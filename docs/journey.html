@@ -1,0 +1,253 @@
+<title>PolyBridge Journey</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a snake map of every step on top, then a vertical spine of step cards grouped by phase. */
+:root {
+  --bg: #F2F3FA; --surface: #FFFFFF; --ink: #151A30; --muted: #5C6385; --line: #C9CEE3;
+  --decision: #D9694F; --build: #5856E8; --process: #1F8FA8; --gate: #1C8F5A;
+  --soft: #ECECFE; --done: #151A30;
+  --display: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0E1120; --surface: #171B2E; --ink: #E6E8F5; --muted: #9AA1C2; --line: #343B5C;
+  --decision: #F09A84; --build: #9190FF; --process: #5CC6DD; --gate: #46C487; --soft: #22254A; --done: #E6E8F5; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0E1120; --surface: #171B2E; --ink: #E6E8F5; --muted: #9AA1C2; --line: #343B5C;
+  --decision: #F09A84; --build: #9190FF; --process: #5CC6DD; --gate: #46C487; --soft: #22254A; --done: #E6E8F5; color-scheme: dark }
+
+body { background: var(--bg); color: var(--ink); font-family: var(--display); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 40px 80px; display: grid; gap: 40px; }
+header { display: grid; gap: 14px; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+h1 { font-size: clamp(28px, 4vw, 44px); line-height: 1.1; margin: 0; letter-spacing: -.02em; text-wrap: balance; }
+h2 { font-size: 21px; margin: 0; letter-spacing: -.01em; }
+p { margin: 0; max-width: 72ch; }
+.lede { color: var(--muted); font-size: 17px; }
+
+.progress { display: grid; gap: 8px; max-width: 560px; }
+.bar { height: 10px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--gate); }
+.progress span { font-family: var(--mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.controls button { font: inherit; font-size: 13px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; display: inline-flex; gap: 8px; align-items: center; }
+.controls button[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.controls button:focus-visible, .step:focus-visible, svg a:focus-visible { outline: 2px solid var(--build); outline-offset: 2px; }
+
+/* shape glyphs */
+.g { width: 12px; height: 12px; display: inline-block; flex: none; }
+.g.decision { background: var(--decision); transform: rotate(45deg) scale(.85); }
+.g.build { background: var(--build); border-radius: 50%; }
+.g.process { background: var(--process); border-radius: 2px; }
+.g.gate { background: var(--gate); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); transform: scale(1.25); border-radius: 0; }
+
+figure { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 18px; display: grid; gap: 12px; min-width: 0; }
+.scroll { overflow-x: auto; }
+#map { display: block; width: 100%; height: auto; min-width: 900px; }
+figcaption { color: var(--muted); font-size: 14px; }
+.m-line { fill: none; stroke: var(--line); stroke-width: 4; stroke-linecap: round; }
+.m-line-done { fill: none; stroke: var(--ink); stroke-width: 4; stroke-linecap: round; }
+.m-num { fill: var(--muted); font-family: var(--mono); font-size: 10px; text-anchor: middle; }
+.m-lbl { fill: var(--ink); font-family: var(--display); font-size: 10.5px; text-anchor: middle; }
+.m-phase { fill: var(--muted); font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; }
+.m-next { fill: none; stroke: var(--decision); stroke-width: 2; }
+.dim { opacity: .18; }
+
+/* spine */
+.phase { display: grid; gap: 14px; }
+.phase-head { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; }
+.phase-head .when { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.spine { display: grid; gap: 10px; position: relative; padding-left: 34px; }
+.spine::before { content: ""; position: absolute; left: 11px; top: 6px; bottom: 6px; width: 3px; border-radius: 2px; background: var(--line); }
+.step { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 16px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; scroll-margin-top: 16px; }
+.step .dot { position: absolute; left: -30px; top: 15px; width: 18px; height: 18px; display: grid; place-items: center; }
+.step .dot .g { width: 14px; height: 14px; }
+.step.done { opacity: .78; }
+.step.done .t::after { content: " ✓"; color: var(--gate); }
+.step.next { border-color: var(--decision); box-shadow: 0 0 0 3px color-mix(in srgb, var(--decision) 22%, transparent); }
+.step .t { font-weight: 600; }
+.step .meta { font-family: var(--mono); font-size: 11.5px; color: var(--muted); text-align: right; white-space: nowrap; }
+.step .d { grid-column: 1 / -1; color: var(--muted); font-size: 14px; max-width: 90ch; }
+.step .out { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { font-family: var(--mono); font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+.tag.you { border-color: var(--decision); color: var(--decision); }
+.tag.rub { border-color: var(--gate); color: var(--gate); }
+.tag.next { background: var(--decision); color: var(--surface); border-color: var(--decision); }
+.step.hide { display: none; }
+@media (max-width: 640px) { .step { grid-template-columns: minmax(0, 1fr); } .step .meta { text-align: left; } }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">PolyBridge · GatorQuant Hacks 2026 · from scratch to stage</div>
+    <h1>The journey: every decision, build and gate</h1>
+    <p class="lede">Each dot is one step. Diamonds are your decisions, circles are things we build, squares are processes and checks, and the green markers are gates that can't be skipped. Steps run in order; a gate blocks everything after it.</p>
+    <div class="progress"><div class="bar"><i id="barfill" style="width:0%"></i></div><span id="progtext">loading</span></div>
+    <div class="controls" role="group" aria-label="Filter steps by type">
+      <button type="button" data-f="all" aria-pressed="true">All</button>
+      <button type="button" data-f="decision" aria-pressed="false"><span class="g decision"></span>Your decisions</button>
+      <button type="button" data-f="build" aria-pressed="false"><span class="g build"></span>Builds</button>
+      <button type="button" data-f="process" aria-pressed="false"><span class="g process"></span>Processes</button>
+      <button type="button" data-f="gate" aria-pressed="false"><span class="g gate"></span>Gates</button>
+      <button type="button" data-f="todo" aria-pressed="false">Still to do</button>
+    </div>
+  </header>
+
+  <figure>
+    <div class="scroll"><svg id="map" role="img" aria-label="Snake map of all steps from the first idea to the presentation, with completed steps drawn in solid ink and the next step ringed."></svg></div>
+    <figcaption>Read left to right, then down. The solid line is what's done; the ringed diamond is the next decision. Click any dot to jump to its card.</figcaption>
+  </figure>
+
+  <div id="phases"></div>
+</div>
+
+<script>
+const PHASES = [
+  { id: "p0", name: "0 · Foundations", when: "Fri, before kickoff → now" },
+  { id: "p1", name: "1 · Tonight's gates", when: "Fri night · now → 2 AM" },
+  { id: "p2", name: "2 · In-sample research", when: "Sat 8 AM → 1 PM" },
+  { id: "p3", name: "3 · Rigor, then freeze", when: "Sat 1 PM → 7 PM" },
+  { id: "p4", name: "4 · Out-of-sample and story", when: "Sat 7 PM → 2 AM" },
+  { id: "p5", name: "5 · Ship and present", when: "Sun 7 AM → 3 PM" },
+];
+// type: decision | build | process | gate · status: done | next | todo
+const STEPS = [
+  ["p0","decision","done","The idea: PolyBridge","You","Use prediction-market prices as a signal to hedge equity positions.","thesis",["Innovation"]],
+  ["p0","decision","done","Live end-to-end, real data, simulated fills","You","Option A: real Polymarket, Kalshi and equity data; paper execution only.","scope",[]],
+  ["p0","decision","done","Stack: Next.js · FastAPI · C++","You","Python control plane, C++ hot path, web UI.","architecture",[]],
+  ["p0","decision","done","C++20 for the engine","You","The standard most HFT production systems run; nothing needed from 23/26.","engine standard",[]],
+  ["p0","decision","done","PPP = Prediction–Price Parity","You","The stock prices the event at the market's p; J is the gap between outcomes; the parity gap is the signal.","framework",["Economic foundation"]],
+  ["p0","build","done","Repo skeleton + design spec","Claude","github.com/theomachado05/polybridge: README, spec, .gitignore, .env.example.","main branch",[]],
+  ["p0","build","done","System map + win plan pages","Claude","Architecture, parity, tick loop; rubric mapping and timeline.","docs/",[]],
+  ["p0","process","done","Study the track and Massive briefs","Claude","Rubrics, deliverables, caps; Massive starter kit downloaded into research/starter.","requirements",[]],
+  ["p0","decision","done","Direction A: Massive-first, told as PolyBridge","You","One entry scored on both rubrics; the live engine moves to the demo path.","strategy",[]],
+
+  ["p1","decision","next","Confirm the hypothesis: H1, H2 or H3","You","H1 (recommended): the options chain underprices slow-burning bad news → protective put. H2: sell puts into restructurings. H3: collar after executive departures.","blocks the first commit",["Novelty 30","Economic foundation"]],
+  ["p1","decision","todo","Name the workstream owners","You","Research · C++20 · Webull + overlay · Web + pitch. Writing is shared. Owners go into CODEOWNERS.","team plan",[]],
+  ["p1","process","todo","Massive API key → .env","Team","From the #massive Discord channel. Never committed; .gitignore already covers it.","data access",[]],
+  ["p1","process","todo","Apply for the Webull OpenAPI key","Team","Approval takes 1–2 working days, so apply tonight. Fallback: a free public daily source, cited.","stock data",["Liquidity & capital"]],
+  ["p1","gate","todo","Commit HYPOTHESIS.md before touching data","Claude + you","Universe, behavior, horizon, counterparty, persistence, prediction, falsifier. The git timestamp proves it came first.","pre-registration",["Economic foundation","Novelty 30"]],
+  ["p1","build","todo","Restructure the repo for submission","Claude","research/ (notebook), engine/pb_core, overlay/, web/, note/; requirements.txt; .massive_cache ignored.","clean layout",["Communication 10"]],
+  ["p1","process","todo","Run the starter end to end on the CFO example","Research","Pipeline check only, on a tag that isn't ours, so we learn nothing about H1 early.","working pipeline",[]],
+  ["p1","build","todo","pb_core skeleton: CMake + pybind11","C++20","P&L kernels for the 5 strategies; std::variant stage pipeline; no allocation in the loop.","C++ library",[]],
+  ["p1","build","todo","Build flow on static 8-K data","Web","Event → stock → ranked hedge, reusing the mockup design.","demo UI",[]],
+  ["p1","build","todo","Quant note skeleton with page budgets","Writing","Summary ¼ · hypothesis ½ · data ½ · method 1 · results 1¼ · risk ½ · liquidity ½ · limits ½.","note.md",["Communication 10"]],
+
+  ["p2","build","todo","Combined-tag event table for H1","Research","Litigation, investigation, cyber incident, restatement, impairment → one event per filer per date.","events",["Rigor 30"]],
+  ["p2","build","todo","EDGAR acceptance-time fix","Research","Filings accepted after 16:00 ET move to the next session, so there's no lookahead.","honest t₀",["Trade realism 10"]],
+  ["p2","process","todo","In-sample scoreboard, placebo and decay","Research","All 8 horizons + expiry, bootstrap CIs, event minus ordinary days, realized ÷ implied.","first evidence",["Rigor 30"]],
+  ["p2","decision","todo","Pooled vs per-tag; primary horizon","You + Research","Decided from in-sample decay only, and written down with the reason.","method choices",["Rigor 30"]],
+  ["p2","build","todo","pb_core grid + bootstrap + parity test","C++20","≈810 variants per category definition, every one logged; Python fallback identical to 1e-12.","variant log",["Rigor 30"]],
+  ["p2","decision","todo","Webull or the fallback data source","You","If the key isn't approved by noon, switch to the cited public source; don't wait.","stock bars",[]],
+  ["p2","build","todo","Top-100 bars, ADV, PolyBridgeOverlay strategy","Webull","Equal-weight book; a put when an H1 filing hits a holding; costs in backtrader.","overlay backtest",["Risk management","Liquidity & capital"]],
+
+  ["p3","process","todo","Massive workshop, 1 PM","Team","Validate the H1 design and the timing fix with the Massive team.","feedback",[]],
+  ["p3","process","todo","Webull workshop, 2 PM","Team","Key status, data entitlements, paperTrade setup.","feedback",[]],
+  ["p3","build","todo","Sensitivity grid + deflated Sharpe","Research + C++20","Expiry × OTM × entry × horizon; plateau vs. spike; the variant count disclosed.","robustness",["Rigor 30","Performance & evidence"]],
+  ["p3","build","todo","Overlay: walk-forward, costs ×2, capacity","Webull","Purge gap; last 20% locked; capacity in $ from % of ADV.","risk + capacity",["Risk management","Liquidity & capital"]],
+  ["p3","process","todo","Track check-in, 5 PM","Team","Sign up for a Sunday presentation slot.","slot booked",[]],
+  ["p3","build","todo","Engine: EDGAR + Polymarket feeds, µs latency","C++20","Lock-free queues; latency histogram; the same pb_core presets the backtest validated.","live engine",["Innovation"]],
+  ["p3","build","todo","Write the predicted-fragility list","Research","Which horizons we expect to hold on the sealed window, and why. Written before OOS.","fragility note",["Sealed 20"]],
+  ["p3","gate","todo","METHOD FREEZE","You","After this, nothing about the rule changes. Commit and tag it in git.","frozen rule",["Performance & evidence"]],
+
+  ["p4","gate","todo","Run out-of-sample ONCE","Research + Webull","Massive OOS window and the overlay's locked period. Report it, good or bad.","OOS results",["Rigor 30","Performance & evidence"]],
+  ["p4","process","todo","Factor regression and by-year breakdown","Webull","Is it just beta, momentum or value? Does one year carry it?","attribution",["Risk management"]],
+  ["p4","build","todo","Engine → Webull paper orders + replay recording","C++20","Recorded session as the demo fallback if Wi-Fi or feeds fail.","demo safety",["Trade realism 10"]],
+  ["p4","build","todo","Web: research view + live bridge view","Web","Scoreboard, decay and sensitivity; the bridge on engine telemetry.","pitch UI",["Communication 10"]],
+  ["p4","decision","todo","The narrative: positive result or well-argued null","You","Both can win. A clear decay curve with an honest null beats a lucky backtest.","story",["Communication 10"]],
+  ["p4","build","todo","Results, risk, liquidity, limits; 2-page Massive cut","Writing","Pages 1–2 stand alone as the Massive write-up.","note draft",["Communication 10"]],
+  ["p4","process","todo","Pitch script + two rehearsals","Team","3 minutes of findings, 90 seconds of live demo, 30 seconds to ask. Everyone can explain the strategy.","5-min pitch",["Communication 10"]],
+
+  ["p5","process","todo","Clean-kernel test on a fresh machine","Research","Only the Massive key; start and end dates as inputs; numbers match the note.","reproducible",["Performance & evidence"]],
+  ["p5","process","todo","Secrets audit, then make the repo public","Claude","No keys, .env, .massive_cache or licensed data anywhere in the history.","public repo",[]],
+  ["p5","build","todo","Export the quant note PDF, ≤ 5 pages","Writing","11pt or larger, standard margins; references and appendix don't count.","note.pdf",["Communication 10"]],
+  ["p5","gate","todo","Submit on Devpost by 10:00 AM","You","Note PDF + public repo link + all members listed. Massive code pushes close 11:00.","submitted",[]],
+  ["p5","gate","todo","Present, 1–3 PM","Team","5 minutes + Q&A. Massive judges remotely; its top 10 go to Massive.","on stage",[]],
+];
+
+const steps = STEPS.map((s, i) => ({ n: i + 1, phase: s[0], type: s[1], status: s[2], title: s[3], owner: s[4], detail: s[5], output: s[6], rubric: s[7] }));
+const done = steps.filter(s => s.status === "done").length;
+document.getElementById("barfill").style.width = (100 * done / steps.length).toFixed(1) + "%";
+document.getElementById("progtext").textContent = `${done} of ${steps.length} steps done · next: #${steps.find(s => s.status === "next").n} ${steps.find(s => s.status === "next").title}`;
+
+// ---- step cards
+const host = document.getElementById("phases");
+for (const p of PHASES) {
+  const sec = document.createElement("section");
+  sec.className = "phase";
+  sec.innerHTML = `<div class="phase-head"><h2>${p.name}</h2><span class="when">${p.when}</span></div><div class="spine"></div>`;
+  const spine = sec.querySelector(".spine");
+  for (const s of steps.filter(s => s.phase === p.id)) {
+    const el = document.createElement("article");
+    el.className = `step ${s.status}`;
+    el.id = `s${s.n}`;
+    el.tabIndex = -1;
+    el.dataset.type = s.type;
+    el.dataset.status = s.status;
+    const tags = [`<span class="tag">→ ${s.output}</span>`]
+      .concat(s.type === "decision" ? [`<span class="tag you">your call</span>`] : [])
+      .concat(s.status === "next" ? [`<span class="tag next">NEXT</span>`] : [])
+      .concat(s.rubric.map(r => `<span class="tag rub">${r}</span>`));
+    el.innerHTML = `<span class="dot"><span class="g ${s.type}"></span></span>
+      <div class="t">${s.n}. ${s.title}</div><div class="meta">${s.type} · ${s.owner}</div>
+      <div class="d">${s.detail}</div><div class="out">${tags.join("")}</div>`;
+    spine.appendChild(el);
+  }
+  host.appendChild(sec);
+}
+
+// ---- snake map
+const svg = document.getElementById("map");
+const NS = "http://www.w3.org/2000/svg";
+const PER_ROW = 12, X0 = 80, DX = 98, Y0 = 70, DY = 120, W = X0 * 2 + DX * (PER_ROW - 1);
+const rows = Math.ceil(steps.length / PER_ROW);
+svg.setAttribute("viewBox", `0 0 ${W} ${Y0 + DY * (rows - 1) + 70}`);
+const pos = steps.map((s, i) => {
+  const r = Math.floor(i / PER_ROW), c = i % PER_ROW;
+  return { x: X0 + DX * (r % 2 ? PER_ROW - 1 - c : c), y: Y0 + DY * r };
+});
+function seg(a, b, i) {
+  if (a.y === b.y) return `M${a.x},${a.y} L${b.x},${b.y}`;
+  const dir = Math.floor(i / PER_ROW) % 2 ? -1 : 1, r = DY / 2;
+  return `M${a.x},${a.y} C${a.x + dir * r * 1.1},${a.y} ${b.x + dir * r * 1.1},${b.y} ${b.x},${b.y}`;
+}
+const mk = (tag, attrs, parent = svg) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent.appendChild(e); return e; };
+for (let i = 0; i < steps.length - 1; i++) mk("path", { d: seg(pos[i], pos[i + 1], i), class: steps[i + 1].status === "done" ? "m-line-done" : "m-line" });
+// phase labels at the first step of each phase
+for (const p of PHASES) {
+  const i = steps.findIndex(s => s.phase === p.id);
+  const t = mk("text", { x: pos[i].x - 8, y: pos[i].y - 30, class: "m-phase" });
+  t.textContent = p.name.toUpperCase();
+}
+const color = t => `var(--${t})`;
+steps.forEach((s, i) => {
+  const { x, y } = pos[i];
+  const a = mk("a", { href: `#s${s.n}`, "data-type": s.type, "data-status": s.status });
+  const title = mk("title", {}, a); title.textContent = `${s.n}. ${s.title} (${s.type}, ${s.owner})`;
+  const fill = s.status === "done" ? color(s.type) : "var(--surface)";
+  const stroke = color(s.type);
+  if (s.type === "decision") mk("rect", { x: x - 9, y: y - 9, width: 18, height: 18, transform: `rotate(45 ${x} ${y})`, fill, stroke, "stroke-width": 2.5 }, a);
+  else if (s.type === "build") mk("circle", { cx: x, cy: y, r: 10, fill, stroke, "stroke-width": 2.5 }, a);
+  else if (s.type === "process") mk("rect", { x: x - 9, y: y - 9, width: 18, height: 18, rx: 3, fill, stroke, "stroke-width": 2.5 }, a);
+  else mk("polygon", { points: `${x},${y - 14} ${x + 14},${y} ${x},${y + 14} ${x - 14},${y}`, fill, stroke, "stroke-width": 2.5 }, a);
+  if (s.status === "next") mk("circle", { cx: x, cy: y, r: 20, class: "m-next" }, a);
+  const num = mk("text", { x, y: y + 30, class: "m-num" }, a); num.textContent = s.n;
+  const words = s.title.split(" "); let short = "";
+  for (const w of words) { if ((short + " " + w).trim().length > 15) break; short = (short + " " + w).trim(); }
+  const lbl = mk("text", { x, y: y + 43, class: "m-lbl" }, a); lbl.textContent = short + (short.length < s.title.length ? "…" : "");
+  a.addEventListener("click", e => { e.preventDefault(); const el = document.getElementById(`s${s.n}`); el.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" }); el.focus({ preventScroll: true }); });
+});
+
+// ---- filters
+const buttons = document.querySelectorAll(".controls button");
+buttons.forEach(b => b.addEventListener("click", () => {
+  buttons.forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  const f = b.dataset.f;
+  const match = el => f === "all" || (f === "todo" ? el.dataset.status !== "done" : el.dataset.type === f);
+  document.querySelectorAll(".step").forEach(el => el.classList.toggle("hide", !match(el)));
+  svg.querySelectorAll("a").forEach(el => el.classList.toggle("dim", !match(el)));
+}));
+</script>
