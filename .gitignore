@@ -1,0 +1,33 @@
+# env / secrets
+.env
+.env.*
+!.env.example
+*.pem
+
+# OS / editors
+.DS_Store
+.vscode/
+.idea/
+
+# web
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+.vercel
+
+# api
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+api/.cache/
+
+# engine
+engine/build/
+engine/cmake-build-*/
+compile_commands.json
+engine/recordings/*.jsonl
+!engine/recordings/demo-*.jsonl
