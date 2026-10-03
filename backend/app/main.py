@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .routes import router
 from .store import ProposalStore
+from .markets import router as markets_router
 from .verdicts import router as verdicts_router
 
 
@@ -23,6 +24,7 @@ def create_app() -> FastAPI:
     app.add_exception_handler(RequestValidationError, _validation_error)
     app.include_router(router)
     app.include_router(verdicts_router)
+    app.include_router(markets_router)
     return app
 
 
