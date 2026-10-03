@@ -1,11 +1,14 @@
 """Step 3: build replay ticks from a market's real price history, aligned to the ticker's equity bars.
 
-Sources, in order: Polymarket CLOB ``prices-history`` for the market's YES token ("live_history"), then a
-recorded replay file ("replay"), else nothing ("none"). Kalshi history is not wired yet (no ticks from it).
+Sources, in order: live history ("live_history": Polymarket CLOB ``prices-history`` for the market's YES token, or
+Kalshi hourly candlesticks for the market), then a recorded replay file ("replay"), else nothing ("none").
 
 Honesty rules:
-- History is a mid-price series. ``yes_bid``/``yes_ask`` are set to that mid (``quote_model = "mid_only"``)
-  and ``no_bid``/``no_ask`` to ``1 - mid``; the true spread at the time is unknown.
+- Polymarket history is a mid-price series. ``yes_bid``/``yes_ask`` are set to that mid (``quote_model =
+  "mid_only"``) and ``no_bid``/``no_ask`` to ``1 - mid``; the true spread at the time is unknown.
+- Kalshi candles carry the real top-of-book closes, so ``yes_bid``/``yes_ask`` are those closes
+  (``quote_model = "candle_bid_ask"``), ``no_bid = 1 - yes_ask``, ``no_ask = 1 - yes_bid``. Each tick is stamped at
+  the candle's END (``end_period_ts``), when its close is known.
 - Book depth (``bid_px_*``, ``bid_qty_*``, ``ask_px_*``, ``ask_qty_*``) is never invented: always NaN.
 - Equity: ``under_px`` is the close of the last Massive bar that had already ENDED at each tick (as-of join on the
   time the close becomes known, not on the bar's start: Massive ``t`` is the start of the bar window). An hourly bar
@@ -34,6 +37,8 @@ BACKEND = Path(__file__).resolve().parents[2]
 DATA = BACKEND / "app" / "data"
 REPLAYS = BACKEND / "replays"
 GAMMA_MARKET = "https://gamma-api.polymarket.com/markets/{id}"
+KALSHI_API = "https://api.elections.kalshi.com/trade-api/v2"
+HISTORY_DAYS = 30
 MIN_TICKS = 10
 KDEPTH = 5
 
@@ -64,7 +69,7 @@ def _num(x: Any) -> float | None:
 
 
 def assemble(points: list[tuple[int, float]], bars: list[tuple[int, float]] | None = None,
-             venue: int = 0) -> dict[str, np.ndarray]:
+             venue: int = 0, quotes: list[tuple[float, float]] | None = None) -> dict[str, np.ndarray]:
     """points: [(ts_s, p)] sorted; bars: [(known_at_s, close)] sorted, where known_at_s is when the close became
     available (bar END, see ``massive_bars``). A tick at t sees the latest bar with known_at_s <= t.
     Returns equal-length arrays per MarketTick field."""
@@ -75,7 +80,10 @@ def assemble(points: list[tuple[int, float]], bars: list[tuple[int, float]] | No
     for f in FLOAT_FIELDS:
         out[f] = np.full(n, np.nan, dtype=np.float64)
     out["yes_bid"], out["yes_ask"] = p.copy(), p.copy()
-    out["no_bid"], out["no_ask"] = 1.0 - p, 1.0 - p
+    if quotes is not None and len(quotes) == n:  # real (bid, ask) per tick; NaN where a side was empty
+        out["yes_bid"] = np.array([float(b) for b, _ in quotes], dtype=np.float64)
+        out["yes_ask"] = np.array([float(a) for _, a in quotes], dtype=np.float64)
+    out["no_bid"], out["no_ask"] = 1.0 - out["yes_ask"], 1.0 - out["yes_bid"]
     out["eightk_score"] = np.zeros(n, dtype=np.float64)
     if bars:
         bt = [b[0] for b in bars]
@@ -130,6 +138,69 @@ async def polymarket_points(http: httpx.AsyncClient, token_id: str) -> list[tupl
         hist = await mk.polymarket_history(http, token_id)
         pts = [(h.t, h.p) for h in hist if math.isfinite(h.p)]
     return sorted(set(pts))
+
+
+# ---------------------------------------------------------------- Kalshi
+
+def _dollars(d: Any, key: str) -> float | None:
+    """Kalshi price field: ``<key>_dollars`` ("0.0800") or legacy integer cents ``<key>``."""
+    if not isinstance(d, dict):
+        return None
+    v = _num(d.get(f"{key}_dollars"))
+    if v is None:
+        c = _num(d.get(key))
+        v = c / 100.0 if c is not None else None
+    return v if v is not None and 0.0 <= v <= 1.0 else None
+
+
+async def kalshi_series(http: httpx.AsyncClient, ticker: str) -> tuple[str, str | None]:
+    """(series ticker, question) via market -> event; falls back to the ticker's first dash-separated part."""
+    question = None
+    try:
+        r = await http.get(f"{KALSHI_API}/markets/{ticker}", timeout=mk.TIMEOUT)
+        r.raise_for_status()
+        m = (r.json() or {}).get("market") or {}
+        question = m.get("title") or None
+        ev = m.get("event_ticker")
+        if ev:
+            r = await http.get(f"{KALSHI_API}/events/{ev}", timeout=mk.TIMEOUT)
+            r.raise_for_status()
+            series = ((r.json() or {}).get("event") or {}).get("series_ticker")
+            if series:
+                return str(series), question
+    except Exception:
+        pass
+    return ticker.split("-")[0], question
+
+
+async def kalshi_quotes(http: httpx.AsyncClient, ticker: str, series: str,
+                        now_s: int | None = None) -> list[tuple[int, float, float, float]]:
+    """About a month of hourly candles as [(end_ts_s, mid, bid, ask)]. bid/ask NaN when that side was empty; a
+    candle with neither side nor a trade price is dropped. mid = (bid + ask) / 2, else the one side, else the
+    candle's trade close."""
+    import time as _time
+    end = int(now_s if now_s is not None else _time.time())
+    r = await http.get(f"{KALSHI_API}/series/{series}/markets/{ticker}/candlesticks",
+                       params={"start_ts": end - HISTORY_DAYS * 86400, "end_ts": end, "period_interval": 60},
+                       timeout=mk.TIMEOUT)
+    r.raise_for_status()
+    out: list[tuple[int, float, float, float]] = []
+    for c in (r.json() or {}).get("candlesticks") or []:
+        t = _num(c.get("end_period_ts"))
+        if t is None:
+            continue
+        bid = _dollars(c.get("yes_bid"), "close")
+        ask = _dollars(c.get("yes_ask"), "close")
+        if bid is not None and ask is not None and bid > ask:
+            bid = ask = None  # crossed or stale book: do not trust either side
+        if bid is not None and ask is not None:
+            mid = (bid + ask) / 2.0
+        else:
+            mid = bid if bid is not None else ask if ask is not None else _dollars(c.get("price"), "close")
+        if mid is None:
+            continue
+        out.append((int(t), mid, bid if bid is not None else math.nan, ask if ask is not None else math.nan))
+    return sorted({q[0]: q for q in out}.values())
 
 
 # ---------------------------------------------------------------- recorded replays
@@ -258,6 +329,9 @@ async def build_ticks(market: dict | None, ticker: str, *, http: httpx.AsyncClie
     token_id = (market or {}).get("token_id")
     question: str | None = None
     points: list[tuple[int, float]] = []
+    quotes: list[tuple[float, float]] | None = None
+    quote_model = "mid_only"
+    venue = 1 if source == "kalshi" else 0
     ts_source: TicksSource = "none"
 
     if market and source == "polymarket" and not offline and http is not None:
@@ -272,13 +346,24 @@ async def build_ticks(market: dict | None, ticker: str, *, http: httpx.AsyncClie
         except Exception as e:
             notes.append(f"Polymarket history unavailable ({type(e).__name__})")
             points = []
-    elif market and source == "kalshi":
-        notes.append("Kalshi price history is not wired yet")
+    elif market and source == "kalshi" and not offline and http is not None and mid:
+        try:
+            series, question = await kalshi_series(http, mid)
+            kq = await kalshi_quotes(http, mid, series)
+            if len(kq) >= MIN_TICKS:
+                points = [(t, m) for t, m, _, _ in kq]
+                quotes = [(b, a) for _, _, b, a in kq]
+                quote_model, ts_source = "candle_bid_ask", "live_history"
+            else:
+                notes.append("Kalshi history too short")
+        except Exception as e:
+            notes.append(f"Kalshi history unavailable ({type(e).__name__})")
+            points = []
 
     if ts_source == "none":
         rp, name = replay_points(source, mid, token_id, data_dir, replays) if market else ([], None)
         if len(rp) >= MIN_TICKS:
-            points, ts_source = rp, "replay"
+            points, ts_source, quotes, quote_model = rp, "replay", None, "mid_only"
             notes.append(f"recorded replay {name}")
         else:
             points = []
@@ -303,8 +388,9 @@ async def build_ticks(market: dict | None, ticker: str, *, http: httpx.AsyncClie
             bars = recorded_bars(ticker, data_dir)
             if bars:
                 notes.append(f"recorded equity bars for {ticker.upper()}")
-    ticks = assemble(points, bars)
+    ticks = assemble(points, bars, venue=venue, quotes=quotes)
     has_under = bool(np.isfinite(ticks["under_px"]).any())
     if not has_under:
         notes.append(f"no {ticker.upper() if ticker else 'equity'} prices aligned to the history")
-    return TickSet(ticks, ts_source, len(points), has_under, notes=notes, token_id=token_id, question=question)
+    return TickSet(ticks, ts_source, len(points), has_under, quote_model=quote_model, notes=notes, token_id=token_id,
+                   question=question)

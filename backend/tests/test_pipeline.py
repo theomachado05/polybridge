@@ -94,9 +94,10 @@ def history(n: int = N_POINTS) -> list[dict]:
 class Router:
     """httpx.MockTransport handler that records requests; per-host behaviour is configurable."""
 
-    def __init__(self, gemini=None, prices=None, gamma=None):
+    def __init__(self, gemini=None, prices=None, gamma=None, kalshi_market=None, kalshi_event=None, candles=None):
         self.requests: list[httpx.Request] = []
         self.gemini, self.prices, self.gamma = gemini, prices, gamma
+        self.kalshi_market, self.kalshi_event, self.candles = kalshi_market, kalshi_event, candles
 
     def __call__(self, request: httpx.Request) -> httpx.Response:
         self.requests.append(request)
@@ -116,7 +117,28 @@ class Router:
             if self.gamma is None:
                 return httpx.Response(503)
             return httpx.Response(200, json=self.gamma)
+        if host == "api.elections.kalshi.com":
+            if path.endswith("/candlesticks"):
+                return httpx.Response(503) if self.candles is None else httpx.Response(200, json={"candlesticks": self.candles})
+            if path.startswith("/trade-api/v2/markets/"):
+                return httpx.Response(503) if self.kalshi_market is None else httpx.Response(200, json={"market": self.kalshi_market})
+            if path.startswith("/trade-api/v2/events/"):
+                return httpx.Response(503) if self.kalshi_event is None else httpx.Response(200, json={"event": self.kalshi_event})
         return httpx.Response(404)
+
+
+def candles(n: int = N_POINTS) -> list[dict]:
+    out = []
+    for i in range(n):
+        bid, ask = 0.30 + 0.002 * i, 0.34 + 0.002 * i
+        c = {"end_period_ts": T0 + 3600 * i, "yes_bid": {"close_dollars": f"{bid:.4f}"},
+             "yes_ask": {"close_dollars": f"{ask:.4f}"}, "price": {"previous_dollars": "0.3000"}}
+        if i == 3:
+            c["yes_ask"] = {}  # empty ask side
+        if i == 4:
+            c["yes_bid"], c["yes_ask"] = {"close": 40}, {"close": 35}  # legacy cents, crossed -> both sides untrusted
+        out.append(c)
+    return out
 
 
 def mock_http(router: Router) -> httpx.AsyncClient:
@@ -448,19 +470,90 @@ def test_build_ticks_live_history_resolves_token_and_aligns_bars():
 def test_build_ticks_falls_back_to_replay_then_none():
     r = Router(prices=None, gamma=None)  # every network call fails
     ts = run(build_ticks({"source": "polymarket", "id": FED_ID}, "SPY", http=mock_http(r), massive=lambda: None))
-    assert ts.source == "replay" and ts.n > 700 and not ts.has_underlying
+    # the bundled replay plus the bundled recorded SPY bars (app/data/equity_bars/SPY.json)
+    assert ts.source == "replay" and ts.n > 700 and ts.has_underlying
+    assert any("recorded equity bars for SPY" in n for n in ts.notes)
+    ts = run(build_ticks({"source": "polymarket", "id": FED_ID}, "ZZZZ", http=mock_http(r), massive=lambda: None))
+    assert ts.source == "replay" and not ts.has_underlying
     ts = run(build_ticks({"source": "polymarket", "id": "nope"}, "SPY", http=mock_http(r), massive=lambda: None))
     assert ts.source == "none" and ts.ticks is None
-    ts = run(build_ticks({"source": "kalshi", "id": "KXFED"}, "SPY", http=None))
+    ts = run(build_ticks({"source": "kalshi", "id": "KXFED-26OCT-T4.25"}, "SPY", http=mock_http(r)))
     assert ts.source == "none" and any("Kalshi" in n for n in ts.notes)
+
+
+def test_build_ticks_kalshi_candles_use_real_bid_ask():
+    r = Router(kalshi_market={"event_ticker": "KXFED-26OCT", "title": "Fed above 4.25%?"},
+               kalshi_event={"series_ticker": "KXFED"}, candles=candles())
+    ts = run(build_ticks({"source": "kalshi", "id": "KXFED-26OCT-T4.25"}, "SPY", http=mock_http(r),
+                         massive=lambda: FakeMassive()))
+    assert ts.source == "live_history" and ts.quote_model == "candle_bid_ask" and ts.n == N_POINTS - 1
+    req = next(q for q in r.requests if q.url.path.endswith("/candlesticks"))
+    assert req.url.path == "/trade-api/v2/series/KXFED/markets/KXFED-26OCT-T4.25/candlesticks"
+    assert req.url.params["period_interval"] == "60"
+    t = ts.ticks
+    assert (t["venue"] == 1).all() and t["ts_ns"][0] == T0 * 10**9  # stamped at candle END
+    assert t["yes_bid"][0] == pytest.approx(0.30) and t["yes_ask"][0] == pytest.approx(0.34)
+    assert t["no_bid"][0] == pytest.approx(0.66) and t["no_ask"][0] == pytest.approx(0.70)
+    assert t["yes_bid"][3] == pytest.approx(0.306) and np.isnan(t["yes_ask"][3]) and np.isnan(t["no_bid"][3])
+    # candle 4 was crossed and had no trade close: dropped entirely, never invented
+    assert T0 + 3600 * 4 not in set(t["ts_ns"] // 10**9)
+    assert np.isnan(t["bid_px_0"]).all() and ts.has_underlying
+
+
+def test_kalshi_series_falls_back_to_ticker_prefix():
+    r = Router(candles=candles())  # market/event lookups fail
+    ts = run(build_ticks({"source": "kalshi", "id": "KXCPI-26SEP-T3.0"}, "SPY", http=mock_http(r)))
+    req = next(q for q in r.requests if q.url.path.endswith("/candlesticks"))
+    assert "/series/KXCPI/markets/KXCPI-26SEP-T3.0/" in req.url.path and ts.source == "live_history"
+
+
+def test_fit_resolves_kalshi_question_from_api():
+    r = Router(kalshi_market={"event_ticker": "KXFED-26OCT", "title": "Will the Fed cut rates in October?"},
+               kalshi_event={"series_ticker": "KXFED"}, candles=candles())
+    c = make_client(module=fake_hedgecore(best=("macro_fed_hedge", 3)), router=r, massive=FakeMassive())
+    j = c.post("/pipeline/fit", json={"market": {"source": "kalshi", "id": "KXFED-26OCT-T4.25"}, "ticker": "TLT",
+                                      "shares_held": 100}).json()
+    assert j["event_class"] == "macro_fed" and j["ticks_source"] == "live_history"
+    assert (j["family"], j["preset_index"]) == ("macro_fed_hedge", 3)
 
 
 def test_build_ticks_survives_massive_failure():
     r = Router(prices=history(), gamma={"clobTokenIds": '["tokYES"]'})
-    ts = run(build_ticks({"source": "polymarket", "id": "777"}, "SPY", http=mock_http(r),
+    ts = run(build_ticks({"source": "polymarket", "id": "777"}, "ZZZZ", http=mock_http(r),
                          massive=lambda: FakeMassive(fail=True)))
     assert ts.source == "live_history" and not ts.has_underlying
     assert any("Massive" in n for n in ts.notes)
+
+
+def test_recorded_bars_cover_the_bundled_fed_replay_without_lookahead():
+    pts, _ = replay_points("polymarket", FED_ID)
+    bars = recorded_bars("SPY")
+    assert bars and bars[0][0] <= pts[0][0]
+    under = assemble(pts, bars)["under_px"]
+    assert np.isfinite(under).all()
+    known = [b[0] for b in bars]
+    import bisect
+    for (t, _), u in zip(pts, under):  # every tick's price is from a bar that had already ended
+        j = bisect.bisect_right(known, t) - 1
+        assert known[j] <= t and u == bars[j][1]
+
+
+def test_record_equity_bars_script(tmp_path):
+    import importlib.util
+    from pathlib import Path
+
+    spec = importlib.util.spec_from_file_location("record_equity_bars",
+                                                  Path(__file__).resolve().parents[1] / "scripts" / "record_equity_bars.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    fm = FakeMassive()
+    out = tmp_path / "equity_bars"
+    assert mod.main(["spy", "--start", str(T0), "--end", str(T0 + 86400), "--out-dir", str(out)], client=fm) == 0
+    doc = json.loads((out / "SPY.json").read_text())
+    assert doc["span_s"] == 3600 and doc["bars"][0] == {"t": T0 - 1800, "c": 500.0}
+    assert recorded_bars("SPY", tmp_path)[0] == (T0 + 1800, 500.0)  # read back joined at bar end
+    assert mod.main(["QQQ", "--start", "1", "--end", "2", "--out-dir", str(tmp_path)],
+                    client=FakeMassive(hourly=False)) == 1
 
 
 # ---------------------------------------------------------------- tune

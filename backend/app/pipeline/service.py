@@ -14,7 +14,8 @@ from .engine_adapter import EngineAdapter
 from .explain import explain
 from .llm import LLMProvider, RulesProvider, rules_classify
 from .shortlist import shortlist, unmet_requirements
-from .ticks import TickSet, _universe_entry, available_requirements, build_ticks, orient_to_adverse, resolve_polymarket
+from .ticks import (TickSet, _universe_entry, available_requirements, build_ticks, kalshi_series, orient_to_adverse,
+                    resolve_polymarket)
 from .tune import tune
 
 Direction = Literal["down_on_yes", "up_on_yes"]
@@ -87,7 +88,7 @@ def _num(x: Any) -> float | None:
 
 
 async def _question_for(req: FitRequest, deps: Deps) -> tuple[str, str | None]:
-    """(question, token_id). Uses the request, then the bundled universe, then Gamma (Polymarket only)."""
+    """(question, token_id). Uses the request, then the bundled universe, then Gamma (Polymarket) or the Kalshi API."""
     q = (req.question or "").strip()
     token = req.market.token_id if req.market else None
     if q or req.market is None:
@@ -99,6 +100,12 @@ async def _question_for(req: FitRequest, deps: Deps) -> tuple[str, str | None]:
         try:
             tok, question = await resolve_polymarket(deps.http, req.market.id)
             return (question or ""), token or tok
+        except Exception:
+            pass
+    if req.market.source == "kalshi" and deps.http is not None and not deps.offline:
+        try:
+            _, question = await kalshi_series(deps.http, req.market.id)
+            return (question or ""), token
         except Exception:
             pass
     return "", token
