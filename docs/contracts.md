@@ -34,9 +34,10 @@ Everything that crosses a folder boundary. Change this file and the code togethe
 
 ## hedgecore (`engine/hedgecore`, C++20 + Python module `hedgecore`)
 
-- `HedgeSpec{ticker, shares_held, target_coverage=0.5, band_shares=10, max_hedge_shares=0 (= shares_held), max_staleness_ns=2_000_000_000, sigma_k=2.0, sigma_alpha=0.05}`
-- `Engine(spec).on_tick(ts_ns, p, now_ns) -> Decision{action: hold|order, reason: invalid|stale|below_sigma|inside_band|rebalance|risk_capped, order_qty, target_hedge, current_hedge, latency_ns}`
-- An invalid `HedgeSpec` (non-finite fields, negative shares/band/cap/sigma_k/staleness, `target_coverage` or `sigma_alpha` outside [0,1]) makes every `on_tick` return Hold with reason `invalid`.
+- `HedgeSpec{ticker, shares_held, target_coverage=0.5, band_shares=10, max_hedge_shares=0 (= shares_held), max_staleness_ns=2_000_000_000, sigma_k=2.0, sigma_alpha=0.05, gap_per_share=0 ($/share per unit of dp), fee_per_share=0.0035, half_spread=0.0, min_benefit_ratio=1.0}`
+- `Engine(spec).on_tick(ts_ns, p, now_ns) -> Decision{action: hold|order, reason: invalid|stale|below_sigma|inside_band|rebalance|risk_capped|below_fees, order_qty, target_hedge, current_hedge, latency_ns}`
+- An invalid `HedgeSpec` (non-finite fields, negative shares/band/cap/sigma_k/staleness/gap_per_share/fee_per_share/half_spread/min_benefit_ratio, `target_coverage` or `sigma_alpha` outside [0,1]) makes every `on_tick` return Hold with reason `invalid`.
+- Fee gate (active when `gap_per_share > 0`; inactive at 0 so old callers are unchanged): after the band check, `cost = |qty|·(fee_per_share+half_spread)`, `benefit = |qty|·gap_per_share·|p − p_at_last_order|` (`p_at_last_order` is 0 until the first Order); holds with `below_fees` when `benefit < cost·min_benefit_ratio`.
 - `on_fill(qty)` after the broker confirms. Default sizing: `target = round(c · N · p)`, capped.
 - A `HedgeSpec` is built only from an **approved** `Proposal`.
 - `on_fill` ignores a non-finite qty and latches the engine invalid (every later tick holds with reason `invalid`). A tick dated after `now_ns`, or older than `max_staleness_ns`, holds with reason `stale`.

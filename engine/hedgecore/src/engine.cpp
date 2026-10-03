@@ -15,6 +15,7 @@ const char* to_string(Reason r) noexcept {
     case Reason::InsideBand: return "inside_band";
     case Reason::Rebalance: return "rebalance";
     case Reason::RiskCapped: return "risk_capped";
+    case Reason::BelowFees: return "below_fees";
   }
   return "unknown";
 }
@@ -36,10 +37,13 @@ namespace {
 bool spec_ok(const HedgeSpec& s) noexcept {
   const bool finite = std::isfinite(s.shares_held) && std::isfinite(s.target_coverage) &&
                       std::isfinite(s.band_shares) && std::isfinite(s.max_hedge_shares) &&
-                      std::isfinite(s.sigma_k) && std::isfinite(s.sigma_alpha);
+                      std::isfinite(s.sigma_k) && std::isfinite(s.sigma_alpha) &&
+                      std::isfinite(s.gap_per_share) && std::isfinite(s.fee_per_share) &&
+                      std::isfinite(s.half_spread) && std::isfinite(s.min_benefit_ratio);
   return finite && s.shares_held >= 0 && s.target_coverage >= 0 && s.target_coverage <= 1 &&
          s.band_shares >= 0 && s.max_hedge_shares >= 0 && s.sigma_k >= 0 && s.sigma_alpha >= 0 &&
-         s.sigma_alpha <= 1 && s.max_staleness_ns >= 0;
+         s.sigma_alpha <= 1 && s.max_staleness_ns >= 0 &&
+         s.gap_per_share >= 0 && s.fee_per_share >= 0 && s.half_spread >= 0 && s.min_benefit_ratio >= 0;
 }
 }  // namespace
 
@@ -79,7 +83,14 @@ Decision Engine::on_tick(const Tick& t, std::int64_t now_ns) {
     return finish(Action::Hold, Reason::Invalid, 0, hedge_);
 
   if (std::abs(qty) < spec_.band_shares) return finish(Action::Hold, Reason::InsideBand, 0, target);
+  if (spec_.gap_per_share > 0) {  // fee gate: expected benefit must cover round-trip cost
+    const double cost = std::abs(qty) * (spec_.fee_per_share + spec_.half_spread);
+    const double benefit = std::abs(qty) * spec_.gap_per_share * std::abs(t.p - p_at_last_order_);
+    if (!std::isfinite(cost) || !std::isfinite(benefit)) return finish(Action::Hold, Reason::Invalid, 0, hedge_);
+    if (benefit < cost * spec_.min_benefit_ratio) return finish(Action::Hold, Reason::BelowFees, 0, target);
+  }
   sized_once_ = true;
+  p_at_last_order_ = t.p;
   return finish(Action::Order, capped ? Reason::RiskCapped : Reason::Rebalance, qty, target);
 }
 

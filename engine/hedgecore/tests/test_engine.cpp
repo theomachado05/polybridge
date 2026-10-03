@@ -133,3 +133,72 @@ TEST(Engine, ExtremeTimestampsDoNotOverflow) {
   auto d = e.on_tick({std::numeric_limits<std::int64_t>::min(), 0.20}, std::numeric_limits<std::int64_t>::max());
   EXPECT_EQ(d.reason, Reason::Stale);
 }
+
+namespace {
+HedgeSpec fee_spec() {
+  auto s = spec();
+  s.gap_per_share = 1.0;      // $1 of benefit per share per unit of dp
+  s.fee_per_share = 0.0035;
+  s.half_spread = 0.01;
+  return s;
+}
+}  // namespace
+
+TEST(FeeGate, BlocksSmallMove) {
+  auto s = fee_spec();
+  s.band_shares = 0;
+  Engine e(s);
+  e.on_tick({kSec, 0.20}, kSec);  // first order
+  e.on_fill(100);
+  // target 105 -> qty 5: benefit = 5*1*0.01 = 0.05 < cost = 5*0.0135 = 0.0675
+  auto d = e.on_tick({2 * kSec, 0.21}, 2 * kSec);
+  EXPECT_EQ(d.action, Action::Hold);
+  EXPECT_EQ(d.reason, Reason::BelowFees);
+  EXPECT_DOUBLE_EQ(d.order_qty, 0.0);
+}
+
+TEST(FeeGate, AllowsLargeMove) {
+  auto s = fee_spec();
+  s.band_shares = 0;
+  Engine e(s);
+  e.on_tick({kSec, 0.20}, kSec);
+  e.on_fill(100);
+  auto d = e.on_tick({2 * kSec, 0.30}, 2 * kSec);  // qty 50: benefit 50*0.10=5 >= cost 0.675
+  EXPECT_EQ(d.action, Action::Order);
+  EXPECT_DOUBLE_EQ(d.order_qty, 50.0);
+}
+
+TEST(FeeGate, FirstOrderSizedWhenBenefitEnough) {
+  Engine e(fee_spec());
+  auto d = e.on_tick({kSec, 0.20}, kSec);  // benefit 100*1*0.20=20 >= cost 1.35
+  EXPECT_EQ(d.action, Action::Order);
+  EXPECT_DOUBLE_EQ(d.order_qty, 100.0);
+}
+
+TEST(FeeGate, InvalidNewFieldsHoldInvalid) {
+  const double nan = std::numeric_limits<double>::quiet_NaN();
+  const double inf = std::numeric_limits<double>::infinity();
+  auto check = [](HedgeSpec s) {
+    Engine e(s);
+    auto d = e.on_tick({kSec, 0.20}, kSec);
+    EXPECT_EQ(d.action, Action::Hold);
+    EXPECT_EQ(d.reason, Reason::Invalid);
+  };
+  for (double bad : {-1.0, nan, inf}) {
+    auto s = fee_spec(); s.gap_per_share = bad; check(s);
+    s = fee_spec(); s.fee_per_share = bad; check(s);
+    s = fee_spec(); s.half_spread = bad; check(s);
+    s = fee_spec(); s.min_benefit_ratio = bad; check(s);
+  }
+}
+
+TEST(FeeGate, InactiveWhenGapZero) {
+  auto s = spec();
+  s.fee_per_share = 1000.0;  // absurd cost, but the gate is off
+  s.half_spread = 1000.0;
+  Engine e(s);
+  auto d = e.on_tick({kSec, 0.20}, kSec);
+  EXPECT_EQ(d.action, Action::Order);
+}
+
+TEST(FeeGate, ReasonName) { EXPECT_STREQ(to_string(Reason::BelowFees), "below_fees"); }

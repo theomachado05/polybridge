@@ -9,13 +9,17 @@ PYBIND11_MODULE(hedgecore, m) {
 
   py::class_<HedgeSpec>(m, "HedgeSpec")
       .def(py::init([](std::string ticker, double shares_held, double target_coverage, double band_shares,
-                       double max_hedge_shares, std::int64_t max_staleness_ns, double sigma_k, double sigma_alpha) {
+                       double max_hedge_shares, std::int64_t max_staleness_ns, double sigma_k, double sigma_alpha,
+                       double gap_per_share, double fee_per_share, double half_spread, double min_benefit_ratio) {
              return HedgeSpec{std::move(ticker), shares_held, target_coverage, band_shares, max_hedge_shares,
-                              max_staleness_ns, sigma_k, sigma_alpha};
+                              max_staleness_ns, sigma_k, sigma_alpha, gap_per_share, fee_per_share,
+                              half_spread, min_benefit_ratio};
            }),
            py::kw_only(), py::arg("ticker"), py::arg("shares_held"), py::arg("target_coverage") = 0.5,
            py::arg("band_shares") = 10.0, py::arg("max_hedge_shares") = 0.0,
-           py::arg("max_staleness_ns") = 2'000'000'000LL, py::arg("sigma_k") = 2.0, py::arg("sigma_alpha") = 0.05)
+           py::arg("max_staleness_ns") = 2'000'000'000LL, py::arg("sigma_k") = 2.0, py::arg("sigma_alpha") = 0.05,
+           py::arg("gap_per_share") = 0.0, py::arg("fee_per_share") = 0.0035, py::arg("half_spread") = 0.0,
+           py::arg("min_benefit_ratio") = 1.0)
       .def_readwrite("ticker", &HedgeSpec::ticker)
       .def_readwrite("shares_held", &HedgeSpec::shares_held)
       .def_readwrite("target_coverage", &HedgeSpec::target_coverage)
@@ -23,7 +27,11 @@ PYBIND11_MODULE(hedgecore, m) {
       .def_readwrite("max_hedge_shares", &HedgeSpec::max_hedge_shares)
       .def_readwrite("max_staleness_ns", &HedgeSpec::max_staleness_ns)
       .def_readwrite("sigma_k", &HedgeSpec::sigma_k)
-      .def_readwrite("sigma_alpha", &HedgeSpec::sigma_alpha);
+      .def_readwrite("sigma_alpha", &HedgeSpec::sigma_alpha)
+      .def_readwrite("gap_per_share", &HedgeSpec::gap_per_share)
+      .def_readwrite("fee_per_share", &HedgeSpec::fee_per_share)
+      .def_readwrite("half_spread", &HedgeSpec::half_spread)
+      .def_readwrite("min_benefit_ratio", &HedgeSpec::min_benefit_ratio);
 
   py::class_<Decision>(m, "Decision")
       .def_property_readonly("action", [](const Decision& d) { return d.action == Action::Order ? "order" : "hold"; })
