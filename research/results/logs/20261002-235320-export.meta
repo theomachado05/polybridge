@@ -1,0 +1,9 @@
+run: export_in_sample.py
+start: 2026-10-02T23:53:20-04:00
+git: c0fcfd889d385c1bbb8fb9216177773b9b1385e1 on r/research-pipeline
+python: Python 3.12.7
+cache files before:     8477
+exit: 0
+end: 2026-10-02T23:55:16-04:00
+duration_s: 87
+cache files after:     8709

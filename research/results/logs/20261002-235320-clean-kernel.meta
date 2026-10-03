@@ -1,0 +1,13 @@
+run: clean-kernel nbconvert of research/polybridge_8k.ipynb
+start: 2026-10-02T23:55:31-04:00
+git: c0fcfd889d385c1bbb8fb9216177773b9b1385e1
+workdir: /tmp/pb-clean-20261002-235320 (fresh copy of committed research/, no .venv, no .massive_cache)
+python: Python 3.13.0
+exit: 0
+end: 2026-10-03T00:01:02-04:00
+duration_s: 331
+cold-cache files fetched:     8535
+nb: Out-of-sample not run: it runs once, after the method freeze.
+nb verdict: hedge NULL (cell 5, "**HEDGE: NULL**")
+nb verdict: opportunity NULL (cell 5, "**OPPORTUNITY: NULL**")
+matches results/in_sample verdicts: yes

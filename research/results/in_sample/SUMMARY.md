@@ -42,7 +42,7 @@ No headline horizon has a CI excluding zero. Verdict as computed: NULL.
 - Hedge: edges range from -0.0091 (2m, pre, 5%) to +0.0068 (3-6m, post, 10%) across the 18 cells, 10 positive; no CI computed per cell. Baseline cell (3-6m, post, 5%) +0.0007. No spike; no consistent sign.
 - Opportunity: edges are positive in all 18 cells, from +0.0008 (3-6m, post, 3%) to +0.0124 (1m, post, 3%). Larger for shorter expiries, smaller for 3-6m. Cell sizes 8-24 events.
 
-## Costs (mean P&L per $1 of spot, events only; `*_costs_h21.csv`, `*_costs_h42.csv`)
+## Costs (mean P&L per $1 of spot, events only; `*_costs_h21.csv`, `*_costs_h42.csv`, `*_costs_hexp.csv`)
 Generated from the CSVs by `research/make_summary_tables.py` (full output in `summary_tables.md`). Means skip missing values; the n_* columns give the rows behind each mean. Quote endpoint worked (no fallback to client=None).
 
 | Family, horizon | rows | gross (n) | net 1x haircut (n) | net 2x haircut (n) | half-spread cost (n) | net of spread (n) | median leg volume |
@@ -53,6 +53,23 @@ Generated from the CSVs by `research/make_summary_tables.py` (full output in `su
 | opportunity, 42 | 24 | 0.0130 (24) | 0.0102 (24) | 0.0073 (24) | 0.0026 (24) | 0.0104 (24) | 48.5 |
 
 The cost-table rows (34 for hedge) include 2 rows whose strategy P&L is missing; those are skipped in the means, which is why the gross n is 32 and 30.
+
+### Paired spread costs and the edge after costs (regenerated 2026-10-02 23:55 ET; `*_cost_summary.csv`, `*_costs_hexp.csv`)
+
+Paired = only rows that have both a P&L and a quoted spread, so gross, spread and net use the same events. Net edge = events minus ordinary days, both after the pre-registered 5% premium haircut.
+
+| Family, horizon | paired n | gross (paired) | half-spread cost | net of spread | net edge, 1x haircut | net edge, 2x haircut |
+|---|---|---|---|---|---|---|
+| hedge, 21 | 32 | 0.0210 | 0.0026 | 0.0184 | +0.0011 | +0.0015 |
+| hedge, 42 | 28 | 0.0292 | 0.0019 | 0.0273 | +0.0052 | +0.0055 |
+| hedge, expiry | 6 | -0.0934 | 0.0061 | -0.0994 | +0.0336 | +0.0338 |
+| opportunity, 21 | 24 | 0.0082 | 0.0029 | 0.0054 | +0.0011 | +0.0014 |
+| opportunity, 42 | 24 | 0.0130 | 0.0026 | 0.0104 | +0.0024 | +0.0027 |
+| opportunity, expiry | 2 | 0.0023 | 0.0037 | -0.0015 | +0.0095 | +0.0097 |
+
+- At expiry almost no closing quote exists on the expiry day (paired n = 6 and 2), so expiry spread costs are not informative; the haircut-based net edge uses all 28 and 23 events.
+- The net edge rises slightly at 2x because the ordinary-day baseline pays the same haircut on a larger premium. None of these net edges is a confirmatory test; the pass rule above is on gross P&L as pre-registered, and both families are NULL.
+- Placebo pricing drops by reason are in `placebo_dropped_reasons.csv` (hedge 34, opportunity 39 event/bucket pairs).
 
 ## Figures
 Scoreboard PNGs plot mean P&L with the 95% bootstrap CI band (titles say 95%); decay PNGs likewise use a 95% band. The pass-rule CIs in the tables above are 97.5%.

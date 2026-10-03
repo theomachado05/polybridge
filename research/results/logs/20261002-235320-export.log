@@ -1,0 +1,11 @@
+[      0s] window 2024-01-01 -> 2025-12-31; last completed session 2026-10-02
+events: 60 events -> 160 priced (event, bucket) pairs; 16 drops
+placebo hedge: 120 events -> 318 priced (event, bucket) pairs; 34 drops
+placebo opportunity: 120 events -> 313 priced (event, bucket) pairs; 39 drops
+[     16s] study done
+[     16s] global tables written
+[     16s] [hedge] exporting
+[     59s] [hedge] verdict NULL
+[     59s] [opportunity] exporting
+[     87s] [opportunity] verdict NULL
+[     87s] export complete
