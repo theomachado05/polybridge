@@ -92,6 +92,10 @@ class Order(BaseModel):
     reject_reason: str | None = None
     note: str | None = None  # e.g. "options routed to the simulator: Webull paper does not take them"
     combo_id: str | None = None  # multi-leg option order this leg belongs to
+    # Where this row came from: "polybridge" (placed through this app), "webull_open" (Webull's open-orders list) or
+    # "webull_history" (Webull's order history, e.g. an order placed in the Webull app). None for the simulator.
+    origin: str | None = None
+    broker_status: str | None = None  # the broker's own status word (Webull: PENDING, SUBMITTED, PARTIAL_FILLED, ...)
 
 
 class Position(BaseModel):
@@ -104,6 +108,10 @@ class Position(BaseModel):
     unrealized_pnl: float | None = None
     multiplier: int = 1
     broker: str = "sim"
+    # Which book the row belongs to, in words the UI shows as is: "Webull paper account", "Simulated account" or
+    # "demo holdings" (the seeded demo portfolio, never held at any broker).
+    account: str | None = None
+    strategy: str | None = None  # Webull option position strategy (SINGLE, VERTICAL, ...) for an option leg
 
 
 class Account(BaseModel):
@@ -127,6 +135,27 @@ class Account(BaseModel):
     market_open: bool | None = None
     session: str | None = None
     next_open: str | None = None
+    # Capital and margin as the broker reports them (Webull margin accounts; None when not reported). buying_power is
+    # the conservative figure a hedge held overnight can use (Webull: overnight buying power), day_buying_power the
+    # intraday (4x) figure, option_buying_power what option orders may use.
+    day_buying_power: float | None = None
+    overnight_buying_power: float | None = None
+    option_buying_power: float | None = None
+    settled_cash: float | None = None
+    unsettled_cash: float | None = None
+    market_value: float | None = None
+    unrealized_pnl: float | None = None
+    maintenance_margin: float | None = None
+    init_margin: float | None = None
+    used_margin: float | None = None
+    margin_excess: float | None = None
+    margin_ratio: float | None = None
+    open_margin_calls: list[str] | None = None
+    day_trades_left: str | None = None
+    # Capabilities: may this broker place option orders itself (False: option legs go to the simulator, labelled), and
+    # where option orders go right now ("webull-paper" or "sim").
+    options_supported: bool | None = None
+    options_route: str | None = None
 
 
 @runtime_checkable
@@ -136,6 +165,9 @@ class Broker(Protocol):
     # SimBroker True (simulated); WebullBroker False by default (the paper sandbox refuses every order outside
     # 09:30-16:00 ET; WEBULL_EXTENDED_HOURS=1 sends "ALL" limit orders per the OpenAPI docs). Callers read it with getattr(broker, "extended_hours", False) so a minimal fake still works.
     extended_hours: bool
+    # Optional capabilities, read with getattr so a minimal fake still works:
+    #   options_supported: bool          the broker itself places option orders (WebullBroker: WEBULL_OPTIONS=1)
+    #   async can_short(symbol) -> bool | None   True shortable, False not (instrument or account), None unknown
 
     async def account(self) -> Account: ...
     async def positions(self) -> list[Position]: ...

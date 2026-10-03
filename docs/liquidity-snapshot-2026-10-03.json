@@ -1,0 +1,327 @@
+{
+ "what": "One run of the liquidity service (app.liquidity.service.LiquidityService.equity, coverage 0.5) for SPY, TLT and ITA with the Massive key. Saturday snapshot of Friday's data: daily and 5-minute bars end with the 2026-10-02 session; the spread is the last Massive quote, which on a Saturday is an after-hours/overnight quote (flagged in sources.spread). cs_spread_bp_daily_bars is the service's own Corwin-Schultz (2012) high-low estimate over the same 20 daily bars; the service does not use it when a quote exists, and it is kept here only as a cross-check.",
+ "run_at_utc": "2026-10-03T19:40:56+00:00",
+ "script": "a one-off call of the service from the backend venv; no server, no order",
+ "tickers": {
+  "SPY": {
+   "kind": "equity",
+   "ticker": "SPY",
+   "freshness": {
+    "age_s": 0.0,
+    "cache_stale": false,
+    "staleness": "fresh"
+   },
+   "available": true,
+   "price": 769.64,
+   "adv_shares": 46047314.423602805,
+   "adv_usd": 35210479442.201004,
+   "sigma_daily": 0.006502034145165642,
+   "open5_median_shares": 1242403.437925,
+   "spread_bp": 1.688717419120119,
+   "spread_source": "quote",
+   "per_order_shares": 124240,
+   "per_day_shares": 460473,
+   "max_order_shares": 124240,
+   "max_position_shares": 460473,
+   "binding": "per_order_open5",
+   "est_cost_bp": 4.221722275764542,
+   "cost": {
+    "qty": 124240.0,
+    "half_spread_bp": 0.8443587095600595,
+    "impact_bp": 3.3773635662044823,
+    "total_bp": 4.221722275764542
+   },
+   "capacity": {
+    "coverage": 0.5,
+    "hedge_shares_max": 124240,
+    "book_usd": 191240147.2,
+    "book_usd_single_order_at_open": 191240147.2,
+    "book_usd_within_one_session": 708796879.4399999,
+    "note": "the largest holding whose hedge (coverage x holding) fits one order at the open (10% of the opening 5-minute volume) and one session (1% of ADV)"
+   },
+   "sources": {
+    "daily_bars": {
+     "source": "massive /v2/aggs day",
+     "as_of": "2026-10-02T04:00:00Z",
+     "sessions": 20
+    },
+    "open5": {
+     "source": "massive /v2/aggs 5 minute (09:30 ET bar)",
+     "sessions": 20
+    },
+    "spread": {
+     "source": "quote",
+     "at": "2026-10-03T00:00:00.230963Z",
+     "phase": "overnight",
+     "timeframe": "DELAYED",
+     "note": "last quote outside the regular session: its spread may be wider than at the open"
+    }
+   },
+   "errors": null,
+   "cs_spread_bp_daily_bars": 4.045556943610177
+  },
+  "TLT": {
+   "kind": "equity",
+   "ticker": "TLT",
+   "freshness": {
+    "age_s": 0.0,
+    "cache_stale": false,
+    "staleness": "fresh"
+   },
+   "available": true,
+   "price": 77.48,
+   "adv_shares": 47845893.17811325,
+   "adv_usd": 3817071369.030285,
+   "sigma_daily": 0.006493502788141863,
+   "open5_median_shares": 805109.3691359999,
+   "spread_bp": 1.2902393393981182,
+   "spread_source": "quote",
+   "per_order_shares": 80510,
+   "per_day_shares": 478458,
+   "max_order_shares": 80510,
+   "max_position_shares": 478458,
+   "binding": "per_order_open5",
+   "est_cost_bp": 3.308796981114001,
+   "cost": {
+    "qty": 80510.0,
+    "half_spread_bp": 0.6451196696990591,
+    "impact_bp": 2.6636773114149417,
+    "total_bp": 3.308796981114001
+   },
+   "capacity": {
+    "coverage": 0.5,
+    "hedge_shares_max": 80510,
+    "book_usd": 12475829.600000001,
+    "book_usd_single_order_at_open": 12475829.600000001,
+    "book_usd_within_one_session": 74141851.68,
+    "note": "the largest holding whose hedge (coverage x holding) fits one order at the open (10% of the opening 5-minute volume) and one session (1% of ADV)"
+   },
+   "sources": {
+    "daily_bars": {
+     "source": "massive /v2/aggs day",
+     "as_of": "2026-10-02T04:00:00Z",
+     "sessions": 20
+    },
+    "open5": {
+     "source": "massive /v2/aggs 5 minute (09:30 ET bar)",
+     "sessions": 20
+    },
+    "spread": {
+     "source": "quote",
+     "at": "2026-10-02T23:59:59.366779Z",
+     "phase": "after_hours",
+     "timeframe": "DELAYED",
+     "note": "last quote outside the regular session: its spread may be wider than at the open"
+    }
+   },
+   "errors": null,
+   "cs_spread_bp_daily_bars": 8.627960405989272
+  },
+  "ITA": {
+   "kind": "equity",
+   "ticker": "ITA",
+   "freshness": {
+    "age_s": 0.0,
+    "cache_stale": false,
+    "staleness": "fresh"
+   },
+   "available": true,
+   "price": 207.79,
+   "adv_shares": 857238.5743829999,
+   "adv_usd": 183801113.3948686,
+   "sigma_daily": 0.008312294507636415,
+   "open5_median_shares": 30996.2996635,
+   "spread_bp": 168.87584498063418,
+   "spread_source": "quote",
+   "per_order_shares": 3099,
+   "per_day_shares": 8572,
+   "max_order_shares": 3099,
+   "max_position_shares": 8572,
+   "binding": "per_order_open5",
+   "est_cost_bp": 89.43574533063938,
+   "cost": {
+    "qty": 3099.0,
+    "half_spread_bp": 84.43792249031709,
+    "impact_bp": 4.997822840322292,
+    "total_bp": 89.43574533063938
+   },
+   "capacity": {
+    "coverage": 0.5,
+    "hedge_shares_max": 3099,
+    "book_usd": 1287882.42,
+    "book_usd_single_order_at_open": 1287882.42,
+    "book_usd_within_one_session": 3562351.76,
+    "note": "the largest holding whose hedge (coverage x holding) fits one order at the open (10% of the opening 5-minute volume) and one session (1% of ADV)"
+   },
+   "sources": {
+    "daily_bars": {
+     "source": "massive /v2/aggs day",
+     "as_of": "2026-10-02T04:00:00Z",
+     "sessions": 20
+    },
+    "open5": {
+     "source": "massive /v2/aggs 5 minute (09:30 ET bar)",
+     "sessions": 20
+    },
+    "spread": {
+     "source": "quote",
+     "at": "2026-10-02T23:13:53.864492Z",
+     "phase": "after_hours",
+     "timeframe": "DELAYED",
+     "note": "last quote outside the regular session: its spread may be wider than at the open"
+    }
+   },
+   "errors": null,
+   "cs_spread_bp_daily_bars": 55.0610534586535
+  }
+ },
+ "caps": {
+  "per_order": "<= 10% of the opening 5-minute volume (median of the last 20 sessions)",
+  "per_day": "<= 1% of the 20-day average daily volume"
+ },
+ "cost_model": {
+  "formula": "cost_bp = half_spread_bp + k * sigma_daily * sqrt(q / ADV_shares) * 1e4",
+  "k": 1.0,
+  "k_source": "square-root law; Toth et al. 2011 (Y ~ 0.5-1), Almgren et al. 2005 (~0.3-1): conservative end",
+  "sigma_source": "SD of the last 20 daily close-to-close log returns (Massive daily bars)",
+  "spread_source": "Massive last NBBO quote; else the Corwin-Schultz (2012) high-low estimate from daily bars"
+ },
+ "option_and_pm": {
+  "what": "Same service, second call at run_at_utc: GET /liquidity/option for the SPY 650 put expiring 2026-12-18 (Massive snapshot, Friday's volume and open interest, fmv-marked, no quote on this plan) and GET /liquidity/pm for 'Another Fed rate hike in 2026?' (live Polymarket CLOB book, Saturday; PM books trade on weekends, so this one is live, not Friday's).",
+  "run_at_utc": "2026-10-03T19:42:51+00:00",
+  "option_SPY_650_put_2026-12-18": {
+   "kind": "option",
+   "underlying": "SPY",
+   "strike": 650,
+   "expiry": "2026-12-18",
+   "right": "put",
+   "caps": {
+    "per_order": "<= 10% of the contract's daily volume and <= 5% of its open interest (every leg)"
+   },
+   "available": true,
+   "contract": "O:SPY261218P00650000",
+   "open_interest": 20048.0,
+   "volume": 826.0,
+   "bid": null,
+   "ask": null,
+   "mid": 2.371,
+   "mark_source": "fmv",
+   "delta": -0.05831777292207998,
+   "spot": 769.64,
+   "per_order_contracts": 82,
+   "by_volume": 82,
+   "by_open_interest": 1002,
+   "binding": "volume",
+   "max_order_contracts": 82,
+   "spread_bp": null,
+   "half_spread_usd_per_contract": null,
+   "est_cost_bp": null,
+   "capacity": {
+    "coverage": 0.5,
+    "contracts": 82,
+    "shares_equiv": 8200,
+    "delta_shares_equiv": 478.20573796105583,
+    "book_usd": 736092.528328694,
+    "note": "holding whose hedge (coverage x holding, delta-adjusted when the delta is known) fits one order inside both option caps"
+   },
+   "freshness": {
+    "source": "massive_snapshot",
+    "timeframe": "DELAYED",
+    "fetched_at": 1791056571.849896,
+    "data_age_s": 84472.5,
+    "cache_stale": false,
+    "staleness": "prior_session",
+    "mark_sources": [
+     "fmv"
+    ],
+    "has_quotes": false,
+    "truncated": false
+   },
+   "label": "Massive option snapshot: volume is the latest session's (Friday's on a weekend); spread from the last quote when the plan has quotes",
+   "cost_model": {
+    "formula": "cost_bp = half the quoted spread (bp of mid); option impact not modelled, the volume / open-interest caps keep orders small"
+   }
+  },
+  "pm_polymarket_4620900": {
+   "kind": "pm",
+   "caps": {
+    "per_order": "<= 50% of the book depth within 2 cents of the mid (side taken)"
+   },
+   "bands_cents": [
+    1,
+    2,
+    5
+   ],
+   "label": "depth within 1/2/5 cents of the mid (buy = asks, sell = bids); Polymarket fills are simulated (no trading account)",
+   "available": true,
+   "source": "polymarket",
+   "id": "4620900",
+   "book_key": "834988939366537589681339435844742816680296103724655311351481456389958777625",
+   "depth": {
+    "mid": 0.725,
+    "best_bid": 0.72,
+    "best_ask": 0.73,
+    "spread": 0.010000000000000009,
+    "buy": {
+     "1c": {
+      "contracts": 2602.4,
+      "usd": 1899.752
+     },
+     "2c": {
+      "contracts": 8053.200000000001,
+      "usd": 5933.344
+     },
+     "5c": {
+      "contracts": 18609.32,
+      "usd": 13868.434000000001
+     }
+    },
+    "sell": {
+     "1c": {
+      "contracts": 81.0,
+      "usd": 58.32
+     },
+     "2c": {
+      "contracts": 4382.87,
+      "usd": 3112.6477
+     },
+     "5c": {
+      "contracts": 15481.369999999999,
+      "usd": 10844.5065
+     }
+    }
+   },
+   "max_order_contracts": {
+    "buy": 4026,
+    "sell": 2191
+   },
+   "est_cost_at_cap": {
+    "buy": {
+     "qty": 4026,
+     "filled": 4026.0,
+     "avg_px": 0.7335360158966716,
+     "cost_cents": 0.8536015896671634,
+     "cost_bp": 117.73815029891908
+    },
+    "sell": {
+     "qty": 2191,
+     "filled": 2191.0,
+     "avg_px": 0.71036969420356,
+     "cost_cents": 1.463030579643998,
+     "cost_bp": 201.79732133020661
+    }
+   },
+   "levels": {
+    "bids": 38,
+    "asks": 22
+   },
+   "reason": null,
+   "freshness": {
+    "fetched_at": 1791056571.883038,
+    "age_s": 0.0,
+    "cache_stale": false
+   },
+   "twin": null
+  }
+ }
+}

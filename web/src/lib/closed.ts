@@ -85,6 +85,12 @@ export interface StagedOrder {
   current?: { gap_bp?: number } | null;
   decisions?: StagedDecision[];
   label?: string;
+  /** Evidence gate at planning: "validated", or "override" (act_on_unvalidated on an unvalidated market). */
+  evidence_gate?: "validated" | "override" | string | null;
+  evidence?: string | null;
+  /** Participation-cap and capital-budget checks at planning / execution (backend liquidity.gate, capital.service). */
+  liquidity?: { status?: string; rule?: string; limit_qty?: number; note?: string } | null;
+  capital?: { ok?: boolean; enforced?: boolean; checked?: boolean; note?: string | null; breaches?: { kind?: string; detail?: string }[] | null } | null;
 }
 
 export interface TimelineRow { at: string; at_et: string; event: string; detail?: string | null; staged_id?: string; qty?: number; filled_qty?: number; fill_px?: number | null; phase?: string }

@@ -2,9 +2,12 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { getClosedEvidence, getEquity, getLibrary, getOptionsImplied, mapEvent, searchMarkets, type FitOut, type Holding, type MapOut } from "@/lib/api";
+import { getClosedEvidence, getEquity, getLibrary, getLiquidity, getOptionsImplied, mapEvent, searchMarkets, type FitOut, type Holding, type MapOut } from "@/lib/api";
 import { sessionClosed, weekendModeCopy, type SessionView } from "@/lib/closed";
-import { DEFAULT_OPP_CAPS, opportunityFit } from "@/lib/realBridge";
+import { DEFAULT_OPP_CAPS, opportunityFit, prepareOpportunityProposal, runnableFit } from "@/lib/realBridge";
+import { OVERRIDE_COPY, ackCopy, capacityFromLiquidity, capitalFitView, evidenceGate, isEvidenceError } from "@/lib/risk";
+import { BadgeTag, CapacityCard, EvidenceGateBox } from "@/components/risk/RiskBits";
+import { HedgeCompareCard, OptionChainCard } from "@/components/options/OptionsCards";
 import { EQ, INSTRUMENTS, QUESTIONS, REAL_INSTRUMENTS, demoFirst, demoImpacts, isDemoMarket, isListedMarket, isOpenMarket, isRecordedOnly, questionFromMarket, topImpact, type EquityPick, type Impact, type Question } from "@/lib/demo";
 import { fmtPct, prettyId } from "@/lib/fmt";
 import { fitScoreView, IN_SAMPLE_NOTE } from "@/lib/pipeline";
@@ -303,7 +306,7 @@ export default function Build() {
                 )}
                 {step === 3 && !inst && !busy && opp && chosenMode === "opportunity" && q && (
                   <OpportunityCard q={q} ticker={e.t} fit={oppData!} opp={opp} idea={oppIdea} onBack={() => setMode(null)}
-                    onStart={async () => { const id = await s.openOpportunity(q, e); router.push(`/bridge/${id.replace(/^live:/, "")}`); }} />
+                    onStart={async (ack) => { const id = await s.openOpportunity(q, e, { ackUnvalidated: ack }); router.push(`/bridge/${id.replace(/^live:/, "")}`); }} />
                 )}
                 {step === 3 && !inst && !busy && showHedge && (
                   <div style={{ marginTop: 8, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", fontSize: 12, color: "#5A627A" }}>
@@ -340,10 +343,12 @@ export default function Build() {
             {!busy && (
               <Ai orb="breathing" text={ai4}>
                 <FitCard fit={fit} />
-                {/* Shown while closed, and whenever hedge A is on (so it can always be turned off, even after the open). */}
-                {real && q?.real && (sessionClosed(s.session.data) || s.closedPmHedge) && (
-                  <WeekendModeCard market={q.real} ticker={e?.t ?? ""} session={s.session.data} pmHedge={s.closedPmHedge} onPmHedge={s.setClosedPmHedge} />
+                {/* Shown while closed, and whenever hedge A or the override is on (so they can always be turned off). */}
+                {real && q?.real && (sessionClosed(s.session.data) || s.closedPmHedge || s.actOnUnvalidated) && (
+                  <WeekendModeCard market={q.real} ticker={e?.t ?? ""} session={s.session.data} pmHedge={s.closedPmHedge} onPmHedge={s.setClosedPmHedge}
+                    override={s.actOnUnvalidated} onOverride={s.setActOnUnvalidated} />
                 )}
+                {real && e && <RiskPreview ticker={e.t} held={e.held || 500} maxHedge={s.settings.maxHedge} notional={!e.held} fitRuns={!!runnableFit(fit?.status === "ok" ? fit.data : null)} />}
                 <div style={{ marginTop: 18, display: "flex", gap: 10, flexWrap: "wrap" }}>
                   <button type="button" className="pb-btn pb-btn-primary" style={{ height: 48, padding: "0 22px" }} onClick={toConnect}>Connect brokerage <span className="pb-arrow">→</span></button>
                   <button type="button" className="pb-btn pb-btn-secondary" style={{ height: 48, padding: "0 18px", fontSize: 14, boxShadow: "none" }} onClick={toStep1}>Start over</button>
@@ -374,16 +379,31 @@ const pct = (x: number | null | undefined) => (x == null || !Number.isFinite(x) 
 
 /** The Opportunity step: the options fit, the PM-vs-options gap (GET /options/implied) and the risk caps the
  *  proposal is approved with. Starting it is an explicit click: propose → approve → options bridge. */
-function OpportunityCard({ q, ticker, fit, opp, idea, onStart, onBack }: { q: NonNullable<ReturnType<typeof useStore>["question"]>; ticker: string; fit: FitOut; opp: NonNullable<ReturnType<typeof opportunityFit>>; idea: string; onStart: () => Promise<void>; onBack: () => void }) {
+function OpportunityCard({ q, ticker, fit, opp, idea, onStart, onBack }: { q: NonNullable<ReturnType<typeof useStore>["question"]>; ticker: string; fit: FitOut; opp: NonNullable<ReturnType<typeof opportunityFit>>; idea: string; onStart: (ackUnvalidated: boolean) => Promise<void>; onBack: () => void }) {
   const m = q.real!;
   const implied = useAsync(`oi:${m.source}:${m.id}`, () => getOptionsImplied({ market_source: m.source, market_id: m.id }));
   const [state, setState] = useState<{ busy: boolean; error: string | null }>({ busy: false, error: null });
+  // The pending opportunity proposal (created, not approved): its evidence gate and capital fit before the click.
+  // prepNonce: bumped after an evidence refusal so the stored evidence (rewritten by the backend before its 409) is re-read.
+  const [prepNonce, setPrepNonce] = useState(0);
+  const prep = useAsync(`oprep:${prepNonce}:${m.source}:${m.id}:${ticker}:${opp.family}:${opp.preset_index}`, () => prepareOpportunityProposal(q, ticker, opp));
+  const gate = prep.data ? evidenceGate(prep.data.evidence) : null;
+  const [ack, setAck] = useState(false);
+  // Start waits for the evidence read (a click before it lands on an unvalidated market is a certain 409); a failed
+  // read (prep.error) leaves it enabled and the backend's gate still applies.
+  const blocked = prep.loading || (!!gate?.needsAck && !ack && prep.data?.status !== "approved");
+  const capFit = prep.data ? capitalFitView(prep.data.capacity) : null;
   const d = implied.data;
   const recordedOnly = isRecordedOnly(m);
   const box = { marginTop: 14, padding: "14px 16px", borderRadius: 18, background: "rgba(255,255,255,.7)", border: "1px solid rgba(255,255,255,.9)" };
   const start = () => {
+    if (blocked) return;
     setState({ busy: true, error: null });
-    onStart().catch((e) => setState({ busy: false, error: e instanceof Error ? e.message : String(e) }));
+    onStart(ack).catch((e) => {
+      const evid = isEvidenceError(e);
+      setState({ busy: false, error: `${evid ? "Evidence gate: " : ""}${e instanceof Error ? e.message : String(e)}` });
+      if (evid) { setAck(false); setPrepNonce((n) => n + 1); }
+    });
   };
   return (
     <div style={box}>
@@ -410,9 +430,18 @@ function OpportunityCard({ q, ticker, fit, opp, idea, onStart, onBack }: { q: No
       {fit.rationale && <div className="pb-pretty" style={{ fontSize: 13, color: "#3C4458", lineHeight: 1.5, marginTop: 6 }}>{fit.rationale}</div>}
       <div className="pb-pretty" style={{ fontSize: 12, color: "#5A627A", marginTop: 6, lineHeight: 1.45 }}>{OPP_REPLAY_NOTE}</div>
       <div style={{ fontSize: 12, color: "#5A627A", marginTop: 8 }}>Risk caps on the proposal you approve: at most {DEFAULT_OPP_CAPS.max_contracts} structures open, ${DEFAULT_OPP_CAPS.max_notional.toLocaleString("en-US")} premium / max loss at risk. Ticker context: {ticker}.</div>
+      <EvidenceGateBox gate={gate} loading={prep.loading} acknowledged={prep.data?.status === "approved" && !!prep.data.ack_unvalidated} ack={ack} onAck={setAck} copy={ackCopy(ticker, "opportunity")} testId="opp-evidence-gate" />
+      {prep.error && <div style={{ fontSize: 12, color: "#8A5A00", marginTop: 6 }}>Could not read the proposal first ({prep.error}); the backend’s evidence gate still applies at approval.</div>}
+      {capFit && (
+        <div style={{ fontSize: 12, color: "#3C4458", marginTop: 8, lineHeight: 1.5 }}>
+          <span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}><span className="pb-label">CAPITAL</span><BadgeTag b={capFit.badge} /></span>
+          {capFit.lines.map((l) => <div key={l}>{l}</div>)}
+          {prep.data?.capacity?.options?.note && <div style={{ color: "#5A627A" }}>Liquidity: {prep.data.capacity.options.note}.</div>}
+        </div>
+      )}
       {state.error && <div role="alert" style={{ fontSize: 12.5, color: "#C8323F", marginTop: 8 }}>Could not start the options bridge: {state.error}</div>}
       <div style={{ marginTop: 14, display: "flex", gap: 10, flexWrap: "wrap" }}>
-        <button type="button" className="pb-btn pb-btn-primary" style={{ height: 44, padding: "0 20px" }} disabled={state.busy} onClick={start}>{state.busy ? "Starting…" : "Approve & start options bridge"} <span className="pb-arrow">→</span></button>
+        <button type="button" className={`pb-btn ${blocked ? "pb-btn-disabled" : "pb-btn-primary"}`} style={{ height: 44, padding: "0 20px" }} disabled={state.busy || blocked} onClick={start} title={blocked ? (prep.loading ? "Reading this proposal's evidence status first" : "Tick the acknowledgement: this market's signal is unvalidated") : undefined}>{state.busy ? "Starting…" : prep.loading ? "Checking the evidence…" : blocked ? "Acknowledge the unvalidated market to start" : ack ? "Approve & start (unvalidated)" : "Approve & start options bridge"} <span className="pb-arrow">→</span></button>
         <button type="button" className="pb-btn pb-btn-secondary" style={{ height: 44, padding: "0 16px", fontSize: 14, boxShadow: "none" }} onClick={onBack}>Back</button>
       </div>
     </div>
@@ -453,7 +482,7 @@ function FitCard({ fit }: { fit: ReturnType<typeof useStore>["fit"] }) {
 /** U4: Weekend mode, shown while US equities are closed. Hedge B (an equity order staged for the first tradable moment,
  *  approved by you on the Bridge) is the default; hedge A (holding the PM contract over the closure) is an explicit
  *  opt-in, labelled an estimate and never protection, because research R1 found no evidence it reduces the loss. */
-function WeekendModeCard({ market, ticker, session, pmHedge, onPmHedge }: { market: { source: string; id: string; token_id?: string | null }; ticker: string; session: SessionView | null; pmHedge: boolean; onPmHedge: (on: boolean) => void }) {
+function WeekendModeCard({ market, ticker, session, pmHedge, onPmHedge, override, onOverride }: { market: { source: string; id: string; token_id?: string | null }; ticker: string; session: SessionView | null; pmHedge: boolean; onPmHedge: (on: boolean) => void; override: boolean; onOverride: (on: boolean) => void }) {
   const ev = useAsync(`ce:${market.source}:${market.id}`, () => getClosedEvidence({ market_source: market.source, market_id: market.id, token_id: market.token_id }));
   const copy = weekendModeCopy(ev.data);
   const m = ev.data?.market;
@@ -486,6 +515,42 @@ function WeekendModeCard({ market, ticker, session, pmHedge, onPmHedge }: { mark
         </div>
         <Switch on={pmHedge} onClick={() => onPmHedge(!pmHedge)} label="Opt in to hedge A (estimate, not protection)" />
       </div>
+      {(!validated || override) && !ev.loading && (
+        <div style={opt} data-testid="override-row">
+          <div style={{ minWidth: 0 }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}><span style={{ fontSize: 14, fontWeight: 600 }}>Override · stage hedge B on an unvalidated market</span><Tag tone="caution">override</Tag></div>
+            <div className="pb-pretty" style={{ fontSize: 12, color: "#5A627A", marginTop: 3, lineHeight: 1.45 }}>
+              Without it, the evidence gate refuses to plan a staged order on this market (EVIDENCE_GATE) and the bridge says so once per closure. {OVERRIDE_COPY} It also needs the acknowledgement at approval.
+            </div>
+            <div style={{ fontSize: 12, color: override ? "#9A4A00" : "#5A627A", marginTop: 6 }}>{override ? "On: staged plans on this market are labelled “override”." : "Off (default): no staged plan on an unvalidated market."}</div>
+          </div>
+          <Switch on={override} onClick={() => onOverride(!override)} label="Override the evidence gate for staged plans" />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Before connecting: can the market absorb the hedge (GET /liquidity), what each hedge instrument costs
+ *  (GET /options/hedge-quote), and the strike ladder on demand (GET /options/chain/{ticker}). */
+function RiskPreview({ ticker, held, maxHedge, notional, fitRuns }: { ticker: string; held: number; maxHedge: string; notional: boolean; fitRuns: boolean }) {
+  // Same coverage the proposal will carry (realBridge.hedgeTerms): Max hedge with a runnable AI fit, else at most 50%.
+  const cap = Math.min(1, (parseInt(maxHedge, 10) || 100) / 100);
+  const coverage = fitRuns ? cap : Math.min(0.5, cap);
+  const hedge = Math.floor(coverage * held);
+  const liq = useAsync(`liq:${ticker}:${coverage}:${hedge}`, () => getLiquidity(ticker, { coverage, qty: hedge }));
+  const [chain, setChain] = useState(false);
+  const view = liq.error ? { ...capacityFromLiquidity(null), reason: `Liquidity unavailable (${liq.error}); orders are not capped and are labelled “unknown”.`, verdict: { tone: "neutral" as const, text: "caps unknown" } } : capacityFromLiquidity(liq.data, hedge);
+  return (
+    <div data-testid="risk-preview">
+      <CapacityCard view={view} title={`LIQUIDITY · ${ticker} · HEDGE ${hedge.toLocaleString("en-US")} SH${notional ? " (NOTIONAL)" : ""}`}
+        tag={<Tag tone="ai" title="Participation caps: per order ≤ 10% of the opening 5-minute volume, per day ≤ 1% of ADV; cost = half spread + square-root impact (k = 1.0)">estimate</Tag>}
+        footer={<div style={{ fontSize: 11, color: "#5A627A", marginTop: 6 }}>Every order the bridge sends is checked against these caps (capped orders are labelled “liquidity capped”) and against the account’s capital budget.</div>} />
+      <HedgeCompareCard ticker={ticker} shares={held} />
+      <div style={{ marginTop: 10 }}>
+        <button type="button" className="pb-chip pb-chip-sm" data-on={chain} onClick={() => setChain(!chain)}>{chain ? "Hide the options chain" : "Show the options chain"}</button>
+      </div>
+      {chain && <OptionChainCard ticker={ticker} />}
     </div>
   );
 }

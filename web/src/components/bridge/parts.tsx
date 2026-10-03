@@ -1,7 +1,7 @@
 // Presentational pieces of the Bridge screen, shared by the demo simulator and the live SSE view.
 import type { ReactNode } from "react";
 import { LOGO } from "@/lib/demo";
-import { Glass, Label, OrbDisc, Spark } from "@/components/pb";
+import { Glass, Label, OrbDisc, Spark, Tag, type TagTone } from "@/components/pb";
 
 const panelPad = { minWidth: 0, padding: "24px 26px 22px" };
 const big = { fontSize: "clamp(38px,4vw,56px)", fontWeight: 400, letterSpacing: "-.02em", lineHeight: 1 } as const;
@@ -127,7 +127,11 @@ export function PortfolioPanel(p: {
   );
 }
 
-export interface TradeCard { id: string | number; side: "SELL" | "BUY" | "HOLD"; time: string; head: ReactNode; algo: string; reason: string }
+export interface TradeCard {
+  id: string | number; side: "SELL" | "BUY" | "HOLD"; time: string; head: ReactNode; algo: string; reason: string;
+  /** Evidence label and risk-gate badges (liquidity capped, capital budget) on this order. */
+  tags?: { tone: TagTone; text: string; title?: string }[];
+}
 export function TradesPanel({ trades, empty, tag }: { trades: TradeCard[]; empty?: string; tag?: ReactNode }) {
   return (
     <Glass style={{ padding: "22px 26px", minWidth: 0 }}>
@@ -145,6 +149,7 @@ export function TradesPanel({ trades, empty, tag }: { trades: TradeCard[]; empty
             </div>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 13.5, fontWeight: 600, letterSpacing: "-.01em" }}>{t.head} <span style={{ color: "#5A627A", fontWeight: 400 }}>· {t.algo}</span></div>
+              {t.tags && t.tags.length > 0 && <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }} data-testid="trade-tags">{t.tags.map((g) => <Tag key={g.text} tone={g.tone} title={g.title}>{g.text}</Tag>)}</div>}
               <div className="pb-pretty" style={{ fontSize: 12, color: "#3C4458", lineHeight: 1.45, marginTop: 3 }}>{t.reason}</div>
             </div>
           </div>

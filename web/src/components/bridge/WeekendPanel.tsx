@@ -13,6 +13,7 @@ import {
 import { fmtMoney } from "@/lib/fmt";
 import type { StreamState } from "@/lib/useBridgeStream";
 import { Glass, Label, Switch, Tag, upColor } from "@/components/pb";
+import { stagedBadges } from "@/lib/risk";
 
 const sub = { padding: "12px 14px", minWidth: 0 } as const;
 const k = { fontSize: 11, color: "#5A627A" } as const;
@@ -135,7 +136,13 @@ export function WeekendPanel({ id, summary, st, replay, ticker }: { id: string; 
             <Tag tone={split.active.some((o) => o.status === "staged") ? "caution" : "sim"} title={labels?.hedge_b?.label ?? "Executes only after approval, at the next tradable session."}>{split.active.some((o) => o.status === "staged") ? "awaiting your approval" : "executes only after approval"}</Tag>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 10 }}>
-            {split.active.length === 0 && split.folded === 0 && <div style={{ fontSize: 12.5, color: "#5A627A" }}>{cm?.plan_note ? `No plan: ${cm.plan_note}` : "No plan yet. One is staged for your approval once the expected gap is at least 10 bp against the position."}</div>}
+            {st.refusal && (
+              <div role="status" data-testid="evidence-refusal" style={{ fontSize: 12.5, color: "#9A4A00", lineHeight: 1.45 }}>
+                <Tag tone="caution" title={st.refusal.detail ?? undefined}>evidence gate · no plan</Tag>{" "}
+                The evidence gate refused to stage a plan on this market ({st.refusal.reason}){st.refusal.detail ? `: ${st.refusal.detail}` : "."} To stage one anyway, start a bridge with the override (Weekend mode on Build) and approve it with the acknowledgement.
+              </div>
+            )}
+            {split.active.length === 0 && split.folded === 0 && !st.refusal && <div style={{ fontSize: 12.5, color: "#5A627A" }}>{cm?.plan_note ? `No plan: ${cm.plan_note}` : "No plan yet. One is staged for your approval once the expected gap is at least 10 bp against the position."}</div>}
             {split.active.map((o) => {
               const a = stagedActions(o);
               const g = o.current?.gap_bp ?? o.estimate?.gap_bp;
@@ -145,6 +152,7 @@ export function WeekendPanel({ id, summary, st, replay, ticker }: { id: string; 
                     <div style={{ fontSize: 13.5, fontWeight: 600, letterSpacing: "-.01em" }}>
                       <span style={{ display: "inline-block", padding: "2px 8px", borderRadius: 999, fontSize: 10.5, color: "#fff", background: o.side === "buy" ? "#22A06B" : "#E0485A", marginRight: 8 }}>{(o.side ?? "sell").toUpperCase()}</span>
                       {o.qty.toLocaleString("en-US")} {o.ticker ?? ticker ?? ""} <span style={{ color: "#5A627A", fontWeight: 400 }}>· {stagedStatusText(o)}</span>
+                      {stagedBadges(o).map((b) => <span key={b.text} style={{ marginLeft: 6 }}><Tag tone={b.tone} title={b.title}>{b.text}</Tag></span>)}
                     </div>
                     <div style={small}>Executes at {executionText(o)}{o.session_target === "pre_market" ? " (the broker supports extended hours; R1's evidence is for the 09:30 version)" : ""}{g != null ? ` · sized on an expected gap of ${fmtBp(g)}${o.estimate?.status ? ` (${o.estimate.status})` : ""}` : ""}.</div>
                   </div>

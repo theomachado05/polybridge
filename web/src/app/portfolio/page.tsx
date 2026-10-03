@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { getOrders, getPositions, type BrokerOrder, type Holding } from "@/lib/api";
+import { getOrders, type BrokerOrder, type Holding } from "@/lib/api";
 import { EQ, QUESTIONS } from "@/lib/demo";
 import { fmtMoney, fmtTime } from "@/lib/fmt";
 import { useAsync } from "@/lib/hooks";
@@ -11,11 +11,15 @@ import { DemoTag, Glass, Label, Tag, upColor } from "@/components/pb";
 import { SandboxFillsPanel } from "@/components/SandboxFills";
 import { engineBridgeFor } from "@/lib/portfolioView";
 import { WeekendExposurePanel } from "@/components/WeekendExposure";
+import { BrokerAccountPanel, CapitalPanel } from "@/components/risk/AccountPanels";
+import { accountPill } from "@/lib/risk";
 
 type DemoEntry = Extract<BridgeEntry, { kind: "demo" }>;
 interface Row {
   t: string; name: string; shares: number; px: number | null; verdict: string | null;
   demo: DemoEntry | null; engineBridge: string | null; touching: number; real: boolean;
+  /** Broker book for this ticker (not the demo shares) and whether the broker can short it now. */
+  brokerQty?: number | null; canShort?: boolean | null; shortReason?: string | null;
 }
 interface Fill { key: string; ts: number; time: string; side: string; color: string; qty: number; ticker: string; px: string; via: string; demo: boolean }
 
@@ -27,8 +31,9 @@ export default function Portfolio() {
   const router = useRouter();
   const s = useStore();
   const orders = useAsync("orders", () => getOrders());
-  const positions = useAsync("positions", getPositions);
   const acct = brokerLabel(s.account);
+  const pill = accountPill(s.account.data, s.session.data);
+  const holdingsLabel = s.portfolio.data?.holdings_label ?? null;
   const demos = s.bridges.filter((b): b is DemoEntry => b.kind === "demo");
   const liveIds = s.bridges.flatMap((b) => (b.kind === "live" ? [b.bridgeId] : []));
   const hedgeIds = s.bridges.flatMap((b) => (b.kind === "live" && b.mode !== "opportunity" ? [b.bridgeId] : []));
@@ -44,7 +49,7 @@ export default function Portfolio() {
           t: h.ticker, name: h.name ?? h.ticker, shares: h.shares, px: h.spot, real: true,
           verdict: v ? `8-K ${v.tag}: ${v.label.replace("_", " ")} (${v.kind})` : null,
           demo: demoFor(h.ticker), engineBridge: engineBridgeFor(h, s.bridges),
-          touching: h.markets.length,
+          touching: h.markets.length, brokerQty: h.broker_qty, canShort: h.can_short, shortReason: h.short_reason,
         };
       })
     : Object.keys(EQ).filter((t) => EQ[t].held).map((t) => ({
@@ -86,7 +91,6 @@ export default function Portfolio() {
   ].sort((a, b) => b.ts - a.ts).slice(0, 7);
 
   const bridgeIt = (t: string) => { s.setQuestion(null); s.setQuery(t); router.push("/build"); };
-  const hedgePositions = (positions.data ?? []).filter((p) => p.qty !== 0);
 
   return (
     <main className="pb-page" style={{ maxWidth: 1400, paddingTop: 18, paddingBottom: 60, display: "flex", flexDirection: "column", gap: 16 }}>
@@ -94,7 +98,7 @@ export default function Portfolio() {
         <div>
           <div className="pb-label" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
             PORTFOLIO · {acct.name.toUpperCase()}
-            <Tag tone={acct.tone} title="GET /account">{acct.tone === "paper" ? "Webull paper" : acct.tone === "sim" ? "simulated" : "no account endpoint"}</Tag>
+            <span data-testid="account-pill"><Tag tone={pill.tone} title={pill.title}>{pill.text}</Tag></span>
             {!realHoldings && <DemoTag what="sample holdings" />}
           </div>
           <h2 className="pb-h2">{totalValue == null ? "—" : fmtMoney(totalValue)}</h2>
@@ -116,7 +120,10 @@ export default function Portfolio() {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,420px),1fr))", gap: 16 }}>
         <Glass style={{ padding: "22px 26px", minWidth: 0 }}>
-          <Label>01 · HOLDINGS</Label>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <Label>01 · HOLDINGS{holdingsLabel === "demo holdings" ? " · DEMO" : ""}</Label>
+            {holdingsLabel && <Tag tone="demo" title="These holdings are the demo seed the hedges are sized on. They are not in the broker account (05) and never add to its totals.">{holdingsLabel}</Tag>}
+          </div>
           <div className="pb-table-scroll">
             <div style={{ minWidth: 640 }}>
               <div style={{ display: "grid", gridTemplateColumns: cols, gap: 14, padding: "16px 0 8px", borderBottom: "1px solid rgba(15,22,38,.14)", fontSize: 11, color: "#5A627A" }}>
@@ -124,6 +131,7 @@ export default function Portfolio() {
               </div>
               {priced.map((h) => {
                 const bridged = !!h.demo || !!h.engineBridge;
+                const brokerNote = h.real && h.brokerQty !== undefined ? `broker ${h.brokerQty == null ? "n/a" : `${h.brokerQty.toLocaleString("en-US")} sh`}${h.canShort === false ? " · not shortable" : h.canShort ? " · shortable" : ""}` : "";
                 const sub = h.demo ? `${h.demo.q.ev} · ${simCover(h.demo.sim)}% covered` : h.engineBridge ? `engine bridge ${h.engineBridge}` : `${h.touching} ${h.touching === 1 ? "market touches" : "markets touch"} this`;
                 const open = () => {
                   if (h.engineBridge) router.push(`/bridge/${h.engineBridge}`);
@@ -143,6 +151,7 @@ export default function Portfolio() {
                     <div style={{ minWidth: 0 }}>
                       <button type="button" onClick={open} style={{ display: "inline-block", padding: "4px 10px", borderRadius: 999, fontSize: 11.5, fontWeight: 600, cursor: "pointer", border: 0, background: bridged ? "rgba(34,160,107,.12)" : "#0F1626", color: bridged ? "#15804F" : "#fff" }}>{bridged ? "Bridged" : "Bridge it"}</button>
                       <div className="pb-ellipsis" style={{ fontSize: 11, color: "#5A627A", marginTop: 4 }}>{sub}</div>
+                      {brokerNote && <div className="pb-ellipsis" style={{ fontSize: 10.5, color: h.canShort === false ? "#9A4A00" : "#8A92A8" }} title={h.shortReason ?? undefined}>{brokerNote}</div>}
                     </div>
                   </div>
                 );
@@ -175,12 +184,7 @@ export default function Portfolio() {
               )}
             </div>
           </div>
-          {positions.data && (
-            <div style={{ marginTop: 14, fontSize: 12, color: "#5A627A", display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-              <Tag tone={acct.tone}>{acct.name}</Tag>
-              {hedgePositions.length ? hedgePositions.map((p) => `${p.symbol} ${p.qty > 0 ? "+" : "−"}${Math.abs(p.qty).toLocaleString("en-US")}${p.asset && p.asset !== "equity" ? " " + p.asset : ""}`).join(" · ") : "No open positions in the account yet."}
-            </div>
-          )}
+          {realHoldings && <div style={{ marginTop: 14, fontSize: 12, color: "#5A627A" }}>The broker&rsquo;s own positions, balances and orders are in 05 below, apart from these holdings.</div>}
         </Glass>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 16, minWidth: 0 }}>
@@ -235,6 +239,10 @@ export default function Portfolio() {
           </Glass>
           <SandboxFillsPanel bridgeIds={liveIds} onOpen={(id) => router.push(`/bridge/${id}`)} />
         </div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,420px),1fr))", gap: 16 }}>
+        <BrokerAccountPanel account={s.account.data} accountError={s.account.error} session={s.session.data} refreshKey="portfolio" />
+        <CapitalPanel refreshKey="portfolio" />
       </div>
       <WeekendExposurePanel holdings={realHoldings} bridgeIds={hedgeIds} session={s.session.data} onOpen={(id) => router.push(`/bridge/${id}`)} />
     </main>

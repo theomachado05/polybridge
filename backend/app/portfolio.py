@@ -1,5 +1,12 @@
 """Demo portfolio exposure map: seeded holdings joined with open markets, recent filings + verdicts,
-remaining event exposure (from the precomputed AI mapping) and hedge status. Never 500s on a failing source."""
+remaining event exposure (from the precomputed AI mapping) and hedge status. Never 500s on a failing source.
+
+Two books, never mixed: ``holdings`` are the seeded **demo holdings** (app/data/portfolio.json, held nowhere), and
+``broker_account`` is the active broker's real book: the **Webull paper account** when BROKER=webull (balances, cash,
+buying power and margin from Webull, its positions, plus simulated option / prediction legs labelled "Simulated
+account"), else the **Simulated account**. Each demo holding also says how many shares of that ticker the broker book
+holds (``broker_qty``) and whether the broker can short it now (``can_short`` True / False / None, ``short_reason``),
+since the staged equity hedge is a short sale."""
 from __future__ import annotations
 
 import asyncio
@@ -39,6 +46,17 @@ class HedgeStatus(BaseModel):
     bridge_id: str | None = None
 
 
+class BrokerBook(BaseModel):
+    broker: str | None = None
+    label: str  # "Webull paper account" | "Simulated account"
+    available: bool = True
+    error: str | None = None
+    account: dict | None = None  # GET /account fields: cash, equity, buying power, margin, account class ...
+    positions: list[dict] = []  # GET /positions rows, each labelled by `account`
+    options_supported: bool | None = None
+    note: str | None = None
+
+
 class Holding(BaseModel):
     ticker: str
     name: str | None = None
@@ -50,10 +68,15 @@ class Holding(BaseModel):
     exposure: Exposure | None = None
     hedge: HedgeStatus
     notes: list[str]
+    broker_qty: float | None = None  # shares of this ticker in the broker book (not the demo shares)
+    can_short: bool | None = None  # can the active broker short this ticker now (the staged hedge is a short sale)
+    short_reason: str | None = None
 
 
 class PortfolioOut(BaseModel):
+    holdings_label: str = "demo holdings"
     holdings: list[Holding]
+    broker_account: BrokerBook | None = None
     total_value: float | None = None
     total_exposure: float | None = None
     total_includes_fuzzy: bool = False  # the exposure total includes fuzzy-matched (not exact) AI mappings
@@ -187,12 +210,47 @@ async def _holding(request: Request, h: dict, proposals: list[Proposal], bridges
                    hedge=hedge_status(ticker, proposals, bridges), notes=notes), stale
 
 
+BROKER_TIMEOUT_S = 10.0
+
+
+async def broker_book(request: Request, tickers: list[str]) -> tuple[BrokerBook, dict[str, dict]]:
+    """The active broker's own book (balances + positions) and its short-sale readiness for ``tickers``. Any failure
+    is reported in the book (available False / error), never raised."""
+    from .broker import get_broker
+    from .broker.routes import _short
+
+    try:
+        b = get_broker(request.app)
+    except Exception as e:
+        return BrokerBook(label="unavailable", available=False, error=type(e).__name__), {}
+    label = "Webull paper account" if b.name == "webull-paper" else "Simulated account"
+    book = BrokerBook(broker=b.name, label=label, options_supported=getattr(b, "options_supported", None))
+    try:
+        acct = await asyncio.wait_for(b.account(), BROKER_TIMEOUT_S)
+        book.account = acct.model_dump(exclude_none=True)
+        book.note = acct.note
+    except Exception as e:
+        book.available, book.error = False, getattr(e, "message", None) or type(e).__name__
+    try:
+        book.positions = [p.model_dump() for p in await asyncio.wait_for(b.positions(), BROKER_TIMEOUT_S)]
+    except Exception as e:
+        book.available = False
+        book.error = book.error or getattr(e, "message", None) or type(e).__name__
+    try:
+        shorts = await asyncio.wait_for(_short(b, tickers), BROKER_TIMEOUT_S) if tickers else {}
+    except Exception:
+        shorts = {}
+    return book, shorts
+
+
 @router.get("/portfolio", response_model=PortfolioOut)
 async def portfolio(request: Request) -> PortfolioOut:
     proposals = request.app.state.store.list()
     rows = load_holdings()
     bridges = getattr(request.app.state, "bridges", {})
+    book_task = asyncio.ensure_future(broker_book(request, [h["ticker"] for h in rows]))
     results = await asyncio.gather(*(_holding(request, h, proposals, bridges) for h in rows), return_exceptions=True)
+    book, shorts = await book_task
     holdings: list[Holding] = []
     stale = False
     for h, r in zip(rows, results):
@@ -203,8 +261,16 @@ async def portfolio(request: Request) -> PortfolioOut:
         else:
             holdings.append(r[0])
             stale = stale or r[1]
+    held = {}
+    for p in book.positions:
+        if p.get("asset") == "equity":
+            held[p["symbol"]] = held.get(p["symbol"], 0.0) + float(p.get("qty") or 0.0)
+    for x in holdings:
+        x.broker_qty = held.get(x.ticker, 0.0) if book.available else None
+        sh = shorts.get(x.ticker) or {}
+        x.can_short, x.short_reason = sh.get("can_short"), sh.get("reason")
     vals = [x.value for x in holdings if x.value is not None]
     exps = [x.exposure.remaining_usd for x in holdings if x.exposure]
     fuzzy = any(x.exposure and x.exposure.match_type == "fuzzy" for x in holdings)
-    return PortfolioOut(holdings=holdings, total_value=sum(vals) if vals else None,
+    return PortfolioOut(holdings=holdings, broker_account=book, total_value=sum(vals) if vals else None,
                         total_exposure=sum(exps) if exps else None, total_includes_fuzzy=fuzzy, stale=stale)

@@ -102,11 +102,13 @@ def make_app(tmp_path, broker=None, t=SAT_NOON):
     return app
 
 
-def approved_proposal(app, shares=1000, cov=0.5, direction="down_on_yes", ticker="SPY"):
+def approved_proposal(app, shares=1000, cov=0.5, direction="down_on_yes", ticker="SPY", override=True):
+    """A synthetic market (m1) is unvalidated: these tests stage on it through the explicit, acknowledged override
+    (act_on_unvalidated + ack_unvalidated); tests/test_closed_staged.py::test_the_evidence_gate_* cover the gate."""
     p = app.state.store.propose(ticker=ticker, family="hedge", strategy="s", shares_held=shares, target_coverage=cov,
                                 basis="market_event", market=MarketRef(source="polymarket", id="m1"),
-                                direction=direction)
-    return app.state.store.approve(p.id)
+                                direction=direction, act_on_unvalidated=override)
+    return app.state.store.approve(p.id, ack_unvalidated=True)
 
 
 def track(app, *points):
@@ -164,8 +166,9 @@ def test_plan_approve_and_execute_pre_market_through_the_sim(tmp_path):
         assert o["session_target"] == "pre_market" and o["execute_at"] == "2026-10-05T08:00:00Z"
         assert o["extended_hours"] and o["order_type"] == "limit" and o["broker"] == "sim"
         assert o["estimate"]["n_closures"] == 380 and len(o["estimate"]["band_bp"]) == 2
-        assert [d["code"] for d in o["decisions"]] == ["NEXT_PRE_MARKET", "EXPECTED_GAP", "SIZED_TO_EXPECTED_GAP",
-                                                       "AWAITING_APPROVAL"]
+        assert [d["code"] for d in o["decisions"]] == ["NEXT_PRE_MARKET", "EXPECTED_GAP", "EVIDENCE_OVERRIDE",
+                                                       "SIZED_TO_EXPECTED_GAP", "AWAITING_APPROVAL"]
+        assert o["evidence_gate"] == "override" and o["evidence"]["validated"] is False
         listed = c.get("/staged").json()
         assert listed["broker"] == {"name": "sim", "extended_hours": True} and listed["orders"][0]["id"] == o["id"]
 
@@ -185,6 +188,7 @@ def test_plan_approve_and_execute_pre_market_through_the_sim(tmp_path):
         bo = changed[0]["broker_order"]
         assert bo["type"] == "limit" and bo["limit_px"] == 495.0 and bo["side"] == "sell"
         assert bo["client_order_id"] == f"stg-{o['id']}" and bo["fill_px"] == pytest.approx(499.95)
+        assert "evidence: override" in bo["note"]
         assert c.get("/positions").json()[0]["qty"] == -376
         assert c.delete(f"/staged/{o['id']}").status_code == 409
 
@@ -255,6 +259,9 @@ def test_working_order_is_cancelled_at_the_broker_when_the_pm_reverts(tmp_path):
 
 def test_coverage_is_rechecked_at_execution_and_the_fill_feeds_the_bridge_hedge(tmp_path):
     app = make_app(tmp_path)
+    # the approval is priced from the broker's quote ($500): 460 SPY = $230k, above the default 20% per-event budget
+    # of the $1M sim; this test is about coverage, so the budget is widened
+    app.state.capital_limits = {"max_event_pct": 0.5}
     prop = approved_proposal(app)
     bridge = StubBridge(prop, app.state.broker)
     app.state.bridges = {prop.id: bridge}
@@ -535,7 +542,7 @@ def test_a_failed_cancel_after_a_revert_is_logged_once(tmp_path):
         assert codes.count("PM_REVERTED") == 1 and codes.count("CANCEL_FAILED") == 1
 
 
-def test_webull_split_sell_and_unconfirmed_fill_are_reconciled_by_client_id(tmp_path):
+def test_webull_split_sell_and_unconfirmed_fill_are_reconciled_by_client_id(tmp_path, roomy_capital):
     from tests.test_broker_webull import Sandbox, make
 
     sb = Sandbox(status="SUBMITTED", held=50.0)  # 50 AAPL long: a 376 sell splits into SELL 50 + SHORT 326

@@ -30,7 +30,7 @@ def client(replay_file):
 
 def _approved(client, tags=("material_litigation",)):
     pid = client.post("/proposals", json={"ticker": "ABNB", "tags": list(tags), "shares_held": 1200}).json()["id"]
-    client.post(f"/proposals/{pid}/approve")
+    client.post(f"/proposals/{pid}/approve", json={"ack_unvalidated": True})
     return pid
 
 
@@ -164,7 +164,7 @@ def test_market_event_proposal_needs_approval_no_engine(client, monkeypatch):
     monkeypatch.setattr(bridges, "_load_engine", lambda: None)
     pid = client.post("/proposals", json=UI_MARKET_BODY).json()["id"]
     assert client.post("/bridges", json={"proposal_id": pid, "source": "replay"}).status_code == 409
-    client.post(f"/proposals/{pid}/approve")
+    client.post(f"/proposals/{pid}/approve", json={"ack_unvalidated": True})
     assert client.post("/bridges", json={"proposal_id": pid, "source": "replay"}).status_code == 503  # no market needed
 
 

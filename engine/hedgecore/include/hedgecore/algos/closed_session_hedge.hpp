@@ -1,5 +1,5 @@
 #pragma once
-// closed_session_hedge: hedge A of the closed-market plan (docs/superpowers/plans/2026-10-03-closed-market-mode.md).
+// closed_session_hedge: hedge A of closed-market mode (docs/design.md, section 2, Product behaviour 4).
 // While US equities are closed (nights, weekends, NYSE holidays, one-off closures, and from 13:00 ET on early-close
 // days; judged on the tick's own timestamp so a replayed Saturday behaves like a Saturday) the stock cannot be traded
 // but the prediction market can. The calendar is us_equity_regular_session (util.hpp), the same rules as the backend

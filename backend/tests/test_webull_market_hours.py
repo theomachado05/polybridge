@@ -64,6 +64,15 @@ class Hours(Sandbox):
         if p == "/trading/orders/get" and r.url.params["client_order_id"] not in self.known:
             self.requests.append(r)
             return httpx.Response(417, json={"message": "Order not present"})
+        if p == "/trading/assets/balances/get":  # the paper margin account as the sandbox reports it (2026-10-03)
+            self.requests.append(r)
+            return httpx.Response(200, json={
+                "total_asset_currency": "USD", "total_net_liquidation_value": "1000000.00",
+                "total_cash_balance": "1000000.00", "maintenance_margin": "0.00", "open_margin_calls": [],
+                "account_currency_assets": [{"currency": "USD", "cash_balance": "1000000.00",
+                                             "net_liquidation_value": "1000000.00",
+                                             "day_buying_power": "4000000", "overnight_buying_power": "2000000.00",
+                                             "option_buying_power": "1000000.00"}]})
         return super().handler(r)
 
 
@@ -169,7 +178,7 @@ def test_get_account_reports_webull_paper_margin_class_and_market_open(tmp_path)
 # ------------------------------------------------------------------------------------------------ staged book
 
 
-def test_staged_orders_for_webull_execute_only_in_the_regular_session_and_a_417_is_held(tmp_path):
+def test_staged_orders_for_webull_execute_only_in_the_regular_session_and_a_417_is_held(tmp_path, roomy_capital):
     sb = Hours(closed=True)
     app = make_app(tmp_path, margin(sb, tmp_path), t=SAT_NOON)
     prop = approved_proposal(app)

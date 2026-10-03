@@ -67,6 +67,12 @@ class OptionQuote:
     volume: float = NAN
     updated_ns: int | None = None
     exercise_style: str | None = None
+    gamma: float = NAN
+    theta: float = NAN               # per calendar day (Massive convention)
+    vega: float = NAN                # per vol point
+    last: float = NAN                # last trade price when the plan has trades, else the session close
+    last_source: str | None = None   # "last_trade" | "day_close" | None
+    shares_per_contract: float = 100.0
 
 
 @dataclass
@@ -127,10 +133,19 @@ def parse_result(r: dict) -> OptionQuote | None:
         mid, src = _f(day.get("close")), "day_close"
     upd = _ns(lq.get("last_updated")) if src == "quote" else _ns(r.get("fmv_last_updated")) if src == "fmv" else _ns(day.get("last_updated"))
     iv = _f(r.get("implied_volatility"))
+    lt = r.get("last_trade") or {}
+    last, lsrc = _f(lt.get("price")), "last_trade"
+    if not (math.isfinite(last) and last > 0):
+        last, lsrc = _f(day.get("close")), "day_close"
+    if not (math.isfinite(last) and last >= 0):
+        last, lsrc = NAN, None
+    spc = _f(det.get("shares_per_contract"))
     return OptionQuote(ticker=str(det.get("ticker") or ""), kind=kind, strike=strike, expiry=str(expiry)[:10],
                        bid=bid, ask=ask, mid=mid, mark_source=src, iv=iv if iv >= 0 else NAN,
                        delta=_f(greeks.get("delta")), open_interest=_f(r.get("open_interest")),
-                       volume=_f(day.get("volume")), updated_ns=upd, exercise_style=det.get("exercise_style"))
+                       volume=_f(day.get("volume")), updated_ns=upd, exercise_style=det.get("exercise_style"),
+                       gamma=_f(greeks.get("gamma")), theta=_f(greeks.get("theta")), vega=_f(greeks.get("vega")),
+                       last=last, last_source=lsrc, shares_per_contract=spc if spc > 0 else 100.0)
 
 
 def parse_snapshot(underlying: str, pages: list[dict], fetched_at: float | None = None) -> Chain:

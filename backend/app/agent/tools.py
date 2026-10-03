@@ -56,8 +56,12 @@ TOOLS: list[dict] = [
          "tags": {"type": "array", "items": {"type": "string"}, "description": "Filing tags, only if no market is given."}},
          ["ticker", "shares_held"])},
     {"name": "approve", "method": "POST", "path": "/proposals/{pid}/approve",
-     "description": "Approve a proposal. Ask the user first and only call with confirm true after they say yes.",
-     "parameters": _obj({"proposal_id": {"type": "string"}, "confirm": _CONFIRM}, ["proposal_id", "confirm"])},
+     "description": "Approve a proposal. Ask the user first; confirm true only after yes. Unvalidated markets also need "
+                    "ack_unvalidated.",
+     "parameters": _obj({"proposal_id": {"type": "string"}, "confirm": _CONFIRM,
+                         "ack_unvalidated": {"type": "boolean", "description": "True only after the user acknowledged "
+                                             "that this market's signal has not passed its out-of-sample test."}},
+                        ["proposal_id", "confirm"])},
     {"name": "start_bridge", "method": "POST", "path": "/bridges",
      "description": "Start the live hedge for an approved proposal. Ask the user first; confirm true only after yes.",
      "parameters": _obj({
@@ -175,7 +179,8 @@ async def _approve(request: Request, a: dict):
     from .. import routes
     pid = str(_need(a, "proposal_id"))
     _require_confirm(a, f"approve proposal {pid}")
-    out = _dump(routes.approve(pid, request))
+    from ..models import ApproveIn
+    out = _dump(routes.approve(pid, request, ApproveIn(ack_unvalidated=a.get("ack_unvalidated") is True)))
     return f"Proposal {pid} is approved.", out
 
 

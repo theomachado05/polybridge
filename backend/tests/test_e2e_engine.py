@@ -48,7 +48,7 @@ def test_market_event_propose_approve_bridge_stream(client):
     assert p.status_code == 201 and p.json()["family"] == "hedge" and p.json()["basis"] == "market_event"
     assert p.json()["shares_held"] == 100
     pid = p.json()["id"]
-    assert client.post(f"/proposals/{pid}/approve").json()["status"] == "approved"
+    assert client.post(f"/proposals/{pid}/approve", json={"ack_unvalidated": True}).json()["status"] == "approved"
 
     body = {"proposal_id": pid, "source": "replay", "gap_per_share": 1.0}
     r = client.post("/bridges", json=body)

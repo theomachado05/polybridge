@@ -55,16 +55,20 @@ def test_hmac_sha1_variant_uses_md5_body_digest_per_the_older_docs():
 class Sandbox:
     """Records every request and answers like the Webull sandbox (field names per the public docs/SDK)."""
 
-    def __init__(self, status="FILLED", place_error=None, held=0.0):
+    def __init__(self, status="FILLED", place_error=None, held=0.0, history=None, open_groups=None, profiles=None):
         self.requests: list[httpx.Request] = []
         self.status, self.place_error, self.held = status, place_error, held
         self.qty: dict[str, str] = {}  # client_order_id -> quantity sent
+        # Order list payloads in Webull's documented shape: groups {client_order_id, combo_type, orders: [...]}
+        self.history = history or []  # list of pages; each page {"data": [...], "pagination_key"?}
+        self.open_groups = open_groups or []
+        self.profiles = profiles if profiles is not None else {}  # symbol -> profile row (default: shortable, ETB)
 
     def handler(self, r: httpx.Request) -> httpx.Response:
         self.requests.append(r)
         p = r.url.path
         if p == "/trading/accounts/list":
-            return httpx.Response(200, json=[{"account_id": "ACC-PAPER-1", "account_type": "CASH"}])
+            return httpx.Response(200, json=[{"account_id": "ACC-PAPER-1", "account_type": "MARGIN"}])  # shorts need margin
         if p == "/trading/assets/balances/get":
             return httpx.Response(200, json={"total_asset_currency": "USD", "total_net_liquidation_value": "101500.5",
                                              "account_currency_assets": [{"currency": "USD", "cash_balance": "90000",
@@ -84,7 +88,17 @@ class Sandbox:
                                                       "filled_quantity": self.qty.get(cid, "10"), "filled_price": "189.9",
                                                       "client_order_id": cid}})
         if p == "/trading/orders/open-orders/list":
-            return httpx.Response(200, json={"data": []})
+            return httpx.Response(200, json={"data": self.open_groups})
+        if p == "/trading/orders/historical-orders/list":
+            key = r.url.params.get("pagination_key")
+            i = int(key) if key else 0
+            return httpx.Response(200, json=self.history[i] if i < len(self.history) else {"data": []})
+        if p == "/trading/instruments/stocks/profiles/list":
+            syms = r.url.params["symbols"].split(",")
+            rows = [{"symbol": s, "status": "OC", "shortable": True, "easy_to_borrow": True, "marginable": True,
+                     "margin_requirement_short": "0.5", **self.profiles.get(s, {})}
+                    for s in syms if self.profiles.get(s, {}) is not None and s != "UNLISTED"]
+            return httpx.Response(200, json={"data": rows})
         if p == "/trading/orders/cancel":
             return httpx.Response(200, json={"client_order_id": json.loads(r.content)["client_order_id"]})
         return httpx.Response(404, json={"message": "no route " + p})

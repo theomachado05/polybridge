@@ -1,7 +1,9 @@
 """Webull paper smoke check: is the configured Webull paper account reachable, and can it trade right now?
 
-Read-only by default. It reads the account (type / class), its balance, Webull positions and open orders, the NYSE
-session (market_open) and the broker's extended-hours capability. It never places an order outside the regular session
+Read-only by default. It reads the account (type / class), its balance and margin figures, Webull positions, open
+orders and order history (last 7 days, bounded windows), runs one reconciliation pass (reads only), reports
+options_supported and short-sale readiness (instrument profiles) for a few tickers, the NYSE session (market_open) and
+the broker's extended-hours capability. It never places an order outside the regular session
 (the paper sandbox refuses every order outside 09:30-16:00 ET with HTTP 417). Only when the regular session is on AND
 WEBULL_SMOKE_ORDER=1 does it place a 1-share SPY limit buy far below the market ($1.00, cannot fill) and cancel it at
 once. Account and order ids are masked in the output; keys are never printed.
@@ -28,6 +30,7 @@ from app.closed.session import now_utc, session_at  # noqa: E402
 
 SMOKE_SYMBOL = "SPY"
 SMOKE_LIMIT = 1.00  # far below any SPY price: the order rests, it cannot fill
+SHORT_CHECK = ("SPY", "TLT", "IWM")  # tickers the demo hedges short
 
 
 def mask(v: Any) -> str:
@@ -57,14 +60,47 @@ async def check(broker: WebullBroker, now: dt.datetime, smoke: bool, out: Callab
     out(f"  balance         cash ${acct.cash:,.2f}  equity ${acct.equity:,.2f}  buying power ${acct.buying_power:,.2f}"
         f"  {acct.currency}")
 
-    held = [p for p in await broker.positions() if p.broker == broker.name]
-    res["positions"] = [{"symbol": p.symbol, "qty": p.qty} for p in held]
+    if acct.overnight_buying_power is not None or acct.day_buying_power is not None:
+        out(f"  margin          overnight BP ${acct.overnight_buying_power or 0:,.2f}  day BP "
+            f"${acct.day_buying_power or 0:,.2f}  option BP ${acct.option_buying_power or 0:,.2f}  maintenance "
+            f"${acct.maintenance_margin or 0:,.2f}  margin calls {len(acct.open_margin_calls or [])}  day trades left "
+            f"{acct.day_trades_left or '?'}")
+    res.update(overnight_buying_power=acct.overnight_buying_power, day_buying_power=acct.day_buying_power,
+               option_buying_power=acct.option_buying_power, maintenance_margin=acct.maintenance_margin)
+
+    held = await broker.broker_positions()
+    res["positions"] = [{"symbol": p.symbol, "asset": p.asset, "qty": p.qty} for p in held]
+    res["positions_count"] = len(held)
     out(f"  positions       {len(held)}" + (": " + ", ".join(f"{p.symbol} {p.qty:g}" for p in held) if held else ""))
 
-    opn = [o for o in await broker.orders("open") if o.broker == broker.name]
+    opn = await broker.open_orders()
     res["open_orders"] = len(opn)
     out(f"  open orders     {len(opn)}" + (": " + ", ".join(f"{mask(o.id)} {o.side} {o.qty:g} {o.symbol}"
                                                               for o in opn) if opn else ""))
+    hist = await broker.order_history(7)
+    by: dict[str, int] = {}
+    for o in hist:
+        by[o.status] = by.get(o.status, 0) + 1
+    res["history_count"], res["history_by_status"] = len(hist), by
+    out(f"  order history   {len(hist)} in the last 7 days"
+        + (" (" + ", ".join(f"{k} {v}" for k, v in sorted(by.items())) + ")" if by else "")
+        + ("  [truncated: more pages than read]" if broker.history_truncated else ""))
+    rec = await broker.reconcile()
+    res["reconcile"] = {k: v for k, v in rec.items() if k != "transitions"}
+    out(f"  reconcile       read-only pass: {rec['checked']} tracked, {rec['open_at_webull']} open at Webull, "
+        f"{rec['updated']} updated (runs every 15 s in the regular session while the backend is up)")
+
+    res["options_supported"] = bool(broker.options_supported)
+    out(f"  options         options_supported={broker.options_supported}"
+        + ("  (option orders go to Webull paper)" if broker.options_supported else
+           "  (documented by the Webull OpenAPI, unverified on the paper sandbox: options stay simulated; "
+           "WEBULL_OPTIONS=1 sends them to Webull)"))
+    shorts = await broker.short_status(list(SHORT_CHECK))
+    res["can_short"] = {s: v.get("can_short") for s, v in shorts.items()}
+    out("  can_short       " + ", ".join(f"{s} {v.get('can_short')}"
+                                       + ("" if v.get("easy_to_borrow") is not False else " (hard to borrow)")
+                                       for s, v in shorts.items())
+        + f"  (account type {next(iter(shorts.values()), {}).get('account_type') or '?'})")
     out(f"  session         {sess.label}  market_open={sess.equities_open}")
     out(f"  extended_hours  {broker.extended_hours}"
         + ("" if broker.extended_hours else "  (Webull paper takes orders 09:30-16:00 ET only; WEBULL_EXTENDED_HOURS=1 "

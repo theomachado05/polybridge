@@ -2,8 +2,10 @@
 
 get_broker() is the one place that decides which broker is active:
   BROKER=webull + WEBULL_APP_KEY (or WEBULL_API_KEY) + WEBULL_APP_SECRET
-                                                       -> WebullBroker (paper); options and prediction legs to the sim;
-                                                          equity orders only 09:30-16:00 ET unless WEBULL_EXTENDED_HOURS=1
+                                                       -> WebullBroker (paper); prediction legs to the sim; options to
+                                                          the sim unless WEBULL_OPTIONS=1 (options_supported; unverified
+                                                          on the paper sandbox, see broker/WEBULL_NOTES.md); equity
+                                                          orders only 09:30-16:00 ET unless WEBULL_EXTENDED_HOURS=1
   anything else, or a missing Webull key               -> SimBroker (never a crash)
   WEBULL_BASE_URL other than https://api.sandbox.webull.com (e.g. production api.webull.com)
                                                        -> refused, logged, SimBroker: nothing here reaches real money
@@ -36,6 +38,10 @@ def _env(name: str) -> str:
         return ""
 
 
+def _on(name: str) -> bool:
+    return _env(name).lower() in ("1", "true", "yes", "on")
+
+
 def _quotes(app: Any | None):
     from .. import chain
 
@@ -64,7 +70,7 @@ def build_broker(app: Any | None = None) -> Broker:
             # The paper sandbox refuses every order outside 09:30-16:00 ET (417): extended hours stay off unless
             # WEBULL_EXTENDED_HOURS turns them on explicitly.
             return WebullBroker(client, sim, account_id=_env("WEBULL_ACCOUNT_ID") or None,
-                                extended_hours=_env("WEBULL_EXTENDED_HOURS").lower() in ("1", "true", "yes", "on"))
+                                extended_hours=_on("WEBULL_EXTENDED_HOURS"), options_supported=_on("WEBULL_OPTIONS"))
         log.warning("BROKER=webull but WEBULL_APP_KEY / WEBULL_APP_SECRET are not set; using the simulated broker")
     return SimBroker(path, _quotes(app), cash)
 

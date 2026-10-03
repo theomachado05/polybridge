@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { brokerLabel, defaultPick, useStore } from "@/lib/store";
 import { sessionPill } from "@/lib/closed";
+import { accountPill } from "@/lib/risk";
 
 const tabStyle = (on: boolean) => ({
   padding: "8px 16px", borderRadius: 999, cursor: "pointer",
@@ -29,7 +30,7 @@ export function Nav() {
     : on("/pipeline") ? "Composing bridge"
     : on("/build") ? `Step ${step} of 3`
     : on("/connect") ? "Connect brokerage"
-    : brokerLabel(s.account).name;
+    : s.account.status === "ok" ? accountPill(s.account.data, s.session.data).text : brokerLabel(s.account).name;
 
   const goBridge = () => {
     if (!s.bridges.length) {

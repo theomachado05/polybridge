@@ -107,7 +107,7 @@ def test_real_algo_bridge_on_replay_orders_fills_and_reports(client, tmp_path):
                                           "shares_held": 1000, "algo": {"family": "equity_delta_bridge",
                                                                          "params": {"sigma_k": 0.0, "fee_ratio": 0.5,
                                                                                     "band_shares": 10.0}}}).json()["id"]
-    client.post(f"/proposals/{pid}/approve")
+    client.post(f"/proposals/{pid}/approve", json={"ack_unvalidated": True})
     r = client.post("/bridges", json={"proposal_id": pid, "source": "replay", "replay_to_account": True})
     assert r.status_code == 201, r.text
     ev = _events(client, r.json()["bridge_id"])
@@ -146,7 +146,7 @@ def test_real_coverage_1_preset_on_a_half_proposal_stays_within_half(client, tmp
                                            "shares_held": 1000, "target_coverage": 0.5,
                                            "algo": {"family": "equity_delta_bridge", "preset_index": idx}}).json()
     assert prop["algo"]["resolved_params"]["coverage"] == 0.5 and prop["algo"]["capped"] == {"coverage": 1.0}
-    client.post(f"/proposals/{prop['id']}/approve")
+    client.post(f"/proposals/{prop['id']}/approve", json={"ack_unvalidated": True})
     r = client.post("/bridges", json={"proposal_id": prop["id"], "source": "replay", "replay_to_account": True})
     ev = _events(client, r.json()["bridge_id"])
     s = client.get(f"/bridges/{r.json()['bridge_id']}").json()

@@ -5,6 +5,7 @@ import type { Direction, FitOut, Proposal } from "./api";
 import type { EquityPick, Question } from "./demo";
 import { isRecordedOnly } from "./demo.ts";
 import { prettyId } from "./fmt.ts";
+import { isEvidenceError } from "./risk.ts";
 
 export interface Settings {
   broker: string | null; conns: string[]; account: "Taxable" | "IRA"; rate: string; taxState: string; maxHedge: string;
@@ -33,10 +34,10 @@ export const bridgeFeeGateOff = (gap: number | null | undefined, running: Applie
 /** The open live hedge bridge Build may reuse for this pick, or undefined. It must match the market, the ticker AND
  *  the hedge A choice: a bridge started with hedge A on is never handed back to a pick that has it off (the default),
  *  nor the reverse, so the bridge always runs what the approval box said. Opportunity bridges are never reused here. */
-export function reusableBridge<B extends { kind: string; mode?: string; q?: { id: string } | null; eq?: { t: string } | null; pmHedge?: boolean }>(
-  bridges: readonly B[], qId: string, ticker: string, closedPmHedge: boolean): B | undefined {
+export function reusableBridge<B extends { kind: string; mode?: string; q?: { id: string } | null; eq?: { t: string } | null; pmHedge?: boolean; override?: boolean }>(
+  bridges: readonly B[], qId: string, ticker: string, closedPmHedge: boolean, actOnUnvalidated = false): B | undefined {
   return bridges.find((b) => b.kind === "live" && b.mode !== "opportunity" && b.q?.id === qId && b.eq?.t === ticker
-    && (b.pmHedge === true) === closedPmHedge);
+    && (b.pmHedge === true) === closedPmHedge && (b.override === true) === actOnUnvalidated);
 }
 
 const sameMarket = (p: Proposal, m: NonNullable<Question["real"]>) => p.market?.source === m.source && p.market?.id === m.id;
@@ -76,52 +77,89 @@ export function fitDirection(q: Pick<Question, "real">, eq: Pick<EquityPick, "di
   return eq.move < 0 ? "down_on_yes" : "up_on_yes";
 }
 
-/** Proposal → approval → engine bridge on the real backend (market-event path, contracts.md).
- *  Reuses an earlier proposal for the same ticker, market, direction, algo, coverage and shares instead of creating one per run: an
- *  approved one (POST /bridges is idempotent per proposal, so this re-attaches to its bridge, or finally starts
- *  the bridge if an earlier attempt failed after approval), else a pending one, which is approved here. */
-export async function startRealBridge(q: Question, eq: EquityPick, maxHedge: string, api: BridgeApi = defaultApi,
-  fit: AppliedFit | null = null, opts: { closedPmHedge?: boolean } = {}): Promise<{ bridgeId: string; gap: number; applied: AppliedFit | null }> {
-  const { approveProposal, createProposal, getEquity, listProposals, startBridge } = api;
+/** The exact terms a hedge proposal is created (or reused) with: the bridge runs what was approved, so the approval
+ *  step and the bridge start must agree on every one of them. */
+export interface HedgeTerms {
+  ticker: string; market: { source: string; id: string; token_id?: string | null }; direction: Direction;
+  shares_held: number; target_coverage: number; fit: AppliedFit | null; closedPmHedge: boolean; actOnUnvalidated: boolean;
+}
+export interface HedgeOpts { closedPmHedge?: boolean; actOnUnvalidated?: boolean }
+
+export function hedgeTerms(q: Question, eq: EquityPick, maxHedge: string, fit: AppliedFit | null = null, opts: HedgeOpts = {}): HedgeTerms {
   const m = q.real;
   if (!m) throw new Error("this market is from the demo set, not the live search");
   if (!eq.direction) throw new Error(`${eq.t} is not in this market's mapping, so the adverse outcome is unknown`);
-  let spot = eq.px;
-  if (!spot) spot = await getEquity(eq.t).then((c) => c.implied_move?.spot ?? null, () => null);
   const cap = Math.min(1, (parseInt(maxHedge, 10) || 100) / 100);
   // With a fit, target_coverage is the user's Max hedge: the backend caps the algo's coverage at it and clips every
   // sell beyond it (contracts.md), so the approved proposal bounds what is hedged. Without a fit the default Engine
   // hedges target_coverage itself: half the position, never above Max hedge.
-  const coverage = fit ? cap : Math.min(0.5, cap);
-  const sharesHeld = eq.held || 500;
-  const market = { source: m.source, id: m.id, token_id: m.token_id };
-  // Hedge A (closed-market mode) is an explicit opt-in on the proposal; the key is sent only when opted in.
-  const pmHedge = opts.closedPmHedge === true;
-  // Reuse only a proposal approved for exactly these terms: the bridge runs what was approved, so an older approval
-  // at another coverage or position size would hedge more (or less) than the screen says.
-  const mine = (await listProposals().catch(() => [] as Proposal[]))
-    .filter((p) => p.ticker === eq.t && p.family === "hedge" && sameMarket(p, m) && (p.direction ?? "down_on_yes") === eq.direction
-      && sameAlgo(p, fit) && sameNum(p.target_coverage, coverage) && sameNum(p.shares_held, sharesHeld) && (p.closed_pm_hedge === true) === pmHedge);
-  const approved = mine.find((p) => p.status === "approved");
-  const pending = mine.find((p) => p.status === "proposed");
-  let ok: Proposal;
-  if (approved) ok = approved;
-  else if (pending) ok = await approveProposal(pending.id);
-  else {
-    const algo = fit ? { algo: { family: fit.family, preset_index: fit.preset_index ?? undefined, source: "ai_fit" as const } } : {};
-    const prop = await createProposal({ ticker: eq.t, market, direction: eq.direction, shares_held: sharesHeld, target_coverage: coverage, ...algo, ...(pmHedge ? { closed_pm_hedge: true } : {}) });
-    ok = prop.status === "approved" ? prop : await approveProposal(prop.id);
+  return {
+    ticker: eq.t, market: { source: m.source, id: m.id, token_id: m.token_id }, direction: eq.direction,
+    shares_held: eq.held || 500, target_coverage: fit ? cap : Math.min(0.5, cap), fit,
+    closedPmHedge: opts.closedPmHedge === true, actOnUnvalidated: opts.actOnUnvalidated === true,
+  };
+}
+
+/** Proposals the backend's evidence gate refused at bridge start. The stored evidence on such a proposal can still read
+ *  "validated" (it was approved while validated, then the evidence file flipped; POST /bridges re-checks but does not
+ *  rewrite the proposal), so reusing it would 409 on every retry. Kept for this page session. */
+const evidenceRefused = new Set<string>();
+/** Never reuse proposal `id` again (its bridge start failed the evidence gate); the next try proposes again. */
+export const markEvidenceRefused = (id: string) => { evidenceRefused.add(id); };
+
+/** A proposal a bridge can start from: not one approved WITHOUT the acknowledgement on an unvalidated market (the
+ *  backend refuses that bridge with 409 EVIDENCE_UNVALIDATED), and not one whose bridge start that gate refused. */
+export const bridgeable = (p: Proposal) => !evidenceRefused.has(p.id) && !(p.status === "approved" && p.evidence?.validated === false && !p.ack_unvalidated);
+
+/** The error a failed bridge start reports. An evidence refusal says the proposal is dropped (it is no longer reused);
+ *  any other failure keeps the approved proposal for the next try (POST /bridges is idempotent per proposal). */
+function startFailure(last: unknown, proposalId: string): Error {
+  const why = last instanceof Error ? last.message : "the backend refused to start a bridge";
+  if (isEvidenceError(last)) {
+    markEvidenceRefused(proposalId);
+    return new Error(`${why}; proposal ${proposalId} is not reused: the next try proposes again and reads the evidence afresh`);
   }
+  return new Error(`${why}; proposal ${proposalId} stays approved and is reused on the next try`);
+}
+
+const matchesTerms = (p: Proposal, t: HedgeTerms) => p.ticker === t.ticker && p.family === "hedge" && p.market?.source === t.market.source
+  && p.market?.id === t.market.id && (p.direction ?? "down_on_yes") === t.direction && sameAlgo(p, t.fit)
+  && sameNum(p.target_coverage, t.target_coverage) && sameNum(p.shares_held, t.shares_held)
+  && (p.closed_pm_hedge === true) === t.closedPmHedge && (p.act_on_unvalidated === true) === t.actOnUnvalidated;
+
+/** The proposal for these terms: an approved one (still bridgeable), else a pending one, else a new one. Never approves:
+ *  the approval step reads its `evidence` and `capacity` before the user decides. */
+export async function prepareHedgeProposal(t: HedgeTerms, api: Pick<BridgeApi, "createProposal" | "listProposals"> = defaultApi): Promise<Proposal> {
+  const mine = (await api.listProposals().catch(() => [] as Proposal[])).filter((p) => matchesTerms(p, t) && bridgeable(p));
+  const found = mine.find((p) => p.status === "approved") ?? mine.find((p) => p.status === "proposed");
+  if (found) return found;
+  const algo = t.fit ? { algo: { family: t.fit.family, preset_index: t.fit.preset_index ?? undefined, source: "ai_fit" as const } } : {};
+  return api.createProposal({ ticker: t.ticker, market: t.market, direction: t.direction, shares_held: t.shares_held, target_coverage: t.target_coverage,
+    ...algo, ...(t.closedPmHedge ? { closed_pm_hedge: true } : {}), ...(t.actOnUnvalidated ? { act_on_unvalidated: true } : {}) });
+}
+
+/** Proposal → approval → engine bridge on the real backend (market-event path, contracts.md).
+ *  Reuses an earlier proposal for the same terms instead of creating one per run: an approved one (POST /bridges is
+ *  idempotent per proposal, so this re-attaches to its bridge, or finally starts the bridge if an earlier attempt failed
+ *  after approval), else a pending one, which is approved here. `ackUnvalidated` is the user's explicit acknowledgement
+ *  of an unvalidated market (the evidence gate); without it the backend answers 409 EVIDENCE_UNVALIDATED on such a market. */
+export async function startRealBridge(q: Question, eq: EquityPick, maxHedge: string, api: BridgeApi = defaultApi,
+  fit: AppliedFit | null = null, opts: HedgeOpts & { ackUnvalidated?: boolean } = {}): Promise<{ bridgeId: string; gap: number; applied: AppliedFit | null }> {
+  const { approveProposal, getEquity, startBridge } = api;
+  const t = hedgeTerms(q, eq, maxHedge, fit, opts);
+  let spot = eq.px;
+  if (!spot) spot = await getEquity(eq.t).then((c) => c.implied_move?.spot ?? null, () => null);
+  const prop = await prepareHedgeProposal(t, api);
+  const ok = prop.status === "approved" ? prop : await approveProposal(prop.id, opts.ackUnvalidated === true);
   const gap = gapPerShare(spot, eq.move);
-  const sources: ("replay" | "live")[] = m.token_id ? ["replay", "live"] : ["replay"];
+  const sources: ("replay" | "live")[] = t.market.token_id ? ["replay", "live"] : ["replay"];
   let last: unknown = null;
   for (const source of sources) {
     const run = fit ? { family: fit.family, ...(fit.preset_index != null ? { preset_index: fit.preset_index } : {}) } : {};
-    try { return { bridgeId: (await startBridge({ proposal_id: ok.id, source, gap_per_share: gap, direction: eq.direction, market, ...run })).bridge_id, gap, applied: fit }; }
-    catch (e) { last = e; }
+    try { return { bridgeId: (await startBridge({ proposal_id: ok.id, source, gap_per_share: gap, direction: t.direction, market: t.market, ...run })).bridge_id, gap, applied: fit }; }
+    catch (e) { last = e; if (isEvidenceError(e)) break; }  // the gate answers the same for every source
   }
-  const why = last instanceof Error ? last.message : "the backend refused to start a bridge";
-  throw new Error(`${why}; proposal ${ok.id} stays approved and is reused on the next try`);
+  throw startFailure(last, ok.id);
 }
 
 // ---------------------------------------------------------------- Opportunity division (options)
@@ -150,36 +188,39 @@ export function opportunityFit(fit: (Pick<FitOut, "family" | "preset_index" | "d
 export interface OpportunityCaps { max_contracts: number; max_notional: number }
 export const DEFAULT_OPP_CAPS: OpportunityCaps = { max_contracts: 10, max_notional: 10_000 };
 
-/** Opportunity proposal (options family + risk caps) → approval → POST /bridges. Reuses an approved or pending
- *  proposal for the same ticker, market, algo and caps (the bridge runs exactly what was approved). */
-export async function startOpportunityBridge(q: Question, ticker: string, fit: AppliedFit, api: BridgeApi = defaultApi,
-  caps: OpportunityCaps = DEFAULT_OPP_CAPS): Promise<{ bridgeId: string; applied: AppliedFit }> {
-  const { approveProposal, createProposal, listProposals, startBridge } = api;
+/** The opportunity proposal for this pick (options family + risk caps): approved (still bridgeable), else pending, else
+ *  new. Never approves: the Opportunity card reads its `evidence` first. */
+export async function prepareOpportunityProposal(q: Question, ticker: string, fit: AppliedFit,
+  api: Pick<BridgeApi, "createProposal" | "listProposals"> = defaultApi, caps: OpportunityCaps = DEFAULT_OPP_CAPS): Promise<Proposal> {
   const m = q.real;
   if (!m) throw new Error("this market is from the demo set, not the live search");
   const market = { source: m.source, id: m.id, token_id: m.token_id };
-  const mine = (await listProposals().catch(() => [] as Proposal[]))
+  const mine = (await api.listProposals().catch(() => [] as Proposal[]))
     .filter((p) => p.ticker === ticker && p.family === "opportunity" && sameMarket(p, m) && sameAlgo(p, fit)
-      && p.max_contracts === caps.max_contracts && p.max_notional === caps.max_notional);
-  const approved = mine.find((p) => p.status === "approved");
-  const pending = mine.find((p) => p.status === "proposed");
-  let ok: Proposal;
-  if (approved) ok = approved;
-  else if (pending) ok = await approveProposal(pending.id);
-  else {
-    const prop = await createProposal({ ticker, market, division: "opportunity", ...caps,
-      algo: { family: fit.family, preset_index: fit.preset_index ?? undefined, source: "ai_fit" } });
-    ok = prop.status === "approved" ? prop : await approveProposal(prop.id);
-  }
+      && p.max_contracts === caps.max_contracts && p.max_notional === caps.max_notional && bridgeable(p));
+  const found = mine.find((p) => p.status === "approved") ?? mine.find((p) => p.status === "proposed");
+  if (found) return found;
+  return api.createProposal({ ticker, market, division: "opportunity", ...caps,
+    algo: { family: fit.family, preset_index: fit.preset_index ?? undefined, source: "ai_fit" } });
+}
+
+/** Opportunity proposal → approval (with the evidence acknowledgement when given) → POST /bridges. */
+export async function startOpportunityBridge(q: Question, ticker: string, fit: AppliedFit, api: BridgeApi = defaultApi,
+  caps: OpportunityCaps = DEFAULT_OPP_CAPS, opts: { ackUnvalidated?: boolean } = {}): Promise<{ bridgeId: string; applied: AppliedFit }> {
+  const { approveProposal, startBridge } = api;
+  const m = q.real;
+  if (!m) throw new Error("this market is from the demo set, not the live search");
+  const market = { source: m.source, id: m.id, token_id: m.token_id };
+  const prop = await prepareOpportunityProposal(q, ticker, fit, api, caps);
+  const ok = prop.status === "approved" ? prop : await approveProposal(prop.id, opts.ackUnvalidated === true);
   // A resolved market listed for its recording has no live book: replay it directly (no failed live attempt first).
   const sources: ("replay" | "live")[] = isRecordedOnly(m) ? ["replay"] : m.token_id || m.source === "kalshi" ? ["live", "replay"] : ["replay"];
   let last: unknown = null;
   for (const source of sources) {
     try { return { bridgeId: (await startBridge({ proposal_id: ok.id, source, gap_per_share: 0, market })).bridge_id, applied: fit }; }
-    catch (e) { last = e; }
+    catch (e) { last = e; if (isEvidenceError(e)) break; }  // the gate answers the same for every source
   }
-  const why = last instanceof Error ? last.message : "the backend refused to start a bridge";
-  throw new Error(`${why}; proposal ${ok.id} stays approved and is reused on the next try`);
+  throw startFailure(last, ok.id);
 }
 
 // ---------------------------------------------------------------- where a bridge's orders fill, in words

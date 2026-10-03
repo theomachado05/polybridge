@@ -45,6 +45,27 @@ small label (`demo data`, `sample`, `simulated`). Other labels stay honest: `rep
   sample markets (simulator). Demo bridges never touch real portfolio rows or totals.
 - Live trade cards show the broker's fill (`fill` SSE event, v4/broker) when present, else the last quote, labelled.
 
+## Risk controls in the UI (evidence gate, liquidity, capital, Webull, options)
+
+- **Evidence gate.** The Pipeline approval step (and the Opportunity card on Build) first creates the proposal *pending*
+  and reads its `evidence` and `capacity`. On an unvalidated market Approve stays disabled until the user ticks the
+  acknowledgement; the approval then sends `{ack_unvalidated: true}`. Auto-approve never covers an unvalidated market.
+  A 409 `EVIDENCE_UNVALIDATED` is shown, never hidden behind a simulator bridge. Weekend mode on Build has the
+  closed-market override (`act_on_unvalidated`). Every decision, fill and staged plan shows its evidence label;
+  an `EVIDENCE_GATE` refusal shows on the Bridge's closed-market panel.
+- **Liquidity & capacity card** (approval step, Build preview via `GET /liquidity/{t}`, Bridge panel 08): max order,
+  max position per day, estimated cost in bp, book-size capacity, binding limit, sources and staleness, plus the
+  capital-budget fit. Trade cards badge `liquidity capped` / `capital budget` orders and say why.
+- **Portfolio:** 05 the broker account (Webull paper balances, positions, 7-day order history with origin and the
+  broker's status word, reconciler status), kept apart from 01 demo holdings; 06 capital usage (`GET /capital`):
+  equity, buying power, gross hedge notional, margin, per-event budgets, breaches. The nav shows the account pill
+  ("Webull paper · Individual Margin · market closed").
+- **Options:** Build shows the hedge-instrument comparison (`GET /options/hedge-quote`: short stock, protective put,
+  collar, put spread in $ and bp with liquidity flags) and the strike ladder on demand (`GET /options/chain/{t}`).
+  Option legs on opportunity bridges and broker option positions carry marks (`GET /options/mark/{contract}`).
+- View logic is pure and tested: `src/lib/risk.ts`, `src/lib/optionsView.ts` (`tests/risk.test.ts`,
+  `tests/options_view.test.ts`).
+
 Code map: `src/lib/store.tsx` (flow state), `src/lib/realBridge.ts` (proposal → approval → bridge, tested),
 `src/lib/bridgeStream.ts` (SSE reducer, tested), `src/lib/demo.ts` (prototype data),
 `src/lib/sim.ts` (prototype simulator, demo bridges only), `src/lib/library.ts` (catalog → rows; block kinds →

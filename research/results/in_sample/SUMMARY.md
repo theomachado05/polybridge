@@ -1,6 +1,6 @@
 # In-sample results, 2024-01-01 to 2025-12-31
 
-All numbers come from the CSV files in this folder, produced by `research/export_in_sample.py` (one run, no parameter changes after seeing results). Out-of-sample window not run. Atlas not run (stretch goal), so there is no atlas table here.
+All numbers come from the CSV files in this folder, produced by `research/export_in_sample.py` (one run, no parameter changes after seeing results). Out-of-sample results: research/results/oos/SUMMARY.md. Atlas: research/results/atlas/README.md.
 Edge = event mean minus placebo mean, P&L per $1 of spot at entry, baseline spec (3-6m expiry, 5% OTM, entry "post"), 97.5% bootstrap CI.
 
 ## Sample

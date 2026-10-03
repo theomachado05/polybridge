@@ -3,7 +3,10 @@
 - ``GET  /closed/opportunity``                     status: R3 research gate, session, snapshots, trades
 - ``POST /closed/opportunity/snapshot``            Friday-close option snapshot for one threshold market
 - ``GET  /closed/opportunity/compare``             the open comparison (PM now vs options), read-only
-- ``POST /closed/opportunity/trades``              stage the 09:30 option trade (needs approval)
+- ``POST /closed/opportunity/trades``              stage the 09:30 option trade (needs approval; while R3 does not
+                                                   support the signal, also ``ack_unvalidated: true``, else 409
+                                                   ``evidence_unvalidated``). Execution passes the option
+                                                   participation caps and the capital budget.
 - ``POST /closed/opportunity/trades/{id}/approve`` / ``/cancel`` / ``/execute``
 - ``POST /closed/opportunity/review``              revert rule before the open: cancel trades the PM no longer supports
 - ``POST /closed/opportunity/execute-due``         execute approved trades whose open window is running
@@ -49,6 +52,8 @@ class StageIn(BaseModel):
     max_notional: float = Field(default=OPP_DEFAULT_MAX_NOTIONAL, gt=0, le=OPP_DEFAULT_MAX_NOTIONAL,
                                 allow_inf_nan=False)
     pm_yes: float | None = Field(default=None, gt=0, lt=1, allow_inf_nan=False)
+    # R3 is NULL: staging acts on an unvalidated estimate, so it needs this explicit acknowledgement (409 otherwise)
+    ack_unvalidated: bool = False
 
 
 class PriceIn(BaseModel):
@@ -224,6 +229,11 @@ async def stage(body: StageIn, request: Request) -> dict:
     t = now(request)
     if t >= sc.to_utc(s["next_open"]) + dt.timedelta(seconds=opp.EXEC_WINDOW_S):
         raise HTTPException(409, {"reason_code": "missed_open_window", "reason": opp.REASONS["missed_open_window"]})
+    research = opp.research_status()
+    validated = bool(research.get("supports_claim"))
+    if not validated and not body.ack_unvalidated:  # the evidence gate (docs/design.md section 6)
+        raise HTTPException(409, {"reason_code": "evidence_unvalidated", "reason": opp.REASONS["evidence_unvalidated"],
+                                  "research": research})
     price, _ = await pm_now(request, s["market"], body.pm_yes)
     dec = opp.evaluate(s, price)
     async with b.lock:
@@ -236,6 +246,8 @@ async def stage(body: StageIn, request: Request) -> dict:
         except ValueError as e:
             code = str(e)
             raise HTTPException(409, {"reason_code": code, "reason": opp.REASONS.get(code, code), "comparison": dec})
+        trade["ack_unvalidated"] = bool(body.ack_unvalidated)
+        trade["evidence"] = "validated" if validated else opp.EVIDENCE_LABEL
         return b.put_trade(trade)
 
 
@@ -297,7 +309,8 @@ async def _execute(request: Request, tr: dict, override: float | None) -> dict:
         chain, stale = await open_chain(s, t)
         price, _ = await pm_now(request, s["market"], override)
     res = await opp.execute_trade(tr, s, now=t, pm_now=price, chain=chain, broker=get_broker(request.app),
-                                  cache_stale=bool(stale), book_room=b.book_room(t, exclude=tr["id"]))
+                                  cache_stale=bool(stale), book_room=b.book_room(t, exclude=tr["id"]),
+                                  app=request.app)
     b.put_trade(tr)
     return res
 

@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getBridge, getEquity } from "@/lib/api";
+import { getBridge, getCapital, getEquity, getLiquidity } from "@/lib/api";
 import { INSTRUMENTS } from "@/lib/demo";
 import { fmtK, fmtMoney, fmtNs, fmtPct, prettyId } from "@/lib/fmt";
 import { useAsync } from "@/lib/hooks";
@@ -15,6 +15,8 @@ import { AlgoDock, PortfolioPanel, TopRow, TradesPanel, type DockAlgo, type Trad
 import { OpportunityBridge } from "./OpportunityBridge";
 import { ClosedBanner, WeekendPanel } from "./WeekendPanel";
 import { sessionClosed } from "@/lib/closed";
+import { budgetPhrase, capacityFromLiquidity, capitalView, evidenceLabelBadge, fillBadges, gateCounts, gateSentence } from "@/lib/risk";
+import { BadgeTag, CapacityCard, PanelHead } from "@/components/risk/RiskBits";
 
 type LiveEntry = Extract<BridgeEntry, { kind: "live" }>;
 type DemoEntry = Extract<BridgeEntry, { kind: "demo" }>;
@@ -205,12 +207,15 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
       : f.status === "filled" ? ` Filled by ${f.broker ?? "the broker"}${f.price_source ? ` (price: ${f.price_source})` : ""}${f.fee ? `, fee $${f.fee.toFixed(2)}` : ""}.${f.note || f.scope === "replay_sandbox" ? ` ${f.note ?? "Replay sandbox: not your account."}` : ""}`
       : f.status === "rejected" ? ` Broker rejected it${f.reject_reason ? `: ${f.reject_reason}` : ""}.`
       : f.status === "error" ? ` Broker error (${f.error ?? "unknown"}); nothing filled.`
+      : f.status === "held" ? ` Held before reaching the broker${f.reject_reason ? `: ${f.reject_reason}` : ""}.`
       : ` Broker status: ${f.status ?? "unknown"}.`;
+    const gateLine = f?.gates?.length ? gateSentence(f) : "";
     return {
       id: l.n, side: l.qty > 0 ? "SELL" : "BUY", time: `#${l.n}`,
       head: `${Math.abs(l.qty)} ${ticker ?? ""}${px}`,
       algo: l.family ? `${prettyId(l.family)}${l.preset != null ? ` · preset ${l.preset}` : ""}` : "Delta-Bridge Sizer",
-      reason: `YES at ${l.p == null ? "n/a" : Math.round(l.p * 100) + "¢"}; ${l.family ? "algo" : "engine"} ${l.reason.replaceAll("_", " ")}${l.target != null ? `: target hedge ${l.target} sh, was ${l.current} sh` : `: hedge was ${l.current} sh`}${l.signal != null ? ` (signal ${l.signal.toFixed(3)})` : ""}. Decided in ${fmtNs(l.ns)}.${brokerLine}`,
+      reason: `YES at ${l.p == null ? "n/a" : Math.round(l.p * 100) + "¢"}; ${l.family ? "algo" : "engine"} ${l.reason.replaceAll("_", " ")}${l.target != null ? `: target hedge ${l.target} sh, was ${l.current} sh` : `: hedge was ${l.current} sh`}${l.signal != null ? ` (signal ${l.signal.toFixed(3)})` : ""}. Decided in ${fmtNs(l.ns)}.${brokerLine}${gateLine ? ` ${gateLine}` : ""}`,
+      tags: fillBadges(f, l.evidence),
     };
   });
   // The AI fit is sent with the proposal and POST /bridges, and hedgecore.Algo runs that family and preset. The
@@ -236,6 +241,8 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
     ? <Tag tone="sim" title="Started on the engine's default spec with gap_per_share = 0 because there was no quote or impact estimate; the legacy Engine's fee gate is off (docs/contracts.md).">fee gate off (no quote/impact)</Tag>
     : null;
   const question = entry.q?.q ?? summary.data?.label ?? `Bridge ${id}`;
+  const evLabel = evidenceLabelBadge(summary.data?.evidence_label ?? st.log.findLast((l) => l.evidence)?.evidence ?? null);
+  const evTag = evLabel ? <BadgeTag b={{ ...evLabel, title: summary.data?.evidence?.evidence ?? evLabel.title }} /> : null;
   const replayAlert = notice && (notice.tone === "warn"
     ? <div role="alert" style={{ fontSize: 13, color: "#8A5A00" }}>{notice.text}</div>
     : <div role="status" style={{ fontSize: 13, color: "#5A627A" }}>{notice.text}</div>);
@@ -271,7 +278,7 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
         px={spot ? spot.toFixed(2) : "—"} pxColor="#5A627A" pxDelta={spot ? "Not streamed on this bridge" : "No quote available"} pxSpark={[]}
         driftLabel="Priced-in drift since start (mapping estimate)" drift={priced == null ? "n/a" : fmtPct(priced, 2)}
       />
-      <AlgoDock label={running ? "04 · ENGINE GATES · AI FIT" : "04 · ENGINE GATES · DEFAULT SPEC"} algos={algos} tag={<span style={{ display: "inline-flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>{gateTag}{fitTag}{holdTag}{sourceTag}</span>} />
+      <AlgoDock label={running ? "04 · ENGINE GATES · AI FIT" : "04 · ENGINE GATES · DEFAULT SPEC"} algos={algos} tag={<span style={{ display: "inline-flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>{evTag}{gateTag}{fitTag}{holdTag}{sourceTag}</span>} />
       <WeekendPanel id={id} summary={summary.data ?? null} st={st} replay={source === "replay"} ticker={ticker} />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,340px),1fr))", gap: 16, alignItems: "stretch" }}>
         <PortfolioPanel
@@ -284,7 +291,35 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
         />
         <TradesPanel trades={trades} tag={sourceTag} empty={holding ? "No equity orders while the market is closed: the algo holds; the staged plan (hedge B) covers the open." : st.decisions ? `No orders yet — the gates are holding (${st.decisions} decisions).` : "Waiting for the first tick…"} />
       </div>
+      {ticker && <LiquidityPanel ticker={ticker} shares={shares} coverage={summary.data?.target_coverage ?? 0.5} counts={gateCounts(st.log.map((l) => l.fill), summary.data)} sandbox={scope.sandbox} />}
       <Label style={{ marginTop: -4 }}>Bridge {id} · {summary.data?.label ?? "engine bridge"}</Label>
     </>
+  );
+}
+
+/** 08 · Liquidity & capital: the participation caps every order of this bridge is checked against (GET /liquidity),
+ *  and how many orders the caps cut or the capital budget refused so far. */
+function LiquidityPanel({ ticker, shares, coverage, counts, sandbox }: { ticker: string; shares: number; coverage: number; counts: { liquidity: number; capital: number }; sandbox: boolean }) {
+  const hedge = Math.floor(coverage * shares);
+  const liq = useAsync(`bliq:${ticker}:${coverage}:${hedge}`, () => getLiquidity(ticker, { coverage, ...(hedge > 0 ? { qty: hedge } : {}) }));
+  const view = liq.error ? { ...capacityFromLiquidity(null), reason: `Liquidity unavailable (${liq.error}); orders are not capped and are labelled “unknown”.` } : capacityFromLiquidity(liq.data, hedge);
+  // The budget numbers come from GET /capital (CAPITAL_MAX_GROSS_PCT / CAPITAL_MAX_EVENT_PCT), never hard-coded.
+  const cap = useAsync(`bcap:${ticker}`, getCapital);
+  const capV = cap.data ? capitalView(cap.data) : null;
+  const enforce = sandbox ? "This replay fills in a sandbox: the capital budget is evaluated and labelled, not enforced."
+    : capV && !capV.read && !capV.checked ? "This broker gives no account read, so the capital budget is not enforced now."
+    : capV && !capV.read ? "The account cannot be read right now, so exposure-increasing orders are refused (fail closed)."
+    : "An unreadable account refuses exposure-increasing orders (fail closed).";
+  return (
+    <Glass style={{ padding: "22px 26px", minWidth: 0 }}>
+      <PanelHead label="08 · LIQUIDITY & CAPITAL">
+        <Tag tone={counts.liquidity ? "caution" : "neutral"} title="Orders cut by the participation caps (liquidity_capped)">{counts.liquidity} capped</Tag>
+        <Tag tone={counts.capital ? "caution" : "neutral"} title="Orders refused by the account's capital budget (capital_budget)">{counts.capital} refused (capital)</Tag>
+      </PanelHead>
+      <CapacityCard view={view} title={`PARTICIPATION CAPS · ${ticker} · APPROVED HEDGE ${hedge.toLocaleString("en-US")} SH`} testId="bridge-capacity" />
+      <div className="pb-pretty" style={{ fontSize: 12, color: "#5A627A", marginTop: 10, lineHeight: 1.5 }}>
+        Each order is capped per order (10% of the opening 5-minute volume) and per session (1% of ADV, summed over the day), then checked against the capital budget ({budgetPhrase(cap.data?.limits)}). {enforce}
+      </div>
+    </Glass>
   );
 }

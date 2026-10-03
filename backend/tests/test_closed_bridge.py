@@ -94,9 +94,11 @@ def make_client(tmp_path, replay: Path | None, quotes=None):
     return TestClient(app)
 
 
-def approved(c, *, market=MKT, shares=1000, cov=0.5, algo=None, hedge_a=False) -> str:
+def approved(c, *, market=MKT, shares=1000, cov=0.5, algo=None, hedge_a=False, override=True) -> str:
+    """Synthetic markets are unvalidated: by default the proposal sets the explicit closed-market override
+    (act_on_unvalidated) and the approval acknowledges it; the recession market on SPY needs neither."""
     body = {"ticker": "SPY", "market": market, "direction": "down_on_yes", "shares_held": shares,
-            "target_coverage": cov}
+            "target_coverage": cov, "act_on_unvalidated": override}
     if algo:
         body["algo"] = algo
     if hedge_a:
@@ -104,7 +106,7 @@ def approved(c, *, market=MKT, shares=1000, cov=0.5, algo=None, hedge_a=False) -
     r = c.post("/proposals", json=body)
     assert r.status_code == 201, r.text
     assert r.json()["closed_pm_hedge"] is hedge_a
-    c.post(f"/proposals/{r.json()['id']}/approve")
+    c.post(f"/proposals/{r.json()['id']}/approve", json={"ack_unvalidated": True})
     return r.json()["id"]
 
 
@@ -249,6 +251,7 @@ def test_weekend_replay_holds_the_equity_algo_stages_hedge_b_and_executes_at_the
     assert "AWAITING_APPROVAL" in codes and "APPROVED" in codes and "REPLAY_NEEDS_TICK_PRICE" in codes
     assert codes.index("APPROVED") < codes.index("SUBMITTED")
     assert o["estimate"]["validated"] is False and "unvalidated" in o["label"]
+    assert o["evidence_gate"] == "override" and "OVERRIDE" in o["label"]  # staged only through act_on_unvalidated
     assert "pre-market" in o["label"]  # the plan says R1's pre-market variant was only partial
 
     # handoff: the engine took the staged short over; the summary's hedge is the whole position
@@ -459,7 +462,8 @@ def test_a_bridge_on_the_recorded_weekend_shows_the_whole_closed_market_path(tmp
     o = filled[0]
     assert o["executed_at"] == "2025-04-07T08:05:05Z" and o["session_target"] == "pre_market"
     assert o["fill_px"] == pytest.approx(488.5, abs=0.2) and o["ref_source"] == "recorded"
-    assert o["estimate"]["validated"] is True
+    assert o["estimate"]["validated"] is True and o["evidence_gate"] == "validated"
+    assert s["evidence_label"] == "validated" and "evidence: validated" in o["broker_order"]["note"]
     p = s["closed_mode"]["pnl"]
     assert p["s_close"] == 506.56 and p["s_now"] == 495.69 and p["unhedged_usd"] == pytest.approx(-10870.0)
     total_short = p["carried_hedge_shares"] + p["staged_short_shares"] + p["algo_short_shares"]
@@ -540,7 +544,7 @@ def test_the_default_demo_replay_trades_only_in_regular_hours(tmp_path):
         p = c.post("/proposals", json={"ticker": "TLT", "market": m, "direction": "down_on_yes", "shares_held": 1000,
                                        "target_coverage": 0.5,
                                        "algo": {"family": "equity_delta_bridge", "preset_index": 75}}).json()
-        c.post(f"/proposals/{p['id']}/approve")
+        c.post(f"/proposals/{p['id']}/approve", json={"ack_unvalidated": True})
         bid = c.post("/bridges", json={"proposal_id": p["id"], "source": "replay", "replay_to_account": True}).json()[
             "bridge_id"]
         ev = _events(c, bid)

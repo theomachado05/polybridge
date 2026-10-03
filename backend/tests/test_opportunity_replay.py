@@ -239,7 +239,7 @@ def _opp_bridge(c, preset: int, **caps) -> tuple[str, list, dict]:
     assert r.status_code == 201, r.text
     pid = r.json()["id"]
     assert c.post("/bridges", json={"proposal_id": pid, "source": "replay"}).status_code == 409  # not approved yet
-    assert c.post(f"/proposals/{pid}/approve").status_code == 200
+    assert c.post(f"/proposals/{pid}/approve", json={"ack_unvalidated": True}).status_code == 200
     r = c.post("/bridges", json={"proposal_id": pid, "source": "replay"})
     assert r.status_code == 201, r.text
     bid = r.json()["bridge_id"]

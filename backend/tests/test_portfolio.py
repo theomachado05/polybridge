@@ -48,7 +48,7 @@ def test_no_mapping_and_hedge_status(tmp_path, monkeypatch):
     assert p.status_code == 201
     pid = p.json()["id"]
     assert c.get("/portfolio").json()["holdings"][0]["hedge"] == {"status": "proposed", "proposal_id": pid, "bridge_id": None}
-    c.post(f"/proposals/{pid}/approve")
+    c.post(f"/proposals/{pid}/approve", json={"ack_unvalidated": True})
     assert c.get("/portfolio").json()["holdings"][0]["hedge"]["status"] == "approved"
     d = c.get("/portfolio").json()
     assert d["holdings"][0]["exposure"] is None and d["total_exposure"] is None
