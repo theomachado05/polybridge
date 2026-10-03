@@ -58,7 +58,11 @@ The cost-table rows (34 for hedge) include 2 rows whose strategy P&L is missing;
 Scoreboard PNGs plot mean P&L with the 95% bootstrap CI band (titles say 95%); decay PNGs likewise use a 95% band. The pass-rule CIs in the tables above are 97.5%.
 
 ## Disclosure
-Exit prices at the 42-session, 63-session and expiry horizons for late-2025 events come from trading sessions in 2026 (inside the calendar span of the out-of-sample window). These are in-sample events; no 2026 event was fetched or evaluated.
+Any entry, exit or quote date after 2025-12-31 for in-sample events and placebo days falls inside the calendar span of the out-of-sample window. Examples: a 2025-12-31 filing enters on 2026-01-02 under conservative timing; 21-session exits of filings after about late November 2025; year-end placebo days; exit-date quotes in the cost tables; and the 42-session, 63-session and expiry exits of late-2025 events. No 2026 event or 2026 placebo day was fetched as an event, and no out-of-sample result was computed. Separately, the Massive starter notebook's out-of-sample cell was run on `cfo_appointment` (not an H1/H2 tag) during pipeline setup; see `research/HYPOTHESIS.md` change log and `research/results/pipeline_check.md`.
+
+## Notes on reading the tables
+- The 97.5% interval in the pass-check table and the one in `*_difference_975.csv` for the same quantity differ slightly: the bootstrap RNG stream is shared across strategies inside `difference_board` (seed fixed, not re-seeded per call).
+- "spot not recoverable from the chain: 2" counts events, not event/bucket pairs.
 
 ## Caveats stated by the numbers
 Samples are 23-36 events per family. Static universe, last-trade marks, inferred spot (see HYPOTHESIS.md section 8). Neither hypothesis passes the pre-registered rule in-sample.
