@@ -57,7 +57,7 @@ def write_chart(res: dict, d: pd.DataFrame, path: Path) -> None:
     ax1.set_title("Variance removed by each hedge (positive = less risk)", loc="left")
     ax1.grid(axis="x", color=GRID, lw=0.8)
     ax1.set_axisbelow(True)
-    ax1.legend(frameon=False, loc="lower right")
+    ax1.legend(frameon=False, loc="upper right")
     for s in ("top", "right"):
         ax1.spines[s].set_visible(False)
 
@@ -74,7 +74,9 @@ def write_chart(res: dict, d: pd.DataFrame, path: Path) -> None:
     ax2.legend(frameon=False)
     for s in ("top", "right"):
         ax2.spines[s].set_visible(False)
-    fig.autofmt_xdate()
+    for lab in ax2.get_xticklabels():
+        lab.set_rotation(30)
+        lab.set_ha("right")
     fig.tight_layout()
     fig.savefig(path, dpi=150, facecolor="white")
     plt.close(fig)
@@ -109,10 +111,11 @@ def write_summary(res: dict, path: Path) -> None:
              f"**{t['B']['verdict']}**; secondary 08:00 variant: **{t['B08']['verdict']}**.")
     L.append(f"- In-sample ceiling (look-ahead, full-panel slope per market {', '.join(f'{k} {v:.2f}' for k, v in res['in_sample']['rates'].items())} bp/pp): "
              f"a PM-sized gap hedge could have removed at most {pct(res['in_sample']['VR0'])} of the gap variance on these closures.")
-    L.append(f"- Cost: PM half-spread {hs['hs_pp']:.2f} pp (median of {hs['n']} live two-sided books with mid in [2%, 98%], "
-             f"top markets by volume, fetched {hs.get('fetched_utc')}{'; FALLBACK value' if hs['fallback'] else ''}). "
-             f"Hedge A costs {p['mean_cost_A_bp']:.2f} bp per closure on average; hedge B hedges {pct(p['mean_f_B'])} of the "
-             f"position on average and is active in {pct(p['share_f_B_pos'], 0)} of closures.")
+    L.append(f"- Cost: PM half-spread {hs['hs_pp']:.2f} pp (median of {hs['n']} usable live books out of the "
+             f"{hs.get('n_markets')} top markets by lifetime volume; the rest were one-sided or priced outside [2%, 98%]; "
+             f"fetched {hs.get('fetched_utc')}{'; FALLBACK value' if hs['fallback'] else ''}). "
+             f"Hedge A costs {p['mean_cost_A_bp']:.2f} bp per closure on average; hedge B hedges {100 * p['mean_f_B']:.1f}% of the "
+             f"position on average and is active in {100 * p['share_f_B_pos']:.0f}% of closures.")
     L.append(f"- Replication panel: {res['replication_status']}.")
     L.append("\n![chart](chart.png)\n")
 
@@ -150,11 +153,13 @@ def write_summary(res: dict, path: Path) -> None:
     L.append("| Variant | VR0 | VRS | mean hedged P&L (bp) |")
     L.append("|---|---|---|---|")
     for k, x in res["cost_sens"].items():
-        mean = res["cost_sens_desc"].get(k, {}).get("hedge", {}).get("mean", float("nan"))
-        L.append(f"| {k} | {ci(x, 'VR0', 2)} | {ci(x, 'VRS', 2)} | {mean:+.2f} |")
+        mean = res["cost_sens_desc"].get(k, {}).get("hedge", {}).get("mean")
+        L.append(f"| {k} | {ci(x, 'VR0', 2)} | {ci(x, 'VRS', 2)} | {'n/a' if mean is None else f'{mean:+.2f}'} |")
     arb = res.get("arb_half_spread_pp")
-    L.append(f"\n(The 5.0 pp case is the median half-spread of thin live equity-threshold books in the arb run, "
-             f"{arb:.1f} pp; costs mostly shift the mean, which is why the variance barely moves.)\n" if arb else "")
+    if arb:
+        L.append(f"\nThe {res['params']['hs_thin_pp']:.1f} pp case is the median half-spread of thin live equity-threshold books in the arb run "
+                 f"({arb:.1f} pp). Hedge A's cost is 2 x hs x rate bp per closure, so at a wide spread it varies with the fitted "
+                 "rate from closure to closure: it then adds variance as well as lowering the mean.\n")
     L.append("**Hedge B scale K** (expected loss that hedges the whole position):\n")
     L.append("| K (bp) | B at 09:30 VR0 | VRS | B at 08:00 VR0 | VRS |")
     L.append("|---|---|---|---|---|")
@@ -180,14 +185,36 @@ def write_summary(res: dict, path: Path) -> None:
     else:
         L.append(f"**Replication panel:** {res['replication_status']}.\n")
 
+    conc = res.get("exploratory", {}).get("concentration", {})
+    if conc:
+        L.append("**Concentration check, exploratory** (METHOD.md Amendment 1, added after the run): the gain over the "
+                 "static hedge after dropping the k closures that contribute most to it.\n")
+        L.append("| Hedge | all | drop 1 | drop 3 | drop 5 | top contributors (closure day) |")
+        L.append("|---|---|---|---|---|---|")
+        for h in ("A", "B", "B08"):
+            c = conc.get(h)
+            if c:
+                L.append(f"| {h} | VRS {pct(t[h]['VRS'], 2)} | {pct(c['1']['VRS'], 2)} | {pct(c['3']['VRS'], 2)} | "
+                         f"{pct(c['5']['VRS'], 2)} | {', '.join(c.get('top', []))} |")
+        L.append("")
+
     L.append("## What this means for the product\n")
-    L.append("- Hedge A is the only hedge that can touch the gap itself, because it is on while equities are shut. Its value "
-             "is bounded by how much of the gap the PM move explains (R-squared about 4% on these closures), so even a "
-             "perfect rate removes little variance; the label in the app should say \"partial hedge, estimated\".")
-    L.append("- Hedge B at 09:30 cannot reduce the gap; it only changes the risk after the open. A staged order is a way "
-             "to act at the first tradable moment, not a protection against the gap.")
-    L.append("- Costs: PM spread costs are paid on every closure, so the mean P&L of hedge A is below the unhedged mean "
-             "by about the cost line above.\n")
+    a_ok, b_ok = t["A"]["verdict"], t["B"]["verdict"]
+    bt = res.get("exploratory", {}).get("b_timing", {})
+    L.append(f"- **Hedge A ({a_ok}).** It is the only hedge that can touch the gap itself, because it is on while equities "
+             f"are shut. Its ceiling is how much of the gap the PM move explains: {pct(res['in_sample']['VR0'])} with "
+             f"hindsight on these closures; the rate fitted without hindsight got {pct(t['A']['VR0'], 2)} "
+             f"(CI {pct(t['A']['VR0_lo'], 2)} to {pct(t['A']['VR0_hi'], 2)}). In the app it should be labelled as an estimate with a wide band, never as protection.")
+    L.append(f"- **Hedge B at 09:30 ({b_ok}).** It cannot reduce the gap; it changes the risk after the open. Its "
+             "measured gain comes from timing, not direction: it is active only after an adverse expected gap "
+             f"({bt.get('n_active', 'n/a')} closures), and the first 30 minutes after those closures were more volatile "
+             f"(sd {bt.get('sd_active', float('nan')):.1f} bp vs {bt.get('sd_inactive', float('nan')):.1f} bp otherwise) "
+             f"while the hedge size did not predict the direction (correlation of size with the 30-minute return "
+             f"{bt.get('corr_f_ret30', float('nan')):+.2f}). The concentration check above shows how "
+             "much of that rests on a few closures, and the block bootstrap is weaker; treat it as a supporting signal "
+             "for staging an order at the first tradable moment, not as a protection against the gap.")
+    L.append(f"- **Costs.** At today's top-book spread hedge A costs {p['mean_cost_A_bp']:.2f} bp per closure on "
+             f"average; at thin-book spreads ({res['params']['hs_thin_pp']:.1f} pp) it would cost far more than it saves.\n")
 
     L.append("## Caveats\n")
     L.append("- Pre-registered analysis of data already analysed in the closed-market study; not a fresh sample.")

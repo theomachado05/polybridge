@@ -52,6 +52,8 @@ def main(argv: list[str] | None = None) -> int:
     out = Path(RESULTS_DIR)
     out.mkdir(parents=True, exist_ok=True)
     offline = "--offline-books" in argv  # tests only: skip the network, use the fallback spread
+    if "--report-only" in argv:
+        return rerender(out)
 
     panel_all = pd.read_csv(PANEL_CSV)
     panel_all["news"] = panel_all["news"].astype(str).str.lower().eq("true")
@@ -106,6 +108,9 @@ def main(argv: list[str] | None = None) -> int:
             "ret30_bp", "resid_bp", "rate", "rate_raw", "rate_src", "n_prior", "excluded"]
     csv = d[cols].join(st)
     csv.to_csv(out / "closures_hedged.csv", index=False)
+    ev_csv = csv[csv["excluded"] == ""]
+    res["exploratory"] = {"concentration": {h: A.concentration(ev_csv, h) for h in ("A", "B", "B08")},
+                          "b_timing": A.b_timing(ev_csv)}
     res["wall_s"] = round(time.time() - t0, 1)
     res["commit"] = _git("rev-parse", "--short", "HEAD")
     res["dirty"] = bool(_git("status", "--porcelain", "--", "research/closed_hedge"))
@@ -115,6 +120,29 @@ def main(argv: list[str] | None = None) -> int:
     _log(out / "RUN_LOG.md", res, books, offline)
     print(f"A: {prim['tests']['A']['verdict']} (VR0 {prim['tests']['A']['VR0']:+.4f}); "
           f"B: {prim['tests']['B']['verdict']} (VR0 {prim['tests']['B']['VR0']:+.4f}); hs {hs:.3f} pp; n {res['n_eval']}")
+    return 0
+
+
+def rerender(out: Path) -> int:
+    """Rewrite SUMMARY.md and chart.png from the saved results.json and closures_hedged.csv (no fetch, no refit)."""
+    t0 = time.time()
+    res = json.loads((out / "results.json").read_text())
+    h = pd.read_csv(out / "closures_hedged.csv")
+    h["excluded"] = h["excluded"].fillna("")
+    st = h[h["excluded"] == ""]
+    res["exploratory"] = {"concentration": {k: A.concentration(st, k) for k in ("A", "B", "B08")},
+                          "b_timing": A.b_timing(st)}
+    (out / "results.json").write_text(json.dumps(res, indent=1, default=float))
+    write_chart(res, h, out / "chart.png")
+    write_summary(res, out / "SUMMARY.md")
+    path = out / "RUN_LOG.md"
+    path.write_text(path.read_text() + (
+        f"\n## {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%SZ')}\n"
+        f"- code commit: `{_git('rev-parse', '--short', 'HEAD')}`"
+        f"{' + uncommitted changes in research/closed_hedge/' if _git('status', '--porcelain', '--', 'research/closed_hedge') else ''}\n"
+        f"- mode: report re-render from saved results.json and closures_hedged.csv (METHOD.md Amendment 1); "
+        f"no fetch, no refit, primary numbers unchanged\n"
+        f"- wall time: {time.time() - t0:.1f} s\n- network requests: none\n- exit: 0\n"))
     return 0
 
 

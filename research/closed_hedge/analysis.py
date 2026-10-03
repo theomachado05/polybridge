@@ -81,3 +81,27 @@ def replication(rep: pd.DataFrame, hs_pp: float, n_boot: int = PARAMS.n_boot, se
     t["n_dates"] = int(ev["closure"].nunique())
     t["n_markets"] = int(ev["market"].nunique())
     return t
+
+
+def concentration(st: pd.DataFrame, h: str, ks=(1, 3, 5)) -> dict:
+    """Exploratory (Amendment 1): VR0 and VRS after dropping the k closures that add most to VRS."""
+    c0, ch, cs = PAIRS[h]
+    e = st[[c0, ch, cs]].dropna()
+    v0 = e[c0].var(ddof=1)
+    contrib = ((e[cs] - e[cs].mean()) ** 2 - (e[ch] - e[ch].mean()) ** 2) / (len(e) - 1) / v0
+    order = contrib.sort_values(ascending=False).index
+    out = {"top": [str(st.loc[i, "closure"]) for i in order[:max(ks)]] if "closure" in st else []}
+    for k in ks:
+        r = e.drop(order[:k])
+        out[str(k)] = {"VR0": float(1 - r[ch].var(ddof=1) / r[c0].var(ddof=1)),
+                       "VRS": float((r[cs].var(ddof=1) - r[ch].var(ddof=1)) / r[c0].var(ddof=1))}
+    return out
+
+
+def b_timing(ev: pd.DataFrame) -> dict:
+    """Exploratory (Amendment 1): post-open sd when hedge B is active vs not, and corr(f_B, ret30)."""
+    on = ev["f_B"] > 0
+    return {"n_active": int(on.sum()), "sd_active": float(ev.loc[on, "ret30_bp"].std(ddof=1)),
+            "sd_inactive": float(ev.loc[~on, "ret30_bp"].std(ddof=1)),
+            "mean_active": float(ev.loc[on, "ret30_bp"].mean()), "mean_inactive": float(ev.loc[~on, "ret30_bp"].mean()),
+            "corr_f_ret30": float(np.corrcoef(ev["f_B"], ev["ret30_bp"])[0, 1])}
