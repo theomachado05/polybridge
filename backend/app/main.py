@@ -38,6 +38,7 @@ def create_app() -> FastAPI:
     app.include_router(portfolio_router)
     from .pipeline.router import router as pipeline_router; app.include_router(pipeline_router)  # noqa: E702
     app.include_router(broker_router)
+    from .options.router import router as options_router; app.include_router(options_router)  # noqa: E702
     return app
 
 
