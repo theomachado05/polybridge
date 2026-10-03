@@ -17,6 +17,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
+from .broker import Broker, OrderRequest, SimBroker, get_broker
 from .models import MarketRef, Proposal
 from .store import NotFound, ProposalStore
 from .ticks import LiveSource, ReplaySource, SourceError
@@ -26,6 +27,10 @@ HEARTBEAT_S = 15.0
 MAX_EVENTS = 20_000
 REPLAYS_DIR = Path(__file__).resolve().parents[1] / "replays"
 NO_ENGINE = "engine not installed (uv sync --group engine)"
+BROKER_TIMEOUT_S = 20.0  # an order never stalls the bridge loop longer than this
+MAX_FILLS = 500
+REPLAY_NOTE = "replay: priced at the current market, not the replayed time"
+REPLAY_BROKER_NAME = "sim-replay"
 
 
 def _load_engine():
@@ -43,11 +48,14 @@ class BridgeIn(BaseModel):
     market: MarketRef | None = None  # optional for market-event proposals (their own market is used)
     gap_per_share: float = Field(default=0.0, ge=0, allow_inf_nan=False)
     direction: Literal["down_on_yes", "up_on_yes"] = "down_on_yes"  # which outcome hurts a long holder
+    # Replay decisions are historical but fills are priced at today's market. By default a replay bridge trades a
+    # throwaway in-memory simulator (never Webull, never the persistent account); set true to opt in to the account.
+    replay_to_account: bool = False
 
 
 class Bridge:
     def __init__(self, proposal: Proposal, source: str, market: MarketRef, gap: float,
-                 direction: str = "down_on_yes") -> None:
+                 direction: str = "down_on_yes", replay_to_account: bool = False) -> None:
         self.id = uuid.uuid4().hex[:12]
         self.proposal_id, self.requested_source, self.market, self.gap = proposal.id, source, market, gap
         self.proposal = proposal
@@ -63,6 +71,13 @@ class Bridge:
         self.ticks = self.orders = 0
         self.hedge = 0.0
         self.task: asyncio.Task | None = None
+        self.broker: Broker | None = None  # active broker for engine orders (None: no account attached)
+        self.replay_to_account = replay_to_account
+        self.replay_broker: Broker | None = None  # isolated in-memory sim used by replay bridges by default
+        self.broker_name: str | None = None  # the broker that took the latest order (else the active one)
+        self.broker_hedge = 0.0  # net short quantity actually filled by the broker (sell adds, buy reduces)
+        self.fills: list[dict] = []
+        self.broker_filled = self.broker_rejects = self.broker_errors = 0
 
     async def emit(self, kind: str, data: dict, status: str | None = None) -> None:
         async with self.cond:
@@ -74,6 +89,21 @@ class Bridge:
             self.events.append((kind, data))
             self.cond.notify_all()
 
+    def _sandboxed(self) -> bool:
+        return self.effective_source == "replay" and not self.replay_to_account
+
+    def order_broker(self) -> Broker | None:
+        """The broker for the next order. Replay bridges get an isolated in-memory sim (never Webull, never the
+        persistent account) unless replay_to_account was set; it shares the active broker's market-data source."""
+        if self.broker is None or not self._sandboxed():
+            return self.broker
+        if self.replay_broker is None:
+            sim = self.broker if isinstance(self.broker, SimBroker) else getattr(self.broker, "sim", None)
+            start = getattr(sim, "starting_cash", None) or 1_000_000.0
+            self.replay_broker = SimBroker(None, getattr(sim, "quotes", None), start)
+            self.replay_broker.name = REPLAY_BROKER_NAME
+        return self.replay_broker
+
     def summary(self) -> dict:
         lat = sorted(self.latencies)
         q = lambda f: lat[min(len(lat) - 1, int(f * len(lat)))] if lat else None
@@ -81,6 +111,13 @@ class Bridge:
                 "status": self.status, "direction": self.direction, "source": self.effective_source, "requested_source": self.requested_source,
                 "started_at": self.started_at.isoformat(), "ticks": self.ticks, "orders": self.orders,
                 "hedge": self.hedge, "reasons": dict(self.reasons),
+                "broker": self.broker_name or getattr(self.broker, "name", None),
+                "account_scope": "replay_sandbox" if self._sandboxed() else "account",
+                "hedge_basis": "engine_intent", "broker_hedge": self.broker_hedge,
+                "broker_coverage": self.broker_hedge / self.proposal.shares_held if self.proposal.shares_held else 0.0,
+                "broker_filled": self.broker_filled,
+                "broker_rejects": self.broker_rejects, "broker_errors": self.broker_errors,
+                "last_fill": self.fills[-1] if self.fills else None,
                 "shares_held": self.proposal.shares_held, "target_coverage": self.proposal.target_coverage,
                 "coverage": self.hedge / self.proposal.shares_held if self.proposal.shares_held else 0.0,
                 "basis": self.proposal.basis, "label": self.proposal.label,
@@ -131,6 +168,38 @@ def _fallback_path(app) -> Path | None:
     return Path(configured) if configured else None
 
 
+async def _send_to_broker(bridge: Bridge, order_qty: float) -> dict | None:
+    """Route one engine order to the active broker: sell to add to the short hedge, buy to reduce it.
+    Returns the fill record for the stream; never raises (a broker failure must not stop the bridge)."""
+    broker = bridge.order_broker()
+    if broker is None:
+        return None
+    bridge.broker_name = broker.name
+    side = "sell" if order_qty > 0 else "buy"
+    rec: dict = {"broker": broker.name, "side": side, "qty": abs(order_qty), "symbol": bridge.proposal.ticker}
+    note = None
+    if bridge.effective_source == "replay":
+        note = REPLAY_NOTE
+        rec["price_note"] = "priced at the current market, not the replayed time"
+        rec["scope"] = "account" if bridge.replay_to_account else "replay_sandbox"
+    try:
+        req = OrderRequest(symbol=bridge.proposal.ticker, asset="equity", side=side, qty=abs(order_qty), type="market",
+                           client_order_id=f"{bridge.id}-{bridge.orders}", tag=bridge.id, note=note)
+        o = await asyncio.wait_for(broker.place_order(req), BROKER_TIMEOUT_S)
+    except Exception as e:
+        bridge.broker_errors += 1
+        rec.update(status="error", error=type(e).__name__, filled_qty=0.0)
+        return rec
+    rec.update(status=o.status, order_id=o.id, fill_px=o.fill_px, fee=o.fee, price_source=o.price_source,
+               reject_reason=o.reject_reason, note=o.note, broker=o.broker, filled_qty=o.filled_qty)
+    bridge.broker_hedge += o.filled_qty if side == "sell" else -o.filled_qty  # only what was really filled
+    if o.status == "filled":
+        bridge.broker_filled += 1
+    elif o.status == "rejected":
+        bridge.broker_rejects += 1
+    return rec
+
+
 async def _run_source(bridge: Bridge, engine, hc, source) -> None:
     async for ts_ns, p in source:
         bridge.ticks += 1
@@ -142,18 +211,36 @@ async def _run_source(bridge: Bridge, engine, hc, source) -> None:
         await bridge.emit("decision", {"action": d.action, "reason": d.reason, "order_qty": d.order_qty,
                                        "target_hedge": d.target_hedge, "current_hedge": d.current_hedge,
                                        "latency_ns": d.latency_ns})
-        if d.action == "order":  # simulated fill: the whole order fills immediately
+        if d.action == "order":
+            # The engine tracks the intended hedge and advances on every order (as before); the broker holds the
+            # account record. A rejected or failed broker order is flagged on the "fill" event and in the summary.
             engine.on_fill(d.order_qty)
             bridge.orders += 1
             bridge.hedge = engine.current_hedge
-            await bridge.emit("position", {"hedge": bridge.hedge,
-                                           "coverage": bridge.hedge / bridge.proposal.shares_held})
+            fill = await _send_to_broker(bridge, d.order_qty)
+            if fill is not None:
+                bridge.fills.append(fill)
+                del bridge.fills[:-MAX_FILLS]
+                await bridge.emit("fill", fill)
+            shares = bridge.proposal.shares_held
+            # "hedge"/"coverage" are the engine's intended position (it advances on every order). "broker_hedge" /
+            # "broker_coverage" are what the broker actually filled; they differ when orders are rejected or fail.
+            await bridge.emit("position", {"hedge": bridge.hedge, "coverage": bridge.hedge / shares,
+                                           "hedge_basis": "engine_intent",
+                                           "broker_hedge": bridge.broker_hedge,
+                                           "broker_coverage": bridge.broker_hedge / shares if shares else 0.0,
+                                           "broker": bridge.broker_name or getattr(bridge.broker, "name", None)})
 
 
 async def _run(bridge: Bridge, app, hc, source, fallback: Path | None) -> None:
     spec = hc.HedgeSpec(ticker=bridge.proposal.ticker, shares_held=bridge.proposal.shares_held,
                         target_coverage=bridge.proposal.target_coverage, gap_per_share=bridge.gap)
     engine = hc.Engine(spec)
+    try:
+        bridge.broker = get_broker(app)
+    except Exception:  # an unavailable account must not stop the hedge loop
+        bridge.broker = None
+        await bridge.emit("error", {"message": "broker unavailable", "source": "broker"})
     try:
         try:
             await _run_source(bridge, engine, hc, source)
@@ -216,7 +303,7 @@ async def start_bridge(body: BridgeIn, request: Request, response: Response) -> 
         source = factory(market.token_id) if factory else LiveSource(market.token_id)
 
     # No await between the registry check above and this insert: exactly one bridge per proposal.
-    bridge = Bridge(prop, body.source, market, body.gap_per_share, direction)
+    bridge = Bridge(prop, body.source, market, body.gap_per_share, direction, body.replay_to_account)
     reg[prop.id] = bridge
     store.mark_bridge_started(prop.id)
     bridge.task = asyncio.create_task(_run(bridge, request.app, hc, source, fallback))
