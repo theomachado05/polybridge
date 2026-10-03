@@ -18,16 +18,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      - run: cd backend && uv sync && uv run pytest -q
+      - run: cd backend && uv sync --locked && uv run pytest -q
 
   engine:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
       - run: sudo apt-get update && sudo apt-get install -y ninja-build
       - run: cmake -S engine/hedgecore -B engine/hedgecore/build -G Ninja -DCMAKE_BUILD_TYPE=Release
       - run: cmake --build engine/hedgecore/build
       - run: ctest --test-dir engine/hedgecore/build --output-on-failure
+      - run: cd backend && uv sync --locked --group engine && uv run pytest ../engine/hedgecore/tests -q
 
   web:
     runs-on: ubuntu-latest

@@ -34,9 +34,16 @@ Everything that crosses a folder boundary. Change this file and the code togethe
 
 ## hedgecore (`engine/hedgecore`, C++20 + Python module `hedgecore`)
 
-- `HedgeSpec{ticker, shares_held, target_coverage=0.5, band_shares=10, max_hedge_shares=0 (= shares_held), max_staleness_ns=2e9, sigma_k=2.0, sigma_alpha=0.05}`
+- `HedgeSpec{ticker, shares_held, target_coverage=0.5, band_shares=10, max_hedge_shares=0 (= shares_held), max_staleness_ns=2_000_000_000, sigma_k=2.0, sigma_alpha=0.05}`
 - `Engine(spec).on_tick(ts_ns, p, now_ns) -> Decision{action: hold|order, reason: invalid|stale|below_sigma|inside_band|rebalance|risk_capped, order_qty, target_hedge, current_hedge, latency_ns}`
 - An invalid `HedgeSpec` (non-finite fields, negative shares/band/cap/sigma_k/staleness, `target_coverage` or `sigma_alpha` outside [0,1]) makes every `on_tick` return Hold with reason `invalid`.
 - `on_fill(qty)` after the broker confirms. Default sizing: `target = round(c · N · p)`, capped.
 - A `HedgeSpec` is built only from an **approved** `Proposal`.
+- `on_fill` ignores a non-finite qty and latches the engine invalid (every later tick holds with reason `invalid`). A tick dated after `now_ns`, or older than `max_staleness_ns`, holds with reason `stale`.
+
+### Approval to execution
+
+- The bridge starts at most once per approved proposal id (idempotent, keyed by id): never a second `HedgeSpec` from one proposal.
+- For now only `family == "hedge"` proposals reach hedgecore, which sizes a short stock hedge `c·N·p`. `opportunity` (cash-secured put) proposals are executed as a single simulated options order outside hedgecore until `HedgeSpec` gains `side`/`strategy`.
+- The backend runs as a single uvicorn worker until the proposal store is persisted (approve-once is per process).
 - The backend installs hedgecore only through the uv dependency group `engine` (`uv sync --group engine`); plain `uv sync` excludes it.

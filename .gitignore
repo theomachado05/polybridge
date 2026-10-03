@@ -23,7 +23,6 @@ __pycache__/
 .venv/
 .pytest_cache/
 .ruff_cache/
-api/.cache/
 
 # engine
 engine/build/

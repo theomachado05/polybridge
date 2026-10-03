@@ -11,7 +11,7 @@
 
 - `docs/contracts.md`: every type and endpoint that crosses a folder boundary
 - `research/polybridge_research/schema.py`: families, tags, `Event`
-- `research/HYPOTHESIS.md`, `research/HYPOTHESIS_TAGS.md`: pre-registration; changes are logged in their change log
+- `research/HYPOTHESIS.md`, `research/HYPOTHESIS_TAGS.md`: pre-registration. `HYPOTHESIS.md` changes are logged in its change log; `HYPOTHESIS_TAGS.md` changes go in a separate commit that states the reason (its rule 4)
 
 ## Branches
 
@@ -23,6 +23,10 @@
 1. `cp .env.example .env` and add `MASSIVE_API_KEY` (from the #massive Discord channel). Never commit `.env`.
 2. Lane R: `make setup-research && make test-research`
 3. Lane P: `make setup-backend test-backend`, `make test-engine` (needs `cmake` and `ninja`: `uv tool install cmake ninja`), `make setup-web test-web`
+
+## Dependencies
+
+- Backend installs are locked (`uv sync --locked`) and `backend/uv.lock` records research's dependencies too. Any change to `research/pyproject.toml` dependencies must run `cd backend && uv lock` in the same PR.
 
 ## Hard rules (they protect rubric points)
 
