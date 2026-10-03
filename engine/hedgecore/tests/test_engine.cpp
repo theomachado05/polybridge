@@ -202,3 +202,53 @@ TEST(FeeGate, InactiveWhenGapZero) {
 }
 
 TEST(FeeGate, ReasonName) { EXPECT_STREQ(to_string(Reason::BelowFees), "below_fees"); }
+
+TEST(FeeGate, BelowFeesHoldKeepsReferencePrice) {
+  auto s = fee_spec();
+  s.band_shares = 0;
+  Engine e(s);
+  e.on_tick({kSec, 0.20}, kSec);  // order, reference price 0.20
+  e.on_fill(100);
+  // qty 5: benefit 5*1*0.01 = 0.05 < cost 0.0675 -> hold; reference must stay at 0.20
+  auto d1 = e.on_tick({2 * kSec, 0.21}, 2 * kSec);
+  EXPECT_EQ(d1.reason, Reason::BelowFees);
+  // qty 10: benefit 10*|0.22-0.20| = 0.20 >= cost 0.135 -> order.
+  // (Had the hold moved the reference to 0.21, benefit would be 0.10 < 0.135 and this would hold.)
+  auto d2 = e.on_tick({3 * kSec, 0.22}, 3 * kSec);
+  EXPECT_EQ(d2.action, Action::Order);
+  EXPECT_DOUBLE_EQ(d2.order_qty, 10.0);
+}
+
+TEST(Engine, ZeroQuantityNeverOrders) {
+  auto s = spec();
+  s.band_shares = 0;
+  Engine e(s);
+  e.on_tick({kSec, 0.20}, kSec);
+  e.on_fill(100);
+  auto d = e.on_tick({2 * kSec, 0.2001}, 2 * kSec);  // target rounds to 100 again -> qty 0
+  EXPECT_EQ(d.action, Action::Hold);
+  EXPECT_EQ(d.reason, Reason::InsideBand);
+  EXPECT_DOUBLE_EQ(d.order_qty, 0.0);
+}
+
+TEST(FeeGate, RiskCapAndGateTogether) {
+  auto s = fee_spec();
+  s.band_shares = 0;
+  s.max_hedge_shares = 50;
+  {  // cap binds (target 100 -> 50) and the benefit covers the cost: capped order
+    Engine e(s);
+    auto d = e.on_tick({kSec, 0.20}, kSec);
+    EXPECT_EQ(d.action, Action::Order);
+    EXPECT_EQ(d.reason, Reason::RiskCapped);
+    EXPECT_DOUBLE_EQ(d.order_qty, 50.0);
+  }
+  {  // cap binds but the benefit (50*0.001*0.2 = 0.01) is below cost (0.675): the gate holds, target stays capped
+    s.gap_per_share = 0.001;
+    Engine e(s);
+    auto d = e.on_tick({kSec, 0.20}, kSec);
+    EXPECT_EQ(d.action, Action::Hold);
+    EXPECT_EQ(d.reason, Reason::BelowFees);
+    EXPECT_DOUBLE_EQ(d.target_hedge, 50.0);
+    EXPECT_DOUBLE_EQ(d.order_qty, 0.0);
+  }
+}

@@ -82,8 +82,9 @@ Decision Engine::on_tick(const Tick& t, std::int64_t now_ns) {
   if (!std::isfinite(qty) || !std::isfinite(target) || !std::isfinite(hedge_))
     return finish(Action::Hold, Reason::Invalid, 0, hedge_);
 
-  if (std::abs(qty) < spec_.band_shares) return finish(Action::Hold, Reason::InsideBand, 0, target);
-  if (spec_.gap_per_share > 0) {  // fee gate: expected benefit must cover round-trip cost
+  if (qty == 0 || std::abs(qty) < spec_.band_shares)  // never emit a zero-quantity order, even with band_shares = 0
+    return finish(Action::Hold, Reason::InsideBand, 0, target);
+  if (spec_.gap_per_share > 0) {  // fee gate: expected benefit must cover the per-order cost
     const double cost = std::abs(qty) * (spec_.fee_per_share + spec_.half_spread);
     const double benefit = std::abs(qty) * spec_.gap_per_share * std::abs(t.p - p_at_last_order_);
     if (!std::isfinite(cost) || !std::isfinite(benefit)) return finish(Action::Hold, Reason::Invalid, 0, hedge_);
