@@ -128,3 +128,23 @@ def test_market_event_proposal_needs_approval_no_engine(client, monkeypatch):
 def test_filing_proposal_still_needs_market(client):
     pid = _approved(client)
     assert client.post("/bridges", json={"proposal_id": pid, "source": "replay"}).status_code == 422
+
+
+def test_high_speed_replay_of_hourly_history_is_never_stale(tmp_path):
+    """Demo setting: hourly Polymarket history at 36000x (one tick per 0.1 s). Ticks are stamped on the wall clock,
+    so the engine's staleness check (2 s) compares delivery time, never the 1 h gap in the recorded history."""
+    import asyncio
+    f = tmp_path / "hourly.jsonl"
+    f.write_text("".join(json.dumps({"ts_ns": 1_788_415_213_000_000_000 + i * 3_600_000_000_000, "p": 0.2 + 0.01 * i}) + "\n"
+                         for i in range(6)))
+
+    async def go():
+        out = []
+        async for ts, p in ReplaySource(f, speed=36000):
+            out.append((ts, time.time_ns()))
+        return out
+    got = asyncio.run(go())
+    assert len(got) == 6
+    assert all(0 <= now - ts < 2_000_000_000 for ts, now in got)  # fresh vs. the default max_staleness_ns
+    gaps = [b[0] - a[0] for a, b in zip(got, got[1:])]
+    assert all(80_000_000 <= g <= 400_000_000 for g in gaps)  # 1 h / 36000 = 0.1 s

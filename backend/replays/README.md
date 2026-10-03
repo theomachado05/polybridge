@@ -18,7 +18,9 @@ tied with the "no change" market at 0.55). Regenerate:
 
     cd backend && uv run python scripts/history_to_replay.py --token-id <YES token id> --out replays/<slug>-history.jsonl
 
-Replay at 3600x (one tick per second, about 12 minutes), via `POLYBRIDGE_REPLAY_SPEED=3600`. Replayed ticks are stamped
+Demo setting: replay at 36000x (ten ticks per second, about 72 seconds for the month), via `POLYBRIDGE_REPLAY_SPEED=36000`.
+This is safe because staleness is judged on the wall clock (ticks are stamped at delivery), not on the recorded 1 h gaps
+(tested in `tests/test_bridges.py::test_high_speed_replay_of_hourly_history_is_never_stale`). Replayed ticks are stamped
 with the current time, preserving spacing divided by the speed.
 
 ## Record another
@@ -29,7 +31,7 @@ Failed polls are skipped. Find a token id via `GET /markets/search?q=...` (`toke
 
 ## Replay
 
-    POLYBRIDGE_REPLAY_PATH=replays/fed-hike-25bps-oct-2026-history.jsonl POLYBRIDGE_REPLAY_SPEED=3600 uv run --group engine uvicorn app.main:app
+    POLYBRIDGE_REPLAY_PATH=replays/fed-hike-25bps-oct-2026-history.jsonl POLYBRIDGE_REPLAY_SPEED=36000 uv run --group engine uvicorn app.main:app
     # approve a hedge proposal, then:
     curl -X POST localhost:8000/bridges -H 'content-type: application/json' \
       -d '{"proposal_id":"<id>","source":"replay","market":{"source":"polymarket","id":"fed"},"gap_per_share":1.0}'
