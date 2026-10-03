@@ -53,7 +53,8 @@ export default function Portfolio() {
     return { ...r, livePx: px, value, day: r.demo ? simPnl(r.demo.sim) : null };
   });
   const summed = priced.reduce((a, r) => a + (r.value ?? 0), 0);
-  const totalValue = realHoldings && s.portfolio.data?.total_value != null ? s.portfolio.data.total_value : summed;
+  const anyPriced = priced.some((r) => r.value != null);
+  const totalValue = realHoldings && s.portfolio.data?.total_value != null ? s.portfolio.data.total_value : anyPriced ? summed : null;
   const demoPnl = demos.reduce((a, b) => a + simPnl(b.sim), 0);
   const demoFees = demos.reduce((a, b) => a + b.sim.fees, 0);
   const demoFills = demos.reduce((a, b) => a + b.sim.tradeCount, 0);
@@ -90,9 +91,9 @@ export default function Portfolio() {
             <Tag tone={acct.tone} title="GET /account">{acct.tone === "paper" ? "Webull paper" : acct.tone === "sim" ? "simulated" : "no account endpoint"}</Tag>
             {!realHoldings && <DemoTag what="sample holdings" />}
           </div>
-          <h2 className="pb-h2">{fmtMoney(totalValue)}</h2>
+          <h2 className="pb-h2">{totalValue == null ? "—" : fmtMoney(totalValue)}</h2>
           <div className="pb-lede">
-            Total equity value{realHoldings && s.portfolio.data?.total_value == null ? " (priced holdings only)" : ""}
+            {totalValue == null ? "Total equity value unavailable (no quotes)" : `Total equity value${realHoldings && s.portfolio.data?.total_value == null ? " (priced holdings only)" : ""}`}
             {(!realHoldings || demos.length > 0) && <> · <span style={{ fontWeight: 600, color: upColor(demoPnl) }}>{fmtMoney(demoPnl, true)}</span> simulated across {demos.length} demo {demos.length === 1 ? "bridge" : "bridges"}{realHoldings ? " (not in the total)" : ""}</>}
             {s.account.status === "ok" && s.account.data && <> · cash {fmtMoney(s.account.data.cash)}</>}
           </div>

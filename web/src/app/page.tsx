@@ -31,7 +31,7 @@ export default function Landing() {
         </div>
         <h1 className="pb-serif pb-balance" style={{ margin: 0, fontSize: "clamp(44px,6vw,80px)", lineHeight: 1.02, letterSpacing: "-.02em", fontWeight: 400, maxWidth: 920 }}>Hedge the headline before it hits your stock.</h1>
         <p className="pb-pretty" style={{ margin: 0, maxWidth: 640, fontSize: 18, lineHeight: 1.5, color: "#3C4458" }}>
-          Prediction markets already price the event. PolyBridge reads that signal, estimates what it does to the equities you hold, and composes a hedge from {count} {presets != null ? "compiled algorithm presets" : "proprietary algorithms"} — fee-aware, acting only when it must.
+          Prediction markets already price the event. PolyBridge reads that signal, estimates what it does to the equities you hold, and composes a hedge from {presets != null ? `${count} compiled algorithm presets` : "a library of compiled algorithm presets"} — fee-aware, acting only when it must.
         </p>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center", marginTop: 6 }}>
           <Btn href="/build" arrow>Build a bridge</Btn>
@@ -42,7 +42,7 @@ export default function Landing() {
         {CARDS.map((c, i) => (
           <Glass key={c.k} style={{ padding: 26 }}>
             <Label rule color="#2B57D6">{c.k}</Label>
-            <div className="pb-serif" style={{ fontSize: 25, fontWeight: 400, letterSpacing: "-.01em", lineHeight: 1.2, marginTop: 14 }}>{i === 1 && presets != null ? `${count} presets, chained per event` : c.t}</div>
+            <div className="pb-serif" style={{ fontSize: 25, fontWeight: 400, letterSpacing: "-.01em", lineHeight: 1.2, marginTop: 14 }}>{i === 1 ? (presets != null ? `${count} presets, chained per event` : "Compiled algorithms, chained per event") : c.t}</div>
             <p style={{ margin: "10px 0 0", fontSize: 14, lineHeight: 1.5, color: "#3C4458" }}>{c.p}</p>
           </Glass>
         ))}

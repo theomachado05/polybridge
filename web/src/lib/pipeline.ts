@@ -44,7 +44,7 @@ export function demoSteps(c: PipeContext): PipeStep[] {
   const held = c.heldReal ? `${c.heldReal.toLocaleString("en-US")} sh held` : `no position — sized to a ${c.held.toLocaleString("en-US")} sh notional`;
   return [
     { key: "classify", name: "Parsing question", orb: "searching", text: `Resolution: ${c.question.replace("Will ", "").replace("?", "")} — sources: ${c.venues.join(" + ")}. Current YES ${c.yes}¢, 24h vol ${c.vol}.` },
-    { key: "shortlist", name: "Mapping exposure", orb: "connecting", text: c.real ? `${c.ticker}: ${held}. Fee schedule and account type loaded.` : `${c.ticker}: ${c.held.toLocaleString("en-US")} sh across 3 lots (2 long-term). Fee schedule and account type loaded.` },
+    { key: "shortlist", name: "Mapping exposure", orb: "connecting", text: c.real ? `${c.ticker}: ${held}.` : `${c.ticker}: ${c.held.toLocaleString("en-US")} sh across 3 lots (2 long-term). Fee schedule and account type loaded.` },
     { key: "history", name: "Estimating impact", orb: "working", text: c.real
       ? (c.move ? `Precomputed AI mapping: expected move on YES ${fmtPct(c.move)}. ${c.why}` : `No impact estimate for ${c.ticker} on this market; the engine hedges on probability alone (fee gate off).`)
       : `Revenue ${c.rev == null ? "n/a" : fmtPct(c.rev)}, brand ${c.brand == null ? "n/a" : fmtPct(c.brand)} → expected move on YES ${fmtPct(c.move)} (confidence 0.71). ${c.why}` },

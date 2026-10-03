@@ -109,7 +109,9 @@ export default function Pipeline() {
         <div className="pb-glass" style={{ width: "100%", marginTop: 16, padding: "16px 18px", fontSize: 13.5, lineHeight: 1.55, color: "#3C4458", display: "flex", flexDirection: "column", gap: 8 }}>
           <div>
             Approving creates a hedge proposal for {(e.held || 500).toLocaleString("en-US")} {e.t} shares{e.held ? "" : " (notional)"} on this market and starts the engine&apos;s default delta-bridge spec.
-            Once it runs, the engine places its orders with <Tag tone={acct.tone} title="GET /account">{acct.name}</Tag> without asking again.
+            {acct.tone === "demo"
+              ? <> Once it runs, the engine places its orders without asking again; this backend has no account endpoint, so they are simulated fills inside the engine <Tag tone="sim" title="GET /account is unavailable">no broker</Tag>.</>
+              : <> Once it runs, the engine places its orders with <Tag tone={acct.tone} title="GET /account">{acct.name}</Tag> without asking again.</>}
           </div>
           {gateOff && (
             <div style={{ color: "#8A5A00" }}>
