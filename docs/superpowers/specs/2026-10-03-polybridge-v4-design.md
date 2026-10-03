@@ -218,3 +218,18 @@ struct Params { std::array<double, kMaxParams> v{}; };
 - C++20, header-only blocks, no heap allocation and no virtual calls in `on_tick`. GoogleTest per block and per family. A latency benchmark per family.
 - Tests are offline: HTTP is mocked, and the engine-dependent tests sit behind the `engine` dependency group as today.
 - Work on branches. PRs to `main`; never push to `main` directly. Commit messages end with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
+
+## 9. Addendum after the design handoff (`design/design_handoff_polybridge/`)
+
+- The UI is the high-fidelity design in `design/design_handoff_polybridge/README.md` + `PolyBridge.dc.html`: the liquid-glass style and 8 screens (Landing, Build chat wizard, Connect brokerage, AI pipeline, Bridge live, Portfolio, Library, Profile). Recreate it in `web/` (Next.js), replacing the prototype's simulated data with our API wherever an endpoint exists. Where no endpoint exists, keep the prototype's behavior, clearly labelled.
+- The library UI groups algos as Gate, Reader, Impact, Execution, Tax, Routing, and the design quotes **~1,284 algorithms**. The C++ library therefore adds two block kinds:
+  - **tax**: `TaxLotSelector` (HIFO / long-term first), `WashSaleGuard` (blocks re-buys within 30 days of a loss sale);
+  - **routing**: `VenueRouter` (prediction-market leg to Poly vs Kalshi by best price).
+- UI families map from block kinds:
+  - signals → Reader;
+  - impact sizers → Impact;
+  - gates → Gate;
+  - execution → Execution;
+  - tax → Tax;
+  - routing → Routing.
+- The real preset count is whatever `catalog()` reports. Aim the grids so it lands near 1,284, and never pad with duplicate presets.
