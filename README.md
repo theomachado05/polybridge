@@ -6,10 +6,10 @@ Hedge equity positions using live prediction-market prices (Polymarket + Kalshi)
 
 | Folder | Stack | Role |
 |---|---|---|
-| `engine/` | C++20 · pybind11 | hedgecore: header-only blocks composed into algo families (1,278 presets), run on approved hedges |
+| `engine/` | C++20 · pybind11 | hedgecore: header-only blocks composed into 17 algo families (1,386 presets), run on approved hedges |
 | `backend/` | Python 3.12 · FastAPI | Control plane: markets, AI mapping and fit, proposals, bridges (SSE), broker (sim / Webull paper), portfolio |
 | `web/` | Next.js · TypeScript | UI: Build chat, AI pipeline, Bridge live, Library, Portfolio, Connect, Profile |
-| `research/` | Python | Evidence: pre-registered 8-K study, lead-lag case studies, closed-market study, options-arbitrage scan |
+| `research/` | Python | Evidence (9 studies): pre-registered 8-K study, lead-lag case studies, closed-market study, options-arbitrage scan, closed-hours replication, AI fit walk-forward, closed-market hedge (R1), expected-gap model (R2), options at the open (R3) |
 | `scripts/`, `replays/`, `web/e2e/` | Python, Node | End-to-end demo driver, recorded Polymarket replays, headless-Chrome UI walk and screenshots |
 
 ## Quickstart
@@ -57,7 +57,17 @@ Real-money execution is out of scope: accounts are simulated or Webull paper onl
 
 ## Honest labels
 
-Replay vs live, AI estimate vs measured, simulated vs Webull paper, case study vs proof: the UI says which one you are looking at. The AI fit score is an in-sample replay number: how much variance the hedge removed beyond a static hedge of the same average size on the history it was tuned on (the raw variance reduction is reported but never ranked, because any static short earns it). It is not a forecast; see [docs/library.md](docs/library.md#how-the-ai-picks-and-tunes). A replay bridge trades in a replay sandbox (not your account) unless started with `replay_to_account`. Evidence so far: lead-lag during market hours is mixed to negative, the closed-market study is mixed, and the options-arbitrage scan found 5 resolved gaps and 0 executable ones. See [docs/demo.md](docs/demo.md#claims-we-make-and-do-not-make).
+Replay vs live, AI estimate vs measured, simulated vs Webull paper, case study vs proof: the UI says which one you are looking at. The AI fit score is an in-sample replay number: how much variance the hedge removed beyond a static hedge of the same average size on the history it was tuned on (the raw variance reduction is reported but never ranked, because any static short earns it). It is not a forecast, and in a pre-registered walk-forward test the picked preset did not beat a static hedge out of sample; see [docs/library.md](docs/library.md#how-the-ai-picks-and-tunes). A replay bridge trades in a replay sandbox (not your account) unless started with `replay_to_account`. See [docs/demo.md](docs/demo.md#5-claims-we-make-and-do-not-make).
+
+> **Results** (full numbers, sources and method commits: [research/EVIDENCE.md](research/EVIDENCE.md))
+> - **Principle:** PolyBridge validates each market's signal out of sample before it lets that signal touch a position. Most markets fail, and the product says so: "validated" vs "unvalidated estimate".
+> - **Options at the open (fresh data, pre-registered R3):** at the Monday open options had repriced by only 0.44 of the prediction market's closure move (95% CI 0.33 to 0.57; 1,535 events, 44 closures). Scope: net of option costs the residual gap is +0.79 pt [-1.21, +2.78], so R3 is NULL: information, not a tradable arbitrage.
+> - **Expected gap, US-recession market (R2):** walk-forward in time, sign right in 64.2% of 151 closures, slope +1.28; pooled 141 of 235 (60.0%, p = 0.003), slope +1.25, permutation p < 0.001. Scope: one market; election market 52.4% (p = 0.744); fails on the 10-market replication panel (50.2% of 878, slope -0.23); already-seen panel.
+> - **Staged equity hedge at 09:30 (R1 hedge B):** post-open variance cut +11.42% [+5.10, +18.14] vs no hedge, +6.82% [+0.50, +13.54] vs a same-size static hedge. Scope: fragile (partial under block bootstrap; -0.78% vs static after dropping 5 closures), timing not direction, does not touch the gap, already-seen 380-closure panel.
+> - **380-closure relation (exploratory):** the PM move during US equity closures lined up with the next SPY gap (+7.52 bp per pp, permutation p = 0.001) and did not replicate on 10 rule-selected new markets (+0.63, p = 0.126). Same-window co-movement; not compared with futures.
+> - **Six pre-registered tests run today:** replication: does not replicate (method `7a780b5`); AI fit walk-forward: fails, median -0.0040, 19 above 0 / 72 below, Wilcoxon p = 1.000 (`e2f1600`); 8-K out of sample: H1 NULL (3 events, untestable), H2 NULL with sign opposite to in-sample (`344de99`); R1: hedge A no evidence and increases variance on the replication panel, hedge B passes but fragile (`c9fc174`); R2: passes on the panel via the recession market only, fails on the replication panel (`fe7c181`); R3: NULL after costs (`297727a`).
+> - **What didn't work:** 8-K parity NULL in-sample for both hypotheses; market-hours lead-lag PM first 9, equity first 9, simultaneous 2 (sign test p = 1.0); options arbitrage 5 verified, 0 executable; AI fit scores are in-sample replays only.
+> - **Product implications:** closed-market mode defaults to staged equity orders (hedge B); the PM-contract hedge (A) is opt-in and labelled an estimate; options-at-open is research-only; the AI fit is configuration, not edge.
 
 ## Workflow
 

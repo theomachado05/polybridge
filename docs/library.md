@@ -1,6 +1,6 @@
 # The hedgecore algo library
 
-PolyBridge's hedging brain is a compiled C++20 library, `hedgecore`: **16 families, 1,278 presets, built from 37 reusable blocks**. The AI never writes trading code. It only chooses a family and a preset from this fixed, tested catalog, so every family is compiled, unit-tested, and benchmarked (default preset) ahead of time. Counts below come from `engine/hedgecore/manifest.json` (schema `hedgecore.catalog/v1`); latencies come from `engine/hedgecore/BENCH.md`.
+PolyBridge's hedging brain is a compiled C++20 library, `hedgecore`: **17 families, 1,386 presets, built from reusable blocks**. The AI never writes trading code. It only chooses a family and a preset from this fixed, tested catalog, so every family is compiled, unit-tested, and benchmarked (default preset) ahead of time. Counts below come from `engine/hedgecore/manifest.json` (schema `hedgecore.catalog/v1`); latencies come from `engine/hedgecore/BENCH.md`.
 
 ## Blocks, families, presets
 
@@ -16,9 +16,9 @@ PolyBridge's hedging brain is a compiled C++20 library, `hedgecore`: **16 famili
 | tax | Tax | 2 | lot selection (HIFO or long-term first) and a wash-sale guard | `TaxLotSelector`, `WashSaleGuard` |
 | routing | Routing | 1 | send a prediction-market leg to Polymarket or Kalshi by best price | `VenueRouter` |
 
-Each family wires a subset of these into a pipeline, roughly: read signals, check gates, size, apply risk limits, shape execution, then (for equity legs) tax rules. A **preset** is one combination of the family's tuned parameters; the grid is the cross product of each tuned parameter's grid values. Across the 16 families that gives **1,278 presets** (never padded with duplicates). The families cover 10 event classes: `macro_fed`, `elections`, `tariffs_trade`, `geopolitics_energy`, `housing`, `fig`, `tech_regulation`, `crypto`, `corporate_8k`, `company_specific`.
+Each family wires a subset of these into a pipeline, roughly: read signals, check gates, size, apply risk limits, shape execution, then (for equity legs) tax rules. A **preset** is one combination of the family's tuned parameters; the grid is the cross product of each tuned parameter's grid values. Across the 17 families that gives **1,386 presets** (never padded with duplicates). The families cover 10 event classes: `macro_fed`, `elections`, `tariffs_trade`, `geopolitics_energy`, `housing`, `fig`, `tech_regulation`, `crypto`, `corporate_8k`, `company_specific`.
 
-## The 16 families
+## The 17 families
 
 Division: **hedge** protects a stock the user holds against an adverse prediction-market event; **opportunity** takes a position from a prediction-market mispricing. mean is the `on_tick` batch mean; p50 and p99 are the 64-call-block view (ns per `on_tick` call). All three include `on_tick`'s own latency stamp (two clock reads, about 15 ns), so they are the full `on_tick` cost, not the decision logic alone; BENCH.md also reports the `step()`-only mean.
 
@@ -40,7 +40,8 @@ Division: **hedge** protects a stock the user holds against an adverse predictio
 | `binary_vs_spread_arb` | opportunity | all 10 | option:call_spread, option:put_spread | 5 | 3 (4 x 3 x 3 = 36) | 36 | 27.7 | 27 | 35 |
 | `vol_vs_pm_move` | opportunity | all 10 | option:straddle, option:strangle | 4 | 4 (3 x 3 x 3 x 3 = 81) | 81 | 28.9 | 29 | 35 |
 | `eightk_opportunity` | opportunity | 2 | option:cash_secured_put, option:put_spread | 6 | 4 (3 x 3 x 3 x 3 = 81) | 81 | 28.3 | 28 | 34 |
-| **total** | | | | | | **1,278** | | | |
+| `closed_session_hedge` (added 2026-10-03 for closed-market mode: holds the adverse PM YES leg while the equity session is closed, hands off at the open; opt-in, labelled an estimate, see research/results/closed_hedge) | hedge | all | PredYes | Session (closed), NoTradeBand, FeeGate, NotionalCap | small grid | **108** | not in the 16-family bench run | | |
+| **total** | | | | | | **1,386** | | | |
 
 What each family does, in one line (from the manifest):
 
@@ -92,7 +93,7 @@ Plain hedge variance reduction, `hedge_var_reduction = 1 - var(hedged P&L change
 
 How to read it: each score is the best of many presets on the same history it is reported on, so a few thousandths (the median is 0.005) is inside selection noise. The honest reading is that the signal adds a material amount on roughly 14 to 31 of 122 markets at most, not on the 86 that are positive. These are in-sample numbers, not a forecast, and no out-of-sample test of the fits exists.
 
-Replay is what makes tuning cheap: scoring the whole library once (1,278 presets over 20,000 synthetic ticks) took 1.68 s on one thread (BENCH.md). Replay results are in-sample estimates on recent history, not out-of-sample proof, and the Build and pipeline screens label fit scores as an in-sample replay (`web/src/lib/pipeline.ts`). The score is measured on the same history it is tuned on, and the picker maximises it over many presets.
+Replay is what makes tuning cheap: scoring the whole library once (1,278 presets, measured before the 17th family was added, over 20,000 synthetic ticks) took 1.68 s on one thread (BENCH.md). Replay results are in-sample estimates on recent history, not out-of-sample proof, and the Build and pipeline screens label fit scores as an in-sample replay (`web/src/lib/pipeline.ts`). The score is measured on the same history it is tuned on, and the picker maximises it over many presets.
 
 ## Latency
 
@@ -107,7 +108,7 @@ Spec section 8 rules. Test-enforced: no heap allocation (`NoAlloc`), NaN handlin
 - **Fixed-size state.** Order books are a fixed-depth (`kDepth = 5`) array inside the tick; per-algo state is a handful of doubles and small arrays.
 - **NaN safety.** Missing data arrives as NaN. Blocks check inputs with finite and probability-range tests and hold with a reason code instead of trading on garbage. A non-finite fill is ignored and latches the engine into an `Invalid` state. The no-alloc test injects NaN quotes mid-stream.
 - **Time comes from the tick.** Algos read the tick's own timestamp, so replay and live produce the same decisions on the same ticks.
-- **Tested per block and per family.** GoogleTest suites cover each block kind, each of the 16 families, the replay harness, and the catalog (counts match the manifest).
+- **Tested per block and per family.** GoogleTest suites cover each block kind, each of the 17 families, the replay harness, and the catalog (counts match the manifest).
 
 ## Reproduce
 
