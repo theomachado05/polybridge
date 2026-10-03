@@ -9,6 +9,7 @@ from .routes import router
 from .store import ProposalStore
 from .markets import router as markets_router
 from .verdicts import router as verdicts_router
+from .equities import router as equities_router
 
 
 async def _validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
@@ -25,6 +26,7 @@ def create_app() -> FastAPI:
     app.include_router(router)
     app.include_router(verdicts_router)
     app.include_router(markets_router)
+    app.include_router(equities_router)
     return app
 
 
