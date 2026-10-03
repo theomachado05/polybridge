@@ -9,7 +9,7 @@ Rules fixed in [METHOD.md](../../closed_hedge/METHOD.md) and committed before th
 - Pre-set criterion (both bootstrap CIs above 0): hedge A **no evidence**, hedge B (09:30) **reduces the loss variance**; secondary 08:00 variant: **partial**.
 - In-sample ceiling (look-ahead, full-panel slope per market election 0.00, recession 10.75 bp/pp): a PM-sized gap hedge could have removed at most +6.9% of the gap variance on these closures.
 - Cost: PM half-spread 0.05 pp (median of 21 usable live books out of the 100 top markets by lifetime volume; the rest were one-sided or priced outside [2%, 98%]; fetched 2026-10-03T16:52:46+00:00). Hedge A costs 0.60 bp per closure on average; hedge B hedges 2.3% of the position on average and is active in 20% of closures.
-- Replication panel: not available (results.csv not committed when this study ran).
+- Replication panel: available; committed about 1.5 minutes after the single run, applied afterwards (METHOD.md Amendment 2). Hedge A there: VR0 -3.79% [-8.19%, -0.91%], VRS +2.10% [-3.91%, +8.77%] (increases variance; secondary).
 
 ![chart](chart.png)
 
@@ -91,7 +91,7 @@ The 5.0 pp case is the median half-spread of thin live equity-threshold books in
 
 **All 397 closures** (17 hindsight-selected news closures added; n evaluated 363): hedge A VR0 +13.78% [+4.39%, +23.14%], VRS +1.04% [-5.00%, +6.85%] (partial); hedge B VR0 +18.51% [+6.93%, +30.21%], VRS +10.85% [-0.74%, +22.55%] (partial).
 
-**Replication panel:** not available (results.csv not committed when this study ran).
+**Replication panel** (hedge A only; 1183 market x closure rows on 464 dates, 10 markets; bootstrap by closure date): VR0 -3.79% [-8.19%, -0.91%], VRS +2.10% [-3.91%, +8.77%] (increases variance).
 
 **Concentration check, exploratory** (METHOD.md Amendment 1, added after the run): the gain over the static hedge after dropping the k closures that contribute most to it.
 

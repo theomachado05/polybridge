@@ -32,3 +32,25 @@ One entry per run of `python -m closed_hedge.run`: code commit, wall time, netwo
 - wall time: 0.1 s
 - network requests: none
 - exit: 0
+
+## 2026-10-03 16:55:46Z
+- code commit: `b676fa3` + uncommitted changes in research/closed_hedge/
+- mode: report re-render from saved results.json and closures_hedged.csv (METHOD.md Amendment 1); no fetch, no refit, primary numbers unchanged
+- wall time: 0.1 s
+- network requests: none
+- exit: 0
+
+## 2026-10-03 16:55:46Z
+- code commit: `b676fa3` + uncommitted changes in research/closed_hedge/
+- mode: replication follow-up (METHOD.md Amendment 2), saved PM half-spread, no fetch
+- wall time: 0.8 s
+- network requests: none
+- result: hedge A on replication panel increases variance (n 1183)
+- exit: 0
+
+## 2026-10-03 16:55:58Z
+- code commit: `b676fa3` + uncommitted changes in research/closed_hedge/
+- mode: report re-render from saved results.json and closures_hedged.csv (METHOD.md Amendment 1); no fetch, no refit, primary numbers unchanged
+- wall time: 0.1 s
+- network requests: none
+- exit: 0

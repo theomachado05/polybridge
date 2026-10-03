@@ -116,7 +116,9 @@ def write_summary(res: dict, path: Path) -> None:
              f"fetched {hs.get('fetched_utc')}{'; FALLBACK value' if hs['fallback'] else ''}). "
              f"Hedge A costs {p['mean_cost_A_bp']:.2f} bp per closure on average; hedge B hedges {100 * p['mean_f_B']:.1f}% of the "
              f"position on average and is active in {100 * p['share_f_B_pos']:.0f}% of closures.")
-    L.append(f"- Replication panel: {res['replication_status']}.")
+    rr = res.get("replication")
+    L.append(f"- Replication panel: {res['replication_status']}."
+             + (f" Hedge A there: VR0 {ci(rr, 'VR0', 2)}, VRS {ci(rr, 'VRS', 2)} ({rr['verdict']}; secondary)." if rr else ""))
     L.append("\n![chart](chart.png)\n")
 
     L.append("## Primary tests (METHOD.md section 4)\n")

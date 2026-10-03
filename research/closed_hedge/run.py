@@ -30,10 +30,11 @@ def replication_panel() -> tuple[pd.DataFrame | None, str]:
     if not _git("ls-files", rel):
         return None, "not available (results.csv not committed when this study ran)"
     rep = pd.read_csv(REPLICATION_CSV)
-    x = "dpm_o_pp" if "dpm_o_pp" in rep else ("x" if "x" in rep else None)
-    if x is None or "gap_bp" not in rep or "closure" not in rep:
+    x = next((c for c in ("dpm_o_pp", "x_pp", "x") if c in rep), None)
+    g = next((c for c in ("gap_bp", "gap_spy_bp") if c in rep), None)
+    if x is None or g is None or "closure" not in rep:
         return None, f"committed but columns not recognised: {list(rep.columns)[:20]}"
-    rep = rep.rename(columns={x: "dpm_o_pp"})
+    rep = rep.rename(columns={x: "dpm_o_pp", g: "gap_bp"})
     if "reason" in rep:
         rep = rep[rep["reason"].isna() | (rep["reason"].astype(str).str.strip() == "")]
     if "open_day" not in rep:
@@ -54,6 +55,8 @@ def main(argv: list[str] | None = None) -> int:
     offline = "--offline-books" in argv  # tests only: skip the network, use the fallback spread
     if "--report-only" in argv:
         return rerender(out)
+    if "--replication-only" in argv:
+        return replication_followup(out)
 
     panel_all = pd.read_csv(PANEL_CSV)
     panel_all["news"] = panel_all["news"].astype(str).str.lower().eq("true")
@@ -143,6 +146,28 @@ def rerender(out: Path) -> int:
         f"- mode: report re-render from saved results.json and closures_hedged.csv (METHOD.md Amendment 1); "
         f"no fetch, no refit, primary numbers unchanged\n"
         f"- wall time: {time.time() - t0:.1f} s\n- network requests: none\n- exit: 0\n"))
+    return 0
+
+
+def replication_followup(out: Path) -> int:
+    """METHOD.md Amendment 2: section 7 applied to the replication panel committed after the run. Primary untouched."""
+    t0 = time.time()
+    res = json.loads((out / "results.json").read_text())
+    rep, status = replication_panel()
+    res["replication_status"] = (f"{status}; committed about 1.5 minutes after the single run, applied afterwards "
+                                 "(METHOD.md Amendment 2)" if rep is not None else status)
+    res["replication"] = A.replication(rep, res["hs"]["hs_pp"]) if rep is not None else None
+    (out / "results.json").write_text(json.dumps(res, indent=1, default=float))
+    rerender(out)
+    path = out / "RUN_LOG.md"
+    r = res["replication"]
+    path.write_text(path.read_text() + (
+        f"\n## {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%SZ')}\n"
+        f"- code commit: `{_git('rev-parse', '--short', 'HEAD')}`"
+        f"{' + uncommitted changes in research/closed_hedge/' if _git('status', '--porcelain', '--', 'research/closed_hedge') else ''}\n"
+        f"- mode: replication follow-up (METHOD.md Amendment 2), saved PM half-spread, no fetch\n"
+        f"- wall time: {time.time() - t0:.1f} s\n- network requests: none\n"
+        f"- result: {('hedge A on replication panel ' + r['verdict'] + f' (n {r[chr(110)]})') if r else status}\n- exit: 0\n"))
     return 0
 
 
