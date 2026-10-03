@@ -30,3 +30,26 @@ export function optionFillText(f: FillInfo): { head: string; detail: string } {
   const legs = (f.legs ?? []).map(legLine).join("; ");
   return { head: `${what}${px}`, detail: `${status}${cap}${routed}${legs ? ` Legs: ${legs}.` : ""}${f.price_note ? ` ${f.price_note}.` : ""}` };
 }
+
+/** Plain-language pitch per options family, used when the library's own `idea` text is not loaded. */
+const OPTION_FAMILY_PITCH: Record<string, string> = {
+  binary_vs_spread_arb: "Trade the gap between this market's price and the options-implied probability of the same threshold, with a call or put spread; exit when the gap closes.",
+  vol_vs_pm_move: "When this market reprices but options implied volatility has not moved, buy a straddle; when IV spikes while the market is quiet, sell it.",
+  eightk_opportunity: "A strong 8-K filing opens an event window; if this market's adverse probability confirms the filing's direction, sell a cash-secured put or buy a put spread.",
+};
+
+/** What the offered options family does: the library's `idea` when known, else the built-in pitch for that family. */
+export function optionFamilyIdea(family: string | null | undefined, libraryIdea?: string | null): string {
+  if (libraryIdea && libraryIdea.trim()) return libraryIdea.trim().replace(/\.?$/, ".");
+  return (family && OPTION_FAMILY_PITCH[family]) || "Trade this market against listed options.";
+}
+
+/** The honest caveat for an opportunity replay score: the replay's option prices are estimates from bar closes. */
+export const OPP_REPLAY_NOTE = "Replay score on this market's history; the replay's option prices are estimates from hourly or daily bar closes of the option legs, not quotes. Option fills are simulated.";
+
+/** The `idea` text of one family from a GET /library answer (either shape), or null. */
+export function libraryIdea(lib: { families?: { id: string; idea?: string }[] } | { id: string; idea?: string }[] | null | undefined, family: string | null | undefined): string | null {
+  if (!lib || !family) return null;
+  const fams = Array.isArray(lib) ? lib : lib.families ?? [];
+  return fams.find((f) => f.id === family)?.idea ?? null;
+}

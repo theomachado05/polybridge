@@ -6,7 +6,7 @@ import { DEFAULT_OPP_CAPS, opportunityFit, startOpportunityBridge, type BridgeAp
 import { questionFromMarket } from "../src/lib/demo.ts";
 import type { Proposal, ProposalBody } from "../src/lib/api.ts";
 import { init, reduce } from "../src/lib/bridgeStream.ts";
-import { gapPts, legLine, optionFillText } from "../src/lib/opportunity.ts";
+import { OPP_REPLAY_NOTE, gapPts, legLine, libraryIdea, optionFamilyIdea, optionFillText } from "../src/lib/opportunity.ts";
 
 const q = questionFromMarket({ source: "polymarket", id: "nvda-150", question: "Will NVDA close above $150 on Dec 18, 2026?", yes_price: 0.55, volume_24h: 1000, end_date: "2026-12-18", url: null, token_id: "tok" });
 const fit = { family: "binary_vs_spread_arb", preset_index: 4 };
@@ -98,5 +98,26 @@ describe("option fill text", () => {
     assert.equal(gapPts(-0.01), "−1.0 pts");
     assert.equal(gapPts(null), "n/a");
     assert.equal(legLine({ ticker: "X", side: "sell", qty: 1, status: "filled", fill_px: null }), "SELL 1 X (no quote: broker price)");
+  });
+});
+
+describe("opportunity card copy", () => {
+  it("describes each options family by its own idea, not one hard-coded gap sentence", () => {
+    const vol = optionFamilyIdea("vol_vs_pm_move");
+    const ek = optionFamilyIdea("eightk_opportunity");
+    assert.match(vol, /implied volatility|IV/);
+    assert.match(ek, /8-K/);
+    assert.doesNotMatch(vol, /options-implied probability/);
+    assert.match(optionFamilyIdea("binary_vs_spread_arb"), /options-implied probability/);
+  });
+  it("prefers the library's idea text when it is loaded", () => {
+    const lib = { families: [{ id: "vol_vs_pm_move", idea: "PM reprices but implied vol has not moved: buy the straddle" }] };
+    assert.equal(libraryIdea(lib, "vol_vs_pm_move"), "PM reprices but implied vol has not moved: buy the straddle");
+    assert.equal(libraryIdea(lib.families, "eightk_opportunity"), null);
+    assert.equal(optionFamilyIdea("vol_vs_pm_move", libraryIdea(lib, "vol_vs_pm_move")), "PM reprices but implied vol has not moved: buy the straddle.");
+  });
+  it("says the replay's option prices are estimates and fills are simulated", () => {
+    assert.match(OPP_REPLAY_NOTE, /estimates from .*bar closes/);
+    assert.match(OPP_REPLAY_NOTE, /simulated/);
   });
 });

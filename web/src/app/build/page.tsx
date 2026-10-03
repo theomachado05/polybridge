@@ -2,11 +2,12 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { getEquity, getOptionsImplied, mapEvent, searchMarkets, type FitOut, type Holding, type MapOut } from "@/lib/api";
+import { getEquity, getLibrary, getOptionsImplied, mapEvent, searchMarkets, type FitOut, type Holding, type MapOut } from "@/lib/api";
 import { DEFAULT_OPP_CAPS, opportunityFit } from "@/lib/realBridge";
 import { EQ, INSTRUMENTS, QUESTIONS, REAL_INSTRUMENTS, demoImpacts, questionFromMarket, type EquityPick, type Impact, type Question } from "@/lib/demo";
 import { fmtPct, prettyId } from "@/lib/fmt";
 import { useAsync } from "@/lib/hooks";
+import { OPP_REPLAY_NOTE, libraryIdea, optionFamilyIdea } from "@/lib/opportunity";
 import { useStore } from "@/lib/store";
 import { DemoTag, Orb, Tag } from "@/components/pb";
 
@@ -75,6 +76,8 @@ export default function Build() {
   const pickKey = q && e ? `${q.id}|${e.t}` : null;
   const oppData = s.oppFit && pickKey && s.oppFit.key === pickKey && s.oppFit.status === "ok" ? s.oppFit.data : null;
   const opp = real ? opportunityFit(oppData) : null;
+  const lib = useAsync(opp ? "library" : null, () => getLibrary());
+  const oppIdea = opp ? optionFamilyIdea(opp.family, libraryIdea(lib.data, opp.family)) : "";
   const chosenMode = mode && mode.key === pickKey ? mode.m : null;
   const showHedge = !opp || chosenMode === "hedge";
 
@@ -282,16 +285,16 @@ export default function Build() {
                       <div style={{ minWidth: 0 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                           <span style={{ fontSize: 14.5, fontWeight: 500 }}>Opportunity</span>
-                          <Tag tone="ai" title="Replay score from POST /pipeline/fit (division opportunity): net P&L per unit risk on this market's history. A replay estimate, not a forecast.">AI fit · replay score {opp.score.toFixed(3)}</Tag>
+                          <Tag tone="ai" title={`Replay score from POST /pipeline/fit (division opportunity): net P&L per unit risk on this market's history, scored only when the preset traded. ${OPP_REPLAY_NOTE} A replay estimate, not a forecast.`}>AI fit · replay score {opp.score.toFixed(3)} (estimate)</Tag>
                         </div>
-                        <div className="pb-pretty" style={{ fontSize: 12, color: "#5A627A", marginTop: 3 }}>Trade the gap between this market and the options-implied probability with {prettyId(opp.family)} (preset #{opp.preset_index}). Option fills are simulated.</div>
+                        <div className="pb-pretty" style={{ fontSize: 12, color: "#5A627A", marginTop: 3 }}>{prettyId(opp.family)} (preset #{opp.preset_index}): {oppIdea} Replay option prices are estimates from bar closes; option fills are simulated.</div>
                       </div>
                       <div style={{ fontSize: 11, color: "#5A627A", whiteSpace: "nowrap" }}>options</div>
                     </button>
                   </div>
                 )}
                 {step === 3 && !inst && !busy && opp && chosenMode === "opportunity" && q && (
-                  <OpportunityCard q={q} ticker={e.t} fit={oppData!} onBack={() => setMode(null)}
+                  <OpportunityCard q={q} ticker={e.t} fit={oppData!} idea={oppIdea} onBack={() => setMode(null)}
                     onStart={async () => { const id = await s.openOpportunity(q, e); router.push(`/bridge/${id.replace(/^live:/, "")}`); }} />
                 )}
                 {step === 3 && !inst && !busy && showHedge && (
@@ -359,7 +362,7 @@ const pct = (x: number | null | undefined) => (x == null || !Number.isFinite(x) 
 
 /** The Opportunity step: the options fit, the PM-vs-options gap (GET /options/implied) and the risk caps the
  *  proposal is approved with. Starting it is an explicit click: propose → approve → options bridge. */
-function OpportunityCard({ q, ticker, fit, onStart, onBack }: { q: NonNullable<ReturnType<typeof useStore>["question"]>; ticker: string; fit: FitOut; onStart: () => Promise<void>; onBack: () => void }) {
+function OpportunityCard({ q, ticker, fit, idea, onStart, onBack }: { q: NonNullable<ReturnType<typeof useStore>["question"]>; ticker: string; fit: FitOut; idea: string; onStart: () => Promise<void>; onBack: () => void }) {
   const m = q.real!;
   const implied = useAsync(`oi:${m.source}:${m.id}`, () => getOptionsImplied({ market_source: m.source, market_id: m.id }));
   const [state, setState] = useState<{ busy: boolean; error: string | null }>({ busy: false, error: null });
@@ -374,10 +377,11 @@ function OpportunityCard({ q, ticker, fit, onStart, onBack }: { q: NonNullable<R
       <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
         <span className="pb-label">OPPORTUNITY · {prettyId(fit.family ?? "")} · PRESET #{fit.preset_index}</span>
         <span style={{ display: "inline-flex", gap: 6 }}>
-          <Tag tone="ai" title="Replay score: net P&L per unit risk on this market's history (an estimate)">score {fit.score?.toFixed(3)}</Tag>
+          <Tag tone="ai" title={`Net P&L per unit risk on this market's history. ${OPP_REPLAY_NOTE}`}>replay score {fit.score?.toFixed(3)} (estimate)</Tag>
           <Tag tone="sim" title="Option orders are filled by the simulator at the Massive quote mid ± half the quoted spread; Webull paper does not take options here.">simulated fills</Tag>
         </span>
       </div>
+      <div className="pb-pretty" style={{ fontSize: 13, color: "#3C4458", lineHeight: 1.5, marginTop: 8 }}>{idea}</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: 12, marginTop: 12 }}>
         <div><div className="pb-mono" style={{ fontSize: 10.5, color: "#5A627A" }}>PM YES (MEASURED)</div><div style={{ fontSize: 18, fontWeight: 600 }}>{pct(d?.pm_yes_price ?? m.yes_price)}</div></div>
         <div><div className="pb-mono" style={{ fontSize: 10.5, color: "#5A627A" }}>OPTIONS-IMPLIED (ESTIMATE)</div><div style={{ fontSize: 18, fontWeight: 600 }}>{implied.loading ? "…" : d?.available ? pct(d.estimate?.prob) : "n/a"}</div></div>
@@ -389,6 +393,7 @@ function OpportunityCard({ q, ticker, fit, onStart, onBack }: { q: NonNullable<R
           : implied.error ? `Options estimate unavailable (${implied.error}).` : d && !d.available ? `No options estimate: ${d.reason ?? "unavailable"}.` : ""}
       </div>
       {fit.rationale && <div className="pb-pretty" style={{ fontSize: 13, color: "#3C4458", lineHeight: 1.5, marginTop: 6 }}>{fit.rationale}</div>}
+      <div className="pb-pretty" style={{ fontSize: 12, color: "#5A627A", marginTop: 6, lineHeight: 1.45 }}>{OPP_REPLAY_NOTE}</div>
       <div style={{ fontSize: 12, color: "#5A627A", marginTop: 8 }}>Risk caps on the proposal you approve: at most {DEFAULT_OPP_CAPS.max_contracts} structures open, ${DEFAULT_OPP_CAPS.max_notional.toLocaleString("en-US")} premium / max loss at risk. Ticker context: {ticker}.</div>
       {state.error && <div role="alert" style={{ fontSize: 12.5, color: "#C8323F", marginTop: 8 }}>Could not start the options bridge: {state.error}</div>}
       <div style={{ marginTop: 14, display: "flex", gap: 10, flexWrap: "wrap" }}>
