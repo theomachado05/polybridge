@@ -1,0 +1,179 @@
+{
+ "generated_at": "2026-10-03T07:47:05+00:00",
+ "generator": "scripts/precompute_fits.py",
+ "library_source": "fallback",
+ "can_score": false,
+ "offline": false,
+ "n": 3,
+ "fits": {
+  "polymarket:5126779": {
+   "question": "Will Indiana enact a data center moratorium by December 31, 2027?",
+   "ticker": "VRT",
+   "direction": "down_on_yes",
+   "shares_held": 1000.0,
+   "event_class": "tech_regulation",
+   "division": "hedge",
+   "family": "tech_reg_hedge",
+   "preset_index": 16,
+   "params": {
+    "beta": 1.0,
+    "coverage": 0.5,
+    "no_trade_band_shares": 50.0
+   },
+   "score": null,
+   "alternatives": [
+    {
+     "family": "equity_delta_bridge",
+     "preset_index": 8,
+     "params": {
+      "coverage": 0.5,
+      "no_trade_band_shares": 50.0,
+      "fee_gate_mult": 1.0
+     },
+     "score": null,
+     "stats": null
+    },
+    {
+     "family": "book_imbalance_hedge",
+     "preset_index": 17,
+     "params": {
+      "imbalance_threshold": 0.35,
+      "depth_levels": 3.0,
+      "coverage": 0.5
+     },
+     "score": null,
+     "stats": null
+    },
+    {
+     "family": "poly_kalshi_spread",
+     "preset_index": 13,
+     "params": {
+      "min_gap": 0.02,
+      "max_contracts": 500.0,
+      "cooldown_s": 30.0
+     },
+     "score": null,
+     "stats": null
+    }
+   ],
+   "rationale": "Classified as tech_regulation; 4 hedge families in the library cover it, and tech_reg_hedge was chosen for VRT. Preset #16 (beta=1, coverage=0.5, no_trade_band_shares=50) is the family's default, picked by event-class rules without a replay score because the compiled hedgecore engine is not available on this server. Alternatives considered: equity_delta_bridge, book_imbalance_hedge, poly_kalshi_spread.",
+   "llm": "rules",
+   "ticks_source": "live_history",
+   "n_ticks": 87,
+   "scored": false
+  },
+  "polymarket:562831": {
+   "question": "2026 Balance of Power: R Senate, R House",
+   "ticker": "ICLN",
+   "direction": "down_on_yes",
+   "shares_held": 1000.0,
+   "event_class": "elections",
+   "division": "hedge",
+   "family": "election_hedge",
+   "preset_index": 10,
+   "params": {
+    "tilt": 0.5,
+    "coverage": 0.5,
+    "slice_shares": 100.0
+   },
+   "score": null,
+   "alternatives": [
+    {
+     "family": "equity_delta_bridge",
+     "preset_index": 8,
+     "params": {
+      "coverage": 0.5,
+      "no_trade_band_shares": 50.0,
+      "fee_gate_mult": 1.0
+     },
+     "score": null,
+     "stats": null
+    },
+    {
+     "family": "book_imbalance_hedge",
+     "preset_index": 17,
+     "params": {
+      "imbalance_threshold": 0.35,
+      "depth_levels": 3.0,
+      "coverage": 0.5
+     },
+     "score": null,
+     "stats": null
+    },
+    {
+     "family": "poly_kalshi_spread",
+     "preset_index": 13,
+     "params": {
+      "min_gap": 0.02,
+      "max_contracts": 500.0,
+      "cooldown_s": 30.0
+     },
+     "score": null,
+     "stats": null
+    }
+   ],
+   "rationale": "Classified as elections; 4 hedge families in the library cover it, and election_hedge was chosen for ICLN. Preset #10 (tilt=0.5, coverage=0.5, slice_shares=100) is the family's default, picked by event-class rules without a replay score because the compiled hedgecore engine is not available on this server. Alternatives considered: equity_delta_bridge, book_imbalance_hedge, poly_kalshi_spread.",
+   "llm": "rules",
+   "ticks_source": "live_history",
+   "n_ticks": 721,
+   "scored": false
+  },
+  "polymarket:2589813": {
+   "question": "Will the Fed increase interest rates by 25 bps after the October 2026 meeting?",
+   "ticker": "SPY",
+   "direction": "down_on_yes",
+   "shares_held": 1000.0,
+   "event_class": "macro_fed",
+   "division": "hedge",
+   "family": "macro_fed_hedge",
+   "preset_index": 16,
+   "params": {
+    "beta": 1.0,
+    "coverage": 0.5,
+    "no_trade_band_shares": 50.0
+   },
+   "score": null,
+   "alternatives": [
+    {
+     "family": "stress_lead_hedge",
+     "preset_index": 52,
+     "params": {
+      "stress_z": 2.0,
+      "vol_halflife_ticks": 60.0,
+      "coverage": 0.5,
+      "urgency": 0.5
+     },
+     "score": null,
+     "stats": null
+    },
+    {
+     "family": "equity_delta_bridge",
+     "preset_index": 8,
+     "params": {
+      "coverage": 0.5,
+      "no_trade_band_shares": 50.0,
+      "fee_gate_mult": 1.0
+     },
+     "score": null,
+     "stats": null
+    },
+    {
+     "family": "book_imbalance_hedge",
+     "preset_index": 17,
+     "params": {
+      "imbalance_threshold": 0.35,
+      "depth_levels": 3.0,
+      "coverage": 0.5
+     },
+     "score": null,
+     "stats": null
+    }
+   ],
+   "rationale": "Classified as macro_fed; 5 hedge families in the library cover it, and macro_fed_hedge was chosen for SPY. Preset #16 (beta=1, coverage=0.5, no_trade_band_shares=50) is the family's default, picked by event-class rules without a replay score because the compiled hedgecore engine is not available on this server. Alternatives considered: stress_lead_hedge, equity_delta_bridge, book_imbalance_hedge.",
+   "llm": "rules",
+   "ticks_source": "live_history",
+   "n_ticks": 721,
+   "scored": false
+  }
+ }
+}

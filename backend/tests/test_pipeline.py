@@ -572,3 +572,16 @@ def test_precomputed_fits_route_and_script(tmp_path):
     c = make_client(module=None, offline=True)
     j = c.get("/pipeline/fits").json()
     assert "fits" in j
+
+
+def test_slow_live_history_falls_back_to_replay_within_budget(monkeypatch):
+    async def slow(request):
+        await asyncio.sleep(2)
+        return httpx.Response(200, json={"history": history()})
+
+    monkeypatch.setattr(service, "TICKS_BUDGET_S", 0.1)
+    c = make_client(module=None)
+    c.app.state.http = httpx.AsyncClient(transport=httpx.MockTransport(slow))
+    j = c.post("/pipeline/fit", json={"market": {"source": "polymarket", "id": FED_ID, "token_id": "tokYES"},
+                                      "ticker": "SPY", "shares_held": 5}).json()
+    assert j["ticks_source"] == "replay" and j["family"] == "macro_fed_hedge"

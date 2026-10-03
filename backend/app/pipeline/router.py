@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 import json
+import time
 from pathlib import Path
 
 from fastapi import APIRouter, Request
 
-from ..cache import TTLCache
 from .engine_adapter import EngineAdapter
 from .llm import LLMProvider, default_provider
 from .service import Deps, FitRequest, FitResponse, fit
@@ -41,13 +41,19 @@ def _deps(request: Request) -> Deps:
 @router.post("/pipeline/fit", response_model=FitResponse)
 async def pipeline_fit(req: FitRequest, request: Request) -> FitResponse:
     if not hasattr(request.app.state, "cache_fit"):
-        request.app.state.cache_fit = TTLCache(FIT_TTL_S)
+        request.app.state.cache_fit = {}
+    cache: dict = request.app.state.cache_fit
     key = req.model_dump_json()
+    hit = cache.get(key)
+    if hit is not None and time.monotonic() - hit[0] < FIT_TTL_S:
+        return hit[1]
     try:
         deps = _deps(request)
     except Exception:
         deps = Deps(adapter=EngineAdapter(module=None))
-    value, _ = await request.app.state.cache_fit.get_or_set(key, lambda: fit(req, deps))
+    value = await fit(req, deps)
+    if not value.rationale.startswith("The fit pipeline hit an internal error"):  # never cache a degraded answer
+        cache[key] = (time.monotonic(), value)
     return value
 
 

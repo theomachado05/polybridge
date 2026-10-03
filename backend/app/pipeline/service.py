@@ -18,6 +18,7 @@ from .ticks import TickSet, _universe_entry, build_ticks, resolve_polymarket
 from .tune import tune
 
 Direction = Literal["down_on_yes", "up_on_yes"]
+TICKS_BUDGET_S = 15.0
 
 
 class MarketRef(BaseModel):
@@ -120,9 +121,18 @@ async def run_fit(req: FitRequest, deps: Deps) -> dict:
     if req.market:
         market = {"source": req.market.source, "id": req.market.id, "token_id": token}
 
+    async def ticks() -> TickSet:
+        try:  # bound the whole network chain (Gamma + CLOB + Massive); on overrun use recorded data only
+            return await asyncio.wait_for(
+                build_ticks(market, req.ticker, http=deps.http, massive=deps.massive, offline=deps.offline),
+                TICKS_BUDGET_S)
+        except asyncio.TimeoutError:
+            ts = await build_ticks(market, req.ticker, http=None, massive=None, offline=True)
+            ts.notes.append(f"live history took over {TICKS_BUDGET_S:g} s")
+            return ts
+
     (event_class, llm), ts = await asyncio.gather(
-        classify(question, deps.provider, manifest.get("event_classes"), req.ticker),
-        build_ticks(market, req.ticker, http=deps.http, massive=deps.massive, offline=deps.offline))
+        classify(question, deps.provider, manifest.get("event_classes"), req.ticker), ticks())
 
     lists = shortlist(manifest, event_class)
     division = choose_division(lists, req.shares_held)
