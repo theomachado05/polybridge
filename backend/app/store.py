@@ -31,19 +31,34 @@ class ProposalStore:
         with self._lock:
             return list(self._items.values())
 
-    def _decide(self, pid: str, status: str) -> Proposal:
+    def get(self, pid: str) -> Proposal:
+        with self._lock:
+            if pid not in self._items:
+                raise NotFound(pid)
+            return self._items[pid]
+
+    def update(self, pid: str, **fields) -> Proposal:
+        """Set server-side fields (e.g. the capacity block) without touching the decision."""
+        with self._lock:
+            if pid not in self._items:
+                raise NotFound(pid)
+            updated = self._items[pid].model_copy(update=fields)
+            self._items[pid] = updated
+            return updated
+
+    def _decide(self, pid: str, status: str, **extra) -> Proposal:
         with self._lock:
             if pid not in self._items:
                 raise NotFound(pid)
             current = self._items[pid]
             if current.status != "proposed":
                 raise AlreadyDecided(pid)
-            updated = current.model_copy(update={"status": status, "decided_at": dt.datetime.now(dt.UTC)})
+            updated = current.model_copy(update={"status": status, "decided_at": dt.datetime.now(dt.UTC), **extra})
             self._items[pid] = updated
             return updated
 
-    def approve(self, pid: str) -> Proposal:
-        return self._decide(pid, "approved")
+    def approve(self, pid: str, ack_unvalidated: bool = False) -> Proposal:
+        return self._decide(pid, "approved", ack_unvalidated=bool(ack_unvalidated))
 
     def reject(self, pid: str) -> Proposal:
         return self._decide(pid, "rejected")

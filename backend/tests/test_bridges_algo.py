@@ -82,7 +82,7 @@ def proposal(client, algo=None, direction="down_on_yes", approve=True, **kw):
     assert r.status_code == 201, r.text
     pid = r.json()["id"]
     if approve:
-        client.post(f"/proposals/{pid}/approve")
+        client.post(f"/proposals/{pid}/approve", json={"ack_unvalidated": True})
     return r.json()
 
 
@@ -241,18 +241,23 @@ def test_fills_feed_on_fill_and_the_hedge_is_what_filled(client, tmp_path):
 
 
 def test_rejects_and_errors_feed_on_reject(client, tmp_path, monkeypatch):
-    pin(client, SimBroker(tmp_path / "s.json"))  # no quotes and no ref price: every order is rejected (no_price)
+    # no quotes and no ref price: a short's notional is unknown, so the capital budget refuses it at the account
+    # before the broker sees it (fail closed, breach no_price); the algo is told (on_reject)
+    pin(client, SimBroker(tmp_path / "s.json"))
     FakeAlgo.script = {1: {"side": -1, "qty": 10.0}, 3: {"side": -1, "qty": 10.0}}
     p = proposal(client, {"family": "macro_fed_hedge"})
     ev = _events(client, start(client, p["id"], replay_to_account=True).json()["bridge_id"])
     a = FakeAlgo.instances[0]
     assert a.rejects == ["equity", "equity"] and a.fills == []
-    assert [d["status"] for k, d in ev if k == "fill"] == ["rejected", "rejected"]
+    fills = [d for k, d in ev if k == "fill"]
+    assert [d["status"] for d in fills] == ["held", "held"]
+    assert all(d["reject_reason"].startswith("capital_budget: no price") for d in fills)
+    assert all(d["gates"][0]["breaches"] == ["no_price"] for d in fills)
 
     class Boom(SimBroker):
         async def place_order(self, req):
             raise RuntimeError("down")
-    pin(client, Boom(None))
+    pin(client, Boom(None, FakeQuotes(equity={"SPY": Quote(500.0, None, "q")})))
     q = proposal(client, {"family": "macro_fed_hedge"})
     ev = _events(client, start(client, q["id"], replay_to_account=True).json()["bridge_id"])
     assert FakeAlgo.instances[1].rejects == ["equity", "equity"]
@@ -685,7 +690,13 @@ def test_replay_without_quote_or_recorded_price_is_still_refused(client, tmp_pat
     FakeAlgo.script = {2: {"side": -1, "qty": 10.0}}
     p = proposal(client, {"family": "macro_fed_hedge"})
     (f,) = [d for k, d in _events(client, start(client, p["id"], replay_to_account=True).json()["bridge_id"]) if k == "fill"]
-    assert f["status"] == "rejected" and f["reject_reason"].startswith("no_price")
+    # at the account an unpriced short is refused by the capital budget first (fail closed); a sandbox replay with no
+    # price passes the budget labelled unchecked and the simulator refuses it (no_price)
+    assert f["status"] == "held" and f["reject_reason"].startswith("capital_budget: no price")
+    q = proposal(client, {"family": "macro_fed_hedge"})
+    (g,) = [d for k, d in _events(client, start(client, q["id"]).json()["bridge_id"]) if k == "fill"]
+    assert g["status"] == "rejected" and g["reject_reason"].startswith("no_price")
+    assert g["capital"]["checked"] is False and g["capital"]["enforced"] is False
 
 
 def test_live_bridge_never_uses_the_recorded_price_path(client, tmp_path, monkeypatch):

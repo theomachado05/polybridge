@@ -1,4 +1,4 @@
-// Closed-market mode, view logic (plan 2026-10-03-closed-market-mode.md, U1-U5). Pure and dependency-free so
+// Closed-market mode, view logic (docs/design.md, section 2). Pure and dependency-free so
 // `node --test` imports it directly. Every label here follows the evidence gate the backend applies
 // (backend/app/closed/evidence.py, research R1/R2/R3):
 // - an expected gap reads VALIDATED only when the backend says so for a market whose own out-of-sample record passes
@@ -85,6 +85,12 @@ export interface StagedOrder {
   current?: { gap_bp?: number } | null;
   decisions?: StagedDecision[];
   label?: string;
+  /** Evidence gate at planning: "validated", or "override" (act_on_unvalidated on an unvalidated market). */
+  evidence_gate?: "validated" | "override" | string | null;
+  evidence?: string | null;
+  /** Participation-cap and capital-budget checks at planning / execution (backend liquidity.gate, capital.service). */
+  liquidity?: { status?: string; rule?: string; limit_qty?: number; note?: string } | null;
+  capital?: { ok?: boolean; enforced?: boolean; checked?: boolean; note?: string | null; breaches?: { kind?: string; detail?: string }[] | null } | null;
 }
 
 export interface TimelineRow { at: string; at_et: string; event: string; detail?: string | null; staged_id?: string; qty?: number; filled_qty?: number; fill_px?: number | null; phase?: string }

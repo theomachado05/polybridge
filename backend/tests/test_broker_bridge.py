@@ -88,21 +88,28 @@ def test_no_price_rejects_are_recorded_and_the_loop_keeps_running(client, tmp_pa
     pin(client, SimBroker(tmp_path / "s.json", FakeQuotes()))  # no Massive price for ABNB, none supplied
     bid, ev = start(client, replay_to_account=True)
     fills = [d for k, d in ev if k == "fill"]
-    assert [f["status"] for f in fills] == ["rejected", "rejected", "held"] and fills[0]["reject_reason"].startswith("no_price")
+    # an unpriced short has no known notional: the capital budget refuses it at the account (fail closed, no_price)
+    # before the broker sees it
+    assert [f["status"] for f in fills] == ["held", "held", "held"]
+    assert all(f["reject_reason"].startswith("capital_budget: no price") for f in fills[:2])
     # the engine's reducing buy (-80) is held: the broker never filled a short, so a buy would open an unapproved long
     assert fills[2]["reject_reason"].startswith("no short filled") and fills[2]["capped_from"] == 80.0
     kinds = [k for k, _ in ev]
     assert kinds.count("tick") == 20 and ev[-1][1]["status"] == "finished"
     s = client.get(f"/bridges/{bid}").json()
-    assert s["broker_rejects"] == 2 and s["broker_filled"] == 0 and s["orders"] == 3 and s["broker_hedge"] == 0.0
+    assert s["capital_refused"] == 2 and s["broker_rejects"] == 0 and s["broker_filled"] == 0 and s["orders"] == 3
+    assert s["broker_hedge"] == 0.0
 
 
 def test_insufficient_buying_power_is_reported_not_raised(client, tmp_path):
     b = pin(client, SimBroker(tmp_path / "s.json", FakeQuotes(equity={"ABNB": Quote(150.0, None, "q")}), starting_cash=1000.0))
     bid, ev = start(client, replay_to_account=True)
     fills = [d for k, d in ev if k == "fill"]
-    assert [f["status"] for f in fills] == ["rejected", "rejected", "held"]
-    assert {f["reject_reason"] for f in fills[:2]} == {"insufficient_buying_power"}
+    # priced from the broker's quote ($150), the shorts breach the budget of a $1,000 account first: refused with
+    # capital_budget before the simulator's own buying-power check
+    assert [f["status"] for f in fills] == ["held", "held", "held"]
+    assert all(f["reject_reason"].startswith("capital_budget: ") for f in fills[:2])
+    assert all(f["capital_price_source"] == "quote" for f in fills[:2])
     assert run(b.positions()) == [] and run(b.account()).cash == 1000.0
     assert [d["broker_hedge"] for k, d in ev if k == "position"] == [0.0, 0.0, 0.0]  # nothing filled, and it says so
     assert [d["hedge"] for k, d in ev if k == "position"] == [100.0, 150.0, 70.0]  # engine intent is still reported

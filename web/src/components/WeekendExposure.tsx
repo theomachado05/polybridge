@@ -60,7 +60,7 @@ export function WeekendExposurePanel({ holdings, bridgeIds, session, onOpen }: {
   return (
     <Glass style={{ padding: "22px 26px", minWidth: 0 }}>
       <div data-testid="weekend-exposure" style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-        <Label>04 · WEEKEND EXPOSURE · EXPECTED GAP × POSITION</Label>
+        <Label>07 · WEEKEND EXPOSURE · EXPECTED GAP × POSITION</Label>
         <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
           {session && <Tag tone={closedNow ? "caution" : "live"} title={session.label ?? undefined}>{closedNow ? "equities closed" : "market open"}</Tag>}
           {total && (

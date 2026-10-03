@@ -132,7 +132,7 @@ def test_bridge_on_the_demo_replay_decides_exactly_like_the_engine(client, tmp_p
     prop = client.post("/proposals", json={"ticker": "TLT", "market": market, "direction": "down_on_yes",
                                            "shares_held": SHARES, "target_coverage": COVERAGE,
                                            "algo": {"family": FAMILY, "preset_index": PRESET}}).json()
-    client.post(f"/proposals/{prop['id']}/approve")
+    client.post(f"/proposals/{prop['id']}/approve", json={"ack_unvalidated": True})
     # session_hold False: this contract is the engine's decisions when every order fills, at any hour (closed-market
     # mode would hold the off-session intents; see tests/test_closed_bridge.py)
     r = client.post("/bridges", json={"proposal_id": prop["id"], "source": "replay", "replay_to_account": True,
@@ -183,7 +183,7 @@ def test_slow_broker_does_not_turn_replay_ticks_stale(client, tmp_path):  # noqa
                                           "shares_held": 1000, "algo": {"family": "equity_delta_bridge",
                                                                          "params": {"sigma_k": 0.0, "fee_ratio": 0.5,
                                                                                     "band_shares": 10.0}}}).json()["id"]
-    client.post(f"/proposals/{pid}/approve")
+    client.post(f"/proposals/{pid}/approve", json={"ack_unvalidated": True})
     r = client.post("/bridges", json={"proposal_id": pid, "source": "replay", "replay_to_account": True})
     ev = _events(client, r.json()["bridge_id"])
     reasons = [d["reason"] for k, d in ev if k == "decision"]

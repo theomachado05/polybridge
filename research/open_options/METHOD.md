@@ -2,7 +2,7 @@
 
 Question: when equities are closed (a weekend or a holiday) and a prediction-market (PM) threshold contract ("NVDA closes above $230 on Oct 5", "S&P 500 above 7,795 at 4pm") moves, how much of that move is in the listed options of the same underlying once they reopen, and is there a residual PM-vs-options gap at the open that survives costs?
 
-This decides one product feature: the "Opportunity at the open" card (plan `docs/superpowers/plans/2026-10-03-closed-market-mode.md`, Product behaviour item 6, task U5). If the residual gap is not shown to survive costs, the card is not claimed as an opportunity; at most it is shown as an unvalidated estimate.
+This decides one product feature: the "Opportunity at the open" card (`docs/design.md`, section 2, Product behaviour item 6). If the residual gap is not shown to survive costs, the card is not claimed as an opportunity; at most it is shown as an unvalidated estimate.
 
 Status: a descriptive event study, pre-registered. Nothing is traded. A null result is an acceptable answer. Everything below is fixed before the run; later changes go in **Amendments** at the bottom, dated and marked pre- or post-data.
 
@@ -94,3 +94,4 @@ The slope `beta` and its CI are reported alongside as the plain-language answer 
 ## Amendments
 
 1. **2026-10-03, before any PM price or option quote was fetched** (only the Polymarket and Kalshi market listings had been downloaded). Kalshi is dropped from the run. The Kalshi listing pages show each 16:00 ET event created at about 05:00 UTC the day before its settlement date (for example `KXNASDAQ100U-26AUG27...` created 2026-08-26T05:00Z), so no Kalshi 16:00 market is listed before the close that starts a weekend or holiday closure, and every Kalshi pair fails eligibility rule 1 by construction. Downloading a year of Kalshi listings (about 2 MB per 1,000 markets, several hundred thousand markets) only to drop them all is not worth the disk; the runner is invoked with `--skip-kalshi` and the report says so. Nothing else changes.
+2. **2026-10-03, post-run, editorial only:** plan link repointed from the deleted docs/superpowers/plans/2026-10-03-closed-market-mode.md to docs/design.md; no rule, threshold or parameter changed.

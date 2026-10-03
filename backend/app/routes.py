@@ -4,11 +4,15 @@ from fastapi import APIRouter, HTTPException, Request
 
 from polybridge_research.schema import STRATEGY_FOR_FAMILY, assign_family, normalize_ticker
 
+from .capital.router import router as capital_router
+from .liquidity.router import router as liquidity_router
 from .models import (MARKET_EVENT_LABEL, OPP_DEFAULT_MAX_CONTRACTS, OPP_DEFAULT_MAX_NOTIONAL, OPPORTUNITY_LABEL,
-                     AlgoChoice, ClassifyIn, ClassifyOut, Proposal, ProposalIn)
+                     AlgoChoice, ApproveIn, ClassifyIn, ClassifyOut, Proposal, ProposalIn)
 from .store import AlreadyDecided, NotFound, ProposalStore
 
 router = APIRouter()
+router.include_router(liquidity_router)
+router.include_router(capital_router)
 
 
 def _store(request: Request) -> ProposalStore:
@@ -65,11 +69,48 @@ def _caps(body: ProposalIn) -> tuple[int, float]:
             float(body.max_notional if body.max_notional is not None else OPP_DEFAULT_MAX_NOTIONAL))
 
 
+def _evidence(market, ticker: str | None) -> dict:
+    """The evidence gate for a proposal's (market, ticker), as stored on the proposal and re-checked at approval."""
+    from .closed.evidence import signal_status
+    return signal_status(getattr(market, "source", None), getattr(market, "id", None),
+                         getattr(market, "token_id", None), ticker)
+
+
 @router.post("/proposals", response_model=Proposal, status_code=201)
+async def post_proposal(body: ProposalIn, request: Request) -> Proposal:
+    """POST /proposals: the proposal, with its evidence status and a live capacity block (liquidity and capital,
+    bounded; parts that cannot be fetched say so) before approval."""
+    prop = create_proposal(body, request)
+    from .liquidity import proposal as capacity
+    try:
+        block = await capacity.live(request.app, prop)
+    except Exception as e:  # the proposal stands; the block says why it is missing
+        block = {**(prop.capacity or {}), "error": f"capacity unavailable ({type(e).__name__})"}
+    return _store(request).update(prop.id, capacity=block)
+
+
 def create_proposal(body: ProposalIn, request: Request) -> Proposal:
+    """Create a proposal (sync; the voice agent calls it directly). Its capacity block uses cached numbers only."""
+    prop = _create(body, request)
+    from .liquidity import proposal as capacity
+    try:
+        block = capacity.cached(request.app, prop)
+    except Exception as e:
+        block = {"error": f"capacity unavailable ({type(e).__name__})"}
+    return _store(request).update(prop.id, evidence=_evidence(prop.market, prop.ticker), capacity=block)
+
+
+def _create(body: ProposalIn, request: Request) -> Proposal:
     ticker = normalize_ticker(body.ticker)
     if ticker is None:
         raise HTTPException(422, "ticker must not be blank.")
+    if body.act_on_unvalidated and (body.division == "opportunity" or (body.market is None and body.tags
+                                                                         and assign_family(body.tags) is not None
+                                                                         and assign_family(body.tags).value
+                                                                         == "opportunity")):
+        raise HTTPException(422, "act_on_unvalidated (the closed-market staged-hedge override) applies to hedge "
+                                 "proposals only.")
+    over = {"act_on_unvalidated": bool(body.act_on_unvalidated)}
     if body.market is not None and body.division == "opportunity":
         # Opportunity on a market: an options trade run by an approved Opportunity-division options family.
         if body.closed_pm_hedge:
@@ -88,7 +129,7 @@ def create_proposal(body: ProposalIn, request: Request) -> Proposal:
                                        label=MARKET_EVENT_LABEL, market=body.market, direction=body.direction,
                                        shares_held=body.shares_held, target_coverage=body.target_coverage,
                                        algo=checked_algo(request, body.algo, body.target_coverage),
-                                       closed_pm_hedge=body.closed_pm_hedge)
+                                       closed_pm_hedge=body.closed_pm_hedge, **over)
     fam = assign_family(body.tags)
     if fam is None:
         raise HTTPException(422, "These tags map to no pre-registered family, so there is no hedge to propose.")
@@ -107,7 +148,7 @@ def create_proposal(body: ProposalIn, request: Request) -> Proposal:
     return _store(request).propose(ticker=ticker, family=fam.value, strategy=STRATEGY_FOR_FAMILY[fam],
                                    basis="filing_tags", shares_held=body.shares_held,
                                    target_coverage=body.target_coverage, algo=checked_algo(request, body.algo, body.target_coverage),
-                                   closed_pm_hedge=body.closed_pm_hedge)
+                                   closed_pm_hedge=body.closed_pm_hedge, **over)
 
 
 @router.get("/proposals", response_model=list[Proposal])
@@ -115,18 +156,42 @@ def list_proposals(request: Request) -> list[Proposal]:
     return _store(request).list()
 
 
-def _decide(request: Request, pid: str, action: str) -> Proposal:
+def _decide(request: Request, pid: str, action: str, **kw) -> Proposal:
     try:
-        return getattr(_store(request), action)(pid)
+        return getattr(_store(request), action)(pid, **kw)
     except NotFound:
         raise HTTPException(404, f"No proposal {pid}.")
     except AlreadyDecided:
         raise HTTPException(409, f"Proposal {pid} was already approved or rejected.")
 
 
+EVIDENCE_409 = "EVIDENCE_UNVALIDATED"
+
+
 @router.post("/proposals/{pid}/approve", response_model=Proposal)
-def approve(pid: str, request: Request) -> Proposal:
-    return _decide(request, pid, "approve")
+def approve(pid: str, request: Request, body: ApproveIn | None = None) -> Proposal:
+    """Approve a proposal. The evidence gate: when the (market, ticker) signal has not passed its out-of-sample test,
+    the approval must carry ``ack_unvalidated: true`` (409 otherwise). The bridge then runs the approved algo and
+    labels every decision and fill "unvalidated (acknowledged)"."""
+    ack = bool(body.ack_unvalidated) if body is not None else False
+    try:
+        prop = _store(request).get(pid)
+    except NotFound:
+        raise HTTPException(404, f"No proposal {pid}.")
+    if prop.status == "proposed":
+        ev = _evidence(prop.market, prop.ticker)  # re-checked now: the evidence file may have changed
+        _store(request).update(pid, evidence=ev)
+        if not ev.get("validated") and not ack:
+            extra = (" This proposal also sets act_on_unvalidated: approving with the acknowledgement confirms the "
+                     "closed-market override (staged plans on this market are labelled 'override')."
+                     if prop.act_on_unvalidated else "")
+            raise HTTPException(409, f"{EVIDENCE_409}: {prop.ticker}"
+                                     f"{' on ' + prop.market.source + ':' + prop.market.id if prop.market else ''} is an "
+                                     f"unvalidated estimate. {ev.get('evidence')} A market's signal acts only where it "
+                                     "passed its out-of-sample test; to run the approved algo anyway, approve with "
+                                     "ack_unvalidated: true (every decision and fill is then labelled 'unvalidated "
+                                     f"(acknowledged)').{extra}")
+    return _decide(request, pid, "approve", ack_unvalidated=ack)
 
 
 @router.post("/proposals/{pid}/reject", response_model=Proposal)

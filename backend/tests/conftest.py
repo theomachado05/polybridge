@@ -52,3 +52,33 @@ def _regular_session_wall_clock(monkeypatch):
 
     monkeypatch.setattr(bridge_mode, "now_utc", lambda: dt.datetime(2026, 9, 30, 15, 0, tzinfo=dt.timezone.utc))
     yield
+
+
+@pytest.fixture(autouse=True)
+def _offline_liquidity(monkeypatch):
+    """Hermetic liquidity data: no Massive client and no venue-book HTTP (a .env key must never reach the network
+    from a test). Tests that exercise the liquidity numbers pin them (``service_for(app).set_equity`` or a fake)."""
+    import httpx
+
+    from app.liquidity import service
+
+    def offline(request):
+        raise httpx.ConnectError("offline test", request=request)
+
+    monkeypatch.setattr(service, "make_client", lambda: None)
+    monkeypatch.setattr(service, "default_http", lambda: httpx.AsyncClient(transport=httpx.MockTransport(offline)))
+    yield
+
+
+@pytest.fixture
+def roomy_capital(monkeypatch):
+    """For tests about broker mechanics, not capital: the capital check sees a $10M account with $10M buying power
+    (the fake Webull sandboxes report a ~$100k account, on which the tests' 376-share shorts would rightly be
+    refused). tests/test_capital.py covers the budget itself."""
+    from app.capital import service
+
+    async def snap(app, broker, refresh=False):
+        return {"checked": True, "read_ok": True, "broker": getattr(broker, "name", None), "equity": 1e7,
+                "cash": 1e7, "buying_power": 1e7, "short_notional": 0.0, "age_s": 0.0}
+    monkeypatch.setattr(service, "account_snapshot", snap)
+    yield

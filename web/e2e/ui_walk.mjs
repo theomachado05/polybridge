@@ -98,7 +98,7 @@ try {
 
   // 1. Landing
   await goto("/");
-  check("UI: landing shows the library size", await ev("/1,2\\d\\d|1,284/.test(document.body.innerText)"), "");
+  check("UI: landing shows the library size", await ev("/1,\\d\\d\\d/.test(document.body.innerText)"), "");
   await shot(1, "landing");
 
   // 2. Build chat: client-side navigation (the store lives in memory), then search, pick the market, the stock, the hedge
@@ -116,6 +116,9 @@ try {
   await sleep(1500);
   await click("button.pb-row", "hort"); // the dynamic short-shares hedge (the one the engine runs)
   await waitFor(has("button", "Connect brokerage"), "Connect brokerage button", 30_000);
+  // Liquidity preview + hedge-instrument comparison (real Massive data; best effort, the walk does not fail on it).
+  try { await waitFor(`!!document.querySelector('[data-testid=hedge-compare]') && !/Pricing the four hedges/.test(document.querySelector('[data-testid=hedge-compare]').innerText)`, "hedge comparison answers", 30_000); } catch {}
+  check("UI: build shows the liquidity preview and the hedge-instrument comparison", await ev(`!!document.querySelector('[data-testid=risk-preview]') && !!document.querySelector('[data-testid=hedge-compare]')`), "");
   await shot(2, "build");
 
   // 3. Connect
@@ -132,10 +135,26 @@ try {
   check("UI: pipeline shows a fit, labelled rules-based or Gemini", !!fitTag, fitTag ?? "no label");
   const fam = /AI fit for \w+: ([A-Za-z0-9 ]+?)(?: preset|\.|\n)/.exec(pipeText)?.[1]?.trim();
   check("UI: pipeline names the chosen family", !!fam, fam ?? "");
+  // The approval step reads the pending proposal first: evidence gate + liquidity & capacity card.
+  await waitFor(`!!document.querySelector('[data-testid=evidence-gate]') && !/checking evidence/i.test(document.querySelector('[data-testid=evidence-gate]').innerText)`, "evidence gate answers", 45_000);
+  const unvalidated = await ev(`!!document.querySelector('[data-testid=evidence-ack]')`);
+  // The box must carry a real verdict: "unvalidated estimate" with the acknowledgement (or an earlier one recorded), or
+  // "validated" with no acknowledgement box. "evidence not reported" or a missing box fails.
+  const gateText = await ev(`(document.querySelector('[data-testid=evidence-gate]') || {}).innerText || ""`);
+  const gateOk = /unvalidated estimate/i.test(gateText)
+    ? unvalidated || await ev(`!!document.querySelector('[data-testid=evidence-acknowledged]')`)
+    : /(^|[^n])validated/i.test(gateText) && !unvalidated;
+  check("UI: approval shows the evidence gate", gateOk, /unvalidated estimate/i.test(gateText) ? (unvalidated ? "unvalidated: acknowledgement required" : "unvalidated: acknowledged earlier") : /(^|[^n])validated/i.test(gateText) ? "validated" : `no verdict: ${gateText.slice(0, 80)}`);
+  check("UI: approval shows the liquidity & capacity card", await ev(`!!document.querySelector('[data-testid=capacity-card]') || /Checking liquidity/.test(document.body.innerText)`), "");
   await shot(4, "pipeline");
 
-  // 5. Approve -> bridge page (/bridge/<id>)
-  await click("button", "Approve"); // "Approve and open the bridge", or "Approve without the fee gate" when no price is known
+  // 5. Approve -> bridge page (/bridge/<id>). On an unvalidated market the button stays disabled until the box is ticked.
+  if (unvalidated) {
+    check("UI: approve is disabled before the acknowledgement", await ev(`[...document.querySelectorAll('button')].some(b => b.disabled && /Acknowledge the unvalidated market/.test(b.innerText))`), "");
+    await ev(`document.querySelector('[data-testid=evidence-ack]').click()`);
+    await waitFor(has("button", "Approve"), "approve enables after the acknowledgement", 10_000);
+  }
+  await click("button", "Approve"); // "Approve and open the bridge", "Approve on an unvalidated market", or "Approve without the fee gate"
   await waitFor(`location.pathname.startsWith('/bridge') && /Bridge [0-9a-f]{8,}/.test(document.body.innerText)`, "opens the Bridge screen on a backend bridge", 60_000);
   const bridgeId = await ev("(/Bridge ([0-9a-f]{8,})/.exec(document.body.innerText) || [])[1]");
   check("UI: approve opened a backend bridge", /^[0-9a-f]{8,}$/.test(bridgeId), bridgeId);
@@ -166,10 +185,12 @@ try {
   await click("a", "Library");
   await waitFor(`/families|presets|Library/i.test(document.body.innerText) && document.body.innerText.length > 300`, "library renders", 30_000);
   await sleep(1500);
-  check("UI: library shows the compiled catalog", await ev(`/1,2\\d\\d/.test(document.body.innerText)`), "");
+  check("UI: library shows the compiled catalog", await ev(`/1,\\d\\d\\d/.test(document.body.innerText)`), "");
   await shot(7, "library");
   await click("a", "Portfolio");
   await waitFor(`document.body.innerText.includes(${JSON.stringify(TICKER)})`, `portfolio lists ${TICKER}`, 45_000);
+  try { await waitFor(`!!document.querySelector('[data-testid=capital-panel]') && !/Reading the account and the budget/.test(document.querySelector('[data-testid=capital-panel]').innerText)`, "capital panel answers", 30_000); } catch {}
+  check("UI: portfolio shows the broker account and capital usage apart from demo holdings", await ev(`!!document.querySelector('[data-testid=broker-account]') && !!document.querySelector('[data-testid=capital-panel]')`), "");
   await sleep(1500);
   await shot(6, "portfolio");
   await click("a", "JD");

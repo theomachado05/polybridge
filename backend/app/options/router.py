@@ -4,6 +4,11 @@
   options-implied probability of the prediction market's YES, next to the market's own price.
 - ``GET /options/chain?ticker=``: the listed chain snapshot (optional expiry / strike window).
 - ``GET /options/eightk?ticker=``: the 8-K score and the filing behind it.
+- ``GET /options/chain/{underlying}?expiry=&strikes=&window=&quotes=``: one expiry, per contract with bid/ask/mid,
+  last, volume, OI, IV and greeks (Massive, else Black–Scholes labelled ``computed``), spot, staleness, market_open.
+- ``GET /options/hedge-quote?ticker=&shares=&horizon_days=&protection_pct=&borrow_rate=``: short stock vs protective
+  put vs collar vs put spread, side by side at executable prices, with liquidity flags and caveats.
+- ``GET /options/mark/{contract}``: one OCC contract's mark (mid, spread, stale flag), as bridges / portfolio use.
 
 Every response says where the numbers come from (``freshness.source``, ``timeframe``, ``data_age_s``,
 ``staleness``, ``mark_sources``) and is labelled an estimate. No key, an unsupported question or a Massive outage
@@ -23,6 +28,9 @@ from fastapi import APIRouter, HTTPException, Request
 
 from ..chain import make_client
 from . import chain as ch
+from . import hedge as hq
+from . import live as lv
+from . import mark as mk
 from .eightk import OOS_END, eightk_detail, refresh_eightk
 from .enrich import refresh, structure_mid
 from .implied import implied_for_threshold, jsonable
@@ -234,3 +242,60 @@ async def options_eightk(ticker: str, as_of: str | None = None, window_days: int
         d["coverage"], "no 8-K data covers this date (no key, Massive unavailable, or the frozen OOS window)")
     return {**d, "available": d["coverage"] is not None, "source": source,
             "label": "8-K tag-direction prior (H1 hedge -> negative, H2 opportunity -> positive); not a measured edge"}
+
+
+@router.get("/chain/{underlying}")
+async def options_chain_live(underlying: str, expiry: str | None = None, strikes: int = lv.DEFAULT_STRIKES,
+                             window: float = lv.DEFAULT_WINDOW, quotes: bool = True) -> dict:
+    """One expiry of the live chain (nearest listed when ``expiry`` is omitted); ``strikes`` nearest the money;
+    ``window`` = strike window as a fraction of spot; ``quotes`` = fetch the last NBBO per contract (capped)."""
+    tk = underlying.strip().upper()
+    if not _TICKER.match(tk):
+        raise HTTPException(422, "underlying must look like NVDA, BRK.B or I:SPX.")
+    if not 1 <= strikes <= lv.MAX_STRIKES:
+        raise HTTPException(422, f"strikes must be 1..{lv.MAX_STRIKES}.")
+    if not (math.isfinite(window) and 0.01 <= window <= 0.9):
+        raise HTTPException(422, "window must be a fraction of spot in 0.01..0.9 (0.2 = +/-20%).")
+    try:
+        exp = dt.date.fromisoformat(expiry) if expiry else None
+    except ValueError:
+        raise HTTPException(422, "expiry must be YYYY-MM-DD.")
+    return await lv.live_chain(tk, client=make_client(), expiry=exp, strikes=strikes, window=window, nbbo=quotes)
+
+
+def _options_at_broker(request: Request) -> bool:
+    """The active broker places option orders itself (Webull paper with WEBULL_OPTIONS=1), not its simulator."""
+    try:
+        from ..broker import SimBroker, get_broker
+        b = get_broker(request.app)
+    except Exception:
+        return False
+    return not isinstance(b, SimBroker) and bool(getattr(b, "options_supported", False))
+
+
+@router.get("/hedge-quote")
+async def options_hedge_quote(request: Request, ticker: str, shares: int, horizon_days: int = 30,
+                              protection_pct: float = 0.05, borrow_rate: float | None = None) -> dict:
+    """Short stock vs protective put vs collar vs put spread for ``shares`` long, over ``horizon_days``, protecting
+    below spot x (1 - protection_pct). ``borrow_rate`` (annual, e.g. 0.02) overrides the assumed easy-to-borrow fee."""
+    tk = ticker.strip().upper()
+    if not _TICKER.match(tk):
+        raise HTTPException(422, "ticker must look like NVDA or BRK.B.")
+    if not 1 <= shares <= 10_000_000:
+        raise HTTPException(422, "shares must be 1..10,000,000 (the long position being hedged).")
+    if not 1 <= horizon_days <= 730:
+        raise HTTPException(422, "horizon_days must be 1..730.")
+    if not (math.isfinite(protection_pct) and 0.0 < protection_pct <= 0.5):
+        raise HTTPException(422, "protection_pct must be a fraction in (0, 0.5] (0.05 = protect below spot -5%).")
+    if borrow_rate is not None and not (math.isfinite(borrow_rate) and 0.0 <= borrow_rate <= 5.0):
+        raise HTTPException(422, "borrow_rate must be an annual fraction in 0..5 (0.003 = 0.3%/yr).")
+    return await hq.hedge_quote(tk, shares, horizon_days, protection_pct, client=make_client(),
+                                borrow_rate=borrow_rate, options_at_broker=_options_at_broker(request))
+
+
+@router.get("/mark/{contract}")
+async def options_mark(contract: str) -> dict:
+    """Mark one OCC option contract (e.g. O:AAPL261023P00300000): mid, spread, exit prices, stale flag."""
+    if mk.qt.parse_occ(contract) is None:
+        raise HTTPException(422, "contract must be an OCC option symbol like O:AAPL261023P00300000.")
+    return await mk.mark(contract, client=make_client())

@@ -10,6 +10,7 @@ import { EQ, QUESTIONS, demoImpacts, type EquityPick, type Question } from "./de
 import { parseLibrary, type Library } from "./library";
 import { initSim, stepSim, type Sim } from "./sim";
 import { fitDirection, opportunityFit, reusableBridge, runnableFit, startOpportunityBridge, startRealBridge, type AppliedFit, type Settings } from "./realBridge.ts";
+import { isEvidenceError } from "./risk.ts";
 
 export { algoRunLabel, bridgeFeeGateOff, feeGateOff, gapPerShare, runnableFit } from "./realBridge.ts";
 
@@ -29,6 +30,8 @@ export type BridgeEntry =
       mode?: "hedge" | "opportunity";
       /** True when the proposal opted in to hedge A (closed_pm_hedge): reuse only matches the same choice. */
       pmHedge?: boolean;
+      /** True when the proposal set the closed-market override (act_on_unvalidated): reuse only matches the same choice. */
+      override?: boolean;
     };
 
 export interface Remote<T> { status: "loading" | "ok" | "error"; data: T | null; error: string | null }
@@ -80,14 +83,16 @@ interface Store {
   setActive: (id: string) => void;
   addDemoBridge: (q: Question, eq: EquityPick, inst: string) => string;
   seedDemo: () => void;
-  /** Explicit user action only (a click, or the pipeline when settings.guards.auto is on): approves a proposal. */
-  openBridge: (q: Question, eq: EquityPick, inst: string) => Promise<string>;
+  /** Explicit user action only (a click, or the pipeline when settings.guards.auto is on): approves a proposal.
+   *  `ackUnvalidated` is the user's ticked acknowledgement of an unvalidated market (the evidence gate). An evidence
+   *  refusal (409 EVIDENCE_UNVALIDATED) is thrown, never hidden behind a demo bridge. */
+  openBridge: (q: Question, eq: EquityPick, inst: string, opts?: { ackUnvalidated?: boolean }) => Promise<string>;
   fit: FitState | null;
   runFit: (q: Question, eq: EquityPick) => void;
   /** The Opportunity-division fit for the same pick (POST /pipeline/fit with division "opportunity"). */
   oppFit: FitState | null;
   /** Explicit user action only: proposes, approves and starts an options bridge for the opportunity fit. */
-  openOpportunity: (q: Question, eq: EquityPick) => Promise<string>;
+  openOpportunity: (q: Question, eq: EquityPick, opts?: { ackUnvalidated?: boolean }) => Promise<string>;
   library: Remote<Library>;
   account: Remote<AccountOut>;
   portfolio: Remote<PortfolioOut>;
@@ -96,6 +101,10 @@ interface Store {
   /** Hedge A opt-in for the next hedge proposal (closed-market mode). Off by default; reset on every new pick. */
   closedPmHedge: boolean;
   setClosedPmHedge: (on: boolean) => void;
+  /** Closed-market override (act_on_unvalidated) for the next hedge proposal: stage hedge B on an unvalidated market,
+   *  labelled "override". Off by default; reset on every new pick; confirmed by the acknowledged approval. */
+  actOnUnvalidated: boolean;
+  setActOnUnvalidated: (on: boolean) => void;
 }
 
 const Ctx = createContext<Store | null>(null);
@@ -126,6 +135,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [portfolio, setPortfolio] = useState<Remote<PortfolioOut>>(LOADING);
   const [session, setSession] = useState<Remote<SessionView>>(LOADING);
   const [closedPmHedge, setClosedPmHedge] = useState(false);
+  const [actOnUnvalidated, setActOnUnvalidated] = useState(false);
   const thinkTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const fitKey = useRef<string | null>(null);
   const opening = useRef<Map<string, Promise<string>>>(new Map());
@@ -179,8 +189,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     thinkTimer.current = setTimeout(() => setThinking(false), 900);
   }, []);
 
-  const setQuestion = useCallback((q: Question | null) => { setQuestionS(q); setEquityS(null); setInstS(null); setQuery(""); setClosedPmHedge(false); if (q) think(); else setThinking(false); }, [think]);
-  const setEquity = useCallback((e: EquityPick | null) => { setEquityS(e); setInstS(null); setQuery(""); setClosedPmHedge(false); if (e) think(); else setThinking(false); }, [think]);
+  const setQuestion = useCallback((q: Question | null) => { setQuestionS(q); setEquityS(null); setInstS(null); setQuery(""); setClosedPmHedge(false); setActOnUnvalidated(false); if (q) think(); else setThinking(false); }, [think]);
+  const setEquity = useCallback((e: EquityPick | null) => { setEquityS(e); setInstS(null); setQuery(""); setClosedPmHedge(false); setActOnUnvalidated(false); if (e) think(); else setThinking(false); }, [think]);
   const patchEquity = useCallback((t: string, patch: Partial<EquityPick>) => setEquityS((e) => (e && e.t === t ? { ...e, ...patch } : e)), []);
   const setInst = useCallback((id: string | null) => { setInstS(id); setQuery(""); if (id) think(); else setThinking(false); }, [think]);
   const updateSettings = useCallback((p: Partial<Settings>) => setSettings((s) => ({ ...s, ...p })), []);
@@ -203,11 +213,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setBridgeNote(null);
   }, []);
 
-  const openBridge = useCallback((q: Question, eq: EquityPick, instId: string): Promise<string> => {
+  const openBridge = useCallback((q: Question, eq: EquityPick, instId: string, opts: { ackUnvalidated?: boolean } = {}): Promise<string> => {
     const key = `${q.id}|${eq.t}`;
-    const openKey = `${key}|${closedPmHedge ? "pmHedge" : "plain"}`;
-    // Reuse a live bridge already open for this market and ticker, started under the same hedge A choice.
-    const existing = reusableBridge(bridges, q.id, eq.t, closedPmHedge);
+    const openKey = `${key}|${closedPmHedge ? "pmHedge" : "plain"}|${actOnUnvalidated ? "override" : ""}`;
+    // Reuse a live bridge already open for this market and ticker, started under the same hedge A / override choices.
+    const existing = reusableBridge(bridges, q.id, eq.t, closedPmHedge, actOnUnvalidated);
     if (existing) { setActiveId(existing.id); setBridgeNote(null); return Promise.resolve(existing.id); }
     const inflight = opening.current.get(openKey);
     if (inflight) return inflight;
@@ -216,17 +226,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (q.real && instId !== "shares") throw new Error("the engine runs only the dynamic short-shares hedge; option and contract hedges are demo-only");
         const mine = fit && fit.key === key && fit.status === "ok" ? fit.data : null;
         const want = runnableFit(mine);
-        const { bridgeId, gap, applied } = await startRealBridge(q, eq, settings.maxHedge, undefined, want, { closedPmHedge });
+        const { bridgeId, gap, applied } = await startRealBridge(q, eq, settings.maxHedge, undefined, want, { closedPmHedge, actOnUnvalidated, ackUnvalidated: opts.ackUnvalidated });
         const unapplied = mine?.family && !applied
           ? { family: mine.family, preset_index: mine.preset_index ?? null, why: mine.division !== "hedge" ? `${mine.division} families do not run on a hedge bridge` : "no preset" }
           : null;
-        const entry: BridgeEntry = { id: `live:${bridgeId}`, kind: "live", bridgeId, q, eq, inst: instId, fit: applied, unapplied, gap, pmHedge: closedPmHedge };
+        const entry: BridgeEntry = { id: `live:${bridgeId}`, kind: "live", bridgeId, q, eq, inst: instId, fit: applied, unapplied, gap, pmHedge: closedPmHedge, override: actOnUnvalidated };
         setBridges((bs) => (bs.some((b) => b.id === entry.id) ? bs : [...bs, entry]));
         setActiveId(entry.id);
         setBridgeNote(null);
         refreshAccount();
         return entry.id;
       } catch (e) {
+        // The evidence gate refused: the caller shows why; a simulator bridge would hide the refusal.
+        if (isEvidenceError(e)) throw e;
         setBridgeNote(`No engine bridge on the backend (${errMsg(e)}). This bridge runs the prototype's simulator.`);
         return addDemoBridge(q, eq, instId);
       } finally {
@@ -235,7 +247,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     })();
     opening.current.set(openKey, run);
     return run;
-  }, [bridges, settings, fit, closedPmHedge, addDemoBridge, refreshAccount]);
+  }, [bridges, settings, fit, closedPmHedge, actOnUnvalidated, addDemoBridge, refreshAccount]);
 
   const runFit = useCallback((q: Question, eq: EquityPick) => {
     const key = `${q.id}|${eq.t}`;
@@ -272,13 +284,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
-  const openOpportunity = useCallback(async (q: Question, eq: EquityPick): Promise<string> => {
+  const openOpportunity = useCallback(async (q: Question, eq: EquityPick, opts: { ackUnvalidated?: boolean } = {}): Promise<string> => {
     const key = `${q.id}|${eq.t}`;
     const existing = bridges.find((b) => b.kind === "live" && b.mode === "opportunity" && b.q?.id === q.id && b.eq?.t === eq.t);
     if (existing) { setActiveId(existing.id); return existing.id; }
     const want = opportunityFit(oppFit && oppFit.key === key && oppFit.status === "ok" ? oppFit.data : null);
     if (!want) throw new Error("no scored opportunity fit for this pick");
-    const { bridgeId, applied } = await startOpportunityBridge(q, eq.t, want);
+    const { bridgeId, applied } = await startOpportunityBridge(q, eq.t, want, undefined, undefined, opts);
     const entry: BridgeEntry = { id: `live:${bridgeId}`, kind: "live", bridgeId, q, eq, inst: "options", fit: applied, gap: null, mode: "opportunity" };
     setBridges((bs) => (bs.some((b) => b.id === entry.id) ? bs : [...bs, entry]));
     setActiveId(entry.id);
@@ -291,7 +303,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     question, equity, inst, query, thinking, setQuestion, setEquity, patchEquity, setInst, setQuery,
     settings, updateSettings, bridges, activeId, bridgeNote, setActive: setActiveId, addDemoBridge, seedDemo, openBridge,
     fit, runFit, oppFit, openOpportunity, library, account, portfolio, session, closedPmHedge, setClosedPmHedge,
-  }), [question, equity, inst, query, thinking, setQuestion, setEquity, patchEquity, setInst, settings, updateSettings, bridges, activeId, bridgeNote, addDemoBridge, seedDemo, openBridge, fit, runFit, oppFit, openOpportunity, library, account, portfolio, session, closedPmHedge]);
+    actOnUnvalidated, setActOnUnvalidated,
+  }), [question, equity, inst, query, thinking, setQuestion, setEquity, patchEquity, setInst, settings, updateSettings, bridges, activeId, bridgeNote, addDemoBridge, seedDemo, openBridge, fit, runFit, oppFit, openOpportunity, library, account, portfolio, session, closedPmHedge, actOnUnvalidated]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

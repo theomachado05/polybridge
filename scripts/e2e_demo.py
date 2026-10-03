@@ -82,8 +82,8 @@ OPP_CAPS = {"max_contracts": 10, "max_notional": 10_000.0}  # the web's DEFAULT_
 # in 2025 (Polymarket 516710, the one market whose expected-gap model is validated out of sample, R2), Friday
 # 2025-04-04 15:30 ET to Monday 2025-04-07 10:00 ET, PM history at 5-minute points and 5-minute SPY bars. 799 rows over
 # 66.5 h: at 3600x the replay takes about 67 s and the staged plan must be approved before Monday 04:00 (about 61 s in).
-# The backend runs WITHOUT the env file here: the replay carries its own (2025) prices, and a live 2026 quote would mix
-# two price times into the hedge's P&L.
+# The backend runs WITHOUT the env file and with POLYBRIDGE_REPLAY_PRICES=recorded here: the replay carries its own
+# (2025) prices, and a live 2026 quote would mix two price times into the hedge's P&L.
 WK_MARKET_ID = "516710"
 WK_TOKEN = "104173557214744537570424345347209544585775842950109756851652855913015295701992"
 WK_TICKER = "SPY"
@@ -243,6 +243,35 @@ def read_sse(base: str, bridge_id: str, want_events: int, max_s: float, need_fil
 
 # ------------------------------------------------------------------ the flow
 
+def approve_gated(base: str, prop: dict) -> dict:
+    """Approve through the evidence gate (docs/design.md section 6). A proposal whose (market, ticker) signal has not
+    passed its out-of-sample test is refused (409 EVIDENCE_UNVALIDATED) until the approval acknowledges it
+    (ack_unvalidated: true); every decision and fill of its bridge is then labelled "unvalidated (acknowledged)". The
+    capacity block (participation caps, est. cost, capital budget) is shown before approving."""
+    ev = prop.get("evidence") or {}
+    cap = prop.get("capacity") or {}
+    eq = cap.get("equity") or {}
+    say(f"     evidence: {ev.get('status')} - {str(ev.get('evidence'))[:160]}")
+    if eq.get("available"):
+        say(f"     capacity: hedge {eq.get('hedge_shares')} sh vs max order {eq.get('max_order_shares')} sh "
+            f"(10% of the opening 5 min), {eq.get('per_day_shares')} sh/day (1% ADV); est. cost "
+            f"{eq.get('est_cost_bp') or float('nan'):.1f} bp; capacity ${eq.get('book_usd_capacity') or 0:,.0f}")
+    else:
+        say(f"     capacity: {eq.get('reason') or cap.get('options', {}).get('note') or 'n/a'}")
+    capital = cap.get("capital") or {}
+    say(f"     capital: fits={capital.get('fits')} {[b.get('kind') for b in capital.get('breaches') or []]}")
+    check("the proposal carries a capacity block before approval", bool(cap) and "caps" in cap, "")
+    if ev.get("validated"):
+        s, out = call(base, "POST", f"/proposals/{prop['id']}/approve")
+    else:
+        s0, refused = call(base, "POST", f"/proposals/{prop['id']}/approve")
+        check("approval without the acknowledgement is refused (409 EVIDENCE_UNVALIDATED)",
+              s0 == 409 and "EVIDENCE_UNVALIDATED" in str(refused), f"{s0}")
+        s, out = call(base, "POST", f"/proposals/{prop['id']}/approve", {"ack_unvalidated": True})
+    check("approve", s == 200 and out["status"] == "approved", f"{s}")
+    return out
+
+
 def run_flow(base: str, args) -> dict:
     out: dict = {}
     say("\n== 1. health")
@@ -298,8 +327,7 @@ def run_flow(base: str, args) -> dict:
         raise Abort("proposal refused")
     s2, nope = call(base, "POST", "/bridges", {"proposal_id": prop["id"], "source": "replay", "gap_per_share": 1.0})
     check("a bridge on an unapproved proposal is refused (409)", s2 == 409, f"{s2}")
-    s, prop = call(base, "POST", f"/proposals/{prop['id']}/approve")
-    check("approve", s == 200 and prop["status"] == "approved", f"{s}")
+    prop = approve_gated(base, prop)
     out["proposal"] = prop
     ra = prop.get("algo") or {}
     say(f"     proposal {prop['id']}: {prop['label']}; will run {ra.get('family')} #{ra.get('preset_index')} "
@@ -480,8 +508,7 @@ def run_opportunity_flow(base: str, args) -> dict:
             "replay_to_account": True}  # so GET /orders shows the option legs (the default replay sandbox is invisible there)
     s2, _ = call(base, "POST", "/bridges", body)
     check("a bridge on an unapproved proposal is refused (409)", s2 == 409, f"{s2}")
-    s, prop = call(base, "POST", f"/proposals/{prop['id']}/approve")
-    check("approve", s == 200 and prop["status"] == "approved", f"{s}")
+    prop = approve_gated(base, prop)
     out["proposal"] = prop
 
     say("\n== 6. POST /bridges (replay; option orders go to the SimBroker)")
@@ -587,8 +614,10 @@ def run_weekend_flow(base: str, args) -> dict:
     check("proposal created, hedge A not opted in", s == 201 and prop.get("closed_pm_hedge") is False, f"{s}")
     if s != 201:
         raise Abort(f"proposal refused: {prop}")
-    s, prop = call(base, "POST", f"/proposals/{prop['id']}/approve")
-    check("approve", s == 200 and prop["status"] == "approved", f"{s}")
+    check("the evidence gate: US recession 2025 on SPY is validated out of sample (no override needed)",
+          (prop.get("evidence") or {}).get("validated") is True, (prop.get("evidence") or {}).get("status", ""))
+    prop = approve_gated(base, prop)
+    check("approved without an acknowledgement (validated market)", prop.get("ack_unvalidated") is False, "")
     out["proposal"] = prop
 
     say("\n== 4. POST /bridges (replay of the recorded weekend, replay sandbox)")
@@ -834,7 +863,7 @@ def main() -> int:
         if not shutil.which("uv"):
             raise Abort("uv is not installed (https://docs.astral.sh/uv/)")
         env_file = None if (args.offline or args.weekend) else find_env_file(args.env_file)
-        say(f"MASSIVE_API_KEY source: {'env file (' + env_file.name + ')' if env_file else ('not passed (--weekend; the backend may still find a .env above backend/, so its own sim fills can use the current quote; the closure P&L uses recorded prices only)' if args.weekend else 'none found: live equity quotes degrade to recorded bars')}")
+        say(f"MASSIVE_API_KEY source: {'env file (' + env_file.name + ')' if env_file else ('not passed (--weekend; POLYBRIDGE_REPLAY_PRICES=recorded: every fill and the closure P&L use the recorded 2025 prices)' if args.weekend else 'none found: live equity quotes degrade to recorded bars')}")
         need_web = not args.no_screens
         busy = [(n, p) for n, p in [("backend", args.backend_port)] + ([("web", args.web_port)] if need_web else []) if port_busy(p)]
         if busy and not args.reuse:
@@ -843,6 +872,8 @@ def main() -> int:
         if not args.reuse:
             env = {**os.environ, "POLYBRIDGE_REPLAY_PATH": str(Path(args.replay).resolve()), "POLYBRIDGE_REPLAY_SPEED": str(args.speed),
                    "BROKER": "sim", "SIM_ACCOUNT_PATH": str(work / "sim_account.json"), "PYTHONUNBUFFERED": "1"}
+            if args.weekend:  # the bridge's own sandbox fills at the recorded (2025) prices too, like `make dev`
+                env["POLYBRIDGE_REPLAY_PRICES"] = "recorded"
             for k in ("WEBULL_APP_KEY", "WEBULL_APP_SECRET"):
                 env.pop(k, None)
             if args.offline:  # httpx honours these: every call to Polymarket, Kalshi, Massive, Gemini is refused at once

@@ -81,8 +81,10 @@ def test_propose_then_approve_requires_confirm(client):
         r = call(client, "approve", {"proposal_id": pid, **bad})
         assert r.status_code == 200 and r.json()["ok"] is False and r.json()["needs_confirmation"] is True
     assert client.get("/proposals").json()[0]["status"] == "proposed"
-    ok = call(client, "approve", {"proposal_id": pid, "confirm": True}).json()
-    assert ok["ok"] and ok["data"]["status"] == "approved"
+    gated = call(client, "approve", {"proposal_id": pid, "confirm": True}).json()  # evidence gate: m1 is unvalidated
+    assert gated["ok"] is False and gated["status"] == 409 and "ack_unvalidated" in gated["summary"]
+    ok = call(client, "approve", {"proposal_id": pid, "confirm": True, "ack_unvalidated": True}).json()
+    assert ok["ok"] and ok["data"]["status"] == "approved" and ok["data"]["ack_unvalidated"] is True
     again = call(client, "approve", {"proposal_id": pid, "confirm": True})
     assert again.status_code == 200 and again.json()["ok"] is False
 

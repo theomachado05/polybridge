@@ -2,6 +2,8 @@
 
 Pre-registration: [HYPOTHESIS.md](HYPOTHESIS.md) (19:38 ET, 2 Oct 2026) and [HYPOTHESIS_TAGS.md](HYPOTHESIS_TAGS.md) (20:08 ET), both committed before any event data was fetched.
 
+Every result of every study, with its source file: [EVIDENCE.md](EVIDENCE.md). How the product gates on them: [../docs/design.md](../docs/design.md), section 6.
+
 ## Reproduce (Python 3.10+, only a Massive API key)
 
 ```bash

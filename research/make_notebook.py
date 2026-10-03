@@ -341,9 +341,77 @@ C13 = """\
 """
 
 
+CM_MD = """\
+## Closed-market evidence (stocks close, prediction markets don't)
+
+The 8-K study above is the rigorous "what didn't work". This section is the evidence behind PolyBridge's closed-market mode
+and its principle, **evidence gating**: a market's signal may act on a position only after it passed a pre-registered
+out-of-sample test; otherwise it is shown as an unvalidated estimate.
+
+**Reproducible offline.** These cells read only the committed files in `results/leadlag_closed`, `results/leadlag_replication`,
+`results/gap_model`, `results/closed_hedge` and `results/open_options`. They make no network call and do not need
+`MASSIVE_API_KEY`, so they run on their own (run the first code cell of this section, then the rest). Every headline number
+is recomputed from the CSVs with the studies' own functions, parameters and seeds (10,000 permutations or bootstrap draws),
+then checked against the committed JSON. Methods: the `METHOD.md` file in each study folder; numbers quoted elsewhere come
+from `EVIDENCE.md`.
+
+**How to read the verdicts.** *Confirmatory* = pre-registered and run once on new data. *Pre-registered analysis of a
+known panel* = the rule was fixed in advance, but the 380-closure panel had already been seen, so it is not confirmatory.
+*Exploratory* = a reading made after seeing the results.
+"""
+
+CM1 = '''\
+# Closed-market evidence: recompute every headline number from the committed result files (no network, no key)
+import sys
+from pathlib import Path
+
+import pandas as pd
+from IPython.display import display
+
+RESEARCH = next(p for p in (Path.cwd(), Path.cwd() / "research") if (p / "closed_market_section.py").exists())
+if str(RESEARCH) not in sys.path:
+    sys.path.insert(0, str(RESEARCH))
+import closed_market_section as cms
+
+cm_data = cms.load(RESEARCH / "results")
+cm = cms.recompute(cm_data)
+cm_check = cms.comparison(cm, cm_data)
+with pd.option_context("display.float_format", "{:.6g}".format):
+    display(cm_check.set_index(["study", "statistic"]))
+print(f"{int(cm_check['match'].sum())} of {len(cm_check)} recomputed numbers match the committed JSON"
+      + ("" if cm_check["match"].all() else "  <-- MISMATCH: the committed files disagree; trust neither until resolved"))
+'''
+
+CM2 = '''\
+import matplotlib.pyplot as plt
+
+cms.chart(cm_data, cm)
+plt.show()
+'''
+
+CM3 = '''\
+cm_summary = cms.summary(cm)
+with pd.option_context("display.max_colwidth", None):
+    display(cm_summary.set_index("finding"))
+'''
+
+CM_END = """\
+**What this supports.** Options at the Monday open had repriced by about 0.44 of the prediction market's closure move
+(R3, fresh data), but after option costs the residual gap is not above zero, so R3 is NULL: information, not an arbitrage.
+The expected-gap model held out of sample in time on the US-recession market only (R2), which is why each market is gated on
+its own result. Staging the equity hedge for 09:30 reduced post-open variance (R1 hedge B), fragile and on a known panel.
+
+**What it does not support.** That prediction markets lead or predict the open, or beat futures (futures were not observed);
+that the 380-closure relation is confirmed (it did not replicate); that the expected gap works beyond the recession market;
+that hedge B reduces the gap itself; that the PM-contract hedge (hedge A) protects; that options at the open are a tradable
+arbitrage.
+"""
+
+
 def build(path: Path | None = None) -> None:
     nb = new_notebook(cells=[md(C1), code(C2), code(C3), code(C4), code(C5), code(C6), code(C6R), code(C7), code(C8), code(C9),
-                             code(C10), code(C11), md(C12M), code(C12), md(C13)])
+                             code(C10), code(C11), md(C12M), code(C12), md(C13),
+                             md(CM_MD), code(CM1), code(CM2), code(CM3), md(CM_END)])
     nb.metadata["kernelspec"] = {"display_name": "Python 3", "language": "python", "name": "python3"}
     for i, cell in enumerate(nb.cells):
         cell["id"] = f"cell-{i:02d}"

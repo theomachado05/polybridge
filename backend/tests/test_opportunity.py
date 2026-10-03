@@ -361,7 +361,7 @@ def opp_proposal(c, algo=None, approve=True, **kw):
     r = c.post("/proposals", json=body)
     assert r.status_code == 201, r.text
     if approve:
-        assert c.post(f"/proposals/{r.json()['id']}/approve").status_code == 200
+        assert c.post(f"/proposals/{r.json()['id']}/approve", json={"ack_unvalidated": True}).status_code == 200
     return r.json()
 
 
@@ -401,7 +401,7 @@ def test_opportunity_bridge_keeps_every_approval_gate(opp_client):
     assert c.post("/bridges", json=body("nope")).status_code == 404
     p = opp_proposal(c, approve=False)
     assert c.post("/bridges", json=body(p["id"])).status_code == 409  # not approved
-    c.post(f"/proposals/{p['id']}/approve")
+    c.post(f"/proposals/{p['id']}/approve", json={"ack_unvalidated": True})
     r = c.post("/bridges", json=body(p["id"]))
     assert r.status_code == 201
     bid = r.json()["bridge_id"]
@@ -414,7 +414,7 @@ def test_opportunity_bridge_keeps_every_approval_gate(opp_client):
     assert other.status_code == 409  # the approval covers what runs
     # a filing opportunity proposal without an options algo still never reaches hedgecore
     pid = c.post("/proposals", json={"ticker": "ABNB", "tags": ["workforce_reduction"], "shares_held": 10}).json()["id"]
-    c.post(f"/proposals/{pid}/approve")
+    c.post(f"/proposals/{pid}/approve", json={"ack_unvalidated": True})
     r = c.post("/bridges", json={**body(pid), "market": MKT})
     assert r.status_code == 409 and "single simulated options order" in r.json()["detail"]
 
@@ -425,7 +425,7 @@ def test_filing_opportunity_with_an_options_algo_can_bridge(opp_client):
                                    "algo": {"family": "eightk_opportunity"}})
     assert r.status_code == 201 and r.json()["max_contracts"] == 10
     pid = r.json()["id"]
-    c.post(f"/proposals/{pid}/approve")
+    c.post(f"/proposals/{pid}/approve", json={"ack_unvalidated": True})
     r = c.post("/bridges", json={"proposal_id": pid, "source": "replay", "market": MKT})
     assert r.status_code == 201
     _events(c, r.json()["bridge_id"])
@@ -554,6 +554,61 @@ def test_webull_routes_option_combos_to_the_simulator_labelled(opp_client):
     assert f["routed"].startswith("simulator")
     assert run(sim.positions()) == []  # opened in the Webull wrapper's simulator, closed there at bridge end
     assert sorted(o.symbol for o in run(sim.orders())) == ["O:NVDA261218C00145000"] * 2 + ["O:NVDA261218C00155000"] * 2
+
+
+def test_webull_options_mode_places_combos_at_webull_labelled_and_only_in_session(opp_client):
+    """WEBULL_OPTIONS=1 (options_supported): the combo goes to Webull, so the fill is not labelled simulated, the
+    capital check reads the Webull account (not its simulator), and outside 09:30-16:00 ET nothing is sent."""
+    from types import SimpleNamespace
+
+    from app.broker.models import Order, now_iso
+    from app.closed.bridge_mode import ClosedMode
+
+    c = opp_client
+    sim = SimBroker(None)
+    wb = WebullBroker(object(), sim, options_supported=True)
+    placed, accounts = [], []
+
+    async def combo(reqs):
+        placed.append([r.symbol for r in reqs])
+        return [Order(id=r.client_order_id, client_order_id=r.client_order_id, broker=wb.name, symbol=r.symbol,
+                      asset="option", side=r.side, qty=r.qty, type="limit", status="filled", filled_qty=r.qty,
+                      fill_px=r.ref_px, fee=0.65, created_at=now_iso(), price_source="webull_paper", combo_id=r.combo_id)
+                for r in reqs]
+
+    async def account():
+        accounts.append("webull")
+        return SimpleNamespace(equity=1e6, cash=1e6, buying_power=2e6, broker=wb.name)
+
+    async def no_positions():
+        return []
+    wb.place_combo, wb.account, wb.positions = combo, account, no_positions
+    c.app.state.broker = wb
+    c.app.state.staged_clock = lambda: dt.datetime(2026, 10, 7, 15, 0, tzinfo=dt.timezone.utc)  # Wed 11:00 ET
+    FakeAlgo.script, FakeAlgo.instances = {2: {"instrument": "option", "side": 1, "qty": 1.0}}, []
+    p = opp_proposal(c)
+    r = c.post("/bridges", json={"proposal_id": p["id"], "source": "replay", "replay_to_account": True})
+    bid = r.json()["bridge_id"]
+    fills = [d for k, d in _events(c, bid) if k == "fill"]
+    f = fills[0]
+    assert f["status"] == "filled" and f["broker"] == "webull-paper" and f["simulated"] is False
+    assert f["routed"] == bridges.ROUTED_BROKER and f["fill_model"] == bridges.OPTION_FILLS_LABEL_BROKER
+    assert f["capital"]["checked"] is True and accounts  # checked against the Webull account
+    assert fills[-1]["close_reason"] == "bridge_end" and fills[-1]["close_label"] == bridges.OPTION_CLOSE_LABEL_BROKER
+    assert len(placed) == 2 and run(sim.orders()) == []  # entry and close at Webull, nothing in its simulator
+    s = c.get(f"/bridges/{bid}").json()
+    assert s["fills_label"] == bridges.OPTION_FILLS_LABEL_BROKER
+
+    # off-session: the opportunity loop holds (broker_hold), and the order path itself never sends to Webull
+    br = SimpleNamespace(division="opportunity", order_broker=lambda: wb, app=c.app)
+    assert ClosedMode.broker_hold.fget(SimpleNamespace(hedging=False, bridge=br)) is True
+    wb_sim_opts = WebullBroker(object(), sim)  # options in the simulator: an opportunity bridge trades any hour
+    br2 = SimpleNamespace(division="opportunity", order_broker=lambda: wb_sim_opts, app=c.app)
+    assert ClosedMode.broker_hold.fget(SimpleNamespace(hedging=False, bridge=br2)) is False
+    c.app.state.staged_clock = lambda: dt.datetime(2026, 10, 3, 16, 0, tzinfo=dt.timezone.utc)  # Saturday
+    assert bridges._options_closed_at_broker(br, wb) is True
+    assert bridges._options_closed_at_broker(br, wb_sim_opts) is False
+    assert bridges._options_closed_at_broker(br, sim) is False
 
 
 # ---------------------------------------------------------------- SimBroker combos

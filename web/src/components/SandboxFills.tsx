@@ -8,6 +8,7 @@ import { prettyId } from "@/lib/fmt";
 import { useAsync } from "@/lib/hooks";
 import { sandboxFills, useBridgeStream } from "@/lib/useBridgeStream";
 import { Glass, Label, Tag } from "@/components/pb";
+import { fillBadges, gateCounts } from "@/lib/risk";
 
 /** At most this many bridges are streamed at once (each holds one SSE connection to the backend). */
 const MAX_STREAMS = 4;
@@ -55,7 +56,8 @@ function BridgeFills({ id, onOpen }: { id: string; onOpen: (id: string) => void 
     return <div>{head}<div style={{ fontSize: 12, color: "#8A92A8", marginTop: 4 }}>Bridge summary unavailable ({summary.error}).</div></div>;
   }
   if (scope === "account") {
-    return <div>{head}<div style={{ fontSize: 12, color: "#5A627A", marginTop: 4 }}>Not a sandbox bridge: its orders go to the account and show under Recent fills.</div></div>;
+    const c = gateCounts(st.log.map((l) => l.fill), sum);
+    return <div>{head}<div style={{ fontSize: 12, color: "#5A627A", marginTop: 4 }}>Not a sandbox bridge: its orders go to the account and show under Recent fills.{c.liquidity || c.capital ? ` ${c.liquidity} order${c.liquidity === 1 ? "" : "s"} liquidity-capped, ${c.capital} refused by the capital budget.` : ""}</div></div>;
   }
   return (
     <div>
@@ -73,6 +75,7 @@ function BridgeFills({ id, onOpen }: { id: string; onOpen: (id: string) => void 
               {f.qty.toLocaleString("en-US")} {f.what === "sh" ? ticker : f.what}{f.px != null ? ` @ ${f.px.toFixed(2)}` : ""}
               <span style={{ color: "#5A627A" }}>{f.status !== "filled" ? ` · ${f.status}` : ""}{f.family ? ` · ${prettyId(f.family)}${f.preset != null ? ` #${f.preset}` : ""}` : " · engine"}{f.fee ? ` · fee $${f.fee.toFixed(2)}` : ""}</span>
               {f.priceNote?.startsWith("recorded price") && <span title={f.priceNote} style={{ color: "#8A6A1F" }}> · recorded price</span>}
+              {fillBadges({ gates: f.gates, reject_reason: f.reject, evidence: f.evidence }).map((b) => <span key={b.text} style={{ marginLeft: 6 }}><Tag tone={b.tone} title={b.title}>{b.text}</Tag></span>)}
             </span>
           </div>
         ))}

@@ -1,4 +1,4 @@
-"""Evidence gate for closed-market numbers (plan 2026-10-03-closed-market-mode.md; research R1, R2, R3).
+"""Evidence gate for closed-market numbers (docs/design.md, section 6; research R1, R2, R3).
 
 A closed-market expected gap (and the hedge sized on it) is shown as **validated** only for a market whose OWN
 out-of-sample record passes R2's pre-set rule (``backend/app/data/gap_evidence.json``, written by
@@ -127,6 +127,35 @@ def gate(evid: dict, label: str | None, ticker: str | None, basis_ticker: str | 
                'ticker'} borrows that rate as a proxy, so the number is an unvalidated estimate.")
         return False, UNVALIDATED, why
     return True, VALIDATED, str(evid.get("evidence") or "")
+
+
+NO_MARKET_EVIDENCE = ("No prediction market is named yet (a filing-tags proposal takes its market at bridge start), so "
+                      "no market signal has passed an out-of-sample test: unvalidated estimate.")
+# Labels carried by every bridge decision / fill and by every staged plan and order (enforced gate, see section 6).
+LABEL_VALIDATED = "validated"
+LABEL_ACKNOWLEDGED = "unvalidated (acknowledged)"  # regular hours: approved with ack_unvalidated=true
+LABEL_OVERRIDE = "override"                        # closed hours: staged plan on an unvalidated market, act_on_unvalidated
+
+
+def signal_status(market_source: str | None, market_id: str | None, token_id: str | None = None,
+                  ticker: str | None = None, doc: dict | None = None) -> dict:
+    """The evidence gate for a (market, ticker) pair before any PM move is known: the same rule as ``gate`` (the
+    market's own out-of-sample record passes R2, its own rate is in use, and the rate was estimated on this ticker),
+    with the rate the gap service would choose. {validated, status, evidence, market, rate_source, basis_ticker,
+    reasons, oos}."""
+    if not market_source or not market_id:
+        return {"validated": False, "status": UNVALIDATED, "evidence": NO_MARKET_EVIDENCE, "market": None,
+                "rate_source": None, "basis_ticker": None, "reasons": [], "oos": None}
+    from .gap import GAP_PROXY_TICKER, choose_rate, load_rates
+    evid = market_evidence(market_source, market_id, token_id, doc=doc)
+    rates = load_rates()
+    r, _own, codes = choose_rate(rates, market_source, market_id, ticker, token_id or evid.get("token_id"))
+    codes = list(codes)
+    if ticker and ticker.upper() != (r.ticker or "").upper():
+        codes.append(GAP_PROXY_TICKER)
+    validated, status, why = gate(evid, r.label, ticker, r.ticker, codes)
+    return {"validated": validated, "status": status, "evidence": why, "market": evid.get("market"),
+            "rate_source": r.label, "basis_ticker": r.ticker, "reasons": codes, "oos": evid.get("oos")}
 
 
 def _p(p: Any) -> str:

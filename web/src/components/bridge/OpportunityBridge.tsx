@@ -8,6 +8,8 @@ import { gapPts, optionFillText, probPct } from "@/lib/opportunity";
 import { quantile, type StreamState } from "@/lib/useBridgeStream";
 import { Glass, Label, Spark, Tag, panel } from "@/components/pb";
 import { TradesPanel, type TradeCard } from "./parts";
+import { evidenceLabelBadge, fillBadges, gateSentence } from "@/lib/risk";
+import { LegMark } from "@/components/options/OptionsCards";
 
 export function OpportunityBridge({ id, summary, st, question, sourceTag }: {
   id: string; summary: BridgeSummary | null; st: StreamState; question: string; sourceTag: React.ReactNode;
@@ -26,7 +28,8 @@ export function OpportunityBridge({ id, summary, st, question, sourceTag }: {
     return {
       id: l.n, side: f.status === "filled" ? (f.side === "sell" ? "SELL" : "BUY") : "HOLD", time: `#${l.n}`, head: t.head,
       algo: l.family ? `${prettyId(l.family)}${l.preset != null ? ` · preset ${l.preset}` : ""}` : "options algo",
-      reason: `${l.reason.replaceAll("_", " ")}${l.signal != null ? ` (signal ${l.signal.toFixed(3)})` : ""}, decided in ${fmtNs(l.ns)}. ${t.detail}`,
+      reason: `${l.reason.replaceAll("_", " ")}${l.signal != null ? ` (signal ${l.signal.toFixed(3)})` : ""}, decided in ${fmtNs(l.ns)}. ${t.detail}${f.gates?.length ? ` ${gateSentence(f)}` : ""}`,
+      tags: fillBadges(f, l.evidence),
     };
   });
   // The summary is read once when the screen opens; the stream says whether option data has arrived since.
@@ -45,6 +48,7 @@ export function OpportunityBridge({ id, summary, st, question, sourceTag }: {
           <Label>01 · OPPORTUNITY · {summary?.ticker ?? ""}</Label>
           <span style={{ display: "inline-flex", gap: 6, flexWrap: "wrap" }}>{sourceTag}{dataTag}{simTag}
             {algo && <Tag tone="ai" title="The options family approved with the proposal (AI fit)">Running {prettyId(algo.family)} · preset {algo.preset_index ?? "custom"}</Tag>}
+            {(() => { const b = evidenceLabelBadge(summary?.evidence_label); return b ? <Tag tone={b.tone} title={summary?.evidence?.evidence ?? b.title}>{b.text}</Tag> : null; })()}
           </span>
         </div>
         <div className="pb-serif pb-pretty" style={{ fontSize: 22, lineHeight: 1.35 }}>{question}</div>
@@ -72,8 +76,9 @@ export function OpportunityBridge({ id, summary, st, question, sourceTag }: {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><Label>02 · OPTION POSITION</Label>{simTag}</div>
           <div style={{ fontSize: 30, fontWeight: 600, letterSpacing: "-.03em" }}>{pos > 0 ? "+" : ""}{pos} <span style={{ fontSize: 14, color: "#5A627A", fontWeight: 400 }}>{summary?.option_structure?.kind?.replaceAll("_", " ") ?? "structures"}</span></div>
           {summary?.option_structure?.legs && (
-            <div className="pb-mono" style={{ fontSize: 11.5, color: "#3C4458", lineHeight: 1.6 }}>
-              {summary.option_structure.legs.map((lg) => <div key={lg.ticker}>{lg.sign > 0 ? "+" : "−"} {lg.ticker}</div>)}
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {summary.option_structure.legs.map((lg) => <LegMark key={lg.ticker} contract={lg.ticker} sign={lg.sign} />)}
+              <div style={{ fontSize: 11, color: "#5A627A" }}>Marks: GET /options/mark (mid ± half spread; NBBO when quoted, else an estimated spread; a closed market shows the last close).</div>
             </div>
           )}
           <div style={{ fontSize: 12.5, color: "#3C4458" }}>

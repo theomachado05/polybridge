@@ -26,9 +26,16 @@ def buy(client, **kw):
 def test_account_starts_at_a_million(client):
     r = client.get("/account")
     assert r.status_code == 200
-    assert r.json() | {"note": None} == {"broker": "sim", "cash": 1_000_000.0, "equity": 1_000_000.0,
-                                         "buying_power": 1_000_000.0, "currency": "USD", "simulated": True,
-                                         "starting_cash": 1_000_000.0, "realized_pnl": 0.0, "fees_paid": 0.0, "note": None}
+    j = r.json()
+    session = {k: j.pop(k) for k in ("market_open", "session", "next_open")}  # from the session clock (wall time)
+    assert isinstance(session["market_open"], bool) and session["session"] and session["next_open"].endswith("Z")
+    assert (j.pop("options_supported"), j.pop("options_route")) == (True, "sim")  # simulated option fills
+    j = {k: v for k, v in j.items() if v is not None}  # margin fields: a Webull margin account only
+    assert j | {"note": None, "account_type": None, "account_class": None, "account_label": None} == {"broker": "sim", "cash": 1_000_000.0, "equity": 1_000_000.0,
+                                  "buying_power": 1_000_000.0, "currency": "USD", "simulated": True,
+                                  "starting_cash": 1_000_000.0, "realized_pnl": 0.0, "fees_paid": 0.0, "note": None,
+                                  "account_type": None, "account_class": None, "account_label": None,
+                                  "extended_hours": True}
 
 
 def test_post_order_fills_and_shows_in_positions_and_orders(client):

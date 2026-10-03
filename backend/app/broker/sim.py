@@ -52,6 +52,8 @@ def _r(x: float) -> float:
 class SimBroker:
     name = "sim"
     extended_hours = True  # simulated: an extended-hours order fills like any other (at the supplied / quoted price)
+    options_supported = True  # simulated option fills (quote mid +/- half-spread, per-contract fee)
+    ACCOUNT_LABEL = "Simulated account"
 
     def __init__(self, path: Path | str | None = DEFAULT_PATH, quotes: QuoteProvider | None = None,
                  starting_cash: float = START_CASH, fees: Fees | None = None,
@@ -312,7 +314,12 @@ class SimBroker:
         return Account(broker=self.name, cash=_r(self.cash), equity=_r(self._equity(self.cash, self.pos)),
                        buying_power=_r(max(0.0, self._buying_power(self.cash, self.pos))),
                        starting_cash=self.starting_cash, realized_pnl=self.realized, fees_paid=self.fees_paid,
+                       options_supported=True, options_route=self.name,
                        note="Simulated account: fills are modelled, not real.")
+
+    async def can_short(self, symbol: str) -> bool | None:
+        """The simulator models no borrow: every equity can be shorted here (simulated, not a borrow check)."""
+        return True
 
     async def positions(self) -> list[Position]:
         out = []
@@ -321,7 +328,7 @@ class SimBroker:
             out.append(Position(symbol=p["symbol"], asset=p["asset"], qty=p["qty"], avg_px=_r(p["avg_px"]),
                                 mark_px=mark, market_value=_r(p["qty"] * mark * p["mult"]),
                                 unrealized_pnl=_r((mark - p["avg_px"]) * p["qty"] * p["mult"]),
-                                multiplier=p["mult"], broker=self.name))
+                                multiplier=p["mult"], broker=self.name, account=self.ACCOUNT_LABEL))
         return out
 
     async def refresh_marks(self) -> None:

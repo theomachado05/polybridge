@@ -114,7 +114,16 @@ REASONS: dict[str, str] = {
     "broker_rejected": "the simulated broker rejected the combo",
     "filled": "filled (simulated) at the open",
     "cancelled_by_user": "cancelled by the user",
+    # the gates every order passes (docs/design.md sections 6, 10 and 11)
+    "evidence_unvalidated": "R3 (do options catch up at the open?) does not support this signal: a trade is staged "
+                            "only with ack_unvalidated: true, an explicit acknowledgement that it acts on an "
+                            "unvalidated estimate",
+    "liquidity_capped": "a leg's participation cap (10% of its volume, 5% of its open interest) leaves room for no "
+                        "whole contract",
+    "capital_budget": "the capital budget (gross / per-event hedge exposure, buying power) refuses this trade's risk, "
+                      "or the account cannot be read (fail closed)",
 }
+EVIDENCE_LABEL = "unvalidated (acknowledged)"  # R3 is NULL: every staged trade says so
 
 
 # ------------------------------------------------------------------------------------------------------ helpers
@@ -496,12 +505,15 @@ def review_trade(trade: dict, snap: dict | None, pm_now: float | None, *, now: A
 
 
 async def execute_trade(trade: dict, snap: dict, *, now: Any, pm_now: float | None, chain: ch.Chain | None,
-                        broker, cache_stale: bool = False, book_room: float | None = None) -> dict:
+                        broker, cache_stale: bool = False, book_room: float | None = None, app=None) -> dict:
     """Execute an approved trade at the open, simulated, all legs or none. Mutates ``trade`` (status, events,
     execution) and returns {"outcome": executed|held|cancelled|expired|rejected|refused, reason_code, ...}.
     ``held`` keeps the trade approved so a later call retries inside the window. ``book_room``: what the total cap
     across opportunity trades allows this trade (its own staged estimate excluded). The simulated orders carry the
-    decision time (``now``) in their note, since the broker stamps its own wall clock."""
+    decision time (``now``) in their note, since the broker stamps its own wall clock. Before the combo is sent the
+    trade passes the option participation caps (every leg <= 10% of its volume and <= 5% of its open interest; cut to
+    the cap, refused at 0) and, when ``app`` is given, the capital budget at the account the legs fill in (its max loss,
+    the debit plus fees; refused on a breach or an unreadable account)."""
     t = sc.to_utc(now)
 
     def out(outcome: str, code: str, **extra) -> dict:
@@ -565,10 +577,28 @@ async def execute_trade(trade: dict, snap: dict, *, now: Any, pm_now: float | No
         _event(trade, t, "rejected", "no_broker")
         return out("rejected", "no_broker")
     from ..broker.models import OrderRequest
+    from ..liquidity import gate as liquidity
     sl = chain.slice(st["expiry"])
+    quotes = [(sl.get(float(lg["strike"])) or {}).get(lg["kind"]) for lg in live["legs"]]
+    lq = liquidity.option_check(quotes, qty)
+    gates = {"liquidity": {k: v for k, v in lq.items() if k != "allowed"}}
+    if lq["status"] == "capped":
+        if int(lq["allowed"]) <= 0:
+            trade["status"] = "rejected"
+            _event(trade, t, "rejected", "liquidity_capped", leg=lq.get("leg"), limit_qty=lq.get("limit_qty"))
+            trade["execution"] = {"gates": gates}
+            return out("rejected", "liquidity_capped", liquidity=gates["liquidity"])
+        qty, cap = int(lq["allowed"]), "liquidity_capped"
+    if app is not None:
+        chk = await _capital(app, place, broker, trade, qty * float(live["unit_cost"]))
+        gates["capital"] = chk
+        if chk.get("refused"):
+            trade["status"] = "rejected"
+            _event(trade, t, "rejected", "capital_budget", detail=chk.get("detail"))
+            trade["execution"] = {"gates": gates}
+            return out("rejected", "capital_budget", capital=chk)
     reqs = []
-    for i, lg in enumerate(live["legs"]):
-        q = (sl.get(float(lg["strike"])) or {}).get(lg["kind"])
+    for i, (lg, q) in enumerate(zip(live["legs"], quotes)):
         mid = _fin(getattr(q, "mid", None))
         b, a = _fin(getattr(q, "bid", None)), _fin(getattr(q, "ask", None))
         half = (a - b) / 2.0 if b is not None and a is not None and a >= b else None
@@ -594,7 +624,7 @@ async def execute_trade(trade: dict, snap: dict, *, now: Any, pm_now: float | No
         "cost": round(net * 100 * qty + sum(o.fee for o in orders), 2) if net is not None else None,
         "broker": orders[0].broker if orders else None, "simulated": True, "fill_model": SIM_NOTE,
         # The broker stamps its own wall clock on the orders; in a replay that differs from ``at`` (the tick time).
-        "broker_filled_at": orders[0].filled_at if orders else None, "book_room": book_room,
+        "broker_filled_at": orders[0].filled_at if orders else None, "book_room": book_room, "gates": gates,
     }
     if filled:
         trade["status"] = "executed"
@@ -604,6 +634,24 @@ async def execute_trade(trade: dict, snap: dict, *, now: Any, pm_now: float | No
     why = next((o.reject_reason for o in orders if o.reject_reason), None)
     _event(trade, t, "rejected", "broker_rejected", detail=why)
     return out("rejected", "broker_rejected", detail=why)
+
+
+async def _capital(app, place, broker, trade: dict, risk_usd: float) -> dict:
+    """The capital budget for the trade's max loss, checked at the account the legs fill in (the simulator behind
+    Webull paper, since ``_combo_target`` sends the combo there). Fails closed when the check itself fails."""
+    from ..capital import service as cap
+    from ..capital.budget import CAPITAL_BUDGET
+    acct = getattr(place, "__self__", None) or broker
+    try:
+        chk = await cap.check(app, broker=acct, event=cap.event_key(trade.get("market")), add_notional=risk_usd,
+                              add_margin=risk_usd)
+    except Exception as e:
+        return {"refused": True, "reason": CAPITAL_BUDGET, "detail": f"capital check failed ({type(e).__name__})"}
+    row = {k: chk.get(k) for k in ("ok", "enforced", "checked", "scope", "note", "reason")}
+    row["risk_usd"] = round(risk_usd, 2)
+    if cap.refused(chk):
+        row.update(refused=True, detail=cap.refusal_text(chk))
+    return row
 
 
 def _combo_target(broker):

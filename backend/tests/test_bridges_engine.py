@@ -138,7 +138,7 @@ def test_market_event_proposal_runs_a_bridge(client):
     from tests.test_api import UI_MARKET_BODY
     p = client.post("/proposals", json=UI_MARKET_BODY).json()
     assert client.post("/bridges", json={"proposal_id": p["id"], "source": "replay", "gap_per_share": 1.0}).status_code == 409
-    client.post(f"/proposals/{p['id']}/approve")
+    client.post(f"/proposals/{p['id']}/approve", json={"ack_unvalidated": True})
     # the body's direction/market are ignored: the proposal's own market and direction drive the engine
     body = {"proposal_id": p["id"], "source": "replay", "gap_per_share": 1.0, "direction": "up_on_yes",
             "market": {"source": "polymarket", "id": "fed-hike-25bps-oct-2026"}, "replay_file": "fixture.jsonl"}

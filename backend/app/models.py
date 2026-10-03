@@ -76,6 +76,10 @@ class ProposalIn(BaseModel):
     # Hedge A (closed-market mode): opt in to a simulated PM-leg estimate while equities are closed. Off by default;
     # research R1 found no evidence it reduces the open-gap loss (hedge proposals only).
     closed_pm_hedge: bool = False
+    # Closed-market override (evidence gate, docs/design.md section 6): stage hedge B on a market whose signal has NOT
+    # passed out of sample. Off by default; an explicit, labelled override that the approval must confirm
+    # (ack_unvalidated) and that every staged plan / order then carries as "override".
+    act_on_unvalidated: bool = False
 
     @model_validator(mode="after")
     def _one_basis(self) -> "ProposalIn":
@@ -96,6 +100,12 @@ class ProposalIn(BaseModel):
         return self
 
 
+class ApproveIn(BaseModel):
+    """Body of POST /proposals/{id}/approve. ``ack_unvalidated`` acknowledges that the market's signal has not passed
+    its out-of-sample test (required, 409 otherwise, whenever the proposal's evidence status is not validated)."""
+    ack_unvalidated: bool = False
+
+
 class Proposal(BaseModel):
     id: str
     ticker: str
@@ -114,6 +124,13 @@ class Proposal(BaseModel):
     # Hedge A opt-in (closed-market mode): while equities are closed, a simulated prediction-market leg sized by the
     # closed_session_hedge family. An explicit, labelled estimate, never protection (research R1: no evidence).
     closed_pm_hedge: bool = False
+    act_on_unvalidated: bool = False  # closed-market override (staged plans on an unvalidated market), labelled
+    # The evidence gate for this proposal's (market, ticker) at proposal time: {validated, status, evidence, ...}. An
+    # unvalidated proposal is approved only with ack_unvalidated=true (409 otherwise); the flag is stored here.
+    evidence: dict | None = None
+    ack_unvalidated: bool = False
+    # Liquidity and capital before approval: participation caps, est. cost, book-size capacity, budget fit.
+    capacity: dict | None = None
     created_at: dt.datetime
     decided_at: dt.datetime | None = None
     bridge_started_at: dt.datetime | None = None

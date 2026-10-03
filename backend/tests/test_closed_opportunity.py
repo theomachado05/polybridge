@@ -296,11 +296,11 @@ def test_route_full_weekend_flow_executes_a_simulated_combo(env, monkeypatch, tm
     assert cmp_["supported"] and cmp_["comparison"]["reason_code"] == "stage_yes_spread"
     assert cmp_["pm_source"] == "live"
 
-    r = c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"], "contracts": 2})
+    r = c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"], "ack_unvalidated": True, "contracts": 2})
     assert r.status_code == 201, r.text
     tr = r.json()
     assert tr["status"] == "staged" and tr["structure"]["kind"] == "call_spread" and tr["qty_estimate"] == 2
-    assert c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"]}).status_code == 409  # one per snapshot
+    assert c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"], "ack_unvalidated": True}).status_code == 409  # one per snapshot
 
     r = c.post(f"/closed/opportunity/trades/{tr['id']}/execute")
     assert r.status_code == 409 and r.json()["detail"]["reason_code"] == "awaiting_approval"  # approval required
@@ -329,7 +329,7 @@ def test_route_cancels_at_the_open_when_options_caught_up(env):
     c = env["client"]
     s = _snapshot(env)
     env["yes"] = 0.62
-    tid = c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"]}).json()["id"]
+    tid = c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"], "ack_unvalidated": True}).json()["id"]
     c.post(f"/closed/opportunity/trades/{tid}/approve")
     _to_monday(env, book_rows(c_lo=(10.4, 10.6), c_hi=(4.4, 4.6), upd=MON_NS))
     cmp_ = c.get("/closed/opportunity/compare", params={"snapshot_id": s["id"], "refresh_options": True}).json()
@@ -343,7 +343,7 @@ def test_route_holds_on_stale_quotes_then_expires(env):
     c = env["client"]
     s = _snapshot(env)
     env["yes"] = 0.62
-    tid = c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"]}).json()["id"]
+    tid = c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"], "ack_unvalidated": True}).json()["id"]
     c.post(f"/closed/opportunity/trades/{tid}/approve")
     _to_monday(env, book_rows(upd=FRI_NS))  # the feed still shows Friday's quotes
     r = c.post(f"/closed/opportunity/trades/{tid}/execute").json()
@@ -359,20 +359,20 @@ def test_route_caps_bind_at_execution(env):
     c = env["client"]
     s = _snapshot(env)
     env["yes"] = 0.62
-    tid = c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"], "contracts": 5,
+    tid = c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"], "ack_unvalidated": True, "contracts": 5,
                                                      "max_notional": 1200}).json()["id"]
     c.post(f"/closed/opportunity/trades/{tid}/approve")
     _to_monday(env, book_rows(upd=MON_NS))
     r = c.post(f"/closed/opportunity/trades/{tid}/execute").json()
     assert r["outcome"] == "executed" and r["execution"]["qty"] == 2 and r["execution"]["cap"] == "max_notional"
-    assert c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"], "max_notional": 20_000}).status_code == 422
+    assert c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"], "ack_unvalidated": True, "max_notional": 20_000}).status_code == 422
 
 
 def test_route_stage_refused_with_reason_code_when_nothing_to_do(env):
     c = env["client"]
     s = _snapshot(env)
     env["yes"] = 0.51
-    r = c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"]})
+    r = c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"], "ack_unvalidated": True})
     assert r.status_code == 409 and r.json()["detail"]["reason_code"] == "pm_move_small"
 
 
@@ -380,7 +380,7 @@ def test_route_review_cancels_reverted_trades(env):
     c = env["client"]
     s = _snapshot(env)
     env["yes"] = 0.62
-    tid = c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"]}).json()["id"]
+    tid = c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"], "ack_unvalidated": True}).json()["id"]
     env["yes"] = 0.50
     res = c.post("/closed/opportunity/review").json()["results"]
     assert res[0]["status"] == "cancelled"
@@ -417,7 +417,7 @@ def test_route_universe_fallback_price_never_feeds_a_decision(env, monkeypatch):
     c = env["client"]
     s = _snapshot(env)
     env["yes"] = 0.62
-    tid = c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"]}).json()["id"]
+    tid = c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"], "ack_unvalidated": True}).json()["id"]
     c.post(f"/closed/opportunity/trades/{tid}/approve")
     monkeypatch.setattr(orouter, "_universe", lambda source, mid, data_dir=None: {
         "question": Q, "end_date": EXPIRY, "yes_price": 0.80})
@@ -426,11 +426,11 @@ def test_route_universe_fallback_price_never_feeds_a_decision(env, monkeypatch):
     assert cmp_["pm_source"] == "universe" and cmp_["comparison"]["pm_now"] is None
     assert cmp_["comparison"]["reason_code"] == "pm_unavailable" and cmp_["comparison"]["decision"] == "none"
     assert c.post(f"/closed/opportunity/trades/{tid}/cancel").status_code == 200
-    r = c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"]})
+    r = c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"], "ack_unvalidated": True})
     assert r.status_code == 409 and r.json()["detail"]["reason_code"] == "pm_unavailable"
     # an approved trade under a Gamma outage: review leaves it alone, execution at the open holds
     env["gamma_down"] = False
-    tid = c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"]}).json()["id"]
+    tid = c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"], "ack_unvalidated": True}).json()["id"]
     c.post(f"/closed/opportunity/trades/{tid}/approve")
     env["gamma_down"] = True
     res = c.post("/closed/opportunity/review").json()["results"]
@@ -450,7 +450,7 @@ def test_route_resnapshot_refused_while_a_trade_uses_it(env):
     c = env["client"]
     s = _snapshot(env)
     env["yes"] = 0.62
-    tid = c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"]}).json()["id"]
+    tid = c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"], "ack_unvalidated": True}).json()["id"]
     c.post(f"/closed/opportunity/trades/{tid}/approve")
     env["now"] = SAT + dt.timedelta(days=1)  # Sunday: someone re-snapshots (no pm_yes, so the live 0.62)
     r = c.post("/closed/opportunity/snapshot", json={"market_source": "polymarket", "market_id": "pm-test-1"})
@@ -484,12 +484,12 @@ def test_route_book_cap_spans_trades(env, monkeypatch):
     monkeypatch.setattr(opp, "BOOK_MAX_NOTIONAL", 1200.0)
     s = _snapshot(env)
     env["yes"] = 0.62
-    r = c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"], "contracts": 5})
+    r = c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"], "ack_unvalidated": True, "contracts": 5})
     assert r.status_code == 201 and r.json()["qty_estimate"] == 2 and r.json()["cap_estimate"] == "book_notional"
     # a second market on the same weekend: no room left under the book cap
     s2 = c.post("/closed/opportunity/snapshot", json={"market_source": "polymarket", "market_id": "pm-test-2",
                                                       "pm_yes": 0.50}).json()
-    r2 = c.post("/closed/opportunity/trades", json={"snapshot_id": s2["id"]})
+    r2 = c.post("/closed/opportunity/trades", json={"snapshot_id": s2["id"], "ack_unvalidated": True})
     assert r2.status_code == 409 and r2.json()["detail"]["reason_code"] == "book_cap_used_up"
     st = c.get("/closed/opportunity").json()["book"]
     assert st["max_notional"] == 1200.0 and st["exposure"] == pytest.approx(2 * 521.3)
@@ -499,7 +499,7 @@ def test_route_simulated_orders_carry_the_decision_time(env):
     c = env["client"]
     s = _snapshot(env)
     env["yes"] = 0.62
-    tid = c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"]}).json()["id"]
+    tid = c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"], "ack_unvalidated": True}).json()["id"]
     c.post(f"/closed/opportunity/trades/{tid}/approve")
     _to_monday(env, book_rows(upd=MON_NS))
     r = c.post(f"/closed/opportunity/trades/{tid}/execute").json()
@@ -512,3 +512,62 @@ def test_route_simulated_orders_carry_the_decision_time(env):
 def test_committed_r3_result_is_null_and_supports_no_claim():
     st = opp.research_status(opp.REPO)
     assert st["status"] == "null" and st["supports_claim"] is False
+
+
+# ------------------------------------------------------------------------- the gates (evidence, liquidity, capital)
+
+
+def _with_liquidity(rows, volume, oi):
+    return [{**r, "day": {"volume": volume}, "open_interest": oi} for r in rows]
+
+
+def _staged_and_approved(env, contracts=5):
+    c = env["client"]
+    s = _snapshot(env)
+    env["yes"] = 0.62
+    tid = c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"], "contracts": contracts,
+                                                     "ack_unvalidated": True}).json()["id"]
+    assert c.post(f"/closed/opportunity/trades/{tid}/approve").json()["status"] == "approved"
+    return tid
+
+
+def test_staging_on_an_unvalidated_signal_needs_the_acknowledgement(env):
+    c = env["client"]
+    s = _snapshot(env)
+    env["yes"] = 0.62
+    r = c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"]})
+    assert r.status_code == 409 and r.json()["detail"]["reason_code"] == "evidence_unvalidated"
+    assert c.get("/closed/opportunity/trades").json() == []
+    tr = c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"], "ack_unvalidated": True}).json()
+    assert tr["ack_unvalidated"] is True and tr["evidence"] == "unvalidated (acknowledged)"
+
+
+def test_execution_cuts_the_combo_to_the_option_participation_cap(env):
+    c = env["client"]
+    tid = _staged_and_approved(env, contracts=5)
+    # 30 contracts of volume: 10% allows 3 per leg (open interest 1,000 would allow 50)
+    _to_monday(env, _with_liquidity(book_rows(upd=MON_NS), volume=30, oi=1_000))
+    r = c.post(f"/closed/opportunity/trades/{tid}/execute").json()
+    assert r["outcome"] == "executed", r
+    ex = r["trade"]["execution"]
+    assert ex["qty"] == 3 and ex["cap"] == "liquidity_capped" and ex["gates"]["liquidity"]["status"] == "capped"
+    assert ex["gates"]["capital"]["ok"] is True and ex["gates"]["capital"]["risk_usd"] > 0
+
+
+def test_execution_refuses_when_the_participation_cap_allows_nothing(env):
+    c = env["client"]
+    tid = _staged_and_approved(env)
+    _to_monday(env, _with_liquidity(book_rows(upd=MON_NS), volume=5, oi=1_000))
+    r = c.post(f"/closed/opportunity/trades/{tid}/execute").json()
+    assert r["outcome"] == "rejected" and r["reason_code"] == "liquidity_capped"
+    assert [o for o in c.get("/orders").json() if o["combo_id"] == tid] == []
+
+
+def test_execution_refuses_a_trade_the_capital_budget_does_not_allow(env):
+    c = env["client"]
+    tid = _staged_and_approved(env)
+    env["app"].state.capital_limits = {"max_gross_hedge_pct": 0.0001, "max_event_pct": 0.0001}  # $100 on a $1M account
+    _to_monday(env, book_rows(upd=MON_NS))
+    r = c.post(f"/closed/opportunity/trades/{tid}/execute").json()
+    assert r["outcome"] == "rejected" and r["reason_code"] == "capital_budget", r
+    assert [o for o in c.get("/orders").json() if o["combo_id"] == tid] == []

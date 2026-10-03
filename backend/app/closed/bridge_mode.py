@@ -1,4 +1,4 @@
-"""Closed-market mode inside a bridge (plan 2026-10-03-closed-market-mode.md, task P5).
+"""Closed-market mode inside a bridge (docs/design.md, section 2).
 
 Every bridge knows the NYSE session of each tick: a replay from the tick's RECORDED time (a replayed Saturday is a
 Saturday), a live bridge from the wall clock. While the regular session is closed (after-hours, overnight, weekend,
@@ -7,7 +7,10 @@ holiday, and pre-market):
 - **The equity algo holds.** The bridge's equity algo / engine is paused, not stepped (``bridges._hold_closed``): nothing
   is sent and the decision is reported as ``hold`` / ``session_closed``. (Stepping it and refusing its intents would put
   the algo into its wall-clock reject backoff, which freezes a replay.) ``BridgeIn.session_hold=false`` trades at any
-  hour instead.
+  hour instead, except at a broker that takes orders only in the regular session (Webull paper,
+  ``regular_session_only``): there the hold is forced (``broker_hold``) and only staged orders reach it, at 09:30 ET.
+  An opportunity bridge's options algo is held the same way when that broker also takes its option combos
+  (``options_supported``, WEBULL_OPTIONS=1); with option legs in the simulator it trades at any hour.
 - **Closure and expected gap.** The PM move since the last regular close (closure tracker: the app's shared tracker for
   a live bridge, one local to the bridge for a replay) and the expected open gap with its 80% band and the number of
   closures behind the rate (``app.closed.gap``).
@@ -152,6 +155,7 @@ class HedgeA:
         self.reasons: Counter[str] = Counter()
         self.last_signal: float | None = None
         self.simulated = True    # no Polymarket trading account: the leg is never real coverage
+        self.liquidity_capped = 0  # PM orders the depth cap lowered
 
     def step(self, oriented: dict, ts_ns: int, now_ns: int, venue: int, under_px: float | None,
              tick_builder) -> dict | None:
@@ -176,12 +180,26 @@ class HedgeA:
         if px is None or not 0.0 < px < 1.0:
             self.algo.on_reject("pred_yes")
             return None
+        # participation: at most 50% of the book depth within 2 cents of the mid on the side taken
+        from ..liquidity import gate as liquidity
+        liq = liquidity.pm_check(oriented, "buy" if side > 0 else "sell", qty)
+        capped_from = None
+        if liq["status"] == "capped":
+            self.liquidity_capped += 1
+            capped_from, qty = qty, float(liq["allowed"])
+            if qty <= 0:
+                self.reasons[liquidity.LIQUIDITY_CAPPED] += 1
+                self.algo.on_reject("pred_yes")
+                return None
         self.algo.on_fill("pred_yes", side * qty, px)
         self.contracts += side * qty
         self.cash -= side * qty * px
         rec = {"instrument": "pred_yes", "side": "buy" if side > 0 else "sell", "qty": qty, "fill_px": px,
                "reason": str(i.get("reason")), "contracts": self.contracts, "simulated": True, "estimate": True,
                "label": "simulated PM leg (estimate, no Polymarket account)"}
+        liquidity.tag(rec, liq)
+        if capped_from is not None:
+            rec["capped_from"] = capped_from
         self.fills.append(rec)
         del self.fills[:-HEDGE_A_FILLS_MAX]
         return rec
@@ -212,7 +230,7 @@ class HedgeA:
                 # hedge B's real order); the simulated equivalent is shown separately for display only
                 "equity_equiv_shares": 0.0 if self.simulated else self.equity_equiv_shares(),
                 "sim_equity_equiv_shares": self.equity_equiv_shares(), "counts_toward_cap": not self.simulated,
-                "fills": len(self.fills),
+                "fills": len(self.fills), "liquidity_capped": self.liquidity_capped,
                 "last_fill": self.fills[-1] if self.fills else None, "signal_gap_bp": self.last_signal,
                 "reasons": dict(self.reasons), "params": dict(self.params)}
 
@@ -253,6 +271,7 @@ class ClosedMode:
         self.skip_gap: float | None = None
         self.plan_note: str | None = None
         self.user_cancelled = False
+        self.gate_reported = False  # the EVIDENCE_GATE refusal was sent as an SSE event this closure
         self.seen: dict[str, tuple[str, int]] = {}
         self.last_gap: dict | None = None  # the latest active expected gap (kept after the open: the gap it expected)
         self.fills_since_close: list[tuple[float, float | None, str]] = []  # (signed short shares, px, source)
@@ -292,8 +311,22 @@ class ClosedMode:
         return self.local if self.bridge.effective_source == "replay" else tracker_for(self.app)
 
     @property
+    def broker_hold(self) -> bool:
+        """The bridge's order broker takes orders only in the regular session (Webull paper refuses everything else
+        with a 417): its equity algo must hold off-session whatever ``session_hold`` says. An opportunity bridge holds
+        too when that broker also takes its option combos (``options_supported``, WEBULL_OPTIONS=1); with options in
+        the simulator it trades at any hour. A replay sandbox is a sim."""
+        try:
+            b = self.bridge.order_broker() if hasattr(self.bridge, "order_broker") else None
+        except Exception:
+            return False
+        if not bool(getattr(b, "regular_session_only", False)):
+            return False
+        return self.hedging or bool(getattr(b, "options_supported", False))
+
+    @property
     def hold(self) -> bool:
-        return self.hold_enabled and self.sess is not None and self.sess.closed
+        return (self.hold_enabled or self.broker_hold) and self.sess is not None and self.sess.closed
 
     def note(self, at: dt.datetime, event: str, detail: str | None = None, **extra) -> dict:
         row = {"at": _iso(at), "at_et": at.astimezone(ET).strftime("%a %Y-%m-%d %H:%M ET"), "event": event,
@@ -332,6 +365,7 @@ class ClosedMode:
             self.rates = load_rates()
             self.evidence = ev.market_evidence(self.source, self.mid, self.token)
             self.plan_id, self.skip_gap, self.plan_note, self.user_cancelled = None, None, None, False
+            self.gate_reported = False
             self.h_close = float(getattr(self.bridge, "broker_hedge", 0.0) or 0.0)
             self.fills_since_close = []
             if self.prev_closed is False and self.last_regular_px is not None:
@@ -474,12 +508,20 @@ class ClosedMode:
             o = staged.plan_for(self.app, body, self.app.state.store)
         except HTTPException as e:
             self.skip_gap, self.plan_note = gap_bp, str(e.detail)
-            self.note(at, "plan_refused", str(e.detail))
+            row = self.note(at, "plan_refused", str(e.detail))
+            code = str(e.detail).split(":", 1)[0]
+            # the evidence gate is reported once per closure as an SSE event (the timeline keeps every refusal)
+            if code == "EVIDENCE_GATE" and not self.gate_reported:
+                self.gate_reported = True
+                return {"event": "refused", "reason": code, "detail": str(e.detail), "timeline": row,
+                        "evidence": gap_view(g, self.evidence)}
             return None
         gv = gap_view(g, self.evidence) or {}
         o.estimate["validated"], o.estimate["evidence"] = gv.get("validated"), gv.get("evidence")
         o.estimate["status"] = gv.get("status")
         o.label = (f"{ev.HEDGE_B_LABEL} Expected gap: {gv.get('status')}."
+                   + (" OVERRIDE: this market's signal has not passed its out-of-sample test; staged only because "
+                      "act_on_unvalidated is set." if o.evidence_gate == "override" else "")
                    + (f" {ev.HEDGE_B_PREMARKET_NOTE}" if o.session_target == "pre_market" else ""))
         if o.status == "skipped":
             self.skip_gap, self.plan_note = gap_bp, o.reason
@@ -582,7 +624,8 @@ class ClosedMode:
         orders = staged.book_for(self.app).list(bridge_id=self.bridge.id)
         return {"session": session_view(sess), "closure": closure_view(self.state),
                 "expected_gap": gap_view(self.gap, self.evidence),
-                "closed_mode": {"hold": self.hold, "session_hold": self.hold_enabled, "holds": self.holds,
+                "closed_mode": {"hold": self.hold, "session_hold": self.hold_enabled,
+                                "broker_hold": self.broker_hold, "holds": self.holds,
                                 "evidence": self.evidence, "labels": ev.hedge_evidence(),
                                 "plan": plan.model_dump() if plan is not None else None, "plan_note": self.plan_note,
                                 "staged_orders": [{"id": o.id, "status": o.status, "qty": o.qty,
