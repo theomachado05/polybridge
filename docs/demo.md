@@ -45,7 +45,7 @@ Close the demo on the Bridge or Library screen. About 90 seconds; the replay is 
 Two things to know before you say "and here is the account":
 
 - A replay bridge trades in a **replay sandbox** by default, so the Portfolio's "Recent fills" and positions stay empty after this demo. The Bridge screen's trade log is where its fills show. Orders reach the account (`GET /account`, `/positions`, `/orders`) only from a live bridge, or a replay started with `replay_to_account` (that is what `make e2e` does, to prove the broker path).
-- Replay fills are priced at today's market from Massive, not at the replayed time; the trade log says so.
+- Replay fills are priced at today's market from Massive, not at the replayed time; with no network they use the recorded replay price instead. The trade log says which.
 
 ### Optional: voice
 
@@ -74,7 +74,7 @@ If `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` is set and the tunnel is up (see `docs/voic
 
 | If | What happens | What to do |
 |---|---|---|
-| **Wi-Fi off** (no network at all) | Market search uses the bundled list ("offline: cached market list"); `/map` is precomputed; the fit tunes on the recorded replay file (tag "replay ticks" instead of "real price history"); the bridge replays fine and the decisions, gates and reasons all work. **But the broker refuses every order**: replay fills need a Massive price and there is none, so the trade log shows rejected orders and the hedge stays at zero. (Known limitation, `make e2e` pins it with `--offline`.) | Prefer a phone hotspot. If you must go offline, narrate the decisions and gates, and say plainly that fills need market data. Do not claim a hedge was built. |
+| **Wi-Fi off** (no network at all) | Market search uses the bundled list ("offline: cached market list"); `/map` is precomputed; the fit tunes on the recorded replay file (tag "replay ticks" instead of "real price history"); the bridge replays fine and the decisions, gates and reasons all work. Orders fill in the sandbox at the **recorded price** from the replay file (each fill is marked "recorded price"), so the hedge builds as usual. `make e2e` checks this with `--offline` (26/26 pass). | Prefer a phone hotspot. If offline, say the fills are priced from the recorded replay, not a live quote. |
 | **No Gemini key** | Rules-based classifier and a template rationale; the tag says "RULES-BASED FIT". The family and preset come from the same deterministic replay tuning. | Say "keyword rules today; Gemini refines the classification and the wording when a key is set". |
 | **No Webull key** | The account is the simulator. The Connect screen shows the Webull card as a saved preference only, and the account tag reads "Simulated account". | Say "simulated account; Webull paper takes over when its keys are set". Never imply a real broker. |
 | **No Massive key** | No live equity quote; replay fills are refused as above. The fit still runs on recorded bars. | Put the key in `.env` before the talk. |
