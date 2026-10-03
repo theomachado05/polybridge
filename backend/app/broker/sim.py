@@ -159,7 +159,7 @@ class SimBroker:
             return ((req.ref_px, 0.0, "supplied_book_price") if req.ref_px
                     else "no_price: prediction legs need ref_px (the book price); limit_px is only a bound")
         if req.ref_px:
-            mid, src, half = req.ref_px, "supplied", None
+            mid, src, half = req.ref_px, "supplied", req.ref_half_spread
         else:
             q = await (self.quotes.equity(req.symbol) if a == "equity" else self.quotes.option(req.symbol))
             if q is None:
@@ -213,10 +213,7 @@ class SimBroker:
             if (dup := self._by_client(req.client_order_id)) is not None:
                 return dup
             self.seq += 1
-            o = Order(id=f"sim-{self.seq:06d}", client_order_id=req.client_order_id, broker=self.name,
-                      symbol=req.symbol, asset=req.asset, side=req.side, qty=req.qty, type=req.type,
-                      limit_px=req.limit_px, status="open", created_at=self._clock(), tag=req.tag,
-                      note=" | ".join(n for n in (req.note, self.order_note) if n) or None)
+            o = self._new_order(req)
             self._orders.append(o)
             if isinstance(priced, str):
                 o.status, o.reject_reason = "rejected", priced
@@ -234,6 +231,58 @@ class SimBroker:
                 self._orders = self._orders[-MAX_ORDERS:]
             self._save()
             return o.model_copy()
+
+    def _new_order(self, req: OrderRequest) -> Order:
+        return Order(id=f"sim-{self.seq:06d}", client_order_id=req.client_order_id, broker=self.name,
+                     symbol=req.symbol, asset=req.asset, side=req.side, qty=req.qty, type=req.type,
+                     limit_px=req.limit_px, status="open", created_at=self._clock(), tag=req.tag,
+                     note=" | ".join(n for n in (req.note, self.order_note) if n) or None, combo_id=req.combo_id)
+
+    async def place_combo(self, reqs: list[OrderRequest]) -> list[Order]:
+        """A multi-leg option order, all or none: every leg is priced (supplied ref_px +/- ref_half_spread, else the
+        Massive option quote) and filled at market in one step; if any leg has no price, or the whole combination
+        would push buying power below zero, every leg is rejected and nothing trades. Idempotent per leg
+        client_order_id (a retried combo returns the legs already placed)."""
+        if not reqs:
+            raise BrokerError("A combo needs at least one leg.", 422)
+        if any(r.asset != "option" or r.type != "market" for r in reqs):
+            raise BrokerError("Combos take market option legs only.", 422)
+        if (dups := [self._by_client(r.client_order_id) for r in reqs]) and all(d is not None for d in dups):
+            return dups  # type: ignore[return-value]
+        priced = [await self._price(r) for r in reqs]
+        async with self._lock:
+            orders = []
+            for r in reqs:
+                self.seq += 1
+                orders.append(self._new_order(r))
+            self._orders.extend(orders)
+            bad = next(((i, p) for i, p in enumerate(priced) if isinstance(p, str)), None)
+            if bad is not None:
+                for o in orders:
+                    o.status, o.reject_reason = "rejected", f"combo leg {bad[0] + 1}: {bad[1]}"
+            else:
+                pre_bp = self._buying_power(self.cash, self.pos)
+                cash2, pos2, realized, fees, fills = self.cash, copy.deepcopy(self.pos), 0.0, 0.0, []
+                for o, (mid, half, src) in zip(orders, priced):
+                    px = self._fill_px(o.side, mid, half, o.asset)
+                    fee = self._fee(o.asset, o.qty)
+                    cash2, rz = self._settle(cash2, pos2, o.asset, o.symbol, o.side, o.qty, px, mid, fee)
+                    realized, fees = realized + rz, fees + fee
+                    fills.append((o, px, fee, src))
+                post_bp = self._buying_power(cash2, pos2)
+                if post_bp < -EPS and post_bp < pre_bp - EPS:
+                    for o in orders:
+                        o.status, o.reject_reason = "rejected", "insufficient_buying_power (combo)"
+                else:
+                    self.cash, self.pos = _r(cash2), pos2
+                    self.realized = _r(self.realized + realized)
+                    self.fees_paid = _r(self.fees_paid + fees)
+                    now = self._clock()
+                    for o, px, fee, src in fills:
+                        o.status, o.filled_qty, o.fill_px, o.fee = "filled", o.qty, px, fee
+                        o.filled_at, o.price_source = now, src
+            self._save()
+            return [o.model_copy() for o in orders]
 
     def _sweep_symbol(self, just: Order, mid: float, half: float, src: str) -> None:
         """Resting limit orders in the same instrument get a chance to fill at the price just seen."""

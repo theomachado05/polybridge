@@ -258,6 +258,10 @@ class WebullBroker:
         except BrokerError:
             return 0.0
 
+    async def place_combo(self, reqs: list[OrderRequest]) -> list[Order]:
+        """Multi-leg option orders always go to the simulator here (labelled SIM_NOTE on every leg)."""
+        return await self.sim.place_combo(reqs)
+
     @_guard
     async def place_order(self, req: OrderRequest) -> Order:
         if req.asset != "equity":

@@ -36,6 +36,10 @@ class OrderRequest(BaseModel):
     # Reference price supplied by the caller: the bridge's last price (equity), the quote mid (option) or the
     # prediction-market book price on the side being taken (prediction legs).
     ref_px: float | None = Field(default=None, gt=0, allow_inf_nan=False)
+    # Half the quoted bid/ask spread around ref_px (e.g. an option leg's Massive quote). None: the broker applies its
+    # configured fallback spread.
+    ref_half_spread: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    combo_id: str | None = Field(default=None, max_length=64)  # legs of one multi-leg option order share it
     note: str | None = Field(default=None, max_length=200)  # label copied to the Order (e.g. replay origin)
 
     @field_validator("symbol")
@@ -81,6 +85,7 @@ class Order(BaseModel):
     price_source: str | None = None  # where the reference price came from
     reject_reason: str | None = None
     note: str | None = None  # e.g. "options routed to the simulator: Webull paper does not take them"
+    combo_id: str | None = None  # multi-leg option order this leg belongs to
 
 
 class Position(BaseModel):

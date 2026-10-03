@@ -15,7 +15,9 @@ Honesty rules:
   is known at start + 1 h; a daily bar (``t`` = midnight ET of the session) only from the end of that day, so a
   10:00 tick on day D sees day D-1's close, never day D's 16:00 close. NaN before the first finished bar or when
   no bars are available. ``under_bid``/``under_ask`` are NaN.
-- Options, other-venue and 8-K fields are NaN / 0 (``eightk_score`` 0 = none, per the MarketTick contract).
+- Other-venue and 8-K fields are NaN / 0 here (``eightk_score`` 0 = none, per the MarketTick contract). Option fields
+  are NaN here; for threshold questions the fit service then joins options-implied history from listed-contract bar
+  closes (``app.pipeline.options_join``), which also sets ``eightk_score`` per date (NaN where no data covers it).
 """
 from __future__ import annotations
 
@@ -337,12 +339,30 @@ def orient_to_adverse(ticks: dict[str, Any], direction: str) -> dict[str, Any]:
     return out
 
 
+# Opportunity families whose signal is the PM *adverse* probability (the outcome that hurts the underlying), not YES.
+ADVERSE_READING_FAMILIES = frozenset({"eightk_opportunity"})
+
+
+def orient_for_family(ticks: dict[str, Any], family: str | None, question_direction: str | None) -> dict[str, Any]:
+    """Opportunity families trade raw YES, except those in ``ADVERSE_READING_FAMILIES``: eightk_opportunity confirms
+    a bullish 8-K by a *falling adverse* probability. On a threshold question "above K" YES is the bullish outcome,
+    so the adverse probability is NO and the ticks are flipped exactly as for an ``up_on_yes`` hedge; on "below K"
+    YES is already adverse. Unknown direction or any other family: returned unchanged. Used by the fit and by
+    opportunity bridges alike."""
+    if family in ADVERSE_READING_FAMILIES and question_direction == "above":
+        return orient_to_adverse(ticks, "up_on_yes")
+    return ticks
+
+
 def available_requirements(ts: "TickSet") -> set[str]:
     """Family requirements this tick set can meet. 'both_venues' needs a finite other-venue price somewhere;
-    'listed_options' is never met yet (no options data is joined into the ticks)."""
+    'listed_options' needs a finite options-implied probability somewhere (joined by
+    ``app.pipeline.options_join.join_options`` for mapped threshold questions, or carried by a recording)."""
     have: set[str] = set()
     if ts.ticks is not None and np.isfinite(ts.ticks.get("p_other_venue", np.array([]))).any():
         have.add("both_venues")
+    if ts.ticks is not None and np.isfinite(ts.ticks.get("opt_implied_prob", np.array([]))).any():
+        have.add("listed_options")
     return have
 
 

@@ -5,7 +5,7 @@ import { API_URL } from "./api";
 
 import { init, reduce, type StreamState } from "./bridgeStream.ts";
 
-export { quantile, REASONS, type FillInfo, type LogEntry, type StreamState } from "./bridgeStream.ts";
+export { quantile, REASONS, type FillInfo, type LogEntry, type OptionLegFill, type OptionsView, type StreamState } from "./bridgeStream.ts";
 
 export function useBridgeStream(id: string, initialSource: string | null): StreamState {
   const [s, dispatch] = useReducer(reduce, { ...init, source: initialSource });
@@ -17,7 +17,7 @@ export function useBridgeStream(id: string, initialSource: string | null): Strea
     const connect = () => {
       es = new EventSource(`${API_URL}/bridges/${id}/stream`);
       es.onopen = () => dispatch({ k: "open" });
-      es.addEventListener("tick", (m) => dispatch({ k: "tick", p: json(m as MessageEvent).p }));
+      es.addEventListener("tick", (m) => { const d = json(m as MessageEvent); dispatch({ k: "tick", p: d.p, options: d.options ?? null }); });
       es.addEventListener("decision", (m) => dispatch({ k: "decision", d: json(m as MessageEvent) }));
       es.addEventListener("position", (m) => dispatch({ k: "position", ...json(m as MessageEvent) }));
       es.addEventListener("fill", (m) => dispatch({ k: "fill", f: json(m as MessageEvent) }));

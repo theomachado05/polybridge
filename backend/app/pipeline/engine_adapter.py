@@ -256,20 +256,33 @@ class AlgoChoiceError(ValueError):
     """A requested family/preset/params that the library cannot run on a bridge (the API answers 422)."""
 
 
+def is_option_family(family: dict) -> bool:
+    """An Opportunity-division family that trades listed options (an ``option`` / ``option:*`` instrument)."""
+    ins = [str(i).lower() for i in family.get("instruments") or []]
+    return "opportunity" in (family.get("divisions") or []) and any(i.startswith("option") for i in ins)
+
+
 def resolve_algo(manifest: dict, family_id: str, preset_index: int | None = None,
-                 params: dict[str, float] | None = None) -> dict:
+                 params: dict[str, float] | None = None, division: str = "hedge") -> dict:
     """Validate a bridge's algo choice against the library and resolve it to concrete params.
 
     Returns {family, preset_index, params, division}. ``preset_index`` follows the compiled library's ordering
     (mixed radix, last parameter fastest), so ``preset_grid(f)[i]`` is the preset ``replay_grid`` scored as index i.
     Explicit ``params`` are checked against the catalog bounds; parameters left out take the family default (as the
-    engine does), and ``preset_index`` is then None. Only hedge-division families run on a bridge: a bridge hedges an
-    equity position, and the other families trade prediction-market or option contracts.
+    engine does), and ``preset_index`` is then None.
+
+    ``division="hedge"`` (default): only hedge-division families (a hedge bridge hedges an equity position).
+    ``division="opportunity"``: only the Opportunity division's option families (``is_option_family``), which an
+    approved opportunity proposal runs on listed options; prediction-market-leg families are never bridged.
     """
     fam = next((f for f in manifest.get("families") or [] if f.get("id") == family_id), None)
     if fam is None:
         raise AlgoChoiceError(f"unknown algo family '{family_id}'")
-    if fam.get("divisions") != ["hedge"]:
+    if division == "opportunity":
+        if not is_option_family(fam):
+            raise AlgoChoiceError(f"'{family_id}' is not an options family; opportunity bridges run the "
+                                  "Opportunity division's option families only")
+    elif fam.get("divisions") != ["hedge"]:
         raise AlgoChoiceError(f"'{family_id}' is a {'/'.join(fam.get('divisions') or [])} family; bridges run "
                               "hedge-division families only (they hedge an equity position)")
     if preset_index is not None and params is not None:
@@ -277,12 +290,12 @@ def resolve_algo(manifest: dict, family_id: str, preset_index: int | None = None
     if params is None:
         if preset_index is None:
             idx, chosen = default_preset(fam)
-            return {"family": family_id, "preset_index": idx, "params": chosen, "division": "hedge"}
+            return {"family": family_id, "preset_index": idx, "params": chosen, "division": division}
         grid = preset_grid(fam)
         if not 0 <= int(preset_index) < len(grid):
             raise AlgoChoiceError(f"'{family_id}' has presets 0..{len(grid) - 1}; got {preset_index}")
         return {"family": family_id, "preset_index": int(preset_index), "params": grid[int(preset_index)],
-                "division": "hedge"}
+                "division": division}
     defs = {p["name"]: p for p in fam.get("params") or []}
     unknown = sorted(set(params) - set(defs))
     if unknown:
@@ -295,13 +308,30 @@ def resolve_algo(manifest: dict, family_id: str, preset_index: int | None = None
         if not math.isfinite(v) or (math.isfinite(lo) and v < lo) or (math.isfinite(hi) and v > hi):
             raise AlgoChoiceError(f"'{family_id}' param {name}={v} is outside [{lo}, {hi}]")
         out[name] = v
-    return {"family": family_id, "preset_index": None, "params": out, "division": "hedge"}
+    return {"family": family_id, "preset_index": None, "params": out, "division": division}
 
 
 # The hedge-size parameters of the hedge families: "coverage" (fraction hedged at p = 1) and "max_cov" (the
 # LinearExposure ceiling). A family without one (election_hedge: beta * (p - p_neutral), capped at 1) is held to the
 # approved coverage by the bridge's own clip on sell intents (bridges._coverage_room).
 COVERAGE_PARAMS = ("coverage", "max_cov")
+
+
+CONTRACT_PARAMS = ("contracts",)  # option families: structures per entry
+
+
+def cap_contracts(params: dict[str, float], max_contracts: float | None) -> tuple[dict[str, float], dict[str, float] | None]:
+    """An approved opportunity proposal's max_contracts caps the option families' per-entry size the same way
+    target_coverage caps the hedge size. Returns (capped params, {param: original} or None)."""
+    out, lowered = dict(params), {}
+    if max_contracts is None:
+        return out, None
+    for name in CONTRACT_PARAMS:
+        v = out.get(name)
+        if v is not None and math.isfinite(float(v)) and float(v) > float(max_contracts):
+            lowered[name] = float(v)
+            out[name] = float(max_contracts)
+    return out, (lowered or None)
 
 
 def cap_coverage(params: dict[str, float], target_coverage: float) -> tuple[dict[str, float], dict[str, float] | None]:

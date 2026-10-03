@@ -11,6 +11,11 @@ Honesty rules (same as the fit pipeline):
   on both venues). ``p_other_venue`` = the twin market's YES mid on the other venue when a twin is given and its
   book has both sides, else NaN. ``under_*`` from the broker's quote source (Massive), refreshed at most every
   ``equity_interval_s``; ``under_bid``/``under_ask`` only when the quote has a spread.
+- Options (``OptionsEnricher``, opportunity bridges): for a threshold question ``app.options.match`` can map,
+  ``app.options.enrich.enrich_market`` fills ``opt_mid`` / ``opt_delta`` / ``opt_iv`` / ``opt_implied_prob`` from the
+  Massive chain snapshot (refreshed every ``refresh_s``; network-free in between) and ``eightk_score`` for a
+  single-stock underlying (NaN when no 8-K data covers the date, and for indices / ETFs). Unmapped questions, no
+  key or no listed contracts leave the option fields NaN.
 - Replay (``ReplaySource``): the recorded mid (``yes_bid = yes_ask = p``, as in the fit replays) plus any other
   MarketTick field the JSONL row carries; ``under_px`` from recorded equity bars as of the row's ORIGINAL time
   (bar close known at that time), else NaN.
@@ -167,6 +172,88 @@ async def kalshi_book(http: httpx.AsyncClient, ticker: str) -> tuple[list[Level]
 # ---------------------------------------------------------------- sources
 
 EquityQuote = Callable[[], Awaitable[Any]]  # -> object with .mid and .half_spread (broker Quote), or None
+OptionsHook = Callable[[dict, int], Awaitable[dict]]  # (fields, ts_ns) -> fields with opt_* / eightk_score filled
+INDEX_LIKE = ("SPY", "QQQ", "IWM", "DIA")
+
+
+class OptionsEnricher:
+    """Fills a tick's option fields (and the 8-K score) for one prediction market's threshold question.
+
+    ``question`` / ``end_date`` may be given, or resolved lazily by ``resolve`` (async () -> (question, end_date)).
+    The first call (and one every ``refresh_s``) runs ``enrich_market`` (match + chain refresh + live 8-K refresh +
+    enrich, bounded by ``timeout_s``); calls in between re-enrich from the cached snapshot without network. Never
+    raises: on any failure the fields stay NaN. ``context()`` exposes what the bridge needs to price option legs:
+    the matched underlying / strike, the listed expiry and bracketing strikes, and the chain snapshot."""
+
+    def __init__(self, question: str | None = None, end_date: Any = None, *,
+                 resolve: Callable[[], Awaitable[tuple[str | None, Any]]] | None = None,
+                 refresh_s: float = 60.0, timeout_s: float = 10.0, enrich_market: Callable | None = None) -> None:
+        self.question, self.end_date, self._resolve = question, end_date, resolve
+        self.refresh_s, self.timeout_s = refresh_s, timeout_s
+        self._enrich_market = enrich_market
+        self._at = -math.inf
+        self._resolved = question is not None
+        self.detail: dict = {}
+        self.chain: Any = None
+
+    async def _question(self) -> str | None:
+        if not self._resolved and self._resolve is not None:
+            self._resolved = True
+            try:
+                self.question, end = await asyncio.wait_for(self._resolve(), self.timeout_s)
+                self.end_date = self.end_date or end
+            except Exception:
+                self.question = None
+        return self.question
+
+    def supported(self) -> bool:
+        return bool(self.detail.get("supported"))
+
+    def context(self) -> dict | None:
+        d = self.detail
+        if not d.get("supported") or not d.get("expiry") or d.get("k_lo") is None or self.chain is None:
+            return None
+        return {"underlying": d.get("underlying_used"), "strike": d.get("strike_used"), "expiry": d["expiry"],
+                "k_lo": float(d["k_lo"]), "k_hi": float(d["k_hi"]), "above": d.get("direction", "above") == "above",
+                "chain": self.chain, "available": bool(d.get("available"))}
+
+    async def __call__(self, fields: dict, ts_ns: int | None = None) -> dict:
+        from .options import enrich as en
+        from .options import chain as ch
+        f = dict(fields)
+        if ts_ns is not None:
+            f.setdefault("ts_ns", ts_ns)
+        try:
+            q = await self._question()
+            if not q:
+                self.detail = {"supported": False, "reason": "no question text for this market"}
+                return fields
+            now = time.monotonic()
+            if now - self._at >= self.refresh_s:
+                self._at = now
+                fn = self._enrich_market or en.enrich_market
+                out, det = await asyncio.wait_for(fn(f, q, self.end_date), self.timeout_s)
+                self.detail = det
+                if det.get("supported"):
+                    m = det.get("match") or {}
+                    self.chain = (ch.chain_for(det.get("underlying_used"), det.get("strike_used"), m.get("expiry"))
+                                  or ch.last_chain(det.get("underlying_used") or "") or self.chain)
+            elif self.detail.get("supported") and self.chain is not None:
+                d, m = self.detail, self.detail.get("match") or {}
+                und = d.get("underlying_used") or ""
+                tk = None if (und.startswith("I:") or und in INDEX_LIKE) else und
+                out = en.enrich(f, und, d.get("strike_used"), m.get("expiry"),
+                                above=m.get("direction", "above") == "above", chain=self.chain, eightk_ticker=tk)
+            else:
+                return fields
+        except Exception:
+            return fields
+        und = self.detail.get("underlying_used") or ""
+        if self.detail.get("supported") and (und.startswith("I:") or und in INDEX_LIKE):
+            out["eightk_score"] = NAN  # indices and ETFs file no 8-Ks: not available, not "none"
+        if "ts_ns" not in fields:
+            out.pop("ts_ns", None)
+        return out
 
 
 class LiveSource:
@@ -180,9 +267,10 @@ class LiveSource:
     def __init__(self, market_id: str, interval_s: float = 1.0, max_failures: int = 3,
                  http: httpx.AsyncClient | None = None, *, primary: str = "polymarket",
                  twin: tuple[str, str] | None = None, equity: EquityQuote | None = None,
-                 equity_interval_s: float = 5.0) -> None:
+                 equity_interval_s: float = 5.0, options: OptionsHook | None = None) -> None:
         self.market_id, self.interval_s, self.max_failures, self._http = market_id, interval_s, max_failures, http
         self.primary, self.twin, self.equity, self.equity_interval_s = primary, twin, equity, equity_interval_s
+        self.options = options
         self._quote: Any = None
         self._quote_at = -math.inf
 
@@ -235,7 +323,13 @@ class LiveSource:
             hs = _num(getattr(quote, "half_spread", None))
             if hs is not None and hs >= 0:
                 f["under_bid"], f["under_ask"] = mid - hs, mid + hs
-        return Tick(time.time_ns(), p, f, venue=1 if self.primary == "kalshi" else 0)
+        ts = time.time_ns()
+        if self.options is not None:  # opt_* / eightk_score for a mapped threshold question; NaN on any failure
+            try:
+                f = {**f, **{k: v for k, v in (await self.options(f, ts)).items() if k in TICK_FIELDS}}
+            except Exception:
+                pass
+        return Tick(ts, p, f, venue=1 if self.primary == "kalshi" else 0)
 
     async def __aiter__(self) -> AsyncIterator[Tick]:
         http = self._http or httpx.AsyncClient()

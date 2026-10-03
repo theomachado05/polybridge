@@ -78,3 +78,51 @@ export async function startRealBridge(q: Question, eq: EquityPick, maxHedge: str
   const why = last instanceof Error ? last.message : "the backend refused to start a bridge";
   throw new Error(`${why}; proposal ${ok.id} stays approved and is reused on the next try`);
 }
+
+// ---------------------------------------------------------------- Opportunity division (options)
+
+/** The Opportunity division's option families: the only opportunity families a bridge runs (contracts.md). */
+export const OPTION_FAMILIES = ["binary_vs_spread_arb", "vol_vs_pm_move", "eightk_opportunity"] as const;
+
+/** An opportunity fit worth offering: an options family with a real (replay-scored) score and a preset. A rules pick
+ *  (score null) is not offered, so the UI never presents an unscored guess as an opportunity. */
+export function opportunityFit(fit: Pick<FitOut, "family" | "preset_index" | "division" | "score"> | null | undefined): (AppliedFit & { score: number }) | null {
+  if (!fit || fit.division !== "opportunity" || !fit.family || fit.preset_index == null) return null;
+  if (!(OPTION_FAMILIES as readonly string[]).includes(fit.family)) return null;
+  if (typeof fit.score !== "number" || !Number.isFinite(fit.score)) return null;
+  return { family: fit.family, preset_index: fit.preset_index, score: fit.score };
+}
+
+export interface OpportunityCaps { max_contracts: number; max_notional: number }
+export const DEFAULT_OPP_CAPS: OpportunityCaps = { max_contracts: 10, max_notional: 10_000 };
+
+/** Opportunity proposal (options family + risk caps) → approval → POST /bridges. Reuses an approved or pending
+ *  proposal for the same ticker, market, algo and caps (the bridge runs exactly what was approved). */
+export async function startOpportunityBridge(q: Question, ticker: string, fit: AppliedFit, api: BridgeApi = defaultApi,
+  caps: OpportunityCaps = DEFAULT_OPP_CAPS): Promise<{ bridgeId: string; applied: AppliedFit }> {
+  const { approveProposal, createProposal, listProposals, startBridge } = api;
+  const m = q.real;
+  if (!m) throw new Error("this market is from the demo set, not the live search");
+  const market = { source: m.source, id: m.id, token_id: m.token_id };
+  const mine = (await listProposals().catch(() => [] as Proposal[]))
+    .filter((p) => p.ticker === ticker && p.family === "opportunity" && sameMarket(p, m) && sameAlgo(p, fit)
+      && p.max_contracts === caps.max_contracts && p.max_notional === caps.max_notional);
+  const approved = mine.find((p) => p.status === "approved");
+  const pending = mine.find((p) => p.status === "proposed");
+  let ok: Proposal;
+  if (approved) ok = approved;
+  else if (pending) ok = await approveProposal(pending.id);
+  else {
+    const prop = await createProposal({ ticker, market, division: "opportunity", ...caps,
+      algo: { family: fit.family, preset_index: fit.preset_index ?? undefined, source: "ai_fit" } });
+    ok = prop.status === "approved" ? prop : await approveProposal(prop.id);
+  }
+  const sources: ("replay" | "live")[] = m.token_id || m.source === "kalshi" ? ["live", "replay"] : ["replay"];
+  let last: unknown = null;
+  for (const source of sources) {
+    try { return { bridgeId: (await startBridge({ proposal_id: ok.id, source, gap_per_share: 0, market })).bridge_id, applied: fit }; }
+    catch (e) { last = e; }
+  }
+  const why = last instanceof Error ? last.message : "the backend refused to start a bridge";
+  throw new Error(`${why}; proposal ${ok.id} stays approved and is reused on the next try`);
+}
