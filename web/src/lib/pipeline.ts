@@ -36,7 +36,7 @@ export function fitSteps(fit: FitOut, c: PipeContext): PipeStep[] {
     { key: "history", name: "Loading price history", orb: "working", text: history },
     { key: "tune", name: "Tuning presets on replay", orb: "searching", text: fit.family ? `${fam} preset #${fit.preset_index ?? 0} · ${scoreLabel(String(fit.division))} ${fmtScore(fit.score, String(fit.division))} · ${fmtParams(fit.params)}.${alts.length ? ` Runners-up: ${alts.slice(0, 3).map((a) => `${prettyId(a.family)} ${fmtScore(a.score ?? null, String(fit.division))}`).join(", ")}.` : ""}` : "Nothing to tune." },
     { key: "explain", name: "Explaining the fit", orb: "composing", text: fit.rationale || "No rationale returned." },
-    { key: "ready", name: "Ready for your approval", orb: "listening", text: `AI fit for ${c.ticker}: ${fam}${fit.family ? " (not applied yet: bridges run the engine's default delta-bridge spec until they accept a preset)" : ""}. Next: you approve a proposal, then the engine starts.` },
+    { key: "ready", name: "Ready for your approval", orb: "listening", text: `AI fit for ${c.ticker}: ${fam}${fit.family ? (fit.division === "hedge" && fit.preset_index != null ? ` preset #${fit.preset_index}. It is sent with the proposal: once you approve, the bridge runs exactly this family and preset` : ` (${fit.division} family: not run on a hedge bridge, which uses the engine's default delta-bridge spec)`) : ""}. Next: you approve a proposal, then the engine starts.` },
   ];
 }
 

@@ -21,6 +21,7 @@ export interface Proposal {
   label?: string | null;
   market?: { source: string; id: string; token_id?: string | null } | null;
   direction?: Direction | null;
+  algo?: AlgoChoice | null;
   created_at: string;
   decided_at: string | null;
   bridge_started_at?: string | null;
@@ -150,6 +151,17 @@ export interface BridgeSummary {
   label?: string | null;
   reasons: Record<string, number>;
   latency_ns: { p50: number | null; p99: number | null };
+  /** "algo": hedgecore.Algo runs `algo` (the fit); "legacy": the Engine default spec (no fit sent). */
+  engine?: "algo" | "legacy";
+  algo?: (AlgoChoice & { params?: Record<string, number> | null }) | null;
+}
+
+/** The hedgecore algo a bridge runs (contracts.md): a catalog family plus one preset, or explicit params. */
+export interface AlgoChoice {
+  family: string;
+  preset_index?: number | null;
+  params?: Record<string, number> | null;
+  source?: "ai_fit" | "user";
 }
 
 export interface HedgeStatus { status: "none" | "proposed" | "approved" | "bridging" | "rejected"; proposal_id: string | null; bridge_id: string | null }
@@ -190,8 +202,8 @@ export const mapEvent = (body: { question?: string; source?: string; market_id?:
 export const getHedges = (ticker: string, shares: number, label: VerdictLabel) =>
   request<HedgeMenu>(`/hedges/${encodeURIComponent(ticker)}?shares=${shares}&label=${label}`);
 export type ProposalBody =
-  | { ticker: string; tags: string[]; shares_held: number; target_coverage: number }
-  | { ticker: string; market: { source: string; id: string; token_id?: string | null }; direction: Direction; shares_held: number; target_coverage: number };
+  | { ticker: string; tags: string[]; shares_held: number; target_coverage: number; algo?: AlgoChoice }
+  | { ticker: string; market: { source: string; id: string; token_id?: string | null }; direction: Direction; shares_held: number; target_coverage: number; algo?: AlgoChoice };
 export const createProposal = (body: ProposalBody) => post<Proposal>("/proposals", body);
 export const startBridge = (body: {
   proposal_id: string;
@@ -199,6 +211,10 @@ export const startBridge = (body: {
   market?: { source: string; id: string; token_id?: string | null };
   gap_per_share: number;
   direction?: Direction;
+  /** The fitted algo (must equal the proposal's approved algo when it has one). Omitted: the Engine default spec. */
+  family?: string;
+  preset_index?: number;
+  params?: Record<string, number>;
 }) => post<{ bridge_id: string }>("/bridges", body);
 export const getBridge = (id: string) => request<BridgeSummary>(`/bridges/${id}`);
 export const getPortfolio = () => request<PortfolioOut>("/portfolio");

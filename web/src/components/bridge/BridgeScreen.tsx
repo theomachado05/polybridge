@@ -188,15 +188,20 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
     return {
       id: l.n, side: l.qty > 0 ? "SELL" : "BUY", time: `#${l.n}`,
       head: `${Math.abs(l.qty)} ${ticker ?? ""}${px}`,
-      algo: "Delta-Bridge Sizer",
-      reason: `YES at ${l.p == null ? "n/a" : Math.round(l.p * 100) + "¢"}; engine ${l.reason.replace("_", " ")}: target hedge ${l.target} sh, was ${l.current} sh. Decided in ${fmtNs(l.ns)}.${brokerLine}`,
+      algo: l.family ? `${prettyId(l.family)}${l.preset != null ? ` · preset ${l.preset}` : ""}` : "Delta-Bridge Sizer",
+      reason: `YES at ${l.p == null ? "n/a" : Math.round(l.p * 100) + "¢"}; ${l.family ? "algo" : "engine"} ${l.reason.replaceAll("_", " ")}${l.target != null ? `: target hedge ${l.target} sh, was ${l.current} sh` : `: hedge was ${l.current} sh`}${l.signal != null ? ` (signal ${l.signal.toFixed(3)})` : ""}. Decided in ${fmtNs(l.ns)}.${brokerLine}`,
     };
   });
-  // POST /bridges takes no family or preset: the engine runs its default delta-bridge spec. The AI fit is shown
-  // beside it, labelled as not applied.
-  const fitTag = entry.fit
-    ? <Tag tone="ai" title={`POST /pipeline/fit picked ${prettyId(entry.fit.family)}${entry.fit.preset_index != null ? " preset #" + entry.fit.preset_index : ""}. The bridge API does not take a preset yet, so the engine runs its default spec.`}>AI fit: {prettyId(entry.fit.family)} (not applied yet)</Tag>
-    : null;
+  // The AI fit is sent with the proposal and POST /bridges, and hedgecore.Algo runs that family and preset. The
+  // backend's summary is the truth (engine "algo"); the entry's fit covers the moment before the summary loads.
+  const running = summary.data?.engine === "algo" && summary.data.algo
+    ? { family: summary.data.algo.family, preset_index: summary.data.algo.preset_index ?? null }
+    : summary.data?.engine === "legacy" ? null : entry.fit;
+  const fitTag = running
+    ? <Tag tone="ai" title={`hedgecore.Algo runs ${prettyId(running.family)}${running.preset_index != null ? ` preset #${running.preset_index}` : " with custom params"}: the AI fit sent with the approved proposal.`}>Running {prettyId(running.family)} · preset {running.preset_index ?? "custom"}</Tag>
+    : entry.unapplied
+      ? <Tag tone="ai" title={`POST /pipeline/fit picked ${prettyId(entry.unapplied.family)}, but ${entry.unapplied.why}; the engine runs its default delta-bridge spec.`}>AI fit: {prettyId(entry.unapplied.family)} (not applied: {entry.unapplied.why})</Tag>
+      : null;
   const gateTag = entry.gap === 0
     ? <Tag tone="sim" title="Started with gap_per_share = 0 because there was no quote or impact estimate; the engine's fee gate is off (docs/contracts.md).">fee gate off (no quote/impact)</Tag>
     : null;
@@ -219,7 +224,7 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
         px={spot ? spot.toFixed(2) : "—"} pxColor="#5A627A" pxDelta={spot ? "Not streamed on this bridge" : "No quote available"} pxSpark={[]}
         driftLabel="Priced-in drift since start (mapping estimate)" drift={priced == null ? "n/a" : fmtPct(priced, 2)}
       />
-      <AlgoDock label="04 · ENGINE GATES · DEFAULT SPEC" algos={algos} tag={<span style={{ display: "inline-flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>{gateTag}{fitTag}{sourceTag}</span>} />
+      <AlgoDock label={running ? "04 · ENGINE GATES · AI FIT" : "04 · ENGINE GATES · DEFAULT SPEC"} algos={algos} tag={<span style={{ display: "inline-flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>{gateTag}{fitTag}{sourceTag}</span>} />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,340px),1fr))", gap: 16, alignItems: "stretch" }}>
         <PortfolioPanel
           tag={<Tag tone={acct.tone} title="Account that receives the engine's orders (GET /account)">{acct.name}</Tag>}

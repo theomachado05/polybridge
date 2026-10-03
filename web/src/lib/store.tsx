@@ -8,22 +8,23 @@ import { getAccount, getLibrary, getPortfolio, postFit, type AccountOut, type Fi
 import { EQ, QUESTIONS, demoImpacts, type EquityPick, type Question } from "./demo";
 import { parseLibrary, type Library } from "./library";
 import { initSim, stepSim, type Sim } from "./sim";
-import { startRealBridge, type Settings } from "./realBridge.ts";
+import { runnableFit, startRealBridge, type AppliedFit, type Settings } from "./realBridge.ts";
 
 export { feeGateOff, gapPerShare } from "./realBridge.ts";
 
-export type { Settings };
+export type { AppliedFit, Settings };
 export type BridgeEntry =
   | { id: string; kind: "demo"; q: Question; eq: EquityPick; inst: string; sim: Sim }
   | {
       id: string; kind: "live"; bridgeId: string; q: Question | null; eq: EquityPick | null; inst: string;
-      /** The AI fit for this exact pick. Shown as "not applied yet": POST /bridges takes no family or preset,
-       *  so the engine always runs its default delta-bridge spec. */
+      /** The AI fit this bridge was started with (sent with the proposal and POST /bridges, so hedgecore.Algo runs
+       *  that family and preset). null: no runnable fit, the engine runs its default delta-bridge spec. */
       fit: AppliedFit | null;
+      /** A fit that exists for this pick but cannot run on a bridge (e.g. an opportunity-division family). */
+      unapplied?: { family: string; preset_index: number | null; why: string } | null;
       /** $/share per unit of probability sent to the engine; 0 means its fee gate is off. null: unknown (re-attached). */
       gap: number | null;
     };
-export interface AppliedFit { family: string; preset_index: number | null }
 
 export interface Remote<T> { status: "loading" | "ok" | "error"; data: T | null; error: string | null }
 export interface FitState extends Remote<FitOut> { key: string }
@@ -165,9 +166,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const run = (async () => {
       try {
         if (q.real && instId !== "shares") throw new Error("the engine runs only the dynamic short-shares hedge; option and contract hedges are demo-only");
-        const { bridgeId, gap } = await startRealBridge(q, eq, settings.maxHedge);
-        const f = fit && fit.key === key && fit.status === "ok" && fit.data?.family ? { family: fit.data.family, preset_index: fit.data.preset_index ?? null } : null;
-        const entry: BridgeEntry = { id: `live:${bridgeId}`, kind: "live", bridgeId, q, eq, inst: instId, fit: f, gap };
+        const mine = fit && fit.key === key && fit.status === "ok" ? fit.data : null;
+        const want = runnableFit(mine);
+        const { bridgeId, gap, applied } = await startRealBridge(q, eq, settings.maxHedge, undefined, want);
+        const unapplied = mine?.family && !applied
+          ? { family: mine.family, preset_index: mine.preset_index ?? null, why: mine.division !== "hedge" ? `${mine.division} families do not run on a hedge bridge` : "no preset" }
+          : null;
+        const entry: BridgeEntry = { id: `live:${bridgeId}`, kind: "live", bridgeId, q, eq, inst: instId, fit: applied, unapplied, gap };
         setBridges((bs) => (bs.some((b) => b.id === entry.id) ? bs : [...bs, entry]));
         setActiveId(entry.id);
         setBridgeNote(null);
