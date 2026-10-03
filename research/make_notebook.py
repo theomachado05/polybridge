@@ -308,13 +308,17 @@ C13 = """\
 """
 
 
-def build() -> None:
+def build(path: Path | None = None) -> None:
     nb = new_notebook(cells=[md(C1), code(C2), code(C3), code(C4), code(C5), code(C6), code(C7), code(C8), code(C9),
                              code(C10), code(C11), md(C12M), code(C12), md(C13)])
     nb.metadata["kernelspec"] = {"display_name": "Python 3", "language": "python", "name": "python3"}
+    for i, cell in enumerate(nb.cells):
+        cell["id"] = f"cell-{i:02d}"
     nbformat.validate(nb)
-    nbformat.write(nb, HERE / "polybridge_8k.ipynb")
+    nbformat.write(nb, path or HERE / "polybridge_8k.ipynb")
 
 
 if __name__ == "__main__":
-    build()
+    import sys
+
+    build(Path(sys.argv[1]) if len(sys.argv) > 1 else None)

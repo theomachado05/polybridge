@@ -6,9 +6,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_generated_notebook_is_clean_and_safe():
-    subprocess.run([sys.executable, str(ROOT / "make_notebook.py")], check=True)
-    nb = json.loads((ROOT / "polybridge_8k.ipynb").read_text())
+def test_generated_notebook_is_clean_and_safe(tmp_path):
+    out = tmp_path / "nb.ipynb"
+    subprocess.run([sys.executable, str(ROOT / "make_notebook.py"), str(out)], check=True)
+    nb = json.loads(out.read_text())
     code = [c for c in nb["cells"] if c["cell_type"] == "code"]
     assert all(not c.get("outputs") and c.get("execution_count") is None for c in code)
     src = "\n".join("".join(c["source"]) for c in nb["cells"])

@@ -55,7 +55,7 @@ def fam_of(df, fam):
 if not ev.empty:
     (ev.assign(year=pd.to_datetime(ev["filing_date"]).dt.year).groupby(["family", "year"]).size()
      .rename("n_events").reset_index().to_csv(OUT / "events_summary.csv", index=False))
-pd.DataFrame({"n_excluded_cross_family_or_other": [len(study["excluded"])]}).to_csv(OUT / "excluded.csv", index=False)
+pd.DataFrame({"n_cross_family_filings_excluded": [len(study["excluded"])]}).to_csv(OUT / "excluded.csv", index=False)
 (dropped.groupby("reason").size().rename("n").reset_index() if len(dropped)
  else pd.DataFrame(columns=["reason", "n"])).to_csv(OUT / "dropped_reasons.csv", index=False)
 pd.DataFrame(list(study["timing_counts"].items()), columns=["timing", "n"]).to_csv(OUT / "timing_counts.csv", index=False)
@@ -134,4 +134,5 @@ for fam, chk in study["checks"].items():
     fig.savefig(OUT / f"{fam}_decay.png", dpi=120)
     plt.close(fig)
     log(f"[{fam}] verdict {'PASS' if chk['passed'] else 'NULL'}")
+
 log("export complete")
