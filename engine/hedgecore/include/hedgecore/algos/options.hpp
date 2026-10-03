@@ -38,7 +38,7 @@ struct BinaryVsSpreadArb : AlgoBase<BinaryVsSpreadArb> {
     if (!num(gap) || !num(t.opt_mid)) return hold(Rc::SignalMissing);
     const double pos = core.led.at(Instrument::Option);
     if (pos != 0) {
-      if (gap * sgn(pos) <= exit_gap) return order(Instrument::Option, pos > 0 ? -1 : +1, std::abs(pos), kNaN, Rc::Exit, gap);
+      if (gap * sgn(pos) <= exit_gap + 1e-12) return order(Instrument::Option, pos > 0 ? -1 : +1, std::abs(pos), kNaN, Rc::Exit, gap);
       return hold(Rc::NoSignal, gap);
     }
     if (std::abs(gap) < entry) return hold(Rc::NoSignal, gap);

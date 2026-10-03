@@ -79,7 +79,7 @@ struct PolyKalshiSpread : AlgoBase<PolyKalshiSpread> {
     const bool holding = core.led.at(Instrument::PredYes) != 0 || core.led.at(Instrument::PredNo) != 0;
     if (holding) {
       if (kill.update(gap)) return close_leg(t, Rc::GapFlipKill, gap);
-      if (kill.entry_sign == 0 || gap * kill.entry_sign <= exit_gap) return close_leg(t, Rc::Exit, gap);
+      if (kill.entry_sign == 0 || gap * kill.entry_sign <= exit_gap + 1e-12) return close_leg(t, Rc::Exit, gap);
       return hold(Rc::NoSignal, gap);
     }
     if (kill.killed) return hold(Rc::GapFlipKill, gap);
