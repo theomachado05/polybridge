@@ -27,6 +27,10 @@ EVENT_CLASSES = ["macro_fed", "elections", "tariffs_trade", "geopolitics_energy"
                  "tech_regulation", "crypto", "corporate_8k", "company_specific", "unsupported"]
 WILDCARDS = {"all", "any", "*"}
 DIVISIONS = ("hedge", "opportunity")
+# Requirements no live hedge bridge can meet yet. 'pm_leg_sim': a simulated, labelled prediction-market leg (there is
+# no Polymarket trading account and a hedge bridge routes equity intents only). Until a bridge provides it, a family
+# that needs it is never offered (no tick set satisfies it, see ticks.available_requirements) and never bridged.
+BRIDGE_UNMET = frozenset({"pm_leg_sim"})
 
 
 def _divisions(raw: Any) -> list[str]:
@@ -72,12 +76,17 @@ def derive_requires(family: dict) -> list[str]:
 
     - a ``CrossVenueGap`` signal needs the other venue's price      -> 'both_venues'
     - any ``option:*`` instrument needs a listed option chain        -> 'listed_options'
+    - a hedge-only family that trades a prediction-market leg        -> 'pm_leg_sim'
+      (closed_session_hedge buys the adverse YES while equities are closed; its fills must be simulated and labelled)
     """
     req = []
     if "CrossVenueGap" in _block_names(family.get("blocks")):
         req.append("both_venues")
     if any(str(i).lower().startswith("option") for i in family.get("instruments") or []):
         req.append("listed_options")
+    divs = family.get("divisions") or _divisions(family.get("division"))
+    if divs == ["hedge"] and any(str(i).lower().startswith("pred_") for i in family.get("instruments") or []):
+        req.append("pm_leg_sim")
     return req
 
 
@@ -285,6 +294,10 @@ def resolve_algo(manifest: dict, family_id: str, preset_index: int | None = None
     elif fam.get("divisions") != ["hedge"]:
         raise AlgoChoiceError(f"'{family_id}' is a {'/'.join(fam.get('divisions') or [])} family; bridges run "
                               "hedge-division families only (they hedge an equity position)")
+    unmet = sorted(BRIDGE_UNMET & set(fam.get("requires") or []))
+    if division == "hedge" and unmet:
+        raise AlgoChoiceError(f"'{family_id}' needs {', '.join(unmet)} (a simulated prediction-market leg), which "
+                              "hedge bridges do not provide yet; they route equity intents only")
     if preset_index is not None and params is not None:
         raise AlgoChoiceError("send preset_index or params, not both")
     if params is None:

@@ -51,6 +51,7 @@ def _r(x: float) -> float:
 
 class SimBroker:
     name = "sim"
+    extended_hours = True  # simulated: an extended-hours order fills like any other (at the supplied / quoted price)
 
     def __init__(self, path: Path | str | None = DEFAULT_PATH, quotes: QuoteProvider | None = None,
                  starting_cash: float = START_CASH, fees: Fees | None = None,

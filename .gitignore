@@ -19,6 +19,7 @@ next-env.d.ts
 
 # api
 backend/.sim_account.json
+backend/.closed_opportunity.json
 __pycache__/
 *.pyc
 .venv/

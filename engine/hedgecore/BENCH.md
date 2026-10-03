@@ -52,8 +52,11 @@ All values in nanoseconds.
 | `binary_vs_spread_arb` | 27.7 | 16.8 | 42 | 83 | 167 | 27 | 35 | 41 | 568,388 |
 | `vol_vs_pm_move` | 28.9 | 18.1 | 42 | 83 | 125 | 29 | 35 | 42 | 122,372 |
 | `eightk_opportunity` | 28.3 | 16.3 | 42 | 42 | 84 | 28 | 34 | 37 | 1 |
+| `closed_session_hedge` ¹ | 29.7 | 9.8 | 42 | 84 | 84 | 29 | 37 | 39 | 2,922 |
 
-Summary: `on_tick` batch mean 27.1 to 34.6 ns across all 16 families, including its own latency stamp; the decision logic alone (`step()` mean) is 4.2 to 22.9 ns. Worst per-call p99.9 is 458 ns (a few clock ticks, four clock reads); worst 64-block p99.9 is 83 ns per call. Every family decides in well under a microsecond, about four orders of magnitude below the 1 ms scale of a network round trip to a venue.
+¹ `closed_session_hedge` was added after the run above, so its row comes from a second run, `hedgecore_bench 1000000 20000` built in `engine/hedgecore/build` (CMake Release, same machine, compiler and flags, 2026-10-03, while other jobs shared the machine). In that run `equity_delta_bridge` measured 30.2 ns mean and 14.0 ns step() mean, close to its row above, so the two runs are comparable for `on_tick`. The family checks the NYSE calendar once per minute of tick time (session edges fall on whole minutes), so on this 1-second tape most ticks skip the calendar math. The tape starts on 1970-01-01, an NYSE holiday, and crosses six regular sessions (Fri 1970-01-02 to Fri 01-09), so both the closed-market path (YES leg sized and resized) and the open path (handoff unwind) run. Since this run the family checks the full NYSE calendar (one-off closures and 13:00 early closes, `us_equity_regular_session`) instead of `us_equity_session`; that adds a few integer operations to the once-per-minute check and was not re-measured.
+
+Summary: `on_tick` batch mean 27.1 to 34.6 ns across the first 16 families (first run; `closed_session_hedge` 29.7 ns from the second run, see footnote ¹), including its own latency stamp; the decision logic alone (`step()` mean) is 4.2 to 22.9 ns. Worst per-call p99.9 is 458 ns (a few clock ticks, four clock reads); worst 64-block p99.9 is 83 ns per call. Every family decides in well under a microsecond, about four orders of magnitude below the 1 ms scale of a network round trip to a venue.
 
 Caveats, stated plainly:
 
@@ -83,5 +86,8 @@ Caveats, stated plainly:
 | `binary_vs_spread_arb` | 36 | 20,000 | 0.047 | 1.531e+07 |
 | `vol_vs_pm_move` | 81 | 20,000 | 0.105 | 1.549e+07 |
 | `eightk_opportunity` | 81 | 20,000 | 0.103 | 1.569e+07 |
+| `closed_session_hedge` ¹ | 108 | 20,000 | 0.219 | 9.879e+06 |
 
-All 1,278 presets over 20,000 ticks: 1.68 s total, 1.521e+07 preset-ticks per second (sum of the table's seconds, so this is the cost of scoring the whole library once on one thread).
+The first 16 families (1,278 presets) over 20,000 ticks: 1.68 s total, 1.521e+07 preset-ticks per second (sum of the table's seconds from the first run, so this is the cost of scoring those families once on one thread).
+
+¹ From the second run, which was slowed by other jobs on the machine: `equity_delta_bridge` took 0.199 s (1.087e+07 preset-ticks/s) in that run against 0.140 s above, so compare `closed_session_hedge` with that same-run figure rather than with the rows above. With all 17 families the library has 1,386 presets.

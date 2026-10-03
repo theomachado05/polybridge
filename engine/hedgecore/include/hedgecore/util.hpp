@@ -127,6 +127,46 @@ constexpr bool us_equity_session(std::int64_t ts_ns) noexcept {
   return sod >= 9 * 3600 + 30 * 60 && sod < 16 * 3600;
 }
 
+// ---- full NYSE calendar: one-off closures and 13:00 early closes, matching backend/app/closed/session.py ----
+// us_equity_session above (the Session gate every other family uses) keeps its documented rule set; families that
+// need the full calendar opt in through blocks::Session::full_calendar.
+//
+// One-off full-day closures (national days of mourning), the same table as session.py _SPECIAL_CLOSURES.
+constexpr bool nyse_special_closure(std::int64_t lday) noexcept {
+  return lday == days_from_civil(2018, 12, 5) || lday == days_from_civil(2025, 1, 9);
+}
+// A weekday that is neither a rule-7.2 holiday nor a one-off closure (session.py is_trading_day).
+constexpr bool nyse_trading_day(std::int64_t lday) noexcept {
+  const unsigned wd = weekday_from_days(lday);
+  return wd != 0 && wd != 6 && !nyse_holiday(lday) && !nyse_special_closure(lday);
+}
+// 13:00 ET early close (session.py is_early_close): the day after Thanksgiving, Christmas Eve when it is a trading
+// day, and 3 July when it is a Monday-Thursday trading day.
+constexpr bool nyse_early_close(std::int64_t lday) noexcept {
+  if (!nyse_trading_day(lday)) return false;
+  const Civil c = civil_from_days(lday);
+  if (lday == nth_weekday(c.y, 11, 4, 4) + 1) return true;
+  if (c.m == 12 && c.d == 24) return true;
+  const unsigned wd = weekday_from_days(lday);
+  return c.m == 7 && c.d == 3 && wd >= 1 && wd <= 4;
+}
+
+// True when ts_ns (UTC) falls in the regular session on the full calendar: 09:30 to 16:00 ET (13:00 on an early-close
+// day) on an NYSE trading day. Same DST rule as us_equity_session. Session edges stay on whole minutes.
+constexpr bool us_equity_regular_session(std::int64_t ts_ns) noexcept {
+  const std::int64_t s = ts_ns >= 0 ? ts_ns / kNsPerSec : -((-ts_ns + kNsPerSec - 1) / kNsPerSec);
+  const std::int64_t utc_day = s >= 0 ? s / 86400 : -((-s + 86399) / 86400);
+  const std::int64_t y = civil_from_days(utc_day).y;
+  const std::int64_t dst_start = nth_sunday(y, 3, 2) * 86400 + 7 * 3600;
+  const std::int64_t dst_end = nth_sunday(y, 11, 1) * 86400 + 6 * 3600;
+  const std::int64_t offset = (s >= dst_start && s < dst_end) ? -4 * 3600 : -5 * 3600;
+  const std::int64_t ls = s + offset;
+  const std::int64_t lday = ls >= 0 ? ls / 86400 : -((-ls + 86399) / 86400);
+  if (!nyse_trading_day(lday)) return false;
+  const std::int64_t sod = ls - lday * 86400;
+  return sod >= 9 * 3600 + 30 * 60 && sod < (nyse_early_close(lday) ? 13 : 16) * 3600;
+}
+
 // Swap the YES and NO sides of a tick (for positions where YES is the favorable outcome: hedge families treat YES as
 // the adverse event). Missing NO quotes are derived from YES as 1 - px; nothing missing becomes 0.
 inline MarketTick flip_yes_no(const MarketTick& t) noexcept {

@@ -11,6 +11,10 @@ Built from Webull's public developer docs and the Apache-2.0 official Python SDK
                GET  /trading/assets/positions/list   POST /trading/orders/place
                POST /trading/orders/cancel           GET  /trading/orders/get
                GET  /trading/orders/open-orders/list
+  sessions     support_trading_session: "CORE" (regular hours 09:30-16:00 ET), "ALL" (regular plus pre-market and
+               after-hours), "NIGHT" (overnight only) -- developer.webull.com/apis/docs/trade-api/stock. Webull takes
+               only LIMIT orders outside the regular session, so an extended-hours market order is refused here
+               before it is sent. OrderRequest.extended_hours=True sends "ALL"; everything else sends "CORE".
 Equities go to Webull. Options and prediction legs go to the SimBroker and are labelled as such on the order.
 Enabled only by get_broker() when BROKER=webull and WEBULL_APP_KEY / WEBULL_APP_SECRET are set."""
 from __future__ import annotations
@@ -223,8 +227,12 @@ def order_from_webull(d: dict, fallback: Order | None = None) -> Order:
 class WebullBroker:
     name = "webull-paper"
 
-    def __init__(self, client: WebullClient, sim: SimBroker, account_id: str | None = None) -> None:
+    def __init__(self, client: WebullClient, sim: SimBroker, account_id: str | None = None,
+                 extended_hours: bool = True) -> None:
         self.client, self.sim = client, sim
+        # Documented for US stocks (support_trading_session "ALL", limit orders). Whether the paper sandbox fills
+        # pre-market orders is only known once a key is tried (W1 smoke test); WEBULL_EXTENDED_HOURS=0 turns it off.
+        self.extended_hours = extended_hours
         self._account_id = account_id or None
         self._placed: dict[str, Order] = {}  # client_order_id -> last known state of orders placed through us
         # split sell: client_order_id -> its leg client ids (recorded BEFORE each leg is posted, so a split that
@@ -344,17 +352,23 @@ class WebullBroker:
 
     async def _submit(self, req: OrderRequest, cid: str, side: str, qty: float) -> Order:
         """Place one equity order at Webull and (once) ask for its state; a refusal is a rejected order."""
+        base = Order(id=cid, client_order_id=cid, broker=self.name, symbol=req.symbol, asset="equity", side=req.side,
+                     qty=qty, type=req.type, limit_px=req.limit_px, status="open", created_at=now_iso(), tag=req.tag,
+                     price_source="webull_paper", note=req.note)
+        if req.extended_hours and (not self.extended_hours or req.type != "limit"):
+            base.status = "rejected"
+            base.reject_reason = ("extended_hours_disabled: WEBULL_EXTENDED_HOURS is off" if not self.extended_hours
+                                  else "extended_hours_needs_limit: Webull takes only limit orders outside 09:30-16:00 ET")
+            self._placed[cid] = base
+            return base
         aid = await self._aid()
         item: dict[str, Any] = {
             "client_order_id": cid, "combo_type": "NORMAL", "symbol": req.symbol,
             "instrument_type": "EQUITY", "market": "US", "order_type": req.type.upper(),
-            "quantity": _dec(qty), "support_trading_session": "CORE", "side": side,
+            "quantity": _dec(qty), "support_trading_session": "ALL" if req.extended_hours else "CORE", "side": side,
             "time_in_force": "DAY", "entrust_type": "QTY"}
         if req.type == "limit":
             item["limit_price"] = _dec(req.limit_px)
-        base = Order(id=cid, client_order_id=cid, broker=self.name, symbol=req.symbol, asset="equity", side=req.side,
-                     qty=qty, type=req.type, limit_px=req.limit_px, status="open", created_at=now_iso(), tag=req.tag,
-                     price_source="webull_paper", note=req.note)
         try:
             resp = await self.client.request("POST", "/trading/orders/place", body={"account_id": aid, "new_orders": [item]})
         except WebullAPIError as e:

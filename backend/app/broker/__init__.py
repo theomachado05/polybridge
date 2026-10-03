@@ -59,7 +59,8 @@ def build_broker(app: Any | None = None) -> Broker:
                 log.error("%s; using the simulated broker", e)
                 return SimBroker(path, _quotes(app), cash)
             sim = SimBroker(path, _quotes(app), cash, order_note=SIM_NOTE)
-            return WebullBroker(client, sim, account_id=_env("WEBULL_ACCOUNT_ID") or None)
+            return WebullBroker(client, sim, account_id=_env("WEBULL_ACCOUNT_ID") or None,
+                                extended_hours=_env("WEBULL_EXTENDED_HOURS").lower() not in ("0", "false", "no", "off"))
         log.warning("BROKER=webull but WEBULL_APP_KEY / WEBULL_APP_SECRET are not set; using the simulated broker")
     return SimBroker(path, _quotes(app), cash)
 

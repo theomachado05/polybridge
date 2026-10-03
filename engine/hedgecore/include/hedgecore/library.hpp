@@ -10,6 +10,7 @@
 #include <variant>
 #include <vector>
 #include "hedgecore/algos/book_imbalance_hedge.hpp"
+#include "hedgecore/algos/closed_session_hedge.hpp"
 #include "hedgecore/algos/equity_delta_bridge.hpp"
 #include "hedgecore/algos/opportunity.hpp"
 #include "hedgecore/algos/options.hpp"
@@ -23,7 +24,8 @@ using AnyAlgo = std::variant<algos::EquityDeltaBridge, algos::StressLeadHedge, a
                              algos::PolyKalshiSpread, algos::NoBidSeller, algos::FigStress, algos::HousingRates,
                              algos::MacroFedHedge, algos::ElectionHedge, algos::TariffTradeHedge,
                              algos::EnergyGeoHedge, algos::CryptoRegHedge, algos::TechRegHedge,
-                             algos::BinaryVsSpreadArb, algos::VolVsPmMove, algos::EightKOpportunity>;
+                             algos::BinaryVsSpreadArb, algos::VolVsPmMove, algos::EightKOpportunity,
+                             algos::ClosedSessionHedge>;
 inline constexpr std::size_t kNumFamilies = std::variant_size_v<AnyAlgo>;
 
 struct FamilyInfo {

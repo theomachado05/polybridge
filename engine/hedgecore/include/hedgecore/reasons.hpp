@@ -28,6 +28,7 @@ enum class Rc : std::uint16_t {
   Entry = 0x0302,       // opportunity position opened
   Exit = 0x0303,        // opportunity position closed (converged / window closed / max hold)
   ZeroTarget = 0x0304,  // sizer target equals the current position
+  Handoff = 0x0305,     // session open: the closed-session PM leg is unwound and the hedge handed to the equity
   // 0x04 execution
   InsideBand = 0x0401,
   BelowFees = 0x0402,
@@ -73,6 +74,7 @@ constexpr const char* to_string(Rc r) noexcept {
     case Rc::Entry: return "entry";
     case Rc::Exit: return "exit";
     case Rc::ZeroTarget: return "zero_target";
+    case Rc::Handoff: return "handoff";
     case Rc::InsideBand: return "inside_band";
     case Rc::BelowFees: return "below_fees";
     case Rc::FeeUnknown: return "fee_unknown";
@@ -114,8 +116,8 @@ constexpr const char* reason_block(std::uint16_t c) noexcept {
 inline constexpr Rc kAllReasons[] = {
     Rc::None, Rc::Invalid, Rc::InvalidParams, Rc::InvalidState, Rc::SignalMissing, Rc::Warmup, Rc::NoSignal,
     Rc::Stale, Rc::BelowSigma, Rc::SpreadTooWide, Rc::ThinBook, Rc::OutOfSession, Rc::Cooldown,
-    Rc::OutsideEventWindow, Rc::Rebalance, Rc::Entry, Rc::Exit, Rc::ZeroTarget, Rc::InsideBand, Rc::BelowFees,
-    Rc::FeeUnknown, Rc::Sliced, Rc::IcebergCapped, Rc::Passive, Rc::Aggressive, Rc::PositionCapped,
+    Rc::OutsideEventWindow, Rc::Rebalance, Rc::Entry, Rc::Exit, Rc::ZeroTarget, Rc::Handoff, Rc::InsideBand,
+    Rc::BelowFees, Rc::FeeUnknown, Rc::Sliced, Rc::IcebergCapped, Rc::Passive, Rc::Aggressive, Rc::PositionCapped,
     Rc::NotionalCapped, Rc::DrawdownKill, Rc::GapFlipKill, Rc::DailyLossCap, Rc::NotionalUnknown, Rc::WashSale,
     Rc::RoutedPoly, Rc::RoutedKalshi, Rc::NoRoute};
 

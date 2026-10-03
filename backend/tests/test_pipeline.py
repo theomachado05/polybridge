@@ -913,8 +913,8 @@ def real_manifest() -> dict:
 
 def test_real_catalog_is_the_library_without_the_module():
     m, src = pinned_adapter(None, "real").library()
-    assert src == "manifest_file" and m["total_presets"] == 1278 and len(m["families"]) == 16
-    assert sum(f["preset_count"] for f in m["families"]) == 1278
+    assert src == "manifest_file" and m["total_presets"] == 1386 and len(m["families"]) == 17
+    assert sum(f["preset_count"] for f in m["families"]) == 1386
     assert make_client(module=None).get("/library").json()["source"] == "manifest_file"
 
 
@@ -923,7 +923,7 @@ def test_real_catalog_generic_families_are_not_specific():
     fams = {f["id"]: f for f in real_manifest()["families"]}
     generic = {fid for fid, f in fams.items() if f["generic"]}
     assert generic == {"equity_delta_bridge", "book_imbalance_hedge", "poly_kalshi_spread", "no_bid_seller",
-                       "binary_vs_spread_arb", "vol_vs_pm_move"}
+                       "binary_vs_spread_arb", "vol_vs_pm_move", "closed_session_hedge"}
     sl = shortlist(real_manifest(), "macro_fed")
     # the family built for the class leads; narrower specific families before broader ones, generic ones last
     assert [f["id"] for f in sl["hedge"]][:3] == ["macro_fed_hedge", "fig_stress", "stress_lead_hedge"]

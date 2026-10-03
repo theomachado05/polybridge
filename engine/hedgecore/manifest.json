@@ -1,7 +1,7 @@
 {
   "schema": "hedgecore.catalog/v1",
-  "total": 1278,
-  "n_families": 16,
+  "total": 1386,
+  "n_families": 17,
   "event_classes": [
     "macro_fed",
     "elections",
@@ -94,6 +94,10 @@
     },
     "772": {
       "name": "zero_target",
+      "block": "sizers"
+    },
+    "773": {
+      "name": "handoff",
       "block": "sizers"
     },
     "1025": {
@@ -2987,6 +2991,211 @@
         ]
       },
       "preset_count": 81
+    },
+    {
+      "id": "closed_session_hedge",
+      "division": "hedge",
+      "ui_kind": "Impact",
+      "idea": "While the stock market is closed, buy the adverse YES contract sized so a 1 pp PM move offsets the expected equity move (rate bp per pp); at the open unwind the PM leg and hand the hedge to the equity",
+      "event_classes": [
+        "macro_fed",
+        "elections",
+        "tariffs_trade",
+        "geopolitics_energy",
+        "housing",
+        "fig",
+        "tech_regulation",
+        "crypto",
+        "corporate_8k",
+        "company_specific"
+      ],
+      "instruments": [
+        "pred_yes",
+        "equity"
+      ],
+      "blocks": [
+        {
+          "kind": "signals",
+          "name": "ImpliedProb",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "gates",
+          "name": "Staleness",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "gates",
+          "name": "Session",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "sizers",
+          "name": "DeltaBridge",
+          "ui_kind": "Impact"
+        },
+        {
+          "kind": "risk",
+          "name": "PositionCap",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "risk",
+          "name": "NotionalCap",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "execution",
+          "name": "NoTradeBand",
+          "ui_kind": "Execution"
+        },
+        {
+          "kind": "execution",
+          "name": "FeeGate",
+          "ui_kind": "Execution"
+        }
+      ],
+      "ui_kinds": [
+        "Execution",
+        "Gate",
+        "Impact",
+        "Reader"
+      ],
+      "params": [
+        {
+          "name": "coverage",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.5,
+          "grid": [
+            0.25,
+            0.5,
+            0.75,
+            1.0
+          ],
+          "tuned": true,
+          "help": "c: fraction of the held shares covered by the PM and equity legs combined"
+        },
+        {
+          "name": "rate_bp_per_pp",
+          "min": 0.0,
+          "max": 100.0,
+          "default": 7.52,
+          "grid": [
+            7.52
+          ],
+          "tuned": false,
+          "help": "r: bp of equity move per pp of PM move (per-market estimate, else the pooled 7.52 from 380 closures)"
+        },
+        {
+          "name": "rate_scale",
+          "min": 0.0,
+          "max": 5.0,
+          "default": 1.0,
+          "grid": [
+            0.5,
+            1.0,
+            1.5
+          ],
+          "tuned": true,
+          "help": "multiplier on r (r_eff = r * scale)"
+        },
+        {
+          "name": "band_contracts",
+          "min": 0.0,
+          "max": 10000000.0,
+          "default": 50.0,
+          "grid": [
+            10.0,
+            50.0,
+            100.0
+          ],
+          "tuned": true,
+          "help": "no-trade band on the YES leg: trade only if |target - held| >= band contracts"
+        },
+        {
+          "name": "max_notional",
+          "min": 0.0,
+          "max": 1000000000.0,
+          "default": 5000.0,
+          "grid": [
+            1000.0,
+            5000.0,
+            25000.0
+          ],
+          "tuned": true,
+          "help": "cap on YES contracts * YES price in $ (0 = off)"
+        },
+        {
+          "name": "exp_move_pp",
+          "min": 0.0,
+          "max": 100.0,
+          "default": 2.0,
+          "grid": [
+            2.0
+          ],
+          "tuned": false,
+          "help": "PM move (pp) expected over a closure; prices the fee gate's benefit; 0 disables the fee gate"
+        },
+        {
+          "name": "handoff_equity",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "grid": [
+            0.0
+          ],
+          "tuned": false,
+          "help": "1 = after unwinding the YES leg at the open, move the hedge into the equity at round(c * N * p)"
+        },
+        {
+          "name": "equity_band",
+          "min": 0.0,
+          "max": 1000000.0,
+          "default": 10.0,
+          "grid": [
+            10.0
+          ],
+          "tuned": false,
+          "help": "no-trade band in shares for the equity handoff leg"
+        }
+      ],
+      "grid": {
+        "coverage": [
+          0.25,
+          0.5,
+          0.75,
+          1.0
+        ],
+        "rate_bp_per_pp": [
+          7.52
+        ],
+        "rate_scale": [
+          0.5,
+          1.0,
+          1.5
+        ],
+        "band_contracts": [
+          10.0,
+          50.0,
+          100.0
+        ],
+        "max_notional": [
+          1000.0,
+          5000.0,
+          25000.0
+        ],
+        "exp_move_pp": [
+          2.0
+        ],
+        "handoff_equity": [
+          0.0
+        ],
+        "equity_band": [
+          10.0
+        ]
+      },
+      "preset_count": 108
     }
   ]
 }

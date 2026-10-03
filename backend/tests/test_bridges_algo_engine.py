@@ -30,7 +30,7 @@ def test_engine_catalog_matches_the_committed_manifest():
     from app.pipeline.engine_adapter import ENGINE_MANIFEST
     committed = json.loads(ENGINE_MANIFEST.read_text())
     live = hedgecore.catalog()
-    assert live["total"] == committed["total"] == 1278
+    assert live["total"] == committed["total"] == 1386
     assert [f["id"] for f in live["families"]] == [f["id"] for f in committed["families"]]
     a = EngineAdapter()
     assert a.can_score and a.library()[1] == "engine"

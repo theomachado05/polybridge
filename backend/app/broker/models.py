@@ -44,6 +44,9 @@ class OrderRequest(BaseModel):
     ref_source: str | None = Field(default=None, max_length=32, pattern=r"^[a-z][a-z0-9_]*$")
     combo_id: str | None = Field(default=None, max_length=64)  # legs of one multi-leg option order share it
     note: str | None = Field(default=None, max_length=200)  # label copied to the Order (e.g. replay origin)
+    # True: the order may trade outside the regular session (pre-market 04:00-09:30 ET, after-hours 16:00-20:00 ET).
+    # Only honoured by a broker whose ``extended_hours`` capability is True; Webull needs a limit order for it.
+    extended_hours: bool = False
 
     @field_validator("symbol")
     @classmethod
@@ -119,6 +122,10 @@ class Account(BaseModel):
 @runtime_checkable
 class Broker(Protocol):
     name: str
+    # Capability: the broker accepts equity orders with ``OrderRequest.extended_hours`` (pre-market / after-hours).
+    # SimBroker True (simulated); WebullBroker True per the Webull OpenAPI docs (support_trading_session "ALL",
+    # limit orders only). Callers read it with getattr(broker, "extended_hours", False) so a minimal fake still works.
+    extended_hours: bool
 
     async def account(self) -> Account: ...
     async def positions(self) -> list[Position]: ...

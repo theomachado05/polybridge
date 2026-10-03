@@ -45,8 +45,8 @@ import pytest
 
 def test_catalog_shape_and_honest_total():
     cat = hedgecore.catalog()
-    assert cat["n_families"] == 16
-    assert cat["total"] == sum(f["preset_count"] for f in cat["families"]) == 1278
+    assert cat["n_families"] == 17
+    assert cat["total"] == sum(f["preset_count"] for f in cat["families"]) == 1386
     ids = [f["id"] for f in cat["families"]]
     assert ids[:8] == ["equity_delta_bridge", "stress_lead_hedge", "book_imbalance_hedge", "poly_kalshi_spread",
                        "no_bid_seller", "fig_stress", "housing_rates", "macro_fed_hedge"]
@@ -216,3 +216,20 @@ def test_repeated_rejects_back_off():
             sent.append(k)
             a.on_reject("equity")
     assert sent == [2, 3, 4, 6, 10, 18]
+
+
+def test_closed_session_hedge_closed_vs_open_and_handoff():
+    sat, mon = 1_791_043_200 * 10**9, 1_791_207_000 * 10**9  # Sat 2026-10-03 12:00 EDT, Mon 2026-10-05 09:30 EDT
+    fri = 1_790_967_600 * 10**9  # Fri 2026-10-02 15:00 EDT (regular session)
+    q = {"yes_bid": 0.295, "yes_ask": 0.305, "under_px": 100.0, "under_bid": 99.99, "under_ask": 100.01}
+    assert hedgecore.Algo("closed_session_hedge", {}, {"shares_held": 1000}).on_tick(
+        {**q, "ts_ns": fri}, now_ns=fri)["reason"] == "out_of_session"
+    a = hedgecore.Algo("closed_session_hedge", {"coverage": 0.5}, {"shares_held": 1000})
+    d = a.on_tick({**q, "ts_ns": sat}, now_ns=sat)
+    assert (d["action"], d["instrument"], d["side"], d["qty"], d["reason"]) == ("order", "pred_yes", 1, 3760.0,
+                                                                                "rebalance")
+    a.on_fill("pred_yes", 3760.0, 0.305)
+    d = a.on_tick({**q, "ts_ns": mon}, now_ns=mon)
+    assert (d["action"], d["instrument"], d["side"], d["qty"]) == ("order", "pred_yes", -1, 3760.0)
+    assert (d["reason"], d["reason_block"]) == ("handoff", "sizers")
+    assert hedgecore.catalog()["reasons"][str(0x0305)]["name"] == "handoff"

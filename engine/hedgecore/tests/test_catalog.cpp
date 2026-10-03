@@ -5,14 +5,15 @@
 
 using namespace hedgecore;
 
-TEST(Catalog, AllSixteenFamiliesInSpecOrder) {
+TEST(Catalog, AllSeventeenFamiliesInSpecOrder) {
   const auto& c = catalog();
-  ASSERT_EQ(c.families.size(), 16u);
+  ASSERT_EQ(c.families.size(), 17u);
   const char* expected[] = {"equity_delta_bridge", "stress_lead_hedge", "book_imbalance_hedge", "poly_kalshi_spread",
                             "no_bid_seller",       "fig_stress",        "housing_rates",        "macro_fed_hedge",
                             "election_hedge",      "tariff_trade_hedge", "energy_geo_hedge",    "crypto_reg_hedge",
-                            "tech_reg_hedge",      "binary_vs_spread_arb", "vol_vs_pm_move",    "eightk_opportunity"};
-  for (std::size_t i = 0; i < 16; ++i) EXPECT_STREQ(c.families[i].id, expected[i]);
+                            "tech_reg_hedge",      "binary_vs_spread_arb", "vol_vs_pm_move",    "eightk_opportunity",
+                            "closed_session_hedge"};
+  for (std::size_t i = 0; i < 17; ++i) EXPECT_STREQ(c.families[i].id, expected[i]);
 }
 
 TEST(Catalog, PresetTotalIsTheHonestSumNearDesignFigure) {
@@ -25,7 +26,7 @@ TEST(Catalog, PresetTotalIsTheHonestSumNearDesignFigure) {
     sum += f.preset_count;
   }
   EXPECT_EQ(c.total, sum);
-  EXPECT_EQ(c.total, 1278u);  // spec §3.2 design figure ~1,284
+  EXPECT_EQ(c.total, 1386u);  // spec §3.2 design figure ~1,284, plus closed_session_hedge (108)
 }
 
 TEST(Catalog, PresetsAreDistinctAndInsideBounds) {

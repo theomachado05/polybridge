@@ -78,7 +78,12 @@ struct Session {
   static constexpr const char* name = "Session";
   static constexpr Rc fail = Rc::OutOfSession;
   bool enabled = false;
-  bool pass(const GateIn& g) noexcept { return !enabled || us_equity_session(g.t.ts_ns); }
+  // false: us_equity_session (rule-7.2 holidays, 16:00 close every day). true: us_equity_regular_session (also
+  // one-off closures and 13:00 early closes, matching the backend session clock). Opt-in per family.
+  bool full_calendar = false;
+  bool pass(const GateIn& g) noexcept {
+    return !enabled || (full_calendar ? us_equity_regular_session(g.t.ts_ns) : us_equity_session(g.t.ts_ns));
+  }
 };
 
 // At least min_ns between orders. The family calls on_order(now) when it emits one.

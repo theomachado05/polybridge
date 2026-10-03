@@ -344,7 +344,7 @@ std::vector<MarketTick> prepared_ticks(const py::dict& ticks, bool flip) {
 }  // namespace
 
 PYBIND11_MODULE(hedgecore, m) {
-  m.doc() = "PolyBridge hedgecore: the C++20 algo library (16 families) and the legacy Engine";
+  m.doc() = "PolyBridge hedgecore: the C++20 algo library (17 families) and the legacy Engine";
 
   py::class_<HedgeSpec>(m, "HedgeSpec")
       .def(py::init([](std::string ticker, double shares_held, double target_coverage, double band_shares,
