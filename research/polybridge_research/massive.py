@@ -9,6 +9,7 @@ import json
 import os
 import sys
 import time
+import uuid
 from getpass import getpass
 from pathlib import Path
 
@@ -84,7 +85,7 @@ class MassiveClient:
             self._sleep(min(float(retry_after), _MAX_RETRY_SLEEP) if retry_after.isdigit() else min(2 ** attempt, 20))
         resp.raise_for_status()
         payload = resp.json()
-        tmp_file = cache_file.with_suffix(".tmp")
+        tmp_file = cache_file.with_name(f"{cache_file.stem}.{uuid.uuid4().hex}.tmp")
         tmp_file.write_text(json.dumps(payload))
         os.replace(tmp_file, cache_file)
         return payload
