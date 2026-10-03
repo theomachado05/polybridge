@@ -1,0 +1,38 @@
+# Pre-registered event list (METHOD.md section 2). Committed before any event-window price was fetched.
+# news_et: approximate local time of the news (America/New_York); it only decides which closure the event belongs to.
+markets:
+  election:
+    market_slug: will-donald-trump-win-the-2024-us-presidential-election
+    condition_id: '0xdd22472e552920b8438158ea7238bfadfa4f736aa4cee91a6b86c39ead110917'
+    token_id: '21742633143463906290569050155826241533067272736897614950488156847949938836455'
+    outcome: 'Yes'
+    sign: 1
+    sign_rationale: Trump win probability rising is read as bullish for US equities (pre-set once, for the whole market).
+    volume_usd: 1531479285
+  recession:
+    market_slug: us-recession-in-2025
+    condition_id: '0xfa48a99317daef1654d5b03e30557c4222f276657275628d9475e141c64b545d'
+    token_id: '104173557214744537570424345347209544585775842950109756851652855913015295701992'
+    outcome: 'Yes'
+    sign: -1
+    sign_rationale: US recession probability rising is bearish for US equities (pre-set once, for the whole market).
+    volume_usd: 11734512
+
+events:
+  - {id: e01-2024-07-13-attempt, name: Trump assassination attempt (Saturday evening), family: political, market: election, news_et: '2024-07-13T18:11', precision: exact (shots fired 18:11 ET)}
+  - {id: e02-2024-07-21-biden, name: Biden withdraws from the race (Sunday afternoon), family: political, market: election, news_et: '2024-07-21T13:46', precision: exact (X post 13:46 ET)}
+  - {id: e03-2024-09-15-second, name: Second Trump assassination attempt (Sunday afternoon), family: political, market: election, news_et: '2024-09-15T14:00', precision: approx +-1 h}
+  - {id: e04-2024-11-06-election, name: Election called for Trump overnight, family: election, market: election, news_et: '2024-11-06T02:30', precision: approx +-1 h (first network call about 02:25 ET)}
+  - {id: e05-2025-02-01-tariffs, name: Canada/Mexico/China tariff orders signed (Saturday), family: weekend-tariff, market: recession, news_et: '2025-02-01T17:00', precision: approx +-2 h}
+  - {id: e06-2025-01-26-deepseek, name: DeepSeek AI model shock (Sunday night), family: tech-shock, market: recession, news_et: '2025-01-26T18:00', precision: approx +-3 h (news built through Sunday)}
+  - {id: e07-2025-04-02-liberation, name: Liberation Day tariff announcement (Wednesday 16:00 ET), family: weekend-tariff, market: recession, news_et: '2025-04-02T16:15', precision: approx +-30 min}
+  - {id: e08-2025-04-06-medicine, name: Weekend tariff turmoil, Sunday "take medicine" remarks, family: weekend-tariff, market: recession, news_et: '2025-04-06T18:00', precision: approx +-3 h}
+  - {id: e09-2025-04-11-exemption, name: Electronics tariff exemption notice (Friday night), family: weekend-tariff, market: recession, news_et: '2025-04-11T22:00', precision: approx +-2 h}
+  - {id: e10-2025-05-12-geneva, name: US-China Geneva tariff truce statement (Monday pre-market), family: weekend-tariff, market: recession, news_et: '2025-05-12T05:00', precision: approx +-2 h}
+  - {id: e11-2025-05-25-eu, name: EU 50 pct tariff postponed (Sunday, Memorial Day weekend), family: weekend-tariff, market: recession, news_et: '2025-05-25T07:00', precision: approx +-2 h}
+  - {id: e12-2025-06-12-israel-iran, name: Israel strikes Iran (Thursday night), family: geopolitical, market: recession, news_et: '2025-06-12T20:00', precision: approx +-1 h}
+  - {id: e13-2025-06-21-us-strikes, name: US strikes Iranian nuclear sites (Saturday night), family: geopolitical, market: recession, news_et: '2025-06-21T19:50', precision: approx +-30 min}
+  - {id: e14-2025-06-23-ceasefire, name: Israel-Iran ceasefire announced (Monday evening), family: geopolitical, market: recession, news_et: '2025-06-23T18:02', precision: approx +-30 min}
+  - {id: e15-2025-07-12-letters, name: 30 pct tariff letters to EU and Mexico (Saturday), family: weekend-tariff, market: recession, news_et: '2025-07-12T12:00', precision: approx +-3 h}
+  - {id: e16-2025-10-01-shutdown, name: Government shutdown begins at midnight, family: shutdown, market: recession, news_et: '2025-10-01T00:00', precision: exact (deadline); loose market fit}
+  - {id: e17-2025-11-09-senate, name: Senate advances bill to end shutdown (Sunday night), family: shutdown, market: recession, news_et: '2025-11-09T21:00', precision: approx +-1 h; loose market fit}
