@@ -200,7 +200,7 @@ a minute with only one Kalshi side gives no signal in either direction, at 1× a
 0.04 (27 markets) or 0.05 (the 6 Fed markets), exponent 1; one market (Trump out before 2027) charges no fee.
 The 3-month Treasury yield is 4.17% (2026-10-01, the latest value published).
 
-**Amendment 3, 2026-10-03 23:50 UTC, before the forward window opened: the forward test needs two-sided books.**
+**Amendment 3, 2026-10-03 23:47 UTC, before the forward window opened: the forward test needs two-sided books.**
 Amendment 2 (no signal from a one-sided Kalshi quote) applies to the recorded books too, and to Polymarket's book: the
 2× cost rule and the mid mark need each venue's mid. A snapshot in which either book has an empty side gives no entry
 signal, at 1× and at 2×. At the end of the window the mid mark uses the last snapshot with both books two-sided

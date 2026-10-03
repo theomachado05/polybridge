@@ -133,3 +133,7 @@ index close from Massive daily bars. Massive refused the index (`403` on `I:SPX`
 not index aggregates). The index close is taken instead from Kalshi's own settlement value (`expiration_value`) of the
 previous session's 16:00 `KXINXU` event, which is the S&P 500 level Kalshi settled on. SPY's close still comes from
 Massive. The ratio rule is otherwise unchanged. The first run stopped at the refused request; no set had been built.
+
+**Amendment 2, 2026-10-03 23:48 UTC, before the forward window opened: two-sided books in Part F.** Part F runs on
+S1's paper-test code, so S1's amendment 3 applies: a snapshot in which either venue's book has an empty side gives no
+entry signal, and the mid mark at the end of the window uses the last snapshot with both books two-sided.
