@@ -27,6 +27,7 @@ def test_end_to_end_on_fake_market(tmp_path):
     assert isinstance(out["checks"]["hedge"]["passed"], bool)
     assert out["checks"]["opportunity"]["passed"] is False  # 1 event < 5: no CI, cannot pass
     assert not out["results"].empty and not out["placebo_results"].empty
+    assert list(out["placebo_dropped"].columns) == ["ticker", "t_0", "reason", "family"]
 
 
 def test_empty_window(tmp_path):

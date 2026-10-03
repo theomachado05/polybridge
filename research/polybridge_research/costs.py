@@ -51,3 +51,20 @@ def cost_table(results: pd.DataFrame, priced, strategy: str, horizon, cfg: Study
     cols = ["ticker", "family", "event_date", "gross", "premium_traded", *[f"haircut_cost_{m}x" for m in multipliers],
             *[f"net_haircut_{m}x" for m in multipliers], "spread_cost", "net_spread", "leg_volume"]
     return pd.DataFrame(rows, columns=cols)
+
+
+def cost_summary(ct: pd.DataFrame, ct_placebo: pd.DataFrame | None = None, multipliers=(1, 2)) -> dict:
+    """Means over PAIRED rows (gross and spread both present) so gross, spread and net-of-spread share one sample;
+    haircut nets use every row with a gross P&L. With a placebo cost table, also the net-of-haircut edge
+    (events minus placebo) at each multiplier."""
+    paired = ct.dropna(subset=["gross", "spread_cost"])
+    out = {"n": len(ct), "n_gross": int(ct["gross"].notna().sum()), "n_paired": len(paired),
+           "gross_paired": paired["gross"].mean(), "spread_cost_paired": paired["spread_cost"].mean(),
+           "net_spread_paired": (paired["gross"] - paired["spread_cost"]).mean(),
+           "gross": ct["gross"].mean(), "median_leg_volume": ct["leg_volume"].median()}
+    for m in multipliers:
+        out[f"net_haircut_{m}x"] = ct[f"net_haircut_{m}x"].mean()
+        if ct_placebo is not None:
+            out[f"n_placebo_{m}x"] = int(ct_placebo[f"net_haircut_{m}x"].notna().sum())
+            out[f"net_edge_{m}x"] = ct[f"net_haircut_{m}x"].mean() - ct_placebo[f"net_haircut_{m}x"].mean()
+    return out

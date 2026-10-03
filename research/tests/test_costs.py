@@ -4,7 +4,7 @@ import pandas as pd
 
 from polybridge_research.calendar import TradingCalendar
 from polybridge_research.config import StudyConfig
-from polybridge_research.costs import cost_table, half_spread
+from polybridge_research.costs import cost_summary, cost_table, half_spread
 from polybridge_research.evaluate import evaluate
 from polybridge_research.pricing import price_events
 from tests.fakes import FakeClient, FakeMarket
@@ -65,3 +65,22 @@ def test_missing_quotes_give_nan_spread_not_zero():
 def row_spot(res):
     r = res[(res.bucket == "3-6m") & (res.entry == "post") & (res.otm == 0.05) & (res.horizon == 21)]
     return float(r.S_entry.iloc[0])
+
+
+def test_cost_table_supports_expiry_horizon():
+    c, priced, res = _setup(0.10)
+    tbl = cost_table(res, priced, "protective_put", "exp", CFG, client=c)
+    assert len(tbl) == 1 and not math.isnan(tbl.iloc[0].premium_traded)
+
+
+def test_cost_summary_uses_paired_rows_and_placebo_edge():
+    ev = pd.DataFrame({"gross": [0.10, 0.20, 0.30], "spread_cost": [0.01, float("nan"), 0.03],
+                       "net_haircut_1x": [0.09, 0.19, 0.29], "net_haircut_2x": [0.08, 0.18, 0.28],
+                       "leg_volume": [1, 2, 3]})
+    pl = ev.assign(net_haircut_1x=[0.0, 0.1, 0.2], net_haircut_2x=[-0.01, 0.09, 0.19])
+    s = cost_summary(ev, pl)
+    assert s["n_paired"] == 2 and math.isclose(s["gross_paired"], 0.20)
+    assert math.isclose(s["spread_cost_paired"], 0.02) and math.isclose(s["net_spread_paired"], 0.18)
+    assert math.isclose(s["gross"], 0.20) and s["n_gross"] == 3
+    assert math.isclose(s["net_edge_1x"], 0.19 - 0.10) and math.isclose(s["net_edge_2x"], 0.18 - 0.09)
+    assert "net_edge_1x" not in cost_summary(ev)

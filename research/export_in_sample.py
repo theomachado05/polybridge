@@ -19,7 +19,7 @@ from polybridge_research.analysis import decay_table, difference_board, scoreboa
 from polybridge_research.atlas import count_variants
 from polybridge_research.calendar import TradingCalendar
 from polybridge_research.config import StudyConfig
-from polybridge_research.costs import cost_table
+from polybridge_research.costs import cost_summary, cost_table
 from polybridge_research.massive import MassiveClient, load_api_key
 from polybridge_research.pipeline import run_family_study
 from polybridge_research.schema import STRATEGY_FOR_FAMILY, Family
@@ -58,6 +58,9 @@ if not ev.empty:
 pd.DataFrame({"n_cross_family_filings_excluded": [len(study["excluded"])]}).to_csv(OUT / "excluded.csv", index=False)
 (dropped.groupby("reason").size().rename("n").reset_index() if len(dropped)
  else pd.DataFrame(columns=["reason", "n"])).to_csv(OUT / "dropped_reasons.csv", index=False)
+(study["placebo_dropped"].groupby(["family", "reason"]).size().rename("n").reset_index()
+ if len(study["placebo_dropped"]) else pd.DataFrame(columns=["family", "reason", "n"])
+ ).to_csv(OUT / "placebo_dropped_reasons.csv", index=False)
 pd.DataFrame(list(study["timing_counts"].items()), columns=["timing", "n"]).to_csv(OUT / "timing_counts.csv", index=False)
 (OUT / "variants.txt").write_text(f"{count_variants(cfg)}\n")
 log("global tables written")
@@ -89,7 +92,9 @@ for fam, chk in study["checks"].items():
     sens.reset_index().to_csv(OUT / f"{fam}_sensitivity.csv", index=False)
     # costs
     priced_f = [p for p in study["priced"] if str(getattr(p.family, "value", p.family)) == fam]
-    for h in (21, 42):
+    pl_priced_f = [p for p in study["placebo_priced"] if str(getattr(p.family, "value", p.family)) == fam]
+    summaries = []
+    for h in (21, 42, "exp"):
         if ev_r.empty or not priced_f:
             continue
         try:
@@ -98,6 +103,11 @@ for fam, chk in study["checks"].items():
             print(f"cost_table with quotes failed ({type(e).__name__}); falling back to client=None", flush=True)
             ct = cost_table(ev_r, priced_f, strat, h, cfg, client=None)
         ct.drop(columns=["ticker", "event_date"]).to_csv(OUT / f"{fam}_costs_h{h}.csv", index=False)
+        # placebo costs: haircut only (no quote calls); used for the net-of-cost events-minus-placebo edge
+        ct_pl = cost_table(pl_r, pl_priced_f, strat, h, cfg, client=None) if len(pl_r) and pl_priced_f else None
+        summaries.append({"horizon": h, **cost_summary(ct, ct_pl)})
+    if summaries:
+        pd.DataFrame(summaries).to_csv(OUT / f"{fam}_cost_summary.csv", index=False)
     # figures
     sb_e, sb_p = scoreboard(ev_r, cfg, strategies=[strat]), scoreboard(pl_r, cfg, strategies=[strat])
     fig, ax = plt.subplots(figsize=(6, 3.8))

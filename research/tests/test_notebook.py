@@ -17,5 +17,7 @@ def test_generated_notebook_is_clean_and_safe(tmp_path):
     assert 'START, END = "2024-01-01", "2025-12-31"' in src
     assert "hedgecore" not in src and "anthropic" not in src.lower()
     assert "run_family_study" in src and "pass_check" in src and "run_atlas" in src
+    assert "SEC_USER_AGENT" not in src and "user_agent=UA" not in src and "user_agent=None" in src
+    assert "LAST_SESSION = None" in src and "pd.Timestamp(LAST_SESSION)" in src
     for c in code:
         compile("".join(c["source"]), "<cell>", "exec")
