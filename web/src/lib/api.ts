@@ -22,6 +22,9 @@ export interface Proposal {
   market?: { source: string; id: string; token_id?: string | null } | null;
   direction?: Direction | null;
   algo?: AlgoChoice | null;
+  /** Opportunity proposals: the approved risk caps (open option structures; premium / max loss at risk, USD). */
+  max_contracts?: number | null;
+  max_notional?: number | null;
   created_at: string;
   decided_at: string | null;
   bridge_started_at?: string | null;
@@ -159,6 +162,29 @@ export interface BridgeSummary {
   cap_holds?: number;
   equity_price?: "live_quote" | "recorded" | "none" | null;
   equity_source?: string | null;
+  /** "opportunity": an options bridge (Opportunity-division family, simulated option fills). */
+  division?: Family;
+  option_position?: number;
+  option_structure?: { kind: string; expiry?: string; strikes?: number[]; side?: string; legs?: { sign: number; ticker: string }[] } | null;
+  risk_used?: number;
+  max_contracts?: number | null;
+  max_notional?: number | null;
+  option_data?: "live_chain" | "recorded" | "none";
+  pm_vs_options?: PmVsOptions | null;
+  options_detail?: { supported?: boolean; available?: boolean; reason?: string | null; underlying_used?: string; strike_used?: number; expiry?: string; k_lo?: number; k_hi?: number; notes?: string[] } | null;
+  fills_label?: string;
+}
+
+/** One tick's PM YES mid vs the options-implied P(YES) (raw orientation). The option number is an estimate. */
+export interface PmVsOptions {
+  pm_mid: number | null;
+  opt_implied_prob: number | null;
+  gap: number | null;
+  opt_mid?: number | null;
+  opt_iv?: number | null;
+  opt_delta?: number | null;
+  eightk_score?: number | null;
+  label?: string;
 }
 
 /** The hedgecore algo a bridge runs (contracts.md): a catalog family plus one preset, or explicit params. */
@@ -213,7 +239,8 @@ export const getHedges = (ticker: string, shares: number, label: VerdictLabel) =
   request<HedgeMenu>(`/hedges/${encodeURIComponent(ticker)}?shares=${shares}&label=${label}`);
 export type ProposalBody =
   | { ticker: string; tags: string[]; shares_held: number; target_coverage: number; algo?: AlgoChoice }
-  | { ticker: string; market: { source: string; id: string; token_id?: string | null }; direction: Direction; shares_held: number; target_coverage: number; algo?: AlgoChoice };
+  | { ticker: string; market: { source: string; id: string; token_id?: string | null }; direction: Direction; shares_held: number; target_coverage: number; algo?: AlgoChoice }
+  | { ticker: string; market: { source: string; id: string; token_id?: string | null }; division: "opportunity"; algo: AlgoChoice; direction?: Direction; max_contracts?: number; max_notional?: number };
 export const createProposal = (body: ProposalBody) => post<Proposal>("/proposals", body);
 export const startBridge = (body: {
   proposal_id: string;
@@ -243,6 +270,9 @@ export interface FitBody {
   ticker: string;
   direction?: Direction;
   shares_held?: number;
+  /** Fit this division instead of the default (hedge when shares are held, else opportunity). */
+  division?: Family;
+  end_date?: string;
 }
 export interface FitAlternative { family: string; preset_index?: number; params?: Record<string, number>; score?: number | null; division?: string }
 export interface FitOut {
@@ -337,3 +367,66 @@ const unwrap = <T,>(key: string) => (x: unknown): T[] =>
 export const getPositions = () => request<unknown>("/positions").then(unwrap<BrokerPosition>("positions"));
 export const getOrders = (status?: string) =>
   request<unknown>(`/orders${status ? `?status=${encodeURIComponent(status)}` : ""}`).then(unwrap<BrokerOrder>("orders"));
+
+// ---- options data layer (backend/app/options/router.py). Every number here is labelled: options-implied values are
+// risk-neutral estimates from listed prices, never measured probabilities.
+
+export interface OptionsMatch {
+  underlying: string; strike: number; expiry: string; direction: "above" | "below"; scale: number; level: number;
+  label: string; fallback: [string, number] | null; approx: boolean; date_source: string; notes: string[];
+}
+export interface OptionsEstimate {
+  prob: number | null; lo: number | null; hi: number | null; method: string | null; k_lo: number | null; k_hi: number | null;
+  expiry: string | null; expiry_gap_days: number | null; expiry_gap_ok: boolean; delta: number | null; iv: number | null;
+  structure_mid?: number | null; notes: string[];
+}
+export interface OptionsImpliedOut {
+  label: string;
+  market: { source: string | null; id: string | null; question: string | null; end_date: string | null; yes_price: number | null; origin: string | null };
+  supported: boolean;
+  available: boolean;
+  reason?: string | null;
+  match?: OptionsMatch;
+  underlying_used?: string;
+  strike_used?: number;
+  approx?: boolean;
+  notes?: string[];
+  estimate?: OptionsEstimate;
+  pm_yes_price?: number | null;
+  pm_minus_option?: number | null;
+  spot?: number | null;
+  freshness?: Record<string, unknown>;
+}
+export interface OptionRow {
+  ticker: string; bid: number | null; ask: number | null; mid: number | null; mark_source: string | null;
+  iv: number | null; delta: number | null; open_interest: number | null; volume: number | null; updated_ns: number | null;
+}
+export interface OptionsChainOut {
+  ticker: string;
+  label: string;
+  window: { expiry_from: string; expiry_to: string; strike_min: number | null; strike_max: number | null };
+  available: boolean;
+  reason: string | null;
+  spot?: number | null;
+  n_contracts?: number;
+  expiries: { expiry: string; strikes: { strike: number; call: OptionRow | null; put: OptionRow | null }[] }[];
+  freshness?: Record<string, unknown>;
+}
+export interface OptionsEightKOut {
+  ticker: string;
+  as_of?: string;
+  score: number | null;
+  coverage: "in_sample" | "live" | null;
+  available: boolean;
+  source: string;
+  label: string;
+  [k: string]: unknown;
+}
+const qs = (o: Record<string, string | number | undefined | null>) =>
+  Object.entries(o).filter(([, v]) => v != null && v !== "").map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`).join("&");
+export const getOptionsImplied = (p: { market_source?: string; market_id?: string; question?: string; end_date?: string }) =>
+  request<OptionsImpliedOut>(`/options/implied?${qs(p)}`);
+export const getOptionsChain = (p: { ticker: string; expiry_from?: string; expiry_to?: string; strike_min?: number; strike_max?: number }) =>
+  request<OptionsChainOut>(`/options/chain?${qs(p)}`);
+export const getOptionsEightK = (ticker: string, as_of?: string) =>
+  request<OptionsEightKOut>(`/options/eightk?${qs({ ticker, as_of })}`);

@@ -8,7 +8,7 @@ import { getAccount, getLibrary, getPortfolio, postFit, type AccountOut, type Fi
 import { EQ, QUESTIONS, demoImpacts, type EquityPick, type Question } from "./demo";
 import { parseLibrary, type Library } from "./library";
 import { initSim, stepSim, type Sim } from "./sim";
-import { runnableFit, startRealBridge, type AppliedFit, type Settings } from "./realBridge.ts";
+import { opportunityFit, runnableFit, startOpportunityBridge, startRealBridge, type AppliedFit, type Settings } from "./realBridge.ts";
 
 export { feeGateOff, gapPerShare } from "./realBridge.ts";
 
@@ -24,6 +24,8 @@ export type BridgeEntry =
       unapplied?: { family: string; preset_index: number | null; why: string } | null;
       /** $/share per unit of probability sent to the engine; 0 means its fee gate is off. null: unknown (re-attached). */
       gap: number | null;
+      /** "opportunity": an options bridge (Opportunity-division family, simulated option fills). Default hedge. */
+      mode?: "hedge" | "opportunity";
     };
 
 export interface Remote<T> { status: "loading" | "ok" | "error"; data: T | null; error: string | null }
@@ -72,6 +74,10 @@ interface Store {
   openBridge: (q: Question, eq: EquityPick, inst: string) => Promise<string>;
   fit: FitState | null;
   runFit: (q: Question, eq: EquityPick) => void;
+  /** The Opportunity-division fit for the same pick (POST /pipeline/fit with division "opportunity"). */
+  oppFit: FitState | null;
+  /** Explicit user action only: proposes, approves and starts an options bridge for the opportunity fit. */
+  openOpportunity: (q: Question, eq: EquityPick) => Promise<string>;
   library: Remote<Library>;
   account: Remote<AccountOut>;
   portfolio: Remote<PortfolioOut>;
@@ -98,6 +104,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [bridgeNote, setBridgeNote] = useState<string | null>(null);
   const [fit, setFit] = useState<FitState | null>(null);
+  const [oppFit, setOppFit] = useState<FitState | null>(null);
+  const oppKey = useRef<string | null>(null);
   const [library, setLibrary] = useState<Remote<Library>>(LOADING);
   const [account, setAccount] = useState<Remote<AccountOut>>(LOADING);
   const [portfolio, setPortfolio] = useState<Remote<PortfolioOut>>(LOADING);
@@ -193,6 +201,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (fitKey.current === key) return;
     fitKey.current = key;
     setFit({ key, ...LOADING });
+    if (q.real && oppKey.current !== key) {  // the Opportunity division, fitted alongside (offered only when scored)
+      oppKey.current = key;
+      setOppFit({ key, ...LOADING });
+      postFit({ market: { source: q.real.source, id: q.real.id }, question: q.q, ticker: eq.t, shares_held: 0,
+        division: "opportunity", end_date: q.real.end_date ?? undefined }).then(
+        (data) => { if (oppKey.current === key) setOppFit({ key, status: "ok", data, error: null }); },
+        (e) => { if (oppKey.current !== key) return; oppKey.current = null; setOppFit({ key, status: "error", data: null, error: errMsg(e) }); },
+      );
+    }
     postFit({
       market: q.real ? { source: q.real.source, id: q.real.id } : undefined,
       question: q.q, ticker: eq.t, direction: eq.direction ?? (eq.move < 0 ? "down_on_yes" : "up_on_yes"), shares_held: eq.held || 500,
@@ -206,11 +223,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const openOpportunity = useCallback(async (q: Question, eq: EquityPick): Promise<string> => {
+    const key = `${q.id}|${eq.t}`;
+    const existing = bridges.find((b) => b.kind === "live" && b.mode === "opportunity" && b.q?.id === q.id && b.eq?.t === eq.t);
+    if (existing) { setActiveId(existing.id); return existing.id; }
+    const want = opportunityFit(oppFit && oppFit.key === key && oppFit.status === "ok" ? oppFit.data : null);
+    if (!want) throw new Error("no scored opportunity fit for this pick");
+    const { bridgeId, applied } = await startOpportunityBridge(q, eq.t, want);
+    const entry: BridgeEntry = { id: `live:${bridgeId}`, kind: "live", bridgeId, q, eq, inst: "options", fit: applied, gap: null, mode: "opportunity" };
+    setBridges((bs) => (bs.some((b) => b.id === entry.id) ? bs : [...bs, entry]));
+    setActiveId(entry.id);
+    setBridgeNote(null);
+    return entry.id;
+  }, [bridges, oppFit]);
+
   const value = useMemo<Store>(() => ({
     question, equity, inst, query, thinking, setQuestion, setEquity, patchEquity, setInst, setQuery,
     settings, updateSettings, bridges, activeId, bridgeNote, setActive: setActiveId, addDemoBridge, seedDemo, openBridge,
-    fit, runFit, library, account, portfolio,
-  }), [question, equity, inst, query, thinking, setQuestion, setEquity, patchEquity, setInst, settings, updateSettings, bridges, activeId, bridgeNote, addDemoBridge, seedDemo, openBridge, fit, runFit, library, account, portfolio]);
+    fit, runFit, oppFit, openOpportunity, library, account, portfolio,
+  }), [question, equity, inst, query, thinking, setQuestion, setEquity, patchEquity, setInst, settings, updateSettings, bridges, activeId, bridgeNote, addDemoBridge, seedDemo, openBridge, fit, runFit, oppFit, openOpportunity, library, account, portfolio]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

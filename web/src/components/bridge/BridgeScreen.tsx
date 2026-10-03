@@ -11,6 +11,7 @@ import { brokerLabel, useStore, type BridgeEntry } from "@/lib/store";
 import { quantile, useBridgeStream } from "@/lib/useBridgeStream";
 import { Btn, DemoTag, Glass, Label, Orb, Tag, upColor } from "@/components/pb";
 import { AlgoDock, PortfolioPanel, TopRow, TradesPanel, type DockAlgo, type TradeCard } from "./parts";
+import { OpportunityBridge } from "./OpportunityBridge";
 
 type LiveEntry = Extract<BridgeEntry, { kind: "live" }>;
 type DemoEntry = Extract<BridgeEntry, { kind: "demo" }>;
@@ -214,6 +215,17 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
     ? <Tag tone="sim" title="Started with gap_per_share = 0 because there was no quote or impact estimate; the engine's fee gate is off (docs/contracts.md).">fee gate off (no quote/impact)</Tag>
     : null;
   const question = entry.q?.q ?? summary.data?.label ?? `Bridge ${id}`;
+
+  if (summary.data?.division === "opportunity" || (!summary.data && entry.mode === "opportunity")) {
+    return (
+      <>
+        {summary.error && <div role="alert" style={{ fontSize: 13, color: "#C8323F" }}>Could not load bridge {id}: {summary.error}</div>}
+        {st.status === "reconnecting" && <div role="alert" style={{ fontSize: 13, color: "#8A5A00" }}>Connection to the backend dropped; reconnecting…</div>}
+        {st.error && <div style={{ fontSize: 13, color: "#5A627A" }}>Engine message: {st.error}</div>}
+        <OpportunityBridge id={id} summary={summary.data ?? null} st={st} question={question} sourceTag={sourceTag} />
+      </>
+    );
+  }
 
   return (
     <>
