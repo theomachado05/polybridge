@@ -181,6 +181,7 @@ class Bridge:
         self.closed_errors = 0
         self.engine: Any = None  # the running hedgecore Algo / Engine (staged fills are handed to it)
         self.last_under_px: float | None = None  # the latest equity price a tick carried (staged plans' reference)
+        self.broker_note: str | None = None  # set when the account broker's market hours shaped this bridge at start
 
     def on_staged_fill(self, signed_short: float, px: float | None) -> None:
         """A staged (hedge B) order of this bridge filled ``signed_short`` shares (+ = more short) at ``px``: the
@@ -259,6 +260,7 @@ class Bridge:
                 "equity_source": self.equity_source,
                 "recorded_price_fills": self.recorded_fills,
                 "account_note": self._account_note(),
+                "broker_note": self.broker_note,
                 "broker_coverage": self.broker_hedge / self.proposal.shares_held if self.proposal.shares_held else 0.0,
                 "broker_filled": self.broker_filled,
                 "broker_rejects": self.broker_rejects, "broker_errors": self.broker_errors,
@@ -303,15 +305,31 @@ class Bridge:
                 "recorded_option_fills": self.recorded_option_fills}
 
 
-def _replay_speed(app) -> float:
-    """app.state.replay_speed (tests) or POLYBRIDGE_REPLAY_SPEED; 1.0 = real time."""
+def _replay_speed(app, path: Path | None = None) -> float:
+    """app.state.replay_speed (tests) or POLYBRIDGE_REPLAY_SPEED; 1.0 = real time. A recording found through the
+    replay index (not the configured POLYBRIDGE_REPLAY_PATH file) plays at its sidecar's ``replay_speed`` when it has
+    one, so one ``make dev`` session plays each recording at its own demo pace (the 5-minute weekend at 3600x, the
+    hourly histories at 18000-36000x) whatever the configured file's speed is."""
     v = getattr(app.state, "replay_speed", None)
-    if v is None:
-        try:
-            v = float(os.environ.get("POLYBRIDGE_REPLAY_SPEED", "1"))
-        except ValueError:
-            v = 1.0
-    return v
+    if v is not None:
+        return v
+    if path is not None and (own := _sidecar_speed(app, path)) is not None:
+        return own
+    try:
+        return float(os.environ.get("POLYBRIDGE_REPLAY_SPEED", "1"))
+    except ValueError:
+        return 1.0
+
+
+def _sidecar_speed(app, path: Path) -> float | None:
+    configured = getattr(app.state, "replay_path", None) or os.environ.get("POLYBRIDGE_REPLAY_PATH")
+    try:
+        if configured and Path(configured).resolve() == path.resolve():
+            return None  # the configured file plays at the configured speed
+        v = float(json.loads(path.with_name(path.name + ".meta.json").read_text()).get("replay_speed"))
+    except (OSError, ValueError, TypeError, AttributeError):
+        return None
+    return v if math.isfinite(v) and v > 0 else None
 
 
 def replay_meta(path: Path) -> dict | None:
@@ -693,6 +711,13 @@ REPLAY_RECORDED_PRICE_NOTE = ("recorded price: no current market quote (offline 
                               "priced at the replayed under_px, not today's market")
 
 
+def recorded_prices_only() -> bool:
+    """POLYBRIDGE_REPLAY_PRICES=recorded (``make dev`` default for the weekend demo): a replay sandbox fills every
+    equity order at the recorded under_px even when a Massive key could quote today's price, so the bridge's own fills
+    and the closure P&L use the same (recorded) price time while the .env keys (Gemini, Webull) stay loaded."""
+    return os.environ.get("POLYBRIDGE_REPLAY_PRICES", "").strip().lower() == "recorded"
+
+
 async def _broker_can_price(bridge: Bridge, broker: Broker) -> bool:
     """Replay only: can the order broker price an equity order itself (a current Massive quote for the ticker)?
     A broker that prices its own fills (Webull) always can; a sim without a quote cannot, and the replay then
@@ -701,6 +726,8 @@ async def _broker_can_price(bridge: Bridge, broker: Broker) -> bool:
     sim = broker if isinstance(broker, SimBroker) else None
     if sim is None:
         return True
+    if recorded_prices_only():
+        return False  # POLYBRIDGE_REPLAY_PRICES=recorded: replay fills at the replayed price, never today's quote
     now = time.monotonic()
     hit = bridge.quote_check
     if hit is not None and now - hit[0] < EQUITY_TTL_S:
@@ -1382,7 +1409,7 @@ async def _run(bridge: Bridge, app, hc, source, fallback: Path | None) -> None:
                 await bridge.emit("status", {"status": "running", "source": "replay", "note": "live failed; replaying"})
                 bars = _bars(bridge.proposal.ticker)
                 bridge.equity_price = _replay_equity_price(fallback, bars)
-                await loop(ReplaySource(fallback, speed=_replay_speed(app), bars=bars))
+                await loop(ReplaySource(fallback, speed=_replay_speed(app, fallback), bars=bars))
             else:
                 await _finish_orders(bridge, engine)
                 await bridge.emit("status", {"status": "stopped", "reason": "source_failed"}, status="stopped")
@@ -1613,7 +1640,9 @@ async def start_bridge(body: BridgeIn, request: Request, response: Response) -> 
         raise HTTPException(503, NO_ENGINE)
 
     algo, choice = _algo_for(prop, body, hc)
-    bridge = Bridge(prop, body.source, market, body.gap_per_share, direction, body.replay_to_account, algo)
+    to_account, broker_note = _replay_scope(request.app, body)
+    bridge = Bridge(prop, body.source, market, body.gap_per_share, direction, to_account, algo)
+    bridge.broker_note = broker_note
     bridge.choice = choice
     bridge.app = request.app
     bridge.session_hold = body.session_hold
@@ -1631,7 +1660,7 @@ async def start_bridge(body: BridgeIn, request: Request, response: Response) -> 
             raise HTTPException(422, "No replay file configured (set POLYBRIDGE_REPLAY_PATH or add replays/<market id>.jsonl).")
         bridge.set_replay(path)
         bars = _bars(prop.ticker)
-        source: Any = ReplaySource(path, speed=_replay_speed(request.app), bars=bars)
+        source: Any = ReplaySource(path, speed=_replay_speed(request.app, path), bars=bars)
         bridge.equity_price = _replay_equity_price(path, bars)
         if bridge.division == "opportunity":
             bridge.options = _options_enricher(request, market)
@@ -1657,6 +1686,35 @@ async def start_bridge(body: BridgeIn, request: Request, response: Response) -> 
     store.mark_bridge_started(prop.id)
     bridge.task = asyncio.create_task(_run(bridge, request.app, hc, source, fallback))
     return {"bridge_id": bridge.id}
+
+
+def _regular_session_only(app) -> bool:
+    """The account broker takes orders only in the regular session (Webull paper: 417 outside 09:30-16:00 ET)."""
+    try:
+        return bool(getattr(get_broker(app), "regular_session_only", False))
+    except Exception:
+        return False
+
+
+def _wall_closed(app) -> bool:
+    try:
+        return bridge_mode.session_at(bridge_mode.live_now(app)).closed
+    except ValueError:
+        return False
+
+
+def _replay_scope(app, body: BridgeIn) -> tuple[bool, str | None]:
+    """(replay_to_account, note). A bridge started while the market is closed at a regular-session-only broker
+    (BROKER=webull): a replay keeps its in-memory sandbox (Webull would refuse every order until 09:30 ET), a live
+    bridge holds its equity algo off-session and only staged orders reach Webull, executing at the 09:30 open."""
+    if not _regular_session_only(app) or not _wall_closed(app):
+        return body.replay_to_account, None
+    if body.source == "replay":
+        note = ("Webull paper accepts orders 09:30-16:00 ET and the market is closed: this replay trades its "
+                "in-memory sandbox")
+        return False, note + (" (replay_to_account ignored)" if body.replay_to_account else "")
+    return False, ("Webull paper accepts orders 09:30-16:00 ET and the market is closed: the equity algo holds and "
+                   "only approved staged orders go to Webull, executing at the 09:30 ET open")
 
 
 def _carry_account_exposure(old: Bridge, new: Bridge) -> None:

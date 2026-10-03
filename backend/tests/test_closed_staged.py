@@ -405,7 +405,8 @@ def test_webull_extended_hours_sends_session_all_and_refuses_extended_market_ord
 
     sb = Sandbox(status="SUBMITTED")
     wb = make(sb, tmp_path)
-    assert wb.extended_hours is True and SimBroker.extended_hours is True
+    assert wb.extended_hours is False and wb.regular_session_only and SimBroker.extended_hours is True  # sandbox default
+    wb.extended_hours = True  # WEBULL_EXTENDED_HOURS=1
 
     async def go():
         lim = await wb.place_order(OrderRequest(symbol="SPY", asset="equity", side="buy", qty=3, type="limit",
@@ -420,7 +421,6 @@ def test_webull_extended_hours_sends_session_all_and_refuses_extended_market_ord
     assert mkt.status == "rejected" and mkt.reject_reason.startswith("extended_hours_needs_limit")
 
     off = make(Sandbox(), tmp_path)
-    off.extended_hours = False
     o = run(off.place_order(OrderRequest(symbol="SPY", asset="equity", side="buy", qty=1, type="limit", limit_px=1.0,
                                          client_order_id="x3", extended_hours=True)))
     assert o.status == "rejected" and o.reject_reason.startswith("extended_hours_disabled")
@@ -432,6 +432,10 @@ def test_build_broker_reads_webull_extended_hours_switch(monkeypatch, tmp_path):
     monkeypatch.setenv("BROKER", "webull")
     monkeypatch.setenv("WEBULL_APP_KEY", "k")
     monkeypatch.setenv("WEBULL_APP_SECRET", "s")
+    monkeypatch.delenv("WEBULL_EXTENDED_HOURS", raising=False)
+    monkeypatch.chdir(tmp_path)  # no .env above: the switch is unset
+    assert broker_mod.build_broker(None).extended_hours is False  # the sandbox refuses orders outside 09:30-16:00 ET
+    monkeypatch.setenv("WEBULL_EXTENDED_HOURS", "1")
     assert broker_mod.build_broker(None).extended_hours is True
     monkeypatch.setenv("WEBULL_EXTENDED_HOURS", "0")
     assert broker_mod.build_broker(None).extended_hours is False
@@ -536,6 +540,7 @@ def test_webull_split_sell_and_unconfirmed_fill_are_reconciled_by_client_id(tmp_
 
     sb = Sandbox(status="SUBMITTED", held=50.0)  # 50 AAPL long: a 376 sell splits into SELL 50 + SHORT 326
     wb = make(sb, tmp_path)
+    wb.extended_hours = True  # WEBULL_EXTENDED_HOURS=1: the pre-market path
     app = make_app(tmp_path, wb, t=MON_PRE + dt.timedelta(minutes=1))
     prop = approved_proposal(app, ticker="AAPL")
     with TestClient(app) as c:
@@ -551,6 +556,7 @@ def test_webull_split_sell_and_unconfirmed_fill_are_reconciled_by_client_id(tmp_
 
     sb2 = Sandbox(status="FILLED")
     wb2 = make(sb2, tmp_path)
+    wb2.extended_hours = True
     real = wb2.place_order
 
     async def accepted_then_timeout(req):  # Webull took and filled it, but the reply never arrived

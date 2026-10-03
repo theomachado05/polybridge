@@ -2,7 +2,7 @@
 
 Question: when equities are closed (a weekend or a holiday) and a prediction-market (PM) threshold contract ("NVDA closes above $230 on Oct 5", "S&P 500 above 7,795 at 4pm") moves, how much of that move is in the listed options of the same underlying once they reopen, and is there a residual PM-vs-options gap at the open that survives costs?
 
-This decides one product feature: the "Opportunity at the open" card (plan `docs/superpowers/plans/2026-10-03-closed-market-mode.md`, Product behaviour item 6, task U5). If the residual gap is not shown to survive costs, the card is not claimed as an opportunity; at most it is shown as an unvalidated estimate.
+This decides one product feature: the "Opportunity at the open" card (`docs/design.md`, section 2, Product behaviour item 6). If the residual gap is not shown to survive costs, the card is not claimed as an opportunity; at most it is shown as an unvalidated estimate.
 
 Status: a descriptive event study, pre-registered. Nothing is traded. A null result is an acceptable answer. Everything below is fixed before the run; later changes go in **Amendments** at the bottom, dated and marked pre- or post-data.
 

@@ -1,4 +1,4 @@
-"""Hedge B: staged session orders (docs/superpowers/plans/2026-10-03-closed-market-mode.md, Product behaviour 5).
+"""Hedge B: staged session orders (docs/design.md, section 2, Product behaviour 5).
 
 While equities are closed and the prediction market moves, an equity hedge order is *staged* for the next tradable
 session. Nothing is sent before the user approves the plan.
@@ -33,6 +33,10 @@ Execution (``run_due`` on the wall clock; ``on_tick`` from every bridge tick, ap
   09:30-16:00) with a collar around the lower of the quote and the expected open (a sell); regular-open orders are
   market orders. A pre-market limit still resting at 09:30 is cancelled and its rest sent as a market order. The
   model's expected open is never a fill price: a simulator with no quote waits (NO_QUOTE_WAIT) until the session ends.
+  Webull paper takes orders only 09:30-16:00 ET (its ``extended_hours`` capability is off by default, so its orders are
+  scheduled for the regular open). A broker refusal that only says the session is closed (``market_closed: ...``, the
+  sandbox's 417) is not a failure: the order is HELD_FOR_NEXT_SESSION, rescheduled for the next regular open with a
+  fresh client order id, and stays approved.
 Replays
   A replay order (planned on a replay bridge named by bridge_id) moves only on replayed ticks: the tick's recorded time,
   its PM move and its recorded equity price (never today's quote or the live tracker), through the replay bridge's own
@@ -54,6 +58,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field, model_validator
 
 from ..broker import Broker, BrokerError, OrderRequest, SimBroker, get_broker
+from ..broker.webull import is_market_closed
 from . import gap as gapsvc
 from .session import ET, UTC, now_utc, regular_hours, session_at, to_utc
 from .tracker import NO_CLOSE_PRICE, NO_PM_DATA, market_key, tracker_for
@@ -218,6 +223,7 @@ class StagedOrder(BaseModel):
     filled_qty: float = 0.0        # total filled over every broker order of this plan
     prior_filled: float = 0.0      # filled by earlier (cancelled and replaced) broker orders
     replacements: int = 0          # pre-market limits replaced by a regular-session order at the open
+    holds: int = 0                 # times the broker refused it only because the market was closed (held, resent)
     fill_px: float | None = None
     ref_source: str | None = None  # where the price sent with the order came from: quote | tick | recorded
     limit_anchor: str | None = None  # a pre-market limit's anchor: quote | recorded | expected_open_estimate
@@ -645,7 +651,24 @@ def _at_account(o: StagedOrder, bridge) -> bool:
     return o.clock == "wall" or not sandboxed(bridge)
 
 
+def _hold_for_next_session(app, o: StagedOrder, order, at: dt.datetime) -> None:
+    """The broker refused the order only because the regular session is not on (Webull paper: 417 outside 09:30-16:00
+    ET; a holiday the calendar missed, a clock edge). Nothing traded: the plan stays approved and is rescheduled for the
+    next regular open (market order), under a new client order id."""
+    nxt = session_at(at).next_open
+    book_for(app).brokers.pop(o.id, None)
+    o.holds += 1
+    o.status, o.broker_order = "approved", order.model_dump()
+    o.session_target, o.execute_at, o.session_date = "regular_open", _iso(nxt), nxt.astimezone(ET).date().isoformat()
+    o.extended_hours, o.order_type = False, "market"
+    _note(o, at, "HELD_FOR_NEXT_SESSION", f"{order.broker}: {order.reject_reason}; held for the next regular session, "
+                                          f"executes at {_iso(nxt)} (09:30 ET)")
+
+
 def _take_order(app, o: StagedOrder, order, bridge, at: dt.datetime) -> None:
+    if is_market_closed(order):
+        _hold_for_next_session(app, o, order, at)
+        return
     o.broker_order = order.model_dump()
     o.broker = order.broker
     if order.fill_px is not None:
@@ -757,8 +780,9 @@ async def _execute(app, o: StagedOrder, bridge, at: dt.datetime, ref_override: f
         anchor, anchor_src = (min if o.side == "sell" else max)(cands, key=lambda c: c[0])
         f = (1 - o.collar_bps / 1e4) if o.side == "sell" else (1 + o.collar_bps / 1e4)
         limit = round(anchor * f, 2)
-    if o.replacements:
-        o.client_order_id = f"stg-{o.id}-r{o.replacements}"
+    if o.replacements or o.holds:  # a new broker order: never reuse the id of one the broker already answered
+        o.client_order_id = (f"stg-{o.id}" + (f"-r{o.replacements}" if o.replacements else "")
+                             + (f"-h{o.holds}" if o.holds else ""))
     req = OrderRequest(symbol=o.ticker, asset="equity", side=o.side, qty=remaining,
                        type="limit" if extended else "market", limit_px=limit, client_order_id=o.client_order_id,
                        tag=o.bridge_id or o.proposal_id, ref_px=ref, ref_source=src, extended_hours=extended,

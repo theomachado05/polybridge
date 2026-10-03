@@ -1,6 +1,6 @@
 # Expected-gap model: out-of-sample accuracy (pre-registered, plan task R2)
 
-**Question.** The product's closed-market mode shows an *expected open gap* = rate x PM move, with a per-market rate estimated from that market's own past closures and a pooled fallback (plan `docs/superpowers/plans/2026-10-03-closed-market-mode.md`, Product behaviour item 3). Is that number accurate **out of sample**: if each rate is fitted only on closures that ended before the test closure began, does the predicted gap get the sign of the realized SPY open gap right more than half the time, and does the realized gap rise with the predicted gap?
+**Question.** The product's closed-market mode shows an *expected open gap* = rate x PM move, with a per-market rate estimated from that market's own past closures and a pooled fallback (`docs/design.md`, section 2, Product behaviour item 3). Is that number accurate **out of sample**: if each rate is fitted only on closures that ended before the test closure began, does the predicted gap get the sign of the realized SPY open gap right more than half the time, and does the realized gap rise with the predicted gap?
 
 This file and `config.py` are committed **before any statistic of this study is computed**. Every parameter below is fixed here. A later change goes under "Amendments" with the reason; the original stays in git history. The study is run once and reported whatever it shows.
 

@@ -1,4 +1,4 @@
-"""Evidence gate for closed-market numbers (plan 2026-10-03-closed-market-mode.md; research R1, R2, R3).
+"""Evidence gate for closed-market numbers (docs/design.md, section 6; research R1, R2, R3).
 
 A closed-market expected gap (and the hedge sized on it) is shown as **validated** only for a market whose OWN
 out-of-sample record passes R2's pre-set rule (``backend/app/data/gap_evidence.json``, written by

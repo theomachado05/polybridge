@@ -1,6 +1,6 @@
 "use client";
 
-// Closed-market mode on the Bridge screen (plan 2026-10-03-closed-market-mode.md, U1, U2, U5): the closed-market
+// Closed-market mode on the Bridge screen (docs/design.md, section 2): the closed-market
 // banner, and the weekend panel (PM move since the close, the evidence-gated expected gap, staged hedge B with
 // Approve plan / Cancel, the handoff timeline, hedge A only when opted in, and the research-only Opportunity card).
 import { useEffect, useState } from "react";

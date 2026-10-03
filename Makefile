@@ -1,4 +1,4 @@
-.PHONY: setup-research test-research setup-backend test-backend build-engine test-engine test-engine-py setup-web test-web test dev dev-live e2e e2e-api e2e-opportunity e2e-weekend
+.PHONY: setup-research test-research setup-backend test-backend build-engine test-engine test-engine-py setup-web test-web test dev dev-live dev-tlt dev-ita dev-iwm dev-nvda e2e e2e-api e2e-opportunity e2e-weekend e2e-demo webull-check
 
 research/.venv:
 	$(MAKE) setup-research
@@ -39,23 +39,44 @@ test: test-research test-backend test-engine test-engine-py test-web
 # `make dev`: backend (engine group, offline replay of real Polymarket history) on :8000 and the web dev server on :3000.
 # Keys come from ./.env when it exists (MASSIVE_API_KEY, GEMINI_API_KEY, BROKER, WEBULL_*); any missing key degrades
 # gracefully. Open http://localhost:3000 (not 127.0.0.1). Ctrl-C stops both.
-# Default demo: "Another Fed rate hike in 2026?" hedging TLT (401 hourly points, 6 ticks/s at 21600x: about 67 s).
-# Alternatives (pick the matching market in Build; the replay file is global to the backend):
-#   REPLAY=backend/replays/russia-eu-military-2026-history.jsonl SPEED=18000 make dev   # Russia/EU -> ITA, about 69 s
-#   REPLAY=backend/replays/fed-hike-25bps-oct-2026-history.jsonl SPEED=36000 make dev   # Fed October -> IWM, about 72 s
-#   REPLAY=backend/replays/us-recession-in-2025-weekend-2025-04-04.jsonl SPEED=3600 make dev
-#       closed-market weekend -> SPY, about 67 s. The weekend P&L values every leg at the recording's prices; the
-#       bridge's own sim fills may still show today's quote whenever a .env with MASSIVE_API_KEY sits above backend/
-#       (the backend finds it without --env-file), a labelled replay artifact the closure P&L does not use.
+# Default demo (D3): the validated closed-market weekend. "US recession in 2025?" (the one market whose expected-gap model
+# passes out of sample) over Fri 2025-04-04 15:30 ET -> Mon 2025-04-07 10:00 ET, hedging SPY: 799 five-minute points at
+# 3600x, about 67 s (approve the staged plan before Monday 04:00, about 61 s in).
+# Recorded-price fills: REPLAY_PRICES=recorded (POLYBRIDGE_REPLAY_PRICES) makes every replay sandbox fill at the replayed
+# price, so the bridge's own fills and the weekend P&L share one price time while .env stays loaded (Gemini, ElevenLabs
+# and Webull keys are needed for the pitch). This replaces the older `make dev ENVFILE= ... SPEED=3600` recipe, which
+# could not work: the backend finds ../.env on its own. `make dev REPLAY_PRICES=` restores today's-quote fills.
+# With BROKER=webull while the market is closed, GET /account shows webull-paper (market_open false), replays trade their
+# in-memory sandbox, and only approved staged orders reach Webull, executing at the 09:30 ET open.
+# Other recordings play at their own sidecar replay_speed when a bridge picks them through the replay index (no
+# restart). Documented alternatives, as the configured file (fills as before: today's quote when Massive answers,
+# else the recorded price, labelled):
+#   make dev-tlt    "Another Fed rate hike in 2026?" -> TLT (401 hourly points at 21600x, about 67 s)
+#   make dev-ita    Russia/EU military clash -> ITA (18000x, about 69 s)
+#   make dev-iwm    Fed October 25 bps hike -> IWM (36000x, about 72 s)
+#   make dev-nvda   Opportunity division: NVDA > $230 end of September, options call spread (21600x, about 59 s)
 ENVFILE := $(if $(wildcard .env),--env-file ../.env,)
-REPLAY ?= backend/replays/another-fed-hike-2026-history.jsonl  # relative to the repo root
-SPEED ?= 21600
+REPLAY ?= backend/replays/us-recession-in-2025-weekend-2025-04-04.jsonl  # relative to the repo root
+SPEED ?= 3600
+REPLAY_PRICES ?= recorded
 
 dev:
 	@trap 'kill 0' INT TERM EXIT; \
-	(cd backend && POLYBRIDGE_REPLAY_PATH=$(abspath $(REPLAY)) POLYBRIDGE_REPLAY_SPEED=$(SPEED) uv run --group engine $(ENVFILE) uvicorn app.main:app --port 8000) & \
+	(cd backend && POLYBRIDGE_REPLAY_PATH=$(abspath $(REPLAY)) POLYBRIDGE_REPLAY_SPEED=$(SPEED) POLYBRIDGE_REPLAY_PRICES=$(REPLAY_PRICES) uv run --group engine $(ENVFILE) uvicorn app.main:app --port 8000) & \
 	(cd web && pnpm dev) & \
 	wait
+
+dev-tlt:
+	$(MAKE) dev REPLAY=backend/replays/another-fed-hike-2026-history.jsonl SPEED=21600 REPLAY_PRICES=
+
+dev-ita:
+	$(MAKE) dev REPLAY=backend/replays/russia-eu-military-2026-history.jsonl SPEED=18000 REPLAY_PRICES=
+
+dev-iwm:
+	$(MAKE) dev REPLAY=backend/replays/fed-hike-25bps-oct-2026-history.jsonl SPEED=36000 REPLAY_PRICES=
+
+dev-nvda:
+	$(MAKE) dev REPLAY=backend/replays/nvda-230-sep-2026-history.jsonl SPEED=21600 REPLAY_PRICES=
 
 # Same, without a replay file: bridges start on the live Polymarket book (needs network; falls back per bridge).
 dev-live:
@@ -82,3 +103,14 @@ e2e-opportunity:
 # tradable moment -> P&L vs no hedge (API only, recorded prices, about 70 s).
 e2e-weekend:
 	python3 scripts/e2e_demo.py --weekend $(E2E_ARGS)
+
+# The default demo's flow (the validated weekend, `make dev`'s replay), end to end over HTTP. `make e2e` stays on the TLT
+# replay as the regression run.
+e2e-demo:
+	python3 scripts/e2e_demo.py --weekend $(E2E_ARGS)
+
+# Webull paper smoke check, read-only: account (type / class), balance, positions, open orders, market_open, the
+# extended-hours capability. Never places an order outside 09:30-16:00 ET; during the regular session
+# WEBULL_SMOKE_ORDER=1 also places and cancels a 1-share SPY limit at $1.00 (cannot fill). Ids are masked.
+webull-check:
+	cd backend && uv run --locked $(ENVFILE) python scripts/webull_check.py

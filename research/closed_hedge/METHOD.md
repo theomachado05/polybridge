@@ -2,7 +2,7 @@
 
 **Question.** A holder is long US equities (SPY) when the regular session closes. While the session is closed (overnight, weekend, holiday) the prediction market (PM) keeps trading. Does a hedge built from the PM signal make the profit and loss (P&L) at the next open less variable than (a) no hedge and (b) a static hedge of the same average size?
 
-This is task R1 of `docs/superpowers/plans/2026-10-03-closed-market-mode.md`. It tests the two hedges of the product spec (section "Product behaviour", items 4 and 5): hedge A (hold the adverse PM contract during the closure, unwind at the open) and hedge B (an equity hedge staged for the next session).
+This is test R1 of closed-market mode (`docs/design.md`, sections 2 and 6). It tests the two hedges of the product spec (section "Product behaviour", items 4 and 5): hedge A (hold the adverse PM contract during the closure, unwind at the open) and hedge B (an equity hedge staged for the next session).
 
 This file and `config.py` are committed **before any data is fetched for this study** (the only new fetch is the live Polymarket order books used for the cost assumption, section 6). Every rule and threshold below is fixed. A later change goes under "Amendments" with the reason, and the original stays in git history. One run produces the result, and the result is reported whatever it shows.
 

@@ -1,4 +1,4 @@
-"""Closed-market mode (plan 2026-10-03-closed-market-mode.md, task P1): session clock, closure tracker, expected gap.
+"""Closed-market mode (docs/design.md, section 2): session clock, closure tracker, expected gap.
 
 Everything takes an explicit instant; replays pass the tick's recorded time."""
 from .gap import (POOLED, ExpectedGap, GapRate, GapRates, choose_rate, direction_sign, expected_gap,

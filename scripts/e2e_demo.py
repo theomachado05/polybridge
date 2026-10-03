@@ -82,8 +82,8 @@ OPP_CAPS = {"max_contracts": 10, "max_notional": 10_000.0}  # the web's DEFAULT_
 # in 2025 (Polymarket 516710, the one market whose expected-gap model is validated out of sample, R2), Friday
 # 2025-04-04 15:30 ET to Monday 2025-04-07 10:00 ET, PM history at 5-minute points and 5-minute SPY bars. 799 rows over
 # 66.5 h: at 3600x the replay takes about 67 s and the staged plan must be approved before Monday 04:00 (about 61 s in).
-# The backend runs WITHOUT the env file here: the replay carries its own (2025) prices, and a live 2026 quote would mix
-# two price times into the hedge's P&L.
+# The backend runs WITHOUT the env file and with POLYBRIDGE_REPLAY_PRICES=recorded here: the replay carries its own
+# (2025) prices, and a live 2026 quote would mix two price times into the hedge's P&L.
 WK_MARKET_ID = "516710"
 WK_TOKEN = "104173557214744537570424345347209544585775842950109756851652855913015295701992"
 WK_TICKER = "SPY"
@@ -834,7 +834,7 @@ def main() -> int:
         if not shutil.which("uv"):
             raise Abort("uv is not installed (https://docs.astral.sh/uv/)")
         env_file = None if (args.offline or args.weekend) else find_env_file(args.env_file)
-        say(f"MASSIVE_API_KEY source: {'env file (' + env_file.name + ')' if env_file else ('not passed (--weekend; the backend may still find a .env above backend/, so its own sim fills can use the current quote; the closure P&L uses recorded prices only)' if args.weekend else 'none found: live equity quotes degrade to recorded bars')}")
+        say(f"MASSIVE_API_KEY source: {'env file (' + env_file.name + ')' if env_file else ('not passed (--weekend; POLYBRIDGE_REPLAY_PRICES=recorded: every fill and the closure P&L use the recorded 2025 prices)' if args.weekend else 'none found: live equity quotes degrade to recorded bars')}")
         need_web = not args.no_screens
         busy = [(n, p) for n, p in [("backend", args.backend_port)] + ([("web", args.web_port)] if need_web else []) if port_busy(p)]
         if busy and not args.reuse:
@@ -843,6 +843,8 @@ def main() -> int:
         if not args.reuse:
             env = {**os.environ, "POLYBRIDGE_REPLAY_PATH": str(Path(args.replay).resolve()), "POLYBRIDGE_REPLAY_SPEED": str(args.speed),
                    "BROKER": "sim", "SIM_ACCOUNT_PATH": str(work / "sim_account.json"), "PYTHONUNBUFFERED": "1"}
+            if args.weekend:  # the bridge's own sandbox fills at the recorded (2025) prices too, like `make dev`
+                env["POLYBRIDGE_REPLAY_PRICES"] = "recorded"
             for k in ("WEBULL_APP_KEY", "WEBULL_APP_SECRET"):
                 env.pop(k, None)
             if args.offline:  # httpx honours these: every call to Polymarket, Kalshi, Massive, Gemini is refused at once

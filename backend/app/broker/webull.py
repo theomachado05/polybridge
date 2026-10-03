@@ -15,6 +15,13 @@ Built from Webull's public developer docs and the Apache-2.0 official Python SDK
                after-hours), "NIGHT" (overnight only) -- developer.webull.com/apis/docs/trade-api/stock. Webull takes
                only LIMIT orders outside the regular session, so an extended-hours market order is refused here
                before it is sent. OrderRequest.extended_hours=True sends "ALL"; everything else sends "CORE".
+  market hours The PAPER SANDBOX refuses every order outside 09:30-16:00 ET (tested Sat 2026-10-03: HTTP 417 "Orders
+               cannot be placed at this time. Please try again during normal market hours 9:30 a.m. - 4:00 p.m. ET",
+               even a CORE limit). So the ``extended_hours`` capability is False by default here
+               (WEBULL_EXTENDED_HOURS=1 turns it on), and that refusal is a rejected order with reject_reason
+               MARKET_CLOSED_REASON, never a crash: the staged-order book reads it as "held for the next regular
+               session". Cancelling an order Webull reports as not present (417 "Order not present") is a clean
+               rejected Order whose reason starts with "not_found:", never an exception.
 Equities go to Webull. Options and prediction legs go to the SimBroker and are labelled as such on the order.
 Enabled only by get_broker() when BROKER=webull and WEBULL_APP_KEY / WEBULL_APP_SECRET are set."""
 from __future__ import annotations
@@ -46,6 +53,9 @@ SANDBOX_HOSTNAME = "api.sandbox.webull.com"  # the only host this integration ta
 # bridge's BROKER_TIMEOUT_S (30 s), so the bridge never abandons a call that may still place an order.
 TIMEOUT_S = 4.0
 SIM_NOTE = "Routed to the simulator: Webull paper is only used for equities in this integration."
+MARKET_CLOSED = "market_closed"
+MARKET_CLOSED_REASON = f"{MARKET_CLOSED}: Webull paper accepts orders 09:30-16:00 ET"
+NOT_FOUND = "not_found"
 _LISTS = ("data", "accounts", "positions", "orders", "holdings", "items", "list", "results")
 
 
@@ -60,6 +70,25 @@ class WebullAPIError(BrokerError):
     @property
     def refused(self) -> bool:
         return self.http_status is not None and 400 <= self.http_status < 500 and self.http_status != 429
+
+
+def market_closed_refusal(e: "WebullAPIError") -> bool:
+    """Webull's "Orders cannot be placed at this time ... normal market hours" refusal (HTTP 417 on the sandbox)."""
+    t = e.message.lower()
+    return e.refused and ("cannot be placed at this time" in t or "normal market hours" in t
+                          or (e.http_status == 417 and "market hours" in t))
+
+
+def not_present_refusal(e: "WebullAPIError") -> bool:
+    """Webull does not know the order (417 "Order not present" on a cancel; a 404 / "not found" variant too)."""
+    t = e.message.lower()
+    return e.refused and ("not present" in t or "not found" in t or "not exist" in t or e.http_status == 404)
+
+
+def is_market_closed(order: Order | None) -> bool:
+    """True for an order the broker refused only because the regular session is not on (retry at the next open)."""
+    return (order is not None and order.status == "rejected" and order.filled_qty <= 0
+            and (order.reject_reason or "").startswith(MARKET_CLOSED))
 
 
 class NotSandboxHost(ValueError):
@@ -228,17 +257,24 @@ class WebullBroker:
     name = "webull-paper"
 
     def __init__(self, client: WebullClient, sim: SimBroker, account_id: str | None = None,
-                 extended_hours: bool = True) -> None:
+                 extended_hours: bool = False) -> None:
         self.client, self.sim = client, sim
-        # Documented for US stocks (support_trading_session "ALL", limit orders). Whether the paper sandbox fills
-        # pre-market orders is only known once a key is tried (W1 smoke test); WEBULL_EXTENDED_HOURS=0 turns it off.
+        # Documented for US stocks (support_trading_session "ALL", limit orders), but the paper sandbox refuses every
+        # order outside 09:30-16:00 ET (417, tested 2026-10-03), so it is off by default; WEBULL_EXTENDED_HOURS=1 turns
+        # it on (e.g. if the sandbox starts accepting pre-market limits).
         self.extended_hours = extended_hours
         self._account_id = account_id or None
+        self._account_row: dict | None = None  # the accounts/list row of the account in use (type / class / label)
         self._placed: dict[str, Order] = {}  # client_order_id -> last known state of orders placed through us
         # split sell: client_order_id -> its leg client ids (recorded BEFORE each leg is posted, so a split that
         # fails half way can still be reconciled by the parent id) and the parent's total quantity
         self._legs: dict[str, list[str]] = {}
         self._split_qty: dict[str, float] = {}
+
+    @property
+    def regular_session_only(self) -> bool:
+        """True while orders are accepted only during the regular session (09:30-16:00 ET): the sandbox default."""
+        return not self.extended_hours
 
     async def _aid(self) -> str:
         if self._account_id is None:
@@ -247,7 +283,23 @@ class WebullBroker:
             if not ids:
                 raise BrokerError("Webull returned no paper accounts for these credentials.", 502)
             self._account_id = ids[0]
+            self._account_row = next(r for r in rows if _str(r, "account_id", "accountId") == ids[0])
         return self._account_id
+
+    async def account_info(self) -> dict:
+        """{account_type, account_class, account_label} of the account in use, from accounts/list (read once; empty
+        when Webull does not list it or the call fails: the balance never depends on it)."""
+        aid = await self._aid()
+        if self._account_row is None:
+            try:
+                rows = _rows(await self.client.request("GET", "/trading/accounts/list"))
+            except BrokerError:
+                return {}
+            self._account_row = next((r for r in rows if _str(r, "account_id", "accountId") == aid), {})
+        r = self._account_row or {}
+        typ = _str(r, "account_type")
+        return {"account_type": typ.lower() if typ else None, "account_class": _str(r, "account_class"),
+                "account_label": _str(r, "account_label")}
 
     # ---- account and positions --------------------------------------------------------------------
     @_guard
@@ -268,10 +320,15 @@ class WebullBroker:
         bp = _num(d, "buying_power", "stock_buying_power", "day_buying_power", "overnight_buying_power")
         if cash is None and equity is None:
             raise BrokerError("Webull balance response had no cash or equity field.", 502)
+        info = await self.account_info()
+        hours = ("orders accepted 09:30-16:00 ET only" if self.regular_session_only
+                 else "extended-hours limit orders enabled (WEBULL_EXTENDED_HOURS)")
         return Account(broker=self.name, cash=cash if cash is not None else 0.0,
                        equity=equity if equity is not None else (cash or 0.0),
                        buying_power=bp if bp is not None else (cash or 0.0), simulated=True,
-                       note="Webull paper (simulated money). Options and prediction legs are simulated separately.")
+                       extended_hours=self.extended_hours, **info,
+                       note=f"Webull paper (simulated money; {hours}). Options and prediction legs are simulated "
+                            "separately.")
 
     @_guard
     async def positions(self) -> list[Position]:
@@ -307,9 +364,15 @@ class WebullBroker:
             return await self.sim.place_order(req)  # the sim stamps SIM_NOTE on every order it takes here
         cid = req.client_order_id
         if (dup := self._placed.get(cid)) is not None:
-            return dup
+            if not is_market_closed(dup):
+                return dup
+            del self._placed[cid]  # refused only because the session was closed: Webull never took it, send again
         if (legs := self._legs.get(cid)) is not None and (merged := self._merge(cid, legs)) is not None:
-            return merged
+            if not is_market_closed(merged):
+                return merged
+            for leg in legs:
+                self._placed.pop(leg, None)
+            del self._legs[cid]
         if req.side == "buy":
             return await self._submit(req, cid, "BUY", req.qty)
         held = max(await self._held(req.symbol), 0.0)  # long quantity only; a short is already negative
@@ -373,7 +436,8 @@ class WebullBroker:
             resp = await self.client.request("POST", "/trading/orders/place", body={"account_id": aid, "new_orders": [item]})
         except WebullAPIError as e:
             if e.refused:  # a 4xx: understood and refused, a rejected order, not a crash
-                base.status, base.reject_reason = "rejected", e.message
+                base.status = "rejected"
+                base.reject_reason = MARKET_CLOSED_REASON if market_closed_refusal(e) else e.message
                 self._placed[cid] = base
                 return base
             # 5xx / 429: the order may have been accepted anyway. Ask Webull; if it knows the order, report what it
@@ -465,9 +529,32 @@ class WebullBroker:
             return merged
         local = next((o for o in self._placed.values() if order_id in (o.id, o.client_order_id)), None)
         cid = local.client_order_id if local else order_id
-        await self.client.request("POST", "/trading/orders/cancel", body={"account_id": await self._aid(), "client_order_id": cid})
         base = local or Order(id=order_id, client_order_id=cid, broker=self.name, symbol="", asset="equity", side="buy",
                               qty=0, type="market", status="open", created_at=now_iso())
+        try:
+            await self.client.request("POST", "/trading/orders/cancel",
+                                      body={"account_id": await self._aid(), "client_order_id": cid})
+        except WebullAPIError as e:
+            if not not_present_refusal(e):
+                raise
+            return await self._not_present(base, cid)
         base.status = "cancelled"
         self._placed[cid] = base
         return base
+
+    async def _not_present(self, base: Order, cid: str) -> Order:
+        """Cancel answered "Order not present": nothing rests at Webull under this id. A finished order we placed is
+        reported as it finished (it may have filled meanwhile); otherwise a clean rejected Order with reason
+        "not_found: ...", never an exception."""
+        if base.client_order_id in self._placed:
+            try:
+                fresh = await self._refresh(base)
+            except BrokerError:
+                fresh = None
+            if fresh is not None and fresh.status != "open":
+                return fresh
+        gone = base.model_copy(update={"status": "rejected", "reject_reason":
+                                       f"{NOT_FOUND}: Webull reports order {cid} not present (nothing to cancel)"})
+        if cid in self._placed:
+            self._placed[cid] = gone
+        return gone

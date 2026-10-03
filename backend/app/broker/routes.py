@@ -29,9 +29,23 @@ async def _call(coro):
         raise HTTPException(502, f"Broker error ({type(e).__name__}).")
 
 
+def market_session(app) -> dict:
+    """The NYSE session now (``app.state.staged_clock`` pins it in tests): market_open is the regular session."""
+    from ..closed.session import now_utc, session_at, to_utc
+
+    clock = getattr(app.state, "staged_clock", None)
+    s = session_at(to_utc(clock()) if clock else now_utc())
+    return {"market_open": s.equities_open, "session": s.label,
+            "next_open": s.next_open.isoformat().replace("+00:00", "Z")}
+
+
 @router.get("/account", response_model=Account)
 async def get_account(request: Request) -> Account:
-    return await _call(get_broker(request.app).account())
+    b = get_broker(request.app)
+    acct = await _call(b.account())
+    ext = getattr(b, "extended_hours", None)
+    return acct.model_copy(update={**market_session(request.app),
+                                   "extended_hours": acct.extended_hours if acct.extended_hours is not None else ext})
 
 
 @router.get("/positions", response_model=list[Position])

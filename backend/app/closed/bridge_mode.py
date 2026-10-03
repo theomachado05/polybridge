@@ -1,4 +1,4 @@
-"""Closed-market mode inside a bridge (plan 2026-10-03-closed-market-mode.md, task P5).
+"""Closed-market mode inside a bridge (docs/design.md, section 2).
 
 Every bridge knows the NYSE session of each tick: a replay from the tick's RECORDED time (a replayed Saturday is a
 Saturday), a live bridge from the wall clock. While the regular session is closed (after-hours, overnight, weekend,
@@ -7,7 +7,8 @@ holiday, and pre-market):
 - **The equity algo holds.** The bridge's equity algo / engine is paused, not stepped (``bridges._hold_closed``): nothing
   is sent and the decision is reported as ``hold`` / ``session_closed``. (Stepping it and refusing its intents would put
   the algo into its wall-clock reject backoff, which freezes a replay.) ``BridgeIn.session_hold=false`` trades at any
-  hour instead.
+  hour instead, except at a broker that takes orders only in the regular session (Webull paper,
+  ``regular_session_only``): there the hold is forced (``broker_hold``) and only staged orders reach it, at 09:30 ET.
 - **Closure and expected gap.** The PM move since the last regular close (closure tracker: the app's shared tracker for
   a live bridge, one local to the bridge for a replay) and the expected open gap with its 80% band and the number of
   closures behind the rate (``app.closed.gap``).
@@ -292,8 +293,20 @@ class ClosedMode:
         return self.local if self.bridge.effective_source == "replay" else tracker_for(self.app)
 
     @property
+    def broker_hold(self) -> bool:
+        """The bridge's order broker takes orders only in the regular session (Webull paper refuses everything else
+        with a 417): its equity algo must hold off-session whatever ``session_hold`` says. A replay sandbox is a sim."""
+        if not self.hedging:
+            return False
+        try:
+            b = self.bridge.order_broker() if hasattr(self.bridge, "order_broker") else None
+        except Exception:
+            return False
+        return bool(getattr(b, "regular_session_only", False))
+
+    @property
     def hold(self) -> bool:
-        return self.hold_enabled and self.sess is not None and self.sess.closed
+        return (self.hold_enabled or self.broker_hold) and self.sess is not None and self.sess.closed
 
     def note(self, at: dt.datetime, event: str, detail: str | None = None, **extra) -> dict:
         row = {"at": _iso(at), "at_et": at.astimezone(ET).strftime("%a %Y-%m-%d %H:%M ET"), "event": event,
@@ -582,7 +595,8 @@ class ClosedMode:
         orders = staged.book_for(self.app).list(bridge_id=self.bridge.id)
         return {"session": session_view(sess), "closure": closure_view(self.state),
                 "expected_gap": gap_view(self.gap, self.evidence),
-                "closed_mode": {"hold": self.hold, "session_hold": self.hold_enabled, "holds": self.holds,
+                "closed_mode": {"hold": self.hold, "session_hold": self.hold_enabled,
+                                "broker_hold": self.broker_hold, "holds": self.holds,
                                 "evidence": self.evidence, "labels": ev.hedge_evidence(),
                                 "plan": plan.model_dump() if plan is not None else None, "plan_note": self.plan_note,
                                 "staged_orders": [{"id": o.id, "status": o.status, "qty": o.qty,

@@ -117,14 +117,24 @@ class Account(BaseModel):
     realized_pnl: float | None = None
     fees_paid: float | None = None
     note: str | None = None
+    # Webull: the account in use as accounts/list names it (e.g. "margin", "INDIVIDUAL_MARGIN", "Individual Margin")
+    account_type: str | None = None
+    account_class: str | None = None
+    account_label: str | None = None
+    extended_hours: bool | None = None  # the broker's extended-hours capability (Broker.extended_hours)
+    # Set by GET /account from the NYSE session clock: is the regular session (09:30-16:00 ET) on right now, and the
+    # session label / next regular open. Webull paper takes orders only while market_open is True.
+    market_open: bool | None = None
+    session: str | None = None
+    next_open: str | None = None
 
 
 @runtime_checkable
 class Broker(Protocol):
     name: str
     # Capability: the broker accepts equity orders with ``OrderRequest.extended_hours`` (pre-market / after-hours).
-    # SimBroker True (simulated); WebullBroker True per the Webull OpenAPI docs (support_trading_session "ALL",
-    # limit orders only). Callers read it with getattr(broker, "extended_hours", False) so a minimal fake still works.
+    # SimBroker True (simulated); WebullBroker False by default (the paper sandbox refuses every order outside
+    # 09:30-16:00 ET; WEBULL_EXTENDED_HOURS=1 sends "ALL" limit orders per the OpenAPI docs). Callers read it with getattr(broker, "extended_hours", False) so a minimal fake still works.
     extended_hours: bool
 
     async def account(self) -> Account: ...

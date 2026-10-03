@@ -342,17 +342,22 @@ def test_configured_account_id_skips_the_account_list(tmp_path):
         http = httpx.AsyncClient(transport=httpx.MockTransport(sb.handler))
         b = WebullBroker(WebullClient("K", "S", http=http), SimBroker(None), account_id="MINE")
         await b.account()
+        await b.account()
     run(go())
-    assert [r.url.path for r in sb.requests] == ["/trading/assets/balances/get"]
-    assert sb.requests[0].url.params["account_id"] == "MINE"
+    paths = [r.url.path for r in sb.requests]  # the list is read once, only for the account's type / class
+    assert paths.count("/trading/accounts/list") == 1 and paths.count("/trading/assets/balances/get") == 2
+    assert all(r.url.params["account_id"] == "MINE" for r in sb.requests if r.url.path != "/trading/accounts/list")
 
 
 # --- the factory ------------------------------------------------------------------------------------
 
 def test_factory_default_is_the_sim(monkeypatch):
-    monkeypatch.delenv("BROKER", raising=False)
-    monkeypatch.delenv("WEBULL_APP_KEY", raising=False)
-    assert get_broker().name == "sim"
+    monkeypatch.setattr(broker_mod, "_env", lambda n: "")  # hermetic: a developer .env may say BROKER=webull
+    broker_mod.reset_default_broker()
+    try:
+        assert get_broker().name == "sim"
+    finally:
+        broker_mod.reset_default_broker()
 
 
 def test_factory_webull_needs_both_the_switch_and_both_keys(monkeypatch):

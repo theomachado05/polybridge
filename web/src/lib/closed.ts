@@ -1,4 +1,4 @@
-// Closed-market mode, view logic (plan 2026-10-03-closed-market-mode.md, U1-U5). Pure and dependency-free so
+// Closed-market mode, view logic (docs/design.md, section 2). Pure and dependency-free so
 // `node --test` imports it directly. Every label here follows the evidence gate the backend applies
 // (backend/app/closed/evidence.py, research R1/R2/R3):
 // - an expected gap reads VALIDATED only when the backend says so for a market whose own out-of-sample record passes
