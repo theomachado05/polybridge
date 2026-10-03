@@ -9,6 +9,7 @@ from pathlib import Path
 import httpx
 import pandas as pd
 from fastapi import APIRouter, Request
+from polybridge_research.schema import normalize_ticker
 from polybridge_research.parity import implied_move
 from polybridge_research.pricing import locate_spot  # noqa: F401  (re-exported for patching in tests)
 from pydantic import BaseModel
@@ -82,12 +83,16 @@ def _headline(vs: list[TagVerdict]) -> TagVerdict | None:
 
 
 def fetch_filings(client, ticker: str, today: pd.Timestamp, book) -> list[Filing]:
-    rows = client.get_all(DISCLOSURES, {"ticker": ticker,
+    rows = client.get_all(DISCLOSURES, {"tickers": ticker,
                                         "filing_date.gte": (today - pd.Timedelta(days=FILING_DAYS)).strftime("%Y-%m-%d"),
                                         "filing_date.lte": today.strftime("%Y-%m-%d"),
                                         "limit": 1000, "sort": "filing_date.desc"})
+    want = normalize_ticker(ticker)
     groups: dict[str, dict] = {}
     for r in rows:
+        tk = r.get("tickers")
+        if not isinstance(tk, list) or want not in {normalize_ticker(t) for t in tk}:
+            continue  # the API may ignore its filter; never show another company's filing
         key = r.get("accession_number") or f"{r.get('filing_date')}-{len(groups)}"
         g = groups.setdefault(key, {"date": str(r.get("filing_date"))[:10], "url": r.get("filing_url"), "tags": []})
         for t in _row_tags(r):

@@ -20,9 +20,9 @@ class StubClient(rf.FakeClient):
         self.rows, self.quote = rows or [], quote
 
     def get_all(self, path, params=None, max_pages=500):
-        if path == "/stocks/filings/8-K/vX/disclosures" and "ticker" in (params or {}):
+        if path == "/stocks/filings/8-K/vX/disclosures" and "tickers" in (params or {}):
             self.calls.append((path, params))
-            return [r for r in self.rows if r["tickers"] == [params["ticker"]]]
+            return list(self.rows)  # like the live API: the filter is not applied
         return super().get_all(path, params, max_pages)
 
     def get(self, path, params=None):
@@ -57,7 +57,8 @@ def make(massive, monkeypatch, http_fail=False):
 
 
 def test_card_with_move_filings_and_markets(monkeypatch):
-    client = StubClient([row("a1", "Entry into Material Agreement"), row("a1", "Results of Operations"), row("a2", "X", "2026-08-01")],
+    other = [row("o1", "Results of Operations", ticker="BBB"), {k: v for k, v in row("o2", "X").items() if k != "tickers"}]
+    client = StubClient(other + [row("a1", "Entry into Material Agreement"), row("a1", "Results of Operations"), row("a2", "X", "2026-08-01")],
                         market=rf.FakeMarket({"AAA": 100.0}))
     d = make(client, monkeypatch).get("/equities/aaa").json()
     assert d["ticker"] == "AAA"
