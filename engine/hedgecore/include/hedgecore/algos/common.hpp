@@ -2,6 +2,7 @@
 // Shared pieces of the algo families: catalog metadata types, the CRTP latency wrapper, a small ledger, and
 // HedgeCore, the equity-hedge pipeline that the 11 hedge families feed with their own signal and target.
 // Nothing here allocates or makes a virtual call on the tick path.
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <limits>
@@ -110,6 +111,18 @@ struct HedgeCore {
   bool working = false;    // an approved rebalance toward work_target is not finished yet
   double work_target = 0;
   static constexpr double kDoneShares = 1e-6;
+  // Reject backoff: consecutive rejects of equity orders on the same side with no fill in between. The first reject
+  // is re-sent on the next tick; after the k-th (k >= 2) the next send on that side waits 2^(k-2) s (at most 60 s)
+  // after the rejected one, held as Cooldown. Measured on `now` (the live bridge passes wall-clock time, so it bounds
+  // a fast replayed stream too; offline replay passes tick time, where hourly ticks are never held). A fill or an
+  // order on the other side resets it. The approved rebalance stays approved, so it still completes once the venue
+  // accepts it (a market reopening, a transient broker error).
+  static constexpr std::int64_t kBackoffBaseNs = kNsPerSec;
+  static constexpr std::int64_t kBackoffMaxNs = 60 * kNsPerSec;
+  int rejects = 0;
+  int last_side = 0;                // side of the last order sent
+  std::int64_t last_send_ns = 0;    // `now` of the last order sent
+  std::int64_t retry_at_ns = std::numeric_limits<std::int64_t>::min();
   FeeModel fees{};
   blocks::Staleness stale{2 * kNsPerSec};
   blocks::Session session{};
@@ -214,7 +227,11 @@ struct HedgeCore {
               bool capped) noexcept {
     const int side = delta > 0 ? -1 : +1;  // sell to add to the short hedge
     if (side < 0 && !wash.allows(-1, t.ts_ns)) return hold(Rc::WashSale, signal);
+    if (side != last_side) { rejects = 0; retry_at_ns = std::numeric_limits<std::int64_t>::min(); }
+    if (now < retry_at_ns) return hold(Rc::Cooldown, signal);
     if (!cooldown.pass(blocks::GateIn{t, now})) return hold(Rc::Cooldown, signal);
+    last_side = side;
+    last_send_ns = now;
     bool sliced = false;
     const double qty = std::abs(slicer.clip(delta, sliced));
     const double limit = pa.limit(side, t.under_bid, t.under_ask, urgency);
@@ -224,9 +241,15 @@ struct HedgeCore {
   }
 
   // The venue rejected the order or a passive limit expired unfilled: nothing traded, so the cooldown it started is
-  // void. The working rebalance stays approved and is re-sent on the next tick.
+  // void. The working rebalance stays approved. The first reject is re-sent on the next tick; repeated rejects back
+  // off (see kBackoffBaseNs) so a reject that keeps happening (closed market, coverage cap) cannot re-send every
+  // tick.
   void on_reject(Instrument i) noexcept {
-    if (i == Instrument::Equity) cooldown.last_ns = std::numeric_limits<std::int64_t>::min();
+    if (i != Instrument::Equity) return;
+    cooldown.last_ns = std::numeric_limits<std::int64_t>::min();
+    if (rejects < 30) ++rejects;
+    if (rejects >= 2)
+      retry_at_ns = last_send_ns + std::min(kBackoffMaxNs, kBackoffBaseNs << std::min(rejects - 2, 6));
   }
 
   void on_fill(Instrument i, double signed_qty, double px) noexcept {
@@ -234,6 +257,8 @@ struct HedgeCore {
     if (!num(signed_qty) || !num(px)) { ledger.bad = true; return; }
     ledger.fill(i, signed_qty, px, 1.0);
     hedge -= signed_qty;
+    rejects = 0;
+    retry_at_ns = std::numeric_limits<std::int64_t>::min();
     if (working && std::abs(work_target - hedge) < kDoneShares) working = false;
     wash.record(lots.apply_fill(signed_qty, px, last_ts), last_ts);
   }

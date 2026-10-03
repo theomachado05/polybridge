@@ -237,6 +237,8 @@ py::dict stats_dict(const ReplayStats& s) {
   d["fees"] = s.fees;
   d["max_dd"] = s.max_dd;
   d["hedge_var_reduction"] = nan_none(s.hedge_var_reduction);
+  d["hedge_var_reduction_vs_static"] = nan_none(s.hedge_var_reduction_vs_static);
+  d["avg_hedge_ratio"] = nan_none(s.avg_hedge_ratio);
   d["turnover"] = s.turnover;
   d["p50_ns"] = s.p50_ns;
   d["p99_ns"] = s.p99_ns;

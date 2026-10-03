@@ -121,7 +121,9 @@ def test_replay_returns_stats_dict():
     assert s["p99_ns"] >= s["p50_ns"] >= 0
     assert s["params"]["coverage"] == 1.0
     assert set(s) >= {"n_ticks", "n_orders", "pnl", "fees", "max_dd", "hedge_var_reduction", "turnover",
-                      "p50_ns", "p99_ns"}
+                      "p50_ns", "p99_ns", "hedge_var_reduction_vs_static", "avg_hedge_ratio"}
+    assert 0 < s["avg_hedge_ratio"] <= 1
+    assert s["hedge_var_reduction_vs_static"] is not None
 
 
 def test_replay_without_underlying_has_no_var_reduction():
@@ -130,6 +132,7 @@ def test_replay_without_underlying_has_no_var_reduction():
         del t[k]
     s = hedgecore.replay("equity_delta_bridge", {}, {"shares_held": 1000}, t)
     assert s["hedge_var_reduction"] is None and s["n_fills"] == 0
+    assert s["hedge_var_reduction_vs_static"] is None and s["avg_hedge_ratio"] is None
 
 
 def test_replay_grid_covers_every_preset_deterministically():
@@ -184,3 +187,32 @@ def test_on_reject_lets_a_passive_hedge_requote():
     again = a.on_tick({**t, "ts_ns": 2_000_000_000})
     assert again["action"] == "order" and again["qty"] == 100.0
     assert again["reason"] != hedgecore.reason_name(1026)
+
+
+def test_constant_pm_static_short_adds_nothing_over_static():
+    """A constant PM series carries no information: the raw score is ~1 - (1 - 0.99)^2, the vs-static score ~0."""
+    n = 500
+    rng = np.random.default_rng(3)
+    u = 100 + np.cumsum(rng.uniform(-0.5, 0.5, n))
+    t = {"ts_ns": (np.arange(n, dtype=np.int64) + 1) * 1_000_000_000,
+         "yes_bid": np.full(n, 0.985), "yes_ask": np.full(n, 0.995),
+         "under_px": u, "under_bid": u - 0.01, "under_ask": u + 0.01}
+    s = hedgecore.replay("equity_delta_bridge", {"coverage": 1.0, "sigma_k": 0.0}, {"shares_held": 1000}, t)
+    assert s["n_fills"] == 1 and s["hedge_var_reduction"] > 0.999
+    assert abs(s["avg_hedge_ratio"] - 0.99) < 1e-9
+    assert abs(s["hedge_var_reduction_vs_static"]) < 1e-6
+
+
+def test_repeated_rejects_back_off():
+    a = hedgecore.Algo("equity_delta_bridge", {"coverage": 1.0, "sigma_k": 0.0}, {"shares_held": 1000})
+    t = {"ts_ns": 1_000_000_000, "yes_bid": 0.795, "yes_ask": 0.805,
+         "under_px": 100.0, "under_bid": 99.99, "under_ask": 100.01}
+    assert a.on_tick(t)["qty"] == 800.0
+    a.on_fill("equity", -400.0, 99.99)
+    sent = []
+    for k in range(2, 21):
+        i = a.on_tick({**t, "ts_ns": k * 1_000_000_000})
+        if i["action"] == "order":
+            sent.append(k)
+            a.on_reject("equity")
+    assert sent == [2, 3, 4, 6, 10, 18]

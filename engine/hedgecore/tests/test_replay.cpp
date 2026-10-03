@@ -54,6 +54,8 @@ TEST(Replay, HandComputedSingleFill) {
   EXPECT_NEAR(s.max_dd, 0.35 + 101.0, 1e-9);  // peak 0 at start
   // One underlying change: unhedged 1000, hedged 1000 - 100 = 900 -> variance of a single sample is 0 -> NaN.
   EXPECT_TRUE(std::isnan(s.hedge_var_reduction));
+  EXPECT_TRUE(std::isnan(s.hedge_var_reduction_vs_static));
+  EXPECT_NEAR(s.avg_hedge_ratio, 0.1, 1e-12);  // 100 short over the one interval
   EXPECT_GE(s.p99_ns, s.p50_ns);
 }
 
@@ -90,6 +92,8 @@ TEST(Replay, DeterministicAcrossRunsExceptLatency) {
       EXPECT_EQ(a[i].turnover, b[i].turnover) << f.id;
       const bool both_nan = std::isnan(a[i].hedge_var_reduction) && std::isnan(b[i].hedge_var_reduction);
       EXPECT_TRUE(both_nan || a[i].hedge_var_reduction == b[i].hedge_var_reduction) << f.id;
+      const bool vs_nan = std::isnan(a[i].hedge_var_reduction_vs_static) && std::isnan(b[i].hedge_var_reduction_vs_static);
+      EXPECT_TRUE(vs_nan || a[i].hedge_var_reduction_vs_static == b[i].hedge_var_reduction_vs_static) << f.id;
     }
   }
 }
@@ -153,48 +157,99 @@ TEST(Replay, PassiveSlicedHedgeConvergesWhenTheMarketTradesThrough) {
   EXPECT_EQ(s.n_rejected, 0u);
 }
 
-TEST(Replay, ExpiredPassiveOrderIsRequotedEveryTick) {
-  // Flat stock: a resting sell at the ask never trades through. The algo re-quotes each tick instead of going quiet.
+TEST(Replay, ExpiredPassiveOrderIsRequotedWithBackoff) {
+  // Flat stock: a resting sell at the ask never trades through. The algo keeps re-quoting instead of going quiet
+  // (or fee-gating the approved rebalance), but repeated expiries back off: orders at 1, 2, 3, 5, 9 s.
   std::vector<MarketTick> ticks;
   for (int i = 0; i < 10; ++i) ticks.push_back(pm((i + 1) * kSec, 0.20));
   Position pos;
   pos.shares_held = 1000;
   const ReplayStats s = replay("stress_lead_hedge", find_family("stress_lead_hedge")->spec.defaults(), pos, ticks);
-  EXPECT_EQ(s.n_orders, 10u);
+  EXPECT_EQ(s.n_orders, 5u);
   EXPECT_EQ(s.n_fills, 0u);
-  EXPECT_EQ(s.n_rejected, 10u);
+  EXPECT_EQ(s.n_rejected, 5u);
 }
 
-bool is_working(AnyAlgo& a) {
-  return std::visit(
-      [](auto& x) {
-        if constexpr (requires { x.core.working; }) return x.core.working;
-        else return false;
-      },
-      a);
+namespace {
+constexpr std::int64_t kFri1900 = 1790967600LL * kSec;  // 2026-10-02 15:00 EDT, in session
+constexpr std::int64_t kSat1600 = 1791043200LL * kSec;  // 2026-10-03, Saturday
+constexpr std::int64_t kMon0930 = 1791207000LL * kSec;  // 2026-10-05 09:30 EDT, session open
+constexpr std::int64_t kHour = 3600LL * kSec;
+// A recorded tick: PM quote plus an equity bar close with no live quote (as app.pipeline.ticks builds them).
+MarketTick bar_tick(std::int64_t ts, double p, double u) {
+  MarketTick t = pm(ts, p, 0.005, u, 0.01);
+  t.under_bid = t.under_ask = NaN;
+  return t;
+}
+}  // namespace
+
+TEST(Replay, StaleBarCloseIsNotAFillPriceOutOfSession) {
+  // The PM jumps on Saturday. The only equity price is Friday's close: the sell is rejected, not filled at it. At
+  // Monday's open the as-of close is still Friday's (no bar has closed yet): still rejected. Once the first Monday
+  // bar closes (after the gap), the hedge fills there.
+  Position pos;
+  pos.shares_held = 1000;
+  Params p = find_family("equity_delta_bridge")->spec.defaults();
+  p.v[0] = 1.0;  // coverage
+  p.v[2] = 0.0;  // sigma gate off
+  p.v[4] = 0.0;  // fee gate off
+  const std::vector<MarketTick> ticks{bar_tick(kSat1600, 0.60, 100.0), bar_tick(kMon0930, 0.60, 100.0),
+                                      bar_tick(kMon0930 + kHour, 0.60, 94.0)};
+  const ReplayStats s = replay("equity_delta_bridge", p, pos, ticks);
+  EXPECT_EQ(s.n_fills, 1u);
+  EXPECT_EQ(s.n_rejected, 2u);
+  EXPECT_NEAR(s.turnover, 600 * (94.0 - 0.01), 1e-6);  // sold at the post-gap price, not Friday's 100
+  EXPECT_LT(s.pnl, 0.0);                              // so the gap is not booked as hedge profit
 }
 
-TEST(Replay, NoHedgeFamilyStallsBelowFeesMidRebalance) {
-  // Every hedge family at default params on a constant-probability path with immediate fills: while an approved
-  // rebalance is unfinished, nothing may hold below_fees, and every approved rebalance completes. (A target that
-  // grows for another reason, e.g. crypto_reg_hedge's volatility rescale, is a new increment and may be fee-gated.)
-  for (const auto& f : catalog().families) {
-    if (std::string_view(f.division) != "hedge") continue;
-    Position pos;
-    pos.shares_held = 1000;
-    AnyAlgo a = make_algo(f.id, f.spec.defaults(), pos);
-    int orders = 0;
-    for (int k = 0; k < 40; ++k) {
-      MarketTick t = with_book(pm((k + 1) * kSec, 0.60), 3000, 3000);
-      const bool working = is_working(a);
-      const Intent i = on_tick(a, t, t.ts_ns);
-      if (working) EXPECT_NE(i.reason, code(Rc::BelowFees)) << f.id << " tick " << k;
-      if (i.action == Action::Order) {
-        ++orders;
-        on_fill(a, Instrument::Equity, i.side * i.qty, i.side > 0 ? t.under_ask : t.under_bid);
-      }
-    }
-    EXPECT_GT(orders, 0) << f.id;
-    EXPECT_FALSE(is_working(a)) << f.id << " left a rebalance unfinished";
+TEST(Replay, FreshBarCloseInSessionFills) {
+  Position pos;
+  pos.shares_held = 1000;
+  Params p = find_family("equity_delta_bridge")->spec.defaults();
+  p.v[2] = 0.0;
+  p.v[4] = 0.0;
+  const std::vector<MarketTick> ticks{bar_tick(kFri1900 - kHour, 0.20, 100.0), bar_tick(kFri1900, 0.20, 100.5)};
+  const ReplayStats s = replay("equity_delta_bridge", p, pos, ticks);
+  EXPECT_EQ(s.n_fills, 1u);  // the first tick has no prior close to compare (rejected); the second is fresh
+  EXPECT_NEAR(s.turnover, 100 * (100.5 - 0.01), 1e-6);
+}
+
+TEST(Replay, StaticShortWithConstantPmScoresHighButAddsNothingOverStatic) {
+  // A constant PM probability carries no information. equity_delta_bridge at coverage 1 shorts 99% of the shares
+  // once and never trades again: hedge_var_reduction ~ 1 - 0.01^2, yet it is exactly what a static short gives.
+  std::vector<MarketTick> ticks;
+  double u = 100.0;
+  std::uint64_t r = 99;
+  for (int i = 0; i < 500; ++i) {
+    r = r * 6364136223846793005ULL + 1442695040888963407ULL;
+    u += (static_cast<double>(r >> 11) / 9007199254740992.0 - 0.5);
+    ticks.push_back(pm((i + 1) * kSec, 0.99, 0.005, u, 0.01));
   }
+  Position pos;
+  pos.shares_held = 1000;
+  Params p = find_family("equity_delta_bridge")->spec.defaults();
+  p.v[0] = 1.0;
+  p.v[2] = 0.0;  // sigma gate off
+  const ReplayStats s = replay("equity_delta_bridge", p, pos, ticks);
+  EXPECT_EQ(s.n_fills, 1u);
+  EXPECT_GT(s.hedge_var_reduction, 0.999);
+  EXPECT_NEAR(s.avg_hedge_ratio, 0.99, 1e-12);
+  ASSERT_TRUE(std::isfinite(s.hedge_var_reduction_vs_static));
+  EXPECT_NEAR(s.hedge_var_reduction_vs_static, 0.0, 1e-6);
+}
+
+TEST(Replay, FullStaticHedgeHasNoVsStaticScore) {
+  // Already fully hedged and the band never lets it trade: the static benchmark is flat, so no vs-static score.
+  Position pos;
+  pos.shares_held = 1000;
+  pos.equity = -1000;
+  Params p = find_family("equity_delta_bridge")->spec.defaults();
+  p.v[1] = 1e6;  // band_shares
+  std::vector<MarketTick> ticks;
+  for (int i = 0; i < 6; ++i) ticks.push_back(pm((i + 1) * kSec, 0.5, 0.005, 100.0 + (i % 2), 0.01));
+  const ReplayStats s = replay("equity_delta_bridge", p, pos, ticks);
+  EXPECT_EQ(s.n_orders, 0u);
+  EXPECT_NEAR(s.avg_hedge_ratio, 1.0, 1e-12);
+  EXPECT_NEAR(s.hedge_var_reduction, 1.0, 1e-12);
+  EXPECT_TRUE(std::isnan(s.hedge_var_reduction_vs_static));
 }

@@ -74,8 +74,22 @@ ReplayStats replay_algo(AnyAlgo& algo, const Position& pos, std::span<const Mark
 
   std::vector<std::int64_t> lat;
   lat.reserve(ticks.size());
-  std::vector<double> d_unhedged, d_hedged;
-  double peak = 0, prev_u = kNaN, prev_eq_u = 0;
+  std::vector<double> d_unhedged, d_hedged, h_held;
+  double peak = 0, prev_u = kNaN, prev_eq_u = 0, prev_h = 0;
+
+  // An equity fill with no live quote prices off under_ref, which in recorded ticks is the close of the last finished
+  // bar. That price is only tradable in the regular session and once a bar has closed in it: on nights, weekends and
+  // holidays (and in a new session before its first bar is known) it is a stale close, and filling there would book
+  // the opening gap as hedge P&L. Such fills are refused (rejected) until the price is fresh again.
+  bool u_fresh = false, in_sess = false;
+  double last_u = kNaN;
+  auto fill_px = [&](Instrument inst, int side, Venue v, const MarketTick& t) {
+    const double px = touch_price(inst, side, v, t, fm);
+    if (inst != Instrument::Equity || !num(px)) return px;
+    const double q = side > 0 ? t.under_ask : t.under_bid;
+    if (num(q) && q > 0) return px;  // a live quote
+    return (in_sess && u_fresh) ? px : kNaN;
+  };
 
   auto fill = [&](Instrument inst, int side, double qty, double px, Venue v) {
     const int ii = static_cast<int>(inst), vi = static_cast<int>(v);
@@ -92,6 +106,13 @@ ReplayStats replay_algo(AnyAlgo& algo, const Position& pos, std::span<const Mark
   };
 
   for (const MarketTick& t : ticks) {
+    {
+      const double u = under_ref(t);
+      in_sess = us_equity_session(t.ts_ns);
+      if (!in_sess) u_fresh = false;
+      else if (num(u) && num(last_u) && u != last_u) u_fresh = true;
+      if (num(u)) last_u = u;
+    }
     for (int i = 0; i < 4; ++i)
       for (int v = 0; v < 2; ++v) {
         const double m = mark_price(static_cast<Instrument>(i), static_cast<Venue>(v), t);
@@ -107,7 +128,7 @@ ReplayStats replay_algo(AnyAlgo& algo, const Position& pos, std::span<const Mark
 
     if (has_pending) {  // a resting passive limit fills at its limit only if this tick trades through it
       has_pending = false;
-      const double opp = touch_price(pending.instrument, pending.side, pending.venue, t, fm);
+      const double opp = fill_px(pending.instrument, pending.side, pending.venue, t);
       const bool through = num(opp) && (pending.side > 0 ? opp <= pending.limit_px : opp >= pending.limit_px);
       if (through) fill(pending.instrument, pending.side, pending.qty, pending.limit_px, pending.venue);
       else { ++st.n_rejected; on_reject(algo, pending.instrument); }
@@ -119,7 +140,7 @@ ReplayStats replay_algo(AnyAlgo& algo, const Position& pos, std::span<const Mark
 
     if (in.action == Action::Order) {
       ++st.n_orders;
-      const double px = touch_price(in.instrument, in.side, in.venue, t, fm);
+      const double px = fill_px(in.instrument, in.side, in.venue, t);
       const bool ok_qty = num(in.qty) && in.qty > 0 && (in.side == 1 || in.side == -1);
       if (!ok_qty || !num(px)) {
         ++st.n_rejected;
@@ -146,9 +167,11 @@ ReplayStats replay_algo(AnyAlgo& algo, const Position& pos, std::span<const Mark
         const double du = pos.shares_held * (u - prev_u);
         d_unhedged.push_back(du);
         d_hedged.push_back(du + (eq - prev_eq_u));
+        h_held.push_back(prev_h);  // the hedge ratio held over this interval
       }
       prev_u = u;
       prev_eq_u = eq;
+      prev_h = -(book[0][0] + book[0][1]) / pos.shares_held;
     }
   }
   if (has_pending) ++st.n_rejected;
@@ -173,6 +196,15 @@ ReplayStats replay_algo(AnyAlgo& algo, const Position& pos, std::span<const Mark
     };
     const double vu = var(d_unhedged);
     if (vu > 0) st.hedge_var_reduction = 1.0 - var(d_hedged) / vu;
+    // Benchmark: a static short of the average hedge ratio, held the whole time, needs no PM signal at all.
+    double hbar = 0;
+    for (double h : h_held) hbar += h;
+    hbar /= static_cast<double>(h_held.size());
+    st.avg_hedge_ratio = hbar;
+    const double vs = (1.0 - hbar) * (1.0 - hbar) * vu;
+    if (vu > 0 && std::abs(1.0 - hbar) > 1e-9 && vs > 0) st.hedge_var_reduction_vs_static = 1.0 - var(d_hedged) / vs;
+  } else if (!h_held.empty()) {
+    st.avg_hedge_ratio = h_held[0];
   }
   return st;
 }
