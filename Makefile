@@ -1,9 +1,12 @@
 .PHONY: setup-research test-research setup-backend test-backend build-engine test-engine test-engine-py setup-web test-web test dev dev-live e2e e2e-api e2e-opportunity
 
+research/.venv:
+	$(MAKE) setup-research
+
 setup-research:
 	cd research && uv venv .venv && uv pip install --python .venv -e ".[dev]"
 
-test-research:
+test-research: research/.venv
 	cd research && .venv/bin/python -m pytest -q
 
 setup-backend:
@@ -60,12 +63,12 @@ dev-live:
 # End-to-end: starts both servers, drives search -> map -> fit -> propose -> approve -> bridge -> SSE -> account over
 # HTTP, clicks the real UI in headless Chrome and screenshots the 8 screens into web/e2e/screens/, then stops everything.
 e2e:
-	python3 scripts/e2e_demo.py
+	python3 scripts/e2e_demo.py $(E2E_ARGS)
 
 e2e-api:
-	python3 scripts/e2e_demo.py --no-screens
+	python3 scripts/e2e_demo.py --no-screens $(E2E_ARGS)
 
 # The Opportunity division over HTTP: the NVDA > $230 recording's options fit -> approved binary_vs_spread_arb proposal ->
 # replay bridge with simulated multi-leg option orders (API only, about 60 s).
 e2e-opportunity:
-	python3 scripts/e2e_demo.py --opportunity
+	python3 scripts/e2e_demo.py --opportunity $(E2E_ARGS)

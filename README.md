@@ -14,12 +14,13 @@ Hedge equity positions using live prediction-market prices (Polymarket + Kalshi)
 
 ## Quickstart
 
-Prerequisites: [uv](https://docs.astral.sh/uv/), Node 24+ with pnpm, `cmake` and `ninja` (`uv tool install cmake ninja`) to build the C++ library, Chrome for the screenshot pass.
+Prerequisites: [uv](https://docs.astral.sh/uv/) (it fetches Python 3.12 for the projects), any `python3` 3.10+ on PATH for the stdlib-only e2e driver, Node 24+ with pnpm, GNU make, a C++20 compiler (Xcode Command Line Tools / clang 16+ or gcc 12+), `cmake` and `ninja` (`uv tool install cmake ninja`) to build the C++ library, Chrome for the screenshot pass.
 
 ```bash
 cp .env.example .env            # then fill in the keys you have (table below); every key is optional except for live data
 cd backend && uv sync --locked --group engine && cd ..   # builds hedgecore (the C++ algo library)
 make setup-web                  # pnpm install
+make setup-research             # research venv (needed by make test)
 
 make dev                        # backend :8000 (offline replay) + web :3000, Ctrl-C stops both
 # open http://localhost:3000  (not 127.0.0.1: the backend's CORS allows localhost only)
@@ -32,7 +33,7 @@ make dev                        # backend :8000 (offline replay) + web :3000, Ct
 | `make dev` | Backend (engine group, replay) + web dev server |
 | `make test` | Every lane: research, backend, C++ (ctest), engine bindings, web lint + build |
 | `make e2e` | Starts both servers, drives the full flow over HTTP with assertions, clicks the real UI in headless Chrome, saves 8 screenshots to `web/e2e/screens/`, stops everything |
-| `make e2e-api` | The HTTP half of `make e2e` only (no web server, no Chrome) |
+| `make e2e-api` | The HTTP half of `make e2e` only (no web server, no Chrome). Default ports :8000/:3000; pass others with `make e2e-api E2E_ARGS="--backend-port 8766"` |
 | `make test-backend` / `test-engine` / `test-engine-py` / `test-web` / `test-research` | One lane |
 
 ### Environment variables
