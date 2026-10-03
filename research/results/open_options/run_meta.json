@@ -1,0 +1,39 @@
+{
+ "run_utc": "2026-10-03T17:08:48.231441+00:00",
+ "seconds": 663,
+ "scope": {
+  "closures": 55,
+  "pm_events": 7772,
+  "pm_markets_seen": 37218,
+  "pm_excluded_out_of_scope_type": 16136,
+  "pm_excluded_not_above_threshold": 5970,
+  "pm_in_scope": 15112,
+  "pair_listed_after_close": 8763,
+  "pair_resolves_before_reopen_close": 688,
+  "pairs_life_ok": 7715,
+  "pair_no_clean_expiry": 2694,
+  "pairs_eligible": 5021,
+  "status_f1_pm_close_extreme": 1836,
+  "status_pass_f1_f3": 2091,
+  "status_f3_move_below_3pt": 907,
+  "status_f2_placeholder_050": 141,
+  "status_f1_no_pm_price": 46,
+  "status_f4_noarb_violation": 91,
+  "status_event": 1535,
+  "status_f4_opt_close_extreme": 183,
+  "status_f4_no_option_spread": 282
+ },
+ "http": {
+  "gamma-api.polymarket.com": 118,
+  "clob.polymarket.com": 6326,
+  "data-api.polymarket.com": 875
+ },
+ "massive_requests": {
+  "api.massive.com": 11423
+ },
+ "failures": [],
+ "n_failures": 0,
+ "argv": [
+  "--skip-kalshi"
+ ]
+}
