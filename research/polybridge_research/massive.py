@@ -77,8 +77,15 @@ class MassiveClient:
         cache_file = self.cache_dir / (hashlib.sha1(full_url.encode()).hexdigest() + ".json")
         if cache_file.exists():
             return json.loads(cache_file.read_text())
+        resp = None
         for attempt in range(self._max_attempts):
-            resp = self.session.get(full_url, timeout=60)
+            try:
+                resp = self.session.get(full_url, timeout=60)
+            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+                if attempt == self._max_attempts - 1:
+                    raise
+                self._sleep(min(2 ** attempt, 20))
+                continue
             if resp.status_code not in _RETRY_STATUS:
                 break
             retry_after = str(resp.headers.get("Retry-After", ""))
