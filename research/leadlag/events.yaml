@@ -1,0 +1,672 @@
+events:
+- id: fomc-2024-09-18
+  name: FOMC statement 2024-09-18
+  family: fomc
+  selection: scheduled
+  anchor_utc: '2024-09-18T18:00:00Z'
+  window_start_utc: '2024-09-18T17:00:00Z'
+  window_end_utc: '2024-09-18T20:30:00Z'
+  pm:
+    event_slug: fed-interest-rates-november-2024
+    match: no change
+    market_slug: no-change-in-fed-interest-rates-after-2024-november-meeting
+    condition_id: '0x2a3a29b57597777e5d2941c419716b02a7b8c43b5c19c4ac746ae2d9c720cbe1'
+    token_id: '99693453180573360817239647658551491302597637631928074955157125575801041271704'
+    outcome: 'Yes'
+    question: No change in Fed interest rates after 2024 November meeting?
+    volume_usd: 7995207
+    closed: true
+  expected_sign: -1
+  sign_rationale: P(no change at the next meeting) rising = fewer cuts expected = hawkish = bearish for equities
+  instruments: &id001
+  - SPY
+  - QQQ
+  - IWM
+  - XLF
+  - TLT
+- id: fomc-2024-11-07
+  name: FOMC statement 2024-11-07
+  family: fomc
+  selection: scheduled
+  anchor_utc: '2024-11-07T19:00:00Z'
+  window_start_utc: '2024-11-07T18:00:00Z'
+  window_end_utc: '2024-11-07T21:30:00Z'
+  pm:
+    event_slug: fed-interest-rates-december-2024
+    match: no change
+    market_slug: no-change-in-fed-interest-rates-after-december-2024-meeting
+    condition_id: '0x71da2bbc04a7eae0d8ef739c17025d85917c0ea7db07646b6400a4f6ccb9f304'
+    token_id: '40486845757649539115541074089071083804261584217856121899380374870077656913924'
+    outcome: 'Yes'
+    question: No change in Fed interest rates after December 2024 meeting?
+    volume_usd: 7400314
+    closed: true
+  expected_sign: -1
+  sign_rationale: P(no change at the next meeting) rising = fewer cuts expected = hawkish = bearish for equities
+  instruments: *id001
+- id: fomc-2024-12-18
+  name: FOMC statement 2024-12-18
+  family: fomc
+  selection: scheduled
+  anchor_utc: '2024-12-18T19:00:00Z'
+  window_start_utc: '2024-12-18T18:00:00Z'
+  window_end_utc: '2024-12-18T21:30:00Z'
+  pm:
+    event_slug: fed-interest-rates-january-2025
+    match: no change
+    market_slug: no-change-in-fed-interest-rates-after-january-2025-meeting
+    condition_id: '0x4e0f29885709d63bfcff29e80f4a8df1da9e97906ba9e21577b46a70858d8e06'
+    token_id: '71366065379283985882048015988468347304730977557386250301113872372802573107404'
+    outcome: 'Yes'
+    question: No change in Fed interest rates after January 2025 meeting?
+    volume_usd: 21033386
+    closed: true
+  expected_sign: -1
+  sign_rationale: P(no change at the next meeting) rising = fewer cuts expected = hawkish = bearish for equities
+  instruments: *id001
+- id: fomc-2025-01-29
+  name: FOMC statement 2025-01-29
+  family: fomc
+  selection: scheduled
+  anchor_utc: '2025-01-29T19:00:00Z'
+  window_start_utc: '2025-01-29T18:00:00Z'
+  window_end_utc: '2025-01-29T21:30:00Z'
+  pm:
+    event_slug: fed-decision-in-march
+    match: no change
+    market_slug: no-change-in-fed-interest-rates-after-march-2025-meeting
+    condition_id: '0xef5604329fee713a68f4faa9d3014614c7486525864a11f2ebb054179a0c362e'
+    token_id: '36985952389507121027489287608663328433585265985125393395085818029245397624615'
+    outcome: 'Yes'
+    question: No change in Fed interest rates after March 2025 meeting?
+    volume_usd: 17161805
+    closed: true
+  expected_sign: -1
+  sign_rationale: P(no change at the next meeting) rising = fewer cuts expected = hawkish = bearish for equities
+  instruments: *id001
+- id: fomc-2025-03-19
+  name: FOMC statement 2025-03-19
+  family: fomc
+  selection: scheduled
+  anchor_utc: '2025-03-19T18:00:00Z'
+  window_start_utc: '2025-03-19T17:00:00Z'
+  window_end_utc: '2025-03-19T20:30:00Z'
+  pm:
+    event_slug: fed-decision-in-may-2025
+    match: no change
+    market_slug: no-change-in-fed-interest-rates-after-may-2025-meeting
+    condition_id: '0xffffb2874475ae9c1e3a0e3c3c4b4e329eb3105427aa484f357bf41c5fd77c4f'
+    token_id: '11948977256049640505529515118442328278366541768796561243240603850147585003221'
+    outcome: 'Yes'
+    question: No change in Fed interest rates after May 2025 meeting?
+    volume_usd: 20629388
+    closed: true
+  expected_sign: -1
+  sign_rationale: P(no change at the next meeting) rising = fewer cuts expected = hawkish = bearish for equities
+  instruments: *id001
+- id: fomc-2025-05-07
+  name: FOMC statement 2025-05-07
+  family: fomc
+  selection: scheduled
+  anchor_utc: '2025-05-07T18:00:00Z'
+  window_start_utc: '2025-05-07T17:00:00Z'
+  window_end_utc: '2025-05-07T20:30:00Z'
+  pm:
+    event_slug: fed-decision-in-june
+    match: no change
+    market_slug: no-change-in-fed-interest-rates-after-june-2025-meeting
+    condition_id: '0xffdd774123c13df21ce755bfd4f65bde47a74f1377ea73c8b130d84c59831173'
+    token_id: '68046695472248272727543027597015771748863497493648721835081384395985280231101'
+    outcome: 'Yes'
+    question: No change in Fed interest rates after June 2025 meeting?
+    volume_usd: 28071373
+    closed: true
+  expected_sign: -1
+  sign_rationale: P(no change at the next meeting) rising = fewer cuts expected = hawkish = bearish for equities
+  instruments: *id001
+- id: fomc-2025-06-18
+  name: FOMC statement 2025-06-18
+  family: fomc
+  selection: scheduled
+  anchor_utc: '2025-06-18T18:00:00Z'
+  window_start_utc: '2025-06-18T17:00:00Z'
+  window_end_utc: '2025-06-18T20:30:00Z'
+  pm:
+    event_slug: fed-decision-in-july
+    match: no change
+    market_slug: no-change-in-fed-interest-rates-after-july-2025-meeting
+    condition_id: '0x4a68d828f7263f34391484404380c34efa9566f12a08a88553ddbe8e285c3ae9'
+    token_id: '73793697275923646355831824753345919471011673129768736520616870696302293395247'
+    outcome: 'Yes'
+    question: No change in Fed interest rates after July 2025 meeting?
+    volume_usd: 28670117
+    closed: true
+  expected_sign: -1
+  sign_rationale: P(no change at the next meeting) rising = fewer cuts expected = hawkish = bearish for equities
+  instruments: *id001
+- id: fomc-2025-07-30
+  name: FOMC statement 2025-07-30
+  family: fomc
+  selection: scheduled
+  anchor_utc: '2025-07-30T18:00:00Z'
+  window_start_utc: '2025-07-30T17:00:00Z'
+  window_end_utc: '2025-07-30T20:30:00Z'
+  pm:
+    event_slug: fed-decision-in-september
+    match: no change
+    market_slug: no-change-in-fed-interest-rates-after-september-2025-meeting
+    condition_id: '0x02dc46f4354c1cc447577db82ba62cca1bda737bd67b73fe966ce1bfe580868f'
+    token_id: '20687552179259492015264396642668768958132112743605647653821858729131283300433'
+    outcome: 'Yes'
+    question: No change in Fed interest rates after September 2025 meeting?
+    volume_usd: 67368762
+    closed: true
+  expected_sign: -1
+  sign_rationale: P(no change at the next meeting) rising = fewer cuts expected = hawkish = bearish for equities
+  instruments: *id001
+- id: fomc-2025-09-17
+  name: FOMC statement 2025-09-17
+  family: fomc
+  selection: scheduled
+  anchor_utc: '2025-09-17T18:00:00Z'
+  window_start_utc: '2025-09-17T17:00:00Z'
+  window_end_utc: '2025-09-17T20:30:00Z'
+  pm:
+    event_slug: fed-decision-in-october
+    match: no change
+    market_slug: no-change-in-fed-interest-rates-after-october-2025-meeting
+    condition_id: '0x6ef34d5c7937cb8a1eb22234ddce8fe3eb1595e1f35c7d4f2101c58f3506e580'
+    token_id: '93649474745035786731233919003082633017639813911207879453624389467235918905276'
+    outcome: 'Yes'
+    question: No change in Fed interest rates after October 2025 meeting?
+    volume_usd: 46052654
+    closed: true
+  expected_sign: -1
+  sign_rationale: P(no change at the next meeting) rising = fewer cuts expected = hawkish = bearish for equities
+  instruments: *id001
+- id: fomc-2025-10-29
+  name: FOMC statement 2025-10-29
+  family: fomc
+  selection: scheduled
+  anchor_utc: '2025-10-29T18:00:00Z'
+  window_start_utc: '2025-10-29T17:00:00Z'
+  window_end_utc: '2025-10-29T20:30:00Z'
+  pm:
+    event_slug: fed-decision-in-december
+    match: no change
+    market_slug: no-change-in-fed-interest-rates-after-december-2025-meeting
+    condition_id: '0x58f4542341fcc66a2197877b7487ebe901b689ec42bcdbb0a070f5536d91459e'
+    token_id: '80746058984644290629624903019922696017323803605256698757445938534814122585786'
+    outcome: 'Yes'
+    question: No change in Fed interest rates after December 2025 meeting?
+    volume_usd: 44523455
+    closed: true
+  expected_sign: -1
+  sign_rationale: P(no change at the next meeting) rising = fewer cuts expected = hawkish = bearish for equities
+  instruments: *id001
+- id: fomc-2025-12-10
+  name: FOMC statement 2025-12-10
+  family: fomc
+  selection: scheduled
+  anchor_utc: '2025-12-10T19:00:00Z'
+  window_start_utc: '2025-12-10T18:00:00Z'
+  window_end_utc: '2025-12-10T21:30:00Z'
+  pm:
+    event_slug: fed-decision-in-january
+    match: no change
+    market_slug: no-change-in-fed-interest-rates-after-january-2026-meeting
+    condition_id: '0xe93c89c41d1bb08d3bb40066d8565df301a696563b2542256e6e8bbbb1ec490d'
+    token_id: '112838095111461683880944516726938163688341306245473734071798778736646352193304'
+    outcome: 'Yes'
+    question: No change in Fed interest rates after January 2026 meeting?
+    volume_usd: 106767096
+    closed: true
+  expected_sign: -1
+  sign_rationale: P(no change at the next meeting) rising = fewer cuts expected = hawkish = bearish for equities
+  instruments: *id001
+- id: fomc-2026-01-28
+  name: FOMC statement 2026-01-28
+  family: fomc
+  selection: scheduled
+  anchor_utc: '2026-01-28T19:00:00Z'
+  window_start_utc: '2026-01-28T18:00:00Z'
+  window_end_utc: '2026-01-28T21:30:00Z'
+  pm:
+    event_slug: fed-decision-in-march-885
+    match: no change
+    market_slug: will-there-be-no-change-in-fed-interest-rates-after-the-march-2026-meeting
+    condition_id: '0x257b18205f908aef01ef2d1d50e6fea7d29cf5486fe04031d8b101394476faed'
+    token_id: '102559817034631022221500208641784929295731053857601013029449249654006364919935'
+    outcome: 'Yes'
+    question: Will there be no change in Fed interest rates after the March 2026 meeting?
+    volume_usd: 0
+    closed: true
+  expected_sign: -1
+  sign_rationale: P(no change at the next meeting) rising = fewer cuts expected = hawkish = bearish for equities
+  instruments: *id001
+- id: fomc-2026-03-18
+  name: FOMC statement 2026-03-18
+  family: fomc
+  selection: scheduled
+  anchor_utc: '2026-03-18T18:00:00Z'
+  window_start_utc: '2026-03-18T17:00:00Z'
+  window_end_utc: '2026-03-18T20:30:00Z'
+  pm:
+    event_slug: fed-decision-in-april
+    match: no change
+    market_slug: will-there-be-no-change-in-fed-interest-rates-after-the-april-2026-meeting
+    condition_id: '0x36e8ca24d2a13435f519f15580d42b45cdbe3bc425fb39a7c2733260357af0fa'
+    token_id: '63586620628756015058616403521099137018911742768824051367331188904593189743777'
+    outcome: 'Yes'
+    question: Will there be no change in Fed interest rates after the April 2026 meeting?
+    volume_usd: 76909226
+    closed: true
+  expected_sign: -1
+  sign_rationale: P(no change at the next meeting) rising = fewer cuts expected = hawkish = bearish for equities
+  instruments: *id001
+- id: fomc-2026-04-29
+  name: FOMC statement 2026-04-29
+  family: fomc
+  selection: scheduled
+  anchor_utc: '2026-04-29T18:00:00Z'
+  window_start_utc: '2026-04-29T17:00:00Z'
+  window_end_utc: '2026-04-29T20:30:00Z'
+  pm:
+    event_slug: fed-decision-in-june-825
+    match: no change
+    market_slug: will-there-be-no-change-in-fed-interest-rates-after-the-june-2026-meeting
+    condition_id: '0xde04b189b3f19eaccda02529a3ea67abfc46bff5c0c8fc42d8a2d0ed7b8f0d41'
+    token_id: '30767812841387255642892182147223249245545002662653079696958384408588201824258'
+    outcome: 'Yes'
+    question: Will there be no change in Fed interest rates after the June 2026 meeting?
+    volume_usd: 43061416
+    closed: true
+  expected_sign: -1
+  sign_rationale: P(no change at the next meeting) rising = fewer cuts expected = hawkish = bearish for equities
+  instruments: *id001
+- id: fomc-2026-06-17
+  name: FOMC statement 2026-06-17
+  family: fomc
+  selection: scheduled
+  anchor_utc: '2026-06-17T18:00:00Z'
+  window_start_utc: '2026-06-17T17:00:00Z'
+  window_end_utc: '2026-06-17T20:30:00Z'
+  pm:
+    event_slug: fed-decision-in-july-181
+    match: no change
+    market_slug: will-there-be-no-change-in-fed-interest-rates-after-the-july-2026-meeting
+    condition_id: '0x8bf1c1536ecb1c08fe13c6b71e8ab1f58bf3461c4cb79f5f1679f869a06aef86'
+    token_id: '111604417349377875799825956621596386269673370070912696668140891647145772186047'
+    outcome: 'Yes'
+    question: Will there be no change in Fed interest rates after the July 2026 meeting?
+    volume_usd: 40497086
+    closed: true
+  expected_sign: -1
+  sign_rationale: P(no change at the next meeting) rising = fewer cuts expected = hawkish = bearish for equities
+  instruments: *id001
+- id: fomc-2026-07-29
+  name: FOMC statement 2026-07-29
+  family: fomc
+  selection: scheduled
+  anchor_utc: '2026-07-29T18:00:00Z'
+  window_start_utc: '2026-07-29T17:00:00Z'
+  window_end_utc: '2026-07-29T20:30:00Z'
+  pm:
+    event_slug: fed-decision-in-september-762
+    match: no change
+    market_slug: will-there-be-no-change-in-fed-interest-rates-after-the-september-2026-meeting-615
+    condition_id: '0xa3b36b2d6104d34af4e6c6215fc818e43352e78a748fbfb0b85e3a35f71dec9a'
+    token_id: '5615282760875985231868508008056959876238536896643315063916840237042205273721'
+    outcome: 'Yes'
+    question: Will there be no change in Fed interest rates after the September 2026 meeting?
+    volume_usd: 56435145
+    closed: true
+  expected_sign: -1
+  sign_rationale: P(no change at the next meeting) rising = fewer cuts expected = hawkish = bearish for equities
+  instruments: *id001
+- id: fomc-2026-09-16
+  name: FOMC statement 2026-09-16
+  family: fomc
+  selection: scheduled
+  anchor_utc: '2026-09-16T18:00:00Z'
+  window_start_utc: '2026-09-16T17:00:00Z'
+  window_end_utc: '2026-09-16T20:30:00Z'
+  pm:
+    event_slug: fed-decision-in-october-20260617190323537
+    match: no change
+    market_slug: will-there-be-no-change-in-fed-interest-rates-after-the-october-2026-meeting-20260617190324031
+    condition_id: '0xdf9bf27ee5757c55b44b8b9826ddc9ec3a8809aa3278634c45edbb7fc8f1a3e3'
+    token_id: '111061902544814266207267295505639408607400625795891618462682726460921782993748'
+    outcome: 'Yes'
+    question: Will there be no change in Fed interest rates after the October 2026 meeting?
+    volume_usd: 7175579
+    closed: false
+  expected_sign: -1
+  sign_rationale: P(no change at the next meeting) rising = fewer cuts expected = hawkish = bearish for equities
+  instruments: *id001
+- id: jh-2024-08-23
+  name: Powell Jackson Hole speech 2024
+  family: fed_speech
+  selection: curated
+  anchor_utc: '2024-08-23T14:00:00Z'
+  window_start_utc: '2024-08-23T13:00:00Z'
+  window_end_utc: '2024-08-23T16:30:00Z'
+  pm:
+    event_slug: fed-interest-rates-september-2024
+    match: no change
+    market_slug: no-change-in-fed-interest-rates-after-2024-september-meeting
+    condition_id: '0xb20072387cd12bc73f3a6fd30fdd5aa1644c8f72f958803d90fc05c51db0ac49'
+    token_id: '89262722133387845193166560202808972424089924545438804960915341631492994906283'
+    outcome: 'Yes'
+    question: No change in Fed interest rates after 2024 September meeting?
+    volume_usd: 23499211
+    closed: true
+  expected_sign: -1
+  sign_rationale: dovish guidance = P(no change) down = bullish
+  instruments: *id001
+- id: jh-2025-08-22
+  name: Powell Jackson Hole speech 2025
+  family: fed_speech
+  selection: curated
+  anchor_utc: '2025-08-22T14:00:00Z'
+  window_start_utc: '2025-08-22T13:00:00Z'
+  window_end_utc: '2025-08-22T16:30:00Z'
+  pm:
+    event_slug: fed-decision-in-september
+    match: no change
+    market_slug: no-change-in-fed-interest-rates-after-september-2025-meeting
+    condition_id: '0x02dc46f4354c1cc447577db82ba62cca1bda737bd67b73fe966ce1bfe580868f'
+    token_id: '20687552179259492015264396642668768958132112743605647653821858729131283300433'
+    outcome: 'Yes'
+    question: No change in Fed interest rates after September 2025 meeting?
+    volume_usd: 67368762
+    closed: true
+  expected_sign: -1
+  sign_rationale: dovish guidance = P(no change) down = bullish
+  instruments: *id001
+- id: crash-2024-08-05
+  name: Global growth scare / yen carry unwind, US open
+  family: macro_stress
+  selection: curated
+  anchor_utc: '2024-08-05T13:30:00Z'
+  window_start_utc: '2024-08-05T12:00:00Z'
+  window_end_utc: '2024-08-05T16:00:00Z'
+  pm:
+    market_slug: us-recession-in-2024-1
+    condition_id: '0x6015c53496b7a099d952edf8d74f2d2e839aa09d2084df79be603e1db949da71'
+    token_id: '7199924557536673982836049841538041571403060582795466550710959952259572350257'
+    outcome: 'Yes'
+    question: U.S. Recession in 2024?
+    volume_usd: 875848
+    closed: true
+  expected_sign: -1
+  sign_rationale: recession odds up = bearish
+  instruments:
+  - SPY
+  - QQQ
+  - IWM
+  - XLF
+  - XLY
+- id: iran-2024-10-01
+  name: Iran missile attack on Israel
+  family: geopolitics
+  selection: curated
+  anchor_utc: null
+  window_start_utc: '2024-10-01T14:00:00Z'
+  window_end_utc: '2024-10-01T21:00:00Z'
+  pm:
+    market_slug: iran-strike-on-israel-before-november
+    condition_id: '0x2e2008d0fcbbf303a3480d66389cc5ff065b6c22ad1ab377225143bfd10c00e5'
+    token_id: '38576329773754127081718062841512605341180161901225219242565037887640218245210'
+    outcome: 'Yes'
+    question: Iran strike on Israel before November?
+    volume_usd: 294630
+    closed: true
+  expected_sign: -1
+  sign_rationale: escalation = risk-off
+  instruments:
+  - SPY
+  - QQQ
+  - XLE
+  - ITA
+  - GLD
+- id: election-2024-11-05
+  name: 2024 US election night (after-hours session only)
+  family: election
+  selection: curated
+  anchor_utc: '2024-11-06T00:00:00Z'
+  window_start_utc: '2024-11-05T20:30:00Z'
+  window_end_utc: '2024-11-06T01:00:00Z'
+  pm:
+    market_slug: will-donald-trump-win-the-2024-us-presidential-election
+    condition_id: '0xdd22472e552920b8438158ea7238bfadfa4f736aa4cee91a6b86c39ead110917'
+    token_id: '21742633143463906290569050155826241533067272736897614950488156847949938836455'
+    outcome: 'Yes'
+    question: Will Donald Trump win the 2024 US Presidential Election?
+    volume_usd: 1531479285
+    closed: true
+  expected_sign: 1
+  sign_rationale: Trump win odds up = 'Trump trade' = bullish SPY/IWM/financials
+  instruments:
+  - SPY
+  - IWM
+  - QQQ
+  - XLF
+  - KRE
+- id: tiktok-2025-01-17
+  name: SCOTUS upholds TikTok divest-or-ban law
+  family: policy_ruling
+  selection: curated
+  anchor_utc: '2025-01-17T15:00:00Z'
+  window_start_utc: '2025-01-17T14:00:00Z'
+  window_end_utc: '2025-01-17T18:00:00Z'
+  pm:
+    market_slug: tiktok-banned-in-the-us-before-may-2025
+    condition_id: '0xef8cf8b45ef7e3a607a72b6e1d56bede869fdd81795b63db847de1090bf11c41'
+    token_id: '24635636911615866092589652362670811323984202357282728474473612545495782013438'
+    outcome: 'Yes'
+    question: TikTok banned in the US before May 2025?
+    volume_usd: 119653358
+    closed: true
+  expected_sign: 1
+  sign_rationale: ban odds up = bullish for the ad-share beneficiaries (META, SNAP, PINS)
+  instruments:
+  - META
+  - SNAP
+  - PINS
+  - QQQ
+  - SPY
+- id: oval-2025-02-28
+  name: Trump-Zelensky Oval Office meeting breaks down
+  family: geopolitics
+  selection: curated
+  anchor_utc: '2025-02-28T16:00:00Z'
+  window_start_utc: '2025-02-28T15:00:00Z'
+  window_end_utc: '2025-02-28T19:00:00Z'
+  pm:
+    market_slug: russia-x-ukraine-ceasefire-in-2025
+    condition_id: '0x8ee2f1640386310eb5e7ffa596ba9335f2d324e303d21b0dfea6998874445791'
+    token_id: '15974786252393396629980467963784550802583781222733347534844974829144359265969'
+    outcome: 'Yes'
+    question: Russia x Ukraine ceasefire in 2025?
+    volume_usd: 73752993
+    closed: true
+  expected_sign: -1
+  sign_rationale: ceasefire odds up = bearish for US defense names
+  instruments:
+  - ITA
+  - LMT
+  - RTX
+  - NOC
+  - SPY
+- id: tariff-2025-04-02
+  name: Liberation Day tariff announcement (after-hours session)
+  family: tariffs
+  selection: curated
+  anchor_utc: '2025-04-02T20:00:00Z'
+  window_start_utc: '2025-04-02T19:00:00Z'
+  window_end_utc: '2025-04-03T00:00:00Z'
+  pm:
+    market_slug: us-recession-in-2025
+    condition_id: '0xfa48a99317daef1654d5b03e30557c4222f276657275628d9475e141c64b545d'
+    token_id: '104173557214744537570424345347209544585775842950109756851652855913015295701992'
+    outcome: 'Yes'
+    question: US recession in 2025?
+    volume_usd: 11734512
+    closed: true
+  expected_sign: -1
+  sign_rationale: recession odds up = bearish
+  instruments: &id002
+  - SPY
+  - QQQ
+  - IWM
+  - XLY
+  - XLF
+- id: tariff-2025-04-04
+  name: China retaliation plus Powell remarks on tariffs
+  family: tariffs
+  selection: curated
+  anchor_utc: '2025-04-04T17:30:00Z'
+  window_start_utc: '2025-04-04T13:30:00Z'
+  window_end_utc: '2025-04-04T21:00:00Z'
+  pm:
+    market_slug: will-trump-lower-tariffs-on-china-in-april
+    condition_id: '0xbe5219d1c82daaa110a20c0b50dae77f681f05eb43094e05ea24fe833c5ec47f'
+    token_id: '113855018188629272815215854048561973882380218497310887470128856217081250720455'
+    outcome: 'Yes'
+    question: 'Will Trump lower tariffs on China in April? '
+    volume_usd: 11020745
+    closed: true
+  expected_sign: 1
+  sign_rationale: odds of tariff relief up = bullish
+  instruments: *id002
+- id: tariff-2025-04-07
+  name: Unconfirmed 90-day tariff-pause report, then White House denial
+  family: tariffs
+  selection: curated
+  anchor_utc: null
+  window_start_utc: '2025-04-07T13:00:00Z'
+  window_end_utc: '2025-04-07T17:00:00Z'
+  pm:
+    market_slug: us-recession-in-2025
+    condition_id: '0xfa48a99317daef1654d5b03e30557c4222f276657275628d9475e141c64b545d'
+    token_id: '104173557214744537570424345347209544585775842950109756851652855913015295701992'
+    outcome: 'Yes'
+    question: US recession in 2025?
+    volume_usd: 11734512
+    closed: true
+  expected_sign: -1
+  sign_rationale: recession odds up = bearish
+  instruments: *id002
+- id: tariff-2025-04-09
+  name: Tariff pause announced
+  family: tariffs
+  selection: curated
+  anchor_utc: '2025-04-09T17:20:00Z'
+  window_start_utc: '2025-04-09T16:00:00Z'
+  window_end_utc: '2025-04-09T20:30:00Z'
+  pm:
+    market_slug: us-recession-in-2025
+    condition_id: '0xfa48a99317daef1654d5b03e30557c4222f276657275628d9475e141c64b545d'
+    token_id: '104173557214744537570424345347209544585775842950109756851652855913015295701992'
+    outcome: 'Yes'
+    question: US recession in 2025?
+    volume_usd: 11734512
+    closed: true
+  expected_sign: -1
+  sign_rationale: recession odds up = bearish
+  instruments: *id002
+- id: powell-2025-07-16
+  name: Reports Trump may move to fire Powell
+  family: fed_independence
+  selection: curated
+  anchor_utc: null
+  window_start_utc: '2025-07-16T14:00:00Z'
+  window_end_utc: '2025-07-16T21:00:00Z'
+  pm:
+    market_slug: will-trump-try-to-fire-powell-by-august-31
+    condition_id: '0x9b384b7a56c41e7181d207e3a46e54dd1d1805200e976abfb8f621fd3dfd37c5'
+    token_id: '82373092083381110390456864441815712061222969843382368021162848615654637260643'
+    outcome: 'Yes'
+    question: Will Trump try to fire Powell by August 31?
+    volume_usd: 2052018
+    closed: true
+  expected_sign: -1
+  sign_rationale: Fed-independence scare = bearish
+  instruments:
+  - SPY
+  - QQQ
+  - IWM
+  - TLT
+  - XLF
+- id: alaska-2025-08-15
+  name: Trump-Putin Alaska summit
+  family: geopolitics
+  selection: curated
+  anchor_utc: '2025-08-15T20:00:00Z'
+  window_start_utc: '2025-08-15T18:00:00Z'
+  window_end_utc: '2025-08-16T00:00:00Z'
+  pm:
+    market_slug: russia-x-ukraine-ceasefire-in-2025
+    condition_id: '0x8ee2f1640386310eb5e7ffa596ba9335f2d324e303d21b0dfea6998874445791'
+    token_id: '15974786252393396629980467963784550802583781222733347534844974829144359265969'
+    outcome: 'Yes'
+    question: Russia x Ukraine ceasefire in 2025?
+    volume_usd: 73752993
+    closed: true
+  expected_sign: -1
+  sign_rationale: ceasefire odds up = bearish for US defense names
+  instruments:
+  - ITA
+  - LMT
+  - RTX
+  - NOC
+  - SPY
+- id: shutdown-2026-01-30
+  name: Funding deadline, partial shutdown risk
+  family: shutdown
+  selection: curated
+  anchor_utc: null
+  window_start_utc: '2026-01-30T14:30:00Z'
+  window_end_utc: '2026-01-30T21:00:00Z'
+  pm:
+    market_slug: will-there-be-another-us-government-shutdown-by-january-31
+    condition_id: '0x43ec78527bd98a0588dd9455685b2cc82f5743140cb3a154603dc03c02b57de5'
+    token_id: '52607315900507156846622820770453728082833251091510131025984187712529448877245'
+    outcome: 'Yes'
+    question: US government shutdown Saturday?
+    volume_usd: 157296576
+    closed: true
+  expected_sign: -1
+  sign_rationale: shutdown odds up = mildly bearish
+  instruments:
+  - SPY
+  - QQQ
+  - IWM
+  - TLT
+  - XLF
+- id: warsh-2026-01-30
+  name: Trump names Kevin Warsh as Fed Chair pick
+  family: fed_chair
+  selection: curated
+  anchor_utc: null
+  window_start_utc: '2026-01-30T13:30:00Z'
+  window_end_utc: '2026-01-30T21:00:00Z'
+  pm:
+    event_slug: who-will-trump-nominate-as-fed-chair
+    match: kevin warsh
+    market_slug: will-trump-nominate-kevin-warsh-as-the-next-fed-chair
+    condition_id: '0x61b66d02793b4a68ab0cc25be60d65f517fe18c7d654041281bb130341244fcc'
+    token_id: '51338236787729560681434534660841415073585974762690814047670810862722808070955'
+    outcome: 'Yes'
+    question: Will Trump nominate Kevin Warsh as the next Fed chair?
+    volume_usd: 59907151
+    closed: true
+  expected_sign: -1
+  sign_rationale: Warsh odds up = hawkish read vs. the alternatives = bearish for gold and risk
+  instruments:
+  - GLD
+  - SLV
+  - TLT
+  - SPY
+  - UUP
