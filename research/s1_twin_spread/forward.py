@@ -93,11 +93,15 @@ def exit_legs(pm: dict, k: dict, d: str):
     return (pm["b"], no_bids(k)) if d == "A" else (no_bids(pm), k["b"])
 
 
+def two_sided(book: dict) -> bool:
+    return bool(book["b"]) and bool(book["a"])
+
+
 def top_edge(pm: dict, k: dict, d: str, m: dict, c: float, carry_rate: float) -> float:
-    """Edge of the first contract at the top of both books."""
-    pl, kl = entry_legs(pm, k, d)
-    if not pl or not kl:
+    """Edge of the first contract at the top of both books. NaN unless both books are two-sided (amendments 2, 3)."""
+    if not (two_sided(pm) and two_sided(k)):
         return float("nan")
+    pl, kl = entry_legs(pm, k, d)
     pp, kp = pl[0][0], kl[0][0]
     cost = pp + c * m["pm_rate"] * (pp * (1 - pp)) ** m["pm_exp"] + kp + c * cfg.KALSHI_FEE_COEFF * m["k_mult"] * kp * (1 - kp)
     return 1.0 - cost * (1.0 + carry_rate)
@@ -194,9 +198,12 @@ def mark_end(tr: dict, snaps: list, m: dict, c: float, r: float) -> None:
     pm, k = widen(pm_raw, c), widen(k_raw, c)
 
     def mid(b):
-        return (b["b"][0][0] + b["a"][0][0]) / 2.0 if b["b"] and b["a"] else float("nan")
+        return (b["b"][0][0] + b["a"][0][0]) / 2.0
 
-    pm_mid, k_mid = mid(pm_raw), mid(k_raw)
+    # last valid mid carried: the latest snapshot at or after the entry with both books two-sided
+    last = next((s for s in reversed(snaps) if s[0] >= tr["t_in"] and two_sided(s[1]) and two_sided(s[2])), None)
+    pm_mid, k_mid = (mid(last[1]), mid(last[2])) if last else (float("nan"), float("nan"))
+    tr["mid_mark_utc"] = iso(last[0]) if last else ""
     value_mid = (pm_mid + 1 - k_mid) if tr["dir"] == "A" else (k_mid + 1 - pm_mid)
     tr["pnl_mid"] = tr["qty"] * value_mid - tr["cost"] - financing
     pl, kl = exit_legs(pm, k, tr["dir"])
@@ -245,6 +252,7 @@ def main() -> int:
                 "capital": cost, "pnl_locked": sum(x["pnl_locked"] for x in trades),
                 "pnl_mid": float(np.nansum([x["pnl_mid"] for x in trades])),
                 "pnl_liq": float(np.nansum([x["pnl_liq"] for x in trades])),
+                "open_not_liquidatable_at_end": sum(1 for x in trades if x["t_out"] is None and x["pnl_liq"] != x["pnl_liq"]),
                 "locked_edge_bp": sum(x["pnl_locked"] for x in trades) / cost * 1e4 if cost else float("nan"),
                 "fees_bp": sum(x["fees"] for x in trades) / cost * 1e4 if cost else float("nan"),
                 "carry_bp": sum(x["carry"] for x in trades) / cost * 1e4 if cost else float("nan"),

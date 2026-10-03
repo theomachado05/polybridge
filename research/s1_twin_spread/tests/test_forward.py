@@ -88,3 +88,23 @@ def test_snapshots_pair_the_two_venues_by_time():
     rows = [{"t": 100.0, "v": "pm", "id": "T", "b": [], "a": []}, {"t": 100.3, "v": "k", "id": "K", "b": [], "a": []},
             {"t": 115.0, "v": "pm", "id": "T", "b": [], "a": []}, {"t": 140.0, "v": "k", "id": "K", "b": [], "a": []}]
     assert [s[0] for s in fw.snapshots(rows, [M])["K"]] == [100.3]
+
+
+def test_a_one_sided_book_gives_no_signal_on_either_venue():
+    no_bid = {"b": [], "a": [[0.40, 100.0]]}
+    s = [snap(1_000_000 + 15 * i, no_bid, book(0.50, 0.52)) for i in range(3)]       # Polymarket has no bid
+    assert fw.paper_test(s, M, 0.01, True, 1.0, R, 500)[0] == []
+    k_no_ask = {"b": [[0.50, 100.0]], "a": []}
+    s = [snap(1_000_000 + 15 * i, book(0.38, 0.40), k_no_ask) for i in range(3)]     # Kalshi has no ask
+    assert fw.paper_test(s, M, 0.01, True, 1.0, R, 500)[0] == []
+
+
+def test_mid_mark_carries_the_last_two_sided_snapshot():
+    s = [snap(1_000_000 + 15 * i, book(0.38, 0.40), book(0.50, 0.52)) for i in range(2)]
+    s.append(snap(1_000_030, book(0.44, 0.46), book(0.50, 0.52)))
+    s.append(snap(1_000_045, {"b": [], "a": [[0.46, 100.0]]}, book(0.50, 0.52)))      # the last book is one-sided
+    tr = fw.paper_test(s, M, 0.01, False, 1.0, R, 500)[0][0]
+    fw.mark_end(tr, s, M, 1.0, R)
+    financing = R * tr["cost"] * (s[-1][0] - tr["t_in"]) / fw.YEAR_S
+    assert tr["pnl_mid"] == pytest.approx(100 * (0.45 + 1 - 0.51) - tr["cost"] - financing)
+    assert tr["pnl_liq"] != tr["pnl_liq"]                                              # cannot be sold: no bid
