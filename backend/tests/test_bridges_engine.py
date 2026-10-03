@@ -97,3 +97,33 @@ def test_default_direction_unchanged(client):
     bid = client.post("/bridges", json=_body(pid, gap_per_share=1.0)).json()["bridge_id"]
     _events(client, bid)
     assert client.get(f"/bridges/{bid}").json()["direction"] == "down_on_yes"
+
+
+def test_market_event_proposal_runs_a_bridge(client):
+    from tests.test_api import UI_MARKET_BODY
+    p = client.post("/proposals", json=UI_MARKET_BODY).json()
+    assert client.post("/bridges", json={"proposal_id": p["id"], "source": "replay", "gap_per_share": 1.0}).status_code == 409
+    client.post(f"/proposals/{p['id']}/approve")
+    # the body's direction/market are ignored: the proposal's own market and direction drive the engine
+    body = {"proposal_id": p["id"], "source": "replay", "gap_per_share": 1.0, "direction": "up_on_yes",
+            "market": {"source": "polymarket", "id": "fed-hike-25bps-oct-2026"}}
+    r = client.post("/bridges", json=body)
+    assert r.status_code == 201
+    bid = r.json()["bridge_id"]
+    ev = _events(client, bid)
+    decisions = [d for k, d in ev if k == "decision"]
+    assert decisions[0]["order_qty"] == pytest.approx(0.5 * 400 * 0.20)  # down_on_yes: engine sees p
+    s = client.get(f"/bridges/{bid}").json()
+    assert s["direction"] == "down_on_yes" and s["market"]["id"] == "2589813" and s["basis"] == "market_event"
+    assert s["label"] == "Product hedge — no confirmatory claim"
+    assert client.post("/bridges", json=body).status_code == 200
+    assert client.post("/bridges", json={**body, "source": "live"}).status_code == 409
+
+
+def test_summary_carries_shares_and_coverage(client):
+    pid = _approved(client)
+    bid = client.post("/bridges", json=_body(pid, gap_per_share=1.0)).json()["bridge_id"]
+    _events(client, bid)
+    s = client.get(f"/bridges/{bid}").json()
+    assert s["shares_held"] == 1200 and s["target_coverage"] == 0.5
+    assert s["coverage"] == pytest.approx(s["hedge"] / 1200)

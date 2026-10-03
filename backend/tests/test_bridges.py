@@ -114,3 +114,17 @@ def test_replay_market_id_is_sanitized(client, monkeypatch):
 def test_invalid_direction_422(client):
     pid = _approved(client)
     assert client.post("/bridges", json=_body(pid, direction="sideways")).status_code == 422
+
+
+def test_market_event_proposal_needs_approval_no_engine(client, monkeypatch):
+    from tests.test_api import UI_MARKET_BODY
+    monkeypatch.setattr(bridges, "_load_engine", lambda: None)
+    pid = client.post("/proposals", json=UI_MARKET_BODY).json()["id"]
+    assert client.post("/bridges", json={"proposal_id": pid, "source": "replay"}).status_code == 409
+    client.post(f"/proposals/{pid}/approve")
+    assert client.post("/bridges", json={"proposal_id": pid, "source": "replay"}).status_code == 503  # no market needed
+
+
+def test_filing_proposal_still_needs_market(client):
+    pid = _approved(client)
+    assert client.post("/bridges", json={"proposal_id": pid, "source": "replay"}).status_code == 422

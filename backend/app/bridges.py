@@ -17,7 +17,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from .models import Proposal
+from .models import MarketRef, Proposal
 from .store import NotFound, ProposalStore
 from .ticks import LiveSource, ReplaySource, SourceError
 
@@ -37,16 +37,10 @@ def _load_engine():
     return hedgecore
 
 
-class MarketRef(BaseModel):
-    source: str
-    id: str
-    token_id: str | None = None
-
-
 class BridgeIn(BaseModel):
     proposal_id: str
     source: Literal["live", "replay"]
-    market: MarketRef
+    market: MarketRef | None = None  # optional for market-event proposals (their own market is used)
     gap_per_share: float = Field(default=0.0, ge=0, allow_inf_nan=False)
     direction: Literal["down_on_yes", "up_on_yes"] = "down_on_yes"  # which outcome hurts a long holder
 
@@ -87,6 +81,10 @@ class Bridge:
                 "status": self.status, "direction": self.direction, "source": self.effective_source, "requested_source": self.requested_source,
                 "started_at": self.started_at.isoformat(), "ticks": self.ticks, "orders": self.orders,
                 "hedge": self.hedge, "reasons": dict(self.reasons),
+                "shares_held": self.proposal.shares_held, "target_coverage": self.proposal.target_coverage,
+                "coverage": self.hedge / self.proposal.shares_held if self.proposal.shares_held else 0.0,
+                "basis": self.proposal.basis, "label": self.proposal.label,
+                "market": self.market.model_dump(),
                 "latency_ns": {"p50": q(0.5), "p99": q(0.99)}}
 
 
@@ -101,14 +99,31 @@ def _replay_speed(app) -> float:
     return v
 
 
-def _replay_path(request: Request, market: MarketRef) -> Path | None:
+def _replay_path(request: Request, *markets: MarketRef | None) -> Path | None:
     configured = getattr(request.app.state, "replay_path", None) or os.environ.get("POLYBRIDGE_REPLAY_PATH")
     if configured:
         return Path(configured)
-    if not re.fullmatch(r"[A-Za-z0-9_-]+", market.id):
-        raise HTTPException(422, "market.id must match [A-Za-z0-9_-]+ to select a replay file.")
-    guess = REPLAYS_DIR / f"{market.id}.jsonl"
-    return guess if guess.is_file() else None
+    for market in markets:
+        if market is None:
+            continue
+        if not re.fullmatch(r"[A-Za-z0-9_-]+", market.id):
+            raise HTTPException(422, "market.id must match [A-Za-z0-9_-]+ to select a replay file.")
+        guess = REPLAYS_DIR / f"{market.id}.jsonl"
+        if guess.is_file():
+            return guess
+    return None
+
+
+def _resolve(prop: Proposal, body: BridgeIn) -> tuple[MarketRef, str]:
+    """Market-event proposals carry their own market and direction; filing proposals take them from the body."""
+    if prop.market is not None and prop.direction is not None:
+        token = prop.market.token_id
+        if token is None and body.market is not None and body.market.id == prop.market.id:
+            token = body.market.token_id
+        return prop.market.model_copy(update={"token_id": token}), prop.direction
+    if body.market is None:
+        raise HTTPException(422, "market is required for a filing-tags proposal.")
+    return body.market, body.direction
 
 
 def _fallback_path(app) -> Path | None:
@@ -183,24 +198,25 @@ async def start_bridge(body: BridgeIn, request: Request, response: Response) -> 
             raise HTTPException(409, f"Bridge {existing.id} already started for proposal {prop.id} with source {existing.requested_source}.")
         response.status_code = 200
         return {"bridge_id": existing.id}
+    market, direction = _resolve(prop, body)
     hc = _load_engine()
     if hc is None:
         raise HTTPException(503, NO_ENGINE)
 
     fallback = _fallback_path(request.app)
     if body.source == "replay":
-        path = _replay_path(request, body.market)
+        path = _replay_path(request, market, body.market)
         if path is None or not path.is_file():
             raise HTTPException(422, "No replay file configured (set POLYBRIDGE_REPLAY_PATH or add replays/<market id>.jsonl).")
         source: Any = ReplaySource(path, speed=_replay_speed(request.app))
     else:
-        if not body.market.token_id:
+        if not market.token_id:
             raise HTTPException(422, "Live bridge needs a Polymarket market.token_id.")
         factory = getattr(request.app.state, "live_source_factory", None)
-        source = factory(body.market.token_id) if factory else LiveSource(body.market.token_id)
+        source = factory(market.token_id) if factory else LiveSource(market.token_id)
 
     # No await between the registry check above and this insert: exactly one bridge per proposal.
-    bridge = Bridge(prop, body.source, body.market, body.gap_per_share, body.direction)
+    bridge = Bridge(prop, body.source, market, body.gap_per_share, direction)
     reg[prop.id] = bridge
     store.mark_bridge_started(prop.id)
     bridge.task = asyncio.create_task(_run(bridge, request.app, hc, source, fallback))

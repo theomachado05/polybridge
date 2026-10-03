@@ -25,12 +25,16 @@ Everything that crosses a folder boundary. Change this file and the code togethe
 |---|---|---|---|---|
 | GET | `/health` | none | `{"status":"ok"}` | none |
 | POST | `/classify` | `{"tags": [str]}` | `{"family", "strategy"}` (nulls if no family) | 422 bad body |
-| POST | `/proposals` | `{"ticker", "tags", "shares_held" > 0, "target_coverage" ∈ [0,1] = 0.5}` | 201 `Proposal` | 422 no family or bad body |
+| POST | `/proposals` | filing path `{"ticker", "tags", "shares_held" > 0, "target_coverage" ∈ [0,1] = 0.5}` **or** market-event path `{"ticker", "market": {"source", "id", "token_id"?}, "direction": "down_on_yes"\|"up_on_yes", "shares_held", "target_coverage"}` (no tags) | 201 `Proposal` | 422 no family, both/neither basis, missing direction, bad body |
 | GET | `/proposals` | none | `[Proposal]` | none |
 | POST | `/proposals/{id}/approve` | none | `Proposal` status `approved` | 404 unknown, 409 already decided |
 | POST | `/proposals/{id}/reject` | none | `Proposal` status `rejected` | 404, 409 |
 
-`Proposal = {id, ticker, family, strategy, shares_held, target_coverage, status, created_at, decided_at}`
+`Proposal = {id, ticker, family, strategy, shares_held, target_coverage, status, basis, label, market, direction, created_at, decided_at, bridge_started_at}`
+
+- `basis = "filing_tags"` (family from the pre-registered tag map; `label`, `market`, `direction` null) or `"market_event"` (always `family="hedge"`, `strategy="protective_put"`, `label="Product hedge — no confirmatory claim"`; no filing tags are invented and no research claim is made).
+- `POST /bridges {"proposal_id", "source": "live"|"replay", "market"?, "gap_per_share", "direction"?}`: 404 unknown proposal, 409 not approved, 409 opportunity family; same proposal + same source is idempotent (200), a different source is 409. A market-event proposal always uses its own `market` and `direction` (the body's are ignored; `market` may be omitted); a filing proposal needs `market` in the body. The engine is fed the probability of the adverse outcome (`down_on_yes` → p, `up_on_yes` → 1 − p).
+- `GET /bridges/{id}` summary includes `shares_held`, `target_coverage`, `coverage` (= hedge / shares_held), `basis`, `label`, `market`.
 
 ## hedgecore (`engine/hedgecore`, C++20 + Python module `hedgecore`)
 

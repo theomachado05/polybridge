@@ -1,4 +1,5 @@
-"""End-to-end: classify -> propose -> approve -> replay bridge -> SSE -> summary (needs hedgecore)."""
+"""End-to-end demo path: Fed market -> mapped ticker -> market-event proposal -> approve -> replay bridge -> SSE
+-> summary (needs hedgecore)."""
 import json
 
 import pytest
@@ -35,17 +36,20 @@ def _read_stream(client, bridge_id):
     return events
 
 
-def test_classify_propose_approve_bridge_stream(client):
-    fam = client.post("/classify", json={"tags": ["material_litigation"]}).json()
-    assert fam["family"] == "hedge"
+def test_market_event_propose_approve_bridge_stream(client):
+    fed = {"source": "polymarket", "id": "2589813"}
+    m = client.post("/map", json={"question": "Will the Fed increase interest rates by 25 bps after the October 2026 meeting?",
+                                  "source": "polymarket", "market_id": "2589813"}).json()
+    item = next(i for i in m["items"] if i["ticker"] == "SPY")
 
-    p = client.post("/proposals", json={"ticker": "SPY", "tags": ["material_litigation"], "shares_held": 100})
-    assert p.status_code == 201 and p.json()["family"] == "hedge" and p.json()["shares_held"] == 100
+    p = client.post("/proposals", json={"ticker": "SPY", "market": fed, "direction": item["direction"],
+                                        "shares_held": 100, "target_coverage": 0.5})
+    assert p.status_code == 201 and p.json()["family"] == "hedge" and p.json()["basis"] == "market_event"
+    assert p.json()["shares_held"] == 100
     pid = p.json()["id"]
     assert client.post(f"/proposals/{pid}/approve").json()["status"] == "approved"
 
-    body = {"proposal_id": pid, "source": "replay", "gap_per_share": 1.0,
-            "market": {"source": "polymarket", "id": "fed-hike-25bps"}}
+    body = {"proposal_id": pid, "source": "replay", "gap_per_share": 1.0}
     r = client.post("/bridges", json=body)
     assert r.status_code == 201
     bid = r.json()["bridge_id"]

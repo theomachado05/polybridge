@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Request
 
 from polybridge_research.schema import STRATEGY_FOR_FAMILY, assign_family, normalize_ticker
 
-from .models import ClassifyIn, ClassifyOut, Proposal, ProposalIn
+from .models import MARKET_EVENT_LABEL, ClassifyIn, ClassifyOut, Proposal, ProposalIn
 from .store import AlreadyDecided, NotFound, ProposalStore
 
 router = APIRouter()
@@ -27,14 +27,19 @@ def classify(body: ClassifyIn) -> ClassifyOut:
 
 @router.post("/proposals", response_model=Proposal, status_code=201)
 def create_proposal(body: ProposalIn, request: Request) -> Proposal:
-    fam = assign_family(body.tags)
-    if fam is None:
-        raise HTTPException(422, "These tags map to no pre-registered family, so there is no hedge to propose.")
     ticker = normalize_ticker(body.ticker)
     if ticker is None:
         raise HTTPException(422, "ticker must not be blank.")
+    if body.market is not None:  # market-event path: a product hedge, no filing tags invented, no research claim
+        return _store(request).propose(ticker=ticker, family="hedge", strategy="protective_put", basis="market_event",
+                                       label=MARKET_EVENT_LABEL, market=body.market, direction=body.direction,
+                                       shares_held=body.shares_held, target_coverage=body.target_coverage)
+    fam = assign_family(body.tags)
+    if fam is None:
+        raise HTTPException(422, "These tags map to no pre-registered family, so there is no hedge to propose.")
     return _store(request).propose(ticker=ticker, family=fam.value, strategy=STRATEGY_FOR_FAMILY[fam],
-                                   shares_held=body.shares_held, target_coverage=body.target_coverage)
+                                   basis="filing_tags", shares_held=body.shares_held,
+                                   target_coverage=body.target_coverage)
 
 
 @router.get("/proposals", response_model=list[Proposal])
