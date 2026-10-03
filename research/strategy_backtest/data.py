@@ -123,7 +123,7 @@ def fetch_daily(client, start: str, end: str, ticker: str = TICKER) -> pd.DataFr
     rows = client.get_all(f"/v2/aggs/ticker/{ticker}/range/1/day/{start}/{end}",
                           {"adjusted": "true", "sort": "asc", "limit": 50000})
     df = pd.DataFrame(rows)
-    idx = pd.to_datetime(df["t"], unit="ms", utc=True).tz_convert("America/New_York").normalize().tz_localize(None)
+    idx = pd.DatetimeIndex(pd.to_datetime(df["t"], unit="ms", utc=True)).tz_convert("America/New_York").normalize().tz_localize(None)
     return pd.DataFrame({"open": df["o"].astype(float).to_numpy(), "close": df["c"].astype(float).to_numpy(),
                          "volume": df["v"].astype(float).to_numpy(),
                          "vwap": df.get("vw", df["c"]).astype(float).to_numpy()}, index=idx)
