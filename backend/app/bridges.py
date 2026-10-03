@@ -22,7 +22,17 @@ account broker.
   structure), labelled "recorded", and only where the recording kept a fresh pair (regular session, both legs printed).
 
 Direction is applied in ONE place: ``app.pipeline.ticks.orient_to_adverse`` turns every tick into "YES = the outcome
-that hurts the holder" before either engine sees it; hedgecore is always called with its default direction."""
+that hurts the holder" before either engine sees it; hedgecore is always called with its default direction.
+
+Closed-market mode (``app.closed.bridge_mode``): every bridge knows the NYSE session of each tick (a replay from the
+tick's recorded time, a live bridge from the wall clock). Tick events carry ``closed`` {session, closure,
+expected_gap, hold} and the summary ``session`` / ``closure`` / ``expected_gap`` / ``closed_mode`` / ``hedge_a``. While
+the regular session is closed a hedge bridge's equity engine is paused (decision ``hold`` / ``session_closed``, nothing
+sent; ``session_hold: false`` turns this off), hedge B is staged from the expected gap for approval and executed on the
+bridge's ticks at the first tradable moment, hedge A runs only on a proposal's ``closed_pm_hedge`` opt-in (a simulated,
+labelled estimate), and the coverage cap counts the staged and PM legs (``_coverage_room``). Extra SSE events:
+``session`` (the close), ``staged`` (plan / approval / resize / fill), ``hedge_a`` (simulated PM-leg fills) and
+``handoff`` (the open)."""
 from __future__ import annotations
 
 import asyncio
@@ -42,6 +52,8 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, ValidationError
 
 from .broker import Broker, OrderRequest, SimBroker, get_broker
+from .closed import bridge_mode
+from .closed import staged as staged_book
 from .models import AlgoChoice, MarketRef, Proposal
 from .pipeline.engine_adapter import (AlgoChoiceError, cap_contracts, cap_coverage, is_option_family,
                                       normalize_manifest, resolve_algo)
@@ -98,6 +110,10 @@ class BridgeIn(BaseModel):
     # <file>.meta.json sidecar (its market is unknown) under this market. A file whose sidecar names another market is
     # refused either way. Only compared with the configured file's name; never opens a path from the request.
     replay_file: str | None = Field(default=None, min_length=1, max_length=200, pattern=r"^[A-Za-z0-9_.-]+$")
+    # Closed-market mode (app/closed/bridge_mode.py): while the regular session is closed (judged on the tick's
+    # recorded time on a replay, the wall clock live) the equity algo holds and hedge B is staged for the open.
+    # False keeps the old behaviour (equity orders at any hour): research / parity runs against the engine only.
+    session_hold: bool = True
 
 
 class Bridge:
@@ -158,6 +174,27 @@ class Bridge:
         self.last_legs_settled = False  # True: they are the expiry settlement (intrinsic), not bar closes
         self.last_replay_ts_ns: int | None = None  # the recorded time of the last replayed tick (the bridge's "now")
         self.recorded_option_fills = 0  # option orders filled at recorded leg closes (no current chain)
+        # Closed-market mode: the session of each tick, the closure, the expected gap, hedge B / hedge A
+        self.app: Any = None
+        self.session_hold = True
+        self.closed: bridge_mode.ClosedMode | None = None
+        self.closed_errors = 0
+        self.engine: Any = None  # the running hedgecore Algo / Engine (staged fills are handed to it)
+        self.last_under_px: float | None = None  # the latest equity price a tick carried (staged plans' reference)
+
+    def on_staged_fill(self, signed_short: float, px: float | None) -> None:
+        """A staged (hedge B) order of this bridge filled ``signed_short`` shares (+ = more short) at ``px``: the
+        bridge's own algo takes the position over (handoff), so after the open it manages the whole hedge; hedge A
+        sees the equity leg for the combined coverage. ``broker_hedge`` was already updated by the staged book."""
+        eng = self.engine
+        if eng is not None and px:
+            if self.algo and self.division == "hedge":
+                eng.on_fill("equity", -float(signed_short), float(px))
+            elif not self.algo and hasattr(eng, "on_fill"):
+                eng.on_fill(float(signed_short))
+                self.hedge = getattr(eng, "current_hedge", self.hedge)
+        if self.closed is not None:
+            self.closed.on_staged_fill(signed_short, px)
 
     async def emit(self, kind: str, data: dict, status: str | None = None) -> None:
         async with self.cond:
@@ -233,7 +270,19 @@ class Bridge:
                 "replay_file": self.replay_file, "replay_market": self.replay_market,
                 "latency_ns": {"p50": q(0.5), "p99": q(0.99)},
                 "division": self.division,
-                **(self._opp_summary() if self.division == "opportunity" else {})}
+                **(self._opp_summary() if self.division == "opportunity" else {}),
+                **self._closed_summary()}
+
+    def _closed_summary(self) -> dict:
+        """session {phase, next_open, next_premarket, ...}, closure {pm_move_pp, since, ...}, expected_gap {bp, band,
+        n, rate_source, validated, evidence, ...}, closed_mode {...} and hedge_a {...} (app/closed/bridge_mode.py)."""
+        if self.closed is None:
+            return {"session": None, "closure": None, "expected_gap": None, "closed_mode": None, "hedge_a": None}
+        try:
+            return self.closed.summary()
+        except Exception as e:  # a summary never fails because of the closed-market view
+            return {"session": None, "closure": None, "expected_gap": None,
+                    "closed_mode": {"error": type(e).__name__}, "hedge_a": None}
 
     def _account_note(self) -> str | None:
         """Set when recorded-price replay fills went into the persistent account: their cost bases are historical, so
@@ -514,15 +563,67 @@ def engine_tick(oriented: dict, ts_ns: int, venue: int) -> dict:
     return d
 
 
+async def _closed_tick(bridge: Bridge, t: Tick, oriented: dict) -> tuple[dict | None, list[tuple[str, dict]]]:
+    """The closed-market step for one tick (app/closed/bridge_mode.py): the tick's session (recorded time on a replay,
+    wall clock live), closure tracker, expected gap, hedge A, staged hedge B. Returns (the tick event's ``closed``
+    block, extra events to emit after the tick). Never raises: a failure is reported (at most 3 times) and the bridge
+    goes on as if the mode were off for that tick."""
+    if bridge.effective_source == "replay":
+        rts = getattr(t, "recorded_ts_ns", None)
+        if rts is not None:
+            bridge.last_replay_ts_ns = int(rts)
+    px = _positive(t.fields.get("under_px"))
+    if px is not None:
+        bridge.last_under_px = px
+    cm = bridge.closed
+    if cm is None:
+        return None, []
+    try:
+        return await cm.on_tick(t, oriented, engine_tick)
+    except Exception as e:
+        bridge.closed_errors += 1
+        if bridge.closed_errors <= 3:
+            return None, [("error", {"message": f"closed-market step failed: {type(e).__name__}: {e}",
+                                     "source": "closed"})]
+        return None, []
+
+
+SESSION_CLOSED = "session_closed"
+
+
+async def _hold_closed(bridge: Bridge, fields: dict) -> None:
+    """A tick while the regular session is closed: the equity engine is not stepped and nothing is sent."""
+    bridge.closed.holds += 1
+    bridge.reasons[SESSION_CLOSED] += 1
+    sess = bridge.closed.sess
+    await bridge.emit("decision", {**fields, "action": "hold", "reason": SESSION_CLOSED,
+                                   "phase": sess.phase if sess is not None else None,
+                                   "note": "equities closed: the equity algo holds until the regular session; the "
+                                           "staged plan (hedge B) covers the open"})
+
+
 async def _run_source(bridge: Bridge, engine, hc, source) -> None:
     async for raw in source:
         t = as_tick(raw)
         bridge.ticks += 1
-        await bridge.emit("tick", _tick_event(t))
         oriented = orient_to_adverse(t.fields, bridge.direction)  # the one orientation step
+        view, extra = await _closed_tick(bridge, t, oriented)
+        ev = _tick_event(t)
+        if view is not None:
+            ev["closed"] = view
+        await bridge.emit("tick", ev)
+        for kind, data in extra:
+            await bridge.emit(kind, data)
+        if bridge.closed is not None and bridge.closed.hold:
+            # the regular session is closed: the Engine is paused (not stepped, so it books nothing and starts no
+            # cooldown) and nothing reaches the broker; hedge B (staged) covers the open
+            await _hold_closed(bridge, {"engine": "legacy", "family": None, "preset": None, "signal": None,
+                                        "qty": 0.0, "order_qty": 0.0, "target_hedge": None,
+                                        "current_hedge": bridge.hedge, "latency_ns": None})
+            continue
         d = engine.on_tick(ts_ns=t.ts_ns, p=adverse_p(oriented, t, bridge.direction), now_ns=time.time_ns())
-        bridge.reasons[d.reason] += 1
         bridge.latencies.append(d.latency_ns)
+        bridge.reasons[d.reason] += 1
         await bridge.emit("decision", {"action": d.action, "reason": d.reason, "order_qty": d.order_qty,
                                        "target_hedge": d.target_hedge, "current_hedge": d.current_hedge,
                                        "latency_ns": d.latency_ns, "engine": "legacy", "family": None,
@@ -653,6 +754,15 @@ async def _apply_order_state(bridge: Bridge, algo, o, side: str, instrument: str
             bridge.account_hedge += signed
         if not (inherited and bridge._sandboxed()):
             bridge.broker_hedge += signed
+            if bridge.closed is not None and instrument == "equity":  # the closure P&L sees every equity fill
+                # a replay's closure P&L is marked in recorded prices only: its fill is taken at the replayed price
+                # (a sim fill at today's quote would mix two price times), a live one at the broker's fill price
+                if bridge.effective_source == "replay":
+                    px = _positive(ref_px) or bridge.last_under_px
+                else:
+                    px = (_positive(getattr(o, "fill_px", None)) or _positive(getattr(o, "limit_px", None))
+                          or _positive(ref_px))
+                bridge.closed.on_equity_fill(signed, px)
         if algo is not None:
             bridge.hedge = bridge.broker_hedge
         hedged = filled
@@ -762,10 +872,23 @@ async def _settle_resting(bridge: Bridge, algo, broker: Broker | None, why: str,
 
 
 def _coverage_room(bridge: Bridge) -> float:
-    """Shares the bridge may still sell short: the approved target_coverage of shares_held minus the hedge the broker
-    filled. The approval gate is a hard cap for every family, including one without a coverage param."""
+    """Shares the bridge may still sell short: the approved target_coverage of shares_held minus everything that holds
+    or may still take hedge, PM and equity legs combined: the hedge the broker filled, the unfilled part of this
+    proposal's staged (hedge B) sells resting at a broker, and hedge A's PM leg in equity shares. The approval gate is
+    a hard cap for every family, including one without a coverage param."""
     cap = math.floor(bridge.proposal.target_coverage * bridge.proposal.shares_held + 1e-9)
-    return max(0.0, cap - bridge.broker_hedge)
+    reserved = pm = 0.0
+    app = getattr(bridge, "app", None)
+    if app is not None:
+        clock = "replay" if bridge.effective_source == "replay" else "wall"
+        try:
+            reserved = staged_book.reserved_sell_qty(app, bridge.proposal_id, clock)
+        except Exception:
+            reserved = 0.0
+    cm = getattr(bridge, "closed", None)
+    if cm is not None:
+        pm = cm.pm_leg_shares()
+    return max(0.0, cap - bridge.broker_hedge - reserved - pm)
 
 
 async def _send_intent(bridge: Bridge, algo, intent: dict, t: Tick) -> dict:
@@ -876,17 +999,31 @@ async def _run_algo_source(bridge: Bridge, algo, source) -> None:
         else:
             ev["under_source"] = bridge.equity_source if bridge.effective_source == "live" else (
                 "recorded" if ev["under_px"] is not None else None)
-        await bridge.emit("tick", ev)
         # the one orientation step: hedge -> adverse per the proposal's direction; opportunity -> raw YES, except a
         # family that reads the PM adverse probability (eightk_opportunity), oriented by the matched question
         oriented = opp_engine_fields(bridge, t.fields) if opp else orient_to_adverse(t.fields, bridge.direction)
+        adverse = oriented if not opp else orient_to_adverse(t.fields, bridge.direction)
+        view, extra = await _closed_tick(bridge, t, adverse)
+        if view is not None:
+            ev["closed"] = view
+        await bridge.emit("tick", ev)
+        for kind, data in extra:
+            await bridge.emit(kind, data)
+        if not opp and bridge.closed is not None and bridge.closed.hold:
+            # the regular session is closed: the equity algo is paused (not stepped: no intent, no reject backoff or
+            # cooldown carried into the open) and no equity order is sent; hedge B (staged) covers the open
+            await _hold_closed(bridge, {"engine": "algo", "family": fam, "preset": preset, "signal": None,
+                                        "instrument": None, "side": None, "qty": 0.0, "limit_px": None,
+                                        "order_qty": 0.0, "target_hedge": None, "current_hedge": bridge.hedge,
+                                        "latency_ns": None})
+            continue
         i = algo.on_tick(engine_tick(oriented, t.ts_ns, t.venue), time.time_ns())
         reason = str(i.get("reason"))
-        bridge.reasons[reason] += 1
         bridge.latencies.append(int(i.get("latency_ns") or 0))
         is_order = i.get("action") == "order"
         side = _side(i)
         qty = float(i.get("qty") or 0.0) if is_order else 0.0
+        bridge.reasons[reason] += 1
         await bridge.emit("decision", {
             "engine": "algo", "family": fam, "preset": preset, "action": i.get("action"), "reason": reason,
             "reason_code": i.get("reason_code"), "reason_block": i.get("reason_block"), "signal": i.get("signal"),
@@ -1218,6 +1355,7 @@ async def _run(bridge: Bridge, app, hc, source, fallback: Path | None) -> None:
                             target_coverage=bridge.proposal.target_coverage, gap_per_share=bridge.gap)
         engine = hc.Engine(spec)
         loop = lambda src: _run_source(bridge, engine, hc, src)  # noqa: E731
+    bridge.engine = engine
     try:
         bridge.broker = get_broker(app)
     except Exception:  # an unavailable account must not stop the hedge loop
@@ -1477,8 +1615,14 @@ async def start_bridge(body: BridgeIn, request: Request, response: Response) -> 
     algo, choice = _algo_for(prop, body, hc)
     bridge = Bridge(prop, body.source, market, body.gap_per_share, direction, body.replay_to_account, algo)
     bridge.choice = choice
+    bridge.app = request.app
+    bridge.session_hold = body.session_hold
     if prior is not None:
         _carry_account_exposure(prior, bridge)
+    # closed-market mode: every bridge reports its session; hedge bridges hold off-session and stage hedge B, and run
+    # hedge A (a simulated PM-leg estimate) only when the proposal opted in
+    bridge.closed = bridge_mode.ClosedMode(bridge, request.app, hc,
+                                           hedge_a=bool(getattr(prop, "closed_pm_hedge", False)))
 
     fallback = _fallback_path(request.app, market)
     if body.source == "replay":

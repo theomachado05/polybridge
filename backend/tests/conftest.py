@@ -39,3 +39,16 @@ def _empty_twin_map(request, tmp_path, monkeypatch):
 
     monkeypatch.setattr(store, "DEFAULT_PATH", tmp_path / "no_twins.json")  # missing file = empty map
     yield
+
+
+@pytest.fixture(autouse=True)
+def _regular_session_wall_clock(monkeypatch):
+    """Hermetic session for LIVE bridges: their closed-market mode reads the wall clock, so a test run on a weekend or
+    at night would see equities closed (the equity algo holds). Pinned to a regular session (Wed 2026-09-30 11:00 ET)
+    unless the test sets ``app.state.staged_clock``. Replays are unaffected: they use each tick's recorded time."""
+    import datetime as dt
+
+    from app.closed import bridge_mode
+
+    monkeypatch.setattr(bridge_mode, "now_utc", lambda: dt.datetime(2026, 9, 30, 15, 0, tzinfo=dt.timezone.utc))
+    yield

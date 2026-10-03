@@ -1,4 +1,5 @@
 // Mirrors docs/contracts.md (HTTP API). Change both together, by PR.
+import type { ClosedLabels, ClosedModeSummary, ClosureView, GapView, HedgeASummary, SessionView, StagedOrder } from "./closed.ts";
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export type Family = "hedge" | "opportunity";
@@ -25,6 +26,8 @@ export interface Proposal {
   /** Opportunity proposals: the approved risk caps (open option structures; premium / max loss at risk, USD). */
   max_contracts?: number | null;
   max_notional?: number | null;
+  /** Hedge A opt-in (closed-market mode): a simulated PM-leg estimate while equities are closed. Off by default. */
+  closed_pm_hedge?: boolean;
   created_at: string;
   decided_at: string | null;
   bridge_started_at?: string | null;
@@ -188,6 +191,13 @@ export interface BridgeSummary {
   /** From the file's .meta.json sidecar; null when the file has no sidecar (its market is unknown). Set too when a
    *  live bridge fell back to a replay. */
   replay_market?: { source?: string | null; id?: string | null; token_id?: string | null } | null;
+  /** Closed-market mode (backend app/closed/bridge_mode.py): the session at the bridge's latest tick (recorded time on
+   *  a replay), the PM move since the last close, the expected open gap (evidence-gated), staged hedge B, hedge A. */
+  session?: SessionView | null;
+  closure?: ClosureView | null;
+  expected_gap?: GapView | null;
+  closed_mode?: ClosedModeSummary | null;
+  hedge_a?: HedgeASummary | null;
 }
 
 /** One tick's PM YES mid vs the options-implied P(YES) (raw orientation). The option number is an estimate. */
@@ -254,7 +264,7 @@ export const getHedges = (ticker: string, shares: number, label: VerdictLabel) =
   request<HedgeMenu>(`/hedges/${encodeURIComponent(ticker)}?shares=${shares}&label=${label}`);
 export type ProposalBody =
   | { ticker: string; tags: string[]; shares_held: number; target_coverage: number; algo?: AlgoChoice }
-  | { ticker: string; market: { source: string; id: string; token_id?: string | null }; direction: Direction; shares_held: number; target_coverage: number; algo?: AlgoChoice }
+  | { ticker: string; market: { source: string; id: string; token_id?: string | null }; direction: Direction; shares_held: number; target_coverage: number; algo?: AlgoChoice; closed_pm_hedge?: boolean }
   | { ticker: string; market: { source: string; id: string; token_id?: string | null }; division: "opportunity"; algo: AlgoChoice; direction?: Direction; max_contracts?: number; max_notional?: number };
 export const createProposal = (body: ProposalBody) => post<Proposal>("/proposals", body);
 export const startBridge = (body: {
@@ -470,3 +480,40 @@ export const getOptionsChain = (p: { ticker: string; expiry_from?: string; expir
   request<OptionsChainOut>(`/options/chain?${qs(p)}`);
 export const getOptionsEightK = (ticker: string, as_of?: string) =>
   request<OptionsEightKOut>(`/options/eightk?${qs({ ticker, as_of })}`);
+
+// ---- closed-market mode (backend app/closed/router.py, staged.py, opportunity_routes.py). The evidence gate is the
+// backend's: a gap is "validated" only for a market whose own out-of-sample record passes; the UI never upgrades it.
+
+export const getSession = (at?: string) => request<SessionView>(`/session${at ? `?at=${encodeURIComponent(at)}` : ""}`);
+export interface ExpectedGapOut {
+  market_source: string; market_id: string; ticker: string;
+  session: SessionView; closure: ClosureView & Record<string, unknown>;
+  /** The gap service's names (expected_gap_bp, band_bp, n_closures, label) plus validated / status / evidence. */
+  expected_gap: Record<string, unknown>;
+  evidence: { validated: boolean; status: string; market: string | null; evidence: string };
+  move_source: "what_if" | "history_seed" | "tracker";
+}
+export const getExpectedGap = (p: { market_source: string; market_id: string; ticker?: string; direction?: Direction; token_id?: string | null }) =>
+  request<ExpectedGapOut>(`/closed/expected-gap?${qs({ ...p, token_id: p.token_id ?? undefined })}`);
+export interface ClosedEvidenceOut extends ClosedLabels {
+  rule?: string; validated_markets: string[];
+  market?: { validated: boolean; status: string; market: string | null; evidence: string };
+}
+export const getClosedEvidence = (p: { market_source?: string; market_id?: string; token_id?: string | null } = {}) =>
+  request<ClosedEvidenceOut>(`/closed/evidence${Object.keys(p).length ? `?${qs({ ...p, token_id: p.token_id ?? undefined })}` : ""}`);
+export interface StagedListOut { orders: StagedOrder[]; broker: { name: string | null; extended_hours: boolean }; note: string }
+export const listStaged = (p: { bridge_id?: string; proposal_id?: string } = {}) =>
+  request<StagedListOut>(`/staged${Object.keys(p).length ? `?${qs(p)}` : ""}`);
+/** Explicit user action only: approves one staged plan (hedge B) at the quantity the user saw. An unapproved plan
+ *  resizes with the gap; if it changed since it was rendered the backend refuses (409 PLAN_CHANGED). */
+export const approveStaged = (id: string, qtySeen: number) =>
+  post<StagedOrder>(`/staged/${encodeURIComponent(id)}/approve`, { qty: qtySeen });
+export const cancelStaged = (id: string) => request<StagedOrder>(`/staged/${encodeURIComponent(id)}`, { method: "DELETE" });
+export interface ClosedOpportunityOut {
+  label: string;
+  research: { id: string; status: string; verdict?: string | null; supports_claim: boolean };
+  supported: boolean;
+  display: "research_supported" | "estimate" | "hidden";
+  snapshots: unknown[];
+}
+export const getClosedOpportunity = () => request<ClosedOpportunityOut>("/closed/opportunity");

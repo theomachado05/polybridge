@@ -133,7 +133,10 @@ def test_bridge_on_the_demo_replay_decides_exactly_like_the_engine(client, tmp_p
                                            "shares_held": SHARES, "target_coverage": COVERAGE,
                                            "algo": {"family": FAMILY, "preset_index": PRESET}}).json()
     client.post(f"/proposals/{prop['id']}/approve")
-    r = client.post("/bridges", json={"proposal_id": prop["id"], "source": "replay", "replay_to_account": True})
+    # session_hold False: this contract is the engine's decisions when every order fills, at any hour (closed-market
+    # mode would hold the off-session intents; see tests/test_closed_bridge.py)
+    r = client.post("/bridges", json={"proposal_id": prop["id"], "source": "replay", "replay_to_account": True,
+                                      "session_hold": False})
     assert r.status_code == 201, r.text
     ev = _events(client, r.json()["bridge_id"])
     got = [(d["reason"], d["action"], d["side"], float(d["qty"] or 0.0)) for k, d in ev if k == "decision"]
@@ -220,5 +223,6 @@ def test_ita_bridge_order_count_in_demo_doc_matches_the_ui_share_count():
     assert _ita_bridge_orders(hc, 1000.0, 1.0) == 31
     assert _ita_bridge_orders(hc, 1000.0, 0.5) == 17
     doc = DEMO_MD.read_text()
-    assert "about 17 orders at the 500 shares the UI sizes for an unheld stock" in doc
-    assert "31 orders with no coverage cap" not in doc
+    # The doc quotes the closed-market-mode default (equity algo held outside regular hours) and the any-hour counts.
+    assert "9 orders uncapped at 1,000 shares and 5 at a 50% cap or at the 500 shares the UI sizes" in doc
+    assert "it would be 31 and 17" in doc

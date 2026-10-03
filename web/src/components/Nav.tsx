@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { brokerLabel, defaultPick, useStore } from "@/lib/store";
+import { sessionPill } from "@/lib/closed";
 
 const tabStyle = (on: boolean) => ({
   padding: "8px 16px", borderRadius: 999, cursor: "pointer",
@@ -38,6 +39,7 @@ export function Nav() {
     router.push("/bridge");
   };
   const profile = on("/profile");
+  const pill = sessionPill(s.session.data);
 
   return (
     <div style={{ position: "relative", zIndex: 2, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "22px clamp(16px,4vw,40px)", flexWrap: "wrap" }}>
@@ -52,6 +54,12 @@ export function Nav() {
         <Link href="/portfolio" style={tabStyle(on("/portfolio"))}>Portfolio</Link>
       </nav>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        {pill && (
+          <div className="pb-navpill" title={pill.title} data-testid="session-pill" style={{ display: "flex", alignItems: "center", gap: 8, height: 44, padding: "0 14px", borderRadius: 999, background: "rgba(255,255,255,.55)", color: "#0F1626", fontSize: 12.5, fontWeight: 500, whiteSpace: "nowrap" }}>
+            <span style={{ width: 7, height: 7, borderRadius: "50%", background: pill.dot }} />
+            <span className="pb-mono" style={{ fontSize: 10.5, letterSpacing: ".08em", color: "#5A627A" }}>NYSE</span>{pill.text}
+          </div>
+        )}
         <div style={{ display: "flex", alignItems: "center", gap: 10, height: 44, padding: "0 18px", borderRadius: 999, background: "rgba(15,22,38,.9)", color: "#fff", boxShadow: "0 8px 30px rgba(15,22,38,.25)", fontSize: 13, fontWeight: 500, whiteSpace: "nowrap" }}>
           <span style={{ width: 8, height: 8, borderRadius: "50%", background: dot, animation: "pb-pulse 1.6s ease-in-out infinite" }} />{label}
         </div>

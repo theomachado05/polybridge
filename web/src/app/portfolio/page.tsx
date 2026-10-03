@@ -10,6 +10,7 @@ import { brokerLabel, useStore, type BridgeEntry } from "@/lib/store";
 import { DemoTag, Glass, Label, Tag, upColor } from "@/components/pb";
 import { SandboxFillsPanel } from "@/components/SandboxFills";
 import { engineBridgeFor } from "@/lib/portfolioView";
+import { WeekendExposurePanel } from "@/components/WeekendExposure";
 
 type DemoEntry = Extract<BridgeEntry, { kind: "demo" }>;
 interface Row {
@@ -30,6 +31,7 @@ export default function Portfolio() {
   const acct = brokerLabel(s.account);
   const demos = s.bridges.filter((b): b is DemoEntry => b.kind === "demo");
   const liveIds = s.bridges.flatMap((b) => (b.kind === "live" ? [b.bridgeId] : []));
+  const hedgeIds = s.bridges.flatMap((b) => (b.kind === "live" && b.mode !== "opportunity" ? [b.bridgeId] : []));
   const realHoldings: Holding[] | null = s.portfolio.status === "ok" && s.portfolio.data ? s.portfolio.data.holdings : null;
   // Demo bridges attach only to the sample (EQ) holdings. On the real path they never touch real rows or totals:
   // they are listed separately, labelled, and their simulated P&L, fees and fills stay out of the real figures.
@@ -234,6 +236,7 @@ export default function Portfolio() {
           <SandboxFillsPanel bridgeIds={liveIds} onOpen={(id) => router.push(`/bridge/${id}`)} />
         </div>
       </div>
+      <WeekendExposurePanel holdings={realHoldings} bridgeIds={hedgeIds} session={s.session.data} onOpen={(id) => router.push(`/bridge/${id}`)} />
     </main>
   );
 }

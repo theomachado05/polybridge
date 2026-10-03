@@ -20,13 +20,15 @@ Revert / resize (``reassess``)
   The plan's rate and band are kept; the gap is recomputed from the current PM move. Not adverse beyond min_gap_bp any
   more: cancelled (PM_REVERTED), at the broker too when the order already rests there. Smaller: an order not yet sent is
   resized down (PM_PARTIAL_REVERT_RESIZE); an order resting at the broker is not resized (only a full revert cancels
-  it). Larger: never resized up past what was approved (RESIZE_UP_NEEDS_APPROVAL; a new plan must be approved).
+  it). Larger: a plan not yet approved follows the gap up too (PM_RESIZE_UP, within the coverage room); an approved
+  one is never resized up past what was approved (RESIZE_UP_NEEDS_APPROVAL; a new plan must be approved).
 Coverage (``coverage``, the same room at planning and just before sending)
   cap (target_coverage x shares_held) minus the bridge's filled hedge, the unfilled part of its resting sell, the
   unfilled part of this proposal's other staged sells resting at a broker, and hedge A's current PM leg in shares.
-  ``reserved_sell_qty`` is what bridges._coverage_room must subtract so a live bridge never sells that room too (P5).
-  A wall-clock order follows the proposal's current bridge (a restarted run gets the fill and the coverage check).
-Execution (``run_due`` on the wall clock; ``on_tick`` for P5's per-tick calls)
+  ``reserved_sell_qty`` is subtracted in bridges._coverage_room (with hedge A's leg) so a bridge never sells that room
+  too. A wall-clock order follows the proposal's current bridge (a restarted run gets the fill and the coverage check).
+  A fill reaches the bridge's ``on_staged_fill`` hook: its own algo and hedge A hear of the equity sold (handoff).
+Execution (``run_due`` on the wall clock; ``on_tick`` from every bridge tick, app/closed/bridge_mode.py)
   At the session start through the active broker. Pre-market orders are limit orders (Webull takes only limits outside
   09:30-16:00) with a collar around the lower of the quote and the expected open (a sell); regular-open orders are
   market orders. A pre-market limit still resting at 09:30 is cancelled and its rest sent as a market order. The
@@ -570,15 +572,19 @@ def reassess(o: StagedOrder, move_pp: float, at: dt.datetime) -> str | None:
     if o.status == "working":
         return None  # resting at the broker: only a full revert cancels it
     qty = max(qty, math.ceil(o.filled_qty - EPS))  # never below what already filled
-    ceiling = o.approved_qty if o.approved_qty is not None else o.planned_qty
+    # An unapproved plan follows the gap both ways (within the coverage room size_hedge applies): what the user
+    # approves is the plan as it stands, and approval freezes it as the ceiling. An approved plan is never resized up
+    # past what was approved.
+    ceiling = o.approved_qty if o.approved_qty is not None else (None if o.status == "staged" else o.planned_qty)
     if qty < o.qty:
         _note(o, at, "PM_PARTIAL_REVERT_RESIZE", detail + f"; qty {o.qty} -> {qty}")
         o.qty = qty
         return "PM_PARTIAL_REVERT_RESIZE"
     if qty > o.qty:
-        new = min(qty, ceiling)
+        new = qty if ceiling is None else min(qty, ceiling)
         if new > o.qty:  # back up toward what was planned / approved, never above it
-            _note(o, at, "PM_RESIZE_UP", detail + f"; qty {o.qty} -> {new} (ceiling {ceiling})")
+            _note(o, at, "PM_RESIZE_UP", detail + f"; qty {o.qty} -> {new} "
+                                                  f"({'not yet approved' if ceiling is None else f'ceiling {ceiling}'})")
             o.qty = new
             return "PM_RESIZE_UP"
         if o.reason != "RESIZE_UP_NEEDS_APPROVAL":
@@ -624,6 +630,15 @@ def _apply_fill(o: StagedOrder, bridge, filled_this_order: float, at_account: bo
         bridge.broker_hedge = getattr(bridge, "broker_hedge", 0.0) + signed
         if getattr(bridge, "algo", None):
             bridge.hedge = bridge.broker_hedge
+        # handoff: the bridge's own algo (and hedge A) hear of the equity this plan sold, so the algo that resumes at
+        # the open manages it and the combined PM + equity coverage stays one cap
+        hook = getattr(bridge, "on_staged_fill", None)
+        if callable(hook):
+            px = _fin((o.broker_order or {}).get("fill_px")) or o.fill_px
+            try:
+                hook(signed, px)
+            except Exception as e:  # a bridge-side bookkeeping failure never undoes a broker fill
+                log.warning("staged fill hook failed: %s", type(e).__name__)
 
 
 def _at_account(o: StagedOrder, bridge) -> bool:
@@ -977,8 +992,15 @@ async def post_run(request: Request) -> dict:
     return {"changed": [o.model_dump() for o in changed]}
 
 
+class ApproveIn(BaseModel):
+    """What the user saw when they clicked: the plan's quantity. An unapproved plan resizes with the gap on every tick,
+    so the approval names the quantity shown; a plan that changed since then is refused (409 PLAN_CHANGED) and the
+    client re-renders it. Without a body the plan's current quantity is approved (legacy clients)."""
+    qty: int | None = Field(default=None, ge=1)
+
+
 @router.post("/staged/{sid}/approve")
-async def approve_staged(sid: str, request: Request) -> dict:
+async def approve_staged(sid: str, request: Request, body: ApproveIn | None = None) -> dict:
     app = request.app
     book = book_for(app)
     async with book.lock:
@@ -991,6 +1013,9 @@ async def approve_staged(sid: str, request: Request) -> dict:
         prop = next((p for p in app.state.store.list() if p.id == o.proposal_id), None)
         if prop is None or prop.status != "approved":
             raise HTTPException(409, f"Proposal {o.proposal_id} is no longer approved.")
+        if body is not None and body.qty is not None and body.qty != o.qty:
+            raise HTTPException(409, f"PLAN_CHANGED: staged order {sid} was resized to {o.qty} shares since it was "
+                                     f"shown ({body.qty}); review the new quantity and approve again.")
         if o.clock == "replay":
             now = bridge_now(find_bridge(app, o.bridge_id)) or to_utc(o.planned_at)
         else:

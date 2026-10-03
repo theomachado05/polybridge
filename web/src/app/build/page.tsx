@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { getEquity, getLibrary, getOptionsImplied, mapEvent, searchMarkets, type FitOut, type Holding, type MapOut } from "@/lib/api";
+import { getClosedEvidence, getEquity, getLibrary, getOptionsImplied, mapEvent, searchMarkets, type FitOut, type Holding, type MapOut } from "@/lib/api";
+import { sessionClosed, weekendModeCopy, type SessionView } from "@/lib/closed";
 import { DEFAULT_OPP_CAPS, opportunityFit } from "@/lib/realBridge";
 import { EQ, INSTRUMENTS, QUESTIONS, REAL_INSTRUMENTS, demoFirst, demoImpacts, isDemoMarket, isListedMarket, isOpenMarket, isRecordedOnly, questionFromMarket, topImpact, type EquityPick, type Impact, type Question } from "@/lib/demo";
 import { fmtPct, prettyId } from "@/lib/fmt";
@@ -10,7 +11,7 @@ import { fitScoreView, IN_SAMPLE_NOTE } from "@/lib/pipeline";
 import { useAsync } from "@/lib/hooks";
 import { OPP_REPLAY_NOTE, libraryIdea, optionFamilyIdea } from "@/lib/opportunity";
 import { useStore } from "@/lib/store";
-import { DemoTag, Orb, Tag } from "@/components/pb";
+import { DemoTag, Orb, Switch, Tag } from "@/components/pb";
 
 const optsBox = { marginTop: 14, padding: 6, borderRadius: 22, display: "flex", flexDirection: "column" as const };
 const rowStyle = { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20, padding: "12px 14px", borderRadius: 16, cursor: "pointer", textAlign: "left" as const, width: "100%", background: "transparent", border: 0 };
@@ -339,6 +340,10 @@ export default function Build() {
             {!busy && (
               <Ai orb="breathing" text={ai4}>
                 <FitCard fit={fit} />
+                {/* Shown while closed, and whenever hedge A is on (so it can always be turned off, even after the open). */}
+                {real && q?.real && (sessionClosed(s.session.data) || s.closedPmHedge) && (
+                  <WeekendModeCard market={q.real} ticker={e?.t ?? ""} session={s.session.data} pmHedge={s.closedPmHedge} onPmHedge={s.setClosedPmHedge} />
+                )}
                 <div style={{ marginTop: 18, display: "flex", gap: 10, flexWrap: "wrap" }}>
                   <button type="button" className="pb-btn pb-btn-primary" style={{ height: 48, padding: "0 22px" }} onClick={toConnect}>Connect brokerage <span className="pb-arrow">→</span></button>
                   <button type="button" className="pb-btn pb-btn-secondary" style={{ height: 48, padding: "0 18px", fontSize: 14, boxShadow: "none" }} onClick={toStep1}>Start over</button>
@@ -441,6 +446,46 @@ function FitCard({ fit }: { fit: ReturnType<typeof useStore>["fit"] }) {
       {sv.secondary && <div className="pb-mono" style={{ fontSize: 11.5, marginTop: 2, color: "#5A627A" }} title={sv.title}>{sv.secondary}</div>}
       {f.rationale && <div className="pb-pretty" style={{ fontSize: 13, color: "#3C4458", lineHeight: 1.5, marginTop: 6 }}>{f.rationale}</div>}
       {f.alternatives?.length > 0 && <div style={{ fontSize: 12, color: "#5A627A", marginTop: 6 }}>Alternatives: {f.alternatives.slice(0, 3).map((a) => prettyId(a.family)).join(" · ")}</div>}
+    </div>
+  );
+}
+
+/** U4: Weekend mode, shown while US equities are closed. Hedge B (an equity order staged for the first tradable moment,
+ *  approved by you on the Bridge) is the default; hedge A (holding the PM contract over the closure) is an explicit
+ *  opt-in, labelled an estimate and never protection, because research R1 found no evidence it reduces the loss. */
+function WeekendModeCard({ market, ticker, session, pmHedge, onPmHedge }: { market: { source: string; id: string; token_id?: string | null }; ticker: string; session: SessionView | null; pmHedge: boolean; onPmHedge: (on: boolean) => void }) {
+  const ev = useAsync(`ce:${market.source}:${market.id}`, () => getClosedEvidence({ market_source: market.source, market_id: market.id, token_id: market.token_id }));
+  const copy = weekendModeCopy(ev.data);
+  const m = ev.data?.market;
+  const validated = m?.validated === true && m.status === "validated";
+  const closedNow = sessionClosed(session);
+  const box = { marginTop: 16, padding: "14px 16px", borderRadius: 18, background: "rgba(255,255,255,.7)", border: "1px solid rgba(255,255,255,.9)" };
+  const opt = { display: "grid", gridTemplateColumns: "minmax(0,1fr) auto", gap: 12, alignItems: "start", padding: "12px 0", borderTop: "1px solid rgba(15,22,38,.08)" } as const;
+  return (
+    <div style={box} data-testid="weekend-mode">
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+        <span className="pb-label">WEEKEND MODE · {closedNow ? session?.label ?? "MARKET CLOSED" : "MARKET OPEN NOW · APPLIES AT THE NEXT CLOSE"}</span>
+        <Tag tone={validated ? "measured" : "caution"} title={m?.evidence ?? "No out-of-sample record for this market."}>{ev.loading ? "checking evidence" : validated ? "expected gap validated" : "unvalidated estimate"}</Tag>
+      </div>
+      <div className="pb-pretty" style={{ fontSize: 13, color: "#3C4458", lineHeight: 1.5, marginTop: 8 }}>
+        {closedNow ? "US equities are closed, but this market still trades." : "US equities are open now; this applies from the next close, while this market keeps trading."} While equities are closed the equity algo holds{ticker ? ` ${ticker}` : ""}; the bridge tracks the move since the close and the expected open gap{validated ? "" : " (an unvalidated estimate for this market, shown with its band and the closures behind it)"}.
+        {m?.evidence ? ` ${m.evidence}` : ""}
+      </div>
+      <div style={{ ...opt, marginTop: 10 }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}><span style={{ fontSize: 14, fontWeight: 600 }}>Hedge B · staged order at the first tradable moment</span><Tag tone="neutral">default</Tag></div>
+          <div className="pb-pretty" style={{ fontSize: 12, color: "#5A627A", marginTop: 3, lineHeight: 1.45 }}>{copy.hedgeB}</div>
+        </div>
+        <Tag tone="sim" title="Staged on the Bridge; nothing executes until you press Approve plan">you approve it</Tag>
+      </div>
+      <div style={opt}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}><span style={{ fontSize: 14, fontWeight: 600 }}>Hedge A · hold the prediction-market contract over the closure</span><Tag tone="caution">estimate — not protection</Tag></div>
+          <div className="pb-pretty" style={{ fontSize: 12, color: "#5A627A", marginTop: 3, lineHeight: 1.45 }}>{copy.hedgeA}</div>
+          <div style={{ fontSize: 12, color: pmHedge ? "#9A4A00" : "#5A627A", marginTop: 6 }}>{pmHedge ? "On: the bridge will run a simulated PM-leg estimate next to hedge B and unwind it at the open." : "Off (default)."}</div>
+        </div>
+        <Switch on={pmHedge} onClick={() => onPmHedge(!pmHedge)} label="Opt in to hedge A (estimate, not protection)" />
+      </div>
     </div>
   );
 }

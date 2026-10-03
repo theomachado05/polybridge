@@ -4,10 +4,11 @@
 
 | File | Market (Polymarket id) -> ticker | Rows, span | p range | Fit on this replay (engine, 1,000 shares) | Replay speed |
 |---|---|---|---|---|---|
-| `another-fed-hike-2026-history.jsonl` (**default demo**) | Another Fed rate hike in 2026? (4620900) -> TLT, down on YES | 401 hourly, 2026-09-16 19:00Z to 2026-10-03 11:33Z | 0.705 to 0.92 | equity_delta_bridge #75, score_vs_static +0.257 (engine replay: 17 sends, 4 fills; a bridge: 4 orders, 3 at a 50% cap) | 21600x, about 67 s |
-| `russia-eu-military-2026-history.jsonl` | Russia military action against an EU country by December 31, 2026? (4713962) -> ITA, up on YES | 347 hourly, 2026-09-19 01:00Z to 2026-10-03 11:33Z | 0.065 to 0.285 (opening print 0.485) | energy_geo_hedge #54, score_vs_static +0.508 (engine replay: 136 sends, 8 fills; a bridge: 31 orders, 17 at a 50% cap) | 18000x, about 69 s |
+| `another-fed-hike-2026-history.jsonl` (**default demo**) | Another Fed rate hike in 2026? (4620900) -> TLT, down on YES | 401 hourly, 2026-09-16 19:00Z to 2026-10-03 11:33Z | 0.705 to 0.92 | equity_delta_bridge #75, score_vs_static +0.257 (engine replay: 17 sends, 4 fills; a bridge trading at any hour: 4 orders, 3 at a 50% cap; with closed-market mode, the default: 3 and 3) | 21600x, about 67 s |
+| `russia-eu-military-2026-history.jsonl` | Russia military action against an EU country by December 31, 2026? (4713962) -> ITA, up on YES | 347 hourly, 2026-09-19 01:00Z to 2026-10-03 11:33Z | 0.065 to 0.285 (opening print 0.485) | energy_geo_hedge #54, score_vs_static +0.508 (engine replay: 136 sends, 8 fills; a bridge trading at any hour: 31 orders, 17 at a 50% cap; with closed-market mode, the default: 9 and 5) | 18000x, about 69 s |
 | `fed-hike-25bps-oct-2026-history.jsonl` | Will the Fed increase interest rates by 25 bps after the October 2026 meeting? (2589813) -> IWM | 721 hourly, 2026-09-02 to 2026-10-03 | 0.155 to 0.705 | IWM: equity_delta_bridge #15, score_vs_static -0.011 (no better than a static hedge; fits.json scores SPY at -0.004) | 36000x, about 72 s |
 | `fed-hike-25bps-oct-2026.jsonl` | same Fed October market | 1200 one-second polls, 20 min | constant 0.175 | (quiet: one initial hedge) | real time |
+| `us-recession-in-2025-weekend-2025-04-04.jsonl` (**closed-market mode**) | US recession in 2025? (516710, the one market whose expected-gap model is validated out of sample) -> SPY, down on YES | 799 five-minute points, Fri 2025-04-04 15:30 ET to Mon 2025-04-07 10:00 ET | 0.555 at the Friday close, 0.675 at the weekend high, 0.635 at the open | no fit (a resolved market); a bridge holds its equity algo for the 786 closed ticks, stages hedge B from the validated expected gap (peak -128.8 bp), and fills it at the first fresh pre-market print (Mon 04:05 ET, 488.45) | 3600x, about 67 s |
 | `nvda-230-sep-2026-history.jsonl` (**Opportunity division**) | Will NVIDIA (NVDA) close above $230 end of September? (3961215, resolved NO) -> NVDA call spread 227.5/232.5, expiry 2026-09-30 | 353 hourly, 2026-09-16 04:00Z to 2026-09-30 20:00Z; 66 carry an options estimate | 0.005 to 0.76 (options-implied 0.11 to 0.71) | opportunity fit: binary_vs_spread_arb #6, score -0.956 (11 orders, -$276.15 net of fees, max drawdown $288.95: it loses money here); a bridge: the same 11 orders at recorded leg closes + a bridge-end close at the expiry settlement, -$294.77 | 21600x, about 59 s |
 
 The two new files (recorded 2026-10-03 with `scripts/history_with_equity.py`) carry `{"ts_ns", "p", "under_px"}` per
@@ -26,7 +27,14 @@ or in a session before the price has changed), so the algo re-sends the same ord
 allowed: the TLT replay's 17 orders are 4 fills + 13 refused sends (11 = 2 + 9 at a 50% cap), ITA's 136 are 8 + 128
 (101 = 4 + 97 at 50%). The bridge's SimBroker fills each market order at today's Massive quote (or the recorded price
 offline) whenever it arrives, so every order fills once: 4 for TLT, 31 for ITA with no coverage cap, 3 and 17 at a 50%
-cap (our 2026-10-03 runs, and what `Algo` decides on the same ticks when every order fills). After the first refused
+cap (our 2026-10-03 runs, and what `Algo` decides on the same ticks when every order fills). Those counts are for a
+bridge with `"session_hold": false`. By default a bridge now runs closed-market mode (`app/closed/bridge_mode.py`): its
+equity algo is paused whenever the recorded time is outside the regular session (328 of TLT's 401 hourly ticks, 287 of
+ITA's 347), so it trades only in regular hours: TLT 3 orders uncapped and 3 at a 50% cap (hedge 540 and 360 shares),
+ITA 9 and 5 (885 and 438; 5 at 500 shares uncapped). No staged order is planned on them: their hourly points leave
+no PM price within 30 minutes before the 16:00 close (the closure tracker's research anchor rule), so the tracker
+reports NO_CLOSE_PRICE and no expected gap is shown (and their markets have no validated out-of-sample record: any gap
+would be an unvalidated estimate). The closed-market recording below has 5-minute points for that reason. After the first refused
 send the two hedge paths differ, so the in-sample score describes the engine replay's (session-respecting) fills, not
 the bridge's. See `docs/contracts.md` ("Bridge vs engine replay").
 
@@ -89,6 +97,35 @@ replay places the same 11 orders, each a two-leg combo filled by the SimBroker a
 spread is unknown), $0.65 per leg contract, and closes the last spread at the expiry settlement: -$294.77 over the six
 round trips (#9: -$249.75; our 2026-10-03 run, pinned in `tests/test_opportunity_replay.py`;
 `python3 scripts/e2e_demo.py --opportunity` drives it over HTTP).
+
+## us-recession-in-2025-weekend-2025-04-04.jsonl (closed-market mode)
+
+One real weekend for the closed-market demo, picked by a fixed rule (`scripts/record_weekend.py`; no price was looked
+at to choose): among the markets `app/data/gap_evidence.json` marks validated (R2: the market's own out-of-sample
+record passes; only "US recession in 2025", sign 64.2% of 151, slope +1.28), its weekend closures in
+`research/results/leadlag_closed/closures_all.csv`, the largest adverse (equity-bearish) PM move: 2025-04-04 to
+2025-04-07, YES 55.5 -> 63.5 at the research marks, SPY gap -322.7 bp, then +132.9 bp from 09:30 to 10:00 (the
+"Liberation Day" tariff weekend; a hand-picked news closure in the research table, so it is not one of the closures R2
+tested the rate on).
+
+    cd backend && uv run --env-file ../.env python scripts/record_weekend.py
+
+Each row is `{"ts_ns", "p", "under_px"}`: `p` is the CLOB `prices-history` mid at 5-minute fidelity over the window
+(`startTs`/`endTs`), `under_px` the close of the last 5-minute Massive SPY bar that had already ended (extended hours
+included; over the weekend it stays at Friday's last after-hours print, 505.50). The sidecar carries the rule and the
+research row of the weekend (`weekend`). `app/data/replay_index.json` maps `polymarket:516710` and its YES token here.
+
+What a bridge shows on it (`tests/test_closed_bridge.py`, `python3 scripts/e2e_demo.py --weekend`): Friday 16:00 the
+session closes and the equity algo holds (786 of 799 ticks); the closure tracker follows the PM move since the close and
+the expected gap is **validated** (own rate 10.73 bp/pp on 231 closures, 80% band; -128.8 bp at the weekend high); a
+staged sell (hedge B) is planned, resized with the gap, and approved; the sandbox broker supports extended hours, so it
+executes at the first fresh recorded price, Monday 04:05 ET pre-market (04:00 still shows Friday's 505.50); the
+algo resumes at 09:30. With equity_delta_bridge (sigma_k 0) at 1,000 shares and a 50% cap: 278 shares hedged on Friday
+afternoon carry over the weekend, the plan sells the remaining 222 at 488.45, and at the open the algo buys 182 back.
+P&L from the Friday close (506.56) to Monday 10:00 (495.69), recorded prices: holding -$10,870; carried hedge
++$3,022; staged order -$1,607 (SPY rallied after the open: hedge B works by timing, not direction, and executes after
+the gap); algo after the open +$1,179; hedged -$8,276, i.e. +$2,594 vs no hedge (the e2e prints the run's own
+numbers). The demo shows the mechanism on one weekend; it is not evidence.
 
 ## fed-hike-25bps-oct-2026.jsonl
 

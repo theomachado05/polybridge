@@ -114,7 +114,12 @@ def test_real_algo_bridge_on_replay_orders_fills_and_reports(client, tmp_path):
     decisions = [d for k, d in ev if k == "decision"]
     assert len(decisions) == len(ps)
     reasons = {d["reason"] for d in decisions}
-    assert reasons <= set(v["name"] for v in hedgecore.catalog()["reasons"].values())
+    # session_closed is the bridge's own hold (closed-market mode): after 16:00 ET the algo is paused
+    assert reasons <= set(v["name"] for v in hedgecore.catalog()["reasons"].values()) | {"session_closed"}
+    held = [d for d in decisions if d["reason"] == "session_closed"]
+    assert held and all(d["action"] == "hold" and d["qty"] == 0.0 and d["phase"] != "regular" for d in held)
+    closed = [d["closed"]["session"]["phase"] for k, d in ev if k == "tick" and d.get("closed")]
+    assert closed[0] == "regular" and "after_hours" in closed  # 12:26 ET to 23:26 ET on Mon 2026-09-21
     orders = [d for d in decisions if d["action"] == "order"]
     fills = [d for k, d in ev if k == "fill"]
     assert orders and len(fills) == len(orders)

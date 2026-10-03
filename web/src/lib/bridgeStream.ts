@@ -1,4 +1,7 @@
-// Pure reducer for a bridge's SSE stream (tick, decision, position, fill, status, error); unit-tested offline.
+// Pure reducer for a bridge's SSE stream (tick, decision, position, fill, status, error, and the closed-market events
+// session / staged / handoff / hedge_a); unit-tested offline.
+import type { ClosedTick, HedgeASummary, StagedOrder, TimelineRow } from "./closed.ts";
+import { appendTimeline, newerOrder } from "./closed.ts";
 export const REASONS = ["stale", "below_sigma", "inside_band", "below_fees", "rebalance", "risk_capped"] as const;
 /** A broker fill for one engine order ("fill" SSE event, broker stream). */
 export interface FillInfo {
@@ -45,18 +48,27 @@ export interface StreamState {
   gaps: number[];
   optionPosition: number | null;
   riskUsed: number | null;
+  /** Closed-market mode: the latest tick's session / closure / expected gap, staged orders (hedge B) by id, the
+   *  close -> plan -> approval -> fill -> open timeline, and hedge A's summary (only when the proposal opted in). */
+  closed: ClosedTick | null;
+  staged: Record<string, StagedOrder>;
+  timeline: TimelineRow[];
+  hedgeA: HedgeASummary | null;
 }
 type Ev =
   | { k: "open" } | { k: "drop" }
-  | { k: "tick"; p: number; options?: OptionsView | null }
-  | { k: "decision"; d: { action: string; reason: string; order_qty: number; target_hedge: number | null; current_hedge: number; latency_ns: number;
+  | { k: "tick"; p: number; options?: OptionsView | null; closed?: ClosedTick | null }
+  | { k: "decision"; d: { action: string; reason: string; order_qty: number; target_hedge: number | null; current_hedge: number; latency_ns: number | null;
       engine?: "algo" | "legacy"; family?: string | null; preset?: number | null; signal?: number | null } }
   | { k: "position"; hedge?: number; coverage?: number; broker_hedge?: number; broker?: string | null; option_position?: number; risk_used?: number }
   | { k: "fill"; f: FillInfo }
   | { k: "status"; status: string; source?: string }
-  | { k: "error"; message: string };
+  | { k: "error"; message: string }
+  | { k: "staged"; d: { event?: string; order?: StagedOrder; timeline?: TimelineRow | null } }
+  | { k: "session" | "handoff"; d: { event?: string; timeline?: TimelineRow | null } }
+  | { k: "hedge_a"; d: { summary?: HedgeASummary } };
 
-export const init: StreamState = { prices: [], lastP: null, reasons: {}, lastReason: null, lat: [], hedge: 0, coverage: 0, brokerHedge: null, broker: null, fills: 0, log: [], decisions: 0, status: "connecting", source: null, error: null, options: null, lastPriced: null, gaps: [], optionPosition: null, riskUsed: null };
+export const init: StreamState = { prices: [], lastP: null, reasons: {}, lastReason: null, lat: [], hedge: 0, coverage: 0, brokerHedge: null, broker: null, fills: 0, log: [], decisions: 0, status: "connecting", source: null, error: null, options: null, lastPriced: null, gaps: [], optionPosition: null, riskUsed: null, closed: null, staged: {}, timeline: [], hedgeA: null };
 const cap = <T,>(a: T[], n: number) => (a.length > n ? a.slice(a.length - n) : a);
 /** Bounds the decision log, dropping the oldest holds first: orders (and the fills attached to them) are what the
  *  trades list and the sandbox fills read, and a long run of holds must not push an early order out. */
@@ -75,13 +87,15 @@ export function reduce(s: StreamState, e: Ev): StreamState {
       const o = e.options ?? null;
       const gaps = o && typeof o.gap === "number" ? cap([...s.gaps, o.gap], 300) : s.gaps;
       const lastPriced = o && typeof o.opt_implied_prob === "number" ? o : s.lastPriced;
-      return { ...s, prices: cap([...s.prices, e.p], 300), lastP: e.p, options: o ?? s.options, lastPriced, gaps };
+      return { ...s, prices: cap([...s.prices, e.p], 300), lastP: e.p, options: o ?? s.options, lastPriced, gaps, closed: e.closed ?? s.closed };
     }
     case "decision": {
       const d = e.d;
-      const entry: LogEntry = { n: s.decisions + 1, p: s.lastP, action: d.action, reason: d.reason, qty: d.order_qty, target: d.target_hedge ?? null, current: d.current_hedge, ns: d.latency_ns,
+      // A closed-session hold is not computed by the engine: no latency (null), and it must not skew the quantiles.
+      const ns = typeof d.latency_ns === "number" && Number.isFinite(d.latency_ns) ? d.latency_ns : null;
+      const entry: LogEntry = { n: s.decisions + 1, p: s.lastP, action: d.action, reason: d.reason, qty: d.order_qty ?? 0, target: d.target_hedge ?? null, current: d.current_hedge ?? s.hedge, ns: ns ?? Number.NaN,
         ...(d.family ? { family: d.family, preset: d.preset ?? null, signal: d.signal ?? null } : {}) };
-      return { ...s, decisions: s.decisions + 1, lastReason: d.reason, reasons: { ...s.reasons, [d.reason]: (s.reasons[d.reason] ?? 0) + 1 }, lat: cap([...s.lat, d.latency_ns], 2000), log: capLog([...s.log, entry], 200) };
+      return { ...s, decisions: s.decisions + 1, lastReason: d.reason, reasons: { ...s.reasons, [d.reason]: (s.reasons[d.reason] ?? 0) + 1 }, lat: ns == null ? s.lat : cap([...s.lat, ns], 2000), log: capLog([...s.log, entry], 200) };
     }
     case "position": return {
       ...s, hedge: e.hedge ?? s.hedge, coverage: e.coverage ?? s.coverage,
@@ -97,6 +111,13 @@ export function reduce(s: StreamState, e: Ev): StreamState {
     }
     case "status": return { ...s, status: e.status === "finished" ? "finished" : e.status === "stopped" ? "stopped" : "running", source: e.source ?? s.source };
     case "error": return { ...s, error: e.message };
+    case "staged": {
+      const o = e.d.order;
+      const staged = o && o.id ? { ...s.staged, [o.id]: newerOrder(s.staged[o.id], o)! } : s.staged;
+      return { ...s, staged, timeline: appendTimeline(s.timeline, e.d.timeline) };
+    }
+    case "session": case "handoff": return { ...s, timeline: appendTimeline(s.timeline, e.d.timeline) };
+    case "hedge_a": return e.d.summary ? { ...s, hedgeA: e.d.summary } : s;
   }
 }
 

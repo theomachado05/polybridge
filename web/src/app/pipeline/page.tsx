@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { shortlist } from "@/lib/library";
 import { demoSteps, fitScoreView, fitSteps, type PipeContext } from "@/lib/pipeline";
 import { algoRunLabel, brokerLabel, defaultPick, feeGateOff, runnableFit, useStore } from "@/lib/store";
+import { sessionClosed } from "@/lib/closed";
 import { REPLAY_SANDBOX_SENTENCE } from "@/lib/realBridge";
 import { DemoTag, OrbDisc, Tag } from "@/components/pb";
 
@@ -137,6 +138,19 @@ export default function Pipeline() {
               : <> Once it runs, the engine places its orders with <Tag tone={acct.tone} title="GET /account">{acct.name}</Tag> without asking again.</>}
             {" "}{REPLAY_SANDBOX_SENTENCE}
           </div>
+          )}
+          {!noDir && sessionClosed(s.session.data) && (
+            <div data-testid="pipeline-weekend">
+              US equities are closed: the equity algo holds until the regular session, and a staged order (hedge B) is planned for the first tradable moment; it executes only when you press Approve plan on the Bridge.
+              {s.closedPmHedge
+                ? <> Hedge A is on: a simulated prediction-market leg runs over the closure <Tag tone="caution" title="Research R1 found no evidence it reduces the open-gap loss">estimate — not protection</Tag>.</>
+                : " Hedge A (the PM-leg estimate) is off."}
+            </div>
+          )}
+          {!noDir && !sessionClosed(s.session.data) && s.closedPmHedge && (
+            <div data-testid="pipeline-weekend">
+              Hedge A is on: US equities are open now, and from the next close a simulated prediction-market leg runs over the closure <Tag tone="caution" title="Research R1 found no evidence it reduces the open-gap loss">estimate — not protection</Tag>. Turn it off in Weekend mode on Build before approving if you do not want it.
+            </div>
           )}
           {gateOff && !noDir && (
             <div style={{ color: "#8A5A00" }}>

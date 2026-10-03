@@ -13,6 +13,8 @@ import { quantile, useBridgeStream } from "@/lib/useBridgeStream";
 import { Btn, DemoTag, Glass, Label, Orb, Tag, upColor } from "@/components/pb";
 import { AlgoDock, PortfolioPanel, TopRow, TradesPanel, type DockAlgo, type TradeCard } from "./parts";
 import { OpportunityBridge } from "./OpportunityBridge";
+import { ClosedBanner, WeekendPanel } from "./WeekendPanel";
+import { sessionClosed } from "@/lib/closed";
 
 type LiveEntry = Extract<BridgeEntry, { kind: "live" }>;
 type DemoEntry = Extract<BridgeEntry, { kind: "demo" }>;
@@ -147,6 +149,8 @@ const GATES: { reason: string; name: string }[] = [
   { reason: "rebalance", name: "Delta-Bridge Sizer" },
   { reason: "risk_capped", name: "Position Cap" },
 ];
+/** Closed-market mode: the session clock holds the equity algo while the regular session is closed. */
+const SESSION_GATE = { reason: "session_closed", name: "Session Clock" };
 
 function LiveBridge({ entry }: { entry: LiveEntry }) {
   const s = useStore();
@@ -182,10 +186,14 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
   const priced = move != null && p != null && p0 != null ? move * (p - p0) : null;
   const p50 = quantile(st.lat, 0.5), p99 = quantile(st.lat, 0.99);
   const last = st.lastReason;
-  const algos: DockAlgo[] = GATES.map((g) => ({
+  const session = st.closed?.session ?? summary.data?.session ?? null;
+  const marketClosed = sessionClosed(session);
+  const holding = marketClosed && (st.closed?.hold ?? summary.data?.closed_mode?.hold ?? false);
+  const gates = st.reasons.session_closed || holding ? [SESSION_GATE, ...GATES] : GATES;
+  const algos: DockAlgo[] = gates.map((g) => ({
     name: g.name, active: last === g.reason,
     status: last === g.reason ? (g.reason === "rebalance" ? "Fired" : "Holding") : st.reasons[g.reason] ? "Armed" : "Watching",
-    line: `${st.reasons[g.reason] ?? 0} decisions · ${g.reason.replace("_", " ")}`,
+    line: g.reason === "session_closed" ? `${st.reasons[g.reason] ?? 0} ticks held · equities closed` : `${st.reasons[g.reason] ?? 0} decisions · ${g.reason.replace("_", " ")}`,
   }));
   const coverage = Math.min(100, Math.round((shares ? st.hedge / shares : 0) * 100));
   const orders = st.log.filter((l) => l.action === "order" && l.qty !== 0).slice(-8).reverse();
@@ -250,6 +258,7 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
       {st.status === "reconnecting" && <div role="alert" style={{ fontSize: 13, color: "#8A5A00" }}>Connection to the backend dropped; reconnecting…</div>}
       {st.error && <div style={{ fontSize: 13, color: "#5A627A" }}>Engine message: {st.error}</div>}
       {replayAlert}
+      <ClosedBanner session={session} replay={source === "replay"} hold={holding} />
       <TopRow
         question={question} venues={entry.q?.venues ?? ["Polymarket"]} marketTag={<span style={{ display: "inline-flex", gap: 6 }}>{sourceTag}<Tag tone="neutral">{direction === "down_on_yes" ? "hedging the YES outcome" : "hedging the NO outcome"}</Tag></span>}
         pBig={p == null ? "—" : `${Math.round(p * 100)}¢`} pSpark={st.prices.slice(-60)}
@@ -263,6 +272,7 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
         driftLabel="Priced-in drift since start (mapping estimate)" drift={priced == null ? "n/a" : fmtPct(priced, 2)}
       />
       <AlgoDock label={running ? "04 · ENGINE GATES · AI FIT" : "04 · ENGINE GATES · DEFAULT SPEC"} algos={algos} tag={<span style={{ display: "inline-flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>{gateTag}{fitTag}{holdTag}{sourceTag}</span>} />
+      <WeekendPanel id={id} summary={summary.data ?? null} st={st} replay={source === "replay"} ticker={ticker} />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,340px),1fr))", gap: 16, alignItems: "stretch" }}>
         <PortfolioPanel
           tag={<Tag tone={scope.tone} title={scope.title}>{scope.name}</Tag>}
@@ -272,7 +282,7 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
           ratio={coverage} ratioLabel={`Coverage (target ${Math.round((summary.data?.target_coverage ?? 0.5) * 100)}%)`}
           footL={st.brokerHedge != null ? `${scope.filledVerb} ${st.brokerHedge.toLocaleString("en-US")} sh short · ${st.fills} fills` : `Status ${st.status}`} footR={`p50 ${fmtNs(p50)} · p99 ${fmtNs(p99)}`}
         />
-        <TradesPanel trades={trades} tag={sourceTag} empty={st.decisions ? `No orders yet — the gates are holding (${st.decisions} decisions).` : "Waiting for the first tick…"} />
+        <TradesPanel trades={trades} tag={sourceTag} empty={holding ? "No equity orders while the market is closed: the algo holds; the staged plan (hedge B) covers the open." : st.decisions ? `No orders yet — the gates are holding (${st.decisions} decisions).` : "Waiting for the first tick…"} />
       </div>
       <Label style={{ marginTop: -4 }}>Bridge {id} · {summary.data?.label ?? "engine bridge"}</Label>
     </>

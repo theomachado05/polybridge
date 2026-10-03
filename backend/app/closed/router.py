@@ -1,4 +1,4 @@
-"""Routes: GET /session (now or ?at=) and GET /closed/expected-gap.
+"""Routes: GET /session (now or ?at=), GET /closed/expected-gap (with the evidence gate) and GET /closed/evidence.
 
 The expected-gap route reads the app's closure tracker (fed by bridges). When the tracker has no price at the last
 close for a Polymarket market, it seeds the tracker once from the CLOB price history around the close
@@ -19,6 +19,9 @@ from typing import Any, Awaitable, Callable, Literal
 import httpx
 from fastapi import APIRouter, HTTPException, Query, Request
 
+from .evidence import gate as evidence_gate
+from .evidence import hedge_evidence, market_evidence
+from .evidence import load as load_evidence
 from .gap import GapRates, expected_gap_for, load_rates
 from .session import check_supported, now_utc, session_at
 from .tracker import ClosureState, ClosureTracker, market_key, tracker_for
@@ -127,9 +130,31 @@ async def get_expected_gap(request: Request, market_source: str = Query(min_leng
                              session=state.session, close_at=state.close_at, p_close=None, p_close_at=None,
                              p_now=None, p_now_at=None, move_pp=float(move_pp), high_pp=None, low_pp=None,
                              n_points=0)
-    gap = expected_gap_for(state, market_source, market_id, ticker=ticker, direction=direction, token_id=token_id,
-                           rates=load_rates())
+    evid = market_evidence(market_source, market_id, token_id)
+    # gap_rates.json is keyed by slug and token: a studied market queried by its Polymarket id alone resolves to its
+    # token through the evidence file, so it gets its own rate rather than the pooled one
+    gap = expected_gap_for(state, market_source, market_id, ticker=ticker, direction=direction,
+                           token_id=token_id or evid.get("token_id"), rates=load_rates())
+    gd = gap.to_dict()
+    # evidence gate: validated only on a market whose own out-of-sample record passes, whose own rate is used, and
+    # whose rate was estimated on this ticker (R2 tested SPY only; other tickers are proxies)
+    gd["validated"], gd["status"], gd["evidence"] = evidence_gate(evid, gap.label, gap.ticker, gap.basis_ticker,
+                                                                  gap.reasons)
     return {"market_source": market_source, "market_id": market_id, "ticker": gap.ticker,
-            "session": state.session.to_dict(), "closure": state.to_dict(), "expected_gap": gap.to_dict(),
-            "move_source": "what_if" if move_pp is not None else "history_seed" if seeded else "tracker",
+            "session": state.session.to_dict(), "closure": state.to_dict(), "expected_gap": gd,
+            "evidence": evid, "move_source": "what_if" if move_pp is not None else "history_seed" if seeded else "tracker",
             "seeded_points": seeded}
+
+
+@router.get("/closed/evidence")
+def get_evidence(market_source: str | None = None, market_id: str | None = None, token_id: str | None = None) -> dict:
+    """The evidence gate: which markets' expected gaps are validated out of sample (R2), and the hedge / opportunity
+    research verdicts (R1, R3) with the labels the UI shows. With a market: that market's own status."""
+    doc = load_evidence()
+    out = {"rule": doc.get("rule"), "validated_markets": sorted(k for k, v in (doc.get("markets") or {}).items()
+                                                                if v.get("validated")),
+           **hedge_evidence(doc), "overnight_gap_replication": doc.get("overnight_gap_replication"),
+           "r2_pooled": doc.get("r2_pooled")}
+    if market_id or token_id:
+        out["market"] = market_evidence(market_source, market_id, token_id, doc)
+    return out

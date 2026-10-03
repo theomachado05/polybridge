@@ -236,7 +236,8 @@ def test_check_replay_market(tmp_path):
 def test_committed_replays_carry_sidecars():
     """Every recording in backend/replays/ says which market it records, with its YES token id."""
     expected = {"fed-hike-25bps-oct-2026": "2589813", "another-fed-hike-2026": "4620900",
-                "russia-eu-military-2026": "4713962", "nvda-230-sep-2026": "3961215"}
+                "russia-eu-military-2026": "4713962", "nvda-230-sep-2026": "3961215",
+                "us-recession-in-2025-weekend": "516710"}
     files = sorted(bridges.REPLAYS_DIR.glob("*.jsonl"))
     assert files
     for f in files:

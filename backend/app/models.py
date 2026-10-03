@@ -73,6 +73,9 @@ class ProposalIn(BaseModel):
     algo: AlgoChoice | None = None  # the AI fit (or a user pick) the bridge should run once approved
     max_contracts: int | None = Field(default=None, ge=1, le=10_000)
     max_notional: float | None = Field(default=None, gt=0, le=10_000_000, allow_inf_nan=False)
+    # Hedge A (closed-market mode): opt in to a simulated PM-leg estimate while equities are closed. Off by default;
+    # research R1 found no evidence it reduces the open-gap loss (hedge proposals only).
+    closed_pm_hedge: bool = False
 
     @model_validator(mode="after")
     def _one_basis(self) -> "ProposalIn":
@@ -108,6 +111,9 @@ class Proposal(BaseModel):
     algo: AlgoChoice | None = None
     max_contracts: int | None = None    # opportunity proposals: approved cap on open option structures
     max_notional: float | None = None   # opportunity proposals: approved cap on premium / max loss at risk, USD
+    # Hedge A opt-in (closed-market mode): while equities are closed, a simulated prediction-market leg sized by the
+    # closed_session_hedge family. An explicit, labelled estimate, never protection (research R1: no evidence).
+    closed_pm_hedge: bool = False
     created_at: dt.datetime
     decided_at: dt.datetime | None = None
     bridge_started_at: dt.datetime | None = None

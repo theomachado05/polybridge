@@ -72,6 +72,8 @@ def create_proposal(body: ProposalIn, request: Request) -> Proposal:
         raise HTTPException(422, "ticker must not be blank.")
     if body.market is not None and body.division == "opportunity":
         # Opportunity on a market: an options trade run by an approved Opportunity-division options family.
+        if body.closed_pm_hedge:
+            raise HTTPException(422, "closed_pm_hedge (hedge A) applies to hedge proposals only.")
         max_c, max_n = _caps(body)
         algo = checked_algo(request, body.algo, body.target_coverage, "opportunity", max_c)
         return _store(request).propose(ticker=ticker, family="opportunity", strategy=_opp_strategy(request, algo.family),
@@ -85,12 +87,15 @@ def create_proposal(body: ProposalIn, request: Request) -> Proposal:
         return _store(request).propose(ticker=ticker, family="hedge", strategy="protective_put", basis="market_event",
                                        label=MARKET_EVENT_LABEL, market=body.market, direction=body.direction,
                                        shares_held=body.shares_held, target_coverage=body.target_coverage,
-                                       algo=checked_algo(request, body.algo, body.target_coverage))
+                                       algo=checked_algo(request, body.algo, body.target_coverage),
+                                       closed_pm_hedge=body.closed_pm_hedge)
     fam = assign_family(body.tags)
     if fam is None:
         raise HTTPException(422, "These tags map to no pre-registered family, so there is no hedge to propose.")
     if fam.value == "opportunity":
         # The pre-registered H2 strategy; an options algo (e.g. eightk_opportunity) may run it on a bridge.
+        if body.closed_pm_hedge:
+            raise HTTPException(422, "closed_pm_hedge (hedge A) applies to hedge proposals only.")
         max_c, max_n = _caps(body)
         return _store(request).propose(ticker=ticker, family=fam.value, strategy=STRATEGY_FOR_FAMILY[fam],
                                        basis="filing_tags", shares_held=body.shares_held,
@@ -101,7 +106,8 @@ def create_proposal(body: ProposalIn, request: Request) -> Proposal:
         raise HTTPException(422, "max_contracts / max_notional apply to opportunity proposals only.")
     return _store(request).propose(ticker=ticker, family=fam.value, strategy=STRATEGY_FOR_FAMILY[fam],
                                    basis="filing_tags", shares_held=body.shares_held,
-                                   target_coverage=body.target_coverage, algo=checked_algo(request, body.algo, body.target_coverage))
+                                   target_coverage=body.target_coverage, algo=checked_algo(request, body.algo, body.target_coverage),
+                                   closed_pm_hedge=body.closed_pm_hedge)
 
 
 @router.get("/proposals", response_model=list[Proposal])

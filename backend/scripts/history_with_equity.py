@@ -39,6 +39,11 @@ division offline: ``opt_mid`` / ``opt_implied_prob`` / ``opt_iv`` and ``opt_legs
 
     cd backend && uv run --env-file ../.env python scripts/history_with_equity.py --options --since 2026-09-16 \\
         --market nvda-230-sep-2026=3961215 --equity NVDA --out replays/nvda-230-sep-2026-history.jsonl
+
+``--start`` / ``--end`` (ISO-8601; a time without an offset is New York time) record a fixed window instead of the last
+month, for any market including a resolved one: the CLOB ``prices-history`` with ``startTs``/``endTs`` at
+``--fidelity`` minutes, and Massive bars of ``--bar-minutes`` minutes over the same window (hourly by default), still
+joined only once each bar has ended. ``scripts/record_weekend.py`` uses it for the closed-market demo replay.
 """
 from __future__ import annotations
 
@@ -61,6 +66,41 @@ from record_book import resolve  # noqa: E402
 from record_equity_bars import fetch as fetch_bars  # noqa: E402
 
 from app.pipeline.ticks import BAR_SPAN_S  # noqa: E402
+
+
+CLOB_HISTORY = "https://clob.polymarket.com/prices-history"
+
+
+def parse_when(s: str):
+    """An ISO-8601 time; without an offset it is New York time. Returns an aware datetime."""
+    import datetime as dt
+    from zoneinfo import ZoneInfo
+    t = dt.datetime.fromisoformat(s.replace("Z", "+00:00"))
+    return t if t.tzinfo is not None else t.replace(tzinfo=ZoneInfo("America/New_York"))
+
+
+def fetch_window(token: str, http: httpx.Client, start_s: int, end_s: int, fidelity_min: int) -> list[dict]:
+    """CLOB price history (YES mid) over [start_s, end_s] at ``fidelity_min``-minute points, as replay rows."""
+    from history_to_replay import parse_history
+    r = http.get(CLOB_HISTORY, params={"market": token, "startTs": start_s, "endTs": end_s,
+                                       "fidelity": fidelity_min}, timeout=30)
+    r.raise_for_status()
+    rows = [x for x in parse_history(r.json()) if start_s <= x["ts_ns"] // 1_000_000_000 <= end_s]
+    if not rows:
+        raise SystemExit("no price history in the window")
+    return rows
+
+
+def fetch_minute_bars(client, ticker: str, start_s: int, end_s: int, minutes: int) -> list[dict]:
+    """Massive ``minutes``-minute aggregates (extended hours included) covering the window, [{"t": start s, "c"}]."""
+    from datetime import datetime, timedelta, timezone
+    d0 = datetime.fromtimestamp(start_s, timezone.utc).date() - timedelta(days=1)
+    d1 = datetime.fromtimestamp(end_s, timezone.utc).date() + timedelta(days=1)
+    rows = client.get_all(f"/v2/aggs/ticker/{ticker.upper()}/range/{minutes}/minute/{d0:%Y-%m-%d}/{d1:%Y-%m-%d}",
+                          {"adjusted": "true", "sort": "asc", "limit": 50000}, max_pages=10) or []
+    bars = [{"t": int(r["t"]) // 1000, "c": float(r["c"])} for r in rows
+            if isinstance(r, dict) and r.get("t") is not None and r.get("c") is not None]
+    return sorted(bars, key=lambda b: b["t"])
 
 
 def join(rows: list[dict], span_s: int, bars: list[dict]) -> list[dict]:
@@ -213,7 +253,7 @@ def since_first_option(rows: list[dict]) -> list[dict]:
 
 
 def write_sidecar(out: Path, *, market_id: str, token: str, question: str, end_date: str | None,
-                  options: dict | None, rows: list[dict], equity: str) -> Path:
+                  options: dict | None, rows: list[dict], equity: str, extra: dict | None = None) -> Path:
     import datetime as dt
     span = [dt.datetime.fromtimestamp(rows[i]["ts_ns"] // 1_000_000_000, dt.timezone.utc).isoformat()
             .replace("+00:00", "Z") for i in (0, -1)]
@@ -225,12 +265,13 @@ def write_sidecar(out: Path, *, market_id: str, token: str, question: str, end_d
                           "scripts/history_with_equity.py" + (" --options" if options else "")}
     if options:
         meta["options"] = options
+    meta.update(extra or {})
     path = out.with_name(out.name + ".meta.json")
     path.write_text(json.dumps(meta, indent=1) + "\n")
     return path
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--market", required=True, metavar="SLUG=ID")
     ap.add_argument("--equity", required=True, metavar="TICKER")
@@ -239,7 +280,17 @@ def main() -> int:
     ap.add_argument("--since", metavar="YYYY-MM-DD|options",
                     help="a New York day: drop earlier rows before the options join (the structure is chosen as of that "
                          "day); 'options': cut after the join, at the day of the first option row")
-    a = ap.parse_args()
+    ap.add_argument("--start", help="record a fixed window from this time (ISO-8601; no offset = New York time)")
+    ap.add_argument("--end", help="end of the fixed window (with --start)")
+    ap.add_argument("--fidelity", type=int, default=60, help="with --start: PM history point spacing in minutes")
+    ap.add_argument("--bar-minutes", type=int, default=0,
+                    help="with --start: Massive bars of this many minutes (default 0: hourly, else daily)")
+    a = ap.parse_args(argv)
+    if bool(a.start) != bool(a.end):
+        ap.error("--start and --end go together")
+    window = (int(parse_when(a.start).timestamp()), int(parse_when(a.end).timestamp())) if a.start else None
+    if window and window[0] >= window[1]:
+        ap.error("--start must be before --end")
     since = None
     if a.since and a.since != "options":
         import datetime as dt
@@ -251,7 +302,7 @@ def main() -> int:
     market_id = a.market.partition("=")[2]
     end_date = None
     with httpx.Client() as http:
-        rows = fetch_history(token, http)
+        rows = fetch_window(token, http, *window, a.fidelity) if window else fetch_history(token, http)
         if a.options and not (market_id.isdigit() and len(market_id) >= 30):
             end_date = (http.get(f"https://gamma-api.polymarket.com/markets/{market_id}", timeout=15).json() or {}).get("endDate")
     from app import chain
@@ -261,12 +312,16 @@ def main() -> int:
         joined = rows
     else:
         lo, hi = rows[0]["ts_ns"] // 1_000_000_000, rows[-1]["ts_ns"] // 1_000_000_000
-        span, bars = fetch_bars(client, a.equity, lo, hi)
+        if window and a.bar_minutes > 0:
+            span_s, bars = a.bar_minutes * 60, fetch_minute_bars(client, a.equity, lo, hi, a.bar_minutes)
+        else:
+            span, bars = fetch_bars(client, a.equity, lo, hi)
+            span_s = BAR_SPAN_S[span]
         if not bars:
             print(f"no Massive bars for {a.equity.upper()}: writing the history without under_px", file=sys.stderr)
             joined = rows
         else:
-            joined = join(rows, BAR_SPAN_S[span], bars)
+            joined = join(rows, span_s, bars)
     if since is not None:
         joined = since_day(joined, since)
         if not joined:
@@ -286,9 +341,21 @@ def main() -> int:
     n_opt = sum(1 for r in joined if "opt_implied_prob" in r)
     print(f"{question or slug}: {len(joined)} points, p {min(ps):.4f}..{max(ps):.4f}, {n_eq} with under_px, "
           f"{n_opt} with an options estimate -> {a.out}")
-    if a.options or a.since:
+    if a.options or a.since or window:
+        extra = None
+        if window:
+            import datetime as dt
+            iso = lambda x: dt.datetime.fromtimestamp(x, dt.timezone.utc).isoformat().replace("+00:00", "Z")  # noqa: E731
+            bars_desc = f"{a.bar_minutes}-minute" if a.bar_minutes > 0 else "hourly (else daily)"
+            extra = {"window": {"start": iso(window[0]), "end": iso(window[1]), "fidelity_min": a.fidelity,
+                                "bar_minutes": a.bar_minutes or None},
+                     "provenance": f"gamma-api.polymarket.com/markets/{market_id} (clobTokenIds[0]); CLOB prices-history "
+                                   f"startTs/endTs at {a.fidelity}-minute fidelity (YES mid); Massive {bars_desc} "
+                                   f"{a.equity.upper()} bars (extended hours included), each joined only once it had "
+                                   f"ended; recorded {dt.date.today().isoformat()} with scripts/history_with_equity.py "
+                                   "--start/--end"}
         meta = write_sidecar(a.out, market_id=market_id, token=token, question=question, end_date=end_date,
-                             options=structure, rows=joined, equity=a.equity)
+                             options=structure, rows=joined, equity=a.equity, extra=extra)
         print(f"sidecar -> {meta}")
     return 0
 

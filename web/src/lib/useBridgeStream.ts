@@ -17,10 +17,15 @@ export function useBridgeStream(id: string, initialSource: string | null): Strea
     const connect = () => {
       es = new EventSource(`${API_URL}/bridges/${id}/stream`);
       es.onopen = () => dispatch({ k: "open" });
-      es.addEventListener("tick", (m) => { const d = json(m as MessageEvent); dispatch({ k: "tick", p: d.p, options: d.options ?? null }); });
+      es.addEventListener("tick", (m) => { const d = json(m as MessageEvent); dispatch({ k: "tick", p: d.p, options: d.options ?? null, closed: d.closed ?? null }); });
       es.addEventListener("decision", (m) => dispatch({ k: "decision", d: json(m as MessageEvent) }));
       es.addEventListener("position", (m) => dispatch({ k: "position", ...json(m as MessageEvent) }));
       es.addEventListener("fill", (m) => dispatch({ k: "fill", f: json(m as MessageEvent) }));
+      // closed-market mode (backend app/closed/bridge_mode.py): the close, staged hedge B, the open handoff, hedge A
+      es.addEventListener("staged", (m) => dispatch({ k: "staged", d: json(m as MessageEvent) }));
+      es.addEventListener("session", (m) => dispatch({ k: "session", d: json(m as MessageEvent) }));
+      es.addEventListener("handoff", (m) => dispatch({ k: "handoff", d: json(m as MessageEvent) }));
+      es.addEventListener("hedge_a", (m) => dispatch({ k: "hedge_a", d: json(m as MessageEvent) }));
       es.addEventListener("error", (m) => { if ("data" in m && (m as MessageEvent).data) dispatch({ k: "error", message: json(m as MessageEvent).message }); });
       es.addEventListener("status", (m) => {
         const d = json(m as MessageEvent);

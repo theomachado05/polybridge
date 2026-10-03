@@ -15,6 +15,9 @@ screenshot pass over the 8 screens (web/e2e/screens/). Both servers are always s
     python3 scripts/e2e_demo.py --reuse         # use servers already on :8000/:3000, stop nothing
     python3 scripts/e2e_demo.py --opportunity   # the Opportunity division (API only): options fit -> approved options
                                                 # proposal -> replay bridge with simulated multi-leg option orders
+    python3 scripts/e2e_demo.py --weekend       # closed-market mode (API only): the recorded weekend on the validated
+                                                # market -> expected gap -> staged order approved -> executes at the
+                                                # first tradable moment -> P&L vs no hedge
 
 Only the standard library is used, so it runs with any python3 >= 3.9. Keys: MASSIVE_API_KEY is read from --env-file
 (default: ./.env, or the main checkout's .env when run from a git worktree) and handed to the backend through
@@ -74,6 +77,19 @@ OPP_TICKER = "NVDA"
 OPP_REPLAY = BACKEND / "replays" / "nvda-230-sep-2026-history.jsonl"
 OPP_FAMILIES = ("binary_vs_spread_arb", "vol_vs_pm_move", "eightk_opportunity")  # what an opportunity bridge runs
 OPP_CAPS = {"max_contracts": 10, "max_notional": 10_000.0}  # the web's DEFAULT_OPP_CAPS
+
+# --weekend: closed-market mode on the recorded weekend (backend/scripts/record_weekend.py picks it by rule): US recession
+# in 2025 (Polymarket 516710, the one market whose expected-gap model is validated out of sample, R2), Friday
+# 2025-04-04 15:30 ET to Monday 2025-04-07 10:00 ET, PM history at 5-minute points and 5-minute SPY bars. 799 rows over
+# 66.5 h: at 3600x the replay takes about 67 s and the staged plan must be approved before Monday 04:00 (about 61 s in).
+# The backend runs WITHOUT the env file here: the replay carries its own (2025) prices, and a live 2026 quote would mix
+# two price times into the hedge's P&L.
+WK_MARKET_ID = "516710"
+WK_TOKEN = "104173557214744537570424345347209544585775842950109756851652855913015295701992"
+WK_TICKER = "SPY"
+WK_REPLAY = BACKEND / "replays" / "us-recession-in-2025-weekend-2025-04-04.jsonl"
+WK_SPEED = "3600"
+WK_ALGO = {"family": "equity_delta_bridge", "params": {"sigma_k": 0.0, "fee_ratio": 0.5, "band_shares": 10.0}}
 
 results: list[tuple[str, bool, str]] = []
 children: list[subprocess.Popen] = []
@@ -542,6 +558,141 @@ def run_opportunity_flow(base: str, args) -> dict:
     return out
 
 
+def run_weekend_flow(base: str, args) -> dict:
+    """Closed-market mode over HTTP: Friday close -> weekend PM move -> expected gap (validated) -> staged order
+    (hedge B) approved through POST /staged/{id}/approve -> executes at the first tradable moment -> P&L vs no hedge."""
+    out: dict = {"mode": "weekend"}
+    market = {"source": "polymarket", "id": args.market_id, "token_id": WK_TOKEN}
+    say("\n== 1. health")
+    s, b = call(base, "GET", "/health")
+    check("GET /health", s == 200 and isinstance(b, dict) and b.get("status") == "ok", f"{s} {b}")
+    if s != 200:
+        raise Abort("backend not healthy")
+
+    say("\n== 2. GET /closed/evidence (the evidence gate)")
+    s, e = call(base, "GET", f"/closed/evidence?market_source=polymarket&market_id={args.market_id}&token_id={WK_TOKEN}")
+    ok = s == 200 and e.get("validated_markets") == ["us-recession-in-2025"] and (e.get("market") or {}).get("validated")
+    check("only the recession market is validated out of sample, and it is this one", bool(ok),
+          f"{s} validated={(e or {}).get('validated_markets')} market={((e or {}).get('market') or {}).get('status')}")
+    check("hedge A is an estimate off by default, hedge B the default, opportunity research-only",
+          s == 200 and e["hedge_a"]["default"] is False and e["hedge_a"]["verdict"] == "no evidence"
+          and e["hedge_b"]["default"] is True and e["opportunity"]["research_only"] is True,
+          f"A={e['hedge_a'].get('verdict')} B={e['hedge_b'].get('verdict')} R3={e['opportunity'].get('verdict')}" if s == 200 else str(s))
+    out["evidence"] = e
+
+    say("\n== 3. POST /proposals (SPY, down on YES, 1,000 shares, 50% cap, equity_delta_bridge), then approve")
+    s, prop = call(base, "POST", "/proposals", {"ticker": args.ticker, "market": market, "direction": "down_on_yes",
+                                                "shares_held": args.shares, "target_coverage": args.coverage,
+                                                "algo": {**WK_ALGO, "source": "user"}})
+    check("proposal created, hedge A not opted in", s == 201 and prop.get("closed_pm_hedge") is False, f"{s}")
+    if s != 201:
+        raise Abort(f"proposal refused: {prop}")
+    s, prop = call(base, "POST", f"/proposals/{prop['id']}/approve")
+    check("approve", s == 200 and prop["status"] == "approved", f"{s}")
+    out["proposal"] = prop
+
+    say("\n== 4. POST /bridges (replay of the recorded weekend, replay sandbox)")
+    s, br = call(base, "POST", "/bridges", {"proposal_id": prop["id"], "source": "replay", "market": market})
+    if not check("bridge started", s == 201 and "bridge_id" in br, f"{s} {br}"):
+        raise Abort("bridge not started")
+    bid = br["bridge_id"]
+    out["bridge_id"] = bid
+
+    say("\n== 5. follow the replay; approve the staged plan once it is sized at the full expected gap")
+    approved: list[dict] = []
+    seen_phases: list[str] = []
+    deadline = time.time() + args.finish_timeout
+    summ = None
+    while time.time() < deadline:
+        s, summ = call(base, "GET", f"/bridges/{bid}")
+        if s != 200:
+            time.sleep(0.3)
+            continue
+        ph = (summ.get("session") or {}).get("phase")
+        if ph and (not seen_phases or seen_phases[-1] != ph):
+            seen_phases.append(ph)
+            g = summ.get("expected_gap") or {}
+            say(f"     [{(summ.get('session') or {}).get('at')}] {ph}: {(summ.get('session') or {}).get('label')}"
+                + (f"; expected gap {g['bp']:.1f} bp ({g['status']})" if g.get("bp") is not None else ""))
+        _, st = call(base, "GET", f"/staged?bridge_id={bid}")
+        for o in (st or {}).get("orders", []):
+            cur = o.get("current") or o["estimate"]
+            if o["status"] == "staged" and cur["gap_bp"] <= -o["full_size_gap_bp"] and o["id"] not in {a["id"] for a in approved}:
+                s2, a = call(base, "POST", f"/staged/{o['id']}/approve", {"qty": o["qty"]})  # the qty seen
+                if s2 == 200:
+                    approved.append(a)
+                    say(f"     approved staged plan {a['id']}: sell {a['qty']} {a['ticker']} for the "
+                        f"{a['session_target'].replace('_', ' ')} (gap {cur['gap_bp']:.1f} bp, {cur.get('status') or a['estimate'].get('status')})")
+        if summ.get("status") != "running":
+            break
+        time.sleep(0.25)
+    check("bridge finished (replay complete)", bool(summ) and summ.get("status") == "finished", f"status={summ and summ.get('status')}")
+    check("a staged plan was approved through POST /staged/{id}/approve before the open", bool(approved), f"{len(approved)} approved")
+
+    say(f"\n== 6. SSE /bridges/{bid}/stream (the whole run)")
+    events, closed = read_sse(base, bid, 10 ** 9, 60, need_fill=False)
+    kinds: dict[str, int] = {}
+    for k, _ in events:
+        kinds[k] = kinds.get(k, 0) + 1
+    say(f"     read {len(events)} events: {kinds}  (server closed stream: {closed})")
+    ticks = [d for k, d in events if k == "tick"]
+    phases = [((d.get("closed") or {}).get("session") or {}).get("phase") for d in ticks]
+    check("every tick carries its session (recorded time): Friday regular -> after-hours -> weekend -> pre-market -> regular",
+          len(ticks) == 799 and phases[0] == "regular" and "weekend" in phases and "pre_market" in phases and phases[-1] == "regular",
+          f"{len(ticks)} ticks, phases {sorted(set(p for p in phases if p))}")
+    gaps = [d["closed"]["expected_gap"] for d in ticks if ((d.get("closed") or {}).get("expected_gap") or {}).get("active")]
+    check("the expected gap is validated (own rate, n closures, 80% band) while closed",
+          bool(gaps) and all(g["validated"] and g["rate_source"] == "market" and g["n"] == 231 and g["band"] for g in gaps),
+          f"{len(gaps)} closed ticks; peak {min(g['bp'] for g in gaps):.1f} bp" if gaps else "none")
+    # every equity fill of the bridge's own algo happens while the regular session is on
+    phase, bad = None, []
+    for k, d in events:
+        if k == "tick":
+            phase = ((d.get("closed") or {}).get("session") or {}).get("phase")
+        elif k == "fill" and d.get("status") == "filled" and phase != "regular":
+            bad.append(phase)
+    check("the equity algo holds while closed (no algo order outside the regular session)",
+          not bad and summ["reasons"].get("session_closed", 0) > 0,
+          f"session_closed holds={summ['reasons'].get('session_closed')} off-session fills={bad}")
+    check("handoff at the open", any(k == "handoff" for k, _ in events))
+
+    say("\n== 7. the staged order (hedge B) and the P&L vs no hedge")
+    _, st = call(base, "GET", f"/staged?bridge_id={bid}")
+    orders = (st or {}).get("orders", [])
+    filled = [o for o in orders if o["status"] == "filled"]
+    o = filled[0] if filled else None
+    check("one approved plan executed at the first tradable moment, on a fresh recorded price, in the sandbox",
+          o is not None and len(filled) == 1 and "APPROVED" in [d["code"] for d in o["decisions"]]
+          and o["clock"] == "replay" and o["ref_source"] == "recorded" and o["broker"] == "sim-replay",
+          f"{o['qty']} @ {o['fill_px']} {o['session_target']} at {o['executed_at']}" if o else f"{[(x['status'], x['qty']) for x in orders]}")
+    out["staged"] = o
+    if o:
+        for d in o["decisions"]:
+            if d["code"] in ("AWAITING_APPROVAL", "APPROVED", "EXPECTED_GAP", "REPLAY_NEEDS_TICK_PRICE", "SUBMITTED", "FILLED"):
+                say(f"     {d['at']}  {d['code']:<24} {d['detail'] or ''}"[:220])
+    cm = summ.get("closed_mode") or {}
+    p = cm.get("pnl") or {}
+    cap = int(args.coverage * args.shares)
+    check("PM + equity legs stay within the approved cap", p and p["carried_hedge_shares"] + p["staged_short_shares"] <= cap,
+          f"carried {p.get('carried_hedge_shares')} + staged {p.get('staged_short_shares')} <= {cap}")
+    check("P&L vs no hedge is reported, marked at the recorded price", bool(p) and p.get("price_source") == "recorded"
+          and abs(p["hedged_usd"] - p["unhedged_usd"] - p["vs_no_hedge_usd"]) < 1e-6, f"{p.get('vs_no_hedge_usd')}")
+    check("hedge A stays off without the opt-in", (summ.get("hedge_a") or {}).get("enabled") is False)
+    out["summary"], out["pnl"] = summ, p
+    for r in cm.get("timeline") or []:
+        if r["event"] in ("close", "plan", "staged_approved", "staged_filled", "open", "staged_cancelled"):
+            say(f"     {r['at_et']}  {r['event']:<17} {(r.get('detail') or '')[:150]}")
+    if p:
+        say(f"     SPY {p['s_close']} at the Friday close -> {p['s_now']} on Monday 10:00 ET ({p['price_source']})")
+        say(f"     holding, no hedge:            ${p['unhedged_usd']:>11,.2f}")
+        say(f"     Friday hedge carried ({p['carried_hedge_shares']:g} sh): ${p['carried_hedge_usd']:>11,.2f}")
+        say(f"     staged order, hedge B ({p['staged_short_shares']:g} sh): ${p['staged_usd']:>11,.2f}")
+        say(f"     algo after the open ({p['algo_short_shares']:g} sh):   ${p['algo_usd']:>11,.2f}")
+        say(f"     hedged total:                 ${p['hedged_usd']:>11,.2f}   (vs no hedge {p['vs_no_hedge_usd']:+,.2f})")
+        say(f"     note: {p['note']}")
+    return out
+
+
 # ------------------------------------------------------------------ screenshots
 
 SCREENS = [("landing", "/"), ("build", "/build"), ("connect", "/connect"), ("pipeline", "/pipeline"),
@@ -655,7 +806,16 @@ def main() -> int:
     ap.add_argument("--opportunity", action="store_true",
                     help="drive the Opportunity division instead (API only): NVDA > $230 end of September, its recorded "
                          "options history, an approved binary_vs_spread_arb proposal, a replay bridge with option legs")
+    ap.add_argument("--weekend", action="store_true",
+                    help="drive closed-market mode instead (API only): the recorded 2025-04-04 weekend on the US "
+                         "recession 2025 market, expected gap, staged order approved, executed, P&L vs no hedge")
     args = ap.parse_args()
+    if args.weekend:  # its own market, ticker, recording and speed unless given explicitly
+        args.no_screens = True
+        args.market_id = WK_MARKET_ID if args.market_id == MARKET_ID else args.market_id
+        args.ticker = WK_TICKER if args.ticker == TICKER else args.ticker
+        args.replay = str(WK_REPLAY) if args.replay == str(DEFAULT_REPLAY) else args.replay
+        args.speed = WK_SPEED if args.speed == SPEED else args.speed
     if args.opportunity:  # its own market, ticker and recording unless given explicitly
         args.no_screens = True
         args.market_id = OPP_MARKET_ID if args.market_id == MARKET_ID else args.market_id
@@ -673,8 +833,8 @@ def main() -> int:
         say(f"PolyBridge e2e demo  backend={base}  web={web}  replay={Path(args.replay).name} x{args.speed}")
         if not shutil.which("uv"):
             raise Abort("uv is not installed (https://docs.astral.sh/uv/)")
-        env_file = None if args.offline else find_env_file(args.env_file)
-        say(f"MASSIVE_API_KEY source: {'env file (' + env_file.name + ')' if env_file else 'none found: live equity quotes degrade to recorded bars'}")
+        env_file = None if (args.offline or args.weekend) else find_env_file(args.env_file)
+        say(f"MASSIVE_API_KEY source: {'env file (' + env_file.name + ')' if env_file else ('not passed (--weekend; the backend may still find a .env above backend/, so its own sim fills can use the current quote; the closure P&L uses recorded prices only)' if args.weekend else 'none found: live equity quotes degrade to recorded bars')}")
         need_web = not args.no_screens
         busy = [(n, p) for n, p in [("backend", args.backend_port)] + ([("web", args.web_port)] if need_web else []) if port_busy(p)]
         if busy and not args.reuse:
@@ -714,7 +874,8 @@ def main() -> int:
             s, _ = call(base, "POST", "/account/reset")  # reused backend: start from a clean sim account (409 if Webull is active)
             say(f"--reuse: reset sim account -> {s}")
 
-        out = run_opportunity_flow(base, args) if args.opportunity else run_flow(base, args)
+        out = (run_weekend_flow(base, args) if args.weekend else
+               run_opportunity_flow(base, args) if args.opportunity else run_flow(base, args))
         if need_web:
             screenshots(web, base, out.get("bridge_id"), args)
     except Abort as e:
@@ -731,7 +892,16 @@ def main() -> int:
 
     failed = [r for r in results if not r[1]]
     say("\n================ SUMMARY ================")
-    if out and out.get("mode") == "opportunity":
+    if out and out.get("mode") == "weekend":
+        sm, p, o = out.get("summary") or {}, out.get("pnl") or {}, out.get("staged") or {}
+        say(f"market   : US recession in 2025? (validated out of sample) -> {args.ticker}, weekend 2025-04-04 -> 2025-04-07")
+        if o:
+            say(f"hedge B  : staged sell {o.get('qty')} approved, filled {o.get('filled_qty')} @ {o.get('fill_px')} "
+                f"({o.get('session_target')}, {o.get('executed_at')}, recorded price)")
+        if p:
+            say(f"P&L      : no hedge ${p['unhedged_usd']:,.2f}; hedged ${p['hedged_usd']:,.2f}; vs no hedge {p['vs_no_hedge_usd']:+,.2f} "
+                f"(staged order alone {p['staged_usd']:+,.2f})")
+    elif out and out.get("mode") == "opportunity":
         f, pk, sm = out.get("fit", {}), out.get("pick") or {}, out.get("summary") or {}
         say(f"market   : {out['market']['question']}")
         if f:

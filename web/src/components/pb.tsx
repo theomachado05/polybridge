@@ -48,7 +48,7 @@ export function LogoTile({ logo }: { logo: string }) {
   return <span className="pb-logo"><span style={{ backgroundImage: `url(${logo})` }} /></span>;
 }
 
-export type TagTone = "demo" | "replay" | "live" | "sim" | "paper" | "ai" | "measured" | "neutral";
+export type TagTone = "demo" | "replay" | "live" | "sim" | "paper" | "ai" | "measured" | "caution" | "neutral";
 const TAG: Record<TagTone, { bg: string; fg: string; dot: string }> = {
   demo: { bg: "rgba(251,191,36,.16)", fg: "#8A5A00", dot: "#FBBF24" },
   replay: { bg: "rgba(154,123,255,.14)", fg: "#5B3FD1", dot: "#9A7BFF" },
@@ -57,6 +57,7 @@ const TAG: Record<TagTone, { bg: string; fg: string; dot: string }> = {
   paper: { bg: "rgba(59,108,246,.12)", fg: "#2B57D6", dot: "#3B6CF6" },
   ai: { bg: "rgba(59,108,246,.12)", fg: "#2B57D6", dot: "#9A7BFF" },
   measured: { bg: "rgba(34,160,107,.12)", fg: "#15804F", dot: "#22A06B" },
+  caution: { bg: "rgba(251,146,60,.16)", fg: "#9A4A00", dot: "#FB923C" },
   neutral: { bg: "rgba(15,22,38,.06)", fg: "#5A627A", dot: "rgba(15,22,38,.3)" },
 };
 export function Tag({ tone, children, title }: { tone: TagTone; children: ReactNode; title?: string }) {

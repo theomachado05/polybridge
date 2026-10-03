@@ -4,11 +4,12 @@
 // route). It lives in the root layout, so it survives client navigation between screens.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
-import { getAccount, getLibrary, getPortfolio, postFit, type AccountOut, type FitOut, type PortfolioOut } from "./api";
+import { getAccount, getLibrary, getPortfolio, getSession, postFit, type AccountOut, type FitOut, type PortfolioOut } from "./api";
+import type { SessionView } from "./closed";
 import { EQ, QUESTIONS, demoImpacts, type EquityPick, type Question } from "./demo";
 import { parseLibrary, type Library } from "./library";
 import { initSim, stepSim, type Sim } from "./sim";
-import { fitDirection, opportunityFit, runnableFit, startOpportunityBridge, startRealBridge, type AppliedFit, type Settings } from "./realBridge.ts";
+import { fitDirection, opportunityFit, reusableBridge, runnableFit, startOpportunityBridge, startRealBridge, type AppliedFit, type Settings } from "./realBridge.ts";
 
 export { algoRunLabel, bridgeFeeGateOff, feeGateOff, gapPerShare, runnableFit } from "./realBridge.ts";
 
@@ -26,6 +27,8 @@ export type BridgeEntry =
       gap: number | null;
       /** "opportunity": an options bridge (Opportunity-division family, simulated option fills). Default hedge. */
       mode?: "hedge" | "opportunity";
+      /** True when the proposal opted in to hedge A (closed_pm_hedge): reuse only matches the same choice. */
+      pmHedge?: boolean;
     };
 
 export interface Remote<T> { status: "loading" | "ok" | "error"; data: T | null; error: string | null }
@@ -42,6 +45,8 @@ const DEFAULT_SETTINGS: Settings = {
   markets: { Polymarket: true, Kalshi: true }, guards: { edge: true, wash: true, auto: false },
 };
 export const TICK_MS = 900;
+/** GET /session refresh (the nav pill, Build's Weekend mode and Portfolio's weekend exposure read it). */
+export const SESSION_MS = 60_000;
 
 /** The prototype's default pick (ca-str / ABNB) when a screen is opened without a wizard selection. */
 export function defaultPick(): { q: Question; eq: EquityPick } {
@@ -86,6 +91,11 @@ interface Store {
   library: Remote<Library>;
   account: Remote<AccountOut>;
   portfolio: Remote<PortfolioOut>;
+  /** The NYSE session now (GET /session, wall clock). A replay bridge's own session comes from its ticks instead. */
+  session: Remote<SessionView>;
+  /** Hedge A opt-in for the next hedge proposal (closed-market mode). Off by default; reset on every new pick. */
+  closedPmHedge: boolean;
+  setClosedPmHedge: (on: boolean) => void;
 }
 
 const Ctx = createContext<Store | null>(null);
@@ -114,6 +124,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [library, setLibrary] = useState<Remote<Library>>(LOADING);
   const [account, setAccount] = useState<Remote<AccountOut>>(LOADING);
   const [portfolio, setPortfolio] = useState<Remote<PortfolioOut>>(LOADING);
+  const [session, setSession] = useState<Remote<SessionView>>(LOADING);
+  const [closedPmHedge, setClosedPmHedge] = useState(false);
   const thinkTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const fitKey = useRef<string | null>(null);
   const opening = useRef<Map<string, Promise<string>>>(new Map());
@@ -126,6 +138,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       (e) => alive && setLibrary({ status: "error", data: null, error: errMsg(e) }),
     );
     return () => { alive = false; clearTimeout(thinkTimer.current); };
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+    const load = () => getSession().then(
+      (d) => alive && setSession({ status: "ok", data: d, error: null }),
+      (e) => alive && setSession((s) => (s.data ? s : { status: "error", data: null, error: errMsg(e) })),
+    );
+    load();
+    const t = setInterval(load, SESSION_MS);
+    return () => { alive = false; clearInterval(t); };
   }, []);
 
   // GET /portfolio and GET /account change as bridges open (hedge status, cash), so they are re-read on every
@@ -156,8 +179,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     thinkTimer.current = setTimeout(() => setThinking(false), 900);
   }, []);
 
-  const setQuestion = useCallback((q: Question | null) => { setQuestionS(q); setEquityS(null); setInstS(null); setQuery(""); if (q) think(); else setThinking(false); }, [think]);
-  const setEquity = useCallback((e: EquityPick | null) => { setEquityS(e); setInstS(null); setQuery(""); if (e) think(); else setThinking(false); }, [think]);
+  const setQuestion = useCallback((q: Question | null) => { setQuestionS(q); setEquityS(null); setInstS(null); setQuery(""); setClosedPmHedge(false); if (q) think(); else setThinking(false); }, [think]);
+  const setEquity = useCallback((e: EquityPick | null) => { setEquityS(e); setInstS(null); setQuery(""); setClosedPmHedge(false); if (e) think(); else setThinking(false); }, [think]);
   const patchEquity = useCallback((t: string, patch: Partial<EquityPick>) => setEquityS((e) => (e && e.t === t ? { ...e, ...patch } : e)), []);
   const setInst = useCallback((id: string | null) => { setInstS(id); setQuery(""); if (id) think(); else setThinking(false); }, [think]);
   const updateSettings = useCallback((p: Partial<Settings>) => setSettings((s) => ({ ...s, ...p })), []);
@@ -182,21 +205,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const openBridge = useCallback((q: Question, eq: EquityPick, instId: string): Promise<string> => {
     const key = `${q.id}|${eq.t}`;
-    // Reuse a live bridge already open for this market and ticker.
-    const existing = bridges.find((b) => b.kind === "live" && b.q?.id === q.id && b.eq?.t === eq.t);
+    const openKey = `${key}|${closedPmHedge ? "pmHedge" : "plain"}`;
+    // Reuse a live bridge already open for this market and ticker, started under the same hedge A choice.
+    const existing = reusableBridge(bridges, q.id, eq.t, closedPmHedge);
     if (existing) { setActiveId(existing.id); setBridgeNote(null); return Promise.resolve(existing.id); }
-    const inflight = opening.current.get(key);
+    const inflight = opening.current.get(openKey);
     if (inflight) return inflight;
     const run = (async () => {
       try {
         if (q.real && instId !== "shares") throw new Error("the engine runs only the dynamic short-shares hedge; option and contract hedges are demo-only");
         const mine = fit && fit.key === key && fit.status === "ok" ? fit.data : null;
         const want = runnableFit(mine);
-        const { bridgeId, gap, applied } = await startRealBridge(q, eq, settings.maxHedge, undefined, want);
+        const { bridgeId, gap, applied } = await startRealBridge(q, eq, settings.maxHedge, undefined, want, { closedPmHedge });
         const unapplied = mine?.family && !applied
           ? { family: mine.family, preset_index: mine.preset_index ?? null, why: mine.division !== "hedge" ? `${mine.division} families do not run on a hedge bridge` : "no preset" }
           : null;
-        const entry: BridgeEntry = { id: `live:${bridgeId}`, kind: "live", bridgeId, q, eq, inst: instId, fit: applied, unapplied, gap };
+        const entry: BridgeEntry = { id: `live:${bridgeId}`, kind: "live", bridgeId, q, eq, inst: instId, fit: applied, unapplied, gap, pmHedge: closedPmHedge };
         setBridges((bs) => (bs.some((b) => b.id === entry.id) ? bs : [...bs, entry]));
         setActiveId(entry.id);
         setBridgeNote(null);
@@ -206,12 +230,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setBridgeNote(`No engine bridge on the backend (${errMsg(e)}). This bridge runs the prototype's simulator.`);
         return addDemoBridge(q, eq, instId);
       } finally {
-        opening.current.delete(key);
+        opening.current.delete(openKey);
       }
     })();
-    opening.current.set(key, run);
+    opening.current.set(openKey, run);
     return run;
-  }, [bridges, settings, fit, addDemoBridge, refreshAccount]);
+  }, [bridges, settings, fit, closedPmHedge, addDemoBridge, refreshAccount]);
 
   const runFit = useCallback((q: Question, eq: EquityPick) => {
     const key = `${q.id}|${eq.t}`;
@@ -266,8 +290,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const value = useMemo<Store>(() => ({
     question, equity, inst, query, thinking, setQuestion, setEquity, patchEquity, setInst, setQuery,
     settings, updateSettings, bridges, activeId, bridgeNote, setActive: setActiveId, addDemoBridge, seedDemo, openBridge,
-    fit, runFit, oppFit, openOpportunity, library, account, portfolio,
-  }), [question, equity, inst, query, thinking, setQuestion, setEquity, patchEquity, setInst, settings, updateSettings, bridges, activeId, bridgeNote, addDemoBridge, seedDemo, openBridge, fit, runFit, oppFit, openOpportunity, library, account, portfolio]);
+    fit, runFit, oppFit, openOpportunity, library, account, portfolio, session, closedPmHedge, setClosedPmHedge,
+  }), [question, equity, inst, query, thinking, setQuestion, setEquity, patchEquity, setInst, settings, updateSettings, bridges, activeId, bridgeNote, addDemoBridge, seedDemo, openBridge, fit, runFit, oppFit, openOpportunity, library, account, portfolio, session, closedPmHedge]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

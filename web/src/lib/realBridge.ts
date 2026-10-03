@@ -30,6 +30,15 @@ export const feeGateOff = (q: Question, eq: EquityPick, fit: AppliedFit | null =
  *  started with (null when unknown, e.g. a bridge opened from its URL or an opportunity bridge). */
 export const bridgeFeeGateOff = (gap: number | null | undefined, running: AppliedFit | null) => gap === 0 && !running;
 
+/** The open live hedge bridge Build may reuse for this pick, or undefined. It must match the market, the ticker AND
+ *  the hedge A choice: a bridge started with hedge A on is never handed back to a pick that has it off (the default),
+ *  nor the reverse, so the bridge always runs what the approval box said. Opportunity bridges are never reused here. */
+export function reusableBridge<B extends { kind: string; mode?: string; q?: { id: string } | null; eq?: { t: string } | null; pmHedge?: boolean }>(
+  bridges: readonly B[], qId: string, ticker: string, closedPmHedge: boolean): B | undefined {
+  return bridges.find((b) => b.kind === "live" && b.mode !== "opportunity" && b.q?.id === qId && b.eq?.t === ticker
+    && (b.pmHedge === true) === closedPmHedge);
+}
+
 const sameMarket = (p: Proposal, m: NonNullable<Question["real"]>) => p.market?.source === m.source && p.market?.id === m.id;
 
 /** The algo a bridge runs: a catalog family plus the preset the AI fit picked. */
@@ -72,7 +81,7 @@ export function fitDirection(q: Pick<Question, "real">, eq: Pick<EquityPick, "di
  *  approved one (POST /bridges is idempotent per proposal, so this re-attaches to its bridge, or finally starts
  *  the bridge if an earlier attempt failed after approval), else a pending one, which is approved here. */
 export async function startRealBridge(q: Question, eq: EquityPick, maxHedge: string, api: BridgeApi = defaultApi,
-  fit: AppliedFit | null = null): Promise<{ bridgeId: string; gap: number; applied: AppliedFit | null }> {
+  fit: AppliedFit | null = null, opts: { closedPmHedge?: boolean } = {}): Promise<{ bridgeId: string; gap: number; applied: AppliedFit | null }> {
   const { approveProposal, createProposal, getEquity, listProposals, startBridge } = api;
   const m = q.real;
   if (!m) throw new Error("this market is from the demo set, not the live search");
@@ -86,11 +95,13 @@ export async function startRealBridge(q: Question, eq: EquityPick, maxHedge: str
   const coverage = fit ? cap : Math.min(0.5, cap);
   const sharesHeld = eq.held || 500;
   const market = { source: m.source, id: m.id, token_id: m.token_id };
+  // Hedge A (closed-market mode) is an explicit opt-in on the proposal; the key is sent only when opted in.
+  const pmHedge = opts.closedPmHedge === true;
   // Reuse only a proposal approved for exactly these terms: the bridge runs what was approved, so an older approval
   // at another coverage or position size would hedge more (or less) than the screen says.
   const mine = (await listProposals().catch(() => [] as Proposal[]))
     .filter((p) => p.ticker === eq.t && p.family === "hedge" && sameMarket(p, m) && (p.direction ?? "down_on_yes") === eq.direction
-      && sameAlgo(p, fit) && sameNum(p.target_coverage, coverage) && sameNum(p.shares_held, sharesHeld));
+      && sameAlgo(p, fit) && sameNum(p.target_coverage, coverage) && sameNum(p.shares_held, sharesHeld) && (p.closed_pm_hedge === true) === pmHedge);
   const approved = mine.find((p) => p.status === "approved");
   const pending = mine.find((p) => p.status === "proposed");
   let ok: Proposal;
@@ -98,7 +109,7 @@ export async function startRealBridge(q: Question, eq: EquityPick, maxHedge: str
   else if (pending) ok = await approveProposal(pending.id);
   else {
     const algo = fit ? { algo: { family: fit.family, preset_index: fit.preset_index ?? undefined, source: "ai_fit" as const } } : {};
-    const prop = await createProposal({ ticker: eq.t, market, direction: eq.direction, shares_held: sharesHeld, target_coverage: coverage, ...algo });
+    const prop = await createProposal({ ticker: eq.t, market, direction: eq.direction, shares_held: sharesHeld, target_coverage: coverage, ...algo, ...(pmHedge ? { closed_pm_hedge: true } : {}) });
     ok = prop.status === "approved" ? prop : await approveProposal(prop.id);
   }
   const gap = gapPerShare(spot, eq.move);
