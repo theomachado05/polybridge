@@ -7,6 +7,13 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .routes import router
 from .store import ProposalStore
+from .markets import router as markets_router
+from .verdicts import router as verdicts_router
+from .equities import router as equities_router
+from .hedges import router as hedges_router
+from .mapping import router as mapping_router
+from .bridges import router as bridges_router
+from .portfolio import router as portfolio_router
 
 
 async def _validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
@@ -18,9 +25,16 @@ async def _validation_error(_: Request, exc: RequestValidationError) -> JSONResp
 def create_app() -> FastAPI:
     app = FastAPI(title="PolyBridge backend", version="0.1.0")
     app.state.store = ProposalStore()
-    app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:3000"], allow_methods=["*"], allow_headers=["*"])
+    app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"], allow_methods=["*"], allow_headers=["*"])
     app.add_exception_handler(RequestValidationError, _validation_error)
     app.include_router(router)
+    app.include_router(verdicts_router)
+    app.include_router(markets_router)
+    app.include_router(equities_router)
+    app.include_router(hedges_router)
+    app.include_router(mapping_router)
+    app.include_router(bridges_router)
+    app.include_router(portfolio_router)
     return app
 
 

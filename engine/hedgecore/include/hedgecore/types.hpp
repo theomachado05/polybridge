@@ -14,6 +14,10 @@ struct HedgeSpec {
   std::int64_t max_staleness_ns = 2'000'000'000;  // ticks older than this are ignored
   double sigma_k = 2.0;                           // SigmaGate threshold in std devs of dp
   double sigma_alpha = 0.05;                      // EWMA weight for dp^2
+  double gap_per_share = 0;                       // J, $ of hedge benefit per share per unit of dp; fee gate active when > 0
+  double fee_per_share = 0.0035;                  // $/share commission
+  double half_spread = 0.0;                       // $/share
+  double min_benefit_ratio = 1.0;                 // trade only if benefit >= cost * ratio
 };
 
 struct Tick {
@@ -22,7 +26,7 @@ struct Tick {
 };
 
 enum class Action : std::uint8_t { Hold, Order };
-enum class Reason : std::uint8_t { Invalid, Stale, BelowSigma, InsideBand, Rebalance, RiskCapped };
+enum class Reason : std::uint8_t { Invalid, Stale, BelowSigma, InsideBand, Rebalance, RiskCapped, BelowFees };
 
 struct Decision {
   Action action;

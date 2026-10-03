@@ -51,3 +51,53 @@ def test_build_tag_events_single_tag():
     assert list(ev.ticker) == ["MSFT", "BRK.B"]
     empty = build_tag_events(_client(), "cfo_appointment", "2024-01-01", "2024-12-31", UNIVERSE, CAL)
     assert empty.empty and "t_0" in empty.columns
+
+
+def test_disclosures_without_tickers_key():
+    # Test that disclosures without the tickers key fall back to ticker field
+    client = FakeClient({
+        "missing_tickers_tag": [
+            {"accession_number": "a1", "cik": "1", "filing_date": "2024-03-01",
+             "filing_url": "https://www.sec.gov/Archives/edgar/data/1/a1.txt", "supporting_text": "",
+             "ticker": "AAPL"}  # Has ticker but no tickers
+        ]
+    })
+    # Should use ticker as single-ticker list and include AAPL since it's in the universe
+    ev = build_tag_events(client, "missing_tickers_tag", "2024-01-01", "2024-12-31", UNIVERSE, CAL)
+    assert list(ev.ticker) == ["AAPL"]
+    assert "t_0" in ev.columns
+
+
+def test_mixed_valid_and_missing_tickers():
+    # Test rows mixing valid tickers with missing/None values
+    client = FakeClient({
+        "mixed_tickers_tag": [
+            disclosure("a1", "1", ["AAPL"], "2024-03-01"),  # Valid
+            {"accession_number": "a2", "cik": "2", "tickers": None, "filing_date": "2024-03-02",
+             "filing_url": "https://www.sec.gov/Archives/edgar/data/2/a2.txt", "supporting_text": ""},  # None tickers
+            disclosure("a3", "3", [], "2024-03-03"),  # Empty list tickers
+            disclosure("a4", "4", ["MSFT"], "2024-03-04"),  # Valid
+        ]
+    })
+    ev = build_tag_events(client, "mixed_tickers_tag", "2024-01-01", "2024-12-31", UNIVERSE, CAL)
+    # Should only have AAPL and MSFT (rows with None and empty tickers are filtered out)
+    assert set(ev.ticker) == {"AAPL", "MSFT"}
+    assert len(ev) == 2
+
+
+def test_ticker_singular_fallback_when_tickers_absent():
+    # Test that ticker (singular) is used as fallback when tickers column is absent
+    client = FakeClient({
+        "ticker_fallback_tag": [
+            {"accession_number": "a1", "cik": "1", "filing_date": "2024-03-01",
+             "filing_url": "https://www.sec.gov/Archives/edgar/data/1/a1.txt", "supporting_text": "",
+             "ticker": "AAPL"},
+            {"accession_number": "a2", "cik": "2", "filing_date": "2024-03-02",
+             "filing_url": "https://www.sec.gov/Archives/edgar/data/2/a2.txt", "supporting_text": "",
+             "ticker": "MSFT"},
+        ]
+    })
+    ev = build_tag_events(client, "ticker_fallback_tag", "2024-01-01", "2024-12-31", UNIVERSE, CAL)
+    # Should have AAPL and MSFT using the ticker field as fallback
+    assert set(ev.ticker) == {"AAPL", "MSFT"}
+    assert len(ev) == 2

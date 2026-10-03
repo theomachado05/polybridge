@@ -871,6 +871,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "fastapi" },
+    { name = "httpx" },
     { name = "polybridge-research" },
     { name = "pydantic" },
     { name = "uvicorn", extra = ["standard"] },
@@ -888,6 +889,7 @@ engine = [
 [package.metadata]
 requires-dist = [
     { name = "fastapi", specifier = ">=0.115" },
+    { name = "httpx", specifier = ">=0.28.1" },
     { name = "polybridge-research", editable = "../research" },
     { name = "pydantic", specifier = ">=2.7" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.30" },
@@ -914,6 +916,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "matplotlib", specifier = ">=3.8" },
+    { name = "nbformat", marker = "extra == 'dev'", specifier = ">=5.9" },
     { name = "numpy", specifier = ">=2.0" },
     { name = "pandas", specifier = ">=2.2" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },

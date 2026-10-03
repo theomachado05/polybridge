@@ -72,3 +72,34 @@ def test_share_class_ticker_normalized(client):
     r = client.post("/proposals", json={"ticker": "brk/b", "tags": ["material_litigation"], "shares_held": 10})
     assert r.status_code == 201
     assert r.json()["ticker"] == "BRK.B"
+
+
+# --- market-event proposals (the exact body web/src/components/ProposePanel.tsx sends) -------------
+
+FED = {"source": "polymarket", "id": "2589813", "token_id": "55159722761418013044126414276680602270318000841690689684819994448621694923050"}
+UI_MARKET_BODY = {"ticker": "IWM", "market": FED, "direction": "down_on_yes", "shares_held": 400, "target_coverage": 0.5}
+
+
+def test_market_event_proposal_from_ui_body(client):
+    r = client.post("/proposals", json=UI_MARKET_BODY)
+    assert r.status_code == 201
+    p = r.json()
+    assert p["family"] == "hedge" and p["strategy"] == "protective_put" and p["basis"] == "market_event"
+    assert p["label"] == "Product hedge — no confirmatory claim"
+    assert p["market"]["id"] == "2589813" and p["direction"] == "down_on_yes" and p["status"] == "proposed"
+    assert client.post(f"/proposals/{p['id']}/approve").json()["status"] == "approved"
+
+
+def test_filing_proposal_basis(client):
+    assert _propose(client).json()["basis"] == "filing_tags"
+
+
+@pytest.mark.parametrize("body", [
+    {"ticker": "IWM", "market": FED, "shares_held": 400},  # no direction
+    {"ticker": "IWM", "market": FED, "direction": "sideways", "shares_held": 400},
+    {"ticker": "IWM", "market": FED, "direction": "down_on_yes", "tags": ["material_litigation"], "shares_held": 400},
+    {"ticker": "IWM", "shares_held": 400},  # neither tags nor market
+    {"ticker": "IWM", "tags": [], "shares_held": 400},
+])
+def test_proposal_body_must_pick_one_basis(client, body):
+    assert client.post("/proposals", json=body).status_code == 422

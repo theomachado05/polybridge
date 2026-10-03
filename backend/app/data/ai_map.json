@@ -1,0 +1,3484 @@
+{
+ "generated_at": "2026-10-03T01:22:02",
+ "generator": "claude subagents (Sonnet 5.5), precomputed 2026-10-03; AI estimate, not advice",
+ "universe_fetched_at": "2026-10-03T01:17:29.294536",
+ "items": {
+  "polymarket:5126779": {
+   "question": "Will Indiana enact a data center moratorium by December 31, 2027?",
+   "mappings": [
+    {
+     "ticker": "VRT",
+     "direction": "down_on_yes",
+     "impact_pct": 1.6,
+     "rationale": "Indiana moratorium would curb data center buildout, cutting demand for power and cooling gear."
+    },
+    {
+     "ticker": "DLR",
+     "direction": "down_on_yes",
+     "impact_pct": 0.8,
+     "rationale": "Data center REIT faces construction limits if Indiana enacts a moratorium."
+    },
+    {
+     "ticker": "EQIX",
+     "direction": "down_on_yes",
+     "impact_pct": 0.56,
+     "rationale": "Colocation operator exposed to restricted new capacity in Indiana."
+    },
+    {
+     "ticker": "ETN",
+     "direction": "down_on_yes",
+     "impact_pct": 0.8,
+     "rationale": "Electrical equipment supplier loses data center-driven order growth."
+    }
+   ]
+  },
+  "polymarket:2589812": {
+   "question": "Will there be no change in Fed interest rates after the October 2026 meeting?",
+   "mappings": []
+  },
+  "polymarket:4662693": {
+   "question": "Will Anthropic announce bankruptcy by December 31, 2027?",
+   "mappings": [
+    {
+     "ticker": "AMZN",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Major Anthropic investor would take a write-down and AI cloud revenue hit."
+    },
+    {
+     "ticker": "GOOGL",
+     "direction": "down_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Investor and cloud partner exposed to Anthropic failure."
+    },
+    {
+     "ticker": "NVDA",
+     "direction": "down_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Signals AI demand bubble risk and weaker compute orders."
+    }
+   ]
+  },
+  "polymarket:562831": {
+   "question": "2026 Balance of Power: R Senate, R House",
+   "mappings": [
+    {
+     "ticker": "ICLN",
+     "direction": "down_on_yes",
+     "impact_pct": 2.5,
+     "rationale": "GOP sweep threatens clean energy subsidies."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "GOP sweep favors fossil fuel policy."
+    },
+    {
+     "ticker": "ITA",
+     "direction": "up_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "GOP control favors defense spending."
+    }
+   ]
+  },
+  "polymarket:2589813": {
+   "question": "Will the Fed increase interest rates by 25 bps after the October 2026 meeting?",
+   "mappings": [
+    {
+     "ticker": "SPY",
+     "direction": "down_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Surprise hike tightens financial conditions and hits equities."
+    },
+    {
+     "ticker": "IWM",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Small caps are rate-sensitive with floating-rate debt."
+    },
+    {
+     "ticker": "XHB",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Homebuilders suffer from higher mortgage rates."
+    }
+   ]
+  },
+  "polymarket:562828": {
+   "question": "2026 Balance of Power: D Senate, D House",
+   "mappings": [
+    {
+     "ticker": "ICLN",
+     "direction": "up_on_yes",
+     "impact_pct": 2.5,
+     "rationale": "Democratic sweep favors clean energy incentives."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Democratic sweep raises regulatory risk for fossil fuels."
+    }
+   ]
+  },
+  "polymarket:665374": {
+   "question": "Will the U.S. invade Iran before 2027?",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "impact_pct": 6.0,
+     "rationale": "Invasion would spike oil prices on Hormuz disruption risk."
+    },
+    {
+     "ticker": "LMT",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Defense primes benefit from escalation."
+    },
+    {
+     "ticker": "SPY",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "War escalation and oil spike hit broad equities."
+    },
+    {
+     "ticker": "JETS",
+     "direction": "down_on_yes",
+     "impact_pct": 6.0,
+     "rationale": "Airlines hurt by jet fuel spike and risk-off."
+    }
+   ]
+  },
+  "polymarket:703257": {
+   "question": "Will the US confirm that aliens exist before 2027?",
+   "mappings": []
+  },
+  "polymarket:637002": {
+   "question": "Will Donald Trump win the Nobel Peace Prize in 2026?",
+   "mappings": []
+  },
+  "polymarket:562802": {
+   "question": "Will the Democratic Party control the House after the 2026 Midterm elections?",
+   "mappings": [
+    {
+     "ticker": "ICLN",
+     "direction": "up_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Democratic House would protect clean energy credits."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "impact_pct": 0.8,
+     "rationale": "Democratic House raises energy regulation risk."
+    }
+   ]
+  },
+  "polymarket:5179198": {
+   "question": "Will Indiana enact a data center moratorium by December 31, 2028?",
+   "mappings": [
+    {
+     "ticker": "VRT",
+     "direction": "down_on_yes",
+     "impact_pct": 1.6,
+     "rationale": "Indiana moratorium would curb data center buildout, cutting demand for power and cooling gear."
+    },
+    {
+     "ticker": "DLR",
+     "direction": "down_on_yes",
+     "impact_pct": 0.8,
+     "rationale": "Data center REIT faces construction limits if Indiana enacts a moratorium."
+    },
+    {
+     "ticker": "EQIX",
+     "direction": "down_on_yes",
+     "impact_pct": 0.56,
+     "rationale": "Colocation operator exposed to restricted new capacity in Indiana."
+    },
+    {
+     "ticker": "ETN",
+     "direction": "down_on_yes",
+     "impact_pct": 0.8,
+     "rationale": "Electrical equipment supplier loses data center-driven order growth."
+    }
+   ]
+  },
+  "polymarket:4752979": {
+   "question": "Will England win on 2026-10-03?",
+   "mappings": []
+  },
+  "polymarket:5170735": {
+   "question": "Will Bitcoin reach $87,500 in October?",
+   "mappings": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Spot bitcoin ETF tracks BTC price directly."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 6.4,
+     "rationale": "Exchange volumes and revenue are highly correlated with bitcoin price."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "impact_pct": 8.0,
+     "rationale": "Large bitcoin treasury makes equity a levered BTC proxy."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "impact_pct": 7.2,
+     "rationale": "Bitcoin miner revenue scales with BTC price."
+    }
+   ]
+  },
+  "polymarket:1365861": {
+   "question": "Will Fl\u00e1vio Bolsonaro finish in second place in the first round of the 2026 Brazilian presidential election?",
+   "mappings": [
+    {
+     "ticker": "EWZ",
+     "direction": "up_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Stronger right-wing showing is market-friendly for Brazil assets."
+    }
+   ]
+  },
+  "polymarket:4037599": {
+   "question": "Will Lula win the most votes in the first round of the 2026 Brazil presidential election?",
+   "mappings": [
+    {
+     "ticker": "EWZ",
+     "direction": "down_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Lula leading raises fiscal-risk concerns for Brazilian assets."
+    }
+   ]
+  },
+  "polymarket:562803": {
+   "question": "Will the Republican Party control the House after the 2026 Midterm elections?",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "impact_pct": 0.8,
+     "rationale": "GOP House supports energy-friendly policy."
+    },
+    {
+     "ticker": "ICLN",
+     "direction": "down_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "GOP House threatens clean energy credits."
+    }
+   ]
+  },
+  "polymarket:4985048": {
+   "question": "Will the price of Bitcoin be above $74,000 on October 3?",
+   "mappings": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Spot bitcoin ETF tracks BTC price directly."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 1.6,
+     "rationale": "Exchange volumes and revenue are highly correlated with bitcoin price."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Large bitcoin treasury makes equity a levered BTC proxy."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "impact_pct": 1.8,
+     "rationale": "Bitcoin miner revenue scales with BTC price."
+    }
+   ]
+  },
+  "polymarket:4985052": {
+   "question": "Will the price of Bitcoin be above $76,000 on October 3?",
+   "mappings": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Spot bitcoin ETF tracks BTC price directly."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 1.6,
+     "rationale": "Exchange volumes and revenue are highly correlated with bitcoin price."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Large bitcoin treasury makes equity a levered BTC proxy."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "impact_pct": 1.8,
+     "rationale": "Bitcoin miner revenue scales with BTC price."
+    }
+   ]
+  },
+  "polymarket:2589810": {
+   "question": "Will the Fed decrease interest rates by 50+ bps after the October 2026 meeting?",
+   "mappings": [
+    {
+     "ticker": "IWM",
+     "direction": "up_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Small caps benefit from lower rates."
+    },
+    {
+     "ticker": "GLD",
+     "direction": "up_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Gold benefits from lower real yields."
+    }
+   ]
+  },
+  "polymarket:5166375": {
+   "question": "Any of the Cornell 7 charged with a felony sex crime?",
+   "mappings": []
+  },
+  "polymarket:5126782": {
+   "question": "Will Oklahoma enact a data center moratorium by December 31, 2027?",
+   "mappings": [
+    {
+     "ticker": "VRT",
+     "direction": "down_on_yes",
+     "impact_pct": 1.6,
+     "rationale": "Oklahoma moratorium would curb data center buildout, cutting demand for power and cooling gear."
+    },
+    {
+     "ticker": "DLR",
+     "direction": "down_on_yes",
+     "impact_pct": 0.8,
+     "rationale": "Data center REIT faces construction limits if Oklahoma enacts a moratorium."
+    },
+    {
+     "ticker": "EQIX",
+     "direction": "down_on_yes",
+     "impact_pct": 0.56,
+     "rationale": "Colocation operator exposed to restricted new capacity in Oklahoma."
+    },
+    {
+     "ticker": "ETN",
+     "direction": "down_on_yes",
+     "impact_pct": 0.8,
+     "rationale": "Electrical equipment supplier loses data center-driven order growth."
+    }
+   ]
+  },
+  "polymarket:4037600": {
+   "question": "Will Flavio Bolsonaro win the most votes in the first round of the 2026 Brazil presidential election?",
+   "mappings": [
+    {
+     "ticker": "EWZ",
+     "direction": "up_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Bolsonaro-camp lead would be market-friendly for Brazil."
+    }
+   ]
+  },
+  "polymarket:5062249": {
+   "question": "Will Bitcoin reach $92,000 September 28-October 4?",
+   "mappings": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Spot bitcoin ETF tracks BTC price directly."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 6.4,
+     "rationale": "Exchange volumes and revenue are highly correlated with bitcoin price."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "impact_pct": 8.0,
+     "rationale": "Large bitcoin treasury makes equity a levered BTC proxy."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "impact_pct": 7.2,
+     "rationale": "Bitcoin miner revenue scales with BTC price."
+    }
+   ]
+  },
+  "polymarket:2589814": {
+   "question": "Will the Fed increase interest rates by 50+ bps after the October 2026 meeting?",
+   "mappings": [
+    {
+     "ticker": "SPY",
+     "direction": "down_on_yes",
+     "impact_pct": 3.5,
+     "rationale": "A 50bp hike would be a major hawkish shock."
+    },
+    {
+     "ticker": "IWM",
+     "direction": "down_on_yes",
+     "impact_pct": 5.0,
+     "rationale": "Small caps are rate-sensitive with floating-rate debt."
+    },
+    {
+     "ticker": "XHB",
+     "direction": "down_on_yes",
+     "impact_pct": 5.0,
+     "rationale": "Homebuilders suffer from higher mortgage rates."
+    }
+   ]
+  },
+  "polymarket:5123857": {
+   "question": "Will Texas enact a data center moratorium by December 31, 2027?",
+   "mappings": [
+    {
+     "ticker": "VRT",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Texas moratorium would curb data center buildout, cutting demand for power and cooling gear."
+    },
+    {
+     "ticker": "DLR",
+     "direction": "down_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Data center REIT faces construction limits if Texas enacts a moratorium."
+    },
+    {
+     "ticker": "EQIX",
+     "direction": "down_on_yes",
+     "impact_pct": 1.05,
+     "rationale": "Colocation operator exposed to restricted new capacity in Texas."
+    },
+    {
+     "ticker": "ETN",
+     "direction": "down_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Electrical equipment supplier loses data center-driven order growth."
+    }
+   ]
+  },
+  "polymarket:2176270": {
+   "question": "Strait of Hormuz traffic returns to normal by December 31?",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Normalized Hormuz flows ease oil supply risk premium."
+    },
+    {
+     "ticker": "OXY",
+     "direction": "down_on_yes",
+     "impact_pct": 4.5,
+     "rationale": "US E&P with high oil beta."
+    },
+    {
+     "ticker": "JETS",
+     "direction": "up_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Lower jet fuel costs help airlines."
+    }
+   ]
+  },
+  "polymarket:5164765": {
+   "question": "Israel accuses Iran/proxies of plane stabbing incident by Oct 31?",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Regional escalation risk adds oil premium."
+    },
+    {
+     "ticker": "ITA",
+     "direction": "up_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Defense demand rises with Mideast tension."
+    }
+   ]
+  },
+  "polymarket:2589811": {
+   "question": "Will the Fed decrease interest rates by 25 bps after the October 2026 meeting?",
+   "mappings": [
+    {
+     "ticker": "SPY",
+     "direction": "up_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "A surprise cut eases financial conditions."
+    },
+    {
+     "ticker": "IWM",
+     "direction": "up_on_yes",
+     "impact_pct": 2.5,
+     "rationale": "Small caps benefit most from lower rates."
+    },
+    {
+     "ticker": "XHB",
+     "direction": "up_on_yes",
+     "impact_pct": 2.5,
+     "rationale": "Homebuilders gain from lower mortgage rates."
+    }
+   ]
+  },
+  "polymarket:4985072": {
+   "question": "Will the price of Bitcoin be above $84,000 on October 3?",
+   "mappings": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "impact_pct": 2.5,
+     "rationale": "Spot bitcoin ETF tracks BTC price directly."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Exchange volumes and revenue are highly correlated with bitcoin price."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "impact_pct": 5.0,
+     "rationale": "Large bitcoin treasury makes equity a levered BTC proxy."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "impact_pct": 4.5,
+     "rationale": "Bitcoin miner revenue scales with BTC price."
+    }
+   ]
+  },
+  "polymarket:5062265": {
+   "question": "Will Bitcoin reach $88,000 September 28-October 4?",
+   "mappings": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Spot bitcoin ETF tracks BTC price directly."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 4.8,
+     "rationale": "Exchange volumes and revenue are highly correlated with bitcoin price."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "impact_pct": 6.0,
+     "rationale": "Large bitcoin treasury makes equity a levered BTC proxy."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "impact_pct": 5.4,
+     "rationale": "Bitcoin miner revenue scales with BTC price."
+    }
+   ]
+  },
+  "polymarket:5082317": {
+   "question": "Will Elon Musk post 40-64 tweets from October 1 to October 3, 2026?",
+   "mappings": []
+  },
+  "polymarket:5126781": {
+   "question": "Will Oklahoma enact a data center moratorium by June 30, 2027?",
+   "mappings": [
+    {
+     "ticker": "VRT",
+     "direction": "down_on_yes",
+     "impact_pct": 1.6,
+     "rationale": "Oklahoma moratorium would curb data center buildout, cutting demand for power and cooling gear."
+    },
+    {
+     "ticker": "DLR",
+     "direction": "down_on_yes",
+     "impact_pct": 0.8,
+     "rationale": "Data center REIT faces construction limits if Oklahoma enacts a moratorium."
+    },
+    {
+     "ticker": "EQIX",
+     "direction": "down_on_yes",
+     "impact_pct": 0.56,
+     "rationale": "Colocation operator exposed to restricted new capacity in Oklahoma."
+    },
+    {
+     "ticker": "ETN",
+     "direction": "down_on_yes",
+     "impact_pct": 0.8,
+     "rationale": "Electrical equipment supplier loses data center-driven order growth."
+    }
+   ]
+  },
+  "polymarket:5062275": {
+   "question": "Will Bitcoin dip to $82,000 September 28-October 4?",
+   "mappings": [
+    {
+     "ticker": "COIN",
+     "direction": "down_on_yes",
+     "impact_pct": 4.8,
+     "rationale": "Exchange volumes and revenue are highly correlated with bitcoin price."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "down_on_yes",
+     "impact_pct": 6.0,
+     "rationale": "Large bitcoin treasury makes equity a levered BTC proxy."
+    },
+    {
+     "ticker": "IBIT",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Spot bitcoin ETF tracks BTC price directly."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "down_on_yes",
+     "impact_pct": 5.4,
+     "rationale": "Bitcoin miner revenue scales with BTC price."
+    }
+   ]
+  },
+  "polymarket:5179177": {
+   "question": "Will Missouri enact a data center moratorium by December 31, 2028?",
+   "mappings": [
+    {
+     "ticker": "VRT",
+     "direction": "down_on_yes",
+     "impact_pct": 1.6,
+     "rationale": "Missouri moratorium would curb data center buildout, cutting demand for power and cooling gear."
+    },
+    {
+     "ticker": "DLR",
+     "direction": "down_on_yes",
+     "impact_pct": 0.8,
+     "rationale": "Data center REIT faces construction limits if Missouri enacts a moratorium."
+    },
+    {
+     "ticker": "EQIX",
+     "direction": "down_on_yes",
+     "impact_pct": 0.56,
+     "rationale": "Colocation operator exposed to restricted new capacity in Missouri."
+    },
+    {
+     "ticker": "ETN",
+     "direction": "down_on_yes",
+     "impact_pct": 0.8,
+     "rationale": "Electrical equipment supplier loses data center-driven order growth."
+    }
+   ]
+  },
+  "polymarket:5180113": {
+   "question": "Bitcoin Up or Down on October 3?",
+   "mappings": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Spot bitcoin ETF tracks BTC price directly."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 4.8,
+     "rationale": "Exchange volumes and revenue are highly correlated with bitcoin price."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "impact_pct": 6.0,
+     "rationale": "Large bitcoin treasury makes equity a levered BTC proxy."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "impact_pct": 5.4,
+     "rationale": "Bitcoin miner revenue scales with BTC price."
+    }
+   ]
+  },
+  "polymarket:682716": {
+   "question": "Will Moshe Feiglin be the next Prime Minister of Israel?",
+   "mappings": []
+  },
+  "polymarket:5126778": {
+   "question": "Will Indiana enact a data center moratorium by June 30, 2027?",
+   "mappings": [
+    {
+     "ticker": "VRT",
+     "direction": "down_on_yes",
+     "impact_pct": 1.6,
+     "rationale": "Indiana moratorium would curb data center buildout, cutting demand for power and cooling gear."
+    },
+    {
+     "ticker": "DLR",
+     "direction": "down_on_yes",
+     "impact_pct": 0.8,
+     "rationale": "Data center REIT faces construction limits if Indiana enacts a moratorium."
+    },
+    {
+     "ticker": "EQIX",
+     "direction": "down_on_yes",
+     "impact_pct": 0.56,
+     "rationale": "Colocation operator exposed to restricted new capacity in Indiana."
+    },
+    {
+     "ticker": "ETN",
+     "direction": "down_on_yes",
+     "impact_pct": 0.8,
+     "rationale": "Electrical equipment supplier loses data center-driven order growth."
+    }
+   ]
+  },
+  "polymarket:3215007": {
+   "question": "Will there be no change in Fed interest rates after the December 2026 meeting?",
+   "mappings": [
+    {
+     "ticker": "IWM",
+     "direction": "down_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "No December cut keeps rates high, weighing on small caps."
+    },
+    {
+     "ticker": "XHB",
+     "direction": "down_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Homebuilders weigh on unchanged mortgage rates."
+    }
+   ]
+  },
+  "polymarket:5062278": {
+   "question": "Will Bitcoin dip to $80,000 September 28-October 4?",
+   "mappings": [
+    {
+     "ticker": "COIN",
+     "direction": "down_on_yes",
+     "impact_pct": 6.4,
+     "rationale": "Exchange volumes and revenue are highly correlated with bitcoin price."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "down_on_yes",
+     "impact_pct": 8.0,
+     "rationale": "Large bitcoin treasury makes equity a levered BTC proxy."
+    },
+    {
+     "ticker": "IBIT",
+     "direction": "down_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Spot bitcoin ETF tracks BTC price directly."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "down_on_yes",
+     "impact_pct": 7.2,
+     "rationale": "Bitcoin miner revenue scales with BTC price."
+    }
+   ]
+  },
+  "polymarket:5081860": {
+   "question": "Kharg Island no longer under Iranian control by October 31?",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Loss of Iranian control implies conflict and export disruption, raising oil."
+    },
+    {
+     "ticker": "LMT",
+     "direction": "up_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Military escalation benefits defense primes."
+    }
+   ]
+  },
+  "polymarket:4662694": {
+   "question": "Will Anthropic announce bankruptcy by December 31, 2028?",
+   "mappings": [
+    {
+     "ticker": "AMZN",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Major Anthropic investor would take a write-down and AI cloud revenue hit."
+    },
+    {
+     "ticker": "GOOGL",
+     "direction": "down_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Investor and cloud partner exposed to Anthropic failure."
+    },
+    {
+     "ticker": "NVDA",
+     "direction": "down_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Signals AI demand bubble risk and weaker compute orders."
+    }
+   ]
+  },
+  "polymarket:4662696": {
+   "question": "Will NuScale announce bankruptcy by December 31, 2027?",
+   "mappings": [
+    {
+     "ticker": "SMR",
+     "direction": "down_on_yes",
+     "impact_pct": 35.0,
+     "rationale": "NuScale bankruptcy is direct equity wipeout risk for SMR."
+    },
+    {
+     "ticker": "OKLO",
+     "direction": "down_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Small modular reactor peer sentiment would weaken."
+    },
+    {
+     "ticker": "CEG",
+     "direction": "down_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Nuclear sentiment mildly hurt."
+    }
+   ]
+  },
+  "polymarket:4906127": {
+   "question": "US announces end of Iranian blockade by October 15, 2026?",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "impact_pct": 3.5,
+     "rationale": "End of blockade eases oil supply risk."
+    },
+    {
+     "ticker": "OXY",
+     "direction": "down_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "US E&P with high oil beta."
+    },
+    {
+     "ticker": "JETS",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Lower fuel costs help airlines."
+    }
+   ]
+  },
+  "polymarket:567621": {
+   "question": "Will China invade Taiwan by end of 2026?",
+   "mappings": [
+    {
+     "ticker": "TSM",
+     "direction": "down_on_yes",
+     "impact_pct": 20.0,
+     "rationale": "Taiwan invasion would cripple the world's leading foundry."
+    },
+    {
+     "ticker": "NVDA",
+     "direction": "down_on_yes",
+     "impact_pct": 12.0,
+     "rationale": "Depends on TSMC for advanced chips."
+    },
+    {
+     "ticker": "SMH",
+     "direction": "down_on_yes",
+     "impact_pct": 12.0,
+     "rationale": "Semiconductor sector hit by supply disruption."
+    },
+    {
+     "ticker": "SPY",
+     "direction": "down_on_yes",
+     "impact_pct": 6.0,
+     "rationale": "Severe global risk-off and supply chain shock."
+    },
+    {
+     "ticker": "AAPL",
+     "direction": "down_on_yes",
+     "impact_pct": 8.0,
+     "rationale": "Heavy reliance on Taiwan and China supply chain."
+    }
+   ]
+  },
+  "polymarket:4641065": {
+   "question": "US x Iran ceasefire continues through October 31?",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Ceasefire holding reduces oil risk premium."
+    },
+    {
+     "ticker": "JETS",
+     "direction": "up_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Lower jet fuel costs help airlines."
+    },
+    {
+     "ticker": "SPY",
+     "direction": "up_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Reduced geopolitical risk supports equities."
+    }
+   ]
+  },
+  "polymarket:1107582": {
+   "question": "US strike on Cuba by December 31?",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "impact_pct": 0.8,
+     "rationale": "Escalation with Cuba adds modest geopolitical risk premium to energy."
+    },
+    {
+     "ticker": "CCL",
+     "direction": "down_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Cruise operators with Caribbean itineraries face disruption risk."
+    },
+    {
+     "ticker": "SPY",
+     "direction": "down_on_yes",
+     "impact_pct": 0.5,
+     "rationale": "Military escalation raises broad risk-off pressure."
+    }
+   ]
+  },
+  "polymarket:1365854": {
+   "question": "Will Luiz In\u00e1cio Lula da Silva finish in second place in the first round of the 2026 Brazilian presidential election?",
+   "mappings": []
+  },
+  "polymarket:4727411": {
+   "question": "Will Jamaica win on 2026-10-02?",
+   "mappings": []
+  },
+  "polymarket:4985083": {
+   "question": "Will the price of Bitcoin be above $88,000 on October 3?",
+   "mappings": [
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Coinbase volumes and revenue track bitcoin price strength."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "MicroStrategy holds large bitcoin treasury, high beta to price."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "impact_pct": 1.3,
+     "rationale": "Bitcoin miner revenue levered to spot price."
+    }
+   ]
+  },
+  "polymarket:682705": {
+   "question": "Will Benjamin Netanyahu be the next Prime Minister of Israel?",
+   "mappings": []
+  },
+  "polymarket:666861": {
+   "question": "Trump out as President before 2027?",
+   "mappings": [
+    {
+     "ticker": "SPY",
+     "direction": "down_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Presidential exit would raise political uncertainty and market volatility."
+    }
+   ]
+  },
+  "polymarket:4985077": {
+   "question": "Will the price of Bitcoin be above $86,000 on October 3?",
+   "mappings": [
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Coinbase volumes and revenue track bitcoin price strength."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "impact_pct": 2.2,
+     "rationale": "MicroStrategy holds large bitcoin treasury, high beta to price."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Bitcoin miner revenue levered to spot price."
+    }
+   ]
+  },
+  "polymarket:4985067": {
+   "question": "Will the price of Bitcoin be above $82,000 on October 3?",
+   "mappings": [
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Coinbase volumes and revenue track bitcoin price strength."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "impact_pct": 4.5,
+     "rationale": "MicroStrategy holds large bitcoin treasury, high beta to price."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "impact_pct": 3.9,
+     "rationale": "Bitcoin miner revenue levered to spot price."
+    }
+   ]
+  },
+  "polymarket:5062327": {
+   "question": "Will Ethereum dip to $2,600 September 28-October 4?",
+   "mappings": [
+    {
+     "ticker": "COIN",
+     "direction": "down_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "ETH drop reduces Coinbase trading and staking revenue."
+    },
+    {
+     "ticker": "ETHA",
+     "direction": "down_on_yes",
+     "impact_pct": 8.0,
+     "rationale": "Spot Ether ETF falls with ETH."
+    },
+    {
+     "ticker": "BMNR",
+     "direction": "down_on_yes",
+     "impact_pct": 10.0,
+     "rationale": "Ether treasury company levered to ETH downside."
+    }
+   ]
+  },
+  "polymarket:3554657": {
+   "question": "Will Anthropic have the best AI model at the end of October 2026?",
+   "mappings": [
+    {
+     "ticker": "GOOGL",
+     "direction": "down_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Anthropic leading would weaken Google's AI-leader narrative."
+    },
+    {
+     "ticker": "AMZN",
+     "direction": "up_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Amazon is a large Anthropic investor and cloud partner."
+    }
+   ]
+  },
+  "polymarket:5170731": {
+   "question": "Will Bitcoin reach $97,500 in October?",
+   "mappings": [
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Coinbase volumes and revenue track bitcoin price strength."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "impact_pct": 4.5,
+     "rationale": "MicroStrategy holds large bitcoin treasury, high beta to price."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "impact_pct": 3.9,
+     "rationale": "Bitcoin miner revenue levered to spot price."
+    }
+   ]
+  },
+  "polymarket:4662584": {
+   "question": "Will OpenAI announce bankruptcy by December 31, 2027?",
+   "mappings": [
+    {
+     "ticker": "MSFT",
+     "direction": "down_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Microsoft has large OpenAI stake and Azure commitments."
+    },
+    {
+     "ticker": "ORCL",
+     "direction": "down_on_yes",
+     "impact_pct": 5.0,
+     "rationale": "Oracle backlog depends heavily on OpenAI compute contracts."
+    },
+    {
+     "ticker": "NVDA",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "OpenAI failure would cut a major GPU demand source."
+    },
+    {
+     "ticker": "CRWV",
+     "direction": "down_on_yes",
+     "impact_pct": 6.0,
+     "rationale": "CoreWeave has major OpenAI contract exposure."
+    }
+   ]
+  },
+  "polymarket:1535973": {
+   "question": "Iran leadership change by December 31?",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Iran regime change could reduce Middle East supply risk and oil prices."
+    },
+    {
+     "ticker": "ITA",
+     "direction": "down_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Reduced regional conflict risk modestly lowers defense premium."
+    }
+   ]
+  },
+  "polymarket:5179176": {
+   "question": "Will Louisiana enact a data center moratorium by December 31, 2028?",
+   "mappings": [
+    {
+     "ticker": "EQIX",
+     "direction": "down_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Data center moratorium would limit Louisiana expansion for operators."
+    },
+    {
+     "ticker": "DLR",
+     "direction": "down_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Digital Realty faces restricted US data center growth."
+    },
+    {
+     "ticker": "META",
+     "direction": "down_on_yes",
+     "impact_pct": 0.5,
+     "rationale": "Meta is building a large Louisiana AI data center."
+    }
+   ]
+  },
+  "polymarket:5082319": {
+   "question": "Will Elon Musk post 90-114 tweets from October 1 to October 3, 2026?",
+   "mappings": []
+  },
+  "polymarket:601922": {
+   "question": "Will Luiz In\u00e1cio Lula da Silva qualify for Brazil's presidential runoff?",
+   "mappings": []
+  },
+  "polymarket:4753005": {
+   "question": "Will Spain win on 2026-10-03?",
+   "mappings": []
+  },
+  "polymarket:2126461": {
+   "question": "Will Crude Oil reach a new all-time high by December 31?",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "New record crude prices would lift energy producers."
+    },
+    {
+     "ticker": "XOM",
+     "direction": "up_on_yes",
+     "impact_pct": 3.5,
+     "rationale": "Exxon earnings are leveraged to crude."
+    },
+    {
+     "ticker": "OXY",
+     "direction": "up_on_yes",
+     "impact_pct": 5.0,
+     "rationale": "Occidental is high-beta to oil prices."
+    }
+   ]
+  },
+  "polymarket:2170255": {
+   "question": "Bab el-Mandeb Strait effectively closed by September 30?",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Red Sea chokepoint closure would spike oil and shipping costs."
+    },
+    {
+     "ticker": "ZIM",
+     "direction": "up_on_yes",
+     "impact_pct": 8.0,
+     "rationale": "Container shipping rates surge on rerouting."
+    },
+    {
+     "ticker": "DAL",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Higher jet fuel costs hurt airlines."
+    }
+   ]
+  },
+  "polymarket:3399459": {
+   "question": "Israel x Iran ceasefire continues through October 31?",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Continued ceasefire lowers Middle East oil risk premium."
+    },
+    {
+     "ticker": "ITA",
+     "direction": "down_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Peace reduces defense risk premium."
+    },
+    {
+     "ticker": "SPY",
+     "direction": "up_on_yes",
+     "impact_pct": 0.8,
+     "rationale": "Lower geopolitical risk supports equities."
+    }
+   ]
+  },
+  "polymarket:5170746": {
+   "question": "Will Bitcoin dip to $60,000 in October?",
+   "mappings": [
+    {
+     "ticker": "COIN",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Bitcoin crash to $60k would hit crypto trading volumes."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "down_on_yes",
+     "impact_pct": 6.0,
+     "rationale": "MicroStrategy's bitcoin treasury is highly levered to price."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "down_on_yes",
+     "impact_pct": 5.0,
+     "rationale": "Miner revenue and margins fall sharply with bitcoin."
+    }
+   ]
+  },
+  "polymarket:3128888": {
+   "question": "US announces end of Iranian blockade by October 31, 2026?",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Ending blockade restores Gulf oil flows and lowers prices."
+    },
+    {
+     "ticker": "XOM",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Lower crude hurts Exxon earnings."
+    },
+    {
+     "ticker": "DAL",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Cheaper jet fuel benefits airlines."
+    },
+    {
+     "ticker": "UAL",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Cheaper jet fuel benefits airlines."
+    }
+   ]
+  },
+  "polymarket:663583": {
+   "question": "Will the Iranian regime fall before 2027?",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Regime collapse likely lowers long-run oil risk premium, though near-term volatility."
+    },
+    {
+     "ticker": "ITA",
+     "direction": "up_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Instability may lift defense demand."
+    }
+   ]
+  },
+  "polymarket:716823": {
+   "question": "Extended FDV above $500M one day after launch?",
+   "mappings": []
+  },
+  "polymarket:4824013": {
+   "question": "Will the US announce a diesel export ban by October 31?",
+   "mappings": [
+    {
+     "ticker": "VLO",
+     "direction": "down_on_yes",
+     "impact_pct": 5.0,
+     "rationale": "Export ban would curb refiners' export margins."
+    },
+    {
+     "ticker": "MPC",
+     "direction": "down_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Diesel export restrictions hit refining margins."
+    },
+    {
+     "ticker": "PSX",
+     "direction": "down_on_yes",
+     "impact_pct": 3.5,
+     "rationale": "Refiner earnings reliant on export demand."
+    },
+    {
+     "ticker": "DAL",
+     "direction": "up_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Domestic diesel/jet price relief."
+    }
+   ]
+  },
+  "polymarket:560317": {
+   "question": "Putin out as President of Russia by December 31, 2026?",
+   "mappings": [
+    {
+     "ticker": "SPY",
+     "direction": "up_on_yes",
+     "impact_pct": 0.3,
+     "rationale": "Regime change in Russia might ease geopolitical tension."
+    },
+    {
+     "ticker": "ITA",
+     "direction": "down_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Reduced Russia threat could lower defense premium."
+    }
+   ]
+  },
+  "polymarket:3491459": {
+   "question": "US-Iran Final Nuclear Deal by October 31, 2026?",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Nuclear deal enables Iranian oil supply and lowers prices."
+    },
+    {
+     "ticker": "ITA",
+     "direction": "down_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Reduced conflict risk lowers defense premium."
+    },
+    {
+     "ticker": "DAL",
+     "direction": "up_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Lower fuel costs help airlines."
+    }
+   ]
+  },
+  "polymarket:4620900": {
+   "question": "Another Fed rate hike in 2026?",
+   "mappings": [
+    {
+     "ticker": "TLT",
+     "direction": "down_on_yes",
+     "impact_pct": 2.5,
+     "rationale": "Rate hike pushes long-term yields up and bond prices down."
+    },
+    {
+     "ticker": "KRE",
+     "direction": "up_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Higher rates widen bank margins modestly."
+    },
+    {
+     "ticker": "XHB",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Higher rates hurt homebuilders."
+    },
+    {
+     "ticker": "SPY",
+     "direction": "down_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Tighter policy pressures equity valuations."
+    }
+   ]
+  },
+  "polymarket:4730298": {
+   "question": "Will Alianza FC win on 2026-10-02?",
+   "mappings": []
+  },
+  "polymarket:3215008": {
+   "question": "Will the Fed increase interest rates by 25 bps after the December 2026 meeting?",
+   "mappings": [
+    {
+     "ticker": "TLT",
+     "direction": "down_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "A December hike pushes yields higher."
+    },
+    {
+     "ticker": "XHB",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Higher mortgage rates hurt homebuilders."
+    },
+    {
+     "ticker": "SPY",
+     "direction": "down_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Tighter policy pressures equity valuations."
+    },
+    {
+     "ticker": "KRE",
+     "direction": "up_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Higher rates modestly lift bank margins."
+    }
+   ]
+  },
+  "polymarket:3554666": {
+   "question": "Will SpaceXAI have the best AI model at the end of October 2026?",
+   "mappings": [
+    {
+     "ticker": "TSLA",
+     "direction": "up_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Musk's xAI/SpaceX AI leadership boosts Musk-linked sentiment."
+    },
+    {
+     "ticker": "NVDA",
+     "direction": "up_on_yes",
+     "impact_pct": 0.5,
+     "rationale": "More competitive AI race supports GPU demand."
+    }
+   ]
+  },
+  "polymarket:3554659": {
+   "question": "Will Google have the best AI model at the end of October 2026?",
+   "mappings": [
+    {
+     "ticker": "GOOGL",
+     "direction": "up_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Google holding best AI model supports Gemini narrative and cloud."
+    },
+    {
+     "ticker": "MSFT",
+     "direction": "down_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Rival leadership weakens OpenAI-aligned Microsoft narrative."
+    }
+   ]
+  },
+  "polymarket:5073563": {
+   "question": "Will Argentina win on 2026-10-03?",
+   "mappings": []
+  },
+  "polymarket:601920": {
+   "question": "Will any presidential candidate win outright in the first round of the Brazil election?",
+   "mappings": []
+  },
+  "polymarket:562829": {
+   "question": "2026 Balance of Power: D Senate, R House",
+   "mappings": [
+    {
+     "ticker": "SPY",
+     "direction": "down_on_yes",
+     "impact_pct": 0.5,
+     "rationale": "Divided Congress outcome modestly changes policy expectations."
+    }
+   ]
+  },
+  "polymarket:4753009": {
+   "question": "Will Czechia win on 2026-10-03?",
+   "mappings": []
+  },
+  "polymarket:5130978": {
+   "question": "US x Iran ceasefire continues through October 15?",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Ceasefire holding eases oil risk premium."
+    },
+    {
+     "ticker": "DAL",
+     "direction": "up_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Lower fuel prices help airlines."
+    },
+    {
+     "ticker": "SPY",
+     "direction": "up_on_yes",
+     "impact_pct": 0.8,
+     "rationale": "Reduced geopolitical risk supports equities."
+    }
+   ]
+  },
+  "polymarket:5062258": {
+   "question": "Will Bitcoin reach $90,000 September 28-October 4?",
+   "mappings": [
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Coinbase volumes and revenue track bitcoin price strength."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "MicroStrategy holds large bitcoin treasury, high beta to price."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "impact_pct": 2.6,
+     "rationale": "Bitcoin miner revenue levered to spot price."
+    }
+   ]
+  },
+  "polymarket:5170771": {
+   "question": "Will Ethereum reach $3,000 in October?",
+   "mappings": [
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Coinbase trading and staking revenue track ETH price."
+    },
+    {
+     "ticker": "ETHA",
+     "direction": "up_on_yes",
+     "impact_pct": 6.0,
+     "rationale": "Spot Ether ETF tracks ETH directly."
+    },
+    {
+     "ticker": "BMNR",
+     "direction": "up_on_yes",
+     "impact_pct": 6.0,
+     "rationale": "Ether treasury company is levered to ETH price."
+    }
+   ]
+  },
+  "polymarket:1193094": {
+   "question": "Will Magdalena Andersson be the next Prime Minister of Sweden?",
+   "mappings": []
+  },
+  "polymarket:1365894": {
+   "question": "Will Renan Santos finish in third place in the first round of the 2026 Brazilian presidential election?",
+   "mappings": []
+  },
+  "polymarket:4730293": {
+   "question": "Will AD Cali win on 2026-10-02?",
+   "mappings": []
+  },
+  "polymarket:4985100": {
+   "question": "Will the price of Bitcoin be above $94,000 on October 3?",
+   "mappings": [
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Coinbase volumes and revenue track bitcoin price strength."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "MicroStrategy holds large bitcoin treasury, high beta to price."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "impact_pct": 1.3,
+     "rationale": "Bitcoin miner revenue levered to spot price."
+    }
+   ]
+  },
+  "polymarket:701494": {
+   "question": "Will Bitcoin reach $120,000 by December 31, 2026?",
+   "mappings": [
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 6.0,
+     "rationale": "Bitcoin at $120k would boost Coinbase volumes and revenue."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "impact_pct": 10.0,
+     "rationale": "MicroStrategy is a levered bitcoin proxy."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "impact_pct": 9.0,
+     "rationale": "Miner revenue levered to bitcoin price."
+    }
+   ]
+  },
+  "polymarket:5130977": {
+   "question": "US x Iran ceasefire continues through October 7?",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "impact_pct": 2.5,
+     "rationale": "Ceasefire holding eases oil risk premium."
+    },
+    {
+     "ticker": "DAL",
+     "direction": "up_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Lower fuel prices help airlines."
+    },
+    {
+     "ticker": "SPY",
+     "direction": "up_on_yes",
+     "impact_pct": 0.6,
+     "rationale": "Reduced geopolitical risk supports equities."
+    }
+   ]
+  },
+  "polymarket:5082386": {
+   "question": "Over $50M committed to the Jumper public sale?",
+   "mappings": []
+  },
+  "polymarket:5123850": {
+   "question": "Will Ohio enact a data center moratorium by December 31, 2027?",
+   "mappings": [
+    {
+     "ticker": "AEP",
+     "direction": "down_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Ohio data center moratorium would curb load growth for the local utility."
+    },
+    {
+     "ticker": "DLR",
+     "direction": "down_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Restrictions on data center builds signal wider regulatory risk for operators."
+    },
+    {
+     "ticker": "VRT",
+     "direction": "down_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Fewer data center builds reduce demand for power and cooling equipment."
+    }
+   ]
+  },
+  "polymarket:5170773": {
+   "question": "Will Ethereum reach $2,800 in October?",
+   "mappings": [
+    {
+     "ticker": "ETHA",
+     "direction": "up_on_yes",
+     "impact_pct": 6.0,
+     "rationale": "Spot ether ETF tracks ETH price directly."
+    },
+    {
+     "ticker": "BMNR",
+     "direction": "up_on_yes",
+     "impact_pct": 9.0,
+     "rationale": "BitMine is a large ether treasury company."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Coinbase revenue is sensitive to ETH price and volumes."
+    }
+   ]
+  },
+  "polymarket:2695686": {
+   "question": "Will Alberto N\u00fa\u00f1ez Feij\u00f3o be the next Prime Minister of Spain?",
+   "mappings": []
+  },
+  "polymarket:4985089": {
+   "question": "Will the price of Bitcoin be above $90,000 on October 3?",
+   "mappings": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "impact_pct": 5,
+     "rationale": "Spot bitcoin ETF tracks BTC price directly."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 7,
+     "rationale": "Coinbase volumes and revenue are levered to crypto prices."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "impact_pct": 10,
+     "rationale": "MicroStrategy is a leveraged bitcoin treasury proxy."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "impact_pct": 8,
+     "rationale": "Bitcoin miners trade with high beta to BTC."
+    }
+   ]
+  },
+  "polymarket:630746": {
+   "question": "Will the Democrats win the Kansas Senate race in 2026?",
+   "mappings": []
+  },
+  "polymarket:3758964": {
+   "question": "Bab el-Mandeb Strait effectively closed by October 31?",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Red Sea closure would lift crude and product prices."
+    },
+    {
+     "ticker": "STNG",
+     "direction": "up_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Product tanker rates rise on longer rerouted voyages."
+    },
+    {
+     "ticker": "FRO",
+     "direction": "up_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Crude tanker rates rise with rerouting."
+    },
+    {
+     "ticker": "ZIM",
+     "direction": "up_on_yes",
+     "impact_pct": 5.0,
+     "rationale": "Container rates spike when Suez routes are disrupted."
+    }
+   ]
+  },
+  "polymarket:5062280": {
+   "question": "Will Bitcoin dip to $78,000 September 28-October 4?",
+   "mappings": [
+    {
+     "ticker": "IBIT",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Spot bitcoin ETF tracks BTC price directly."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "down_on_yes",
+     "impact_pct": 4.2,
+     "rationale": "Coinbase volumes and revenue are levered to crypto prices."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "down_on_yes",
+     "impact_pct": 6.0,
+     "rationale": "MicroStrategy is a leveraged bitcoin treasury proxy."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "down_on_yes",
+     "impact_pct": 4.8,
+     "rationale": "Bitcoin miners trade with high beta to BTC."
+    }
+   ]
+  },
+  "polymarket:4757280": {
+   "question": "Will India win on 2026-10-03?",
+   "mappings": []
+  },
+  "polymarket:5062325": {
+   "question": "Will Ethereum reach $2,800 September 28-October 4?",
+   "mappings": [
+    {
+     "ticker": "ETHA",
+     "direction": "up_on_yes",
+     "impact_pct": 4.8,
+     "rationale": "Spot ether ETF tracks ETH price directly."
+    },
+    {
+     "ticker": "BMNR",
+     "direction": "up_on_yes",
+     "impact_pct": 7.2,
+     "rationale": "BitMine is a large ether treasury company."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 3.2,
+     "rationale": "Coinbase revenue is sensitive to ETH price and volumes."
+    }
+   ]
+  },
+  "polymarket:2100981": {
+   "question": "Will Likud win the most seats in the 2026 Israeli legislative election?",
+   "mappings": []
+  },
+  "polymarket:4970462": {
+   "question": "Will Elon Musk post 180-199 tweets from September 29 to October 6, 2026?",
+   "mappings": []
+  },
+  "polymarket:3887127": {
+   "question": "Umia listed on Binance within 30 days of TGE?",
+   "mappings": []
+  },
+  "polymarket:5170730": {
+   "question": "Will Bitcoin reach $100,000 in October?",
+   "mappings": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "impact_pct": 4.5,
+     "rationale": "Spot bitcoin ETF tracks BTC price directly."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 6.3,
+     "rationale": "Coinbase volumes and revenue are levered to crypto prices."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "impact_pct": 9.0,
+     "rationale": "MicroStrategy is a leveraged bitcoin treasury proxy."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "impact_pct": 7.2,
+     "rationale": "Bitcoin miners trade with high beta to BTC."
+    }
+   ]
+  },
+  "polymarket:701502": {
+   "question": "Will Bitcoin dip to $45,000 by December 31, 2026?",
+   "mappings": [
+    {
+     "ticker": "IBIT",
+     "direction": "down_on_yes",
+     "impact_pct": 6.5,
+     "rationale": "Spot bitcoin ETF tracks BTC price directly."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "down_on_yes",
+     "impact_pct": 9.1,
+     "rationale": "Coinbase volumes and revenue are levered to crypto prices."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "down_on_yes",
+     "impact_pct": 13.0,
+     "rationale": "MicroStrategy is a leveraged bitcoin treasury proxy."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "down_on_yes",
+     "impact_pct": 10.4,
+     "rationale": "Bitcoin miners trade with high beta to BTC."
+    }
+   ]
+  },
+  "polymarket:5082320": {
+   "question": "Will Elon Musk post 115-139 tweets from October 1 to October 3, 2026?",
+   "mappings": []
+  },
+  "polymarket:4757283": {
+   "question": "Will Brazil win on 2026-10-03?",
+   "mappings": []
+  },
+  "polymarket:701496": {
+   "question": "Will Bitcoin reach $100,000 by December 31, 2026?",
+   "mappings": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "impact_pct": 5.5,
+     "rationale": "Spot bitcoin ETF tracks BTC price directly."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 7.7,
+     "rationale": "Coinbase volumes and revenue are levered to crypto prices."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "impact_pct": 11.0,
+     "rationale": "MicroStrategy is a leveraged bitcoin treasury proxy."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "impact_pct": 8.8,
+     "rationale": "Bitcoin miners trade with high beta to BTC."
+    }
+   ]
+  },
+  "polymarket:5126792": {
+   "question": "Will Missouri enact a data center moratorium by June 30, 2027?",
+   "mappings": [
+    {
+     "ticker": "AEE",
+     "direction": "down_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Missouri data center moratorium would curb load growth for the local utility."
+    },
+    {
+     "ticker": "DLR",
+     "direction": "down_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Restrictions on data center builds signal wider regulatory risk for operators."
+    },
+    {
+     "ticker": "VRT",
+     "direction": "down_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Fewer data center builds reduce demand for power and cooling equipment."
+    }
+   ]
+  },
+  "polymarket:5126795": {
+   "question": "Will Louisiana enact a data center moratorium by June 30, 2027?",
+   "mappings": [
+    {
+     "ticker": "ETR",
+     "direction": "down_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Louisiana data center moratorium would curb load growth for the local utility."
+    },
+    {
+     "ticker": "DLR",
+     "direction": "down_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Restrictions on data center builds signal wider regulatory risk for operators."
+    },
+    {
+     "ticker": "VRT",
+     "direction": "down_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Fewer data center builds reduce demand for power and cooling equipment."
+    }
+   ]
+  },
+  "polymarket:559651": {
+   "question": "Xi Jinping out before 2027?",
+   "mappings": [
+    {
+     "ticker": "FXI",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Abrupt Chinese leadership change would raise political uncertainty."
+    },
+    {
+     "ticker": "KWEB",
+     "direction": "down_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "China internet stocks are sensitive to policy and leadership risk."
+    }
+   ]
+  },
+  "polymarket:5170728": {
+   "question": "Will Bitcoin reach $105,000 in October?",
+   "mappings": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "impact_pct": 5,
+     "rationale": "Spot bitcoin ETF tracks BTC price directly."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 7,
+     "rationale": "Coinbase volumes and revenue are levered to crypto prices."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "impact_pct": 10,
+     "rationale": "MicroStrategy is a leveraged bitcoin treasury proxy."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "impact_pct": 8,
+     "rationale": "Bitcoin miners trade with high beta to BTC."
+    }
+   ]
+  },
+  "polymarket:5082318": {
+   "question": "Will Elon Musk post 65-89 tweets from October 1 to October 3, 2026?",
+   "mappings": []
+  },
+  "polymarket:4984993": {
+   "question": "Will the price of Ethereum be above $2,800 on October 3?",
+   "mappings": [
+    {
+     "ticker": "ETHA",
+     "direction": "up_on_yes",
+     "impact_pct": 4.8,
+     "rationale": "Spot ether ETF tracks ETH price directly."
+    },
+    {
+     "ticker": "BMNR",
+     "direction": "up_on_yes",
+     "impact_pct": 7.2,
+     "rationale": "BitMine is a large ether treasury company."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 3.2,
+     "rationale": "Coinbase revenue is sensitive to ETH price and volumes."
+    }
+   ]
+  },
+  "polymarket:5170740": {
+   "question": "Will Bitcoin dip to $75,000 in October?",
+   "mappings": [
+    {
+     "ticker": "IBIT",
+     "direction": "down_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Spot bitcoin ETF tracks BTC price directly."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "down_on_yes",
+     "impact_pct": 5.6,
+     "rationale": "Coinbase volumes and revenue are levered to crypto prices."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "down_on_yes",
+     "impact_pct": 8.0,
+     "rationale": "MicroStrategy is a leveraged bitcoin treasury proxy."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "down_on_yes",
+     "impact_pct": 6.4,
+     "rationale": "Bitcoin miners trade with high beta to BTC."
+    }
+   ]
+  },
+  "polymarket:1321567": {
+   "question": "Will SHEIN have the highest IPO Market Cap 2026?",
+   "mappings": []
+  },
+  "polymarket:4936105": {
+   "question": "Will WTI Crude Oil (WTI) hit (LOW) $80 in October?",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Lower crude prices pressure energy sector earnings."
+    },
+    {
+     "ticker": "XOP",
+     "direction": "down_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "E&P stocks are most sensitive to oil price."
+    },
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "impact_pct": 5.0,
+     "rationale": "Oil fund tracks WTI futures directly."
+    }
+   ]
+  },
+  "polymarket:1366007": {
+   "question": "Will Luiz In\u00e1cio Lula da Silva win the first round of the 2026 Brazilian presidential election by less than 5%?",
+   "mappings": []
+  },
+  "polymarket:682710": {
+   "question": "Will Avigdor Lieberman be the next Prime Minister of Israel?",
+   "mappings": []
+  },
+  "polymarket:3501950": {
+   "question": "Strait of Hormuz traffic returns to normal by October 31?",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Normalized Hormuz flows remove oil supply risk premium."
+    },
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "impact_pct": 5.0,
+     "rationale": "Crude would drop as shipping risk premium fades."
+    },
+    {
+     "ticker": "STNG",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Tanker rates ease as disruption premium fades."
+    },
+    {
+     "ticker": "DAL",
+     "direction": "up_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Lower jet fuel costs help airlines."
+    }
+   ]
+  },
+  "polymarket:5180122": {
+   "question": "Ethereum Up or Down on October 3?",
+   "mappings": [
+    {
+     "ticker": "ETHA",
+     "direction": "up_on_yes",
+     "impact_pct": 2.4,
+     "rationale": "Spot ether ETF tracks ETH price directly."
+    },
+    {
+     "ticker": "BMNR",
+     "direction": "up_on_yes",
+     "impact_pct": 3.6,
+     "rationale": "BitMine is a large ether treasury company."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 1.6,
+     "rationale": "Coinbase revenue is sensitive to ETH price and volumes."
+    }
+   ]
+  },
+  "polymarket:701548": {
+   "question": "Will Ethereum reach $4,000 by December 31, 2026?",
+   "mappings": [
+    {
+     "ticker": "ETHA",
+     "direction": "up_on_yes",
+     "impact_pct": 9.0,
+     "rationale": "Spot ether ETF tracks ETH price directly."
+    },
+    {
+     "ticker": "BMNR",
+     "direction": "up_on_yes",
+     "impact_pct": 13.5,
+     "rationale": "BitMine is a large ether treasury company."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 6.0,
+     "rationale": "Coinbase revenue is sensitive to ETH price and volumes."
+    }
+   ]
+  },
+  "polymarket:630747": {
+   "question": "Will the Republicans win the Kansas Senate race in 2026?",
+   "mappings": []
+  },
+  "polymarket:4970459": {
+   "question": "Will Elon Musk post 160-179 tweets from September 29 to October 6, 2026?",
+   "mappings": []
+  },
+  "polymarket:5170744": {
+   "question": "Will Bitcoin dip to $65,000 in October?",
+   "mappings": [
+    {
+     "ticker": "IBIT",
+     "direction": "down_on_yes",
+     "impact_pct": 6.0,
+     "rationale": "Spot bitcoin ETF tracks BTC price directly."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "down_on_yes",
+     "impact_pct": 8.4,
+     "rationale": "Coinbase volumes and revenue are levered to crypto prices."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "down_on_yes",
+     "impact_pct": 12.0,
+     "rationale": "MicroStrategy is a leveraged bitcoin treasury proxy."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "down_on_yes",
+     "impact_pct": 9.6,
+     "rationale": "Bitcoin miners trade with high beta to BTC."
+    }
+   ]
+  },
+  "polymarket:5170772": {
+   "question": "Will Ethereum reach $2,900 in October?",
+   "mappings": [
+    {
+     "ticker": "ETHA",
+     "direction": "up_on_yes",
+     "impact_pct": 6.0,
+     "rationale": "Spot ether ETF tracks ETH price directly."
+    },
+    {
+     "ticker": "BMNR",
+     "direction": "up_on_yes",
+     "impact_pct": 9.0,
+     "rationale": "BitMine is a large ether treasury company."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Coinbase revenue is sensitive to ETH price and volumes."
+    }
+   ]
+  },
+  "polymarket:5062323": {
+   "question": "Will Ethereum reach $2,900 September 28-October 4?",
+   "mappings": [
+    {
+     "ticker": "ETHA",
+     "direction": "up_on_yes",
+     "impact_pct": 4.8,
+     "rationale": "Spot ether ETF tracks ETH price directly."
+    },
+    {
+     "ticker": "BMNR",
+     "direction": "up_on_yes",
+     "impact_pct": 7.2,
+     "rationale": "BitMine is a large ether treasury company."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 3.2,
+     "rationale": "Coinbase revenue is sensitive to ETH price and volumes."
+    }
+   ]
+  },
+  "polymarket:1163699": {
+   "question": "Clarity Act (H.R.3633) signed into law in 2026?",
+   "mappings": [
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 5.0,
+     "rationale": "Market structure law gives clarity for US crypto exchanges."
+    },
+    {
+     "ticker": "HOOD",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Robinhood crypto revenue benefits from clearer regulation."
+    },
+    {
+     "ticker": "CRCL",
+     "direction": "up_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Clearer rules support stablecoin and crypto adoption."
+    },
+    {
+     "ticker": "GLXY",
+     "direction": "up_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Galaxy Digital benefits from regulatory clarity."
+    }
+   ]
+  },
+  "polymarket:5036103": {
+   "question": "Will the price of Bitcoin be above $84,000 on October 4?",
+   "mappings": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Spot bitcoin ETF tracks BTC price directly."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 4.2,
+     "rationale": "Coinbase volumes and revenue are levered to crypto prices."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "impact_pct": 6.0,
+     "rationale": "MicroStrategy is a leveraged bitcoin treasury proxy."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "impact_pct": 4.8,
+     "rationale": "Bitcoin miners trade with high beta to BTC."
+    }
+   ]
+  },
+  "polymarket:5036098": {
+   "question": "Will the price of Bitcoin be above $82,000 on October 4?",
+   "mappings": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "impact_pct": 2.5,
+     "rationale": "Spot bitcoin ETF tracks BTC price directly."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 3.5,
+     "rationale": "Coinbase volumes and revenue are levered to crypto prices."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "impact_pct": 5.0,
+     "rationale": "MicroStrategy is a leveraged bitcoin treasury proxy."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Bitcoin miners trade with high beta to BTC."
+    }
+   ]
+  },
+  "polymarket:703258": {
+   "question": "Will Jesus Christ return before 2027?",
+   "mappings": []
+  },
+  "polymarket:4713962": {
+   "question": "Russia military action against an EU country by December 31, 2026?",
+   "mappings": [
+    {
+     "ticker": "ITA",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Russian aggression against NATO state boosts defense spending outlook."
+    },
+    {
+     "ticker": "LMT",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Defense primes gain on higher NATO demand."
+    },
+    {
+     "ticker": "VGK",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "European equities fall on direct military conflict risk."
+    }
+   ]
+  },
+  "polymarket:4985057": {
+   "question": "Will the price of Bitcoin be above $78,000 on October 3?",
+   "mappings": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "impact_pct": 2.5,
+     "rationale": "Spot bitcoin ETF tracks BTC price directly."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 3.5,
+     "rationale": "Coinbase volumes and revenue are levered to crypto prices."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "impact_pct": 5.0,
+     "rationale": "MicroStrategy is a leveraged bitcoin treasury proxy."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Bitcoin miners trade with high beta to BTC."
+    }
+   ]
+  },
+  "polymarket:4747307": {
+   "question": "Will SD Eibar win on 2026-10-03?",
+   "mappings": []
+  },
+  "polymarket:5170732": {
+   "question": "Will Bitcoin reach $95,000 in October?",
+   "mappings": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "impact_pct": 4.5,
+     "rationale": "Spot bitcoin ETF tracks BTC price directly."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 6.3,
+     "rationale": "Coinbase volumes and revenue are levered to crypto prices."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "impact_pct": 9.0,
+     "rationale": "MicroStrategy is a leveraged bitcoin treasury proxy."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "impact_pct": 7.2,
+     "rationale": "Bitcoin miners trade with high beta to BTC."
+    }
+   ]
+  },
+  "polymarket:4951230": {
+   "question": "Will WTI Crude Oil (WTI) hit (LOW) $65 in October?",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Oil drop to $65 would pressure energy earnings."
+    },
+    {
+     "ticker": "OXY",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "High-beta producer hurt by lower crude."
+    },
+    {
+     "ticker": "DAL",
+     "direction": "up_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Cheaper jet fuel helps airline margins."
+    }
+   ]
+  },
+  "polymarket:1117222": {
+   "question": "Miguel D\u00edaz-Canel out as leader of Cuba by December 31?",
+   "mappings": []
+  },
+  "polymarket:629708": {
+   "question": "Will the Republicans win the Vermont governor race in 2026?",
+   "mappings": []
+  },
+  "polymarket:1321565": {
+   "question": "Will Stripe have the highest IPO Market Cap 2026?",
+   "mappings": []
+  },
+  "polymarket:4662695": {
+   "question": "Will Anthropic announce bankruptcy by December 31, 2029?",
+   "mappings": [
+    {
+     "ticker": "AMZN",
+     "direction": "down_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Major Anthropic investor would take writedown and AI strategy hit."
+    },
+    {
+     "ticker": "GOOGL",
+     "direction": "down_on_yes",
+     "impact_pct": 0.8,
+     "rationale": "Investor in Anthropic exposed to writedown."
+    }
+   ]
+  },
+  "polymarket:2774057": {
+   "question": "Strait of Hormuz traffic returns to normal by September 30?",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Reopened Hormuz would ease supply risk premium in crude."
+    },
+    {
+     "ticker": "DAL",
+     "direction": "up_on_yes",
+     "impact_pct": 2.5,
+     "rationale": "Lower fuel prices help airlines."
+    },
+    {
+     "ticker": "UAL",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Fuel relief boosts airline margins."
+    }
+   ]
+  },
+  "polymarket:562794": {
+   "question": "Will the Republican Party control the Senate after the 2026 Midterm elections?",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "impact_pct": 0.7,
+     "rationale": "GOP Senate seen as friendlier to fossil fuel policy."
+    },
+    {
+     "ticker": "ICLN",
+     "direction": "down_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Clean energy incentives at risk under GOP control."
+    },
+    {
+     "ticker": "KRE",
+     "direction": "up_on_yes",
+     "impact_pct": 0.5,
+     "rationale": "Lighter bank regulation expectations."
+    }
+   ]
+  },
+  "polymarket:5170734": {
+   "question": "Will Bitcoin reach $90,000 in October?",
+   "mappings": [
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "impact_pct": 6.0,
+     "rationale": "Levered bitcoin treasury; equity moves multiples of BTC."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Exchange volumes and fees track bitcoin price."
+    },
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Spot bitcoin ETF tracks BTC directly."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "impact_pct": 5.0,
+     "rationale": "Miner revenue and valuation are highly bitcoin-sensitive."
+    }
+   ]
+  },
+  "polymarket:1090496": {
+   "question": "NATO x Russia military clash by December 31, 2026?",
+   "mappings": [
+    {
+     "ticker": "ITA",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Direct NATO-Russia clash would drive defense spending."
+    },
+    {
+     "ticker": "LMT",
+     "direction": "up_on_yes",
+     "impact_pct": 3.5,
+     "rationale": "Prime contractor benefits from escalation."
+    },
+    {
+     "ticker": "RTX",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Missile and air-defense demand rises."
+    },
+    {
+     "ticker": "SPY",
+     "direction": "down_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Major escalation triggers broad risk-off."
+    }
+   ]
+  },
+  "polymarket:5170745": {
+   "question": "Will Bitcoin dip to $62,500 in October?",
+   "mappings": [
+    {
+     "ticker": "MSTR",
+     "direction": "down_on_yes",
+     "impact_pct": 4.8,
+     "rationale": "Levered bitcoin treasury; equity moves multiples of BTC."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "down_on_yes",
+     "impact_pct": 3.2,
+     "rationale": "Exchange volumes and fees track bitcoin price."
+    },
+    {
+     "ticker": "IBIT",
+     "direction": "down_on_yes",
+     "impact_pct": 2.4,
+     "rationale": "Spot bitcoin ETF tracks BTC directly."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "down_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Miner revenue and valuation are highly bitcoin-sensitive."
+    }
+   ]
+  },
+  "polymarket:2757891": {
+   "question": "Will Aleksandar Vu\u010di\u0107 be the next Prime Minister of Serbia?",
+   "mappings": []
+  },
+  "polymarket:4885967": {
+   "question": "Saudi Oil Pipeline (East-West) restarts by October 15?",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Pipeline restart restores Saudi export capacity, easing crude prices."
+    },
+    {
+     "ticker": "XOM",
+     "direction": "down_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Lower crude hurts producers."
+    }
+   ]
+  },
+  "polymarket:5170743": {
+   "question": "Will Bitcoin dip to $67,500 in October?",
+   "mappings": [
+    {
+     "ticker": "MSTR",
+     "direction": "down_on_yes",
+     "impact_pct": 4.8,
+     "rationale": "Levered bitcoin treasury; equity moves multiples of BTC."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "down_on_yes",
+     "impact_pct": 3.2,
+     "rationale": "Exchange volumes and fees track bitcoin price."
+    },
+    {
+     "ticker": "IBIT",
+     "direction": "down_on_yes",
+     "impact_pct": 2.4,
+     "rationale": "Spot bitcoin ETF tracks BTC directly."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "down_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Miner revenue and valuation are highly bitcoin-sensitive."
+    }
+   ]
+  },
+  "polymarket:4936100": {
+   "question": "Will WTI Crude Oil (WTI) hit (HIGH) $130 in October?",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "impact_pct": 5.0,
+     "rationale": "Higher crude lifts energy sector earnings."
+    },
+    {
+     "ticker": "OXY",
+     "direction": "up_on_yes",
+     "impact_pct": 6.0,
+     "rationale": "High-beta US producer benefits from oil spike."
+    },
+    {
+     "ticker": "XOM",
+     "direction": "up_on_yes",
+     "impact_pct": 3.5,
+     "rationale": "Integrated major gains from higher crude."
+    },
+    {
+     "ticker": "DAL",
+     "direction": "down_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Jet fuel costs rise sharply."
+    },
+    {
+     "ticker": "UAL",
+     "direction": "down_on_yes",
+     "impact_pct": 4.5,
+     "rationale": "Fuel-heavy airline margins compress."
+    }
+   ]
+  },
+  "polymarket:631057": {
+   "question": "Will the Democrats win the Ohio Senate race in 2026?",
+   "mappings": []
+  },
+  "polymarket:1131150": {
+   "question": "Will the Doge-1 Lunar Mission launch by December 31, 2026?",
+   "mappings": []
+  },
+  "polymarket:1321570": {
+   "question": "Will Revolut have the highest IPO Market Cap 2026?",
+   "mappings": []
+  },
+  "polymarket:3554662": {
+   "question": "Will OpenAI have the best AI model at the end of October 2026?",
+   "mappings": [
+    {
+     "ticker": "GOOGL",
+     "direction": "down_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "OpenAI leading would weaken Google's AI narrative."
+    },
+    {
+     "ticker": "MSFT",
+     "direction": "up_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Microsoft is OpenAI's major partner and shareholder."
+    }
+   ]
+  },
+  "polymarket:2467206": {
+   "question": "Will Bitcoin reach $95,000 by December 31, 2026?",
+   "mappings": [
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "impact_pct": 6.0,
+     "rationale": "Levered bitcoin treasury; equity moves multiples of BTC."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Exchange volumes and fees track bitcoin price."
+    },
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Spot bitcoin ETF tracks BTC directly."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "impact_pct": 5.0,
+     "rationale": "Miner revenue and valuation are highly bitcoin-sensitive."
+    }
+   ]
+  },
+  "polymarket:4984991": {
+   "question": "Will the price of Bitcoin be between $84,000 and $86,000 on October 3?",
+   "mappings": []
+  },
+  "polymarket:5126794": {
+   "question": "Will Louisiana enact a data center moratorium by December 31, 2026?",
+   "mappings": [
+    {
+     "ticker": "DLR",
+     "direction": "down_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Moratorium would constrain data center expansion."
+    },
+    {
+     "ticker": "EQIX",
+     "direction": "down_on_yes",
+     "impact_pct": 0.8,
+     "rationale": "Data center REIT growth pipeline limited."
+    },
+    {
+     "ticker": "VRT",
+     "direction": "down_on_yes",
+     "impact_pct": 0.8,
+     "rationale": "Data center equipment demand dented."
+    }
+   ]
+  },
+  "polymarket:1321569": {
+   "question": "Will Waymo have the highest IPO Market Cap 2026?",
+   "mappings": []
+  },
+  "polymarket:630963": {
+   "question": "Will the Democrats win the Texas Senate race in 2026?",
+   "mappings": []
+  },
+  "polymarket:5062329": {
+   "question": "Will Ethereum dip to $2,500 September 28-October 4?",
+   "mappings": [
+    {
+     "ticker": "COIN",
+     "direction": "down_on_yes",
+     "impact_pct": 2.5,
+     "rationale": "Ethereum drop reduces trading activity and fees."
+    },
+    {
+     "ticker": "ETHA",
+     "direction": "down_on_yes",
+     "impact_pct": 8.0,
+     "rationale": "Spot ether ETF tracks ETH directly."
+    },
+    {
+     "ticker": "BMNR",
+     "direction": "down_on_yes",
+     "impact_pct": 10.0,
+     "rationale": "Ether treasury company is highly ETH-sensitive."
+    }
+   ]
+  },
+  "polymarket:4762522": {
+   "question": "Will St. Vincent and the Grenadines win on 2026-10-03?",
+   "mappings": []
+  },
+  "polymarket:4970500": {
+   "question": "Will Elon Musk post 380-399 tweets from September 29 to October 6, 2026?",
+   "mappings": []
+  },
+  "polymarket:3554658": {
+   "question": "Will Meta have the best AI model at the end of October 2026?",
+   "mappings": [
+    {
+     "ticker": "META",
+     "direction": "up_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Leading model would boost Meta's AI standing."
+    },
+    {
+     "ticker": "GOOGL",
+     "direction": "down_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Rival leadership weakens Google's relative position."
+    }
+   ]
+  },
+  "polymarket:701488": {
+   "question": "Will Bitcoin reach $180,000 by December 31, 2026?",
+   "mappings": [
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "impact_pct": 9.0,
+     "rationale": "Levered bitcoin treasury; equity moves multiples of BTC."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 6.0,
+     "rationale": "Exchange volumes and fees track bitcoin price."
+    },
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "impact_pct": 4.5,
+     "rationale": "Spot bitcoin ETF tracks BTC directly."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "impact_pct": 7.5,
+     "rationale": "Miner revenue and valuation are highly bitcoin-sensitive."
+    }
+   ]
+  },
+  "polymarket:4412200": {
+   "question": "Will OpenAI announce another Millennium Prize solution by December 31, 2026?",
+   "mappings": [
+    {
+     "ticker": "MSFT",
+     "direction": "up_on_yes",
+     "impact_pct": 0.5,
+     "rationale": "Microsoft is a key OpenAI partner."
+    },
+    {
+     "ticker": "GOOGL",
+     "direction": "down_on_yes",
+     "impact_pct": 0.5,
+     "rationale": "Signals OpenAI lead over Google AI."
+    }
+   ]
+  },
+  "polymarket:629707": {
+   "question": "Will the Democrats win the Vermont governor race in 2026?",
+   "mappings": []
+  },
+  "polymarket:3399450": {
+   "question": "Iran leadership change by October 31?",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Regime change in Iran may ease Gulf supply risk premium."
+    },
+    {
+     "ticker": "ITA",
+     "direction": "down_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Reduced Middle East tension lowers defense premium."
+    },
+    {
+     "ticker": "DAL",
+     "direction": "up_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Lower oil helps airlines."
+    }
+   ]
+  },
+  "polymarket:5170729": {
+   "question": "Will Bitcoin reach $102,500 in October?",
+   "mappings": [
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "impact_pct": 4.8,
+     "rationale": "Levered bitcoin treasury; equity moves multiples of BTC."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 3.2,
+     "rationale": "Exchange volumes and fees track bitcoin price."
+    },
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "impact_pct": 2.4,
+     "rationale": "Spot bitcoin ETF tracks BTC directly."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Miner revenue and valuation are highly bitcoin-sensitive."
+    }
+   ]
+  },
+  "polymarket:4985062": {
+   "question": "Will the price of Bitcoin be above $80,000 on October 3?",
+   "mappings": []
+  },
+  "polymarket:1345531": {
+   "question": "Will Bitcoin reach $90,000 by December 31, 2026?",
+   "mappings": [
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "impact_pct": 6.0,
+     "rationale": "Levered bitcoin treasury; equity moves multiples of BTC."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Exchange volumes and fees track bitcoin price."
+    },
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Spot bitcoin ETF tracks BTC directly."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "impact_pct": 5.0,
+     "rationale": "Miner revenue and valuation are highly bitcoin-sensitive."
+    }
+   ]
+  },
+  "polymarket:3399468": {
+   "question": "Israel x Iran ceasefire continues through December 31?",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "impact_pct": 2.5,
+     "rationale": "Continued ceasefire lowers oil risk premium."
+    },
+    {
+     "ticker": "ITA",
+     "direction": "down_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Less conflict reduces defense premium."
+    },
+    {
+     "ticker": "SPY",
+     "direction": "up_on_yes",
+     "impact_pct": 0.8,
+     "rationale": "Lower geopolitical risk supports equities."
+    }
+   ]
+  },
+  "polymarket:1193093": {
+   "question": "Will Ulf Kristersson be the next Prime Minister of Sweden?",
+   "mappings": []
+  },
+  "polymarket:5062285": {
+   "question": "Will Bitcoin dip to $74,000 September 28-October 4?",
+   "mappings": [
+    {
+     "ticker": "MSTR",
+     "direction": "down_on_yes",
+     "impact_pct": 4.8,
+     "rationale": "Levered bitcoin treasury; equity moves multiples of BTC."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "down_on_yes",
+     "impact_pct": 3.2,
+     "rationale": "Exchange volumes and fees track bitcoin price."
+    },
+    {
+     "ticker": "IBIT",
+     "direction": "down_on_yes",
+     "impact_pct": 2.4,
+     "rationale": "Spot bitcoin ETF tracks BTC directly."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "down_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Miner revenue and valuation are highly bitcoin-sensitive."
+    }
+   ]
+  },
+  "polymarket:4824866": {
+   "question": "Will \"Verity\" Opening Weekend Box Office be at least 28m?",
+   "mappings": []
+  },
+  "polymarket:4936101": {
+   "question": "Will WTI Crude Oil (WTI) hit (HIGH) $120 in October?",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Higher crude lifts energy sector earnings."
+    },
+    {
+     "ticker": "OXY",
+     "direction": "up_on_yes",
+     "impact_pct": 5.0,
+     "rationale": "High-beta US producer benefits from oil spike."
+    },
+    {
+     "ticker": "XOM",
+     "direction": "up_on_yes",
+     "impact_pct": 2.5,
+     "rationale": "Integrated major gains from higher crude."
+    },
+    {
+     "ticker": "DAL",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Jet fuel costs rise sharply."
+    },
+    {
+     "ticker": "UAL",
+     "direction": "down_on_yes",
+     "impact_pct": 3.5,
+     "rationale": "Fuel-heavy airline margins compress."
+    }
+   ]
+  },
+  "kalshi:KXELONMARS-99": {
+   "question": "Will Elon Musk visit Mars in his lifetime?",
+   "mappings": []
+  },
+  "kalshi:KXNEXTNATOSECGEN-99-KIOH": {
+   "question": "Who will be the next Secretary General of NATO?",
+   "mappings": []
+  },
+  "kalshi:KXNEWPOPE-70-PPIZ": {
+   "question": "Who will the next Pope be?",
+   "mappings": []
+  },
+  "kalshi:KXWARMING-50": {
+   "question": "Will the world pass 2 degrees Celsius over pre-industrial levels before 2050?",
+   "mappings": []
+  },
+  "kalshi:KXMARSVRAIL-50": {
+   "question": "Will a human land on Mars before California starts high-speed rail?",
+   "mappings": []
+  },
+  "kalshi:KXERUPTSUPER-0-50JAN01": {
+   "question": "Will a supervolcano erupt before 2050?",
+   "mappings": []
+  },
+  "kalshi:KXCOLONIZEMARS-50": {
+   "question": "Will humans colonize Mars before 2050?",
+   "mappings": [
+    {
+     "ticker": "TSLA",
+     "direction": "up_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Mars colonization would validate SpaceX-linked ambitions and Musk-associated sentiment."
+    },
+    {
+     "ticker": "RKLB",
+     "direction": "up_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Space launch demand would rise on a successful Mars colonization."
+    }
+   ]
+  },
+  "kalshi:KXPERSONPRESMAM-45": {
+   "question": "Will Zohran Mamdani become President of the United States before 2045?",
+   "mappings": []
+  },
+  "kalshi:KXNEXTDNCCHAIR-45-BWIK": {
+   "question": "Who will be the next DNC Chair?",
+   "mappings": []
+  },
+  "kalshi:KXMILLENNIUMNEXT-45-BSD": {
+   "question": "Which Millennium Prize Problem will be solved next?",
+   "mappings": []
+  },
+  "kalshi:KXXISUCCESSOR-45JAN01-DXUE": {
+   "question": "Who will be named as Xi Jinping's successor?",
+   "mappings": []
+  },
+  "kalshi:KXPERSONPRESFUENTES-45": {
+   "question": "Will Nick Fuentes become President of the United States before 2045?",
+   "mappings": []
+  },
+  "kalshi:KXNEXTROMANIAPM-45JAN01-MISA": {
+   "question": "Who will be the next new Prime Minister of Romania?",
+   "mappings": []
+  },
+  "kalshi:KXNEXTISRAELPM-45JAN01-NBEN": {
+   "question": "Who will succeed Netanyahu as Prime Minister of Israel?",
+   "mappings": []
+  },
+  "kalshi:KXG7LEADEROUT-26JUL20-MCAR": {
+   "question": "Which G7 leader will leave office next?",
+   "mappings": []
+  },
+  "kalshi:KXNFLCAREERRSHYDS-DHENRY-14000": {
+   "question": "Derrick Henry Career Regular Season Rushing Yards",
+   "mappings": []
+  },
+  "kalshi:KXNFLCAREERRECYDS-MEVANS-14000": {
+   "question": "Mike Evans Career Regular Season Receiving Yards",
+   "mappings": []
+  },
+  "kalshi:KXNFLCAREERPASSYDS-PMAHOMES-40000": {
+   "question": "Patrick Mahomes Career Regular Season Passing Yards",
+   "mappings": []
+  },
+  "kalshi:KXNFLCAREERPASSYDS-JALLEN-35000": {
+   "question": "Josh Allen Career Regular Season Passing Yards",
+   "mappings": []
+  },
+  "kalshi:KXRIEMANNRES-40-27JAN01": {
+   "question": "When will the Riemann Hypothesis be resolved?",
+   "mappings": []
+  },
+  "kalshi:KXMILLENNIUMALL-40-28JAN01": {
+   "question": "When will all Millennium Prize Problems be solved?",
+   "mappings": []
+  },
+  "kalshi:KXRAMPBREX-40-RAMP": {
+   "question": "Will Ramp or Brex IPO first?",
+   "mappings": []
+  },
+  "kalshi:KXOAIANTH-40-OAI": {
+   "question": "Will OpenAI or Anthropic IPO first?",
+   "mappings": [
+    {
+     "ticker": "MSFT",
+     "direction": "up_on_yes",
+     "impact_pct": 0.5,
+     "rationale": "An OpenAI IPO would crystallize value of Microsoft's large OpenAI stake."
+    }
+   ]
+  },
+  "kalshi:KXFUSION-30-JAN01": {
+   "question": "When will nuclear fusion be achieved?",
+   "mappings": [
+    {
+     "ticker": "CCJ",
+     "direction": "down_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Achieved fusion threatens long-term uranium and fission demand."
+    },
+    {
+     "ticker": "OKLO",
+     "direction": "down_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Fusion success would undercut advanced fission reactor growth case."
+    }
+   ]
+  },
+  "kalshi:KXDEELRIP-40-DEEL": {
+   "question": "Will Deel or Rippling IPO first?",
+   "mappings": []
+  },
+  "kalshi:KXGDPYEAR-36-T0.1": {
+   "question": "US real GDP growth in 2036?",
+   "mappings": [
+    {
+     "ticker": "SPY",
+     "direction": "up_on_yes",
+     "impact_pct": 0.8,
+     "rationale": "Stronger real GDP growth supports corporate earnings and broad equities."
+    }
+   ]
+  },
+  "kalshi:KXUSCPIYEAR-37FEB01-T0.0": {
+   "question": "US headline CPI inflation in December 2036",
+   "mappings": []
+  },
+  "kalshi:KXNOMGDPGROWTH-37JAN28-T0.0": {
+   "question": "US nominal GDP growth in 2036",
+   "mappings": []
+  },
+  "kalshi:KXU3EOY-37JAN09-T3.0": {
+   "question": "US unemployment rate at year-end 2036",
+   "mappings": []
+  },
+  "kalshi:KXLFPRATEEOY-37JAN09-T56.00": {
+   "question": "US labor force participation rate at year-end 2036",
+   "mappings": []
+  },
+  "kalshi:KXFEDFUNDSYEAR-37JAN01-T1.00": {
+   "question": "Fed funds rate at end of 2036",
+   "mappings": [
+    {
+     "ticker": "TLT",
+     "direction": "down_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Higher terminal fed funds rate pressures long-duration Treasury prices."
+    },
+    {
+     "ticker": "KRE",
+     "direction": "up_on_yes",
+     "impact_pct": 0.8,
+     "rationale": "Higher rates could widen regional bank net interest margins."
+    }
+   ]
+  },
+  "kalshi:KXGDPYEAR-35-T0.1": {
+   "question": "US real GDP growth in 2035?",
+   "mappings": [
+    {
+     "ticker": "SPY",
+     "direction": "up_on_yes",
+     "impact_pct": 0.8,
+     "rationale": "Stronger real GDP growth supports corporate earnings and broad equities."
+    }
+   ]
+  },
+  "kalshi:KXUSCPIYEAR-36FEB01-T0.0": {
+   "question": "US headline CPI inflation in December 2035",
+   "mappings": []
+  },
+  "kalshi:KXNOMGDPGROWTH-36JAN28-T0.0": {
+   "question": "US nominal GDP growth in 2035",
+   "mappings": []
+  },
+  "kalshi:KXU3EOY-36JAN04-T3.0": {
+   "question": "US unemployment rate at year-end 2035",
+   "mappings": []
+  },
+  "kalshi:KXLFPRATEEOY-36JAN04-T56.00": {
+   "question": "US labor force participation rate at year-end 2035",
+   "mappings": []
+  },
+  "kalshi:KXFEDFUNDSYEAR-36JAN01-T1.00": {
+   "question": "Fed funds rate at end of 2035",
+   "mappings": [
+    {
+     "ticker": "TLT",
+     "direction": "down_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Higher terminal fed funds rate pressures long-duration Treasury prices."
+    },
+    {
+     "ticker": "KRE",
+     "direction": "up_on_yes",
+     "impact_pct": 0.8,
+     "rationale": "Higher rates could widen regional bank net interest margins."
+    }
+   ]
+  },
+  "kalshi:KXNEWROLEJP-35DEC-MLA": {
+   "question": "Who will be the next CEO of JPMorgan Chase?",
+   "mappings": []
+  },
+  "kalshi:KXNEWROLEGS-35DEC-JWA": {
+   "question": "Who will be the next CEO of Goldman Sachs?",
+   "mappings": []
+  },
+  "kalshi:KXPOPCHANGESTATE10-35": {
+   "question": "Will any U.S. state experience a population decrease of at least 10% between 2025 and 2035?",
+   "mappings": []
+  },
+  "kalshi:KXEARTHQUAKECALIFORNIA-35": {
+   "question": "Will there be an at least 8.0 magnitude earthquake in California before 2035?",
+   "mappings": [
+    {
+     "ticker": "SPY",
+     "direction": "down_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Magnitude 8 quake in California would cause major economic disruption."
+    },
+    {
+     "ticker": "TRV",
+     "direction": "down_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Large insured catastrophe losses would hit property-casualty insurers."
+    }
+   ]
+  },
+  "kalshi:KXGDPYEAR-34-T0.1": {
+   "question": "US real GDP growth in 2034?",
+   "mappings": [
+    {
+     "ticker": "SPY",
+     "direction": "up_on_yes",
+     "impact_pct": 0.8,
+     "rationale": "Stronger real GDP growth supports corporate earnings and broad equities."
+    }
+   ]
+  },
+  "kalshi:KXUSCPIYEAR-35FEB01-T0.0": {
+   "question": "US headline CPI inflation in December 2034",
+   "mappings": []
+  },
+  "kalshi:KXNOMGDPGROWTH-35JAN28-T0.0": {
+   "question": "US nominal GDP growth in 2034",
+   "mappings": []
+  },
+  "kalshi:KXU3EOY-35JAN05-T3.0": {
+   "question": "US unemployment rate at year-end 2034",
+   "mappings": []
+  },
+  "kalshi:KXLFPRATEEOY-35JAN05-T56.00": {
+   "question": "US labor force participation rate at year-end 2034",
+   "mappings": []
+  },
+  "kalshi:KXNEXTUKPRIMEMIN-35JAN01-NFAR": {
+   "question": "Who will be the next Prime Minister of the UK?",
+   "mappings": []
+  },
+  "kalshi:KXFEDFUNDSYEAR-35JAN01-T1.00": {
+   "question": "Fed funds rate at end of 2034",
+   "mappings": [
+    {
+     "ticker": "TLT",
+     "direction": "down_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Higher terminal fed funds rate pressures long-duration Treasury prices."
+    },
+    {
+     "ticker": "KRE",
+     "direction": "up_on_yes",
+     "impact_pct": 0.8,
+     "rationale": "Higher rates could widen regional bank net interest margins."
+    }
+   ]
+  },
+  "kalshi:KXROBOTMARS-35": {
+   "question": "Will a humanoid robot walk on Mars before a human does?",
+   "mappings": [
+    {
+     "ticker": "TSLA",
+     "direction": "up_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Humanoid robot milestone on Mars boosts Optimus and Musk robotics narrative."
+    }
+   ]
+  },
+  "kalshi:KXPERFORMBONDSONG-35-DUA": {
+   "question": "Next James Bond film: Artist performing the James Bond Theme",
+   "mappings": []
+  },
+  "kalshi:KXJOHNNYDEPP-35-JOH": {
+   "question": "Next Pirates of the Caribbean film: Will Johnny Depp be cast?",
+   "mappings": []
+  },
+  "kalshi:KXFDAVERVE102-VERV-30JAN01": {
+   "question": "Will the FDA approve VERVE-102?",
+   "mappings": [
+    {
+     "ticker": "LLY",
+     "direction": "up_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Lilly owns Verve (acquired 2025); VERVE-102 approval validates its gene-editing cardiovascular franchise, small effect on a mega-cap."
+    },
+    {
+     "ticker": "BEAM",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Base-editing peer would benefit from regulatory precedent for in-vivo editing of cardiovascular targets."
+    },
+    {
+     "ticker": "NTLA",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "In-vivo CRISPR peer gains from a precedent-setting FDA approval of an in-vivo gene editor."
+    }
+   ]
+  },
+  "kalshi:KXBRUVSEAT-35": {
+   "question": "Will Andrew Tate's party win a seat in the next UK election?",
+   "mappings": []
+  },
+  "kalshi:KXAFRICALEADEROUT-35-WR": {
+   "question": "Which of these African leaders will leave office next?",
+   "mappings": []
+  },
+  "kalshi:KXACTORSONNYCROCKETT-35-RYA": {
+   "question": "Next Miami Vice film: Cast",
+   "mappings": []
+  },
+  "kalshi:KXGDPYEAR-33-T0.1": {
+   "question": "US real GDP growth in 2033?",
+   "mappings": [
+    {
+     "ticker": "SPY",
+     "direction": "up_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Stronger long-run US real GDP growth supports corporate earnings and broad equity valuations."
+    }
+   ]
+  }
+ }
+}

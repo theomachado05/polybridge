@@ -1,0 +1,1902 @@
+{
+ "fetched_at": "2026-10-03T01:17:29.294536",
+ "filter": "sports/esports removed by keyword; duplicates removed",
+ "markets": [
+  {
+   "source": "polymarket",
+   "id": "5126779",
+   "question": "Will Indiana enact a data center moratorium by December 31, 2027?",
+   "yes_price": 0.16,
+   "volume_24h": 1873615.432482,
+   "end_date": "2028-01-01T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "2589812",
+   "question": "Will there be no change in Fed interest rates after the October 2026 meeting?",
+   "yes_price": 0.825,
+   "volume_24h": 968942.5263720002,
+   "end_date": "2026-10-29T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4662693",
+   "question": "Will Anthropic announce bankruptcy by December 31, 2027?",
+   "yes_price": 0.125,
+   "volume_24h": 798841.3743660001,
+   "end_date": "2028-01-01T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "562831",
+   "question": "2026 Balance of Power: R Senate, R House",
+   "yes_price": 0.065,
+   "volume_24h": 499942.057658,
+   "end_date": "2026-11-04T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "2589813",
+   "question": "Will the Fed increase interest rates by 25 bps after the October 2026 meeting?",
+   "yes_price": 0.175,
+   "volume_24h": 493286.90216399985,
+   "end_date": "2026-10-29T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "562828",
+   "question": "2026 Balance of Power: D Senate, D House",
+   "yes_price": 0.635,
+   "volume_24h": 455947.7243980001,
+   "end_date": "2026-11-04T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "665374",
+   "question": "Will the U.S. invade Iran before 2027?",
+   "yes_price": 0.165,
+   "volume_24h": 403361.02995099983,
+   "end_date": "2027-01-01T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "703257",
+   "question": "Will the US confirm that aliens exist before 2027?",
+   "yes_price": 0.0305,
+   "volume_24h": 266173.04264500004,
+   "end_date": "2027-01-01T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "637002",
+   "question": "Will Donald Trump win the Nobel Peace Prize in 2026?",
+   "yes_price": 0.0075,
+   "volume_24h": 263637.0014210012,
+   "end_date": "2027-04-01T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "562802",
+   "question": "Will the Democratic Party control the House after the 2026 Midterm elections?",
+   "yes_price": 0.935,
+   "volume_24h": 255338.03262500005,
+   "end_date": "2026-11-04T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5179198",
+   "question": "Will Indiana enact a data center moratorium by December 31, 2028?",
+   "yes_price": 0.25,
+   "volume_24h": 237879.663018,
+   "end_date": "2029-01-01T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4752979",
+   "question": "Will England win on 2026-10-03?",
+   "yes_price": 0.555,
+   "volume_24h": 231859.57069400008,
+   "end_date": "2026-10-03T16:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5170735",
+   "question": "Will Bitcoin reach $87,500 in October?",
+   "yes_price": 0.705,
+   "volume_24h": 192605.34936000002,
+   "end_date": "2026-11-01T04:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "1365861",
+   "question": "Will Fl\u00e1vio Bolsonaro finish in second place in the first round of the 2026 Brazilian presidential election?",
+   "yes_price": 0.745,
+   "volume_24h": 183296.88317499994,
+   "end_date": "2026-10-05T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4037599",
+   "question": "Will Lula win the most votes in the first round of the 2026 Brazil presidential election?",
+   "yes_price": 0.745,
+   "volume_24h": 181703.47587599995,
+   "end_date": "2026-10-05T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "562803",
+   "question": "Will the Republican Party control the House after the 2026 Midterm elections?",
+   "yes_price": 0.065,
+   "volume_24h": 180021.410319,
+   "end_date": "2026-11-04T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4985048",
+   "question": "Will the price of Bitcoin be above $74,000 on October 3?",
+   "yes_price": 0.9995,
+   "volume_24h": 179918.5835,
+   "end_date": "2026-10-03T16:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4985052",
+   "question": "Will the price of Bitcoin be above $76,000 on October 3?",
+   "yes_price": 0.9985,
+   "volume_24h": 176325.598288,
+   "end_date": "2026-10-03T16:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "2589810",
+   "question": "Will the Fed decrease interest rates by 50+ bps after the October 2026 meeting?",
+   "yes_price": 0.0025,
+   "volume_24h": 176020.04300499996,
+   "end_date": "2026-10-29T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5166375",
+   "question": "Any of the Cornell 7 charged with a felony sex crime?",
+   "yes_price": 0.355,
+   "volume_24h": 169919.10471000004,
+   "end_date": "2027-02-01T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5126782",
+   "question": "Will Oklahoma enact a data center moratorium by December 31, 2027?",
+   "yes_price": 0.19,
+   "volume_24h": 168827.43176399992,
+   "end_date": "2028-01-01T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4037600",
+   "question": "Will Flavio Bolsonaro win the most votes in the first round of the 2026 Brazil presidential election?",
+   "yes_price": 0.255,
+   "volume_24h": 168104.75493099992,
+   "end_date": "2026-10-05T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5062249",
+   "question": "Will Bitcoin reach $92,000 September 28-October 4?",
+   "yes_price": 0.0055,
+   "volume_24h": 168076.83580400006,
+   "end_date": "2026-10-05T04:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "2589814",
+   "question": "Will the Fed increase interest rates by 50+ bps after the October 2026 meeting?",
+   "yes_price": 0.0045,
+   "volume_24h": 155439.22775,
+   "end_date": "2026-10-29T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5123857",
+   "question": "Will Texas enact a data center moratorium by December 31, 2027?",
+   "yes_price": 0.22,
+   "volume_24h": 154986.717089,
+   "end_date": "2028-01-01T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "2176270",
+   "question": "Strait of Hormuz traffic returns to normal by December 31?",
+   "yes_price": 0.195,
+   "volume_24h": 152241.95952499998,
+   "end_date": "2027-01-01T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5164765",
+   "question": "Israel accuses Iran/proxies of plane stabbing incident by Oct 31?",
+   "yes_price": 0.145,
+   "volume_24h": 146796.75571399997,
+   "end_date": "2026-11-01T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "2589811",
+   "question": "Will the Fed decrease interest rates by 25 bps after the October 2026 meeting?",
+   "yes_price": 0.0045,
+   "volume_24h": 129799.68051099998,
+   "end_date": "2026-10-29T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4985072",
+   "question": "Will the price of Bitcoin be above $84,000 on October 3?",
+   "yes_price": 0.9125,
+   "volume_24h": 128022.24568299999,
+   "end_date": "2026-10-03T16:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5062265",
+   "question": "Will Bitcoin reach $88,000 September 28-October 4?",
+   "yes_price": 0.0305,
+   "volume_24h": 124801.914707,
+   "end_date": "2026-10-05T04:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5082317",
+   "question": "Will Elon Musk post 40-64 tweets from October 1 to October 3, 2026?",
+   "yes_price": 0.0305,
+   "volume_24h": 122728.45929699996,
+   "end_date": "2026-10-03T16:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5126781",
+   "question": "Will Oklahoma enact a data center moratorium by June 30, 2027?",
+   "yes_price": 0.165,
+   "volume_24h": 120087.897143,
+   "end_date": "2027-07-01T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5062275",
+   "question": "Will Bitcoin dip to $82,000 September 28-October 4?",
+   "yes_price": 0.0755,
+   "volume_24h": 114390.39493900002,
+   "end_date": "2026-10-05T04:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5179177",
+   "question": "Will Missouri enact a data center moratorium by December 31, 2028?",
+   "yes_price": 0.28,
+   "volume_24h": 114353.680714,
+   "end_date": "2029-01-01T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5180113",
+   "question": "Bitcoin Up or Down on October 3?",
+   "yes_price": 0.075,
+   "volume_24h": 111381.10484799997,
+   "end_date": "2026-10-03T16:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "682716",
+   "question": "Will Moshe Feiglin be the next Prime Minister of Israel?",
+   "yes_price": 0.001,
+   "volume_24h": 111106.085,
+   "end_date": "2026-10-28T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5126778",
+   "question": "Will Indiana enact a data center moratorium by June 30, 2027?",
+   "yes_price": 0.115,
+   "volume_24h": 108984.435233,
+   "end_date": "2027-07-01T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "3215007",
+   "question": "Will there be no change in Fed interest rates after the December 2026 meeting?",
+   "yes_price": 0.22,
+   "volume_24h": 106546.64912799998,
+   "end_date": "2026-12-09T23:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5062278",
+   "question": "Will Bitcoin dip to $80,000 September 28-October 4?",
+   "yes_price": 0.0165,
+   "volume_24h": 100829.05085300004,
+   "end_date": "2026-10-05T04:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5081860",
+   "question": "Kharg Island no longer under Iranian control by October 31?",
+   "yes_price": 0.0185,
+   "volume_24h": 99448.77563200003,
+   "end_date": "2026-11-01T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4662694",
+   "question": "Will Anthropic announce bankruptcy by December 31, 2028?",
+   "yes_price": 0.215,
+   "volume_24h": 96587.771042,
+   "end_date": "2029-01-01T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4662696",
+   "question": "Will NuScale announce bankruptcy by December 31, 2027?",
+   "yes_price": 0.19,
+   "volume_24h": 93714.525416,
+   "end_date": "2028-01-01T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4906127",
+   "question": "US announces end of Iranian blockade by October 15, 2026?",
+   "yes_price": 0.085,
+   "volume_24h": 93298.66009900002,
+   "end_date": "2026-10-16T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "567621",
+   "question": "Will China invade Taiwan by end of 2026?",
+   "yes_price": 0.0245,
+   "volume_24h": 92847.16071899996,
+   "end_date": "2027-01-01T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4641065",
+   "question": "US x Iran ceasefire continues through October 31?",
+   "yes_price": 0.595,
+   "volume_24h": 92127.778597,
+   "end_date": "2026-10-31T23:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "1107582",
+   "question": "US strike on Cuba by December 31?",
+   "yes_price": 0.115,
+   "volume_24h": 91682.70551999994,
+   "end_date": "2027-01-01T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "1365854",
+   "question": "Will Luiz In\u00e1cio Lula da Silva finish in second place in the first round of the 2026 Brazilian presidential election?",
+   "yes_price": 0.257,
+   "volume_24h": 83846.13439599998,
+   "end_date": "2026-10-05T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4727411",
+   "question": "Will Jamaica win on 2026-10-02?",
+   "yes_price": 0.9995,
+   "volume_24h": 82616.89148700002,
+   "end_date": "2026-10-03T02:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4985083",
+   "question": "Will the price of Bitcoin be above $88,000 on October 3?",
+   "yes_price": 0.0025,
+   "volume_24h": 81476.55483800001,
+   "end_date": "2026-10-03T16:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "682705",
+   "question": "Will Benjamin Netanyahu be the next Prime Minister of Israel?",
+   "yes_price": 0.335,
+   "volume_24h": 76934.27913599998,
+   "end_date": "2026-10-28T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "666861",
+   "question": "Trump out as President before 2027?",
+   "yes_price": 0.0395,
+   "volume_24h": 73932.96168,
+   "end_date": "2027-01-01T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4985077",
+   "question": "Will the price of Bitcoin be above $86,000 on October 3?",
+   "yes_price": 0.0105,
+   "volume_24h": 73768.16536400003,
+   "end_date": "2026-10-03T16:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4985067",
+   "question": "Will the price of Bitcoin be above $82,000 on October 3?",
+   "yes_price": 0.9945,
+   "volume_24h": 73590.06657300003,
+   "end_date": "2026-10-03T16:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5062327",
+   "question": "Will Ethereum dip to $2,600 September 28-October 4?",
+   "yes_price": 0.1335,
+   "volume_24h": 72660.960294,
+   "end_date": "2026-10-05T04:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "3554657",
+   "question": "Will Anthropic have the best AI model at the end of October 2026?",
+   "yes_price": 0.365,
+   "volume_24h": 71091.29336999997,
+   "end_date": "2026-10-31T16:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5170731",
+   "question": "Will Bitcoin reach $97,500 in October?",
+   "yes_price": 0.135,
+   "volume_24h": 69828.60243100002,
+   "end_date": "2026-11-01T04:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4662584",
+   "question": "Will OpenAI announce bankruptcy by December 31, 2027?",
+   "yes_price": 0.15,
+   "volume_24h": 68344.323697,
+   "end_date": "2028-01-01T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "1535973",
+   "question": "Iran leadership change by December 31?",
+   "yes_price": 0.115,
+   "volume_24h": 67734.64309000001,
+   "end_date": "2027-01-01T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5179176",
+   "question": "Will Louisiana enact a data center moratorium by December 31, 2028?",
+   "yes_price": 0.19,
+   "volume_24h": 67243.29000000001,
+   "end_date": "2029-01-01T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5082319",
+   "question": "Will Elon Musk post 90-114 tweets from October 1 to October 3, 2026?",
+   "yes_price": 0.045,
+   "volume_24h": 67062.817333,
+   "end_date": "2026-10-03T16:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "601922",
+   "question": "Will Luiz In\u00e1cio Lula da Silva qualify for Brazil's presidential runoff?",
+   "yes_price": 0.9895,
+   "volume_24h": 66353.42033400002,
+   "end_date": "2026-10-05T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4753005",
+   "question": "Will Spain win on 2026-10-03?",
+   "yes_price": 0.915,
+   "volume_24h": 62709.78857100002,
+   "end_date": "2026-10-03T18:45:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "2126461",
+   "question": "Will Crude Oil reach a new all-time high by December 31?",
+   "yes_price": 0.11,
+   "volume_24h": 61183.64135499998,
+   "end_date": "2027-01-01T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "2170255",
+   "question": "Bab el-Mandeb Strait effectively closed by September 30?",
+   "yes_price": 0.0005,
+   "volume_24h": 61174.66,
+   "end_date": "2026-10-01T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "3399459",
+   "question": "Israel x Iran ceasefire continues through October 31?",
+   "yes_price": 0.805,
+   "volume_24h": 61120.035314,
+   "end_date": "2026-10-31T20:29:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5170746",
+   "question": "Will Bitcoin dip to $60,000 in October?",
+   "yes_price": 0.0255,
+   "volume_24h": 59165.85904,
+   "end_date": "2026-11-01T04:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "3128888",
+   "question": "US announces end of Iranian blockade by October 31, 2026?",
+   "yes_price": 0.205,
+   "volume_24h": 57351.139272000044,
+   "end_date": "2026-11-01T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "663583",
+   "question": "Will the Iranian regime fall before 2027?",
+   "yes_price": 0.065,
+   "volume_24h": 57175.49813700001,
+   "end_date": "2027-01-01T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "716823",
+   "question": "Extended FDV above $500M one day after launch?",
+   "yes_price": 0.195,
+   "volume_24h": 56935.696342,
+   "end_date": "2027-01-01T05:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4824013",
+   "question": "Will the US announce a diesel export ban by October 31?",
+   "yes_price": 0.026,
+   "volume_24h": 55758.26250499999,
+   "end_date": "2026-11-01T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "560317",
+   "question": "Putin out as President of Russia by December 31, 2026?",
+   "yes_price": 0.0295,
+   "volume_24h": 54735.202465999995,
+   "end_date": "2027-01-01T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "3491459",
+   "question": "US-Iran Final Nuclear Deal by October 31, 2026?",
+   "yes_price": 0.0255,
+   "volume_24h": 53754.620669,
+   "end_date": "2026-11-01T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4620900",
+   "question": "Another Fed rate hike in 2026?",
+   "yes_price": 0.725,
+   "volume_24h": 53515.258391,
+   "end_date": "2026-12-10T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4730298",
+   "question": "Will Alianza FC win on 2026-10-02?",
+   "yes_price": 0.0005,
+   "volume_24h": 52662.448008,
+   "end_date": "2026-10-03T00:45:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "3215008",
+   "question": "Will the Fed increase interest rates by 25 bps after the December 2026 meeting?",
+   "yes_price": 0.735,
+   "volume_24h": 52415.756732,
+   "end_date": "2026-12-09T23:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "3554666",
+   "question": "Will SpaceXAI have the best AI model at the end of October 2026?",
+   "yes_price": 0.0015,
+   "volume_24h": 52153.00002099999,
+   "end_date": "2026-10-31T16:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "3554659",
+   "question": "Will Google have the best AI model at the end of October 2026?",
+   "yes_price": 0.6345,
+   "volume_24h": 49848.854852,
+   "end_date": "2026-10-31T16:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5073563",
+   "question": "Will Argentina win on 2026-10-03?",
+   "yes_price": 0.875,
+   "volume_24h": 49304.609651,
+   "end_date": "2026-10-03T20:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "601920",
+   "question": "Will any presidential candidate win outright in the first round of the Brazil election?",
+   "yes_price": 0.0425,
+   "volume_24h": 49295.52727,
+   "end_date": "2026-10-05T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "562829",
+   "question": "2026 Balance of Power: D Senate, R House",
+   "yes_price": 0.0055,
+   "volume_24h": 49285.67,
+   "end_date": "2026-11-04T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4753009",
+   "question": "Will Czechia win on 2026-10-03?",
+   "yes_price": 0.024,
+   "volume_24h": 49172.493362999994,
+   "end_date": "2026-10-03T18:45:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5130978",
+   "question": "US x Iran ceasefire continues through October 15?",
+   "yes_price": 0.805,
+   "volume_24h": 46639.459978,
+   "end_date": "2026-10-16T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5062258",
+   "question": "Will Bitcoin reach $90,000 September 28-October 4?",
+   "yes_price": 0.013,
+   "volume_24h": 45655.169951999975,
+   "end_date": "2026-10-05T04:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5170771",
+   "question": "Will Ethereum reach $3,000 in October?",
+   "yes_price": 0.365,
+   "volume_24h": 45369.843211000014,
+   "end_date": "2026-11-01T04:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "1193094",
+   "question": "Will Magdalena Andersson be the next Prime Minister of Sweden?",
+   "yes_price": 0.815,
+   "volume_24h": 45209.039541,
+   "end_date": "2026-09-14T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "1365894",
+   "question": "Will Renan Santos finish in third place in the first round of the 2026 Brazilian presidential election?",
+   "yes_price": 0.595,
+   "volume_24h": 44957.02640900001,
+   "end_date": "2026-10-05T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4730293",
+   "question": "Will AD Cali win on 2026-10-02?",
+   "yes_price": 0.9995,
+   "volume_24h": 44417.62581000002,
+   "end_date": "2026-10-03T00:45:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4985100",
+   "question": "Will the price of Bitcoin be above $94,000 on October 3?",
+   "yes_price": 0.0005,
+   "volume_24h": 44396,
+   "end_date": "2026-10-03T16:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "701494",
+   "question": "Will Bitcoin reach $120,000 by December 31, 2026?",
+   "yes_price": 0.085,
+   "volume_24h": 44255.662063,
+   "end_date": "2027-01-01T05:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5130977",
+   "question": "US x Iran ceasefire continues through October 7?",
+   "yes_price": 0.9,
+   "volume_24h": 43513.968254999985,
+   "end_date": "2026-10-08T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5082386",
+   "question": "Over $50M committed to the Jumper public sale?",
+   "yes_price": 0.006,
+   "volume_24h": 43079.358037000005,
+   "end_date": "2026-10-06T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5123850",
+   "question": "Will Ohio enact a data center moratorium by December 31, 2027?",
+   "yes_price": 0.24,
+   "volume_24h": 42246.681432000005,
+   "end_date": "2028-01-01T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5170773",
+   "question": "Will Ethereum reach $2,800 in October?",
+   "yes_price": 0.725,
+   "volume_24h": 41912.579932,
+   "end_date": "2026-11-01T04:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "2695686",
+   "question": "Will Alberto N\u00fa\u00f1ez Feij\u00f3o be the next Prime Minister of Spain?",
+   "yes_price": 0.805,
+   "volume_24h": 41254.166504,
+   "end_date": "2028-04-01T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4985089",
+   "question": "Will the price of Bitcoin be above $90,000 on October 3?",
+   "yes_price": 0.0005,
+   "volume_24h": 40820.18809200001,
+   "end_date": "2026-10-03T16:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "630746",
+   "question": "Will the Democrats win the Kansas Senate race in 2026?",
+   "yes_price": 0.32,
+   "volume_24h": 40704.083899,
+   "end_date": "2026-11-04T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "3758964",
+   "question": "Bab el-Mandeb Strait effectively closed by October 31?",
+   "yes_price": 0.075,
+   "volume_24h": 40181.170842,
+   "end_date": "2026-11-01T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5062280",
+   "question": "Will Bitcoin dip to $78,000 September 28-October 4?",
+   "yes_price": 0.0095,
+   "volume_24h": 40115.89748699999,
+   "end_date": "2026-10-05T04:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4757280",
+   "question": "Will India win on 2026-10-03?",
+   "yes_price": 0.0105,
+   "volume_24h": 39777.149425,
+   "end_date": "2026-10-03T14:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5062325",
+   "question": "Will Ethereum reach $2,800 September 28-October 4?",
+   "yes_price": 0.0465,
+   "volume_24h": 39732.577382,
+   "end_date": "2026-10-05T04:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "2100981",
+   "question": "Will Likud win the most seats in the 2026 Israeli legislative election?",
+   "yes_price": 0.52,
+   "volume_24h": 38658.865341,
+   "end_date": "2026-10-28T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4970462",
+   "question": "Will Elon Musk post 180-199 tweets from September 29 to October 6, 2026?",
+   "yes_price": 0.058,
+   "volume_24h": 36792.34435599999,
+   "end_date": "2026-10-06T16:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "3887127",
+   "question": "Umia listed on Binance within 30 days of TGE?",
+   "yes_price": 0.002,
+   "volume_24h": 36789.812,
+   "end_date": "2028-01-01T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5170730",
+   "question": "Will Bitcoin reach $100,000 in October?",
+   "yes_price": 0.085,
+   "volume_24h": 36552.471722,
+   "end_date": "2026-11-01T04:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "701502",
+   "question": "Will Bitcoin dip to $45,000 by December 31, 2026?",
+   "yes_price": 0.0365,
+   "volume_24h": 36228.758006000004,
+   "end_date": "2027-01-01T05:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5082320",
+   "question": "Will Elon Musk post 115-139 tweets from October 1 to October 3, 2026?",
+   "yes_price": 0.0015,
+   "volume_24h": 36176.409798,
+   "end_date": "2026-10-03T16:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4757283",
+   "question": "Will Brazil win on 2026-10-03?",
+   "yes_price": 0.9715,
+   "volume_24h": 36006.573758000006,
+   "end_date": "2026-10-03T14:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "701496",
+   "question": "Will Bitcoin reach $100,000 by December 31, 2026?",
+   "yes_price": 0.38,
+   "volume_24h": 35714.933676,
+   "end_date": "2027-01-01T05:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5126792",
+   "question": "Will Missouri enact a data center moratorium by June 30, 2027?",
+   "yes_price": 0.115,
+   "volume_24h": 35279.796949,
+   "end_date": "2027-07-01T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5126795",
+   "question": "Will Louisiana enact a data center moratorium by June 30, 2027?",
+   "yes_price": 0.115,
+   "volume_24h": 35112.78043200001,
+   "end_date": "2027-07-01T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "559651",
+   "question": "Xi Jinping out before 2027?",
+   "yes_price": 0.0255,
+   "volume_24h": 34601.72541399999,
+   "end_date": "2027-01-01T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5170728",
+   "question": "Will Bitcoin reach $105,000 in October?",
+   "yes_price": 0.0445,
+   "volume_24h": 34445.339672999995,
+   "end_date": "2026-11-01T04:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5082318",
+   "question": "Will Elon Musk post 65-89 tweets from October 1 to October 3, 2026?",
+   "yes_price": 0.925,
+   "volume_24h": 33928.58925,
+   "end_date": "2026-10-03T16:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4984993",
+   "question": "Will the price of Ethereum be above $2,800 on October 3?",
+   "yes_price": 0.0125,
+   "volume_24h": 33758.027854,
+   "end_date": "2026-10-03T16:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5170740",
+   "question": "Will Bitcoin dip to $75,000 in October?",
+   "yes_price": 0.235,
+   "volume_24h": 33610.092845,
+   "end_date": "2026-11-01T04:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "1321567",
+   "question": "Will SHEIN have the highest IPO Market Cap 2026?",
+   "yes_price": 0.0005,
+   "volume_24h": 33000,
+   "end_date": "2027-01-02T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4936105",
+   "question": "Will WTI Crude Oil (WTI) hit (LOW) $80 in October?",
+   "yes_price": 0.375,
+   "volume_24h": 32856.0542,
+   "end_date": "2026-11-01T03:59:59.999Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "1366007",
+   "question": "Will Luiz In\u00e1cio Lula da Silva win the first round of the 2026 Brazilian presidential election by less than 5%?",
+   "yes_price": 0.685,
+   "volume_24h": 32681.314908999997,
+   "end_date": "2026-10-05T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "682710",
+   "question": "Will Avigdor Lieberman be the next Prime Minister of Israel?",
+   "yes_price": 0.0225,
+   "volume_24h": 32471.229003,
+   "end_date": "2026-10-28T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "3501950",
+   "question": "Strait of Hormuz traffic returns to normal by October 31?",
+   "yes_price": 0.022,
+   "volume_24h": 32321.692567,
+   "end_date": "2026-11-01T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5180122",
+   "question": "Ethereum Up or Down on October 3?",
+   "yes_price": 0.135,
+   "volume_24h": 31553.52302600003,
+   "end_date": "2026-10-03T16:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "701548",
+   "question": "Will Ethereum reach $4,000 by December 31, 2026?",
+   "yes_price": 0.155,
+   "volume_24h": 31348.50291,
+   "end_date": "2027-01-01T05:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "630747",
+   "question": "Will the Republicans win the Kansas Senate race in 2026?",
+   "yes_price": 0.685,
+   "volume_24h": 31122.58037,
+   "end_date": "2026-11-04T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4970459",
+   "question": "Will Elon Musk post 160-179 tweets from September 29 to October 6, 2026?",
+   "yes_price": 0.004,
+   "volume_24h": 31039.423009000006,
+   "end_date": "2026-10-06T16:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5170744",
+   "question": "Will Bitcoin dip to $65,000 in October?",
+   "yes_price": 0.042,
+   "volume_24h": 30962.344151,
+   "end_date": "2026-11-01T04:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5170772",
+   "question": "Will Ethereum reach $2,900 in October?",
+   "yes_price": 0.525,
+   "volume_24h": 30666.655268,
+   "end_date": "2026-11-01T04:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5062323",
+   "question": "Will Ethereum reach $2,900 September 28-October 4?",
+   "yes_price": 0.0095,
+   "volume_24h": 30653.905733999993,
+   "end_date": "2026-10-05T04:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "1163699",
+   "question": "Clarity Act (H.R.3633) signed into law in 2026?",
+   "yes_price": 0.0495,
+   "volume_24h": 30196.003483,
+   "end_date": "2027-01-01T05:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5036103",
+   "question": "Will the price of Bitcoin be above $84,000 on October 4?",
+   "yes_price": 0.7715,
+   "volume_24h": 29942.87235800001,
+   "end_date": "2026-10-04T16:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5036098",
+   "question": "Will the price of Bitcoin be above $82,000 on October 4?",
+   "yes_price": 0.9915,
+   "volume_24h": 29837.330238999988,
+   "end_date": "2026-10-04T16:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "703258",
+   "question": "Will Jesus Christ return before 2027?",
+   "yes_price": 0.0135,
+   "volume_24h": 29388.490893000002,
+   "end_date": "2027-01-01T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4713962",
+   "question": "Russia military action against an EU country by December 31, 2026?",
+   "yes_price": 0.115,
+   "volume_24h": 28929.086676,
+   "end_date": "2027-01-01T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4985057",
+   "question": "Will the price of Bitcoin be above $78,000 on October 3?",
+   "yes_price": 0.9985,
+   "volume_24h": 28812.076834000007,
+   "end_date": "2026-10-03T16:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4747307",
+   "question": "Will SD Eibar win on 2026-10-03?",
+   "yes_price": 0.375,
+   "volume_24h": 28539.432752,
+   "end_date": "2026-10-03T12:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5170732",
+   "question": "Will Bitcoin reach $95,000 in October?",
+   "yes_price": 0.215,
+   "volume_24h": 28195.135825,
+   "end_date": "2026-11-01T04:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4951230",
+   "question": "Will WTI Crude Oil (WTI) hit (LOW) $65 in October?",
+   "yes_price": 0.027,
+   "volume_24h": 27747.276053,
+   "end_date": "2026-11-01T03:59:59.999Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "1117222",
+   "question": "Miguel D\u00edaz-Canel out as leader of Cuba by December 31?",
+   "yes_price": 0.125,
+   "volume_24h": 27465.962955000003,
+   "end_date": "2027-01-01T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "629708",
+   "question": "Will the Republicans win the Vermont governor race in 2026?",
+   "yes_price": 0.8,
+   "volume_24h": 27354.070121,
+   "end_date": "2026-11-04T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "1321565",
+   "question": "Will Stripe have the highest IPO Market Cap 2026?",
+   "yes_price": 0.001,
+   "volume_24h": 27000,
+   "end_date": "2026-12-31T00:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4662695",
+   "question": "Will Anthropic announce bankruptcy by December 31, 2029?",
+   "yes_price": 0.285,
+   "volume_24h": 26744.187408,
+   "end_date": "2030-01-01T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "2774057",
+   "question": "Strait of Hormuz traffic returns to normal by September 30?",
+   "yes_price": 0.0005,
+   "volume_24h": 26460.49,
+   "end_date": "2026-10-01T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "562794",
+   "question": "Will the Republican Party control the Senate after the 2026 Midterm elections?",
+   "yes_price": 0.355,
+   "volume_24h": 26318.450958,
+   "end_date": "2026-11-04T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5170734",
+   "question": "Will Bitcoin reach $90,000 in October?",
+   "yes_price": 0.485,
+   "volume_24h": 26285.324173999998,
+   "end_date": "2026-11-01T04:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "1090496",
+   "question": "NATO x Russia military clash by December 31, 2026?",
+   "yes_price": 0.21,
+   "volume_24h": 26272.675695,
+   "end_date": "2027-01-01T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5170745",
+   "question": "Will Bitcoin dip to $62,500 in October?",
+   "yes_price": 0.036,
+   "volume_24h": 26222.62755,
+   "end_date": "2026-11-01T04:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "2757891",
+   "question": "Will Aleksandar Vu\u010di\u0107 be the next Prime Minister of Serbia?",
+   "yes_price": 0.6615,
+   "volume_24h": 26002.367678,
+   "end_date": "2026-10-25T23:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4885967",
+   "question": "Saudi Oil Pipeline (East-West) restarts by October 15?",
+   "yes_price": 0.34,
+   "volume_24h": 25950.702003000002,
+   "end_date": "2026-10-16T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5170743",
+   "question": "Will Bitcoin dip to $67,500 in October?",
+   "yes_price": 0.055,
+   "volume_24h": 25821.124362,
+   "end_date": "2026-11-01T04:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4936100",
+   "question": "Will WTI Crude Oil (WTI) hit (HIGH) $130 in October?",
+   "yes_price": 0.0175,
+   "volume_24h": 25239.314815,
+   "end_date": "2026-11-01T03:59:59.999Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "631057",
+   "question": "Will the Democrats win the Ohio Senate race in 2026?",
+   "yes_price": 0.585,
+   "volume_24h": 25025.0861,
+   "end_date": "2026-11-04T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "1131150",
+   "question": "Will the Doge-1 Lunar Mission launch by December 31, 2026?",
+   "yes_price": 0.0405,
+   "volume_24h": 25005,
+   "end_date": "2027-01-01T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "1321570",
+   "question": "Will Revolut have the highest IPO Market Cap 2026?",
+   "yes_price": 0.0005,
+   "volume_24h": 25000,
+   "end_date": "2026-12-31T00:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "3554662",
+   "question": "Will OpenAI have the best AI model at the end of October 2026?",
+   "yes_price": 0.007,
+   "volume_24h": 24964.851184999996,
+   "end_date": "2026-10-31T16:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "2467206",
+   "question": "Will Bitcoin reach $95,000 by December 31, 2026?",
+   "yes_price": 0.495,
+   "volume_24h": 24735.885098999996,
+   "end_date": "2027-01-01T05:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4984991",
+   "question": "Will the price of Bitcoin be between $84,000 and $86,000 on October 3?",
+   "yes_price": 0.895,
+   "volume_24h": 24298.28069,
+   "end_date": "2026-10-03T16:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5126794",
+   "question": "Will Louisiana enact a data center moratorium by December 31, 2026?",
+   "yes_price": 0.055,
+   "volume_24h": 24281.163816,
+   "end_date": "2027-01-01T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "1321569",
+   "question": "Will Waymo have the highest IPO Market Cap 2026?",
+   "yes_price": 0.0005,
+   "volume_24h": 24000,
+   "end_date": "2026-12-31T00:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "630963",
+   "question": "Will the Democrats win the Texas Senate race in 2026?",
+   "yes_price": 0.605,
+   "volume_24h": 23915.130626000002,
+   "end_date": "2026-11-04T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5062329",
+   "question": "Will Ethereum dip to $2,500 September 28-October 4?",
+   "yes_price": 0.0185,
+   "volume_24h": 23906.486482999997,
+   "end_date": "2026-10-05T04:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4762522",
+   "question": "Will St. Vincent and the Grenadines win on 2026-10-03?",
+   "yes_price": 0.565,
+   "volume_24h": 23772.103082000005,
+   "end_date": "2026-10-03T21:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4970500",
+   "question": "Will Elon Musk post 380-399 tweets from September 29 to October 6, 2026?",
+   "yes_price": 0.001,
+   "volume_24h": 23600.381,
+   "end_date": "2026-10-06T16:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "3554658",
+   "question": "Will Meta have the best AI model at the end of October 2026?",
+   "yes_price": 0.0015,
+   "volume_24h": 23322.560609999993,
+   "end_date": "2026-11-01T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "701488",
+   "question": "Will Bitcoin reach $180,000 by December 31, 2026?",
+   "yes_price": 0.0145,
+   "volume_24h": 22313.105,
+   "end_date": "2027-01-01T05:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4412200",
+   "question": "Will OpenAI announce another Millennium Prize solution by December 31, 2026?",
+   "yes_price": 0.235,
+   "volume_24h": 22127.566205000003,
+   "end_date": "2027-01-01T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "629707",
+   "question": "Will the Democrats win the Vermont governor race in 2026?",
+   "yes_price": 0.2005,
+   "volume_24h": 22002.425570000003,
+   "end_date": "2026-11-04T04:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "3399450",
+   "question": "Iran leadership change by October 31?",
+   "yes_price": 0.021,
+   "volume_24h": 21991.717688999997,
+   "end_date": "2026-11-01T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5170729",
+   "question": "Will Bitcoin reach $102,500 in October?",
+   "yes_price": 0.055,
+   "volume_24h": 21245.468220000002,
+   "end_date": "2026-11-01T04:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4985062",
+   "question": "Will the price of Bitcoin be above $80,000 on October 3?",
+   "yes_price": 0.9965,
+   "volume_24h": 21176.273902,
+   "end_date": "2026-10-03T16:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "1345531",
+   "question": "Will Bitcoin reach $90,000 by December 31, 2026?",
+   "yes_price": 0.695,
+   "volume_24h": 20861.304541999998,
+   "end_date": "2027-01-01T05:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "3399468",
+   "question": "Israel x Iran ceasefire continues through December 31?",
+   "yes_price": 0.625,
+   "volume_24h": 20827.005349999996,
+   "end_date": "2026-12-31T20:29:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "1193093",
+   "question": "Will Ulf Kristersson be the next Prime Minister of Sweden?",
+   "yes_price": 0.1425,
+   "volume_24h": 20718.241958000002,
+   "end_date": "2026-09-14T03:59:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "5062285",
+   "question": "Will Bitcoin dip to $74,000 September 28-October 4?",
+   "yes_price": 0.0035,
+   "volume_24h": 20650.957886999997,
+   "end_date": "2026-10-05T04:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4824866",
+   "question": "Will \"Verity\" Opening Weekend Box Office be at least 28m?",
+   "yes_price": 0.9865,
+   "volume_24h": 20511.517343,
+   "end_date": "2026-10-04T12:00:00Z"
+  },
+  {
+   "source": "polymarket",
+   "id": "4936101",
+   "question": "Will WTI Crude Oil (WTI) hit (HIGH) $120 in October?",
+   "yes_price": 0.043,
+   "volume_24h": 20411.014586,
+   "end_date": "2026-11-01T03:59:59.999Z"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXELONMARS-99",
+   "question": "Will Elon Musk visit Mars in his lifetime?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2099-08-01T04:59:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXNEXTNATOSECGEN-99-KIOH",
+   "question": "Who will be the next Secretary General of NATO?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2099-01-08T15:00:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXNEWPOPE-70-PPIZ",
+   "question": "Who will the next Pope be?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2070-01-01T15:00:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXWARMING-50",
+   "question": "Will the world pass 2 degrees Celsius over pre-industrial levels before 2050?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2050-01-01T04:59:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXMARSVRAIL-50",
+   "question": "Will a human land on Mars before California starts high-speed rail?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2050-01-01T04:59:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXERUPTSUPER-0-50JAN01",
+   "question": "Will a supervolcano erupt before 2050?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2050-01-01T04:59:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXCOLONIZEMARS-50",
+   "question": "Will humans colonize Mars before 2050?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2050-01-01T04:59:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXPERSONPRESMAM-45",
+   "question": "Will Zohran Mamdani become President of the United States before 2045?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2045-01-29T15:00:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXNEXTDNCCHAIR-45-BWIK",
+   "question": "Who will be the next DNC Chair?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2045-01-08T15:00:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXMILLENNIUMNEXT-45-BSD",
+   "question": "Which Millennium Prize Problem will be solved next?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2045-01-01T04:59:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXXISUCCESSOR-45JAN01-DXUE",
+   "question": "Who will be named as Xi Jinping's successor?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2045-01-01T04:59:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXPERSONPRESFUENTES-45",
+   "question": "Will Nick Fuentes become President of the United States before 2045?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2045-01-08T15:00:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXNEXTROMANIAPM-45JAN01-MISA",
+   "question": "Who will be the next new Prime Minister of Romania?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2045-01-01T15:00:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXNEXTISRAELPM-45JAN01-NBEN",
+   "question": "Who will succeed Netanyahu as Prime Minister of Israel?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2045-01-01T15:00:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXG7LEADEROUT-26JUL20-MCAR",
+   "question": "Which G7 leader will leave office next?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2045-01-01T15:00:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXNFLCAREERRSHYDS-DHENRY-14000",
+   "question": "Derrick Henry Career Regular Season Rushing Yards",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2040-03-08T15:00:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXNFLCAREERRECYDS-MEVANS-14000",
+   "question": "Mike Evans Career Regular Season Receiving Yards",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2040-03-08T15:00:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXNFLCAREERPASSYDS-PMAHOMES-40000",
+   "question": "Patrick Mahomes Career Regular Season Passing Yards",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2040-03-08T15:00:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXNFLCAREERPASSYDS-JALLEN-35000",
+   "question": "Josh Allen Career Regular Season Passing Yards",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2040-03-08T15:00:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXRIEMANNRES-40-27JAN01",
+   "question": "When will the Riemann Hypothesis be resolved?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2027-01-07T15:00:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXMILLENNIUMALL-40-28JAN01",
+   "question": "When will all Millennium Prize Problems be solved?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2028-01-07T15:00:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXRAMPBREX-40-RAMP",
+   "question": "Will Ramp or Brex IPO first?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2040-01-01T04:59:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXOAIANTH-40-OAI",
+   "question": "Will OpenAI or Anthropic IPO first?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2040-01-01T04:59:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXFUSION-30-JAN01",
+   "question": "When will nuclear fusion be achieved?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2030-01-01T04:59:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXDEELRIP-40-DEEL",
+   "question": "Will Deel or Rippling IPO first?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2040-01-01T04:59:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXGDPYEAR-36-T0.1",
+   "question": "US real GDP growth in 2036?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2037-12-31T13:29:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXUSCPIYEAR-37FEB01-T0.0",
+   "question": "US headline CPI inflation in December 2036",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2037-02-01T04:59:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXNOMGDPGROWTH-37JAN28-T0.0",
+   "question": "US nominal GDP growth in 2036",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2037-01-28T13:29:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXU3EOY-37JAN09-T3.0",
+   "question": "US unemployment rate at year-end 2036",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2037-01-09T13:29:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXLFPRATEEOY-37JAN09-T56.00",
+   "question": "US labor force participation rate at year-end 2036",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2037-01-09T13:29:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXFEDFUNDSYEAR-37JAN01-T1.00",
+   "question": "Fed funds rate at end of 2036",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2037-01-01T04:59:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXGDPYEAR-35-T0.1",
+   "question": "US real GDP growth in 2035?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2036-02-28T13:29:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXUSCPIYEAR-36FEB01-T0.0",
+   "question": "US headline CPI inflation in December 2035",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2036-02-01T04:59:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXNOMGDPGROWTH-36JAN28-T0.0",
+   "question": "US nominal GDP growth in 2035",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2036-01-28T13:29:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXU3EOY-36JAN04-T3.0",
+   "question": "US unemployment rate at year-end 2035",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2036-01-04T13:29:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXLFPRATEEOY-36JAN04-T56.00",
+   "question": "US labor force participation rate at year-end 2035",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2036-01-04T13:29:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXFEDFUNDSYEAR-36JAN01-T1.00",
+   "question": "Fed funds rate at end of 2035",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2036-01-01T04:59:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXNEWROLEJP-35DEC-MLA",
+   "question": "Who will be the next CEO of JPMorgan Chase?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2035-12-31T22:00:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXNEWROLEGS-35DEC-JWA",
+   "question": "Who will be the next CEO of Goldman Sachs?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2035-12-31T22:00:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXPOPCHANGESTATE10-35",
+   "question": "Will any U.S. state experience a population decrease of at least 10% between 2025 and 2035?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2036-12-30T15:00:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXEARTHQUAKECALIFORNIA-35",
+   "question": "Will there be an at least 8.0 magnitude earthquake in California before 2035?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2035-12-31T04:59:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXGDPYEAR-34-T0.1",
+   "question": "US real GDP growth in 2034?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2035-02-28T13:29:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXUSCPIYEAR-35FEB01-T0.0",
+   "question": "US headline CPI inflation in December 2034",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2035-02-01T04:59:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXNOMGDPGROWTH-35JAN28-T0.0",
+   "question": "US nominal GDP growth in 2034",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2035-01-28T13:29:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXU3EOY-35JAN05-T3.0",
+   "question": "US unemployment rate at year-end 2034",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2035-01-05T13:29:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXLFPRATEEOY-35JAN05-T56.00",
+   "question": "US labor force participation rate at year-end 2034",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2035-01-05T13:29:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXNEXTUKPRIMEMIN-35JAN01-NFAR",
+   "question": "Who will be the next Prime Minister of the UK?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2035-01-08T15:00:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXFEDFUNDSYEAR-35JAN01-T1.00",
+   "question": "Fed funds rate at end of 2034",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2035-01-01T04:59:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXROBOTMARS-35",
+   "question": "Will a humanoid robot walk on Mars before a human does?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2035-01-01T15:00:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXPERFORMBONDSONG-35-DUA",
+   "question": "Next James Bond film: Artist performing the James Bond Theme",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2035-01-01T15:00:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXJOHNNYDEPP-35-JOH",
+   "question": "Next Pirates of the Caribbean film: Will Johnny Depp be cast?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2035-01-01T15:00:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXFDAVERVE102-VERV-30JAN01",
+   "question": "Will the FDA approve VERVE-102?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2030-01-01T04:59:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXBRUVSEAT-35",
+   "question": "Will Andrew Tate's party win a seat in the next UK election?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2035-01-01T15:00:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXAFRICALEADEROUT-35-WR",
+   "question": "Which of these African leaders will leave office next?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2035-01-01T15:00:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXACTORSONNYCROCKETT-35-RYA",
+   "question": "Next Miami Vice film: Cast",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2035-01-01T15:00:00Z",
+   "category": "Economics"
+  },
+  {
+   "source": "kalshi",
+   "id": "KXGDPYEAR-33-T0.1",
+   "question": "US real GDP growth in 2033?",
+   "yes_price": null,
+   "volume_24h": null,
+   "end_date": "2034-02-28T13:29:00Z",
+   "category": "Economics"
+  }
+ ]
+}

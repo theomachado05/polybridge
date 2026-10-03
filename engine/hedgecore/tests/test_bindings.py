@@ -24,3 +24,13 @@ def test_nan_fill_latches_invalid():
     d = eng.on_tick(ts_ns=1_000_000_000, p=0.2, now_ns=1_000_000_000)
     assert (d.action, d.reason) == ("hold", "invalid")
     assert d.order_qty == 0.0
+
+
+def test_fee_gate_fields_and_reason():
+    spec = hedgecore.HedgeSpec(ticker="X", shares_held=1000, band_shares=0, gap_per_share=1.0, half_spread=0.01)
+    assert (spec.gap_per_share, spec.fee_per_share, spec.half_spread, spec.min_benefit_ratio) == (1.0, 0.0035, 0.01, 1.0)
+    eng = hedgecore.Engine(spec)
+    assert eng.on_tick(ts_ns=1_000_000_000, p=0.2, now_ns=1_000_000_000).action == "order"
+    eng.on_fill(100)
+    d = eng.on_tick(ts_ns=2_000_000_000, p=0.21, now_ns=2_000_000_000)
+    assert (d.action, d.reason) == ("hold", "below_fees")

@@ -1,6 +1,6 @@
 #pragma once
 // hedgecore: the systematic hedge algorithm behind a user-approved PolyBridge hedge.
-// Pipeline per tick: validate -> staleness gate -> sigma gate -> DeltaBridge size -> risk cap -> band.
+// Pipeline per tick: validate -> staleness gate -> sigma gate -> DeltaBridge size -> risk cap -> band -> fee gate.
 // Gates are std::variant stages (static dispatch). on_tick allocates nothing and makes no virtual calls.
 #include <array>
 #include <cmath>
@@ -49,6 +49,7 @@ class Engine {
   std::array<Gate, 2> gates_;
   double hedge_ = 0.0;
   bool sized_once_ = false;
+  double p_at_last_order_ = 0.0;  // updated only when an Order is emitted
   bool fill_invalid_ = false;
   bool spec_valid_ = false;  // computed once in the constructor
 };
