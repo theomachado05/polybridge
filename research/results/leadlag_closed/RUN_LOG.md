@@ -25,3 +25,11 @@ One entry per run of `python -m leadlag_closed.run`: code commit, wall time, net
 - network requests: Polymarket CLOB 0, Massive 0 (cached responses are not counted)
 - result: 17 of 17 events usable, 380 of 380 placebo closures usable; verdict: mixed
 - exit: 0
+
+## 2026-10-03 08:58:34Z
+- code commit: `20f3a9c` + uncommitted changes in leadlag_closed/
+- mode: re-analysis of saved CSV
+- wall time: 2 s
+- network requests: Polymarket CLOB 0, Massive 0 (cached responses are not counted)
+- result: 17 of 17 events usable, 380 of 380 placebo closures usable; verdict: mixed
+- exit: 0

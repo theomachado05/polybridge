@@ -26,6 +26,9 @@ def fetch_equity_ohlc(client, ticker: str, start: pd.Timestamp, end: pd.Timestam
     return out[~out.index.duplicated(keep="last")].sort_index()
 
 
+YEAR_END_CLAMP = pd.Timestamp("2025-12-31 23:59", tz="UTC")  # study uses 2024-2025 prices only; nothing dated 2026 is requested
+
+
 def month_chunks(start: str, end: str) -> list[tuple[pd.Timestamp, pd.Timestamp]]:
     """Calendar-month UTC chunks covering [start, end] (dates), each padded by one day so closures at the edges are whole."""
     s, e = pd.Timestamp(start), pd.Timestamp(end)
@@ -33,7 +36,7 @@ def month_chunks(start: str, end: str) -> list[tuple[pd.Timestamp, pd.Timestamp]
     cur = s.replace(day=1)
     while cur <= e:
         nxt = (cur + pd.offsets.MonthBegin(1))
-        out.append((max(cur, s) .tz_localize("UTC") - pd.Timedelta(days=1), min(nxt, e + pd.Timedelta(days=1)).tz_localize("UTC") + pd.Timedelta(days=1)))
+        out.append((max(cur, s) .tz_localize("UTC") - pd.Timedelta(days=1), min(min(nxt, e + pd.Timedelta(days=1)).tz_localize("UTC") + pd.Timedelta(days=1), YEAR_END_CLAMP)))
         cur = nxt
     return out
 

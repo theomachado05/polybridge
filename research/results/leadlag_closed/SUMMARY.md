@@ -9,7 +9,7 @@ Narrow claim, tested after the wave-1 study found no PM lead during market hours
 - The three conditions: sign test significant with agreement above 50% = not met; slope positive with permutation p < 0.05 = met; pairing placebo p < 0.05 = not met.
 - In the events, the PM and the equity gap pointed the same way in 11 of 15 closures where the PM moved at least 1 pp (73%, exact p = 0.118). With so few events, even a clear tilt may fall short of significance; a count that high or low would be needed to reject 50/50 at n = 15: at least 12 agreeing or disagreeing.
 - The slope is +10.43 bp of gap per pp of PM change (HC3 t = +0.84, R-squared 0.38, permutation p = 0.005, Spearman rho +0.73).
-- On the placebo closures the same PM-vs-gap relation shows 86 of 145 agreeing (59%, p = 0.030) and a slope of +7.52 bp per pp (permutation p = 0.001). A relation of this kind in the unflagged closures means the PM-equity co-movement is not special to the selected news days.
+- On the placebo closures the same PM-vs-gap relation shows 89 of 149 agreeing (60%, p = 0.021) and a slope of +7.52 bp per pp (permutation p = 0.001). A relation of this kind in the unflagged closures means the PM-equity co-movement is not special to the selected news days.
 - Pairing each event's PM move with a random placebo gap gives 7.8 agreeing events on average against the observed 11 (p = 0.075); slope p = <0.001.
 - The interaction term (extra response per pp on news closures) is +2.91 bp per pp (HC3 t = +0.23); the baseline response over all closures is +7.52 (t = +2.58).
 - **Bottom line:** the PM closure move and the equity gap are positively related across the selected news events (rank correlation significant); the same relation also appears in closures with no flagged news, and news closures do not show an extra response; the PM move up to 08:00 ET does not predict the SPY move from 08:00 ET to the open. This is co-movement over the closure, not by itself evidence that the PM leads equities.
@@ -54,7 +54,7 @@ PM columns are the Yes-price in percentage points at the closure start and end; 
 
 **T2 regression** `gap = a + b * oriented PM change`, n = 17: b = +10.43 bp per pp, HC3 t = +0.84, R-squared = 0.381, permutation p = 0.005 (10,000 shuffles). Spearman rho = +0.73 (permutation p = 0.002).
 
-**Leverage check, exploratory (METHOD.md Amendment 2, added after the first run).** Leave-one-event-out slope: +9.0 (without e08) to +22.7 (without e04), positive in 17 of 17. Only the 13 recession-market events: slope +28.51 bp per pp (HC3 t = +4.16, permutation p = 0.001), Spearman rho +0.77 (p = 0.002). The election call (e04) is a very large, high-leverage point: it inflates the HC3 standard error (hence the low HC3 t next to the small permutation p). It does not carry the slope, since dropping it makes the slope larger, not smaller; the two markets simply have different bp-per-pp scales (a Trump-odds point and a recession-odds point are not the same unit of news).
+**Leverage check, exploratory (METHOD.md Amendment 2, added after the first run).** Leave-one-event-out slope: +9.0 (without e08) to +22.7 (without e04), positive in 17 of 17. Only the 13 recession-market events: slope +28.51 bp per pp (HC3 t = +4.16, permutation p = 0.001), Spearman rho +0.77 (p = 0.002). The election call (e04) is a very large, high-leverage point: it inflates the HC3 standard error (hence a low HC3 t next to a small permutation p). It does not carry the slope, since dropping it makes the slope larger, not smaller; the two markets simply have different bp-per-pp scales (a Trump-odds point and a recession-odds point are not the same unit of news).
 
 Secondary (not part of the decision rule):
 
@@ -73,11 +73,11 @@ Median absolute SPY gap: events 94 bp, placebo closures 28 bp. Closure types, ev
 
 | Min PM move | Closures | Agree | Rate | p |
 |---|---|---|---|---|
-| 1.0 pp (headline) | 145 | 86 | 59% | 0.030 |
-| 0.5 pp | 205 | 122 | 60% | 0.008 |
-| 2.0 pp | 58 | 36 | 62% | 0.087 |
+| 1.0 pp (headline) | 149 | 89 | 60% | 0.021 |
+| 0.5 pp | 207 | 122 | 59% | 0.012 |
+| 2.0 pp | 59 | 37 | 63% | 0.067 |
 
-Slope on all 380 placebo closures: b = +7.52 bp per pp, HC3 t = +2.58, R-squared = 0.042, permutation p = 0.001. By panel at 1 pp: election: 30 of 65 agree (46%), p = 0.620 (n closures 149); recession: 56 of 80 agree (70%), p = <0.001 (n closures 231).
+Slope on all 380 placebo closures: b = +7.52 bp per pp, HC3 t = +2.58, R-squared = 0.042, permutation p = 0.001. By panel at 1 pp: election: 31 of 66 agree (47%), p = 0.712 (n closures 149); recession: 58 of 83 agree (70%), p = <0.001 (n closures 231).
 
 **P2 pairing placebo** (events with PM move >= 1 pp, n = 15): each event's PM move paired with the gap of a random placebo closure from the same panel, 10,000 draws. Observed agreeing events 11 vs 7.8 on average under pairing; p = 0.075. Observed slope +10.49 vs +0.10 on average; p = <0.001.
 

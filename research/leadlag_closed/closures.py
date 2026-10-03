@@ -148,7 +148,7 @@ def closure_row(c: Closure, bars: pd.DataFrame, bars2: pd.DataFrame | None, poin
     pm_c = pm_at(points, t_close)
     pm_o = pm_at(points, t_open)
     pm_8 = pm_at(points, eq["t_0800"]) if pd.notna(eq["t_0800"]) else float("nan")
-    dpm = pm_o - pm_c
+    dpm = round(pm_o - pm_c, 9)
     row = {
         "closure": c.key, "open_day": c.open_day.strftime("%Y-%m-%d"), "kind": c.kind, "market": market, "sign": sign,
         "pm_close": pm_c, "pm_open": pm_o, "dpm_pp": dpm, "dpm_o_pp": sign * dpm,

@@ -123,3 +123,22 @@ def test_closure_row_orientation_and_reasons():
     assert r2["reason"] == "no PM quote"
     r3 = closure_row(c, b.iloc[0:0], None, pts, -1, "recession")
     assert r3["reason"] == "no equity bar"
+
+
+def test_one_tick_move_passes_the_1pp_threshold():
+    """0.565 -> 0.555 is exactly 1.0 pp; float noise must not drop it (review finding)."""
+    from leadlag_closed.stats import sign_agreement
+    cl = build_closures("2025-04-01", "2025-04-10")
+    c = {c.key: c for c in cl}["2025-04-02"]
+    bars = _bars("2025-04-02", "2025-04-03")
+    t_close, t_open = c.nominal_close, c.nominal_open
+    pts = [(int(t_close.timestamp()) - 60, 0.565), (int(t_open.timestamp()) - 60, 0.555)]
+    row = closure_row(c, bars, None, pts, 1, "m")
+    assert abs(row["dpm_o_pp"]) >= 1.0
+    # raw float noise, as in the committed CSV, is also tolerated by the test itself
+    assert sign_agreement([-0.9999999999999964, 1.0], [-5.0, 5.0], 1.0)["n"] == 2
+
+
+def test_month_chunks_never_request_2026():
+    from leadlag_closed.data import month_chunks
+    assert max(b for _, b in month_chunks("2025-01-01", "2025-12-31")) < pd.Timestamp("2026-01-01", tz="UTC")

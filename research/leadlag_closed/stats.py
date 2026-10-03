@@ -5,6 +5,8 @@ from math import comb
 
 import numpy as np
 
+THETA_TOL = 1e-9  # PM changes are differences of prices scaled by 100; a one-tick 1.0 pp move can come out as 0.99999999999999
+
 
 def binom_two_sided(k: int, n: int) -> float:
     """Exact two-sided binomial test against p = 0.5 (doubled tail, capped at 1)."""
@@ -18,7 +20,7 @@ def binom_two_sided(k: int, n: int) -> float:
 def sign_agreement(x, y, theta: float) -> dict:
     """T1: among pairs with |x| >= theta and y != 0, count sign(x) == sign(y)."""
     x, y = np.asarray(x, float), np.asarray(y, float)
-    m = np.isfinite(x) & np.isfinite(y) & (np.abs(x) >= theta) & (y != 0)
+    m = np.isfinite(x) & np.isfinite(y) & (np.abs(x) >= theta - THETA_TOL) & (y != 0)
     n = int(m.sum())
     k = int((np.sign(x[m]) == np.sign(y[m])).sum())
     return {"n": n, "k": k, "rate": k / n if n else float("nan"), "p": binom_two_sided(k, n) if n else float("nan")}
@@ -98,7 +100,7 @@ def pairing_placebo(ev_x, ev_panel, ev_y, pools: dict, theta: float, n_perm: int
     """
     x, y = np.asarray(ev_x, float), np.asarray(ev_y, float)
     panel = np.asarray(ev_panel)
-    m = np.isfinite(x) & np.isfinite(y) & (np.abs(x) >= theta)
+    m = np.isfinite(x) & np.isfinite(y) & (np.abs(x) >= theta - THETA_TOL)
     x, y, panel = x[m], y[m], panel[m]
     n = len(x)
     if n < 3:

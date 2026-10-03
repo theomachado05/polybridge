@@ -12,6 +12,7 @@ import pandas as pd  # noqa: E402
 
 from .analysis import usable  # noqa: E402
 from .config import PARAMS, RESULTS_DIR  # noqa: E402
+from .stats import THETA_TOL  # noqa: E402
 
 BLUE, ORANGE, GREY, INK = "#0072B2", "#D55E00", "#9AA0A6", "#222222"
 MARKET_COLOR = {"recession": BLUE, "election": ORANGE}
@@ -41,7 +42,7 @@ def event_table(rows: pd.DataFrame) -> pd.DataFrame:
     def agree(r):
         if r["reason"]:
             return "excluded"
-        if abs(r["dpm_o_pp"]) < th:
+        if abs(r["dpm_o_pp"]) < th - THETA_TOL:
             return "PM move below 1 pp"
         if r["gap_bp"] == 0:
             return "gap is zero"
@@ -94,7 +95,7 @@ def chart_events(rows: pd.DataFrame, path) -> None:
     fig, (a1, a2) = plt.subplots(1, 2, figsize=(11, 0.42 * len(ev) + 1.8), dpi=140, sharey=True)
     y = np.arange(len(ev))[::-1]
     agree = np.sign(ev["dpm_o_pp"]) == np.sign(ev["gap_bp"])
-    small = ev["dpm_o_pp"].abs() < PARAMS.theta_pp
+    small = ev["dpm_o_pp"].abs() < PARAMS.theta_pp - THETA_TOL
     colors = [GREY if s else (BLUE if a else ORANGE) for a, s in zip(agree, small)]
     a1.barh(y, ev["dpm_o_pp"], color=colors)
     a2.barh(y, ev["gap_bp"], color=colors)
@@ -240,9 +241,14 @@ def write_summary(rows: pd.DataFrame, res: dict, markets: dict, et: pd.DataFrame
         ne = lo.get("no_election")
         if ne:
             s += (f" Only the {ne['n']} recession-market events: slope {_f(ne['b'], 2, True)} bp per pp (HC3 t = {_f(ne['t'], 2, True)}, permutation p = {_p(ne['p_perm'])}), "
-                  f"Spearman rho {_f(ne['rho'], 2, True)} (p = {_p(ne['p_rho'])}). The election call (e04) is a very large, high-leverage point: it inflates the HC3 standard error "
-                  "(hence the low HC3 t next to the small permutation p). It does not carry the slope, since dropping it makes the slope larger, not smaller; "
+                  f"Spearman rho {_f(ne['rho'], 2, True)} (p = {_p(ne['p_rho'])}).")
+        if lo["max_drop"].startswith("e04") and lo["max"] > lo["full"]:
+            s += (" The election call (e04) is a very large, high-leverage point: it inflates the HC3 standard error "
+                  "(hence a low HC3 t next to a small permutation p). It does not carry the slope, since dropping it makes the slope larger, not smaller; "
                   "the two markets simply have different bp-per-pp scales (a Trump-odds point and a recession-odds point are not the same unit of news).")
+        else:
+            s += (f" The full-sample slope is {_f(lo['full'], 1, True)} bp per pp; the largest leave-one-out change comes from dropping "
+                  f"{lo['max_drop'][:3]} (slope {_f(lo['max'], 1, True)}) or {lo['min_drop'][:3]} (slope {_f(lo['min'], 1, True)}).")
         L.append(s + "\n")
     L.append("Secondary (not part of the decision rule):\n")
     L.append(f"- **T3 first 30 minutes after the open**: sign agreement at 1 pp: {_t1s(t31[th])}. Slope {_f(t32['b'], 2, True)} bp per pp (t = {_f(t32['t'], 2, True)}, permutation p = {_p(t32['p_perm'])}, n = {t32['n']}). "
