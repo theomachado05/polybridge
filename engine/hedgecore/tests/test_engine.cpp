@@ -80,3 +80,30 @@ TEST(Engine, ReasonNames) {
   EXPECT_STREQ(to_string(Reason::InsideBand), "inside_band");
   EXPECT_STREQ(to_string(Reason::RiskCapped), "risk_capped");
 }
+
+TEST(Engine, NaNCoverageHoldsInvalid) {
+  auto s = spec();
+  s.target_coverage = std::numeric_limits<double>::quiet_NaN();
+  Engine e(s);
+  auto d = e.on_tick({kSec, 0.20}, kSec);
+  EXPECT_EQ(d.action, Action::Hold);
+  EXPECT_EQ(d.reason, Reason::Invalid);
+}
+
+TEST(Engine, NegativeSharesHoldsInvalid) {
+  auto s = spec();
+  s.shares_held = -1000;
+  Engine e(s);
+  auto d = e.on_tick({kSec, 0.20}, kSec);
+  EXPECT_EQ(d.action, Action::Hold);
+  EXPECT_EQ(d.reason, Reason::Invalid);
+}
+
+TEST(Engine, CoverageAboveOneHoldsInvalid) {
+  auto s = spec();
+  s.target_coverage = 1.5;
+  Engine e(s);
+  auto d = e.on_tick({kSec, 0.20}, kSec);
+  EXPECT_EQ(d.action, Action::Hold);
+  EXPECT_EQ(d.reason, Reason::Invalid);
+}

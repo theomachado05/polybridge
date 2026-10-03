@@ -37,6 +37,7 @@ class Engine {
   std::array<Gate, 2> gates_;
   double hedge_ = 0.0;
   bool sized_once_ = false;
+  bool spec_valid_ = false;  // computed once in the constructor
 };
 
 }  // namespace hedgecore

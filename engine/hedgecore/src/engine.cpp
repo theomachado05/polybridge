@@ -32,9 +32,21 @@ bool SigmaGate::pass(const Tick& t, std::int64_t) noexcept {
   return ok;
 }
 
+namespace {
+bool spec_ok(const HedgeSpec& s) noexcept {
+  const bool finite = std::isfinite(s.shares_held) && std::isfinite(s.target_coverage) &&
+                      std::isfinite(s.band_shares) && std::isfinite(s.max_hedge_shares) &&
+                      std::isfinite(s.sigma_k) && std::isfinite(s.sigma_alpha);
+  return finite && s.shares_held >= 0 && s.target_coverage >= 0 && s.target_coverage <= 1 &&
+         s.band_shares >= 0 && s.max_hedge_shares >= 0 && s.sigma_k >= 0 && s.sigma_alpha >= 0 &&
+         s.sigma_alpha <= 1 && s.max_staleness_ns >= 0;
+}
+}  // namespace
+
 Engine::Engine(HedgeSpec spec)
     : spec_(std::move(spec)),
-      gates_{StalenessGate{spec_.max_staleness_ns}, SigmaGate{spec_.sigma_k, spec_.sigma_alpha}} {}
+      gates_{StalenessGate{spec_.max_staleness_ns}, SigmaGate{spec_.sigma_k, spec_.sigma_alpha}},
+      spec_valid_(spec_ok(spec_)) {}
 
 Decision Engine::on_tick(const Tick& t, std::int64_t now_ns) {
   const auto t0 = std::chrono::steady_clock::now();
@@ -44,6 +56,7 @@ Decision Engine::on_tick(const Tick& t, std::int64_t now_ns) {
   };
 
   if (!(t.p >= 0.0 && t.p <= 1.0)) return finish(Action::Hold, Reason::Invalid, 0, hedge_);
+  if (!spec_valid_) return finish(Action::Hold, Reason::Invalid, 0, hedge_);
 
   for (auto& gate : gates_) {
     Reason failed = Reason::Rebalance;
