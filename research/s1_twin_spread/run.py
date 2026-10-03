@@ -29,14 +29,14 @@ def iso(ts: float) -> str:
     return datetime.fromtimestamp(ts, cfg.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def load_pair(meta: dict, t1: int, h: float) -> tuple[en.Pair, dict]:
+def load_pair(meta: dict, t1: int, h: float, k_max_age: float = cfg.MAX_QUOTE_AGE_S) -> tuple[en.Pair, dict]:
     k = np.load(ds.CACHE / f"k_{meta['ticker']}.npz")
     p = np.load(ds.CACHE / f"p_{meta['pm_id']}.npz")
     start = int(ds._iso(meta["hist_start"]).timestamp())
     deadline = ds._iso(meta["deadline"]).timestamp()
     P = en.build_pair(meta["ticker"], start, t1, k["t"], k["bid"], k["ask"], p["t"], p["p"], deadline, h,
                       meta["kalshi_fee_multiplier"], meta["pm_fee_rate"] if meta["pm_fees_enabled"] else 0.0,
-                      meta["pm_fee_exponent"])
+                      meta["pm_fee_exponent"], k_max_age)
     return P, {"k_t": k["t"], "p_t": p["t"]}
 
 
@@ -110,6 +110,9 @@ def main() -> int:
             P, _ = load_pair(meta, t1, c["h"])
             cov = coverage(P)
             row.update(cov)
+            P6, _ = load_pair(meta, t1, c["h"], cfg.QUOTE_RULES[1][1])
+            row["both_share_kalshi_carry_6h"] = coverage(P6)["both_share"]
+            del P6
             if cov["first_both"] is None:
                 row["reason"] = "the two venues never have a fresh quote in the same minute"
             else:
@@ -125,13 +128,14 @@ def main() -> int:
     log.append(f"history window {iso(t0)} to {iso(t1)}; split {iso(split)}; {len(usable)} pairs used")
 
     # ---- pass 2: every variant x cost x segment
-    runs = [(v, c, s) for v in cfg.VARIANTS for c in cfg.COST_MULTIPLIERS for s in segs]
-    equity = {(v.id, c, s, m): np.zeros(len(marks[s])) for v, c, s in runs for m in MARKS}
+    runs = [(q, v, c, s) for q, _ in cfg.QUOTE_RULES for v in cfg.VARIANTS for c in cfg.COST_MULTIPLIERS for s in segs]
+    equity = {(q, v.id, c, s, m): np.zeros(len(marks[s])) for q, v, c, s in runs for m in MARKS}
     trades: list[dict] = []
+    pm_start = {m["ticker"]: ds._iso(m["pm_start"]).timestamp() for m in usable}
     signal_minutes: list[dict] = []
     raw_ts: dict[str, dict] = {}
-    for meta in usable:
-        P, ts = load_pair(meta, t1, calib[meta["token"]]["h"])
+    for meta, (q, k_age) in ((m_, q_) for m_ in usable for q_ in cfg.QUOTE_RULES):
+        P, ts = load_pair(meta, t1, calib[meta["token"]]["h"], k_age)
         raw_ts[meta["ticker"]] = ts
         for c in cfg.COST_MULTIPLIERS:
             L = en.legs(P, c, r, cfg.CLIP_HISTORY)
@@ -140,7 +144,7 @@ def main() -> int:
                     i0, i1 = seg_index(P, sa, sb)
                     if i1 > i0:
                         both = int(np.sum(~np.isnan(L.edge["A"][i0:i1])))
-                        signal_minutes.append({"ticker": P.key, "segment": s, "cost_mult": c, "minutes_both_fresh": both,
+                        signal_minutes.append({"quote_rule": q, "ticker": P.key, "segment": s, "cost_mult": c, "minutes_both_fresh": both,
                                                **{f"minutes_edge{d}_ge_{int(th * 100)}c": int(np.sum(L.edge[d][i0:i1] >= th))
                                                   for d in "AB" for th in (0.0, 0.01, 0.02, 0.03)},
                                                "median_gap_mid": float(np.nanmedian((P.pm - (P.kb + P.ka) / 2)[i0:i1])) if both else float("nan"),
@@ -154,9 +158,11 @@ def main() -> int:
                         idx = np.clip((marks[s] - P.t[0]) // 60, 0, i1 - 1).astype(int)
                         path = {m: np.array([en.pnl_at(P, L, tr, int(i), c, r, m) for i in idx]) for m in MARKS}
                         for m in MARKS:
-                            equity[(v.id, c, s, m)] += path[m]
+                            equity[(q, v.id, c, s, m)] += path[m]
                         d = asdict(tr)
-                        d.update(variant=v.id, cost_mult=c, segment=s, entry_utc=iso(tr.t_in),
+                        d["_path"] = path["mid"]
+                        d["pm_market_age_h"] = (tr.t_in - pm_start[P.key]) / 3600.0
+                        d.update(quote_rule=q, variant=v.id, cost_mult=c, segment=s, entry_utc=iso(tr.t_in),
                                  exit_utc=iso(tr.t_out) if tr.t_out else "", capital=tr.qty * tr.cost_in,
                                  pnl_mid=path["mid"][-1], pnl_liq=path["liq"][-1], pnl_locked=path["locked"][-1],
                                  fees_bp=tr.fees_in / tr.cost_in * 1e4, spread_bp=tr.spread_in / tr.cost_in * 1e4,
@@ -189,14 +195,20 @@ def main() -> int:
         n, size = verify_print(ps, tr) if ps else (0, 0.0)
         d["prints_reach_entry"] = bool(reach <= d["t_in"] - cfg.PRINT_WINDOW_S)
         d["verify_n"], d["verify_size"], d["verified"] = n, size, n > 0
-        d["pnl_mid_verified"] = d["pnl_mid"] * min(size, d["qty"]) / d["qty"] if n else 0.0
-        d["pnl_locked_verified"] = d["pnl_locked"] * min(size, d["qty"]) / d["qty"] if n else 0.0
+        share = min(size, d["qty"]) / d["qty"] if n else 0.0
+        d["verified_qty"] = share * d["qty"]
+        d["pnl_mid_verified"] = d["pnl_mid"] * share
+        d["pnl_locked_verified"] = d["pnl_locked"] * share
+        d["edge_at_entry_verified"] = d["edge_in"] * d["verified_qty"]     # needs no modelled exit
+        key = (d["quote_rule"], d["variant"], d["cost_mult"], d["segment"], "mid_verified")
+        equity.setdefault(key, np.zeros(len(marks[d["segment"]])))
+        equity[key] += d.pop("_path") * share
 
     # ---- metrics
     rows = []
-    for v, c, s in runs:
-        tt = [d for d in trades if (d["variant"], d["cost_mult"], d["segment"]) == (v.id, c, s)]
-        m = en.metrics(equity[(v.id, c, s, "mid")], marks[s], cfg.CAPITAL_HISTORY, sum(d["traded"] for d in tt), segs[s][0])
+    for q, v, c, s in runs:
+        tt = [d for d in trades if (d["quote_rule"], d["variant"], d["cost_mult"], d["segment"]) == (q, v.id, c, s)]
+        m = en.metrics(equity[(q, v.id, c, s, "mid")], marks[s], cfg.CAPITAL_HISTORY, sum(d["traded"] for d in tt), segs[s][0])
         by_mid, by_locked = {}, {}
         for d in tt:
             by_mid.setdefault(d["pair"], []).append(d["pnl_mid"])
@@ -204,13 +216,17 @@ def main() -> int:
         bm = en.pair_bootstrap(by_mid, cfg.N_BOOT, cfg.BOOT_SEED)
         bl = en.pair_bootstrap(by_locked, cfg.N_BOOT, cfg.BOOT_SEED)
         ver = [d for d in tt if d["verified"]]
+        mv = en.metrics(equity.get((q, v.id, c, s, "mid_verified"), np.zeros(len(marks[s]))), marks[s], cfg.CAPITAL_HISTORY,
+                        sum(d["traded"] * d["verified_qty"] / d["qty"] for d in tt), segs[s][0])
+        bv = en.pair_bootstrap({k: [d["pnl_mid_verified"] for d in ver if d["pair"] == k] for k in {d["pair"] for d in ver}},
+                               cfg.N_BOOT, cfg.BOOT_SEED)
         rows.append({
-            "segment": s, "variant": v.id, "theta": v.theta, "exit_on": v.exit_on, "cost_mult": c,
+            "quote_rule": q, "segment": s, "variant": v.id, "theta": v.theta, "exit_on": v.exit_on, "cost_mult": c,
             "start": iso(segs[s][0]), "end": iso(min(segs[s][1], t1)), "entries": len(tt),
             "pairs_traded": len({d["pair"] for d in tt}), "exits": sum(1 for d in tt if d["t_out"]),
             "open_at_end": sum(1 for d in tt if not d["t_out"]),
-            "pnl_mid": float(equity[(v.id, c, s, "mid")][-1]), "pnl_liq": float(equity[(v.id, c, s, "liq")][-1]),
-            "pnl_locked": float(equity[(v.id, c, s, "locked")][-1]),
+            "pnl_mid": float(equity[(q, v.id, c, s, "mid")][-1]), "pnl_liq": float(equity[(q, v.id, c, s, "liq")][-1]),
+            "pnl_locked": float(equity[(q, v.id, c, s, "locked")][-1]),
             "mean_pnl_per_trade_mid": bm[0], "ci_lo_mid": bm[1], "ci_hi_mid": bm[2],
             "mean_pnl_per_trade_locked": bl[0], "ci_lo_locked": bl[1], "ci_hi_locked": bl[2],
             "sharpe_mid": m["sharpe"], "ann_return": m["ann_return"], "ann_vol": m["ann_vol"],
@@ -226,6 +242,13 @@ def main() -> int:
             "prints_reach_share": float(np.mean([d["prints_reach_entry"] for d in tt])) if tt else float("nan"),
             "pnl_mid_verified": float(sum(d["pnl_mid_verified"] for d in tt)),
             "pnl_locked_verified": float(sum(d["pnl_locked_verified"] for d in tt)),
+            "edge_at_entry_verified": float(sum(d["edge_at_entry_verified"] for d in tt)),
+            "verified_pairs": len({d["pair"] for d in ver}), "verified_contracts": float(sum(d["verified_qty"] for d in tt)),
+            "sharpe_mid_verified": mv["sharpe"], "max_drawdown_verified": mv["max_drawdown"],
+            "mean_pnl_per_verified_trade": bv[0], "ci_lo_verified": bv[1], "ci_hi_verified": bv[2],
+            "entries_pm_market_under_48h": sum(1 for d in tt if d["pm_market_age_h"] < 48),
+            "entries_pm_price_45_55": sum(1 for d in tt if 0.45 <= d["pm_hist_price"] <= 0.55),
+            "median_abs_gap_at_entry": float(np.median([abs(d["pm_hist_price"] - (d["kalshi_bid"] + d["kalshi_ask"]) / 2) for d in tt])) if tt else float("nan"),
         })
     # deflated Sharpe across the variants of each (segment, cost)
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -234,7 +257,8 @@ def main() -> int:
         peers = [x["daily_sharpe"] for x in rows if (x["segment"], x["cost_mult"]) == (row["segment"], row["cost_mult"])
                  and x["daily_sharpe"] == x["daily_sharpe"]]
         if row["daily_sharpe"] == row["daily_sharpe"] and len(peers) > 1:
-            row["deflated_sharpe_prob"] = deflated_sharpe(row["daily_sharpe"], row["days"], len(cfg.VARIANTS),
+            row["deflated_sharpe_prob"] = deflated_sharpe(row["daily_sharpe"], row["days"],
+                                                          len(cfg.VARIANTS) * len(cfg.QUOTE_RULES),
                                                           float(np.var(peers)), row["skew"], row["kurtosis"])
         else:
             row["deflated_sharpe_prob"] = float("nan")
@@ -251,14 +275,17 @@ def main() -> int:
             w.writeheader()
             w.writerows(recs)
 
+    for d in trades:
+        d.pop("_path", None)
     write_csv("metrics_history.csv", rows)
-    write_csv("trades.csv", sorted(trades, key=lambda d: (d["variant"], d["cost_mult"], d["segment"], d["t_in"])))
+    write_csv("trades.csv", sorted(trades, key=lambda d: (d["quote_rule"], d["variant"], d["cost_mult"], d["segment"], d["t_in"])))
     write_csv("pairs.csv", pair_rows)
     write_csv("signal_minutes.csv", signal_minutes)
     eq_rows = []
-    for (vid, c, s, m), e in equity.items():
+    for (q, vid, c, s, m), e in equity.items():
         for t, x in zip(marks[s], e):
-            eq_rows.append({"variant": vid, "cost_mult": c, "segment": s, "mark": m, "utc": iso(int(t)), "t": int(t), "pnl": float(x)})
+            eq_rows.append({"quote_rule": q, "variant": vid, "cost_mult": c, "segment": s, "mark": m, "utc": iso(int(t)),
+                            "t": int(t), "pnl": float(x)})
     write_csv("equity_history.csv", eq_rows)
     meta_out = {"t0": iso(t0), "split": iso(split), "t1": iso(t1), "rate": r, "rate_source": "Alpha Vantage TREASURY_YIELD, 3-month constant maturity (FRED DGS3MO)",
                 "rate_date": a.rate_date, "pairs_in_universe": cfg.N_PAIRS, "pairs_used": len(usable),
@@ -269,11 +296,11 @@ def main() -> int:
     (RESULTS / "run_meta.json").write_text(json.dumps(meta_out, indent=1))
 
     print(f"window {iso(t0)} .. {iso(split)} .. {iso(t1)}; pairs used {len(usable)}/{cfg.N_PAIRS}; {time.time() - t_run:.0f}s")
-    print("seg  var cost entries pairs exits  pnl_mid  pnl_liq pnl_locked  sharpe   maxDD  verified")
+    print("rule            seg  var cost entries pairs exits  pnl_mid  pnl_liq pnl_locked  sharpe   maxDD  verified  ver_pnl_mid ver_edge_entry ver_sharpe")
     for x in rows:
-        print(f"{x['segment']:4} {x['variant']} {x['cost_mult']:.0f}x {x['entries']:7d} {x['pairs_traded']:5d} {x['exits']:5d} "
+        print(f"{x['quote_rule']:15} {x['segment']:4} {x['variant']} {x['cost_mult']:.0f}x {x['entries']:7d} {x['pairs_traded']:5d} {x['exits']:5d} "
               f"{x['pnl_mid']:8.2f} {x['pnl_liq']:8.2f} {x['pnl_locked']:9.2f} {x['sharpe_mid']:7.2f} {x['max_drawdown']:7.4f} "
-              f"{x['verified_entries']:4d}/{x['entries']}")
+              f"{x['verified_entries']:4d}/{x['entries']:<4d} {x['pnl_mid_verified']:10.2f} {x['edge_at_entry_verified']:12.2f} {x['sharpe_mid_verified']:9.2f}")
     for line in log:
         print(line)
     return 0

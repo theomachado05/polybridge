@@ -145,8 +145,9 @@ def pm_history(meta: dict, start: datetime, end: datetime, pt: Throttle) -> dict
     return {"t": tt, "p": np.array(p, dtype=np.float32)[idx]}
 
 
-def pm_trades(condition_id: str, oldest_needed: float, pt: Throttle, page: int = 500, max_pages: int = 40) -> list[dict]:
-    """Public trade prints, newest first, paged back until `oldest_needed` (epoch s) or until the API stops serving."""
+def pm_trades(condition_id: str, oldest_needed: float, pt: Throttle, page: int = 10000, max_pages: int = 2) -> list[dict]:
+    """Public trade prints, newest first, paged back until `oldest_needed` (epoch s) or until the API stops serving.
+    The data API refuses an offset above 10000, so at most the latest 20000 prints of a market are reachable."""
     out: list[dict] = []
     for i in range(max_pages):
         d = get_json(DATA_API, {"market": condition_id, "limit": page, "offset": i * page}, throttle=pt, allow=(400, 404))
