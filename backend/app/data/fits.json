@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-03T07:47:05+00:00",
+ "generated_at": "2026-10-03T07:57:27+00:00",
  "generator": "scripts/precompute_fits.py",
  "library_source": "fallback",
  "can_score": false,
@@ -43,20 +43,9 @@
      },
      "score": null,
      "stats": null
-    },
-    {
-     "family": "poly_kalshi_spread",
-     "preset_index": 13,
-     "params": {
-      "min_gap": 0.02,
-      "max_contracts": 500.0,
-      "cooldown_s": 30.0
-     },
-     "score": null,
-     "stats": null
     }
    ],
-   "rationale": "Classified as tech_regulation; 4 hedge families in the library cover it, and tech_reg_hedge was chosen for VRT. Preset #16 (beta=1, coverage=0.5, no_trade_band_shares=50) is the family's default, picked by event-class rules without a replay score because the compiled hedgecore engine is not available on this server. Alternatives considered: equity_delta_bridge, book_imbalance_hedge, poly_kalshi_spread.",
+   "rationale": "Classified as tech_regulation; 3 hedge families in the library cover it, and tech_reg_hedge was chosen for VRT. Preset #16 (beta=1, coverage=0.5, no_trade_band_shares=50) is the family's default, picked by event-class rules without a replay score because the compiled hedgecore engine is not available on this server. Alternatives considered: equity_delta_bridge, book_imbalance_hedge.",
    "llm": "rules",
    "ticks_source": "live_history",
    "n_ticks": 87,
@@ -99,20 +88,9 @@
      },
      "score": null,
      "stats": null
-    },
-    {
-     "family": "poly_kalshi_spread",
-     "preset_index": 13,
-     "params": {
-      "min_gap": 0.02,
-      "max_contracts": 500.0,
-      "cooldown_s": 30.0
-     },
-     "score": null,
-     "stats": null
     }
    ],
-   "rationale": "Classified as elections; 4 hedge families in the library cover it, and election_hedge was chosen for ICLN. Preset #10 (tilt=0.5, coverage=0.5, slice_shares=100) is the family's default, picked by event-class rules without a replay score because the compiled hedgecore engine is not available on this server. Alternatives considered: equity_delta_bridge, book_imbalance_hedge, poly_kalshi_spread.",
+   "rationale": "Classified as elections; 3 hedge families in the library cover it, and election_hedge was chosen for ICLN. Preset #10 (tilt=0.5, coverage=0.5, slice_shares=100) is the family's default, picked by event-class rules without a replay score because the compiled hedgecore engine is not available on this server. Alternatives considered: equity_delta_bridge, book_imbalance_hedge.",
    "llm": "rules",
    "ticks_source": "live_history",
    "n_ticks": 721,
@@ -169,7 +147,7 @@
      "stats": null
     }
    ],
-   "rationale": "Classified as macro_fed; 5 hedge families in the library cover it, and macro_fed_hedge was chosen for SPY. Preset #16 (beta=1, coverage=0.5, no_trade_band_shares=50) is the family's default, picked by event-class rules without a replay score because the compiled hedgecore engine is not available on this server. Alternatives considered: stress_lead_hedge, equity_delta_bridge, book_imbalance_hedge.",
+   "rationale": "Classified as macro_fed; 4 hedge families in the library cover it, and macro_fed_hedge was chosen for SPY. Preset #16 (beta=1, coverage=0.5, no_trade_band_shares=50) is the family's default, picked by event-class rules without a replay score because the compiled hedgecore engine is not available on this server. Alternatives considered: stress_lead_hedge, equity_delta_bridge, book_imbalance_hedge.",
    "llm": "rules",
    "ticks_source": "live_history",
    "n_ticks": 721,
