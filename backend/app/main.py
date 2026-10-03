@@ -13,6 +13,7 @@ from .equities import router as equities_router
 from .hedges import router as hedges_router
 from .mapping import router as mapping_router
 from .bridges import router as bridges_router
+from .portfolio import router as portfolio_router
 
 
 async def _validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
@@ -33,6 +34,7 @@ def create_app() -> FastAPI:
     app.include_router(hedges_router)
     app.include_router(mapping_router)
     app.include_router(bridges_router)
+    app.include_router(portfolio_router)
     return app
 
 
