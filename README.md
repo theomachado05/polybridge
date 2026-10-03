@@ -2,7 +2,7 @@
 
 Hedge equity positions using live prediction-market prices (Polymarket + Kalshi) as the signal, with a low-latency C++ algo stack.
 
-**Start here:** [design spec](docs/superpowers/specs/2026-10-02-polybridge-design.md)
+**Start here:** [research/README.md](research/README.md)
 
 | Folder | Stack | Role |
 |---|---|---|
