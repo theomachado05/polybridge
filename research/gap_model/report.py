@@ -153,8 +153,27 @@ def write_summary(res: dict, info: dict, path: Path) -> None:
          f"direction-and-size hint with a wide band, not a point forecast.",
          f"- Nominal 80% band: realized gap inside the band in {_pct(p['band']['all']['coverage'])} of "
          f"{p['band']['all']['n']} test closures (own rate {_pct(p['band']['own']['coverage'])}, n {p['band']['own']['n']}; "
-         f"pooled fallback {_pct(p['band']['pooled']['coverage'])}, n {p['band']['pooled']['n']}).", "",
-         "## Design", "",
+         f"pooled fallback {_pct(p['band']['pooled']['coverage'])}, n {p['band']['pooled']['n']}).",
+         "- Where the skill comes from (same tests, per subset; not in the verdict): "
+         + "; ".join(f"{k}: sign {_pct(r['g1']['rate'])} of {r['g1']['n']} ({_pe(r['g1']['p'])}), slope "
+                     f"{_f(r['g2']['c'], 2, True)} (permutation {_pe(r['g2']['p_perm'])}) -> {r['verdict'].lower()}"
+                     for k, r in {**{f"{m} market": v for m, v in p['by_market'].items()},
+                                  **{f"{s} rate": v for s, v in p['by_source'].items()}}.items()) + "."]
+    if res.get("panel_b"):
+        b = res["panel_b"]
+        n_pass = sum(r["verdict"] == "Accurate out of sample" for r in b["by_market"].values())
+        L += [f"- **Replication panel ({b['n_markets']} new rule-selected markets): {b['verdict'].lower()}** — sign "
+              f"{_pct(b['g1']['rate'])} of {b['g1']['n']} ({_pe(b['g1']['p'])}), slope {_f(b['g2']['c'], 2, True)} "
+              f"(date permutation {_pe(b['g2']['p_perm'])}); {n_pass} of {b['n_markets']} markets pass the rule on their own."]
+    pl = ex["pooled"]
+    L += [f"- Product reading: the pooled rate over all {pl['n_markets']} markets is {_f(pl['rate_bp_per_pp'], 2, True)} bp/pp "
+          f"(SE {_f(pl['se'], 2)}) with a between-market SD of {_f(ex['tau_bp_per_pp'], 2)} bp/pp"
+          + (", so for a market without its own rate the rate band spans both signs."
+             if ex["tau_bp_per_pp"] is not None and ex["tau_bp_per_pp"] > abs(pl["rate_bp_per_pp"]) else ".")
+          + f" The expected gap is informative only where a market's own rate is "
+          f"well determined; the UI must show the band and the closure count.", "",
+          "## Design", ""]
+    L += [
          f"- Panel: the 380 unselected closures of `leadlag_closed` (Trump 2024 market, 149 closures; US recession 2025 "
          f"market, 231). Rate = least squares through the origin (bp of SPY gap per pp of oriented PM move), HC3 SE.",
          f"- Expanding window: a closure's training set is every closure whose open was on or before its close day. "
