@@ -78,3 +78,30 @@ def test_sample_placebo_respects_gap_and_window():
         assert all(abs((d - a).days) > 30 for a in ev.filing_date)
         assert T("2024-01-01") <= d <= T("2024-12-31")
     assert (pl.t_pre < pl.t_0).all()
+
+
+def test_opportunity_passes_when_ratio_below_placebo():
+    events = _res(80, pp_mean=0.0, csp_mean=0.03, ratio_mean=0.6, seed=11)
+    placebo = _res(200, pp_mean=0.0, csp_mean=0.0, ratio_mean=1.0, seed=12)
+    out = pass_check(events, placebo, "opportunity", CFG)
+    assert out["horizons_pnl_ok"] == out["horizons_ratio_ok"] == [21, 42, "exp"]
+    assert out["passed"] is True
+
+
+def test_zero_ratio_difference_is_not_ok_for_either_family():
+    def const(n):
+        df = _res(n, 0.03, 0.03, 1.0, 13)
+        df["ratio"] = 1.0
+        return df
+    for fam in ("hedge", "opportunity"):
+        out = pass_check(const(80), const(200), fam, CFG)
+        assert out["horizons_ratio_ok"] == [] and out["passed"] is False
+
+
+def test_pass_check_on_empty_frames_does_not_raise():
+    full = _res(20, 0, 0, 1.0, 14)
+    for ev, pl in ((full.iloc[0:0], full), (full, full.iloc[0:0]), (full.iloc[0:0], full.iloc[0:0])):
+        out = pass_check(ev, pl, "hedge", CFG)
+        assert out["passed"] is False and out["horizons_pnl_ok"] == [] and out["horizons_ratio_ok"] == []
+        assert list(out["pnl"].columns) == list(out["ratio"].columns) == [
+            "strategy", "horizon", "n_a", "n_b", "mean_a", "mean_b", "difference", "ci_lo", "ci_hi", "p_value"]

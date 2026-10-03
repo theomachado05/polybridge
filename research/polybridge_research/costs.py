@@ -25,15 +25,15 @@ def half_spread(client, opt_ticker: str, day: pd.Timestamp) -> float | None:
 def cost_table(results: pd.DataFrame, priced, strategy: str, horizon, cfg: StudyConfig, client=None,
                multipliers=(1, 2)) -> pd.DataFrame:
     legs = [l.format(otm=cfg.otm_pct) for l in LEGS_FOR_STRATEGY[strategy]]
-    by_key = {(pe.ticker, pe.event_date): pe for pe in priced if pe.bucket == cfg.baseline_bucket}
+    by_key = {(pe.ticker, pe.event_date, pe.family): pe for pe in priced if pe.bucket == cfg.baseline_bucket}
     r = results[(results.bucket == cfg.baseline_bucket) & (results.entry == cfg.entry) & (results.otm == cfg.otm_pct)
                 & (results.horizon == horizon)]
     rows = []
     for x in r.itertuples(index=False):
-        pe = by_key[(x.ticker, x.event_date)]
+        pe = by_key[(x.ticker, x.event_date, x.family)]
         m_e = pe.marks(x.entry_date)
         premium = sum(abs(m_e[l]) for l in legs) / x.S_entry
-        row = {"ticker": x.ticker, "event_date": x.event_date, "gross": getattr(x, strategy), "premium_traded": premium,
+        row = {"ticker": x.ticker, "family": x.family, "event_date": x.event_date, "gross": getattr(x, strategy), "premium_traded": premium,
                "leg_volume": sum(pe.legs[l].volume_on(x.entry_date) for l in legs)}
         for m in multipliers:
             row[f"haircut_cost_{m}x"] = premium * cfg.cost_haircut * 2 * m
@@ -46,6 +46,6 @@ def cost_table(results: pd.DataFrame, priced, strategy: str, horizon, cfg: Study
         row["spread_cost"] = spread
         row["net_spread"] = row["gross"] - spread
         rows.append(row)
-    cols = ["ticker", "event_date", "gross", "premium_traded", *[f"haircut_cost_{m}x" for m in multipliers],
+    cols = ["ticker", "family", "event_date", "gross", "premium_traded", *[f"haircut_cost_{m}x" for m in multipliers],
             *[f"net_haircut_{m}x" for m in multipliers], "spread_cost", "net_spread", "leg_volume"]
     return pd.DataFrame(rows, columns=cols)

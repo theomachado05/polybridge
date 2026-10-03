@@ -11,6 +11,9 @@ from .stats import bootstrap_ci
 from .strategies import STRATEGIES
 
 
+DIFF_COLUMNS = ["strategy", "horizon", "n_a", "n_b", "mean_a", "mean_b", "difference", "ci_lo", "ci_hi", "p_value"]
+
+
 def _horizons(cfg: StudyConfig, present) -> list:
     return [h for h in [*cfg.horizons, "exp"] if h in set(present)]
 
@@ -52,7 +55,7 @@ def difference_board(res_a, res_b, cfg: StudyConfig, level: float = 0.95, column
                 row.update(mean_a=xa.mean(), mean_b=xb.mean(), difference=xa.mean() - xb.mean(),
                            ci_lo=np.percentile(d, tail), ci_hi=np.percentile(d, 100 - tail), p_value=max(p, 1 / n_boot))
             rows.append(row)
-    return pd.DataFrame(rows)
+    return pd.DataFrame(rows, columns=DIFF_COLUMNS)
 
 
 def sample_placebo(events: pd.DataFrame, n: int, start: str, end: str, cal: TradingCalendar, gap_days: int,
@@ -97,10 +100,10 @@ def pass_check(events_res, placebo_res, family: str, cfg: StudyConfig) -> dict:
     ratio = difference_board(events_res, placebo_res, cfg, level=cfg.confirmatory_level, column="ratio", entry="pre")
     ratio = ratio[ratio.horizon.isin(heads)].reset_index(drop=True)
     want_up = family == Family.HEDGE.value
-    pnl_ok = [h for h in heads if not pnl[(pnl.horizon == h) & (pnl.get("ci_lo", pd.Series(dtype=float)) > 0)].empty]
-    ratio_ok = [h for h in heads
-                if not ratio[(ratio.horizon == h) & ((ratio.get("difference", pd.Series(dtype=float)) > 0) == want_up)
-                             & ratio.get("difference", pd.Series(dtype=float)).notna()].empty]
+    pnl_ok = [h for h in heads if ((pnl["horizon"] == h) & (pnl["ci_lo"] > 0)).any()]
+    d = ratio["difference"]
+    sign_ok = (d > 0) if want_up else (d < 0)          # strict; NaN compares False
+    ratio_ok = [h for h in heads if ((ratio["horizon"] == h) & sign_ok).any()]
     both = [h for h in heads if h in pnl_ok and h in ratio_ok]
     return {"family": family, "strategy": strategy, "pnl": pnl, "ratio": ratio,
             "horizons_pnl_ok": pnl_ok, "horizons_ratio_ok": ratio_ok, "passed": len(both) >= 2}

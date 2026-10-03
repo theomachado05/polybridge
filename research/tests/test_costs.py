@@ -51,7 +51,7 @@ def test_cost_table_haircut_and_spread():
     assert math.isclose(row.premium_traded, 1.0 / row_spot(res), rel_tol=1e-6)
     assert math.isclose(row.haircut_cost_2x, 2 * row.haircut_cost_1x)
     assert math.isclose(row.spread_cost, (0.05 + 0.05) / row_spot(res), rel_tol=1e-6)
-    assert row.leg_volume == 50
+    assert row.leg_volume == 50 and row.family == "hedge"
     assert math.isclose(row.net_spread, row.gross - row.spread_cost)
 
 
