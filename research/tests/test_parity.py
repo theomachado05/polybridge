@@ -25,3 +25,13 @@ def test_parity_ratio_nan_on_bad_inputs():
     assert math.isnan(parity_ratio(0.02, 0.0))
     assert math.isnan(parity_ratio(float("nan"), 0.03))
     assert math.isnan(realized_move(float("nan"), 100.0))
+
+
+def test_degenerate_spot_gives_nan():
+    for bad in (0.0, -5.0, float("nan"), float("inf")):
+        assert math.isnan(implied_move(3.0, 2.0, bad))
+        assert math.isnan(realized_move(bad, 100.0))
+
+
+def test_implied_scaled_nan_for_negative_dte():
+    assert math.isnan(implied_scaled(0.10, sessions_held=5, dte_sessions=-3))

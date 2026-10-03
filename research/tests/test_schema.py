@@ -22,6 +22,15 @@ def test_code_tags_match_preregistration():
     assert not (H1_TAGS & H2_TAGS)
 
 
+def test_contracts_family_table_matches_code():
+    contracts = TAGS_MD.parents[1] / "docs" / "contracts.md"
+    rows = {}
+    for m in re.finditer(r'^\| H([12]) [a-z]+ \| `"[a-z]+"` \| ([^|]+) \|', contracts.read_text(), flags=re.M):
+        rows[m.group(1)] = {t.strip() for t in m.group(2).split(",")}
+    assert rows["1"] == H1_TAGS
+    assert rows["2"] == H2_TAGS
+
+
 def test_assign_family_single_family():
     assert assign_family({"material_litigation"}) is Family.HEDGE
     assert assign_family(["workforce_reduction", "facility_closure"]) is Family.OPPORTUNITY

@@ -28,12 +28,16 @@ def bootstrap_ci(x, n_boot: int = 2000, seed: int = 0, level: float = 0.95) -> t
 
 
 def benjamini_hochberg(pvalues) -> np.ndarray:
+    """BH q-values over the finite p-values only; non-finite inputs stay NaN and do not count toward m."""
     p = np.asarray(pvalues, dtype=float)
-    m = len(p)
-    order = np.argsort(p)
+    q = np.full(len(p), np.nan)
+    idx = np.flatnonzero(np.isfinite(p))
+    m = len(idx)
+    if m == 0:
+        return q
+    order = idx[np.argsort(p[idx])]
     ranked = p[order] * m / np.arange(1, m + 1)
     q_sorted = np.minimum.accumulate(ranked[::-1])[::-1]
-    q = np.empty(m)
     q[order] = np.minimum(q_sorted, 1.0)
     return q
 
@@ -50,6 +54,8 @@ def expected_max_sharpe(n_trials: int, sharpe_variance: float) -> float:
 def deflated_sharpe(sharpe: float, n_obs: int, n_trials: int, sharpe_variance: float,
                     skew: float = 0.0, kurtosis: float = 3.0) -> float:
     """Probability that the true (per-period) Sharpe exceeds the best expected by luck across n_trials."""
+    if n_obs < 2:
+        return math.nan
     sr0 = expected_max_sharpe(n_trials, sharpe_variance)
     denom = math.sqrt(max(1 - skew * sharpe + (kurtosis - 1) / 4 * sharpe ** 2, 1e-12))
     z = (sharpe - sr0) * math.sqrt(n_obs - 1) / denom

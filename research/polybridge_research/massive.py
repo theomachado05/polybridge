@@ -57,6 +57,9 @@ def load_api_key(name: str = "MASSIVE_API_KEY", search_from: Path | None = None,
     )
 
 
+_MAX_RETRY_SLEEP = 60.0
+
+
 class MassiveClient:
     def __init__(self, api_key: str, cache_dir: Path = Path(".massive_cache"), session=None, sleep=time.sleep,
                  max_attempts: int = 10):
@@ -78,10 +81,12 @@ class MassiveClient:
             if resp.status_code not in _RETRY_STATUS:
                 break
             retry_after = str(resp.headers.get("Retry-After", ""))
-            self._sleep(float(retry_after) if retry_after.isdigit() else min(2 ** attempt, 20))
+            self._sleep(min(float(retry_after), _MAX_RETRY_SLEEP) if retry_after.isdigit() else min(2 ** attempt, 20))
         resp.raise_for_status()
         payload = resp.json()
-        cache_file.write_text(json.dumps(payload))
+        tmp_file = cache_file.with_suffix(".tmp")
+        tmp_file.write_text(json.dumps(payload))
+        os.replace(tmp_file, cache_file)
         return payload
 
     def get_all(self, path: str, params: dict | None = None, max_pages: int = 500) -> list[dict]:

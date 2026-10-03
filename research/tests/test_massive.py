@@ -88,3 +88,12 @@ def test_bearer_header_is_set(tmp_path):
     session = FakeSession([])
     MassiveClient("secret", cache_dir=tmp_path, session=session)
     assert session.headers["Authorization"] == "Bearer secret"
+
+
+def test_retry_after_is_capped_at_sixty_seconds(tmp_path):
+    session = FakeSession([FakeResponse(429, headers={"Retry-After": "3600"}), FakeResponse(200, {"ok": True})])
+    slept = []
+    client = MassiveClient("k", cache_dir=tmp_path, session=session, sleep=slept.append)
+    assert client.get("/z") == {"ok": True}
+    assert slept == [60.0]
+    assert not list(tmp_path.glob("*.tmp"))

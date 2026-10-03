@@ -47,3 +47,14 @@ def test_deflated_sharpe_penalizes_many_trials():
     many = deflated_sharpe(0.15, n_obs=500, n_trials=800, sharpe_variance=0.0025)
     assert 0.0 <= many < one <= 1.0
     assert one > 0.99
+
+
+def test_benjamini_hochberg_ignores_nan_and_keeps_position():
+    q = benjamini_hochberg([0.01, 0.04, float("nan"), 0.03])
+    ref = benjamini_hochberg([0.01, 0.04, 0.03])
+    np.testing.assert_allclose([q[0], q[1], q[3]], ref, rtol=1e-12)
+    assert math.isnan(q[2])
+
+
+def test_deflated_sharpe_nan_with_fewer_than_two_obs():
+    assert math.isnan(deflated_sharpe(0.5, n_obs=1, n_trials=10, sharpe_variance=0.1))
