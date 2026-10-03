@@ -1,0 +1,5 @@
+reason,n
+1m: ATM pair did not trade on or near the pre-event session,8
+2m: ATM pair did not trade on or near the pre-event session,1
+2m: no expiry 46-80 days out,5
+could not recover spot from the chain (no liquid near-dated pair),2
