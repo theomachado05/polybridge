@@ -35,3 +35,4 @@ class Proposal(BaseModel):
     status: Status
     created_at: dt.datetime
     decided_at: dt.datetime | None = None
+    bridge_started_at: dt.datetime | None = None

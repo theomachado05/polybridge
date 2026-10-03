@@ -47,3 +47,11 @@ class ProposalStore:
 
     def reject(self, pid: str) -> Proposal:
         return self._decide(pid, "rejected")
+
+    def mark_bridge_started(self, pid: str) -> Proposal:
+        with self._lock:
+            if pid not in self._items:
+                raise NotFound(pid)
+            updated = self._items[pid].model_copy(update={"bridge_started_at": dt.datetime.now(dt.UTC)})
+            self._items[pid] = updated
+            return updated
