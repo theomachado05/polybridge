@@ -15,8 +15,8 @@ GROUPS = [("Resolved Polymarket (PM spread assumed)", lambda d: (d.venue == "pol
           ("Resolved Kalshi (real bid/ask, sizes unknown)", lambda d: (d.venue == "kalshi") & (~d.live)),
           ("Live Polymarket (real book; options closed)", lambda d: (d.venue == "polymarket") & (d.live)),
           ("Live Kalshi (real book; options closed)", lambda d: (d.venue == "kalshi") & (d.live))]
-LABELS = ["gap_mid", "gap_beyond_bounds", "gap_net", "gap_robust", "gap_executable"]
-RANK = {k: i for i, k in enumerate(["none", "gap_mid", "gap_beyond_bounds", "gap_net", "gap_robust", "gap_executable"])}
+LABELS = ["gap_mid", "gap_beyond_bounds", "gap_net", "gap_robust", "gap_verified", "gap_executable"]
+RANK = {k: i for i, k in enumerate(["none", "gap_mid", "gap_beyond_bounds", "gap_net", "gap_robust", "gap_verified", "gap_executable"])}
 
 
 def md_table(df: pd.DataFrame, floatfmt: str = "{:.3f}") -> str:
@@ -114,6 +114,33 @@ def top_table(df: pd.DataFrame, n: int = 15) -> str:
     return md_table(d[cols], "{:.3f}")
 
 
+def verification_block(df: pd.DataFrame, sc: dict) -> str:
+    c = df[(df.venue == "polymarket") & (~df.live) & df.label.isin(["gap_robust", "gap_verified"]) & df.clean.astype(bool)]
+    if c.empty or "verified" not in c:
+        return "No resolved Polymarket candidates."
+    c = c.copy()
+    c["verified"] = c.verified.fillna(False).astype(bool)
+    near_half = c.pm_mid.between(0.499, 0.501)
+    t = pd.DataFrame([
+        {"set": "candidates (cost screen passed, spread assumed)", "rows": len(c), "events": c.event.nunique()},
+        {"set": "...of which PM mid is exactly 0.50 (typically an unquoted placeholder midpoint)", "rows": int(near_half.sum()), "events": c[near_half].event.nunique()},
+        {"set": "...with a trade print at the needed price within 10 min of the snapshot", "rows": int(c.verified.sum()), "events": c[c.verified].event.nunique()},
+    ])
+    out = md_table(t) + (
+        "\n\nWhy this step exists (amendment 3 in METHOD.md): the first full run produced hundreds of resolved Polymarket 'gaps' that were an artifact. "
+        "The CLOB history is a regularly sampled series (a point every ~minute whether or not anything traded, so the age check is vacuous), "
+        "and for thin markets its value is the midpoint of a book that can be 0.01 bid / 0.99 ask. Putting an assumed +/-4.5 cent spread around such a "
+        "midpoint manufactures an edge against the options. A candidate is therefore promoted to `gap_verified` only if a public trade print "
+        "(data-api trades, Yes-equivalent price and side) within 10 minutes of the snapshot shows a price at least as good as the breakeven.")
+    v = c[c.verified]
+    if len(v):
+        v = v.copy()
+        v["market"] = v.underlying + " > " + v.strike.map(lambda x: f"{x:g}")
+        v["need"] = v.verify_price_needed
+        out += "\n\nVerified rows:\n\n" + md_table(v[["market", "res_date", "snapshot", "trade", "pm_mid", "p_lo", "p_hi", "need", "verify_n", "verify_size", "edge", "outcome"]].head(25), "{:.3f}")
+    return out
+
+
 def make_chart(df: pd.DataFrame, path: Path) -> None:
     import matplotlib
     matplotlib.use("Agg")
@@ -184,12 +211,17 @@ def main(argv=None) -> int:
     make_chart(df, res / "arb_gap_chart.png")
     lc = label_counts(df)
     sc = meta["scope"]
-    robust_resolved = int(lc.iloc[0:2]["gap_robust (>=)"].sum())
-    robust_live = int(lc.iloc[2:4]["gap_robust (>=)"].sum())
+    gen_resolved = int(lc.iloc[0:2]["gap_verified (>=)"].sum())
+    gen_live = int(lc.iloc[2:4]["gap_verified (>=)"].sum())
+    robust_all = int(lc["gap_robust (>=)"].sum())
     exe = int(lc["gap_executable (>=)"].sum())
     net_all = int(lc["gap_net (>=)"].sum())
-    headline = (f"**{robust_resolved} resolved and {robust_live} live (market, snapshot) rows survive every cost with the narrow and the wide spread "
-                f"(`gap_robust`); {exe} are executable.** {net_all} rows clear one cent on the narrow spread alone (`gap_net`).")
+    vp = sc.get("verified_poly", 0)
+    headline = (f"**{gen_resolved + gen_live} genuine gaps survive costs and verification** ({gen_resolved} resolved, {gen_live} live; {exe} executable). "
+                f"Before verification the pre-registered cost screen alone passes {robust_all} rows (`gap_robust`) and {net_all} clear one cent on the narrow spread "
+                f"(`gap_net`), but those all rest on an *assumed* Polymarket spread, and only {vp} of {sc.get('verify_candidates', 0)} resolved Polymarket candidates "
+                "have a public trade print at the price they need (section 'Verification').")
+    ver = verification_block(df, sc)
     parts = [
         "# Options-arbitrage scan: prediction-market probability vs option-implied probability",
         f"Run date {meta['now_utc'][:10]} (Saturday; US options closed). Window of resolved markets: {meta['start']} to {meta['end']}. "
@@ -206,6 +238,7 @@ def main(argv=None) -> int:
         f"({sc.get('kalshi_hist_selected', 0)} settled markets selected by volume, {sc.get('kalshi_live_candidates', 0)} open).\n\n" + md_table(funnel(df)),
         "## Gaps by strictness (clean-expiry rows; each row counted at its strictest label and below)\n\n" + md_table(lc) +
         f"\n\nPM half-spread assumed on resolved Polymarket rows: {meta['half_spread']:.3f} (median of {meta['half_spread_n']} live books with mid in [2%, 98%]).",
+        "## Verification of the resolved Polymarket candidates\n\n" + ver,
         "## Largest gaps (all groups, strictest label first, then edge)\n\n`edge` = best of the two trades after every cost, per $1 payoff; `strip_loss` = worst-case unhedged loss per share inside the spread strip.\n\n" + top_table(df),
         "## Size of the raw gap (PM mid minus option-implied mid)\n\n" + gap_stats(df),
         "## Calibration on resolved rows\n\n" + brier_block(df, rng),

@@ -30,6 +30,7 @@ from arbscan import datasrc as ds  # noqa: E402
 from arbscan.costs import KalshiFee, PolyFee, fee_from_gamma  # noqa: E402
 from arbscan.parse import KALSHI_UNDERLYING, kalshi_is_close, parse_pm_question  # noqa: E402
 from arbscan.score import score_row  # noqa: E402
+from arbscan import verify as vf  # noqa: E402
 
 ET = ZoneInfo("America/New_York")
 UTC = timezone.utc
@@ -103,7 +104,7 @@ class Scan:
                 prices = [str(x) for x in _jl(m.get("outcomePrices"))]
                 outcome = 1 if prices[:2] == ["1", "0"] else 0 if prices[:2] == ["0", "1"] else None
                 out.append(dict(venue="polymarket", id=str(m.get("id")), event=ev.get("slug"), question=m.get("question"),
-                                underlying=th.ticker, strike=th.strike, kind=th.kind, end_dt=end_dt,
+                                underlying=th.ticker, strike=th.strike, kind=th.kind, end_dt=end_dt, cid=m.get("conditionId"),
                                 res_date=end_dt.astimezone(ET).date(), token=tokens[0], closed=bool(m.get("closed")),
                                 outcome=outcome if m.get("closed") else None, fee=fee_from_gamma(m),
                                 start_dt=_parse_iso(m["startDate"]) if m.get("startDate") else None,
@@ -272,6 +273,28 @@ class Scan:
                 jobs.append((m, "S2", snap, pm))
         self._run_jobs(jobs, live=False)
 
+    def verify_stage(self, pm_all: list[dict]) -> None:
+        """METHOD.md amendment 3: resolved gap_robust rows are promoted to gap_verified only with real evidence."""
+        byid = {m["id"]: m for m in pm_all}
+        cand = [r for r in self.rows if r.get("venue") == "polymarket" and not r.get("live") and r.get("label") == "gap_robust"]
+        cids = sorted({byid[r["market_id"]]["cid"] for r in cand if byid.get(r["market_id"], {}).get("cid")})
+        self.scope["verify_candidates"] = len(cand)
+        self.scope["verify_markets"] = len(cids)
+        with ThreadPoolExecutor(self.workers) as ex:
+            trades = dict(zip(cids, ex.map(lambda c: vf.fetch_trades(self.http, c), cids)))
+        for r in cand:
+            m = byid.get(r["market_id"], {})
+            tr = trades.get(m.get("cid"), [])
+            snap_ts = datetime.fromisoformat(r["snap_utc"].replace("Z", "+00:00")).timestamp()
+            need = vf.needed_price(r["trade"], r["p_lo"], r["p_hi"], r["width"], m["fee"])
+            r.update(verify_price_needed=need, verify_trades_in_market=len(tr), **vf.verify_row(tr, snap_ts, r["trade"], need))
+            if r["verified"]:
+                r["label"] = "gap_verified"
+        for r in self.rows:
+            if r.get("venue") == "kalshi" and not r.get("live") and r.get("label") == "gap_robust":
+                r["label"] = "gap_verified"        # real bid/ask candles, no assumption to verify
+        self.scope["verified_poly"] = sum(1 for r in cand if r.get("verified"))
+
     def _run_jobs(self, jobs: list, live: bool) -> None:
         def one(j):
             m, label, snap, pm = j
@@ -314,6 +337,7 @@ def main(argv=None) -> int:
     scan.live_rows(pm_all, kal_live)           # first: sets the assumed half-spread used by resolved PM rows
     scan.hist_rows_pm(pm_all)
     scan.hist_rows_kalshi(kal_hist)
+    scan.verify_stage(pm_all)
     import pandas as pd
     df = pd.DataFrame(scan.rows)
     df.to_csv(out / "arb_gaps.csv", index=False)
