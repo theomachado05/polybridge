@@ -96,6 +96,7 @@ def test_committed_map_exists_and_every_pair_is_verified_complete_and_same_direc
         seen_k.add(e["kalshi"]["ticker"])
 
 
+@pytest.mark.real_twins
 def test_committed_map_ambiguous_pairs_are_flagged_and_disjoint_from_pairs():
     doc = committed()
     used = {(e["polymarket"]["id"], e["kalshi"]["ticker"]) for e in doc["pairs"]}
@@ -108,7 +109,20 @@ def test_committed_map_ambiguous_pairs_are_flagged_and_disjoint_from_pairs():
         assert t is None or t.id != a["kalshi"]["ticker"]
 
 
+@pytest.mark.real_twins
 @pytest.mark.parametrize("e", committed()["pairs"][:50], ids=lambda e: e["kalshi"]["ticker"])
 def test_committed_pairs_resolve_through_the_reader(e):
     assert twin_of("polymarket", e["polymarket"]["id"]).id == e["kalshi"]["ticker"]
     assert twin_of("kalshi", e["kalshi"]["ticker"]).token_id == e["polymarket"]["token_id"]
+
+
+def test_tests_get_an_empty_twin_map_unless_they_opt_in():
+    """conftest's autouse fixture: a committed pair is invisible to a test that did not mark itself real_twins."""
+    e = committed()["pairs"][0]
+    assert twin_of("polymarket", e["polymarket"]["id"]) is None
+
+
+@pytest.mark.real_twins
+def test_real_twins_marker_reads_the_committed_map():
+    e = committed()["pairs"][0]
+    assert twin_of("polymarket", e["polymarket"]["id"]).id == e["kalshi"]["ticker"]

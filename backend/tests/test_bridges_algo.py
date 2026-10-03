@@ -612,3 +612,91 @@ def test_replay_reports_whether_the_algo_can_see_an_equity_price(client, tmp_pat
     _events(client, bid)
     assert client.get(f"/bridges/{bid}").json()["equity_price"] == "recorded"
     assert client.get(f"/bridges/{start(client, proposal(client)['id']).json()['bridge_id']}").json()["equity_price"] is None
+
+
+# ---------------------------------------------------------------- replay with no current quote: recorded price
+
+def _replay_with_under(client, tmp_path, px=lambda i: 400.0 + i):
+    f = tmp_path / "under.jsonl"
+    f.write_text("".join(json.dumps({"ts_ns": 1_000_000_000 * (i + 1), "p": p, "under_px": px(i)}) + "\n"
+                         for i, p in enumerate(PS)))
+    client.app.state.replay_path = str(f)
+    return f
+
+
+def test_replay_without_a_quote_fills_at_the_recorded_price_labelled(client, tmp_path):
+    """Wi-Fi off: the sim has no Massive quote, so a replay fills at the replayed under_px, labelled recorded."""
+    quotes = FakeQuotes()  # nothing: offline / no key
+    b = pin(client, SimBroker(tmp_path / "s.json", quotes))
+    _replay_with_under(client, tmp_path)
+    FakeAlgo.script = {2: {"side": -1, "qty": 100.0}, 6: {"side": -1, "qty": 50.0}, 9: {"side": 1, "qty": 30.0}}
+    p = proposal(client, {"family": "macro_fed_hedge"})
+    bid = start(client, p["id"], replay_to_account=True).json()["bridge_id"]
+    ev = _events(client, bid)
+    fills = [d for k, d in ev if k == "fill"]
+    assert [f["status"] for f in fills] == ["filled"] * 3
+    assert all(f["price_source"] == "recorded" and "recorded price" in f["price_note"] for f in fills)
+    assert all("recorded price" in f["note"] for f in fills)
+    # tick 2 replayed under_px 401, 1 bp half-spread: a sell fills just under it, a buy (tick 9, 408) just over
+    assert fills[0]["fill_px"] == pytest.approx(401.0 * (1 - 1e-4), abs=1e-4)
+    assert fills[2]["fill_px"] == pytest.approx(408.0 * (1 + 1e-4), abs=1e-4)
+    assert [(i, q) for i, q, _ in FakeAlgo.instances[0].fills] == [("equity", -100.0), ("equity", -50.0), ("equity", 30.0)]
+    assert all(o.price_source == "recorded" and "recorded price" in o.note for o in run(b.orders()))
+    s = client.get(f"/bridges/{bid}").json()
+    assert s["broker_filled"] == 3 and s["broker_rejects"] == 0 and s["broker_hedge"] == 120.0
+    assert s["recorded_price_fills"] == 3
+    # they went into the persistent account: the summary says their cost bases are historical
+    assert s["account_scope"] == "account" and "3 fill(s)" in s["account_note"] and "historical" in s["account_note"]
+    # the quote check is cached per bridge, not repeated per order (the sim itself never needed a quote)
+    assert quotes.calls == [("equity", "SPY")]
+
+
+def test_replay_with_a_quote_keeps_the_current_market_price(client, tmp_path):
+    pin(client, SimBroker(tmp_path / "s.json", FakeQuotes(equity={"SPY": Quote(500.0, None, "q")})))
+    _replay_with_under(client, tmp_path)
+    FakeAlgo.script = {2: {"side": -1, "qty": 100.0}}
+    p = proposal(client, {"family": "macro_fed_hedge"})
+    bid = start(client, p["id"]).json()["bridge_id"]
+    (f,) = [d for k, d in _events(client, bid) if k == "fill"]
+    assert f["status"] == "filled" and f["price_source"] == "q" and f["fill_px"] == pytest.approx(499.95)
+    assert f["price_note"] == "priced at the current market, not the replayed time" and f["scope"] == "replay_sandbox"
+    s = client.get(f"/bridges/{bid}").json()
+    assert s["recorded_price_fills"] == 0 and s["account_note"] is None
+
+
+def test_sandboxed_recorded_price_replay_has_no_account_note(client, tmp_path):
+    pin(client, SimBroker(tmp_path / "s.json", FakeQuotes()))
+    _replay_with_under(client, tmp_path)
+    FakeAlgo.script = {2: {"side": -1, "qty": 100.0}}
+    p = proposal(client, {"family": "macro_fed_hedge"})
+    bid = start(client, p["id"]).json()["bridge_id"]
+    (f,) = [d for k, d in _events(client, bid) if k == "fill"]
+    assert f["price_source"] == "recorded" and f["scope"] == "replay_sandbox"
+    s = client.get(f"/bridges/{bid}").json()
+    assert s["recorded_price_fills"] == 1 and s["account_note"] is None  # a throwaway sim: no account to mislead
+
+
+def test_replay_without_quote_or_recorded_price_is_still_refused(client, tmp_path):
+    pin(client, SimBroker(tmp_path / "s.json", FakeQuotes()))  # the default fixture replay has no under_px
+    FakeAlgo.script = {2: {"side": -1, "qty": 10.0}}
+    p = proposal(client, {"family": "macro_fed_hedge"})
+    (f,) = [d for k, d in _events(client, start(client, p["id"], replay_to_account=True).json()["bridge_id"]) if k == "fill"]
+    assert f["status"] == "rejected" and f["reject_reason"].startswith("no_price")
+
+
+def test_live_bridge_never_uses_the_recorded_price_path(client, tmp_path, monkeypatch):
+    called = []
+
+    async def spy(bridge, broker):
+        called.append(bridge.effective_source)
+        return False
+    monkeypatch.setattr(bridges, "_broker_can_price", spy)
+    pin(client, SimBroker(tmp_path / "s.json", FakeQuotes()))
+    bridge = bridges.Bridge(SimpleNamespace(id="p", family="hedge", ticker="SPY", shares_held=1000,
+                                            target_coverage=0.5), "live", bridges.MarketRef(**FED), 0.0,
+                            algo={"family": "macro_fed_hedge", "preset_index": 0})
+    bridge.broker = client.app.state.broker
+    a = FakeAlgo("macro_fed_hedge", {}, {})
+    t = Tick(1, 0.3, {"under_px": 400.0})
+    rec = run(bridges._send_intent(bridge, a, {"action": "order", "instrument": "equity", "side": -1, "qty": 5.0}, t))
+    assert called == [] and rec["status"] == "filled" and rec["price_source"] == "supplied"  # the live tick quote

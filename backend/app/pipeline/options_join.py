@@ -9,7 +9,13 @@ Honesty rules:
   time each close became known (bar end). ``opt_mid`` = the spread's close-to-close value, ``opt_implied_prob`` =
   ``opt_mid / (k_hi - k_lo) / DF`` (the digital approximation) when it lies in [0, 1] (within a small tolerance).
   These are estimates from bar closes, not quotes; ``quote_model`` on the result says so.
-- ``opt_iv`` / ``opt_delta`` have no history in bars: they stay NaN (never back-filled from today's snapshot).
+- ``opt_iv`` is implied from the same bar closes: each leg's close is inverted through Black-Scholes (no dividends,
+  r = ``RISK_FREE``) against the underlying's own bar close as of the same time and the time to the listed expiry,
+  bounded to [IV_LO, IV_HI] by bisection; a close outside the no-arbitrage bounds, a missing spot or an expired leg
+  gives NaN (never a guess). A leg close is only paired with a spot close when the two bars closed within one bar
+  interval (the spot series' median bar spacing) of each other; otherwise NaN, so stale option bars do not show up
+  as vol moves. The two legs' IVs are interpolated at the matched strike, as the live snapshot does.
+  ``opt_delta`` has no history: NaN. Nothing is back-filled from today's snapshot.
 - ``eightk_score`` per tick date from ``app.options.eightk`` for single-stock underlyings; NaN where no loaded 8-K
   data covers the date (and for indices / ETFs, which file no 8-Ks).
 - Anything missing (no key, unsupported question, no listed contracts, an expiry too far from the resolution
@@ -36,6 +42,75 @@ def _bars_for(client: Any, option_ticker: str, start_s: int, end_s: int) -> list
 def _discount(r: float, expiry: dt.date, at: dt.date) -> float:
     T = max((expiry - at).days, 0) / 365.0
     return math.exp(-r * T)
+
+
+IV_LO, IV_HI = 1e-3, 5.0   # implied-vol search bounds (0.1% .. 500% annualised)
+IV_ITERS = 60              # bisection steps: (IV_HI - IV_LO) / 2**60 is far below any quoted precision
+_erf = np.frompyfunc(math.erf, 1, 1)
+
+
+def _ncdf(x: np.ndarray) -> np.ndarray:
+    return 0.5 * (1.0 + np.asarray(_erf(np.asarray(x, dtype=np.float64) / math.sqrt(2.0)), dtype=np.float64))
+
+
+def bs_price(S, K, T, r: float, sigma, call: bool) -> np.ndarray:
+    """Black-Scholes price per share (no dividends), vectorised over arrays."""
+    S, K, T, sigma = (np.asarray(x, dtype=np.float64) for x in (S, K, T, sigma))
+    with np.errstate(divide="ignore", invalid="ignore"):
+        v = sigma * np.sqrt(T)
+        d1 = (np.log(S / K) + (r + 0.5 * sigma * sigma) * T) / v
+        d2 = d1 - v
+        df = np.exp(-r * T)
+        if call:
+            return S * _ncdf(d1) - K * df * _ncdf(d2)
+        return K * df * _ncdf(-d2) - S * _ncdf(-d1)
+
+
+def implied_vol(price, S, K, T, r: float, call: bool) -> np.ndarray:
+    """Black-Scholes implied vol by bisection on [IV_LO, IV_HI]; NaN where the inputs are not finite / positive, the
+    price is outside the no-arbitrage bounds, or no vol in the bounds reproduces it. Never raises."""
+    price, S, K, T = np.broadcast_arrays(*(np.asarray(x, dtype=np.float64) for x in (price, S, K, T)))
+    out = np.full(price.shape, NAN)
+    ok = np.isfinite(price) & np.isfinite(S) & np.isfinite(K) & np.isfinite(T) & (S > 0) & (K > 0) & (T > 0) & (price > 0)
+    if not ok.any():
+        return out
+    p, s, k, t = price[ok], S[ok], K[ok], T[ok]
+    lo, hi = np.full(p.shape, IV_LO), np.full(p.shape, IV_HI)
+    p_lo, p_hi = bs_price(s, k, t, r, lo, call), bs_price(s, k, t, r, hi, call)
+    inside = (p >= p_lo) & (p <= p_hi)  # also rejects closes below intrinsic or above the no-arb cap
+    for _ in range(IV_ITERS):
+        mid = 0.5 * (lo + hi)
+        above = bs_price(s, k, t, r, mid, call) > p
+        hi = np.where(above, mid, hi)
+        lo = np.where(above, lo, mid)
+    iv = np.where(inside, 0.5 * (lo + hi), NAN)
+    out[ok] = iv
+    return out
+
+
+def iv_at_strike(iv_lo: np.ndarray, iv_hi: np.ndarray, k_lo: float, k_hi: float, k: float) -> np.ndarray:
+    """Linear in strike between the two legs at k (clamped to [k_lo, k_hi]); one finite leg is used alone."""
+    w = 0.0 if k_hi == k_lo else min(max((k - k_lo) / (k_hi - k_lo), 0.0), 1.0)
+    both = np.isfinite(iv_lo) & np.isfinite(iv_hi)
+    return np.where(both, iv_lo + w * (iv_hi - iv_lo), np.where(np.isfinite(iv_lo), iv_lo, iv_hi))
+
+
+def asof_known(ts_s: np.ndarray, bars: list[tuple[int, float]]) -> np.ndarray:
+    """The time (s) the last bar known at each t became known; NaN before the first bar."""
+    if not bars:
+        return np.full(len(ts_s), NAN)
+    known = np.array([b[0] for b in bars], dtype=np.int64)
+    j = np.searchsorted(known, ts_s, side="right") - 1
+    return np.where(j >= 0, known[np.clip(j, 0, None)].astype(np.float64), NAN)
+
+
+def bar_interval(bars: list[tuple[int, float]], default: float = 3600.0) -> float:
+    """Typical spacing (s) of a bar series: the median gap between consecutive bars (hourly or daily)."""
+    if len(bars) < 2:
+        return default
+    gaps = np.diff(np.array([b[0] for b in bars], dtype=np.float64))
+    gaps = gaps[gaps > 0]
+    return float(np.median(gaps)) if len(gaps) else default
 
 
 def spread_series(ts_s: np.ndarray, legs: list[tuple[int, list[tuple[int, float]]]]) -> np.ndarray:
@@ -128,9 +203,11 @@ async def join_options(ticks: dict[str, np.ndarray], question: str | None, end_d
         out = dict(ticks)
         out["opt_mid"] = np.where(ok, mid, NAN)
         out["opt_implied_prob"] = np.where(ok, np.clip(prob, 0.0, 1.0), NAN)
-        out["opt_iv"] = np.full(len(ts_s), NAN)
+        out["opt_iv"] = await _iv_history(client, bars, und, ts_s, legs, signed, above, k_lo, k_hi, k, expiry,
+                                          RISK_FREE, bounded)
         out["opt_delta"] = np.full(len(ts_s), NAN)
         n_ok = int(ok.sum())
+        n_iv = int(np.isfinite(out["opt_iv"]).sum())
         info.update(available=n_ok > 0, n_with_options=n_ok, underlying_used=und, strike_used=k,
                     structure={"kind": "call_spread" if above else "put_spread", "expiry": res["expiry"],
                                "k_lo": k_lo, "k_hi": k_hi, "legs": [t for _, t in signed]})
@@ -138,7 +215,11 @@ async def join_options(ticks: dict[str, np.ndarray], question: str | None, end_d
             notes.append("options: no bar closes for both legs inside the history window")
         else:
             notes.append(f"options: {n_ok}/{len(ts_s)} ticks carry a {info['structure']['kind']} estimate from bar "
-                         "closes (opt_iv / opt_delta not available historically)")
+                         "closes (opt_delta not available historically)")
+        info["n_with_iv"] = n_iv
+        notes.append(f"options: opt_iv on {n_iv}/{len(ts_s)} ticks (Black-Scholes inversion of the leg bar closes "
+                     "against the underlying's bar closes, paired only when both closed within one bar interval; "
+                     "NaN where they are not in sync or it does not solve; an estimate, not a quoted vol)")
         if eightk and not und.startswith("I:") and und not in INDEX_LIKE:
             try:
                 await refresh_eightk(today, client=client)
@@ -159,3 +240,32 @@ async def join_options(ticks: dict[str, np.ndarray], question: str | None, end_d
     except Exception as e:  # never break the fit
         notes.append(f"options: join failed ({type(e).__name__})")
         return ticks, info
+
+
+async def _iv_history(client, bars, und: str, ts_s: np.ndarray, legs: list, signed: list, above: bool,
+                      k_lo: float, k_hi: float, k: float, expiry: dt.date, r: float, bounded) -> np.ndarray:
+    """opt_iv per tick from leg bar closes and the underlying's bar closes (as of each tick). NaN on any failure."""
+    n = len(ts_s)
+    try:
+        spot_bars = await bounded(bars, client, und, int(ts_s.min()), int(ts_s.max()))
+    except Exception:
+        return np.full(n, NAN)
+    spot = spread_series(ts_s, [(1, spot_bars or [])])
+    if not np.isfinite(spot).any():
+        return np.full(n, NAN)
+    # expiry: the listed contract's last close, 16:00 New York ~ 20:00 UTC
+    exp_s = dt.datetime.combine(expiry, dt.time(20, 0), dt.timezone.utc).timestamp()
+    T = (exp_s - ts_s.astype(np.float64)) / (365.0 * 86400.0)
+    by_strike: dict[float, np.ndarray] = {}
+    strikes = (k_lo, k_hi) if above else (k_hi, k_lo)  # signed legs: above = (+C(k_lo), -C(k_hi)), below = (+P(k_hi), -P(k_lo))
+    # Pair a leg close with a spot close only when both bars closed within one bar interval of each other: an
+    # illiquid option's last bar can be hours older than the spot bar, and that timing gap alone moves the implied
+    # vol by more than vol_vs_pm_move's iv_still threshold. Unsynchronised pairs are NaN, never inverted.
+    spot_t = asof_known(ts_s, spot_bars or [])
+    tol = bar_interval(spot_bars or [])
+    for (_, leg_bars), strike in zip(legs, strikes):
+        close = spread_series(ts_s, [(1, leg_bars)])
+        with np.errstate(invalid="ignore"):
+            synced = np.abs(asof_known(ts_s, leg_bars or []) - spot_t) <= tol
+        by_strike[strike] = implied_vol(np.where(synced, close, NAN), spot, strike, T, r, call=above)
+    return iv_at_strike(by_strike[k_lo], by_strike[k_hi], k_lo, k_hi, k)

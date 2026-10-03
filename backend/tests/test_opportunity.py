@@ -19,7 +19,8 @@ from app.options import chain as ch
 from app.options import enrich as en
 from app.pipeline import service
 from app.pipeline.engine_adapter import ENGINE_MANIFEST, EngineAdapter
-from app.pipeline.options_join import join_options, spread_series
+from app.pipeline.options_join import (IV_HI, asof_known, bar_interval, bs_price, implied_vol, iv_at_strike,
+                                      join_options, spread_series)
 from app.pipeline.ticks import TickSet, assemble, available_requirements
 from app.ticks import LiveSource, OptionsEnricher
 from tests.test_bridges import PS, _events  # noqa: F401
@@ -161,7 +162,8 @@ def test_join_options_builds_the_spread_history_from_leg_bars():
     assert info["available"] and info["structure"]["kind"] == "call_spread"
     assert math.isnan(out["opt_mid"][2]) and out["opt_mid"][3] == pytest.approx(5.0)  # as-of: known at bar end
     assert out["opt_mid"][12] == pytest.approx(5.5)
-    assert 0.4 < out["opt_implied_prob"][3] < 0.6 and np.isnan(out["opt_iv"]).all()  # iv never back-filled
+    # no underlying bars in this fixture: opt_iv cannot be implied, and is never back-filled from the snapshot
+    assert 0.4 < out["opt_implied_prob"][3] < 0.6 and np.isnan(out["opt_iv"]).all()
     assert "listed_options" in available_requirements(TickSet(out, "replay", len(pts)))
 
 
@@ -178,13 +180,76 @@ def test_join_options_degrades_without_data(question, massive, offline, why):
     assert out is ticks and not info["available"] and why in " ".join(info["notes"])
 
 
+def test_black_scholes_inversion_hand_numbers():
+    # S = K = 100, T = 1y, r = 4%, sigma = 20%: d1 = 0.3, d2 = 0.1 -> C = 100 N(0.3) - 100 e^-0.04 N(0.1) = 9.9251
+    c = float(bs_price(100.0, 100.0, 1.0, 0.04, 0.2, call=True))
+    assert c == pytest.approx(9.9251, abs=1e-3)
+    p = float(bs_price(100.0, 100.0, 1.0, 0.04, 0.2, call=False))
+    assert c - p == pytest.approx(100.0 - 100.0 * math.exp(-0.04), abs=1e-9)  # put-call parity
+    assert float(implied_vol(c, 100.0, 100.0, 1.0, 0.04, call=True)) == pytest.approx(0.2, abs=1e-6)
+    assert float(implied_vol(p, 100.0, 100.0, 1.0, 0.04, call=False)) == pytest.approx(0.2, abs=1e-6)
+    # bounded, NaN on failure: below intrinsic, above the no-arb cap (> S), expired, missing spot, zero price
+    bad = implied_vol(np.array([1.0, 101.0, 5.0, 5.0, 0.0]), np.array([120.0, 100.0, 100.0, NAN, 100.0]), 100.0,
+                      np.array([1.0, 1.0, 0.0, 1.0, 1.0]), 0.04, call=True)
+    assert np.isnan(bad).all()
+    assert np.isnan(implied_vol(float(bs_price(100.0, 100.0, 1.0, 0.04, IV_HI * 2, call=True)), 100.0, 100.0, 1.0,
+                                0.04, call=True))  # needs a vol above IV_HI: NaN, not a clipped guess
+    assert iv_at_strike(np.array([0.3, NAN, NAN]), np.array([0.5, 0.4, NAN]), 145.0, 155.0, 150.0).tolist()[:2] == \
+        pytest.approx([0.4, 0.4])
+
+
+def test_join_options_implies_opt_iv_from_leg_and_underlying_bar_closes():
+    pts = _points()
+    ticks = assemble(pts)
+    t0 = pts[0][0]
+    exp_s = dt.datetime(2026, 12, 18, 20, 0, tzinfo=dt.timezone.utc).timestamp()
+    known = t0 + 3600 * 3
+    T = (exp_s - (t0 + 3600 * 5)) / (365 * 86400)  # value the bars at tick 5 (all known at tick 3)
+    c145 = float(bs_price(150.0, 145.0, T, 0.04, 0.50, call=True))
+    c155 = float(bs_price(150.0, 155.0, T, 0.04, 0.60, call=True))
+    bars = {"O:NVDA261218C00145000": [(known, c145)], "O:NVDA261218C00155000": [(known, c155)],
+            "NVDA": [(known, 150.0)]}
+
+    async def refresh(und, k, expiry, **kw):
+        return nvda_chain(), False
+    out, info = run(join_options(ticks, Q_ABOVE, None, massive=lambda: object(), refresh=refresh,
+                                 bars=lambda client, tk, s, e: bars[tk], eightk=False, today=dt.date(2026, 10, 2)))
+    iv = out["opt_iv"]
+    assert np.isnan(iv[:3]).all()  # nothing known before the bars end
+    assert iv[5] == pytest.approx(0.55, abs=1e-6)  # 50% at 145, 60% at 155, interpolated at K = 150
+    assert info["n_with_iv"] == len(pts) - 3 and np.isnan(out["opt_delta"]).all()
+
+
+def test_opt_iv_is_nan_when_leg_and_spot_bars_are_not_in_sync():
+    """Hourly spot bars, one option bar 3 hours older than the spot bar it would be paired with: NaN, not a vol."""
+    pts = _points()
+    ticks = assemble(pts)
+    t0 = pts[0][0]
+    exp_s = dt.datetime(2026, 12, 18, 20, 0, tzinfo=dt.timezone.utc).timestamp()
+    T = (exp_s - (t0 + 3600 * 5)) / (365 * 86400)
+    c145 = float(bs_price(150.0, 145.0, T, 0.04, 0.50, call=True))
+    c155 = float(bs_price(150.0, 155.0, T, 0.04, 0.60, call=True))
+    spot = [(t0 + 3600 * h, 150.0) for h in range(0, 48)]
+    bars = {"O:NVDA261218C00145000": [(t0, c145)], "O:NVDA261218C00155000": [(t0, c155)], "NVDA": spot}
+
+    async def refresh(und, k, expiry, **kw):
+        return nvda_chain(), False
+    out, info = run(join_options(ticks, Q_ABOVE, None, massive=lambda: object(), refresh=refresh,
+                                 bars=lambda client, tk, s, e: bars[tk], eightk=False, today=dt.date(2026, 10, 2)))
+    iv = out["opt_iv"]
+    assert np.isfinite(iv[0]) and np.isfinite(iv[1])  # option and spot bars within one hour of each other
+    assert np.isnan(iv[2:]).all()  # the option bar is now 2+ hours stale against the spot bar: never inverted
+    assert bar_interval(spot) == 3600.0 and np.isnan(asof_known(np.array([t0 - 1]), spot)).all()
+
+
 def test_spread_series_needs_every_leg():
     ts = np.array([10, 20, 30])
     assert np.isnan(spread_series(ts, [(1, [(15, 2.0)]), (-1, [])])).all()
     assert spread_series(ts, [(1, [(15, 2.0)]), (-1, [(5, 0.5)])]).tolist()[1:] == [1.5, 1.5]
 
 
-def _fit(monkeypatch, with_options: bool, with_iv: bool = True, question: str = Q_ABOVE, hc=None):
+def _fit(monkeypatch, with_options: bool, with_iv: bool = True, question: str = Q_ABOVE, hc=None,
+         with_straddle: bool = False):
     pts = _points(48)
     ticks = assemble(pts, bars=[(p[0] - 1, 100.0) for p in pts])
 
@@ -199,6 +264,8 @@ def _fit(monkeypatch, with_options: bool, with_iv: bool = True, question: str = 
         out["opt_mid"] = np.full(len(pts), 4.0)
         if with_iv:
             out["opt_iv"] = np.linspace(0.40, 0.45, len(pts))
+        if with_straddle:
+            out["opt_straddle_mid"] = np.full(len(pts), 9.0)
         return out, {"available": True, "notes": []}
     monkeypatch.setattr(service, "build_ticks", fake_build)
     monkeypatch.setattr(service, "join_options", fake_join)
@@ -209,7 +276,7 @@ def _fit(monkeypatch, with_options: bool, with_iv: bool = True, question: str = 
 
 
 def test_option_families_become_eligible_and_scored_only_with_option_data(monkeypatch):
-    r, hc = _fit(monkeypatch, with_options=True)
+    r, hc = _fit(monkeypatch, with_options=True, with_straddle=True)
     scored = {c[0] for c in hc.calls}
     assert {"binary_vs_spread_arb", "vol_vs_pm_move"} <= scored
     assert r["division"] == "opportunity" and r["score"] is not None
@@ -393,8 +460,16 @@ def test_risk_caps_clip_and_hold_option_entries(opp_client):
     assert fills[1]["status"] == "held" and "max_contracts" in fills[1]["reject_reason"]
     a = FakeAlgo.instances[0]
     assert a.rejects == ["option"] and a.fills[0][1] == 3.0
-    legs = {x.symbol: x.qty for x in run(c.app.state.bridges[p["id"]].replay_broker.positions())}
-    assert legs == {"O:NVDA261218C00145000": 3, "O:NVDA261218C00155000": -3}
+    pos = [d for k, d in ev if k == "position"]
+    assert pos[0]["option_position"] == 3 and pos[1]["option_position"] == 3  # the held entry added nothing
+    # bridge end: the open structure is closed on its own legs (simulated, labelled), so nothing stays open
+    close = fills[-1]
+    assert close["close_reason"] == "bridge_end" and "simulated close" in close["close_label"]
+    assert close["status"] == "filled" and close["side"] == "sell" and close["qty"] == 3
+    assert [(lg["ticker"], lg["side"]) for lg in close["legs"]] == [("O:NVDA261218C00145000", "sell"),
+                                                                    ("O:NVDA261218C00155000", "buy")]
+    assert a.fills[-1] == ("option", -3.0, pytest.approx(4.8)) and pos[-1]["close_reason"] == "bridge_end"
+    assert run(c.app.state.bridges[p["id"]].replay_broker.positions()) == []
 
     FakeAlgo.script, FakeAlgo.instances = {2: {"instrument": "option", "side": 1, "qty": 5.0},
                                            4: {"instrument": "option", "side": 1, "qty": 5.0}}, []
@@ -403,7 +478,28 @@ def test_risk_caps_clip_and_hold_option_entries(opp_client):
     fills = [d for k, d in _events(c, bid) if k == "fill"]
     assert fills[0]["qty"] == 2 and fills[0]["cap"] == "max_notional" and fills[0]["unit_risk"] == pytest.approx(520)
     assert fills[1]["status"] == "held"
-    assert c.get(f"/bridges/{bid}").json()["risk_used"] == pytest.approx(1040)
+    ev2 = _events(c, bid)
+    assert [d for k, d in ev2 if k == "position"][0]["risk_used"] == pytest.approx(1040)
+    s = c.get(f"/bridges/{bid}").json()
+    assert s["option_position"] == 0 and s["risk_used"] == 0 and s["option_structure"] is None  # closed at the end
+
+
+def test_a_close_that_cannot_be_priced_at_bridge_end_is_reported_and_the_structure_stays(opp_client):
+    c = opp_client
+
+    class ChainGoesAway(FakeEnricher):  # the entry is priced; at bridge end Massive is gone (an empty chain)
+        def context(self):
+            self.n = getattr(self, "n", 0) + 1
+            ctx = super().context()
+            return ctx if self.n == 1 else {**ctx, "chain": ch.Chain("NVDA", 0.0)}
+    c.app.state.enricher = ChainGoesAway()
+    FakeAlgo.script = {2: {"instrument": "option", "side": 1, "qty": 1.0}}
+    bid = _start(c, opp_proposal(c))
+    fills = [d for k, d in _events(c, bid) if k == "fill"]
+    assert fills[0]["status"] == "filled"
+    assert fills[-1]["close_reason"] == "bridge_end" and fills[-1]["status"] == "rejected"
+    s = c.get(f"/bridges/{bid}").json()
+    assert s["status"] == "finished" and s["option_position"] == 1 and s["option_structure"]["kind"] == "call_spread"
 
 
 def test_no_chain_rejects_option_intents_cleanly(opp_client):
@@ -433,7 +529,8 @@ def test_webull_routes_option_combos_to_the_simulator_labelled(opp_client):
     f = next(d for k, d in _events(c, r.json()["bridge_id"]) if k == "fill")
     assert f["status"] == "filled" and f["broker"] == "sim" and "Webull" in f["note"]
     assert f["routed"].startswith("simulator")
-    assert {x.symbol for x in run(sim.positions())} == {"O:NVDA261218C00145000", "O:NVDA261218C00155000"}
+    assert run(sim.positions()) == []  # opened in the Webull wrapper's simulator, closed there at bridge end
+    assert sorted(o.symbol for o in run(sim.orders())) == ["O:NVDA261218C00145000"] * 2 + ["O:NVDA261218C00155000"] * 2
 
 
 # ---------------------------------------------------------------- SimBroker combos
@@ -510,12 +607,14 @@ class _IdleAdapter:
         return [{"preset_index": 0, "params": {}, "n_orders": 4, "pnl": -30.0, "fees": 2.0, "max_dd": 40.0}]
 
 
-def _opt_ticks(n=48, iv=True, eightk=False):
+def _opt_ticks(n=48, iv=True, eightk=False, straddle=True):
     pts = _points(n)
     t = assemble(pts)
     t["opt_implied_prob"] = np.full(n, 0.4)
     t["opt_mid"] = np.full(n, 4.0)
     t["opt_iv"] = np.full(n, 0.4) if iv else np.full(n, NAN)
+    if straddle:
+        t["opt_straddle_mid"] = np.full(n, 9.0)
     t["eightk_score"] = np.full(n, 0.7) if eightk else np.full(n, NAN)
     return TickSet(t, "replay", n, True)
 
@@ -541,7 +640,20 @@ def test_family_without_its_signal_history_is_not_replayed():
 
 
 def test_fit_skips_vol_vs_pm_move_without_iv_history(monkeypatch):
-    r, hc = _fit(monkeypatch, with_options=True, with_iv=False)
+    r, hc = _fit(monkeypatch, with_options=True, with_iv=False, with_straddle=True)
+    called = {c[0] for c in hc.calls}
+    assert "binary_vs_spread_arb" in called and "vol_vs_pm_move" not in called
+
+
+def test_vol_vs_pm_move_is_never_scored_on_the_spread_proxy(monkeypatch):
+    """It trades a straddle; the fit's opt_mid is the spread. With implied vol but no straddle price history it is
+    not replayed, and the reason says the spread proxy is not what it trades."""
+    a = _IdleAdapter(idle=())
+    ticks = _opt_ticks(straddle=False)
+    assert missing_signal("vol_vs_pm_move", ticks.ticks) == "opt_straddle_mid"
+    out = tune(a, [{"id": "vol_vs_pm_move"}], "opportunity", {}, ticks)
+    assert a.calls == [] and not out["scored"] and "no straddle price history" in out["unscored_reason"]
+    r, hc = _fit(monkeypatch, with_options=True, with_iv=True)  # the real join: opt_iv yes, straddle history no
     called = {c[0] for c in hc.calls}
     assert "binary_vs_spread_arb" in called and "vol_vs_pm_move" not in called
 

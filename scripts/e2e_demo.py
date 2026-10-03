@@ -282,7 +282,7 @@ def run_flow(base: str, args) -> dict:
     check("a different algo than the approved one is refused (409)", s == 409, f"{s}")
 
     say(f"\n== 7. SSE /bridges/{bid}/stream (>= {args.events} events)")
-    events, closed = read_sse(base, bid, args.events, args.stream_timeout, need_fill=not args.offline)
+    events, closed = read_sse(base, bid, args.events, args.stream_timeout, need_fill=True)
     kinds: dict[str, int] = {}
     for k, _ in events:
         kinds[k] = kinds.get(k, 0) + 1
@@ -295,11 +295,14 @@ def run_flow(base: str, args) -> dict:
     check("every decision names the fitted family", bool(decisions) and all(d.get("family") == fit["family"] for d in decisions),
           f"families={sorted({d.get('family') for d in decisions})}")
     if args.offline:
-        # Known limitation (see docs/demo.md): a replay bridge prices fills at today's market from Massive, so with no
-        # network and no key the sim has no price and refuses every order. Assert that, so a fix shows up as a change.
-        check("offline: orders are refused for want of a price (documented limitation)",
-              bool(fills) and all(f.get("status") == "rejected" and "no_price" in str(f.get("reject_reason")) for f in fills),
-              f"{len(fills)} fills, statuses={sorted({f.get('status') for f in fills})}, reason={fills[0].get('reject_reason') if fills else None}")
+        # Wi-Fi off: no current Massive quote, so a replay bridge fills at the replayed under_px, labelled "recorded".
+        filled_now = [f for f in fills if f.get("status") == "filled"]
+        check("offline: orders fill at the recorded price (no current quote), labelled",
+              bool(filled_now) and all(f.get("price_source") == "recorded" and "recorded price" in str(f.get("price_note"))
+                                       for f in filled_now)
+              and not any("no_price" in str(f.get("reject_reason")) for f in fills),
+              f"{len(fills)} fills, statuses={sorted({f.get('status') for f in fills})}, "
+              f"sources={sorted({str(f.get('price_source')) for f in fills})}, first={fills[0].get('fill_px') if fills else None}")
     else:
         check("at least one order was filled by the broker", any(f.get("status") == "filled" for f in fills),
               f"fills={[(f.get('status'), f.get('side'), f.get('qty'), f.get('fill_px')) for f in fills[:4]]}")
@@ -338,15 +341,15 @@ def run_flow(base: str, args) -> dict:
     mine = [o for o in orders if o.get("tag") == bid] if isinstance(orders, list) else []
     filled = [o for o in mine if o.get("status") == "filled"]
     check("orders reached the broker (tagged with the bridge id)", len(mine) >= 1, f"{len(mine)} orders for {bid}")
-    if not args.offline:
-        check("broker order count matches the bridge summary", len(filled) == summ["broker_filled"],
-              f"filled in /orders={len(filled)} vs summary.broker_filled={summ['broker_filled']}")
-        short = next((p for p in pos if p.get("symbol") == args.ticker), None) if isinstance(pos, list) else None
-        net = -sum(o["qty"] for o in filled if o["side"] == "sell") + sum(o["qty"] for o in filled if o["side"] == "buy")
-        check(f"{args.ticker} position is the net short the orders built", short is not None and abs(short["qty"] - net) < 1e-6 and net < 0,
-              f"position qty={short and short['qty']} vs net filled {net}")
-        check("broker hedge in the summary equals the position", short is not None and abs(-short["qty"] - summ["broker_hedge"]) < 1e-6,
-              f"short={short and -short['qty']} vs broker_hedge={summ['broker_hedge']}")
+    # offline too: the replay fills at the recorded price, so the account must match the bridge either way
+    check("broker order count matches the bridge summary", len(filled) == summ["broker_filled"],
+          f"filled in /orders={len(filled)} vs summary.broker_filled={summ['broker_filled']}")
+    short = next((p for p in pos if p.get("symbol") == args.ticker), None) if isinstance(pos, list) else None
+    net = -sum(o["qty"] for o in filled if o["side"] == "sell") + sum(o["qty"] for o in filled if o["side"] == "buy")
+    check(f"{args.ticker} position is the net short the orders built", short is not None and abs(short["qty"] - net) < 1e-6 and net < 0,
+          f"position qty={short and short['qty']} vs net filled {net}")
+    check("broker hedge in the summary equals the position", short is not None and abs(-short["qty"] - summ["broker_hedge"]) < 1e-6,
+          f"short={short and -short['qty']} vs broker_hedge={summ['broker_hedge']}")
     out.update(account=acct, positions=pos, orders=mine)
     if isinstance(acct, dict):
         say(f"     account: broker={acct.get('broker')} cash=${acct['cash']:,.2f} equity=${acct['equity']:,.2f} "

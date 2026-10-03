@@ -615,10 +615,29 @@ def test_tune_unscored_paths_never_invent_scores():
 
 
 def test_opportunity_score_is_net_pnl_per_unit_drawdown():
-    assert score_row({"pnl": 110.0, "fees": 10.0, "max_dd": 50.0}, "opportunity") == pytest.approx(2.0)
+    # replay pnl is already net of fees (engine contract): 100 / 50 = 2.0, fees are not subtracted a second time
+    assert score_row({"pnl": 100.0, "fees": 10.0, "max_dd": 50.0}, "opportunity") == pytest.approx(2.0)
     assert score_row({"pnl_net": 30.0, "pnl": 999.0, "max_dd": 0.0}, "opportunity") == pytest.approx(30.0)
     assert score_row({"pnl": float("nan")}, "opportunity") is None
     assert score_row({"hedge_var_reduction": 0.4}, "hedge") == 0.4
+
+
+def test_opportunity_ranking_does_not_charge_fees_twice():
+    """Hand numbers. Engine replay pnl is equity marked at the end with every fee already debited from cash
+    (replay.cpp: cash -= side*qty*px*mult + fee; pnl = eq). Family A: pnl 100 net, fees 30, dd 50 -> 100/50 = 2.0.
+    Family B: pnl 80 net, fees 0, dd 50 -> 80/50 = 1.6. A wins. Subtracting fees again would score A at
+    (100-30)/50 = 1.4 and wrongly pick B."""
+    class Hand:
+        can_score = True
+
+        def replay_grid(self, family_id, position, ticks):
+            pnl, fees = {"fam_a": (100.0, 30.0), "fam_b": (80.0, 0.0)}[family_id]
+            return [{"preset_index": 0, "params": {}, "n_orders": 4, "pnl": pnl, "fees": fees, "max_dd": 50.0}]
+
+    out = tune(Hand(), [{"id": "fam_b"}, {"id": "fam_a"}], "opportunity", {"option": 0.0}, _ticks())
+    assert out["scored"] and out["family"] == "fam_a" and out["score"] == pytest.approx(2.0)
+    assert out["alternatives"][0]["family"] == "fam_b" and out["alternatives"][0]["score"] == pytest.approx(1.6)
+    assert out["stats"]["fees"] == 30.0  # still reported for display
 
 
 # ---------------------------------------------------------------- POST /pipeline/fit

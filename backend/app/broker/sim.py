@@ -159,7 +159,7 @@ class SimBroker:
             return ((req.ref_px, 0.0, "supplied_book_price") if req.ref_px
                     else "no_price: prediction legs need ref_px (the book price); limit_px is only a bound")
         if req.ref_px:
-            mid, src, half = req.ref_px, "supplied", req.ref_half_spread
+            mid, src, half = req.ref_px, req.ref_source or "supplied", req.ref_half_spread
         else:
             q = await (self.quotes.equity(req.symbol) if a == "equity" else self.quotes.option(req.symbol))
             if q is None:

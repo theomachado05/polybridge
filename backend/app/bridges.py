@@ -67,8 +67,10 @@ class BridgeIn(BaseModel):
     market: MarketRef | None = None  # optional for market-event proposals (their own market is used)
     gap_per_share: float = Field(default=0.0, ge=0, allow_inf_nan=False)
     direction: Literal["down_on_yes", "up_on_yes"] = "down_on_yes"  # which outcome hurts a long holder
-    # Replay decisions are historical but fills are priced at today's market. By default a replay bridge trades a
-    # throwaway in-memory simulator (never Webull, never the persistent account); set true to opt in to the account.
+    # Replay decisions are historical; fills are priced at today's market when the broker has a current quote, else
+    # (Wi-Fi off / no Massive key) at the replayed under_px, labelled "recorded price". By default a replay bridge
+    # trades a throwaway in-memory simulator (never Webull, never the persistent account); set true to opt in to the
+    # account (recorded-price fills then carry historical cost bases: see ``account_note`` in the summary).
     replay_to_account: bool = False
     # The fitted algo to run (spec §3.4 hedgecore.Algo): a catalog family plus preset_index or params. Ignored when
     # the proposal already carries an algo (it was approved with it; a different one is a 409).
@@ -114,6 +116,8 @@ class Bridge:
         self.cap_holds = 0  # sell intents the approved coverage cap clipped to zero
         self.equity_source: str | None = None  # where the last live under_px came from (None: no quote)
         self.equity_price = "live_quote"  # "live_quote" | "recorded" | "none": what under_px the algo can see
+        self.quote_check: tuple[float, bool] | None = None  # replay: (monotonic, can the broker quote the ticker)
+        self.recorded_fills = 0  # replay orders filled at the recorded under_px (no current quote)
         # Opportunity (options) bridges
         self.division = proposal.family  # "hedge" | "opportunity"
         self.options: OptionsEnricher | None = None
@@ -165,6 +169,8 @@ class Bridge:
                 "cap_holds": self.cap_holds,
                 "equity_price": self.equity_price if self.algo and self.division == "hedge" else None,
                 "equity_source": self.equity_source,
+                "recorded_price_fills": self.recorded_fills,
+                "account_note": self._account_note(),
                 "broker_coverage": self.broker_hedge / self.proposal.shares_held if self.proposal.shares_held else 0.0,
                 "broker_filled": self.broker_filled,
                 "broker_rejects": self.broker_rejects, "broker_errors": self.broker_errors,
@@ -176,6 +182,15 @@ class Bridge:
                 "latency_ns": {"p50": q(0.5), "p99": q(0.99)},
                 "division": self.division,
                 **(self._opp_summary() if self.division == "opportunity" else {})}
+
+    def _account_note(self) -> str | None:
+        """Set when recorded-price replay fills went into the persistent account: their cost bases are historical, so
+        the account's unrealized P&L against today's quotes mixes two price times and measures nothing."""
+        if self.effective_source != "replay" or not self.replay_to_account or not self.recorded_fills:
+            return None
+        return (f"{self.recorded_fills} fill(s) entered the persistent sim account at recorded (historical) prices; "
+                "once a current quote is available the account marks them at today's price, so that unrealized P&L "
+                "comes from mixing the two price times, not from the hedge")
 
     def _opp_summary(self) -> dict:
         p = self.proposal
@@ -367,6 +382,34 @@ def _equity_quote(bridge: Bridge, app):
     return quote
 
 
+RECORDED_SOURCE = "recorded"  # price_source of a replay fill priced at the replayed under_px
+REPLAY_RECORDED_NOTE = "replay: recorded price (no current quote), not a live fill"
+REPLAY_RECORDED_PRICE_NOTE = ("recorded price: no current market quote (offline or no Massive key), so the fill is "
+                              "priced at the replayed under_px, not today's market")
+
+
+async def _broker_can_price(bridge: Bridge, broker: Broker) -> bool:
+    """Replay only: can the order broker price an equity order itself (a current Massive quote for the ticker)?
+    A broker that prices its own fills (Webull) always can; a sim without a quote cannot, and the replay then
+    supplies the replayed under_px. The answer is cached per bridge for EQUITY_TTL_S (one quote call per ticker per
+    window, never one per order) and never consulted by a live bridge."""
+    sim = broker if isinstance(broker, SimBroker) else None
+    if sim is None:
+        return True
+    now = time.monotonic()
+    hit = bridge.quote_check
+    if hit is not None and now - hit[0] < EQUITY_TTL_S:
+        return hit[1]
+    quotes = getattr(sim, "quotes", None)
+    try:
+        q = await asyncio.wait_for(quotes.equity(bridge.proposal.ticker), BROKER_TIMEOUT_S) if quotes else None
+    except Exception:
+        q = None
+    ok = q is not None and _fin(getattr(q, "mid", None)) is not None
+    bridge.quote_check = (now, ok)
+    return ok
+
+
 def _side(intent: dict) -> str:
     return "buy" if int(intent.get("side") or 0) > 0 else "sell"
 
@@ -493,18 +536,25 @@ async def _send_intent(bridge: Bridge, algo, intent: dict, t: Tick) -> dict:
     bridge.broker_name = broker.name
     limit = _fin(intent.get("limit_px"))
     limit = limit if limit is not None and limit > 0 else None
-    note = ref = None
+    note = ref = ref_source = None
     if bridge.effective_source == "replay":
-        note = REPLAY_NOTE  # replayed decisions, fills priced at today's market (the broker's own quote)
-        rec["price_note"] = "priced at the current market, not the replayed time"
         rec["scope"] = "account" if bridge.replay_to_account else "replay_sandbox"
+        recorded = _fin(t.fields.get("under_px"))
+        if recorded is not None and recorded > 0 and not await _broker_can_price(bridge, broker):
+            # Wi-Fi off / no Massive key: the sim has no current quote, so the replay fills at the replayed under_px
+            ref, ref_source, note = recorded, RECORDED_SOURCE, REPLAY_RECORDED_NOTE
+            rec["price_note"] = REPLAY_RECORDED_PRICE_NOTE
+        else:
+            note = REPLAY_NOTE  # replayed decisions, fills priced at today's market (the broker's own quote)
+            rec["price_note"] = "priced at the current market, not the replayed time"
     else:
         ref = _fin(t.fields.get("under_px"))  # the live quote the algo just saw
         ref = ref if ref is not None and ref > 0 else None
     try:
         req = OrderRequest(symbol=bridge.proposal.ticker, asset="equity", side=side, qty=qty,
                            type="limit" if limit is not None else "market", limit_px=limit, ref_px=ref,
-                           client_order_id=f"{bridge.id}-{bridge.orders}", tag=bridge.id, note=note)
+                           ref_source=ref_source, client_order_id=f"{bridge.id}-{bridge.orders}", tag=bridge.id,
+                           note=note)
         o = await asyncio.wait_for(broker.place_order(req), BROKER_TIMEOUT_S)
     except Exception as e:
         bridge.broker_errors += 1
@@ -512,6 +562,11 @@ async def _send_intent(bridge: Bridge, algo, intent: dict, t: Tick) -> dict:
         rec.update(status="error", error=type(e).__name__, filled_qty=0.0)
         return rec
     await _apply_order_state(bridge, algo, o, side, instrument)
+    if bridge.effective_source == "replay":
+        if ref_source == RECORDED_SOURCE and o.filled_qty > 0:
+            bridge.recorded_fills += 1
+        elif o.status == "rejected" and str(o.reject_reason or "").startswith("no_price"):
+            bridge.quote_check = (time.monotonic(), False)  # the quote vanished since the check: next order uses the recording
     rec.update(status=o.status, order_id=o.id, fill_px=o.fill_px, fee=o.fee, price_source=o.price_source,
                reject_reason=o.reject_reason, note=o.note, broker=o.broker, filled_qty=o.filled_qty,
                type=req.type, limit_px=req.limit_px)
@@ -653,7 +708,7 @@ def unit_risk(struct: dict, side: int, net_mid: float, net_half: float) -> float
     return max(per, 0.0) * OPTION_MULT
 
 
-async def _send_option_intent(bridge: Bridge, algo, intent: dict, t: Tick) -> dict:
+async def _send_option_intent(bridge: Bridge, algo, intent: dict, t: Tick | None) -> dict:
     """One Option intent -> one multi-leg option order (all legs or none), capped by the approved max_contracts /
     max_notional. Fills go back to the algo as one structure price (per share). Never raises."""
     fam = bridge.algo["family"]
@@ -841,10 +896,31 @@ async def _run(bridge: Bridge, app, hc, source, fallback: Path | None) -> None:
         await bridge.emit("status", {"status": "stopped", "reason": "internal_error"}, status="stopped")
 
 
+OPTION_CLOSE_LABEL = ("simulated close at bridge end: the open option structure is bought/sold back on its own legs "
+                      "at the Massive quote mid +/- half the spread (SimBroker), so no option position outlives the "
+                      "bridge")
+
+
 async def _finish_orders(bridge: Bridge, engine) -> None:
-    """A bridge that ends leaves no order resting at the broker."""
+    """A bridge that ends leaves no order resting at the broker, and an opportunity bridge leaves no option structure
+    open: it is closed on its own legs (simulated, labelled). A close that cannot be priced is reported, not hidden:
+    the structure then stays in the summary's option_structure."""
     if bridge.algo and bridge.resting is not None:
         await _settle_resting(bridge, engine, bridge.order_broker(), "bridge_end")
+    if bridge.algo and bridge.division == "opportunity" and bridge.opt_pos != 0 and bridge.opt_open is not None:
+        bridge.orders += 1
+        intent = {"action": "order", "instrument": "option", "side": -1 if bridge.opt_pos > 0 else 1,
+                  "qty": abs(bridge.opt_pos), "reason": "bridge_end"}
+        fill = await _send_option_intent(bridge, engine, intent, None)
+        fill.update(close_reason="bridge_end", close_label=OPTION_CLOSE_LABEL)
+        bridge.fills.append(fill)
+        del bridge.fills[:-MAX_FILLS]
+        await bridge.emit("fill", fill)
+        await bridge.emit("position", {
+            "option_position": bridge.opt_pos, "option_structure": bridge.opt_open,
+            "risk_used": abs(bridge.opt_pos) * bridge.opt_risk_per_unit,
+            "max_contracts": bridge.proposal.max_contracts, "max_notional": bridge.proposal.max_notional,
+            "broker": fill.get("broker"), "simulated": True, "close_reason": "bridge_end"})
 
 
 def _replay_equity_price(path: Path, bars: list[tuple[int, float]]) -> str:

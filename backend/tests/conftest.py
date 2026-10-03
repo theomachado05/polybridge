@@ -20,3 +20,22 @@ def _isolated_broker(tmp_path, monkeypatch):
     broker.reset_default_broker()
     yield
     broker.reset_default_broker()
+
+
+def pytest_configure(config):
+    config.addinivalue_line("markers", "real_twins: read the committed twin map (app/data/kalshi_twins.json) "
+                                       "instead of the empty map every other test gets")
+
+
+@pytest.fixture(autouse=True)
+def _empty_twin_map(request, tmp_path, monkeypatch):
+    """Hermetic twins: bridges and the pipeline resolve twins through app.twins.store.DEFAULT_PATH, so a test that
+    does not opt in (``@pytest.mark.real_twins``, or patching DEFAULT_PATH itself) sees an empty map and never
+    depends on which pairs the committed file happens to hold."""
+    if request.node.get_closest_marker("real_twins"):
+        yield
+        return
+    from app.twins import store
+
+    monkeypatch.setattr(store, "DEFAULT_PATH", tmp_path / "no_twins.json")  # missing file = empty map
+    yield

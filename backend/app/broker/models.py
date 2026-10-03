@@ -39,6 +39,9 @@ class OrderRequest(BaseModel):
     # Half the quoted bid/ask spread around ref_px (e.g. an option leg's Massive quote). None: the broker applies its
     # configured fallback spread.
     ref_half_spread: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    # Where ref_px came from, reported as the order's price_source (default "supplied"); e.g. "recorded" for a replay
+    # filled at the replayed price because no current quote was available.
+    ref_source: str | None = Field(default=None, max_length=32, pattern=r"^[a-z][a-z0-9_]*$")
     combo_id: str | None = Field(default=None, max_length=64)  # legs of one multi-leg option order share it
     note: str | None = Field(default=None, max_length=200)  # label copied to the Order (e.g. replay origin)
 
