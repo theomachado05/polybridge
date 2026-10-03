@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ALGOS, DEMO_ALGO_COUNT, IN_CHAIN } from "@/lib/demo";
+import { ALGOS, IN_CHAIN } from "@/lib/demo";
 import { fmtNs, prettyId } from "@/lib/fmt";
 import { UI_FAMILIES, type LibRow } from "@/lib/library";
 import { useStore } from "@/lib/store";
@@ -89,7 +89,7 @@ export default function Library() {
       <div className="pb-header">
         <div>
           <div className="pb-label" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-            {lib ? `LIBRARY · ${lib.total.toLocaleString("en-US")} PRESETS · ${lib.rows.length} FAMILIES` : `LIBRARY · ${DEMO_ALGO_COUNT.toLocaleString("en-US")} ALGORITHMS`}
+            {lib ? `LIBRARY · ${lib.total.toLocaleString("en-US")} PRESETS · ${lib.rows.length} FAMILIES` : "LIBRARY · SAMPLE ALGORITHMS"}
             {lib ? <Tag tone="measured" title="GET /library — the compiled hedgecore catalog; the count is what catalog() reports">compiled catalog</Tag> : <DemoTag what="sample list" title={`GET /library failed (${s.library.error ?? "loading"}); showing the prototype's 15 sample algorithms.`} />}
           </div>
           <h2 className="pb-h2">Composed per event, tuned per tick.</h2>

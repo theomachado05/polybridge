@@ -110,7 +110,6 @@ export const ALGOS: DemoAlgo[] = [
   { id: "PB-0709", name: "Edge-vs-Cost Gate", fam: "Routing", role: "Cancels the trade when expected edge is smaller than commissions plus borrow.", tunes: "min edge" },
 ];
 export const IN_CHAIN = new Set(["Sigma Gate", "Book-Imbalance Reader", "Delta-Bridge v3", "Vol-Adaptive Slicer", "Meridian TWAP", "Tax-Lot Optimizer", "Fee-Aware Router"]);
-export const DEMO_ALGO_COUNT = 1284;
 
 export const LOGO = (d: string) => `https://www.google.com/s2/favicons?domain=${d}&sz=128`;
 export interface Broker { id: string; name: string; sub: string; domain: string; logo: string }

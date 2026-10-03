@@ -13,6 +13,7 @@ export interface PipeContext {
   shortlisted?: string[];   // family ids from GET /library for the fitted class
   real?: boolean;           // a live market with a real mapping: never show the prototype's invented lots/comps
   heldReal?: number;        // shares actually held (real path)
+  libraryTotal?: number;    // preset count GET /library reports (no number is shown without it)
 }
 
 const scoreLabel = (division: string) => (division === "opportunity" ? "net P&L per unit risk" : "hedge variance reduction");
@@ -48,7 +49,7 @@ export function demoSteps(c: PipeContext): PipeStep[] {
     { key: "history", name: "Estimating impact", orb: "working", text: c.real
       ? (c.move ? `Precomputed AI mapping: expected move on YES ${fmtPct(c.move)}. ${c.why}` : `No impact estimate for ${c.ticker} on this market; the engine hedges on probability alone (fee gate off).`)
       : `Revenue ${c.rev == null ? "n/a" : fmtPct(c.rev)}, brand ${c.brand == null ? "n/a" : fmtPct(c.brand)} → expected move on YES ${fmtPct(c.move)} (confidence 0.71). ${c.why}` },
-    { key: "tune", name: "Searching algo library", orb: "searching", text: c.real ? "Algo fit endpoint unavailable, so no presets were scored; the engine's default delta-bridge runs." : "1,284 algorithms scored on σ regime, venue latency, fee drag and tax fit. 61 pass; 6 compose." },
+    { key: "tune", name: "Searching algo library", orb: "searching", text: c.real ? "Algo fit endpoint unavailable, so no presets were scored; the engine's default delta-bridge runs." : `${c.libraryTotal ? `The library holds ${c.libraryTotal.toLocaleString("en-US")} presets. ` : ""}Scripted demo scoring on σ regime, venue latency, fee drag and tax fit: 61 pass; 6 sample algos compose.` },
     { key: "explain", name: "Composing the chain", orb: "composing", text: c.real ? "Staleness → Sigma gate → No-trade band → Fee gate → Delta-bridge sizer → Position cap (hedgecore Engine)." : "Sigma Gate → Book-Imbalance Reader → Delta-Bridge v3 → Vol-Adaptive Slicer / Meridian TWAP → Tax-Lot Optimizer → Fee-Aware Router." },
     { key: "ready", name: c.real ? "Ready for your approval" : "Backtesting on comps", orb: "listening", text: c.real ? `Next: you approve a proposal for ${c.ticker}; then the engine's default delta-bridge spec runs on the market's live feed (or a replay).` : `NYC LL18 and Barcelona 2028 ban: this chain would have captured 71% of ${c.ticker}'s event drawdown at 0.09% cost.` },
   ];

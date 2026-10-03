@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { shortlist } from "@/lib/library";
 import { demoSteps, fitSteps, type PipeContext } from "@/lib/pipeline";
-import { brokerLabel, defaultPick, feeGateOff, useStore } from "@/lib/store";
+import { algoRunLabel, brokerLabel, defaultPick, feeGateOff, runnableFit, useStore } from "@/lib/store";
 import { DemoTag, OrbDisc, Tag } from "@/components/pb";
 
 const STEP_MS = 1400;
@@ -16,7 +16,8 @@ export default function Pipeline() {
   const [{ q, eq: e }] = useState(() => (s.question && s.equity ? { q: s.question, eq: s.equity } : defaultPick()));
   const inst = s.inst ?? "shares";
   const [step, setStep] = useState(0);
-  // Once the fit misses its deadline this run stays on the scripted steps, even if the fit lands later.
+  // Set when the fit misses its deadline. A demo market then stays on the scripted steps; on a live market a fit that
+  // lands later still replaces them (see `mode`).
   const [forcedDemo, setForcedDemo] = useState(false);
   const [opening, setOpening] = useState(false);
   const openingRef = useRef(false);
@@ -25,7 +26,8 @@ export default function Pipeline() {
   const fit = s.fit && s.fit.key === `${q.id}|${e.t}` ? s.fit : null;
   const fitOk = fit?.status === "ok" && !!fit.data;
   const settled = fit != null && fit.status !== "loading";
-  const mode: "fit" | "demo" | "pending" = forcedDemo ? "demo" : fitOk ? "fit" : settled ? "demo" : "pending";
+  // On a live market a fit that lands after the deadline still takes over: approval sends it, so the steps must say so.
+  const mode: "fit" | "demo" | "pending" = fitOk && (!forcedDemo || !!q.real) ? "fit" : forcedDemo || settled ? "demo" : "pending";
   const fitOkRef = useRef(fitOk);
   useEffect(() => { fitOkRef.current = fitOk; });
 
@@ -42,6 +44,9 @@ export default function Pipeline() {
   const { guards } = s.settings;
   const autoOpen = !real || (guards.auto && !(gateOff && guards.edge));
   const acct = brokerLabel(s.account);
+  // What approving starts: openBridge sends the runnable AI fit (hedge family + preset) when the fit answered, else
+  // the engine runs its default delta-bridge spec. Same rule as the store, so the copy matches what runs.
+  const runs = algoRunLabel(runnableFit(fitOk ? fit!.data : null));
 
   const goBridge = async () => {
     if (openingRef.current) return;
@@ -68,6 +73,7 @@ export default function Pipeline() {
   const ctx: PipeContext = {
     question: q.q, venues: q.venues, yes: q.yes, vol: q.vol, ticker: e.t, held: e.held || 500,
     move: e.move, rev: e.rev, brand: e.brand, why: e.why, real: !!q.real, heldReal: e.held,
+    libraryTotal: s.library.status === "ok" && s.library.data ? s.library.data.total : undefined,
     shortlisted: fitOk && s.library.data ? shortlist(s.library.data, String(fit!.data!.event_class)).map((r) => r.id) : undefined,
   };
   const steps = mode === "fit" ? fitSteps(fit!.data!, ctx) : demoSteps(ctx);
@@ -108,7 +114,7 @@ export default function Pipeline() {
       {done && real && (
         <div className="pb-glass" style={{ width: "100%", marginTop: 16, padding: "16px 18px", fontSize: 13.5, lineHeight: 1.55, color: "#3C4458", display: "flex", flexDirection: "column", gap: 8 }}>
           <div>
-            Approving creates a hedge proposal for {(e.held || 500).toLocaleString("en-US")} {e.t} shares{e.held ? "" : " (notional)"} on this market and starts the engine&apos;s default delta-bridge spec.
+            Approving creates a hedge proposal for {(e.held || 500).toLocaleString("en-US")} {e.t} shares{e.held ? "" : " (notional)"} on this market and starts a bridge that runs {runs.sentence}.
             {acct.tone === "demo"
               ? <> Once it runs, the engine places its orders without asking again; this backend has no account endpoint, so they are simulated fills inside the engine <Tag tone="sim" title="GET /account is unavailable">no broker</Tag>.</>
               : <> Once it runs, the engine places its orders with <Tag tone={acct.tone} title="GET /account">{acct.name}</Tag> without asking again.</>}

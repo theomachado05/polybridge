@@ -1,10 +1,10 @@
 // Offline tests for opening a live bridge (proposal reuse, approval, fee gate) with the API injected.
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { feeGateOff, gapPerShare, runnableFit, startRealBridge, type BridgeApi } from "../src/lib/realBridge.ts";
+import { algoRunLabel, feeGateOff, gapPerShare, runnableFit, startRealBridge, type BridgeApi } from "../src/lib/realBridge.ts";
 import { QUESTIONS, REAL_INSTRUMENTS, questionFromMarket, type EquityPick } from "../src/lib/demo.ts";
 import type { Proposal } from "../src/lib/api.ts";
-import { init, reduce } from "../src/lib/bridgeStream.ts";
+import { init, reduce, sandboxFills } from "../src/lib/bridgeStream.ts";
 import { blockUi } from "../src/lib/library.ts";
 
 const q = questionFromMarket({ source: "polymarket", id: "m1", question: "Will X happen?", yes_price: 0.4, volume_24h: 1000, end_date: null, url: null, token_id: "tok" });
@@ -167,6 +167,62 @@ describe("bridge stream reducer", () => {
   it("keeps the broker hedge unknown on a backend without a broker", () => {
     const s = reduce(reduce(init, { k: "open" }), { k: "position", hedge: 50, coverage: 0.1 });
     assert.equal(s.brokerHedge, null);
+  });
+});
+
+describe("replay sandbox fills", () => {
+  it("lists only fills scoped to the replay sandbox, newest first, with the algo that sent them", () => {
+    let s = reduce(init, { k: "open" });
+    s = reduce(s, { k: "decision", d: { action: "order", reason: "rebalance", order_qty: 100, target_hedge: 100, current_hedge: 0, latency_ns: 1, family: "macro_fed_hedge", preset: 7 } });
+    s = reduce(s, { k: "fill", f: { broker: "replay-sim", side: "sell", qty: 100, filled_qty: 100, status: "filled", fill_px: 210.5, fee: 0.01, scope: "replay_sandbox" } });
+    s = reduce(s, { k: "decision", d: { action: "order", reason: "rebalance", order_qty: -40, target_hedge: 60, current_hedge: 100, latency_ns: 1 } });
+    s = reduce(s, { k: "fill", f: { broker: "replay-sim", side: "buy", qty: 40, filled_qty: 40, status: "filled", fill_px: 209, scope: "replay_sandbox" } });
+    s = reduce(s, { k: "decision", d: { action: "order", reason: "rebalance", order_qty: 10, target_hedge: 70, current_hedge: 60, latency_ns: 1 } });
+    s = reduce(s, { k: "fill", f: { broker: "webull-paper", side: "sell", qty: 10, filled_qty: 10, status: "filled", fill_px: 209, scope: "account" } });
+    const f = sandboxFills(s.log);
+    assert.deepEqual(f.map((x) => [x.n, x.side, x.qty]), [[2, "BUY", 40], [1, "SELL", 100]]);
+    assert.equal(f[1].family, "macro_fed_hedge");
+    assert.equal(f[1].preset, 7);
+    assert.equal(f[1].px, 210.5);
+    assert.equal(f[0].family, null);
+    assert.deepEqual(sandboxFills(init.log), []);
+  });
+  it("keeps an early order and its fill when hundreds of holds follow it", () => {
+    let s = reduce(init, { k: "open" });
+    s = reduce(s, { k: "decision", d: { action: "order", reason: "rebalance", order_qty: 206, target_hedge: null, current_hedge: 0, latency_ns: 1 } });
+    s = reduce(s, { k: "fill", f: { side: "sell", qty: 206, filled_qty: 206, status: "filled", fill_px: 281.5, scope: "replay_sandbox" } });
+    for (let i = 0; i < 400; i++) s = reduce(s, { k: "decision", d: { action: "hold", reason: "inside_band", order_qty: 0, target_hedge: null, current_hedge: 206, latency_ns: 1 } });
+    assert.equal(s.log.length, 200);
+    assert.equal(s.decisions, 401);
+    assert.deepEqual(sandboxFills(s.log).map((f) => [f.n, f.qty]), [[1, 206]]);
+  });
+  it("carries the backend's price note so recorded-price fills can be flagged", () => {
+    let s = reduce(init, { k: "open" });
+    s = reduce(s, { k: "decision", d: { action: "order", reason: "rebalance", order_qty: 50, target_hedge: 50, current_hedge: 0, latency_ns: 1 } });
+    s = reduce(s, { k: "fill", f: { side: "sell", qty: 50, filled_qty: 50, status: "filled", fill_px: 200, scope: "replay_sandbox", price_note: "recorded price: no current market quote" } });
+    s = reduce(s, { k: "decision", d: { action: "order", reason: "rebalance", order_qty: 10, target_hedge: 60, current_hedge: 50, latency_ns: 1 } });
+    s = reduce(s, { k: "fill", f: { side: "sell", qty: 10, filled_qty: 10, status: "filled", fill_px: 201, scope: "replay_sandbox" } });
+    const f = sandboxFills(s.log);
+    assert.equal(f[1].priceNote, "recorded price: no current market quote");
+    assert.equal(f[0].priceNote, null);
+  });
+  it("tracks the live broker hedge from position events after the first fills", () => {
+    let s = reduce(init, { k: "open" });
+    s = reduce(s, { k: "position", hedge: 0, coverage: 0, broker_hedge: 0 });
+    s = reduce(s, { k: "position", hedge: 206, coverage: 0.5, broker_hedge: 206 });
+    assert.equal(s.brokerHedge, 206);
+  });
+});
+
+describe("what a bridge runs, in words", () => {
+  it("names the AI-fit family and preset, or the default spec with no fit", () => {
+    assert.equal(algoRunLabel(null).node, "02 · ENGINE · DEFAULT DELTA-BRIDGE SPEC");
+    assert.match(algoRunLabel(null).sentence, /default delta-bridge spec/);
+    const l = algoRunLabel({ family: "macro_fed_hedge", preset_index: 14 });
+    assert.equal(l.node, "02 · AI FIT · MACRO FED HEDGE · PRESET #14");
+    assert.equal(l.sentence, "the AI-fit Macro Fed Hedge algo (preset #14)");
+    assert.doesNotMatch(l.node + l.sentence, /default/i);
+    assert.match(algoRunLabel({ family: "x_y", preset_index: null }).sentence, /custom params/);
   });
 });
 

@@ -173,6 +173,11 @@ export interface BridgeSummary {
   pm_vs_options?: PmVsOptions | null;
   options_detail?: { supported?: boolean; available?: boolean; reason?: string | null; underlying_used?: string; strike_used?: number; expiry?: string; k_lo?: number; k_hi?: number; notes?: string[] } | null;
   fills_label?: string;
+  /** "replay_sandbox": a replay bridge's orders go to an isolated in-memory sim, never the account. */
+  account_scope?: "replay_sandbox" | "account";
+  broker?: string | null;
+  broker_hedge?: number;
+  broker_filled?: number;
 }
 
 /** One tick's PM YES mid vs the options-implied P(YES) (raw orientation). The option number is an estimate. */

@@ -7,7 +7,7 @@ import { INSTRUMENTS } from "@/lib/demo";
 import { fmtK, fmtMoney, fmtNs, fmtPct, prettyId } from "@/lib/fmt";
 import { useAsync } from "@/lib/hooks";
 import { simCover, simPnl } from "@/lib/sim";
-import { brokerLabel, useStore, type BridgeEntry } from "@/lib/store";
+import { algoRunLabel, brokerLabel, useStore, type BridgeEntry } from "@/lib/store";
 import { quantile, useBridgeStream } from "@/lib/useBridgeStream";
 import { Btn, DemoTag, Glass, Label, Orb, Tag, upColor } from "@/components/pb";
 import { AlgoDock, PortfolioPanel, TopRow, TradesPanel, type DockAlgo, type TradeCard } from "./parts";
@@ -61,7 +61,6 @@ export function BridgeScreen({ routeBridgeId }: { routeBridgeId?: string }) {
         <span className="pb-mono" style={{ fontSize: 11, letterSpacing: ".08em", color: "#5A627A", paddingRight: 8, whiteSpace: "nowrap" }}>
           {list.length} {list.length === 1 ? "BRIDGE" : "BRIDGES"}{demos.length > 0 && <> · <span style={{ color: upColor(total) }}>{fmtMoney(total, true)}</span> TODAY{demos.length < list.length ? " (DEMO)" : ""}</>}
         </span>
-        {active?.kind === "demo" && <DemoTag what="demo chain" title="The prototype's simulated bridge: simulated prices and the design's sample algo chain." />}
         {list.map((b) => {
           const on = b.id === activeId;
           const ticker = b.kind === "demo" ? b.eq.t : b.eq?.t ?? "Bridge";
@@ -120,7 +119,7 @@ function DemoBridge({ entry, account }: { entry: DemoEntry; account: string }) {
         pxDelta={`${up ? "+" : "−"}${Math.abs(pxD).toFixed(2)} (${up ? "+" : "−"}${Math.abs((pxD / sim.base) * 100).toFixed(2)}%)`}
         driftLabel="Priced-in drift from market" drift={fmtPct(priced, 2)}
       />
-      <AlgoDock label="04 · 6 OF 1,284 ALGOS" algos={algos} />
+      <AlgoDock label="04 · 6 SAMPLE ALGOS" algos={algos} tag={<DemoTag what="demo chain" title="The prototype's simulated bridge: simulated prices and the design's sample algo chain." />} />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,340px),1fr))", gap: 16, alignItems: "stretch" }}>
         <PortfolioPanel
           tag={demo}
@@ -237,7 +236,7 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
         pBig={p == null ? "—" : `${Math.round(p * 100)}¢`} pSpark={st.prices.slice(-60)}
         pSub={`YES ${source === "replay" ? "from the replay file" : "Polymarket midpoint"} · Kalshi not streamed on this bridge`}
         volLabel="Ticks received" volValue={st.prices.length.toLocaleString("en-US")}
-        orb={st.status === "running" ? "connecting" : "breathing"} nodeLabel="02 · ENGINE · DEFAULT DELTA-BRIDGE SPEC"
+        orb={st.status === "running" ? "connecting" : "breathing"} nodeLabel={algoRunLabel(running).node}
         nodeLines={<>p50 {fmtNs(p50)} · p99 {fmtNs(p99)}<br />{move ? <>Expected move on YES <span style={{ color: move < 0 ? "#E0485A" : "#22A06B", fontWeight: 600 }}>{fmtPct(move)}</span></> : `${st.decisions} decisions`}</>}
         instShort="Dynamic short hedge" exchange="US" ticker={ticker ?? "—"} name={[card.data?.name, entry.eq?.name].find((n) => n && n !== ticker) ?? ""}
         equityTag={<Tag tone="neutral" title="Equity price is the last quote from GET /equities; it is not streamed on the bridge">last quote</Tag>}

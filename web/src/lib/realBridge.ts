@@ -3,6 +3,7 @@
 import * as http from "./api.ts";
 import type { FitOut, Proposal } from "./api";
 import type { EquityPick, Question } from "./demo";
+import { prettyId } from "./fmt.ts";
 
 export interface Settings {
   broker: string | null; conns: string[]; account: "Taxable" | "IRA"; rate: string; taxState: string; maxHedge: string;
@@ -29,6 +30,15 @@ export interface AppliedFit { family: string; preset_index: number | null }
 export function runnableFit(fit: Pick<FitOut, "family" | "preset_index" | "division"> | null | undefined): AppliedFit | null {
   if (!fit || !fit.family || fit.division !== "hedge" || fit.preset_index == null) return null;
   return { family: fit.family, preset_index: fit.preset_index };
+}
+
+/** What a hedge bridge runs, in words: the AI-fit family and preset (hedgecore.Algo), or, with no runnable fit, the
+ *  engine's default delta-bridge spec. `node` is the Bridge screen's centre label; `sentence` reads in running text. */
+export function algoRunLabel(fit: AppliedFit | null): { node: string; sentence: string } {
+  if (!fit) return { node: "02 · ENGINE · DEFAULT DELTA-BRIDGE SPEC", sentence: "the engine's default delta-bridge spec" };
+  const fam = prettyId(fit.family);
+  const preset = fit.preset_index != null ? `preset #${fit.preset_index}` : "custom params";
+  return { node: `02 · AI FIT · ${fam.toUpperCase()} · ${preset.toUpperCase()}`, sentence: `the AI-fit ${fam} algo (${preset})` };
 }
 
 /** A proposal is reusable only when it was approved for exactly this algo (or both have none): a bridge runs what

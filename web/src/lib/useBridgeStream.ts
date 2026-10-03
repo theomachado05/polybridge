@@ -5,7 +5,7 @@ import { API_URL } from "./api";
 
 import { init, reduce, type StreamState } from "./bridgeStream.ts";
 
-export { quantile, REASONS, type FillInfo, type LogEntry, type OptionLegFill, type OptionsView, type StreamState } from "./bridgeStream.ts";
+export { quantile, REASONS, sandboxFills, type FillInfo, type LogEntry, type OptionLegFill, type OptionsView, type SandboxFill, type StreamState } from "./bridgeStream.ts";
 
 export function useBridgeStream(id: string, initialSource: string | null): StreamState {
   const [s, dispatch] = useReducer(reduce, { ...init, source: initialSource });

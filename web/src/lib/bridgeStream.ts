@@ -55,6 +55,13 @@ type Ev =
 
 export const init: StreamState = { prices: [], lastP: null, reasons: {}, lastReason: null, lat: [], hedge: 0, coverage: 0, brokerHedge: null, broker: null, fills: 0, log: [], decisions: 0, status: "connecting", source: null, error: null, options: null, gaps: [], optionPosition: null, riskUsed: null };
 const cap = <T,>(a: T[], n: number) => (a.length > n ? a.slice(a.length - n) : a);
+/** Bounds the decision log, dropping the oldest holds first: orders (and the fills attached to them) are what the
+ *  trades list and the sandbox fills read, and a long run of holds must not push an early order out. */
+function capLog(a: LogEntry[], n: number): LogEntry[] {
+  if (a.length <= n) return a;
+  const i = a.findIndex((l) => l.action !== "order");
+  return i < 0 ? a.slice(a.length - n) : [...a.slice(0, i), ...a.slice(i + 1)];
+}
 
 export type { Ev as StreamEvent };
 export function reduce(s: StreamState, e: Ev): StreamState {
@@ -70,7 +77,7 @@ export function reduce(s: StreamState, e: Ev): StreamState {
       const d = e.d;
       const entry: LogEntry = { n: s.decisions + 1, p: s.lastP, action: d.action, reason: d.reason, qty: d.order_qty, target: d.target_hedge ?? null, current: d.current_hedge, ns: d.latency_ns,
         ...(d.family ? { family: d.family, preset: d.preset ?? null, signal: d.signal ?? null } : {}) };
-      return { ...s, decisions: s.decisions + 1, lastReason: d.reason, reasons: { ...s.reasons, [d.reason]: (s.reasons[d.reason] ?? 0) + 1 }, lat: cap([...s.lat, d.latency_ns], 2000), log: cap([...s.log, entry], 200) };
+      return { ...s, decisions: s.decisions + 1, lastReason: d.reason, reasons: { ...s.reasons, [d.reason]: (s.reasons[d.reason] ?? 0) + 1 }, lat: cap([...s.lat, d.latency_ns], 2000), log: capLog([...s.log, entry], 200) };
     }
     case "position": return {
       ...s, hedge: e.hedge ?? s.hedge, coverage: e.coverage ?? s.coverage,
@@ -93,4 +100,30 @@ export function quantile(xs: number[], f: number): number | null {
   if (!xs.length) return null;
   const a = [...xs].sort((x, y) => x - y);
   return a[Math.min(a.length - 1, Math.floor(f * a.length))];
+}
+
+/** One fill a replay bridge sent to its isolated sandbox broker (fill scope "replay_sandbox"): never the account. */
+export interface SandboxFill {
+  n: number; side: "SELL" | "BUY"; qty: number; px: number | null; fee: number | null; status: string;
+  what: string; family: string | null; preset: number | null; broker: string | null;
+  /** Backend note on how the fill was priced (current quote, or the recorded price when no quote is available). */
+  priceNote: string | null;
+}
+
+/** The replay-sandbox fills in a bridge's decision log, newest first. Account-scoped fills (live bridges, or a replay
+ *  started with replay_to_account) are left out: those reach the account and show with its orders. */
+export function sandboxFills(log: LogEntry[]): SandboxFill[] {
+  const out: SandboxFill[] = [];
+  for (const l of log) {
+    const f = l.fill;
+    if (!f || f.scope !== "replay_sandbox") continue;
+    const side = f.side ? (f.side.toLowerCase() === "sell" ? "SELL" : "BUY") : l.qty > 0 ? "SELL" : "BUY";
+    const qty = f.filled_qty ?? f.qty ?? Math.abs(l.qty);
+    out.push({
+      n: l.n, side, qty, px: f.fill_px ?? null, fee: f.fee ?? null, status: f.status ?? "unknown",
+      what: f.instrument === "option" ? `option ${f.structure ?? "structure"}` : "sh",
+      family: l.family ?? null, preset: l.preset ?? null, broker: f.broker ?? null, priceNote: f.price_note ?? null,
+    });
+  }
+  return out.reverse();
 }

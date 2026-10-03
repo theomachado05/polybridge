@@ -78,9 +78,13 @@ export function TopRow(p: {
 
 export interface DockAlgo { name: string; status: string; line: string; active: boolean }
 export function AlgoDock({ label, algos, tag }: { label: string; algos: DockAlgo[]; tag?: ReactNode }) {
+  // The data tags sit on their own line above the pill, so the label stays short and the six capsules keep to one
+  // row like the prototype's dock instead of wrapping around a wide tag cluster.
   return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
+    {tag && <div style={{ display: "flex", justifyContent: "flex-end", gap: 6, flexWrap: "wrap", padding: "0 8px" }}>{tag}</div>}
     <div style={{ display: "flex", alignItems: "center", gap: 8, padding: 8, borderRadius: 999, background: "rgba(255,255,255,.5)", backdropFilter: "blur(28px) saturate(1.6)", WebkitBackdropFilter: "blur(28px) saturate(1.6)", border: "1px solid rgba(255,255,255,.85)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.95),0 16px 40px rgba(40,60,120,.10)", flexWrap: "wrap" }}>
-      <span className="pb-mono" style={{ padding: "0 10px 0 14px", fontSize: 11, letterSpacing: ".08em", color: "#5A627A", whiteSpace: "nowrap", display: "inline-flex", gap: 8, alignItems: "center" }}>{label}{tag}</span>
+      <span className="pb-mono" style={{ padding: "0 10px 0 14px", fontSize: 11, letterSpacing: ".08em", color: "#5A627A", whiteSpace: "nowrap" }}>{label}</span>
       {algos.map((a) => (
         <div key={a.name} style={{ flex: 1, minWidth: 170, display: "flex", flexDirection: "column", gap: 2, padding: "9px 14px", borderRadius: 999, background: a.active ? "rgba(255,255,255,.85)" : "rgba(255,255,255,.35)", border: `1px solid ${a.active ? "rgba(59,108,246,.35)" : "rgba(255,255,255,.7)"}`, transition: "all .3s ease" }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 12.5, fontWeight: 600, letterSpacing: "-.01em", whiteSpace: "nowrap", minWidth: 0 }}>
@@ -90,6 +94,7 @@ export function AlgoDock({ label, algos, tag }: { label: string; algos: DockAlgo
           <div className="pb-ellipsis" style={{ fontSize: 11, color: "#5A627A" }}>{a.line}</div>
         </div>
       ))}
+    </div>
     </div>
   );
 }

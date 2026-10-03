@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { defaultPick, useStore } from "@/lib/store";
-import { DEMO_ALGO_COUNT } from "@/lib/demo";
 
 const tabStyle = (on: boolean) => ({
   padding: "8px 16px", borderRadius: 999, cursor: "pointer",
@@ -21,7 +20,7 @@ export function Nav() {
   const routeBridge = path.startsWith("/bridge/") && !s.bridges.some((b) => b.kind === "live" && path.endsWith("/" + b.bridgeId)) ? 1 : 0;
   const n = s.bridges.length + routeBridge, anyLive = routeBridge > 0 || s.bridges.some((b) => b.kind === "live");
   const live = on("/bridge") || (on("/portfolio") && n > 0);
-  const lib = s.library.status === "ok" && s.library.data ? `${s.library.data.total.toLocaleString("en-US")} presets` : `${DEMO_ALGO_COUNT.toLocaleString("en-US")} algorithms`;
+  const lib = s.library.status === "ok" && s.library.data ? `${s.library.data.total.toLocaleString("en-US")} presets` : "Algo library";
   const dot = live ? "#4ADE80" : on("/pipeline") ? "#FBBF24" : "#9A7BFF";
   const label = live ? `${anyLive ? "Running" : "Demo"} · ${n} ${n === 1 ? "bridge" : "bridges"}`
     : on("/library") ? lib

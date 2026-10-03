@@ -63,7 +63,8 @@ button { font: inherit; color: inherit; }
 .pb-navpill { backdrop-filter: blur(24px) saturate(1.6); -webkit-backdrop-filter: blur(24px) saturate(1.6); border: 1px solid rgba(255,255,255,.8); box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 8px 30px rgba(40,60,120,.10); }
 .pb-sub { border-radius: 18px; background: rgba(255,255,255,.6); border: 1px solid rgba(255,255,255,.9); }
 
-.pb-page { position: relative; z-index: 1; margin: 0 auto; padding-left: clamp(16px, 4vw, 40px); padding-right: clamp(16px, 4vw, 40px); animation: pb-in .4s ease-out; }
+/* content-box like the prototype: maxWidth is the content width, the gutter sits outside it. */
+.pb-page { position: relative; z-index: 1; box-sizing: content-box; margin: 0 auto; padding-left: clamp(16px, 4vw, 40px); padding-right: clamp(16px, 4vw, 40px); animation: pb-in .4s ease-out; }
 .pb-label { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; color: var(--muted); }
 .pb-rule { padding-top: 14px; border-top: 1px solid var(--hairline); }
 .pb-serif { font-family: var(--serif); }
