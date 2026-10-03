@@ -1,0 +1,6 @@
+
+[notice] A new release of pip is available: 24.2 -> 26.2.1
+[notice] To update, run: python3.13 -m pip install --upgrade pip
+[NbConvertApp] Converting notebook polybridge_8k.ipynb to notebook
+[IPKernelApp] WARNING | Kernel is running over TCP without encryption. All communication (including code and outputs) is sent in plain text and is susceptible to eavesdropping. Use IPC transport or launch with kernel manager-provisioned CurveZMQ keys to enable transport encryption.
+[NbConvertApp] Writing 707706 bytes to executed.ipynb

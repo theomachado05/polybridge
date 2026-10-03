@@ -126,13 +126,13 @@ const STEPS = [
   ["p0","decision","done","Direction A: Massive-first, told as PolyBridge","You","One entry scored on both rubrics; the live engine moves to the demo path.","strategy",[]],
 
   ["p1","decision","done","Confirm the hypothesis: two-sided parity","You","Both sides of the price signal: H1 hedge (protective put after litigation, investigations, cyber, impairment) and H2 opportunity (cash-secured put after restructurings). Starter trade spec; pass = 97.5% CI beats placebo at 2 of 3 horizons.","HYPOTHESIS.md",["Novelty 30","Economic foundation"]],
-  ["p1","decision","next","Name the workstream owners","You","Research · C++20 · Webull + overlay · Web + pitch. Writing is shared. Owners go into CODEOWNERS.","team plan",[]],
-  ["p1","process","todo","Massive API key → .env","Team","From the #massive Discord channel. Never committed; .gitignore already covers it.","data access",[]],
+  ["p1","decision","todo","Name the workstream owners","You","Research · C++20 · Webull + overlay · Web + pitch. Writing is shared. Owners go into CODEOWNERS.","team plan",[]],
+  ["p1","process","done","Massive API key → .env","Team","From the #massive Discord channel. Never committed; .gitignore already covers it.","data access",[]],
   ["p1","process","todo","Apply for the Webull OpenAPI key","Team","Approval takes 1–2 working days, so apply tonight. Fallback: a free public daily source, cited.","stock data",["Liquidity & capital"]],
   ["p1","gate","done","Commit HYPOTHESIS.md before touching data","Claude + you","Committed 2026-10-02 19:38 ET (7cb2f56). Two confirmatory tests plus a labeled exploratory atlas. Tag list follows as HYPOTHESIS_TAGS.md, taxonomy only, before any events.","pre-registration",["Economic foundation","Novelty 30"]],
-  ["p1","build","todo","Restructure the repo for submission","Claude","research/ (notebook), engine/pb_core, overlay/, web/, note/; requirements.txt; .massive_cache ignored.","clean layout",["Communication 10"]],
-  ["p1","process","todo","Run the starter end to end on the CFO example","Research","Pipeline check only, on a tag that isn't ours, so we learn nothing about H1 early.","working pipeline",[]],
-  ["p1","build","todo","pb_core skeleton: CMake + pybind11","C++20","P&L kernels for the 5 strategies; std::variant stage pipeline; no allocation in the loop.","C++ library",[]],
+  ["p1","build","done","Foundations: repo, contracts, CI","Claude","PR #1 merged: research package (schema, Massive client, strategies, parity, stats), FastAPI approval gate, Next.js skeleton, contracts.md, CI green on 4 lanes, 62 tests.","clean layout",["Communication 10"]],
+  ["p1","process","next","Run the starter end to end on the CFO example","Research","Pipeline check only, on a tag that isn't ours, so we learn nothing about H1 early.","working pipeline",[]],
+  ["p1","build","done","hedgecore: C++20 engine + pybind11","C++20","std::variant gates, DeltaBridge sizing, band, risk cap; any invalid input holds; 13 C++ + 3 binding tests.","C++ library",[]],
   ["p1","build","todo","Build flow on static 8-K data","Web","Event → stock → ranked hedge, reusing the mockup design.","demo UI",[]],
   ["p1","build","todo","Quant note skeleton with page budgets","Writing","Summary ¼ · hypothesis ½ · data ½ · method 1 · results 1¼ · risk ½ · liquidity ½ · limits ½.","note.md",["Communication 10"]],
 

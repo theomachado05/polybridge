@@ -1,6 +1,7 @@
 import json
 
 import pytest
+import requests
 
 from polybridge_research.massive import MassiveClient, MissingApiKey, load_api_key
 
@@ -97,3 +98,52 @@ def test_retry_after_is_capped_at_sixty_seconds(tmp_path):
     assert client.get("/z") == {"ok": True}
     assert slept == [60.0]
     assert not list(tmp_path.glob("*.tmp"))
+
+
+def test_concurrent_writes_same_url_never_corrupt_cache(tmp_path):
+    import threading
+
+    class SlowSession:
+        def __init__(self):
+            self.headers = {}
+        def get(self, url, timeout):
+            return FakeResponse(200, {"results": list(range(1000))})
+
+    client = MassiveClient("k", cache_dir=tmp_path, session=SlowSession(), sleep=lambda s: None)
+    threads = [threading.Thread(target=client.get, args=("/same",)) for _ in range(16)]
+    [t.start() for t in threads]
+    [t.join() for t in threads]
+    files = list(tmp_path.glob("*"))
+    assert len(files) == 1 and files[0].suffix == ".json"
+    assert json.loads(files[0].read_text()) == {"results": list(range(1000))}
+
+
+class _FlakySession(FakeSession):
+    """Raises the given exception on the first `fail_times` calls, then answers from `responses`."""
+
+    def __init__(self, responses, exc, fail_times):
+        super().__init__(responses)
+        self.exc, self.fail_times = exc, fail_times
+
+    def get(self, url, timeout):
+        if len(self.urls) < self.fail_times:
+            self.urls.append(url)
+            raise self.exc("boom")
+        return super().get(url, timeout)
+
+
+@pytest.mark.parametrize("exc", [requests.exceptions.ConnectionError, requests.exceptions.Timeout])
+def test_network_error_is_retried_once_then_succeeds(tmp_path, exc):
+    session = _FlakySession([FakeResponse(200, {"results": [2]})], exc, 1)
+    sleeps = []
+    client = MassiveClient("k", cache_dir=tmp_path, session=session, sleep=sleeps.append)
+    assert client.get("/x") == {"results": [2]}
+    assert len(session.urls) == 2 and sleeps == [1]
+
+
+def test_network_error_always_raises_after_max_attempts(tmp_path):
+    session = _FlakySession([], requests.exceptions.ConnectionError, 99)
+    client = MassiveClient("k", cache_dir=tmp_path, session=session, sleep=lambda s: None, max_attempts=3)
+    with pytest.raises(requests.exceptions.ConnectionError):
+        client.get("/x")
+    assert len(session.urls) == 3

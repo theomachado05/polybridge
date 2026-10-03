@@ -9,6 +9,7 @@ import json
 import os
 import sys
 import time
+import uuid
 from getpass import getpass
 from pathlib import Path
 
@@ -76,15 +77,22 @@ class MassiveClient:
         cache_file = self.cache_dir / (hashlib.sha1(full_url.encode()).hexdigest() + ".json")
         if cache_file.exists():
             return json.loads(cache_file.read_text())
+        resp = None
         for attempt in range(self._max_attempts):
-            resp = self.session.get(full_url, timeout=60)
+            try:
+                resp = self.session.get(full_url, timeout=60)
+            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+                if attempt == self._max_attempts - 1:
+                    raise
+                self._sleep(min(2 ** attempt, 20))
+                continue
             if resp.status_code not in _RETRY_STATUS:
                 break
             retry_after = str(resp.headers.get("Retry-After", ""))
             self._sleep(min(float(retry_after), _MAX_RETRY_SLEEP) if retry_after.isdigit() else min(2 ** attempt, 20))
         resp.raise_for_status()
         payload = resp.json()
-        tmp_file = cache_file.with_suffix(".tmp")
+        tmp_file = cache_file.with_name(f"{cache_file.stem}.{uuid.uuid4().hex}.tmp")
         tmp_file.write_text(json.dumps(payload))
         os.replace(tmp_file, cache_file)
         return payload

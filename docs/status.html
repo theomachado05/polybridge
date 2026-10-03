@@ -1,0 +1,340 @@
+<title>PolyBridge Status</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column. Status tiles, the story, the logged runs, the results charts, what it means, then the board to the freeze and the deadline. */
+:root {
+  --bg: #F2F3FA; --surface: #FFFFFF; --ink: #151A30; --muted: #5C6385; --line: #C9CEE3; --grid: #E4E6F0;
+  --hot: #5856E8; --hot-soft: #ECECFE; --score: #1C8F5A; --score-soft: #E5F5EC;
+  --warm: #D9694F; --warm-soft: #FDEEEA; --bad: #CC3F3F; --bad-soft: #FBEAEA;
+  --s1: #5856E8; --s2: #D9694F; --base: #8A90AE;
+  --display: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0E1120; --surface: #171B2E; --ink: #E6E8F5; --muted: #9AA1C2; --line: #343B5C; --grid: #262B45;
+  --hot: #9190FF; --hot-soft: #22254A; --score: #46C487; --score-soft: #173527;
+  --warm: #F09A84; --warm-soft: #3A2626; --bad: #F07272; --bad-soft: #3A1E22;
+  --s1: #7C7BF2; --s2: #D9735A; --base: #8188A8; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0E1120; --surface: #171B2E; --ink: #E6E8F5; --muted: #9AA1C2; --line: #343B5C; --grid: #262B45;
+  --hot: #9190FF; --hot-soft: #22254A; --score: #46C487; --score-soft: #173527;
+  --warm: #F09A84; --warm-soft: #3A2626; --bad: #F07272; --bad-soft: #3A1E22;
+  --s1: #7C7BF2; --s2: #D9735A; --base: #8188A8; color-scheme: dark }
+
+body { background: var(--bg); color: var(--ink); font-family: var(--display); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 20px; padding-block: 40px 72px; display: grid; gap: 48px; }
+header { display: grid; gap: 14px; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+h1 { font-size: clamp(28px, 4vw, 42px); line-height: 1.1; margin: 0; letter-spacing: -.02em; text-wrap: balance; }
+h2 { font-size: 22px; margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+h3 { font-size: 16px; margin: 0; }
+p { margin: 0; max-width: 74ch; }
+.lede { color: var(--muted); font-size: 17px; }
+section { display: grid; gap: 16px; min-width: 0; }
+code { font-family: var(--mono); font-size: .88em; }
+
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; display: grid; gap: 2px; }
+.tile b { font-size: 28px; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.tile span { color: var(--muted); font-size: 13px; }
+.tile.ok b { color: var(--score); }
+.tile.next { border-color: var(--hot); background: var(--hot-soft); }
+.tile.next b { color: var(--hot); }
+
+.story { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); position: relative; }
+.story::before { content: ""; position: absolute; left: 12px; right: 12px; top: 11px; height: 3px; background: var(--ink); border-radius: 2px; }
+.chap { position: relative; padding: 30px 14px 0 0; display: grid; gap: 6px; align-content: start; }
+.chap::before { content: ""; position: absolute; left: 4px; top: 4px; width: 17px; height: 17px; border-radius: 50%; background: var(--ink); border: 3px solid var(--bg); }
+.chap.now::before { background: var(--hot); }
+.chap .when { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.chap ul { margin: 0; padding-left: 18px; font-size: 14px; display: grid; gap: 4px; }
+
+.tbl { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
+table { border-collapse: collapse; width: 100%; min-width: 760px; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 500; background: var(--bg); }
+tr:last-child td { border-bottom: 0; }
+td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pill { font-family: var(--mono); font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); white-space: nowrap; }
+.pill.ok { border-color: var(--score); color: var(--score); background: var(--score-soft); }
+.pill.null { border-color: var(--muted); color: var(--muted); }
+.pill.wait { border-color: var(--hot); color: var(--hot); background: var(--hot-soft); }
+
+figure { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 18px; display: grid; gap: 12px; min-width: 0; }
+.charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.panel { display: grid; gap: 6px; min-width: 0; }
+.panel h3 { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.panel svg { width: 100%; height: auto; display: block; overflow: visible; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; gap: 6px; align-items: center; }
+.legend i { width: 18px; height: 0; border-top: 2px solid var(--muted); display: inline-block; }
+.legend i.dash { border-top-style: dashed; }
+figcaption { color: var(--muted); font-size: 14px; max-width: 95ch; }
+.ax { fill: var(--muted); font-family: var(--mono); font-size: 10.5px; }
+.lbl { fill: var(--ink); font-family: var(--display); font-size: 11.5px; font-weight: 600; }
+.gridl { stroke: var(--grid); stroke-width: 1; }
+.zero { stroke: var(--muted); stroke-width: 1.2; }
+.tip { position: fixed; pointer-events: none; background: var(--ink); color: var(--surface); font-size: 12.5px; padding: 6px 9px; border-radius: 8px; max-width: 260px; line-height: 1.35; z-index: 10; }
+
+.cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.card ul { margin: 0; padding-left: 18px; display: grid; gap: 5px; font-size: 14px; }
+.card.hot { border-color: var(--hot); background: var(--hot-soft); }
+
+.board { display: grid; grid-template-columns: 130px repeat(4, minmax(170px, 1fr)); min-width: 900px; }
+.board > div { padding: 10px 12px; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); font-size: 13px; }
+.board .hd { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); background: var(--bg); }
+.board .nm { font-weight: 600; background: var(--bg); }
+.board .now { background: var(--hot-soft); }
+.board .gate { background: var(--bad-soft); }
+.board ul { margin: 0; padding-left: 16px; display: grid; gap: 3px; }
+@media (max-width: 860px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } .story, .charts, .cols { grid-template-columns: minmax(0, 1fr); } .story::before { display: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">PolyBridge · status at Sat 00:15 ET · method freeze Sat 1:00 PM · Devpost due Sun 10:00 AM</div>
+    <h1>The study ran. Both hypotheses are null in-sample.</h1>
+    <p class="lede">The research pipeline is built, reviewed, and has run on real 2024–2025 data. Neither pre-registered hypothesis passes, and that is reported as is. Every run is logged in the repo. Next: the freeze at 1 PM, one out-of-sample run, the quant note, and the demo.</p>
+  </header>
+
+  <div class="tiles">
+    <div class="tile"><b>115</b><span>tests passing (89 research, 10 backend, 16 engine)</span></div>
+    <div class="tile"><b>NULL · NULL</b><span>in-sample verdicts, H1 hedge · H2 opportunity</span></div>
+    <div class="tile ok"><b>4 / 4</b><span>runs logged; clean-start reproduction passed in 331 s</span></div>
+    <div class="tile next"><b>1:00 PM</b><span>Saturday: method freeze, then OOS once</span></div>
+  </div>
+
+  <section>
+    <h2>1 · How we got here</h2>
+    <div class="story">
+      <div class="chap"><h3>Idea and design</h3><div class="when">Fri 18:24</div><ul><li>PolyBridge and Prediction–Price Parity</li><li>C++20 locked</li></ul></div>
+      <div class="chap"><h3>Fit the rubric</h3><div class="when">Fri 18:46</div><ul><li>Research is scored, demo is not</li><li>Massive-first entry</li></ul></div>
+      <div class="chap"><h3>Pre-registration</h3><div class="when">Fri 19:38</div><ul><li>Two-sided hypothesis</li><li>11 tags, before any data</li></ul></div>
+      <div class="chap"><h3>Foundations</h3><div class="when">Fri 21:24</div><ul><li>PR #1 merged</li><li>Approval gate, hedgecore, CI</li></ul></div>
+      <div class="chap now"><h3>Research pipeline</h3><div class="when">Fri 23:55</div><ul><li>12 tasks, all reviewed</li><li>In-sample run, logged</li></ul></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>2 · What ran, with the record</h2>
+    <p>Every run writes a log and a metadata file to <code>research/results/logs/</code>, committed to the repo: command, git commit, start and end time, duration, cache size, exit code and verdicts. No keys or raw API data.</p>
+    <div class="tbl"><table>
+      <thead><tr><th>Run</th><th>When (ET)</th><th>What it proves</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>Pipeline check (starter, CFO tag)</td><td class="num">Fri 23:00</td><td>The key reaches every endpoint; not a hypothesis tag</td><td><span class="pill ok">passed</span></td></tr>
+        <tr><td>In-sample study, first run</td><td class="num">Fri 23:28</td><td>60 events (36 H1, 24 H2), 120 ordinary days per family, ~8,500 requests</td><td><span class="pill null">NULL · NULL</span></td></tr>
+        <tr><td>In-sample export, logged re-run</td><td class="num">Fri 23:53</td><td>Same code at c0fcfd8: every earlier results file byte-identical; adds expiry and paired costs; 87 s</td><td><span class="pill null">NULL · NULL</span></td></tr>
+        <tr><td>Clean-start notebook run (judges' path)</td><td class="num">Fri 23:55</td><td id="ck-what">Fresh copy, fresh install, empty cache, only the Massive key: ran end to end in 331 s, 8,535 requests</td><td id="ck-result"><span class="pill ok">passed</span> <span class="pill null">NULL · NULL</span></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>3 · The results</h2>
+    <figure>
+      <div class="charts" id="edge-charts"></div>
+      <figcaption>Edge = average P&amp;L of the strategy after the filing minus the same trade on ordinary days for the same stocks, per $1 of stock. Whiskers are the pre-registered 97.5% intervals. A pass needs the whole whisker above zero at two of the three horizons. Every whisker crosses zero, so both are null. Both point the predicted way; the samples (36 and 24 events) are too small to rule out luck.</figcaption>
+    </figure>
+    <figure>
+      <div class="charts" id="decay-charts"></div>
+      <div class="legend"><span><i></i>after the filing (shaded: 95% interval)</span><span><i class="dash"></i>ordinary days</span><span>1.0 = the options priced the move exactly</span></div>
+      <figcaption>The price gap: how far the stock really moved, divided by the move the options priced the day before. For litigation-type filings the gap peaks at 1.36 after 42 trading days (the market underpriced the move by about a third), against 1.15 on ordinary days. That is the PolyBridge signal, but its interval overlaps ordinary days, so it is a direction, not a finding.</figcaption>
+    </figure>
+    <div class="tbl"><table>
+      <thead><tr><th>Family</th><th>Horizon</th><th>Events / ordinary days</th><th>Edge</th><th>97.5% interval</th><th>Price gap vs ordinary</th><th>Net edge after costs (1× · 2×)</th></tr></thead>
+      <tbody id="results-table"></tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>4 · What it means</h2>
+    <div class="cols">
+      <div class="card">
+        <h3>For the judges</h3>
+        <ul>
+          <li>The hypothesis was fixed before any data; the result is reported as it came out. Massive's brief: "a well-argued null result with a clear decay curve beats a lucky backtest."</li>
+          <li>No lookahead: every filing is treated as public after the close.</li>
+          <li>Every contact with 2026 prices is disclosed in the pre-registration's change log.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>For the product</h3>
+        <ul>
+          <li>This is your feature in action: for these event and stock pairs, PolyBridge says "no edge, try another".</li>
+          <li>The price-gap curve is what PolyBridge watches live; the hedge side shows the right direction.</li>
+          <li>The C++ engine only acts on pairs that pass, and only sends orders that beat fees.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>5 · From now to Sunday 10 AM</h2>
+    <div class="tbl"><div class="board">
+      <div class="hd">Lane</div><div class="hd">Now → Sat 1 PM</div><div class="hd">Sat 1 PM freeze</div><div class="hd">Sat 1 PM → night</div><div class="hd">Sun → 10 AM</div>
+
+      <div class="nm">Research</div>
+      <div class="now"><ul><li>Run logs committed ✓</li><li>PR #2 open ✓</li><li>Quant note skeleton</li></ul></div>
+      <div class="gate"><ul><li><b>Freeze</b>: tag the commit, pin the run date</li><li>Run OOS once, log it</li></ul></div>
+      <div><ul><li>Quant note: results, risk, capacity, limits</li><li>2-page Massive cut</li></ul></div>
+      <div><ul><li>PDF ≤ 5 pages</li><li>Repo public</li></ul></div>
+
+      <div class="nm">Product (us)</div>
+      <div class="now"><ul><li>Plan #3: demo</li><li>Build flow on real verdicts</li></ul></div>
+      <div><ul><li>1 PM Massive workshop</li></ul></div>
+      <div><ul><li>Bridge screen on hedgecore</li><li>Fee-aware orders</li><li>Recorded fallback</li></ul></div>
+      <div><ul><li>Pitch: 3 min findings, 90 s demo</li></ul></div>
+
+      <div class="nm">Webull</div>
+      <div><ul><li>Key in progress</li></ul></div>
+      <div><ul><li>2 PM Webull workshop</li></ul></div>
+      <div><ul><li>Overlay backtest: Sharpe, max DD, equity curve</li><li>No key by then: cited public data</li></ul></div>
+      <div><ul><li>Numbers match the note</li></ul></div>
+
+      <div class="nm">Gates</div>
+      <div><ul><li>Clean-start run passed ✓</li><li>Merge PR #2</li></ul></div>
+      <div class="gate"><ul><li>Nothing changes after 1 PM</li></ul></div>
+      <div><ul><li>5 PM check-in, book a slot</li></ul></div>
+      <div class="gate"><ul><li><b>Devpost by 10:00</b></li><li>Present 1–3 PM</li></ul></div>
+    </div></div>
+  </section>
+
+  <section>
+    <div class="cols">
+      <div class="card hot">
+        <h3>Waiting on you</h3>
+        <ul>
+          <li>The Webull key, into <code>.env</code> (not chat).</li>
+          <li>Review and merge PR #2: github.com/theomachado05/polybridge/pull/2</li>
+          <li>Be at the 1 PM freeze: say "freeze".</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Where the record lives</h3>
+        <ul>
+          <li>Pre-registration and change log: <code>research/HYPOTHESIS*.md</code></li>
+          <li>Results: <code>research/results/in_sample/SUMMARY.md</code></li>
+          <li>Run log: <code>research/results/RUN_LOG.md</code> + <code>logs/</code></li>
+          <li>Notebook judges run: <code>research/polybridge_8k.ipynb</code></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="tip" id="tip" hidden></div>
+
+<script>
+const H = ["21", "42", "exp"];
+const EDGE = {
+  hedge: { name: "H1 hedge · protective put", color: "var(--s1)", n: [[32,106],[30,104],[28,95]],
+           m: [0.0007, 0.0049, 0.0333], lo: [-0.0270, -0.0451, -0.0301], hi: [0.0291, 0.0577, 0.1012],
+           ratio: [0.019, 0.209, 0.121], net: [[0.0011,0.0015],[0.0052,0.0055],[0.0336,0.0338]] },
+  opportunity: { name: "H2 opportunity · cash-secured put", color: "var(--s2)", n: [[24,113],[24,111],[23,99]],
+           m: [0.0009, 0.0021, 0.0092], lo: [-0.0068, -0.0090, -0.0036], hi: [0.0089, 0.0136, 0.0234],
+           ratio: [-0.171, -0.095, 0.185], net: [[0.0011,0.0014],[0.0024,0.0027],[0.0095,0.0097]] },
+};
+const DH = ["1","2","3","5","10","21","42","63","exp"];
+const DECAY = {
+  hedge: { ev: [0.68,0.91,1.15,1.22,1.04,1.11,1.36,1.19,1.18], lo: [0.45,0.64,0.79,0.85,0.78,0.87,1.03,0.87,0.88],
+           hi: [1.02,1.21,1.57,1.62,1.33,1.37,1.68,1.54,1.49], pl: [0.99,0.92,0.99,1.01,1.05,1.09,1.15,1.01,1.06],
+           n: [34,33,33,32,32,32,30,28,31] },
+  opportunity: { ev: [1.03,0.99,1.08,0.87,0.99,0.77,0.91,1.11,1.06], lo: [0.62,0.64,0.75,0.62,0.60,0.45,0.66,0.75,0.76],
+           hi: [1.52,1.39,1.46,1.16,1.44,1.13,1.20,1.49,1.38], pl: [0.86,0.95,0.92,1.01,0.94,0.94,1.01,0.92,0.88],
+           n: [24,24,24,24,24,24,24,24,23] },
+};
+const NS = "http://www.w3.org/2000/svg";
+const tip = document.getElementById("tip");
+const pct = v => (v >= 0 ? "+" : "") + (v * 100).toFixed(2) + "%";
+function el(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+function hover(target, text) {
+  const show = ev => { tip.textContent = text; tip.hidden = false; tip.style.left = (ev.clientX + 14) + "px"; tip.style.top = (ev.clientY + 14) + "px"; };
+  target.addEventListener("mousemove", show); target.addEventListener("mouseenter", show);
+  target.addEventListener("mouseleave", () => { tip.hidden = true; });
+  target.setAttribute("tabindex", "0");
+  target.addEventListener("focus", () => { tip.textContent = text; tip.hidden = false; const r = target.getBoundingClientRect(); tip.style.left = r.right + "px"; tip.style.top = r.top + "px"; });
+  target.addEventListener("blur", () => { tip.hidden = true; });
+}
+function panel(host, title, color) {
+  const d = document.createElement("div"); d.className = "panel";
+  d.innerHTML = `<h3><span class="swatch" style="background:${color}"></span>${title}</h3>`;
+  host.appendChild(d); return d;
+}
+
+// Edge charts: one shared y-scale so the two families compare honestly.
+(function () {
+  const host = document.getElementById("edge-charts");
+  const W = 440, Hh = 260, L = 56, R = 16, T = 18, B = 34, lo = -0.06, hi = 0.11;
+  const y = v => T + (hi - v) / (hi - lo) * (Hh - T - B);
+  const x = i => L + (i + 0.5) * (W - L - R) / 3;
+  for (const key of ["hedge", "opportunity"]) {
+    const f = EDGE[key];
+    const svg = el("svg", { viewBox: `0 0 ${W} ${Hh}`, role: "img", "aria-label": `${f.name}: edge by horizon with 97.5% intervals; every interval crosses zero` }, panel(host, f.name, f.color));
+    for (const t of [-0.05, 0, 0.05, 0.10]) {
+      el("line", { x1: L, x2: W - R, y1: y(t), y2: y(t), class: t === 0 ? "zero" : "gridl" }, svg);
+      const lab = el("text", { x: L - 8, y: y(t) + 3.5, "text-anchor": "end", class: "ax" }, svg); lab.textContent = (t * 100).toFixed(0) + "%";
+    }
+    H.forEach((h, i) => {
+      const xl = el("text", { x: x(i), y: Hh - 12, "text-anchor": "middle", class: "ax" }, svg); xl.textContent = h === "exp" ? "expiry" : h + " days";
+      const g = el("g", {}, svg);
+      el("line", { x1: x(i), x2: x(i), y1: y(f.lo[i]), y2: y(f.hi[i]), stroke: f.color, "stroke-width": 2, "stroke-linecap": "round" }, g);
+      for (const v of [f.lo[i], f.hi[i]]) el("line", { x1: x(i) - 7, x2: x(i) + 7, y1: y(v), y2: y(v), stroke: f.color, "stroke-width": 2, "stroke-linecap": "round" }, g);
+      el("circle", { cx: x(i), cy: y(f.m[i]), r: 5.5, fill: f.color, stroke: "var(--surface)", "stroke-width": 2 }, g);
+      const v = el("text", { x: x(i) + 11, y: y(f.m[i]) + 4, class: "lbl" }, g); v.textContent = pct(f.m[i]);
+      el("rect", { x: x(i) - 28, y: T, width: 56, height: Hh - T - B, fill: "transparent" }, g);
+      hover(g, `${f.name}, ${h === "exp" ? "expiry" : h + " trading days"}: edge ${pct(f.m[i])}, 97.5% interval ${pct(f.lo[i])} to ${pct(f.hi[i])} (${f.n[i][0]} events vs ${f.n[i][1]} ordinary days). Crosses zero: not a pass.`);
+    });
+  }
+})();
+
+// Price-gap decay charts.
+(function () {
+  const host = document.getElementById("decay-charts");
+  const W = 440, Hh = 250, L = 44, R = 16, T = 14, B = 32, lo = 0.4, hi = 1.8;
+  const y = v => T + (hi - v) / (hi - lo) * (Hh - T - B);
+  const x = i => L + i * (W - L - R) / (DH.length - 1);
+  for (const key of ["hedge", "opportunity"]) {
+    const f = DECAY[key], color = EDGE[key].color;
+    const svg = el("svg", { viewBox: `0 0 ${W} ${Hh}`, role: "img", "aria-label": `${EDGE[key].name}: price gap by horizon, events versus ordinary days` }, panel(host, EDGE[key].name, color));
+    for (const t of [0.5, 1.0, 1.5]) {
+      el("line", { x1: L, x2: W - R, y1: y(t), y2: y(t), class: t === 1 ? "zero" : "gridl" }, svg);
+      const lab = el("text", { x: L - 8, y: y(t) + 3.5, "text-anchor": "end", class: "ax" }, svg); lab.textContent = t.toFixed(1);
+    }
+    DH.forEach((h, i) => { const t = el("text", { x: x(i), y: Hh - 12, "text-anchor": "middle", class: "ax" }, svg); t.textContent = h; });
+    const band = DH.map((_, i) => `${x(i)},${y(f.hi[i])}`).concat(DH.map((_, i) => `${x(DH.length - 1 - i)},${y(f.lo[DH.length - 1 - i])}`));
+    el("polygon", { points: band.join(" "), fill: color, "fill-opacity": 0.13, stroke: "none" }, svg);
+    el("polyline", { points: DH.map((_, i) => `${x(i)},${y(f.pl[i])}`).join(" "), fill: "none", stroke: "var(--base)", "stroke-width": 2, "stroke-dasharray": "5 4" }, svg);
+    el("polyline", { points: DH.map((_, i) => `${x(i)},${y(f.ev[i])}`).join(" "), fill: "none", stroke: color, "stroke-width": 2 }, svg);
+    DH.forEach((h, i) => {
+      const g = el("g", {}, svg);
+      el("circle", { cx: x(i), cy: y(f.ev[i]), r: 4, fill: color, stroke: "var(--surface)", "stroke-width": 2 }, g);
+      el("rect", { x: x(i) - 18, y: T, width: 36, height: Hh - T - B, fill: "transparent" }, g);
+      hover(g, `${h === "exp" ? "Expiry" : h + " trading days"}: price gap ${f.ev[i].toFixed(2)} after the filing (95% interval ${f.lo[i].toFixed(2)}–${f.hi[i].toFixed(2)}, ${f.n[i]} events) vs ${f.pl[i].toFixed(2)} on ordinary days.`);
+    });
+    const peak = key === "hedge" ? 6 : 5;
+    const t = el("text", { x: x(peak), y: y(f.ev[peak]) + (key === "hedge" ? -10 : 18), "text-anchor": "middle", class: "lbl" }, svg);
+    t.textContent = f.ev[peak].toFixed(2);
+  }
+})();
+
+// Table view of the same numbers.
+(function () {
+  const tb = document.getElementById("results-table");
+  for (const key of ["hedge", "opportunity"]) {
+    const f = EDGE[key];
+    H.forEach((h, i) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${i === 0 ? f.name : ""}</td><td class="num">${h === "exp" ? "expiry" : h}</td><td class="num">${f.n[i][0]} / ${f.n[i][1]}</td>
+        <td class="num">${pct(f.m[i])}</td><td class="num">${pct(f.lo[i])} to ${pct(f.hi[i])}</td>
+        <td class="num">${(f.ratio[i] >= 0 ? "+" : "") + f.ratio[i].toFixed(2)}</td><td class="num">${pct(f.net[i][0])} · ${pct(f.net[i][1])}</td>`;
+      tb.appendChild(tr);
+    });
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="7"><span class="pill null">${f.name}: NULL</span> no horizon has its whole interval above zero</td>`;
+    tb.appendChild(tr);
+  }
+})();
+</script>
