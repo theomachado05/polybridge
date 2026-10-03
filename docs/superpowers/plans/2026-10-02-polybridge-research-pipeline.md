@@ -26,13 +26,13 @@
 
 | ID | Decision | Default in this plan |
 |---|---|---|
-| D1 | SEC `User-Agent` contact for EDGAR acceptance times (sent to sec.gov) | Unset → conservative timing: every filing is treated as after the close, so `t_0` = next session. No lookahead, slightly later entries. |
-| D2 | Placebo size per family | 200 ordinary days (starter: 120) |
-| D3 | Atlas scope | All 119 tags, baseline spec only, capped at 30 events per tag (seeded sample), one shared 300-day placebo over `TOP_100` |
-| D4 | Ratio condition of the pass rule | Point estimate in the predicted direction at the same horizons (literal reading of §4); the CI is reported alongside |
-| D5 | Costs | Real half-spreads from Massive options quotes at entry and exit for the headline strategies, next to the pre-registered 5% haircut (1× and 2×) |
-| D6 | Notebook smoke test in CI with a repo secret | No secret in CI; the clean-kernel run is done locally |
-| D7 | Method freeze | Human decision after reviewing in-sample results (Task 12 stops there) |
+| D1 | SEC `User-Agent` contact | **Decided: none.** Conservative timing: every filing is treated as public after the close, so `t_0` = next session. |
+| D2 | Placebo size per family | **Decided: 120** (the starter's default; supporting check, not the core) |
+| D3 | Atlas scope | **Decided: stretch goal.** Built and tested in Task 9, but the notebook runs it only when `RUN_ATLAS = True` (default `False`); cap 15 events per tag |
+| D4 | Ratio condition of the pass rule | **Decided: A** — point estimate in the predicted direction at the same horizons; CI reported. Logged in HYPOTHESIS.md before any result. |
+| D5 | Costs | **Decided:** keep the pre-registered haircut (1×, 2×) and real half-spreads in the research (rubric requirement, no money spent). Fee-aware ordering in hedgecore belongs to the product plan. |
+| D6 | Notebook smoke test in CI with a repo secret | **Decided: no secret**; the team shares .env another way |
+| D7 | Method freeze | **Default Saturday ~6 PM**, human call after in-sample results (Task 12 stops there) |
 
 When D1, D2 or D4 is answered differently from the default, the controller applies it before Task 12 runs. Any answer to D4 is also written into the `research/HYPOTHESIS.md` change log as a clarification, committed before any H1/H2 result exists.
 
@@ -145,7 +145,7 @@ def test_universe_and_fixed_values_match_preregistration():
     cfg = StudyConfig()
     assert (cfg.study_start, cfg.study_end, cfg.oos_start, cfg.oos_end) == (
         "2024-01-01", "2025-12-31", "2026-01-01", "2026-08-31")
-    assert (cfg.baseline_bucket, cfg.otm_pct, cfg.entry, cfg.cost_haircut) == ("3-6m", 0.05, "post", 0.05)
+    assert (cfg.baseline_bucket, cfg.otm_pct, cfg.entry, cfg.cost_haircut, cfg.n_placebo) == ("3-6m", 0.05, "post", 0.05, 120)
     assert cfg.headline_horizons == (21, 42, "exp")
     assert cfg.confirmatory_level == 0.975
     cfg.validate()
@@ -246,7 +246,7 @@ class StudyConfig:
     risk_free: float = 0.04
     strike_window: float = 0.25
     max_stale_sessions: int = 3
-    n_placebo: int = 200
+    n_placebo: int = 120
     placebo_gap_days: int = 30
     cost_haircut: float = 0.05
     confirmatory_level: float = 0.975
@@ -1935,7 +1935,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - Consumes: the package.
 - Produces: a notebook with no outputs whose cells are, in order:
   1. Markdown: title, the pre-registration links, the two hypotheses in one sentence each, how to run (only `MASSIVE_API_KEY`; optional `SEC_USER_AGENT`).
-  2. Code — configuration: `START, END = "2024-01-01", "2025-12-31"` (judges edit these), `RUN_OOS = False` (comment: flipped once, after the method freeze), `RUN_ATLAS = True`, `ATLAS_MAX_EVENTS = 30`, `MAX_WORKERS = 8`, `cfg = StudyConfig(); cfg.validate()`.
+  2. Code — configuration: `START, END = "2024-01-01", "2025-12-31"` (judges edit these), `RUN_OOS = False` (comment: flipped once, after the method freeze), `RUN_ATLAS = False`, `ATLAS_MAX_EVENTS = 15`, `MAX_WORKERS = 8`, `cfg = StudyConfig(); cfg.validate()`.
   3. Code — setup: `key = load_api_key(search_from=Path.cwd())`, `client = MassiveClient(key)`, `cal = TradingCalendar()`, `LAST = cal.last_completed()`, `UA = os.environ.get("SEC_USER_AGENT")`, print timing mode.
   4. Code — confirmatory study: `study = run_family_study(client, cal, cfg, START, END, LAST, user_agent=UA, max_workers=MAX_WORKERS)`; display event counts by family and year, the excluded cross-family count, timing counts, dropped reasons.
   5. Code — scoreboards: for each family, `scoreboard` of events and placebo; `difference_board` at 97.5%; a small-multiples plot (events vs placebo per strategy, CI band).
@@ -1990,8 +1990,8 @@ The generator builds the 13 cells listed under Interfaces with `nbformat.v4.new_
 # ---- Window. Judges: set your sealed window here and rerun all cells. ----
 START, END = "2024-01-01", "2025-12-31"
 RUN_OOS = False          # flipped once, after the method freeze (see research/HYPOTHESIS.md §4)
-RUN_ATLAS = True         # exploratory atlas over every 8-K tag (HYPOTHESIS.md §5)
-ATLAS_MAX_EVENTS = 30
+RUN_ATLAS = False        # exploratory atlas over every 8-K tag (HYPOTHESIS.md §5); stretch goal, slow
+ATLAS_MAX_EVENTS = 15
 MAX_WORKERS = 8
 
 import os

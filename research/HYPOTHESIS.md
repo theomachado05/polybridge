@@ -131,3 +131,4 @@ the static universe, parity-recovered spot error, last-trade marks without sprea
 
 - 2026-10-02: initial registration.
 - 2026-10-02: tag mapping committed as HYPOTHESIS_TAGS.md (taxonomy only, before any events).
+- 2026-10-02 (clarification, before any H1/H2 result): in §4 rule 2, "differs in the predicted direction" means the point estimate of events-minus-placebo mean R has the predicted sign (H1 > 0, H2 < 0) at the same headline horizons that pass rule 1; its confidence interval is reported but not required. Timing uses the conservative rule (every filing treated as public after the close) because no SEC contact is configured. Placebo size: 120 ordinary days per family (the starter's default).
