@@ -9,6 +9,8 @@ UTC = timezone.utc
 LOOKBACK_DAYS = 365
 GRID_SECONDS = 60
 MAX_QUOTE_AGE_S = 900
+# Quote rules: the registered one, and the sensitivity of amendment 1 (Kalshi candles are written only on a change).
+QUOTE_RULES = (("registered", 900), ("kalshi_carry_6h", 6 * 3600))
 
 # Polymarket modelled half-spread (history only): median of the recorded books in the calibration slice.
 CALIBRATION_START = datetime(2026, 10, 3, 23, 9, 48, tzinfo=UTC)

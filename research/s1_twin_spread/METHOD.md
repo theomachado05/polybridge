@@ -180,4 +180,22 @@ Anything else is a null or "too few observations" and goes under "what didn't wo
 
 ## Amendments
 
-None.
+**Amendment 1, 2026-10-03 23:28 UTC, before any backtest was run: a labelled sensitivity for Kalshi quote age.**
+The pull showed that Kalshi 1-minute candles are sparse (for example 222 candles in 15 days for one market). A
+data-quality check against the recorder, with no strategy quantity computed, shows why: candles are only written when
+the top of the book changes. For every recorded snapshot whose last candle was more than 15 minutes old, the candle's
+bid and ask equalled the recorded book: 792 of 792 snapshots, 12 markets, gaps up to 5.0 hours. (Over all snapshots:
+1,542 of 1,584; the misses are changes inside the current minute.) The 15-minute rule of section 1 therefore discards
+valid Kalshi quotes. The registered rule is **not** changed and stays the primary. Added: a sensitivity `kalshi_carry_6h`
+in which a Kalshi quote stays valid for up to 6 hours (the longest verified gap is 5.0 h); the Polymarket rule is
+unchanged. It is run for every variant and reported next to the primary. The history window and the IS/OOS split are
+those of the registered rule. The deflated Sharpe ratio now uses 8 trials (4 variants × 2 quote rules).
+
+**Amendment 2, 2026-10-03 23:28 UTC, before any backtest was run: a signal needs a two-sided Kalshi quote.**
+Section 1 says an empty Kalshi side is never a price. The 2× cost rule and the mid mark both need the Kalshi mid, so
+a minute with only one Kalshi side gives no signal in either direction, at 1× and at 2×.
+
+**Note on fees, same time.** Kalshi's API reports `fee_type` `quadratic` or `quadratic_with_maker_fees` with
+`fee_multiplier` 1 for all 33 series: the general taker formula applies to all. Polymarket's `feeSchedule` rate is
+0.04 (27 markets) or 0.05 (the 6 Fed markets), exponent 1; one market (Trump out before 2027) charges no fee.
+The 3-month Treasury yield is 4.17% (2026-10-01, the latest value published).

@@ -30,6 +30,7 @@ KALSHI_CHUNK = 50
 SERIES_KALSHI = ["KXINXU", "KXNASDAQ100U", "INXU", "NASDAQ100U", "KXINXAB", "INXAB"]
 EQUITY_TAG = 102676
 THRESHOLD_HORIZON_DAYS = 21
+RETRY = {429, 500, 502, 503, 504}
 
 
 def log(msg: str) -> None:
@@ -67,14 +68,25 @@ def kalshi_row(ob: dict, t0: float, t1: float) -> dict:
             "b": _levels(fp.get("yes_dollars"), True), "a": [[round(1.0 - p, 4), s] for p, s in no_bids]}
 
 
+def _request(http: requests.Session, method: str, url: str, **kw):
+    """The response with the send and receive times of the attempt that succeeded. A rate limit or a server error
+    is retried twice inside the cycle, after 1 s and 2 s."""
+    for attempt in range(3):
+        t0 = time.time()
+        r = http.request(method, url, timeout=10, **kw)
+        t1 = time.time()
+        if r.status_code not in RETRY or attempt == 2:
+            break
+        time.sleep(1.0 + attempt)
+    r.raise_for_status()
+    return r, t0, t1
+
+
 def fetch_pm(http: requests.Session, tokens: list[str]) -> list[dict]:
     rows = []
     for i in range(0, len(tokens), PM_CHUNK):
         chunk = tokens[i:i + PM_CHUNK]
-        t0 = time.time()
-        r = http.post(f"{CLOB}/books", json=[{"token_id": t} for t in chunk], timeout=10)
-        r.raise_for_status()
-        t1 = time.time()
+        r, t0, t1 = _request(http, "POST", f"{CLOB}/books", json=[{"token_id": t} for t in chunk])
         rows.extend(pm_row(b, t0, t1) for b in r.json())
     return rows
 
@@ -83,10 +95,7 @@ def fetch_kalshi(http: requests.Session, tickers: list[str]) -> list[dict]:
     rows = []
     for i in range(0, len(tickers), KALSHI_CHUNK):
         chunk = tickers[i:i + KALSHI_CHUNK]
-        t0 = time.time()
-        r = http.get(f"{KALSHI}/markets/orderbooks", params=[("tickers", t) for t in chunk], timeout=10)
-        r.raise_for_status()
-        t1 = time.time()
+        r, t0, t1 = _request(http, "GET", f"{KALSHI}/markets/orderbooks", params=[("tickers", t) for t in chunk])
         rows.extend(kalshi_row(ob, t0, t1) for ob in r.json().get("orderbooks", []))
     return rows
 
