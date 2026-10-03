@@ -62,9 +62,9 @@ async def run(jobs: list[dict], deps: Deps, shares: float) -> dict:
             continue
         res = await fit(req, deps)
         fits[j["key"]] = {"question": j.get("question"), "ticker": req.ticker, "direction": req.direction,
-                          "shares_held": shares, **res.model_dump()}
+                          "shares_held": shares, **res.model_dump(), "scored": res.score is not None}
         print(f"{j['key']:>24} {req.ticker:<6} {res.event_class:<18} {res.family or '-':<22} "
-              f"scored={res.scored} ticks={res.ticks_source}:{res.n_ticks}", file=sys.stderr)
+              f"scored={res.score is not None} ticks={res.ticks_source}:{res.n_ticks}", file=sys.stderr)
     return fits
 
 

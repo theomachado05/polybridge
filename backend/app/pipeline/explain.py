@@ -5,7 +5,7 @@ from .llm import LLMProvider, RulesProvider, template_rationale
 
 FACT_KEYS = ("event_class", "division", "family", "preset_index", "params", "score", "scored", "unscored_reason",
              "ticks_source", "n_ticks", "ticker", "direction", "shares_held", "n_shortlisted", "family_idea",
-             "proxies", "llm", "reason")
+             "proxies", "llm", "reason", "question_unresolved")
 
 
 def facts(result: dict) -> dict:

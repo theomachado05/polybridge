@@ -96,6 +96,10 @@ def _fmt_params(params: dict) -> str:
 def template_rationale(r: dict) -> str:
     """2-3 sentences built only from the structured result."""
     cls, fam, div = r.get("event_class"), r.get("family"), r.get("division")
+    if not fam and r.get("question_unresolved"):
+        return ("The market's question could not be resolved (it is not in the bundled universe and could not be "
+                "fetched), so it was not classified and no algo was fitted. Pass the question text with the request "
+                "to fit it.")
     if not fam:
         reason = r.get("reason") or "no algo family in the library covers this event class"
         return (f"Classified as {cls} by {r.get('llm', 'rules')}. No algo was fitted: {reason}. "

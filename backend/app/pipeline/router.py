@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import json
 import time
+from collections import OrderedDict
 from pathlib import Path
+from typing import Any, Callable
 
 from fastapi import APIRouter, Request
 
@@ -14,6 +16,35 @@ from .service import Deps, FitRequest, FitResponse, fit
 router = APIRouter()
 FITS = Path(__file__).resolve().parents[1] / "data" / "fits.json"
 FIT_TTL_S = 300.0
+FIT_CACHE_MAX = 256
+
+
+class FitCache:
+    """TTL + size-capped LRU, so a stream of distinct free-text questions cannot grow memory without bound."""
+
+    def __init__(self, ttl_s: float = FIT_TTL_S, max_entries: int = FIT_CACHE_MAX,
+                 clock: Callable[[], float] = time.monotonic):
+        self.ttl_s, self.max_entries, self._clock = ttl_s, max_entries, clock
+        self._data: OrderedDict[str, tuple[float, Any]] = OrderedDict()
+
+    def get(self, key: str) -> Any | None:
+        hit = self._data.get(key)
+        if hit is None:
+            return None
+        if self._clock() - hit[0] >= self.ttl_s:
+            del self._data[key]
+            return None
+        self._data.move_to_end(key)
+        return hit[1]
+
+    def put(self, key: str, value: Any) -> None:
+        self._data[key] = (self._clock(), value)
+        self._data.move_to_end(key)
+        while len(self._data) > self.max_entries:
+            self._data.popitem(last=False)
+
+    def __len__(self) -> int:
+        return len(self._data)
 
 
 def get_adapter(request: Request) -> EngineAdapter:
@@ -40,20 +71,20 @@ def _deps(request: Request) -> Deps:
 
 @router.post("/pipeline/fit", response_model=FitResponse)
 async def pipeline_fit(req: FitRequest, request: Request) -> FitResponse:
-    if not hasattr(request.app.state, "cache_fit"):
-        request.app.state.cache_fit = {}
-    cache: dict = request.app.state.cache_fit
+    if not isinstance(getattr(request.app.state, "cache_fit", None), FitCache):
+        request.app.state.cache_fit = FitCache()
+    cache: FitCache = request.app.state.cache_fit
     key = req.model_dump_json()
     hit = cache.get(key)
-    if hit is not None and time.monotonic() - hit[0] < FIT_TTL_S:
-        return hit[1]
+    if hit is not None:
+        return hit
     try:
         deps = _deps(request)
     except Exception:
         deps = Deps(adapter=EngineAdapter(module=None))
     value = await fit(req, deps)
     if not value.rationale.startswith("The fit pipeline hit an internal error"):  # never cache a degraded answer
-        cache[key] = (time.monotonic(), value)
+        cache.put(key, value)
     return value
 
 

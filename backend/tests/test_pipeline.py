@@ -21,7 +21,8 @@ from app.pipeline.engine_adapter import (FALLBACK_MANIFEST, EngineAdapter, defau
 from app.pipeline.explain import explain, facts
 from app.pipeline.llm import GeminiProvider, LLMError, RulesProvider, parse_json_text, rules_classify
 from app.pipeline.shortlist import shortlist
-from app.pipeline.ticks import TickSet, assemble, build_ticks, replay_points
+from app.pipeline.ticks import (TickSet, assemble, available_requirements, build_ticks, massive_bars,
+                                orient_to_adverse, recorded_bars, replay_points)
 from app.pipeline.tune import score_row, tune
 
 FED_ID = "2589813"  # in market_universe.json and replay_index.json
@@ -52,6 +53,7 @@ def fake_hedgecore(best: tuple[str, int] = ("macro_fed_hedge", 5), catalog_raise
     raw["version"] = "fake-engine"
     fams = {f["id"]: f for f in normalize_manifest(raw)["families"]}
     mod.calls = []
+    mod.ticks = []
 
     def catalog():
         if catalog_raises:
@@ -60,6 +62,7 @@ def fake_hedgecore(best: tuple[str, int] = ("macro_fed_hedge", 5), catalog_raise
 
     def replay_grid(family, position, ticks):
         mod.calls.append((family, dict(position), {k: len(v) for k, v in ticks.items()}))
+        mod.ticks.append({k: np.array(v, copy=True) for k, v in ticks.items()})
         if grid_raises:
             raise RuntimeError("engine crashed")
         rows = []
@@ -121,14 +124,21 @@ def mock_http(router: Router) -> httpx.AsyncClient:
 
 
 class FakeMassive:
-    def __init__(self, fail: bool = False):
-        self.fail, self.paths = fail, []
+    """Massive aggregates with realistic semantics: ``t`` (ms) is the START of the bar window.
+
+    Hourly bar i covers [T0 - 1800 + 3600 i, T0 + 1800 + 3600 i), so tick i (at T0 + 3600 i) sits in the middle of
+    bar i's window and may only see bar i-1's close. ``hourly=False`` returns no hourly bars (daily fallback)."""
+
+    def __init__(self, fail: bool = False, hourly: bool = True, daily: list[dict] | None = None):
+        self.fail, self.paths, self.hourly, self.daily = fail, [], hourly, daily or []
 
     def get_all(self, path, params=None, max_pages=500):
         self.paths.append(path)
         if self.fail:
             raise RuntimeError("massive down")
-        return [{"t": (T0 - 1800 + 3600 * i) * 1000, "c": 500.0 - i} for i in range(N_POINTS)]
+        if "/range/1/hour/" in path:
+            return [{"t": (T0 - 1800 + 3600 * i) * 1000, "c": 500.0 - i} for i in range(N_POINTS)] if self.hourly else []
+        return self.daily
 
 
 def make_client(*, module=None, router: Router | None = None, massive=None, offline=False, provider=None):
@@ -343,9 +353,9 @@ def test_shortlist_unsupported_is_empty_and_requirements_demote():
 
 # ---------------------------------------------------------------- ticks
 
-def test_assemble_never_invents_depth_and_joins_without_lookahead():
+def test_assemble_never_invents_depth_and_joins_on_known_time():
     pts = [(100, 0.3), (200, 0.4), (300, 0.5)]
-    bars = [(150, 10.0), (250, 11.0)]
+    bars = [(150, 10.0), (250, 11.0)]  # (time the close became known, close)
     t = assemble(pts, bars)
     assert set(len(v) for v in t.values()) == {3}
     for side in ("bid", "ask"):
@@ -356,6 +366,66 @@ def test_assemble_never_invents_depth_and_joins_without_lookahead():
     assert np.isnan(t["under_bid"]).all() and np.isnan(t["opt_implied_prob"]).all()
     assert t["ts_ns"][0] == 100 * 10**9 and t["ts_ns"].dtype == np.int64
     assert list(t["yes_bid"]) == [0.3, 0.4, 0.5] and math.isclose(t["no_ask"][0], 0.7)
+
+
+def test_hourly_bar_close_is_only_seen_after_the_bar_ends():
+    fm = FakeMassive()
+    bars = massive_bars(fm, "SPY", T0, T0 + 3600 * N_POINTS)
+    assert bars[0] == (T0 + 1800, 500.0)  # bar 0 starts at T0 - 1800, its close is known an hour later
+    pts = [(T0 + 3600 * i, 0.5) for i in range(N_POINTS)]
+    under = assemble(pts, bars)["under_px"]
+    assert np.isnan(under[0])  # tick 0 is inside bar 0's window: no finished bar yet
+    for i in range(1, N_POINTS):  # tick i is inside bar i's window -> bar i-1's close, never bar i's
+        assert under[i] == 500.0 - (i - 1)
+    # A tick exactly at a bar's end sees that bar; one second earlier it does not.
+    end0 = T0 + 1800
+    assert assemble([(end0 - 1, 0.5), (end0, 0.5)], bars)["under_px"][1] == 500.0
+    assert np.isnan(assemble([(end0 - 1, 0.5)], bars)["under_px"][0])
+
+
+def test_daily_bars_never_leak_the_same_session_close():
+    # 2026-09-28 and 09-29 sessions; Massive daily t = midnight ET (04:00 UTC in EDT).
+    d28, d29 = 1790568000, 1790654400
+    fm = FakeMassive(hourly=False, daily=[{"t": d28 * 1000, "c": 100.0}, {"t": d29 * 1000, "c": 105.0}])
+    bars = massive_bars(fm, "SPY", d28, d29 + 86400)
+    assert any("/range/1/day/" in x for x in fm.paths)
+    ten_am_29 = d29 + 10 * 3600  # 10:00 ET on 09-29: day 29's 16:00 close is not known yet
+    eight_pm_29 = d29 + 20 * 3600
+    next_morning = d29 + 86400 + 10 * 3600
+    u = assemble([(ten_am_29, 0.5), (eight_pm_29, 0.5), (next_morning, 0.5)], bars)["under_px"]
+    assert list(u) == [100.0, 100.0, 105.0]
+
+
+def test_recorded_bars_use_bar_end(tmp_path):
+    (tmp_path / "equity_bars").mkdir()
+    (tmp_path / "equity_bars" / "SPY.json").write_text(json.dumps(
+        {"ticker": "SPY", "span_s": 3600, "bars": [{"t": 1000, "c": 1.0}, {"t": 4600, "c": 2.0}]}))
+    assert recorded_bars("spy", tmp_path) == [(4600, 1.0), (8200, 2.0)]
+    (tmp_path / "equity_bars" / "QQQ.json").write_text(json.dumps([{"t": 0, "c": 3.0}]))
+    assert recorded_bars("QQQ", tmp_path) == [(86400, 3.0)]  # no span: conservative one day
+
+
+def test_orient_to_adverse_swaps_yes_and_no_for_up_on_yes():
+    t = assemble([(1, 0.3), (2, 0.4)])
+    assert orient_to_adverse(t, "down_on_yes") is t
+    o = orient_to_adverse(t, "up_on_yes")
+    assert np.allclose(o["yes_bid"], [0.7, 0.6]) and np.allclose(o["no_ask"], [0.3, 0.4])
+    assert np.isnan(o["bid_px_0"]).all() and np.isnan(o["ask_qty_4"]).all()  # NaN depth stays NaN
+    assert np.allclose(t["yes_bid"], [0.3, 0.4])  # input untouched
+    t["ask_px_0"][:] = [0.32, 0.42]
+    t["ask_qty_0"][:] = [50, 60]
+    t["p_other_venue"][:] = [0.31, 0.41]
+    o = orient_to_adverse(t, "up_on_yes")
+    assert np.allclose(o["bid_px_0"], [0.68, 0.58]) and list(o["bid_qty_0"]) == [50, 60]
+    assert np.allclose(o["p_other_venue"], [0.69, 0.59])
+
+
+def test_available_requirements_from_ticks():
+    t = assemble([(1, 0.3), (2, 0.4)])
+    assert available_requirements(TickSet(t, "live_history", 2)) == set()
+    t["p_other_venue"][1] = 0.38
+    assert available_requirements(TickSet(t, "live_history", 2)) == {"both_venues"}
+    assert available_requirements(TickSet(None, "none")) == set()
 
 
 def test_replay_points_from_index():
@@ -369,6 +439,7 @@ def test_build_ticks_live_history_resolves_token_and_aligns_bars():
     fm = FakeMassive()
     ts = run(build_ticks({"source": "polymarket", "id": "777"}, "SPY", http=mock_http(r), massive=lambda: fm))
     assert ts.source == "live_history" and ts.n == N_POINTS and ts.has_underlying and ts.token_id == "tokYES"
+    assert np.isnan(ts.ticks["under_px"][0]) and ts.ticks["under_px"][5] == 500.0 - 4  # previous bar's close
     hist_req = next(q for q in r.requests if q.url.path == "/prices-history")
     assert hist_req.url.params["market"] == "tokYES"
     assert fm.paths and fm.paths[0].startswith("/v2/aggs/ticker/SPY/range/1/hour/")
@@ -441,7 +512,7 @@ def test_opportunity_score_is_net_pnl_per_unit_drawdown():
 # ---------------------------------------------------------------- POST /pipeline/fit
 
 RESPONSE_KEYS = {"event_class", "division", "family", "preset_index", "params", "score", "alternatives", "rationale",
-                 "llm", "ticks_source", "n_ticks", "scored"}
+                 "llm", "ticks_source", "n_ticks"}  # exactly spec §4
 
 
 def test_fit_scored_end_to_end_with_fake_engine_and_mocked_http():
@@ -454,20 +525,86 @@ def test_fit_scored_end_to_end_with_fake_engine_and_mocked_http():
     j = resp.json()
     assert set(j) == RESPONSE_KEYS
     assert j["event_class"] == "macro_fed" and j["division"] == "hedge" and j["llm"] == "rules"
-    assert (j["family"], j["preset_index"], j["scored"]) == ("macro_fed_hedge", 7, True)
+    assert (j["family"], j["preset_index"]) == ("macro_fed_hedge", 7)
     assert j["score"] == pytest.approx(0.9)
     assert j["ticks_source"] == "live_history" and j["n_ticks"] == N_POINTS
     assert len(j["alternatives"]) == 3 and "SPY" in j["rationale"]
     fam, position, lens = eng.calls[0]
-    assert position["shares_held"] == 1200.0 and position["direction"] == "up_on_yes"
+    assert position["shares_held"] == 1200.0 and "direction" not in position  # §3.3 fields only
+    assert set(position) == {"shares_held", "equity", "pred_yes", "pred_no", "option"}
     assert lens["bid_px_0"] == N_POINTS and lens["under_px"] == N_POINTS
+    # up_on_yes: the engine sees YES re-oriented to the adverse outcome (1 - p)
+    assert np.allclose(eng.ticks[0]["yes_bid"], [1 - h["p"] for h in history()])
+    assert not {f for f, _, _ in eng.calls} & {"poly_kalshi_spread"}  # no second venue -> not replayed
+
+
+def _trend_engine():
+    """Fake engine whose best preset depends on the YES series it is given: preset 0 when YES (the adverse
+    outcome) is mostly cheap, preset 1 when it is mostly dear. Used to prove the direction changes the fit."""
+    mod = fake_hedgecore()
+    base = mod.replay_grid
+
+    def replay_grid(family, position, ticks):
+        rows = base(family, position, ticks)
+        dear = float(np.nanmean(ticks["yes_bid"])) > 0.5
+        for r in rows:
+            r["hedge_var_reduction"] = 0.01
+            if family == "macro_fed_hedge" and r["preset_index"] == (1 if dear else 0):
+                r["hedge_var_reduction"] = 0.95
+        return rows
+
+    mod.replay_grid = replay_grid
+    return mod
+
+
+def test_direction_changes_the_fit():
+    body = {"market": {"source": "polymarket", "id": FED_ID}, "ticker": "SPY", "shares_held": 100}
+    picks = {}
+    for d in ("down_on_yes", "up_on_yes"):
+        r = Router(prices=history(), gamma={"clobTokenIds": '["tokYES"]'})
+        c = make_client(module=_trend_engine(), router=r, massive=FakeMassive())
+        j = c.post("/pipeline/fit", json={**body, "direction": d}).json()
+        picks[d] = (j["family"], j["preset_index"])
+    assert picks == {"down_on_yes": ("macro_fed_hedge", 0), "up_on_yes": ("macro_fed_hedge", 1)}
+
+
+def test_unresolved_market_question_says_so():
+    c = make_client(module=None, offline=True)
+    j = c.post("/pipeline/fit", json={"market": {"source": "kalshi", "id": "KXUNKNOWN-99"}, "ticker": "SPY",
+                                      "shares_held": 10}).json()
+    assert j["family"] is None and j["event_class"] == "unsupported"
+    assert "could not be resolved" in j["rationale"] and "outside every supported" not in j["rationale"]
+
+
+def test_unmet_requirement_families_are_left_out():
+    c = make_client(module=None, offline=True)
+    j = c.post("/pipeline/fit", json={"market": {"source": "polymarket", "id": FED_ID}, "ticker": "TLT",
+                                      "shares_held": 500}).json()
+    assert "poly_kalshi_spread" not in {a["family"] for a in j["alternatives"]}
+    j = c.post("/pipeline/fit", json={"question": "Will Bitcoin hit $150k in 2026?", "ticker": "COIN"}).json()
+    fams = {j["family"]} | {a["family"] for a in j["alternatives"]}
+    assert not fams & {"poly_kalshi_spread", "binary_vs_spread_arb", "vol_vs_pm_move"}
+
+
+def test_fit_cache_is_bounded_and_expires():
+    from app.pipeline.router import FitCache
+    now = [0.0]
+    cache = FitCache(ttl_s=10, max_entries=3, clock=lambda: now[0])
+    for i in range(5):
+        cache.put(f"k{i}", i)
+    assert len(cache) == 3 and cache.get("k0") is None and cache.get("k4") == 4
+    cache.get("k2")  # refresh k2, so k3 is the oldest
+    cache.put("k5", 5)
+    assert cache.get("k3") is None and cache.get("k2") == 2
+    now[0] = 11
+    assert cache.get("k2") is None and len(cache) == 2
 
 
 def test_fit_scored_false_without_engine_offline():
     c = make_client(module=None, offline=True)
     j = c.post("/pipeline/fit", json={"market": {"source": "polymarket", "id": FED_ID}, "ticker": "TLT",
                                       "shares_held": 500}).json()
-    assert j["scored"] is False and j["score"] is None
+    assert j["score"] is None
     assert j["family"] == "macro_fed_hedge" and j["ticks_source"] == "replay" and j["n_ticks"] > 700
     assert "without a replay score" in j["rationale"]
 
@@ -484,7 +621,7 @@ def test_fit_unsupported_class():
 def test_fit_without_shares_uses_opportunity_division():
     c = make_client(module=None, offline=True)
     j = c.post("/pipeline/fit", json={"question": "Will Bitcoin hit $150k in 2026?", "ticker": "COIN"}).json()
-    assert j["division"] == "opportunity" and j["family"] == "no_bid_seller" and j["scored"] is False
+    assert j["division"] == "opportunity" and j["family"] == "no_bid_seller" and j["score"] is None
 
 
 def test_fit_uses_gemini_when_provider_works():
@@ -524,7 +661,7 @@ def test_fit_never_500_with_everything_failing():
                                          "shares_held": 10})
     assert resp.status_code == 200
     j = resp.json()
-    assert j["llm"] == "rules" and j["scored"] is False and j["ticks_source"] == "none"
+    assert j["llm"] == "rules" and j["score"] is None and j["ticks_source"] == "none"
 
 
 @pytest.mark.parametrize("body", [

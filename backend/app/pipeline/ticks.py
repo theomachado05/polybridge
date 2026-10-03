@@ -7,8 +7,11 @@ Honesty rules:
 - History is a mid-price series. ``yes_bid``/``yes_ask`` are set to that mid (``quote_model = "mid_only"``)
   and ``no_bid``/``no_ask`` to ``1 - mid``; the true spread at the time is unknown.
 - Book depth (``bid_px_*``, ``bid_qty_*``, ``ask_px_*``, ``ask_qty_*``) is never invented: always NaN.
-- Equity: ``under_px`` is the last Massive bar close at or before each tick (as-of join, no look-ahead);
-  NaN before the first bar or when no bars are available. ``under_bid``/``under_ask`` are NaN.
+- Equity: ``under_px`` is the close of the last Massive bar that had already ENDED at each tick (as-of join on the
+  time the close becomes known, not on the bar's start: Massive ``t`` is the start of the bar window). An hourly bar
+  is known at start + 1 h; a daily bar (``t`` = midnight ET of the session) only from the end of that day, so a
+  10:00 tick on day D sees day D-1's close, never day D's 16:00 close. NaN before the first finished bar or when
+  no bars are available. ``under_bid``/``under_ask`` are NaN.
 - Options, other-venue and 8-K fields are NaN / 0 (``eightk_score`` 0 = none, per the MarketTick contract).
 """
 from __future__ import annotations
@@ -62,7 +65,9 @@ def _num(x: Any) -> float | None:
 
 def assemble(points: list[tuple[int, float]], bars: list[tuple[int, float]] | None = None,
              venue: int = 0) -> dict[str, np.ndarray]:
-    """points: [(ts_s, p)] sorted; bars: [(ts_s, close)] sorted. Returns equal-length arrays per MarketTick field."""
+    """points: [(ts_s, p)] sorted; bars: [(known_at_s, close)] sorted, where known_at_s is when the close became
+    available (bar END, see ``massive_bars``). A tick at t sees the latest bar with known_at_s <= t.
+    Returns equal-length arrays per MarketTick field."""
     n = len(points)
     ts = np.array([int(t) * 1_000_000_000 for t, _ in points], dtype=np.int64)
     p = np.array([float(x) for _, x in points], dtype=np.float64)
@@ -168,26 +173,75 @@ def replay_points(source: str | None, mid: str | None, token_id: str | None = No
 
 # ---------------------------------------------------------------- equity bars
 
+# Seconds from a bar's start (Massive ``t``) until its close is known. Daily bars start at midnight ET; their close
+# is final by the end of that calendar day at the latest, so they are joined only from the next midnight on
+# (conservative: never earlier than the 16:00 close, at worst a few hours late).
+BAR_SPAN_S = {"hour": 3600, "day": 86400}
+
+
 def massive_bars(client: Any, ticker: str, start_s: int, end_s: int) -> list[tuple[int, float]]:
-    """Hourly Massive aggregates (daily if hourly is empty). Sync: run through app.chain.bounded."""
+    """Hourly Massive aggregates (daily if hourly is empty) as [(known_at_s, close)], known_at = bar start + span.
+    Sync: run through app.chain.bounded."""
     d0 = datetime.fromtimestamp(start_s, timezone.utc).date() - timedelta(days=5)
     d1 = datetime.fromtimestamp(end_s, timezone.utc).date()
     for span in ("hour", "day"):
         rows = client.get_all(f"/v2/aggs/ticker/{ticker.upper()}/range/1/{span}/{d0:%Y-%m-%d}/{d1:%Y-%m-%d}",
                               {"adjusted": "true", "sort": "asc", "limit": 50000}, max_pages=5)
-        bars = [(int(r["t"]) // 1000, float(r["c"])) for r in rows if _num(r.get("t")) and _num(r.get("c"))]
+        bars = [(int(r["t"]) // 1000 + BAR_SPAN_S[span], float(r["c"]))
+                for r in rows if _num(r.get("t")) is not None and _num(r.get("c")) is not None]
         if bars:
             return sorted(bars)
     return []
 
 
 def recorded_bars(ticker: str, data_dir: Path = DATA) -> list[tuple[int, float]]:
-    """Offline bars at app/data/equity_bars/<TICKER>.json: [{"t": unix_s, "c": close}, ...]."""
+    """Offline bars at app/data/equity_bars/<TICKER>.json as [(known_at_s, close)].
+
+    File format: {"ticker", "span_s", "bars": [{"t": bar START unix s, "c": close}, ...]} (or a bare list of bars).
+    known_at = t + span_s; span_s defaults to a day (86400) when absent, the conservative choice."""
     try:
-        rows = json.loads((data_dir / "equity_bars" / f"{ticker.upper()}.json").read_text())
+        doc = json.loads((data_dir / "equity_bars" / f"{ticker.upper()}.json").read_text())
     except (OSError, ValueError):
         return []
-    return sorted((int(r["t"]), float(r["c"])) for r in rows if _num(r.get("t")) and _num(r.get("c")))
+    rows = doc.get("bars", []) if isinstance(doc, dict) else doc
+    span = _num(doc.get("span_s")) if isinstance(doc, dict) else None
+    span = int(span) if span and span > 0 else BAR_SPAN_S["day"]
+    out = []
+    for r in rows or []:
+        if isinstance(r, dict) and _num(r.get("t")) is not None and _num(r.get("c")) is not None:
+            out.append((int(r["t"]) + span, float(r["c"])))
+    return sorted(out)
+
+
+# ---------------------------------------------------------------- orientation
+
+def orient_to_adverse(ticks: dict[str, np.ndarray], direction: str) -> dict[str, np.ndarray]:
+    """Make the series direction-neutral for the engine: afterwards YES always means the outcome that HURTS the
+    held equity. ``down_on_yes`` is already oriented. For ``up_on_yes`` the adverse outcome is NO, so the YES and
+    NO quotes swap; depth on the YES book becomes the mirrored NO book (bid <- 1 - ask, same size); other-venue
+    and option-implied probabilities become 1 - p. NaN stays NaN. Returns a new dict; the input is untouched.
+
+    The §3.3 Position struct has no direction field, so this is how the direction reaches the replay."""
+    if direction != "up_on_yes":
+        return ticks
+    out = dict(ticks)
+    out["yes_bid"], out["no_bid"] = ticks["no_bid"].copy(), ticks["yes_bid"].copy()
+    out["yes_ask"], out["no_ask"] = ticks["no_ask"].copy(), ticks["yes_ask"].copy()
+    for i in range(KDEPTH):
+        out[f"bid_px_{i}"], out[f"ask_px_{i}"] = 1.0 - ticks[f"ask_px_{i}"], 1.0 - ticks[f"bid_px_{i}"]
+        out[f"bid_qty_{i}"], out[f"ask_qty_{i}"] = ticks[f"ask_qty_{i}"].copy(), ticks[f"bid_qty_{i}"].copy()
+    for f in ("p_other_venue", "opt_implied_prob"):
+        out[f] = 1.0 - ticks[f]
+    return out
+
+
+def available_requirements(ts: "TickSet") -> set[str]:
+    """Family requirements this tick set can meet. 'both_venues' needs a finite other-venue price somewhere;
+    'listed_options' is never met yet (no options data is joined into the ticks)."""
+    have: set[str] = set()
+    if ts.ticks is not None and np.isfinite(ts.ticks.get("p_other_venue", np.array([]))).any():
+        have.add("both_venues")
+    return have
 
 
 # ---------------------------------------------------------------- orchestration

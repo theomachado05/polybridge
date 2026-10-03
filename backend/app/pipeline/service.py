@@ -13,8 +13,8 @@ from .classify import classify
 from .engine_adapter import EngineAdapter
 from .explain import explain
 from .llm import LLMProvider, RulesProvider, rules_classify
-from .shortlist import shortlist
-from .ticks import TickSet, _universe_entry, build_ticks, resolve_polymarket
+from .shortlist import shortlist, unmet_requirements
+from .ticks import TickSet, _universe_entry, available_requirements, build_ticks, orient_to_adverse, resolve_polymarket
 from .tune import tune
 
 Direction = Literal["down_on_yes", "up_on_yes"]
@@ -66,7 +66,7 @@ class FitResponse(BaseModel):
     llm: Literal["gemini", "rules"]
     ticks_source: Literal["live_history", "replay", "none"]
     n_ticks: int
-    scored: bool  # false = picked by event-class rules; `score` is then null (never a made-up number)
+    # Exactly the spec §4 keys. An unscored (rules) pick is visible as score == null; `scored` stays internal.
 
 
 @dataclass
@@ -134,11 +134,20 @@ async def run_fit(req: FitRequest, deps: Deps) -> dict:
     (event_class, llm), ts = await asyncio.gather(
         classify(question, deps.provider, manifest.get("event_classes"), req.ticker), ticks())
 
-    lists = shortlist(manifest, event_class)
+    question_unresolved = req.market is not None and not question
+    # Families whose data needs this market cannot meet (second venue, listed options) are left out entirely.
+    available = available_requirements(ts)
+    lists = {d: [f for f in fams if not unmet_requirements(f, available)]
+             for d, fams in shortlist(manifest, event_class, available).items()}
     division = choose_division(lists, req.shares_held)
     families = lists.get(division, []) if division else []
+    # §3.3 Position fields only. The direction reaches the engine through the ticks: for a hedge, YES is re-oriented
+    # to the outcome that hurts the held equity (see ticks.orient_to_adverse), so every family sees one convention.
     position = {"shares_held": float(req.shares_held or 0.0), "equity": 0.0, "pred_yes": 0.0, "pred_no": 0.0,
-                "option": 0.0, "direction": req.direction}
+                "option": 0.0}
+    if division == "hedge" and ts.ticks is not None:
+        ts = TickSet(orient_to_adverse(ts.ticks, req.direction), ts.source, ts.n, ts.has_underlying, ts.quote_model,
+                     ts.notes, ts.token_id, ts.question)
     t = tune(deps.adapter, families, division or "hedge", position, ts)
 
     fam = next((f for f in families if f["id"] == t["family"]), None)
@@ -151,11 +160,19 @@ async def run_fit(req: FitRequest, deps: Deps) -> dict:
         "ticker": req.ticker, "direction": req.direction, "shares_held": req.shares_held,
         "n_shortlisted": len(families), "unscored_reason": t.get("unscored_reason"),
         "family_idea": (fam or {}).get("idea"), "proxies": (fam or {}).get("proxies"),
-        "reason": None if t["family"] else ("the question is outside every supported event class"
-                                            if event_class == "unsupported" else t.get("unscored_reason")),
+        "question_unresolved": question_unresolved or None,
+        "reason": None if t["family"] else _no_fit_reason(event_class, question_unresolved, t),
     }
     result["rationale"], _ = await explain(result, deps.provider)
     return result
+
+
+def _no_fit_reason(event_class: str, question_unresolved: bool, t: dict) -> str | None:
+    if question_unresolved:
+        return "the market's question could not be resolved"
+    if event_class == "unsupported":
+        return "the question is outside every supported event class"
+    return t.get("unscored_reason")
 
 
 def degraded(req: FitRequest | None, err: Exception) -> dict:
@@ -163,7 +180,7 @@ def degraded(req: FitRequest | None, err: Exception) -> dict:
     q = (req.question or "") if req else ""
     return {"event_class": rules_classify(q) if q else "unsupported", "division": None, "family": None,
             "preset_index": None, "params": {}, "score": None, "alternatives": [], "llm": "rules",
-            "ticks_source": "none", "n_ticks": 0, "scored": False,
+            "ticks_source": "none", "n_ticks": 0,
             "rationale": f"The fit pipeline hit an internal error ({type(err).__name__}), so no algo was fitted. "
                          "Nothing here is a recommendation; retry in a moment."}
 
