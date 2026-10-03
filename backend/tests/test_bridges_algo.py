@@ -161,6 +161,16 @@ def test_bad_body_algo_is_422_and_starts_nothing(client, kw, code):
     assert p["id"] not in getattr(client.app.state, "bridges", {})
 
 
+def test_an_engine_that_refuses_the_algo_stops_the_stream_cleanly(client, fake_hc, monkeypatch):
+    def refuse(*a, **k):
+        raise KeyError("family macro_fed_hedge has no param 'coverage'")
+    monkeypatch.setattr(fake_hc, "Algo", refuse)
+    p = proposal(client, {"family": "macro_fed_hedge"})
+    ev = _events(client, start(client, p["id"]).json()["bridge_id"])
+    assert [k for k, _ in ev] == ["error", "status"]
+    assert ev[0][1]["source"] == "engine" and ev[1][1] == {"status": "stopped", "reason": "engine_error"}
+
+
 def test_no_fit_keeps_the_legacy_engine(client):
     p = proposal(client)
     bid = start(client, p["id"]).json()["bridge_id"]

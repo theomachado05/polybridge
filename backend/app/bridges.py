@@ -463,8 +463,14 @@ async def _run_algo_source(bridge: Bridge, algo, source) -> None:
 async def _run(bridge: Bridge, app, hc, source, fallback: Path | None) -> None:
     if bridge.algo:
         # Position fields only: the direction already reached the ticks (orient_to_adverse); never passed to hedgecore.
-        engine = hc.Algo(bridge.algo["family"], dict(bridge.algo["params"]),
-                         {"shares_held": float(bridge.proposal.shares_held)})
+        try:
+            engine = hc.Algo(bridge.algo["family"], dict(bridge.algo["params"]),
+                             {"shares_held": float(bridge.proposal.shares_held)})
+        except Exception as e:  # a catalog/engine mismatch must end the stream cleanly, never hang it
+            await bridge.emit("error", {"message": f"hedgecore.Algo refused {bridge.algo['family']}: {e}",
+                                        "source": "engine"})
+            await bridge.emit("status", {"status": "stopped", "reason": "engine_error"}, status="stopped")
+            return
         loop = lambda src: _run_algo_source(bridge, engine, src)  # noqa: E731
     else:
         spec = hc.HedgeSpec(ticker=bridge.proposal.ticker, shares_held=bridge.proposal.shares_held,
