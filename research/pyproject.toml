@@ -17,4 +17,4 @@ include = ["polybridge_research*"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
-testpaths = ["tests", "leadlag/tests"]
+testpaths = ["tests", "leadlag/tests", "leadlag_closed/tests", "arb/tests"]
