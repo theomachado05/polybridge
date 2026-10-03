@@ -44,6 +44,9 @@ def score_row(*, pm: dict, strike: float, chain: dict[float, str], get_quote: Ca
     bid, ask = pm["bid"], pm["ask"]
     size = _min_size(pm)
     e = implied.edges(nar, strike, bid, ask, fee, size)
+    b1, a1 = max(0.01, mid - 0.01), min(0.99, mid + 0.01)
+    # sensitivity for rows whose PM spread is assumed: what if the PM book were one tick wide on each side
+    edge_1tick = implied.edges(nar, strike, b1, a1, fee, size)["edge"] if pm.get("spread_assumed") else None
     edge_wide = implied.edge_for_trade(wid, e["trade"], bid, ask, fee, size) if wid is not None else None
     q_ts = [q.ts for q in (nar.q1, nar.q2) if not math.isnan(q.ts)]
     opt_age = snap_ts - min(q_ts) if q_ts else None
@@ -62,7 +65,7 @@ def score_row(*, pm: dict, strike: float, chain: dict[float, str], get_quote: Ca
                p_mid=nar.p_mid, p_lo=nar.p_lo, p_hi=nar.p_hi, raw_mid=nar.raw_mid, noarb_violation=nar.noarb_violation,
                wide_k1=getattr(wid, "k1", None), wide_k2=getattr(wid, "k2", None), p_mid_wide=getattr(wid, "p_mid", None),
                width_sens=width_sens, coarse=bool(width_sens is not None and width_sens > implied.COARSE_WIDTH_SENS),
-               mid_gap=mid - nar.p_mid, gap_vs_bounds=gap_vs_bounds, trade=e["trade"], edge=e["edge"],
+               mid_gap=mid - nar.p_mid, gap_vs_bounds=gap_vs_bounds, trade=e["trade"], edge=e["edge"], edge_1tick=edge_1tick,
                edge_A=e["edge_A"], edge_B=e["edge_B"], edge_wide=edge_wide, strip_loss=e["strip_loss"],
                opt_leg_min_size=nar.min_leg_size, opt_quote_age_s=opt_age, options_open=options_open,
                pm_touch_size=touch, hedge_shares_per_contract=100 * nar.width)
