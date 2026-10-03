@@ -7,6 +7,10 @@ Two engines:
   ``Algo.on_fill``, a reject / expiry / cancel / broker error calls ``Algo.on_reject``, and any resting order of the
   bridge is cancelled before a new one is sent. The hedge reported is what the broker filled.
 - ``legacy`` (no fit): the original ``hedgecore.Engine`` default spec on the adverse probability, unchanged.
+- opportunity (an approved opportunity proposal with an Opportunity-division options family): the same Algo loop
+  on raw (never oriented) ticks whose option fields come from ``OptionsEnricher``; each Option intent becomes one
+  multi-leg option order (``app.options.fills`` structure legs priced at the Massive quotes, filled all-or-none by
+  the SimBroker; Webull paper routes options to the simulator). The proposal's max_contracts / max_notional cap it.
 
 Direction is applied in ONE place: ``app.pipeline.ticks.orient_to_adverse`` turns every tick into "YES = the outcome
 that hurts the holder" before either engine sees it; hedgecore is always called with its default direction."""
@@ -30,10 +34,11 @@ from pydantic import BaseModel, Field, ValidationError
 
 from .broker import Broker, OrderRequest, SimBroker, get_broker
 from .models import AlgoChoice, MarketRef, Proposal
-from .pipeline.engine_adapter import AlgoChoiceError, cap_coverage, normalize_manifest, resolve_algo
+from .pipeline.engine_adapter import (AlgoChoiceError, cap_contracts, cap_coverage, is_option_family,
+                                      normalize_manifest, resolve_algo)
 from .pipeline.ticks import orient_to_adverse, recorded_bars
 from .store import NotFound, ProposalStore
-from .ticks import TICK_FIELDS, LiveSource, ReplaySource, SourceError, Tick, as_tick
+from .ticks import TICK_FIELDS, LiveSource, OptionsEnricher, ReplaySource, SourceError, Tick, as_tick
 
 router = APIRouter()
 HEARTBEAT_S = 15.0
@@ -107,6 +112,14 @@ class Bridge:
         self.cap_holds = 0  # sell intents the approved coverage cap clipped to zero
         self.equity_source: str | None = None  # where the last live under_px came from (None: no quote)
         self.equity_price = "live_quote"  # "live_quote" | "recorded" | "none": what under_px the algo can see
+        # Opportunity (options) bridges
+        self.division = proposal.family  # "hedge" | "opportunity"
+        self.options: OptionsEnricher | None = None
+        self.opt_pos = 0.0           # signed structures the broker filled (+ long, - short)
+        self.opt_open: dict | None = None  # the open structure: {kind, expiry, k_lo, k_hi, legs: [{sign, ticker}]}
+        self.opt_risk_per_unit = 0.0  # USD at risk per open structure (premium or max loss), set at entry
+        self.opt_last: dict | None = None  # latest PM-vs-options view for the UI
+        self.option_data = "none"    # "live_chain" | "recorded" | "none"
 
     async def emit(self, kind: str, data: dict, status: str | None = None) -> None:
         async with self.cond:
@@ -146,8 +159,10 @@ class Bridge:
                 "algo": dict(self.algo) if self.algo else None,
                 "resting_order": dict(self.resting) if self.resting else None, "cancels": self.cancels,
                 "hedge_basis": "broker_fill" if self.algo else "engine_intent", "broker_hedge": self.broker_hedge,
-                "coverage_cap": self.proposal.target_coverage if self.algo else None, "cap_holds": self.cap_holds,
-                "equity_price": self.equity_price if self.algo else None, "equity_source": self.equity_source,
+                "coverage_cap": self.proposal.target_coverage if self.algo and self.division == "hedge" else None,
+                "cap_holds": self.cap_holds,
+                "equity_price": self.equity_price if self.algo and self.division == "hedge" else None,
+                "equity_source": self.equity_source,
                 "broker_coverage": self.broker_hedge / self.proposal.shares_held if self.proposal.shares_held else 0.0,
                 "broker_filled": self.broker_filled,
                 "broker_rejects": self.broker_rejects, "broker_errors": self.broker_errors,
@@ -156,7 +171,17 @@ class Bridge:
                 "coverage": self.hedge / self.proposal.shares_held if self.proposal.shares_held else 0.0,
                 "basis": self.proposal.basis, "label": self.proposal.label,
                 "market": self.market.model_dump(),
-                "latency_ns": {"p50": q(0.5), "p99": q(0.99)}}
+                "latency_ns": {"p50": q(0.5), "p99": q(0.99)},
+                "division": self.division,
+                **(self._opp_summary() if self.division == "opportunity" else {})}
+
+    def _opp_summary(self) -> dict:
+        p = self.proposal
+        return {"option_position": self.opt_pos, "option_structure": dict(self.opt_open) if self.opt_open else None,
+                "risk_used": abs(self.opt_pos) * self.opt_risk_per_unit, "max_contracts": p.max_contracts,
+                "max_notional": p.max_notional, "option_data": self.option_data,
+                "pm_vs_options": dict(self.opt_last) if self.opt_last else None,
+                "options_detail": _options_brief(self.options), "fills_label": OPTION_FILLS_LABEL}
 
 
 def _replay_speed(app) -> float:
@@ -187,11 +212,12 @@ def _replay_path(request: Request, *markets: MarketRef | None) -> Path | None:
 
 def _resolve(prop: Proposal, body: BridgeIn) -> tuple[MarketRef, str]:
     """Market-event proposals carry their own market and direction; filing proposals take them from the body."""
-    if prop.market is not None and prop.direction is not None:
+    if prop.market is not None and (prop.direction is not None or prop.family == "opportunity"):
         token = prop.market.token_id
         if token is None and body.market is not None and body.market.id == prop.market.id:
             token = body.market.token_id
-        return prop.market.model_copy(update={"token_id": token}), prop.direction
+        # opportunity bridges never orient ticks; their direction is only a label
+        return prop.market.model_copy(update={"token_id": token}), prop.direction or "down_on_yes"
     if body.market is None:
         raise HTTPException(422, "market is required for a filing-tags proposal.")
     return body.market, body.direction
@@ -497,10 +523,17 @@ async def _run_algo_source(bridge: Bridge, algo, source) -> None:
         t = as_tick(raw)
         bridge.ticks += 1
         ev = _tick_event(t)
-        ev["under_source"] = bridge.equity_source if bridge.effective_source == "live" else (
-            "recorded" if ev["under_px"] is not None else None)
+        opp = bridge.division == "opportunity"
+        if opp:  # option families name the real YES contract: never oriented; the UI sees the PM-vs-options gap
+            bridge.opt_last = pm_vs_options(t.fields)
+            ev["options"] = bridge.opt_last
+            if bridge.opt_last["opt_implied_prob"] is not None and bridge.option_data == "none":
+                bridge.option_data = "live_chain" if bridge.effective_source == "live" else "recorded"
+        else:
+            ev["under_source"] = bridge.equity_source if bridge.effective_source == "live" else (
+                "recorded" if ev["under_px"] is not None else None)
         await bridge.emit("tick", ev)
-        oriented = orient_to_adverse(t.fields, bridge.direction)  # the one orientation step
+        oriented = t.fields if opp else orient_to_adverse(t.fields, bridge.direction)  # the one orientation step
         i = algo.on_tick(engine_tick(oriented, t.ts_ns, t.venue), time.time_ns())
         reason = str(i.get("reason"))
         bridge.reasons[reason] += 1
@@ -519,10 +552,17 @@ async def _run_algo_source(bridge: Bridge, algo, source) -> None:
         if not is_order:
             continue
         bridge.orders += 1
-        fill = await _send_intent(bridge, algo, i, t)
+        fill = await (_send_option_intent if opp else _send_intent)(bridge, algo, i, t)
         bridge.fills.append(fill)
         del bridge.fills[:-MAX_FILLS]
         await bridge.emit("fill", fill)
+        if opp:
+            await bridge.emit("position", {
+                "option_position": bridge.opt_pos, "option_structure": bridge.opt_open,
+                "risk_used": abs(bridge.opt_pos) * bridge.opt_risk_per_unit,
+                "max_contracts": bridge.proposal.max_contracts, "max_notional": bridge.proposal.max_notional,
+                "broker": fill.get("broker"), "simulated": True})
+            continue
         await bridge.emit("position", {"hedge": bridge.hedge, "coverage": bridge.hedge / shares if shares else 0.0,
                                        "hedge_basis": "broker_fill", "broker_hedge": bridge.broker_hedge,
                                        "broker_coverage": bridge.broker_hedge / shares if shares else 0.0,
@@ -530,12 +570,216 @@ async def _run_algo_source(bridge: Bridge, algo, source) -> None:
                                        "broker": bridge.broker_name or getattr(bridge.broker, "name", None)})
 
 
+# ---------------------------------------------------------------- opportunity engine (options)
+
+OPTION_FILLS_LABEL = ("simulated option fills: Massive option quote mid +/- half the quoted spread, per-contract fee "
+                      "(SimBroker; Webull paper does not take options here)")
+OPTION_MULT = 100.0
+
+
+def _options_brief(enricher: OptionsEnricher | None) -> dict | None:
+    if enricher is None:
+        return None
+    d = enricher.detail or {}
+    keep = ("supported", "available", "reason", "underlying_used", "strike_used", "expiry", "k_lo", "k_hi",
+            "method", "direction", "expiry_gap_days", "notes", "eightk_coverage")
+    return {k: (None if isinstance(d[k], float) and not math.isfinite(d[k]) else d[k]) for k in keep if k in d}
+
+
+def pm_vs_options(fields: dict) -> dict:
+    """The PM YES mid vs the options-implied P(YES) on one tick (raw orientation). The option number is a
+    risk-neutral estimate from listed prices, not a measured probability."""
+    b, a = _fin(fields.get("yes_bid")), _fin(fields.get("yes_ask"))
+    pm = (b + a) / 2.0 if b is not None and a is not None else None
+    op = _fin(fields.get("opt_implied_prob"))
+    return {"pm_mid": pm, "opt_implied_prob": op, "gap": (pm - op) if pm is not None and op is not None else None,
+            "opt_mid": _fin(fields.get("opt_mid")), "opt_iv": _fin(fields.get("opt_iv")),
+            "opt_delta": _fin(fields.get("opt_delta")), "eightk_score": _fin(fields.get("eightk_score")),
+            "label": "PM price measured; options-implied probability is a risk-neutral estimate"}
+
+
+def option_structure(family: str, ctx: dict, side: int) -> dict | None:
+    """The unit an Option intent trades, as signed legs (+1 long / -1 short per unit bought), from the family and the
+    matched question: binary_vs_spread_arb -> the YES-equivalent spread (call spread for "above", put spread for
+    "below"); vol_vs_pm_move -> the straddle at the listed strike nearest K; eightk_opportunity -> selling opens a
+    cash-secured put at k_lo (unit = one put), buying opens a put spread k_hi/k_lo."""
+    k_lo, k_hi, K = ctx["k_lo"], ctx["k_hi"], _fin(ctx.get("strike"))
+    if family == "binary_vs_spread_arb":
+        if ctx["above"]:
+            return {"kind": "call_spread", "legs": [(1, k_lo, "call"), (-1, k_hi, "call")], "width": k_hi - k_lo}
+        return {"kind": "put_spread", "legs": [(1, k_hi, "put"), (-1, k_lo, "put")], "width": k_hi - k_lo}
+    if family == "vol_vs_pm_move":
+        k = k_lo if K is None or abs(K - k_lo) <= abs(k_hi - K) else k_hi
+        return {"kind": "straddle", "legs": [(1, k, "call"), (1, k, "put")], "strike": k}
+    if family == "eightk_opportunity":
+        if side < 0:
+            return {"kind": "cash_secured_put", "legs": [(1, k_lo, "put")], "strike": k_lo}
+        return {"kind": "put_spread", "legs": [(1, k_hi, "put"), (-1, k_lo, "put")], "width": k_hi - k_lo}
+    return None
+
+
+def _quote_by_ticker(chain, ticker: str):
+    for q in getattr(chain, "quotes", None) or []:
+        if q.ticker == ticker:
+            return q
+    return None
+
+
+def unit_risk(struct: dict, side: int, net_mid: float, net_half: float) -> float | None:
+    """USD at risk per structure (x100 shares): a bought structure risks its debit (at the ask); a sold spread its
+    width minus the credit; a cash-secured put its strike minus the credit; a sold straddle has no defined max loss
+    and is counted at its strike notional (the cash-secured analogue). None when there is no price."""
+    if net_mid is None or not math.isfinite(net_mid):
+        return None
+    if side > 0:
+        per = net_mid + (net_half or 0.0)
+    else:
+        credit = max(net_mid - (net_half or 0.0), 0.0)
+        if "width" in struct:
+            per = struct["width"] - credit
+        else:
+            per = float(struct.get("strike") or 0.0) - credit
+    return max(per, 0.0) * OPTION_MULT
+
+
+async def _send_option_intent(bridge: Bridge, algo, intent: dict, t: Tick) -> dict:
+    """One Option intent -> one multi-leg option order (all legs or none), capped by the approved max_contracts /
+    max_notional. Fills go back to the algo as one structure price (per share). Never raises."""
+    fam = bridge.algo["family"]
+    side = 1 if int(intent.get("side") or 0) > 0 else -1
+    qty = float(intent.get("qty") or 0.0)
+    rec: dict = {"instrument": "option", "side": "buy" if side > 0 else "sell", "qty": qty, "family": fam,
+                 "preset": bridge.algo.get("preset_index"), "reason": intent.get("reason"), "symbol": None,
+                 "simulated": True, "fill_model": OPTION_FILLS_LABEL}
+    broker = bridge.order_broker()
+    rec["broker"] = getattr(broker, "name", None)
+
+    def refuse(status: str, why: str, *, error: bool = False) -> dict:
+        algo.on_reject("option")
+        if error:
+            bridge.broker_errors += 1
+        rec.update(status=status, reject_reason=why, filled_qty=0.0)
+        return rec
+
+    if str(intent.get("instrument")) != "option" or not (qty > 0 and math.isfinite(qty)):
+        return refuse("rejected", f"opportunity bridges route option intents only (got {intent.get('instrument')})")
+    if broker is None:
+        return refuse("error", "no broker", error=True)
+    combo = getattr(broker, "place_combo", None)
+    if combo is None:
+        return refuse("rejected", f"broker {broker.name} cannot take multi-leg option orders")
+    ctx = bridge.options.context() if bridge.options is not None else None
+    closing = bridge.opt_pos != 0 and side * bridge.opt_pos < 0
+    if closing and bridge.opt_open is not None:  # exits trade the open structure's own legs
+        struct = {k: v for k, v in bridge.opt_open.items() if k != "legs"}
+        legs = [(lg["sign"], lg["ticker"]) for lg in bridge.opt_open["legs"]]
+        qty = min(qty, abs(bridge.opt_pos))
+    else:
+        if ctx is None:
+            return refuse("rejected", "no option chain for this market (unmapped question, no listed contracts, "
+                                      "or Massive unavailable)")
+        struct = option_structure(fam, ctx, side)
+        if struct is None:
+            return refuse("rejected", f"no option structure for family {fam}")
+        sl = ctx["chain"].slice(ctx["expiry"])
+        legs = []
+        for sign, k, kind in struct["legs"]:
+            q = (sl.get(float(k)) or {}).get(kind)
+            if q is None:
+                return refuse("rejected", f"{kind} {k:g} {ctx['expiry']} is not listed in the snapshot")
+            legs.append((sign, q.ticker))
+        struct = {"kind": struct["kind"], "expiry": ctx["expiry"], "underlying": ctx.get("underlying"),
+                  **{k: v for k, v in struct.items() if k in ("width", "strike")},
+                  "strikes": sorted({float(k) for _, k, _ in struct["legs"]})}
+    chain = ctx["chain"] if ctx else None
+    priced, net_mid, net_half = [], 0.0, 0.0
+    for sign, tk in legs:
+        q = _quote_by_ticker(chain, tk) if chain is not None else None
+        mid = _fin(getattr(q, "mid", None))
+        b, a = _fin(getattr(q, "bid", None)), _fin(getattr(q, "ask", None))
+        half = (a - b) / 2.0 if b is not None and a is not None and a >= b else None
+        priced.append((sign, tk, mid, half, getattr(q, "mark_source", None)))
+        if mid is None or net_mid is None:
+            net_mid = None
+        else:
+            net_mid += sign * mid
+            net_half += half if half is not None else mid * 0.02
+    rec["symbol"] = struct.get("underlying") or bridge.proposal.ticker
+    rec["structure"] = struct["kind"]
+    if not closing:  # risk caps apply to anything that opens or adds exposure
+        p = bridge.proposal
+        room_c = max(0.0, float(p.max_contracts or 0) - abs(bridge.opt_pos)) if p.max_contracts else qty
+        risk = unit_risk(struct, side, net_mid, net_half)
+        if risk is None:
+            return refuse("rejected", "no option quote to size the max_notional cap")
+        used = abs(bridge.opt_pos) * bridge.opt_risk_per_unit
+        room_n = math.floor((float(p.max_notional) - used) / risk + 1e-9) if p.max_notional and risk > 0 else qty
+        allowed = float(math.floor(min(qty, room_c, room_n)))
+        if allowed < qty:
+            rec["capped_from"] = qty
+            rec["cap"] = "max_contracts" if room_c <= room_n else "max_notional"
+            qty = allowed
+            rec["qty"] = qty
+            if qty <= 0:
+                bridge.cap_holds += 1
+                return refuse("held", f"risk cap: the approved {rec['cap']} "
+                                      f"({p.max_contracts if rec['cap'] == 'max_contracts' else p.max_notional:g}) "
+                                      "is used up")
+        rec["unit_risk"] = risk
+    note = None
+    if bridge.effective_source == "replay":
+        note = "replay: option legs priced at the current chain snapshot, not the replayed time"
+        rec["price_note"] = note
+        rec["scope"] = "account" if bridge.replay_to_account else "replay_sandbox"
+    if not isinstance(bridge.broker, SimBroker):
+        rec["routed"] = "simulator (Webull paper takes equities only)"
+    cid = f"{bridge.id}-{bridge.orders}"
+    try:
+        reqs = [OrderRequest(symbol=tk, asset="option", side="buy" if sign * side > 0 else "sell", qty=qty,
+                             type="market", ref_px=mid if mid is not None and mid > 0 else None,
+                             ref_half_spread=half if mid is not None and mid > 0 else None,
+                             client_order_id=f"{cid}-L{i}", tag=bridge.id, combo_id=cid, note=note)
+                for i, (sign, tk, mid, half, _src) in enumerate(priced)]
+        orders = await asyncio.wait_for(combo(reqs), BROKER_TIMEOUT_S)
+    except Exception as e:
+        return refuse("error", type(e).__name__, error=True)
+    rec["legs"] = [{"ticker": o.symbol, "side": o.side, "qty": o.qty, "status": o.status, "fill_px": o.fill_px,
+                    "fee": o.fee, "order_id": o.id, "price_source": o.price_source, "quote_mid": mid,
+                    "quote_half_spread": half, "mark_source": src}
+                   for o, (_s, _t, mid, half, src) in zip(orders, priced)]
+    rec["combo_id"] = cid
+    rec["broker"] = orders[0].broker if orders else rec["broker"]
+    rec["note"] = orders[0].note if orders else None
+    rec["quote"] = {"net_mid": net_mid, "half_spread": net_half if net_mid is not None else None}
+    if orders and all(o.status == "filled" for o in orders):
+        px = sum(sign * float(o.fill_px) for (sign, *_r), o in zip(priced, orders))
+        fee = sum(o.fee for o in orders)
+        algo.on_fill("option", side * qty, px)
+        bridge.broker_filled += 1
+        was_flat = bridge.opt_pos == 0
+        bridge.opt_pos += side * qty
+        if was_flat:
+            bridge.opt_open = {**struct, "side": "long" if side > 0 else "short",
+                               "legs": [{"sign": sign, "ticker": tk} for sign, tk, *_r in priced]}
+            bridge.opt_risk_per_unit = float(rec.get("unit_risk") or 0.0)
+        if abs(bridge.opt_pos) < 1e-9:
+            bridge.opt_pos, bridge.opt_open, bridge.opt_risk_per_unit = 0.0, None, 0.0
+        rec.update(status="filled", filled_qty=qty, fill_px=px, fee=fee, order_id=cid)
+    else:
+        bridge.broker_rejects += 1
+        why = next((o.reject_reason for o in orders if o.reject_reason), "combo not filled")
+        algo.on_reject("option")
+        rec.update(status="rejected", reject_reason=why, filled_qty=0.0)
+    return rec
+
+
 async def _run(bridge: Bridge, app, hc, source, fallback: Path | None) -> None:
     if bridge.algo:
         # Position fields only: the direction already reached the ticks (orient_to_adverse); never passed to hedgecore.
+        position = ({"option": 0.0} if bridge.division == "opportunity"
+                    else {"shares_held": float(bridge.proposal.shares_held)})
         try:
-            engine = hc.Algo(bridge.algo["family"], dict(bridge.algo["params"]),
-                             {"shares_held": float(bridge.proposal.shares_held)})
+            engine = hc.Algo(bridge.algo["family"], dict(bridge.algo["params"]), position)
         except Exception as e:  # a catalog/engine mismatch must end the stream cleanly, never hang it
             await bridge.emit("error", {"message": f"hedgecore.Algo refused {bridge.algo['family']}: {e}",
                                         "source": "engine"})
@@ -552,6 +796,12 @@ async def _run(bridge: Bridge, app, hc, source, fallback: Path | None) -> None:
     except Exception:  # an unavailable account must not stop the hedge loop
         bridge.broker = None
         await bridge.emit("error", {"message": "broker unavailable", "source": "broker"})
+    if bridge.options is not None and bridge.effective_source == "replay":
+        # Replays keep the option fields they recorded; the current snapshot is only used to price the legs.
+        await bridge.options({"ts_ns": time.time_ns()}, time.time_ns())
+    if bridge.options is not None:
+        await bridge.emit("status", {"status": "running", "options": _options_brief(bridge.options)
+                                     if bridge.options.detail else {"supported": None, "reason": "resolving"}})
     try:
         try:
             await loop(source)
@@ -654,10 +904,18 @@ def _algo_for(prop: Proposal, body: BridgeIn, hc) -> tuple[dict | None, AlgoChoi
     choice = choice or asked
     if choice is None:
         return None, None
+    opp = prop.family == "opportunity"
     try:
-        r = resolve_algo(_catalog_manifest(hc), choice.family, choice.preset_index, choice.params)
+        r = resolve_algo(_catalog_manifest(hc), choice.family, choice.preset_index, choice.params,
+                         division="opportunity" if opp else "hedge")
     except AlgoChoiceError as e:
         raise HTTPException(422, f"algo: {e}.")
+    if opp:  # the approved max_contracts caps the per-entry size; the bridge also caps open contracts / notional
+        run, lowered = cap_contracts(r["params"], prop.max_contracts)
+        return ({"family": r["family"], "preset_index": r["preset_index"], "params": run, "source": choice.source,
+                 "coverage_cap": None, "capped": lowered, "division": "opportunity",
+                 "max_contracts": prop.max_contracts, "max_notional": prop.max_notional},
+                AlgoChoice(family=choice.family, preset_index=choice.preset_index, params=choice.params))
     run, lowered = cap_coverage(r["params"], prop.target_coverage)
     return ({"family": r["family"], "preset_index": r["preset_index"], "params": run, "source": choice.source,
              "coverage_cap": prop.target_coverage, "capped": lowered},
@@ -685,6 +943,35 @@ def _twin(twin: MarketRef | None, primary: str) -> tuple[str, str] | None:
     return "kalshi", twin.id
 
 
+def _has_options_algo(prop: Proposal, request: Request) -> bool:
+    """An opportunity proposal reaches hedgecore only when it was approved with an Opportunity-division options
+    family (checked against the library the proposal was validated with)."""
+    if prop.algo is None:
+        return False
+    from .pipeline.router import get_adapter
+    try:
+        fams = get_adapter(request).library()[0].get("families") or []
+    except Exception:
+        return False
+    fam = next((f for f in fams if f.get("id") == prop.algo.family), None)
+    return fam is not None and is_option_family(fam)
+
+
+def _options_enricher(request: Request, market: MarketRef) -> OptionsEnricher:
+    """The option-field source for an opportunity bridge. Tests set app.state.options_enricher_factory."""
+    factory = getattr(request.app.state, "options_enricher_factory", None)
+    if factory is not None:
+        return factory(market)
+
+    async def resolve():
+        import httpx
+        from .options.router import resolve_market
+        async with httpx.AsyncClient() as http:
+            m = await resolve_market(http, market.source, market.id)
+        return m.get("question"), m.get("end_date")
+    return OptionsEnricher(resolve=resolve)
+
+
 def _registry(request: Request) -> dict[str, Bridge]:
     if not hasattr(request.app.state, "bridges"):
         request.app.state.bridges = {}
@@ -699,8 +986,10 @@ async def start_bridge(body: BridgeIn, request: Request, response: Response) -> 
         raise HTTPException(404, f"No proposal {body.proposal_id}.")
     if prop.status != "approved":
         raise HTTPException(409, f"Proposal {prop.id} is {prop.status}; only approved proposals can start a bridge.")
-    if prop.family != "hedge":
-        raise HTTPException(409, "Opportunity proposals are executed as a single simulated options order, not by hedgecore.")
+    if prop.family != "hedge" and not _has_options_algo(prop, request):
+        raise HTTPException(409, "This opportunity proposal was not approved with an options algo (fit an "
+                                 "Opportunity-division options family in Build and propose it); without one it is "
+                                 "executed as a single simulated options order, not by hedgecore.")
     reg = _registry(request)
     existing = reg.get(prop.id)
     if existing is not None:  # idempotent: one bridge per approved proposal id
@@ -729,13 +1018,19 @@ async def start_bridge(body: BridgeIn, request: Request, response: Response) -> 
         bars = _bars(prop.ticker)
         source: Any = ReplaySource(path, speed=_replay_speed(request.app), bars=bars)
         bridge.equity_price = _replay_equity_price(path, bars)
+        if bridge.division == "opportunity":
+            bridge.options = _options_enricher(request, market)
     else:
         primary, mid = _live_primary(market)
         twin = _twin(body.twin, primary)
         factory = getattr(request.app.state, "live_source_factory", None) or LiveSource
-        # Only the algo reads under_px; a legacy bridge never polls the equity quote (Massive rate limits).
-        source = factory(mid, primary=primary, twin=twin,
-                         equity=_equity_quote(bridge, request.app) if algo else None)
+        if bridge.division == "opportunity":  # option fields from the chain; no equity quote needed
+            bridge.options = _options_enricher(request, market)
+            source = factory(mid, primary=primary, twin=twin, equity=None, options=bridge.options)
+        else:
+            # Only the algo reads under_px; a legacy bridge never polls the equity quote (Massive rate limits).
+            source = factory(mid, primary=primary, twin=twin,
+                             equity=_equity_quote(bridge, request.app) if algo else None)
 
     # No await between the registry check above and this insert: exactly one bridge per proposal.
     reg[prop.id] = bridge
