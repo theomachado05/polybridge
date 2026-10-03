@@ -1,4 +1,4 @@
-.PHONY: setup-research test-research setup-backend test-backend build-engine test-engine test-engine-py setup-web test-web test dev dev-live e2e e2e-api
+.PHONY: setup-research test-research setup-backend test-backend build-engine test-engine test-engine-py setup-web test-web test dev dev-live e2e e2e-api e2e-opportunity
 
 setup-research:
 	cd research && uv venv .venv && uv pip install --python .venv -e ".[dev]"
@@ -64,3 +64,8 @@ e2e:
 
 e2e-api:
 	python3 scripts/e2e_demo.py --no-screens
+
+# The Opportunity division over HTTP: the NVDA > $230 recording's options fit -> approved binary_vs_spread_arb proposal ->
+# replay bridge with simulated multi-leg option orders (API only, about 60 s).
+e2e-opportunity:
+	python3 scripts/e2e_demo.py --opportunity

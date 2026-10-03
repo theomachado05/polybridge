@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { getEquity, getLibrary, getOptionsImplied, mapEvent, searchMarkets, type FitOut, type Holding, type MapOut } from "@/lib/api";
 import { DEFAULT_OPP_CAPS, opportunityFit } from "@/lib/realBridge";
-import { EQ, INSTRUMENTS, QUESTIONS, REAL_INSTRUMENTS, demoFirst, demoImpacts, isDemoMarket, isOpenMarket, questionFromMarket, topImpact, type EquityPick, type Impact, type Question } from "@/lib/demo";
+import { EQ, INSTRUMENTS, QUESTIONS, REAL_INSTRUMENTS, demoFirst, demoImpacts, isDemoMarket, isListedMarket, isOpenMarket, isRecordedOnly, questionFromMarket, topImpact, type EquityPick, type Impact, type Question } from "@/lib/demo";
 import { fmtPct, prettyId } from "@/lib/fmt";
 import { fitScoreView, IN_SAMPLE_NOTE } from "@/lib/pipeline";
 import { useAsync } from "@/lib/hooks";
@@ -105,7 +105,7 @@ export default function Build() {
   const ql = query.trim().toLowerCase();
   // Held-market rows, the demo market (the one `make dev` replays) first so it is one click away.
   const realBase = useMemo(() => demoFirst(portfolioQuestions(holdings)), [holdings]);
-  const searchRows = useMemo(() => (search.data?.markets ?? []).filter((m) => isOpenMarket(m)).map((m) => {
+  const searchRows = useMemo(() => (search.data?.markets ?? []).filter((m) => isListedMarket(m)).map((m) => {
     const known = realBase.find((x) => x.id === `${m.source}:${m.id}`);
     return known ?? questionFromMarket(m);
   }), [search.data, realBase]);
@@ -215,7 +215,9 @@ export default function Build() {
                       <div className="pb-pretty" style={{ fontSize: 14.5, fontWeight: 500, letterSpacing: "-.01em", lineHeight: 1.35 }}>{x.q}</div>
                       <div style={{ fontSize: 12, color: "#5A627A", marginTop: 3 }}>
                         {x.venues.join(" + ")}{x.touches.length ? " · moves " + x.touches.slice(0, 3).join(", ") : ""}{held ? " · you hold " + held : ""}{" "}
-                        {x.real ? <Tag tone="live" title="From GET /markets/search or your portfolio's markets">live market</Tag> : <DemoTag what="sample" />}
+                        {x.real ? (isRecordedOnly(x.real)
+                          ? <Tag tone="replay" title={`This market has resolved; it is listed because the backend has its recorded history (${x.real.recorded}), which the bridge replays`}>resolved · recorded replay</Tag>
+                          : <Tag tone="live" title="From GET /markets/search or your portfolio's markets">live market</Tag>) : <DemoTag what="sample" />}
                         {x.real && isDemoMarket(x) && <>{" "}<Tag tone="replay" title="The demo market: make dev replays this market's own recorded Polymarket history (time-compressed) on the bridge">demo market</Tag></>}
                       </div>
                     </div>
@@ -292,14 +294,14 @@ export default function Build() {
                           <span style={{ fontSize: 14.5, fontWeight: 500 }}>Opportunity</span>
                           <Tag tone="ai" title={`Replay score from POST /pipeline/fit (division opportunity): net P&L per unit risk on this market's history, scored only when the preset traded. ${OPP_REPLAY_NOTE} A replay estimate, not a forecast.`}>AI fit · replay score {opp.score.toFixed(3)} (estimate)</Tag>
                         </div>
-                        <div className="pb-pretty" style={{ fontSize: 12, color: "#5A627A", marginTop: 3 }}>{prettyId(opp.family)} (preset #{opp.preset_index}): {oppIdea} Replay option prices are estimates from bar closes; option fills are simulated.</div>
+                        <div className="pb-pretty" style={{ fontSize: 12, color: "#5A627A", marginTop: 3 }}>{prettyId(opp.family)} (preset #{opp.preset_index}): {oppIdea} Replay option prices are estimates from bar closes; option fills are simulated.{opp.score < 0 ? " It lost money on this replay." : ""}</div>
                       </div>
                       <div style={{ fontSize: 11, color: "#5A627A", whiteSpace: "nowrap" }}>options</div>
                     </button>
                   </div>
                 )}
                 {step === 3 && !inst && !busy && opp && chosenMode === "opportunity" && q && (
-                  <OpportunityCard q={q} ticker={e.t} fit={oppData!} idea={oppIdea} onBack={() => setMode(null)}
+                  <OpportunityCard q={q} ticker={e.t} fit={oppData!} opp={opp} idea={oppIdea} onBack={() => setMode(null)}
                     onStart={async () => { const id = await s.openOpportunity(q, e); router.push(`/bridge/${id.replace(/^live:/, "")}`); }} />
                 )}
                 {step === 3 && !inst && !busy && showHedge && (
@@ -367,11 +369,12 @@ const pct = (x: number | null | undefined) => (x == null || !Number.isFinite(x) 
 
 /** The Opportunity step: the options fit, the PM-vs-options gap (GET /options/implied) and the risk caps the
  *  proposal is approved with. Starting it is an explicit click: propose → approve → options bridge. */
-function OpportunityCard({ q, ticker, fit, idea, onStart, onBack }: { q: NonNullable<ReturnType<typeof useStore>["question"]>; ticker: string; fit: FitOut; idea: string; onStart: () => Promise<void>; onBack: () => void }) {
+function OpportunityCard({ q, ticker, fit, opp, idea, onStart, onBack }: { q: NonNullable<ReturnType<typeof useStore>["question"]>; ticker: string; fit: FitOut; opp: NonNullable<ReturnType<typeof opportunityFit>>; idea: string; onStart: () => Promise<void>; onBack: () => void }) {
   const m = q.real!;
   const implied = useAsync(`oi:${m.source}:${m.id}`, () => getOptionsImplied({ market_source: m.source, market_id: m.id }));
   const [state, setState] = useState<{ busy: boolean; error: string | null }>({ busy: false, error: null });
   const d = implied.data;
+  const recordedOnly = isRecordedOnly(m);
   const box = { marginTop: 14, padding: "14px 16px", borderRadius: 18, background: "rgba(255,255,255,.7)", border: "1px solid rgba(255,255,255,.9)" };
   const start = () => {
     setState({ busy: true, error: null });
@@ -380,21 +383,23 @@ function OpportunityCard({ q, ticker, fit, idea, onStart, onBack }: { q: NonNull
   return (
     <div style={box}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-        <span className="pb-label">OPPORTUNITY · {prettyId(fit.family ?? "")} · PRESET #{fit.preset_index}</span>
+        <span className="pb-label">OPPORTUNITY · {prettyId(opp.family)} · PRESET #{opp.preset_index}</span>
         <span style={{ display: "inline-flex", gap: 6 }}>
-          <Tag tone="ai" title={`Net P&L per unit risk on this market's history. ${OPP_REPLAY_NOTE}`}>replay score {fit.score?.toFixed(3)} (estimate)</Tag>
-          <Tag tone="sim" title="Option orders are filled by the simulator at the Massive quote mid ± half the quoted spread; Webull paper does not take options here.">simulated fills</Tag>
+          <Tag tone="ai" title={`Net P&L per unit risk on this market's history (in-sample). ${OPP_REPLAY_NOTE}`}>replay score {opp.score.toFixed(3)} (estimate)</Tag>
+          <Tag tone="sim" title="Option orders are filled by the simulator at the Massive quote mid ± half the quoted spread (on a replay of expired contracts: the recorded bar close ± 2%); Webull paper does not take options here.">simulated fills</Tag>
         </span>
       </div>
+      {opp.instead_of && <div className="pb-pretty" style={{ fontSize: 12, color: "#5A627A", marginTop: 6, lineHeight: 1.45 }}>The division’s top pick, {prettyId(opp.instead_of)} (score {fit.score?.toFixed(3) ?? "n/a"}), trades prediction-market legs and does not run on a bridge; this is the best-scored options family.</div>}
       <div className="pb-pretty" style={{ fontSize: 13, color: "#3C4458", lineHeight: 1.5, marginTop: 8 }}>{idea}</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: 12, marginTop: 12 }}>
-        <div><div className="pb-mono" style={{ fontSize: 10.5, color: "#5A627A" }}>PM YES (MEASURED)</div><div style={{ fontSize: 18, fontWeight: 600 }}>{pct(d?.pm_yes_price ?? m.yes_price)}</div></div>
+        <div><div className="pb-mono" style={{ fontSize: 10.5, color: "#5A627A" }}>{recordedOnly ? "PM YES (FINAL)" : "PM YES (MEASURED)"}</div><div style={{ fontSize: 18, fontWeight: 600 }}>{pct(d?.pm_yes_price ?? m.yes_price)}</div></div>
         <div><div className="pb-mono" style={{ fontSize: 10.5, color: "#5A627A" }}>OPTIONS-IMPLIED (ESTIMATE)</div><div style={{ fontSize: 18, fontWeight: 600 }}>{implied.loading ? "…" : d?.available ? pct(d.estimate?.prob) : "n/a"}</div></div>
         <div><div className="pb-mono" style={{ fontSize: 10.5, color: "#5A627A" }}>GAP (PM − OPTIONS)</div><div style={{ fontSize: 18, fontWeight: 600, color: d?.pm_minus_option == null ? "#8A92A8" : d.pm_minus_option > 0 ? "#22A06B" : "#E0485A" }}>{d?.pm_minus_option == null ? "n/a" : `${(d.pm_minus_option * 100).toFixed(1)} pts`}</div></div>
       </div>
       <div className="pb-pretty" style={{ fontSize: 12, color: "#5A627A", marginTop: 8, lineHeight: 1.45 }}>
         {d?.available && d.estimate
           ? `${d.underlying_used} ${d.estimate.method?.replaceAll("_", " ")} ${d.estimate.k_lo}/${d.estimate.k_hi}, expiry ${d.estimate.expiry}. ${d.label}.`
+          : recordedOnly ? `This market has resolved, so there is no live options estimate (its contracts expired). The bridge replays its recording (${m.recorded}), which carries the market price and the options-implied estimate hour by hour, from the option legs’ bar closes.`
           : implied.error ? `Options estimate unavailable (${implied.error}).` : d && !d.available ? `No options estimate: ${d.reason ?? "unavailable"}.` : ""}
       </div>
       {fit.rationale && <div className="pb-pretty" style={{ fontSize: 13, color: "#3C4458", lineHeight: 1.5, marginTop: 6 }}>{fit.rationale}</div>}

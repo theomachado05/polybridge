@@ -29,9 +29,12 @@ export function OpportunityBridge({ id, summary, st, question, sourceTag }: {
       reason: `${l.reason.replaceAll("_", " ")}${l.signal != null ? ` (signal ${l.signal.toFixed(3)})` : ""}, decided in ${fmtNs(l.ns)}. ${t.detail}`,
     };
   });
-  const dataTag = summary?.option_data === "live_chain"
+  // The summary is read once when the screen opens; the stream says whether option data has arrived since.
+  const optionData = summary?.option_data && summary.option_data !== "none" ? summary.option_data
+    : st.lastPriced ? ((st.source ?? summary?.source) === "live" ? "live_chain" : "recorded") : "none";
+  const dataTag = optionData === "live_chain"
     ? <Tag tone="live" title="Option fields from the Massive chain snapshot (refreshed about once a minute)">live option chain</Tag>
-    : summary?.option_data === "recorded"
+    : optionData === "recorded"
       ? <Tag tone="replay" title="Option fields come from the replay recording">recorded option data</Tag>
       : <Tag tone="neutral" title={detail?.reason ?? "No options-implied value on the ticks yet"}>no option data yet</Tag>;
   const simTag = <Tag tone="sim" title={summary?.fills_label ?? "Option fills are simulated"}>simulated fills</Tag>;
@@ -52,6 +55,11 @@ export function OpportunityBridge({ id, summary, st, question, sourceTag }: {
           <Stat k="STRUCTURE MID" v={view?.opt_mid != null ? view.opt_mid.toFixed(2) : "n/a"} />
           <div><div className="pb-mono" style={{ fontSize: 10.5, color: "#5A627A" }}>GAP HISTORY</div>{st.gaps.length > 1 ? <Spark data={st.gaps.slice(-60)} color="#2B57D6" w={150} h={40} /> : <div style={{ fontSize: 12, color: "#8A92A8" }}>waiting for ticks</div>}</div>
         </div>
+        {view?.opt_implied_prob == null && st.lastPriced && (
+          <div style={{ fontSize: 12, color: "#5A627A" }}>
+            No options estimate on this tick (options are priced only in the regular session, once both legs have traded). Last estimate: {probPct(st.lastPriced.opt_implied_prob)} vs PM {probPct(st.lastPriced.pm_mid)}, gap {gapPts(st.lastPriced.gap)}.
+          </div>
+        )}
         {detail && (
           <div style={{ fontSize: 12, color: "#5A627A" }}>
             {detail.supported === false ? `Options estimate unavailable: ${detail.reason ?? "unsupported question"}.`

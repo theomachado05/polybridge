@@ -67,6 +67,9 @@ export interface Market {
   end_date: string | null;
   url: string | null;
   token_id: string | null;
+  /** The backend's recording of this market (replay file name), when it has one. A resolved market with a recording
+   *  is still listed in Build: its replay runs offline (and, with option columns, the Opportunity division). */
+  recorded?: string | null;
 }
 export interface SearchOut { markets: Market[]; stale: boolean; note?: string | null }
 export interface HistoryPoint { t: number; p: number }

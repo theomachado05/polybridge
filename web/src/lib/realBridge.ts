@@ -3,6 +3,7 @@
 import * as http from "./api.ts";
 import type { Direction, FitOut, Proposal } from "./api";
 import type { EquityPick, Question } from "./demo";
+import { isRecordedOnly } from "./demo.ts";
 import { prettyId } from "./fmt.ts";
 
 export interface Settings {
@@ -118,12 +119,21 @@ export async function startRealBridge(q: Question, eq: EquityPick, maxHedge: str
 export const OPTION_FAMILIES = ["binary_vs_spread_arb", "vol_vs_pm_move", "eightk_opportunity"] as const;
 
 /** An opportunity fit worth offering: an options family with a real (replay-scored) score and a preset. A rules pick
- *  (score null) is not offered, so the UI never presents an unscored guess as an opportunity. */
-export function opportunityFit(fit: Pick<FitOut, "family" | "preset_index" | "division" | "score"> | null | undefined): (AppliedFit & { score: number }) | null {
-  if (!fit || fit.division !== "opportunity" || !fit.family || fit.preset_index == null) return null;
-  if (!(OPTION_FAMILIES as readonly string[]).includes(fit.family)) return null;
-  if (typeof fit.score !== "number" || !Number.isFinite(fit.score)) return null;
-  return { family: fit.family, preset_index: fit.preset_index, score: fit.score };
+ *  (score null) is not offered, so the UI never presents an unscored guess as an opportunity. When the division's top
+ *  pick is not an options family (e.g. no_bid_seller, which trades prediction-market legs and never runs on a bridge),
+ *  the best-scored options family among the alternatives is offered instead, and `instead_of` names the top pick. */
+export function opportunityFit(fit: (Pick<FitOut, "family" | "preset_index" | "division" | "score"> & { alternatives?: FitOut["alternatives"] }) | null | undefined):
+  (AppliedFit & { score: number; instead_of?: string }) | null {
+  if (!fit || fit.division !== "opportunity") return null;
+  const isOption = (f: string | null | undefined) => !!f && (OPTION_FAMILIES as readonly string[]).includes(f);
+  const scored = (x: number | null | undefined): x is number => typeof x === "number" && Number.isFinite(x);
+  if (isOption(fit.family)) {
+    if (fit.preset_index == null || !scored(fit.score)) return null;
+    return { family: fit.family!, preset_index: fit.preset_index, score: fit.score };
+  }
+  const alt = (fit.alternatives ?? []).find((a) => isOption(a.family) && a.preset_index != null && scored(a.score));
+  if (!alt) return null;
+  return { family: alt.family, preset_index: alt.preset_index!, score: alt.score as number, ...(fit.family ? { instead_of: fit.family } : {}) };
 }
 
 export interface OpportunityCaps { max_contracts: number; max_notional: number }
@@ -150,7 +160,8 @@ export async function startOpportunityBridge(q: Question, ticker: string, fit: A
       algo: { family: fit.family, preset_index: fit.preset_index ?? undefined, source: "ai_fit" } });
     ok = prop.status === "approved" ? prop : await approveProposal(prop.id);
   }
-  const sources: ("replay" | "live")[] = m.token_id || m.source === "kalshi" ? ["live", "replay"] : ["replay"];
+  // A resolved market listed for its recording has no live book: replay it directly (no failed live attempt first).
+  const sources: ("replay" | "live")[] = isRecordedOnly(m) ? ["replay"] : m.token_id || m.source === "kalshi" ? ["live", "replay"] : ["replay"];
   let last: unknown = null;
   for (const source of sources) {
     try { return { bridgeId: (await startBridge({ proposal_id: ok.id, source, gap_per_share: 0, market })).bridge_id, applied: fit }; }

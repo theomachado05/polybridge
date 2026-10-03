@@ -39,6 +39,9 @@ export interface StreamState {
   error: string | null;
   /** Opportunity bridges: the latest PM-vs-options view, the gap history and the open option structures. */
   options: OptionsView | null;
+  /** The latest view that carried an options-implied estimate (a recording prices options only in the regular
+   *  session, so most replayed hours have none): shown as "last estimate", never as the current one. */
+  lastPriced: OptionsView | null;
   gaps: number[];
   optionPosition: number | null;
   riskUsed: number | null;
@@ -53,7 +56,7 @@ type Ev =
   | { k: "status"; status: string; source?: string }
   | { k: "error"; message: string };
 
-export const init: StreamState = { prices: [], lastP: null, reasons: {}, lastReason: null, lat: [], hedge: 0, coverage: 0, brokerHedge: null, broker: null, fills: 0, log: [], decisions: 0, status: "connecting", source: null, error: null, options: null, gaps: [], optionPosition: null, riskUsed: null };
+export const init: StreamState = { prices: [], lastP: null, reasons: {}, lastReason: null, lat: [], hedge: 0, coverage: 0, brokerHedge: null, broker: null, fills: 0, log: [], decisions: 0, status: "connecting", source: null, error: null, options: null, lastPriced: null, gaps: [], optionPosition: null, riskUsed: null };
 const cap = <T,>(a: T[], n: number) => (a.length > n ? a.slice(a.length - n) : a);
 /** Bounds the decision log, dropping the oldest holds first: orders (and the fills attached to them) are what the
  *  trades list and the sandbox fills read, and a long run of holds must not push an early order out. */
@@ -71,7 +74,8 @@ export function reduce(s: StreamState, e: Ev): StreamState {
     case "tick": {
       const o = e.options ?? null;
       const gaps = o && typeof o.gap === "number" ? cap([...s.gaps, o.gap], 300) : s.gaps;
-      return { ...s, prices: cap([...s.prices, e.p], 300), lastP: e.p, options: o ?? s.options, gaps };
+      const lastPriced = o && typeof o.opt_implied_prob === "number" ? o : s.lastPriced;
+      return { ...s, prices: cap([...s.prices, e.p], 300), lastP: e.p, options: o ?? s.options, lastPriced, gaps };
     }
     case "decision": {
       const d = e.d;

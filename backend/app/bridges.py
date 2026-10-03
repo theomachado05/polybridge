@@ -17,6 +17,9 @@ account broker.
   on raw (never oriented) ticks whose option fields come from ``OptionsEnricher``; each Option intent becomes one
   multi-leg option order (``app.options.fills`` structure legs priced at the Massive quotes, filled all-or-none by
   the SimBroker; Webull paper routes options to the simulator). The proposal's max_contracts / max_notional cap it.
+  On a replay whose contracts no current chain lists (a resolved market: they expired; or offline), the legs are
+  priced at the recording's own bar closes at the replayed time (``opt_legs`` rows + the sidecar's ``options``
+  structure), labelled "recorded", and only where the recording kept a fresh pair (regular session, both legs printed).
 
 Direction is applied in ONE place: ``app.pipeline.ticks.orient_to_adverse`` turns every tick into "YES = the outcome
 that hurts the holder" before either engine sees it; hedgecore is always called with its default direction."""
@@ -149,6 +152,12 @@ class Bridge:
         self.option_data = "none"    # "live_chain" | "recorded" | "none"
         self.replay_file: str | None = None    # the replay file's name once the bridge replays one
         self.replay_market: dict | None = None  # the market its .meta.json sidecar says it records (None: unknown)
+        self.recorded_options: dict | None = None  # the option structure the recording priced (sidecar "options")
+        self.last_legs: dict[str, float] | None = None  # the latest fresh recorded leg closes seen on a replay tick
+        self.last_legs_ts_ns: int | None = None  # their recorded (replayed) time
+        self.last_legs_settled = False  # True: they are the expiry settlement (intrinsic), not bar closes
+        self.last_replay_ts_ns: int | None = None  # the recorded time of the last replayed tick (the bridge's "now")
+        self.recorded_option_fills = 0  # option orders filled at recorded leg closes (no current chain)
 
     async def emit(self, kind: str, data: dict, status: str | None = None) -> None:
         async with self.cond:
@@ -177,6 +186,21 @@ class Bridge:
 
     def set_replay(self, path: Path) -> None:
         self.replay_file, self.replay_market = path.name, replay_meta(path)
+        self.recorded_options = replay_option_structure(path) if self.replay_market is not None else None
+
+    def options_brief(self) -> dict | None:
+        """What the UI shows about the option structure: the live enricher's view, or on a replay whose contracts no
+        current chain lists, the structure the recording priced (with the enricher's reason kept as ``live_reason``)."""
+        live = _options_brief(self.options)
+        rec = self.recorded_options
+        if rec is None or self.effective_source != "replay" or (self.options is not None and self.options.context()):
+            return live
+        return {"supported": True, "available": True, "source": "recording", "underlying_used": rec["underlying"],
+                "strike_used": rec.get("strike"), "expiry": rec["expiry"], "k_lo": rec["k_lo"], "k_hi": rec["k_hi"],
+                "direction": rec["direction"], "method": rec["kind"],
+                "live_reason": (live or {}).get("reason"),
+                "notes": ["the structure and its prices come from the recording (leg bar closes at the replayed "
+                          "time); no current chain lists these contracts"]}
 
     def summary(self) -> dict:
         lat = sorted(self.latencies)
@@ -226,7 +250,8 @@ class Bridge:
                 "risk_used": abs(self.opt_pos) * self.opt_risk_per_unit, "max_contracts": p.max_contracts,
                 "max_notional": p.max_notional, "option_data": self.option_data,
                 "pm_vs_options": dict(self.opt_last) if self.opt_last else None,
-                "options_detail": _options_brief(self.options), "fills_label": OPTION_FILLS_LABEL}
+                "options_detail": self.options_brief(), "fills_label": OPTION_FILLS_LABEL,
+                "recorded_option_fills": self.recorded_option_fills}
 
 
 def _replay_speed(app) -> float:
@@ -251,6 +276,28 @@ def replay_meta(path: Path) -> dict | None:
         return None
     return {"source": str(raw["source"]), "id": str(raw["id"]) if raw.get("id") else None,
             "token_id": str(raw["token_id"]) if raw.get("token_id") else None}
+
+
+def replay_option_structure(path: Path) -> dict | None:
+    """The option structure a recording priced (sidecar ``options``, written by ``history_with_equity.py --options``):
+    {underlying, strike, direction, kind, expiry, k_lo, k_hi, legs: [{sign, ticker, strike, kind}]}, plus
+    ``settlement`` {underlying_close, source, ...} when the recording reached the expiry close; None when absent or
+    malformed."""
+    try:
+        o = json.loads(path.with_name(path.name + ".meta.json").read_text()).get("options")
+        legs = [{"sign": 1 if int(lg["sign"]) > 0 else -1, "ticker": str(lg["ticker"]), "strike": float(lg["strike"]),
+                 "kind": str(lg["kind"])} for lg in o["legs"]]
+        out = {"underlying": str(o["underlying"]), "strike": float(o.get("strike") or "nan"),
+               "direction": "below" if o.get("direction") == "below" else "above", "kind": str(o["kind"]),
+               "expiry": str(o["expiry"])[:10], "k_lo": float(o["k_lo"]), "k_hi": float(o["k_hi"]), "legs": legs}
+    except (OSError, ValueError, TypeError, KeyError, AttributeError):
+        return None
+    if not legs or any(lg["kind"] not in ("call", "put") for lg in legs) or not out["k_lo"] < out["k_hi"]:
+        return None
+    st = o.get("settlement")
+    if isinstance(st, dict) and isinstance(st.get("underlying_close"), (int, float)):
+        out["settlement"] = {k: st[k] for k in ("underlying_close", "source", "rule") if k in st}
+    return out
 
 
 def _meta_matches(meta: dict, market: MarketRef) -> bool:
@@ -815,6 +862,13 @@ async def _run_algo_source(bridge: Bridge, algo, source) -> None:
         ev = _tick_event(t)
         opp = bridge.division == "opportunity"
         if opp:  # option families name the real YES contract: never oriented; the UI sees the PM-vs-options gap
+            rts = getattr(t, "recorded_ts_ns", None)
+            if rts is not None:
+                bridge.last_replay_ts_ns = int(rts)
+            if getattr(t, "legs", None):
+                bridge.last_legs = dict(t.legs)
+                bridge.last_legs_ts_ns = int(rts) if rts is not None else None
+                bridge.last_legs_settled = bool(getattr(t, "settled", False))
             bridge.opt_last = pm_vs_options(t.fields)
             ev["options"] = bridge.opt_last
             if bridge.opt_last["opt_implied_prob"] is not None and bridge.option_data == "none":
@@ -867,6 +921,49 @@ async def _run_algo_source(bridge: Bridge, algo, source) -> None:
 OPTION_FILLS_LABEL = ("simulated option fills: Massive option quote mid +/- half the quoted spread, per-contract fee "
                       "(SimBroker; Webull paper does not take options here)")
 OPTION_MULT = 100.0
+RECORDED_OPTION_NOTE = "replay: option legs priced at the recorded bar closes (no current chain lists them)"
+RECORDED_OPTION_PRICE_NOTE = ("recorded leg closes: no current option chain lists these contracts (expired, or offline), "
+                              "so each leg is priced at its Massive bar close as of the replayed time, +/- the "
+                              "simulator's default half-spread (2% of the price; the real spread is unknown)")
+NO_FRESH_LEGS = ("replay: no fresh recorded option closes at this replayed time (the recording keeps leg closes only in "
+                 "the regular session once both legs have printed) and no current chain lists these contracts")
+# The bridge-end close prices the legs at the last recorded closes only if they are at most one hourly bar (plus the
+# recording's few seconds of jitter) older than the last replayed tick: a replay that ends overnight, on a weekend or
+# past expiry without a recorded settlement would otherwise close at a stale price.
+END_LEGS_MAX_AGE_NS = (3600 + 300) * 1_000_000_000
+SETTLED_OPTION_PRICE_NOTE = ("expiry settlement: the contracts expired, so each leg is valued at its intrinsic value from "
+                             "the underlying's official close on the expiry date (recorded with the replay), with no "
+                             "spread; the simulator's per-contract fee still applies")
+SETTLED_OPENS = ("replay: the recorded legs are the expiry settlement (the contracts have expired), not a tradable quote: "
+                 "only an open structure is closed at it")
+SETTLE_MIN_PX = 0.0001  # the simulator's price floor: an expired out-of-the-money leg (worth 0) is closed at it
+
+
+def stale_end_legs(age_ns: int | None) -> str:
+    if age_ns is None:
+        return ("replay: the bridge-end close cannot tell when the last recorded leg closes were seen, so it does not "
+                "price the close at them (the structure stays open in option_structure)")
+    return (f"replay: the last recorded leg closes are {age_ns / 3.6e12:.1f} h older than the end of the replay (no "
+            "fresh closes overnight, on weekends or after expiry, and no recorded settlement), so the bridge-end close "
+            "is not priced at a stale close (the structure stays open in option_structure)")
+
+
+def recorded_context(struct: dict, legs: dict[str, float], settled: bool = False) -> dict:
+    """An options context (as ``OptionsEnricher.context()``) whose chain holds only the recorded legs, each quoted at
+    its recorded bar close (no bid/ask: the spread is unknown). ``settled``: the legs are the expiry settlement, a
+    known value with no spread (bid = ask = intrinsic)."""
+    from .options.chain import Chain, OptionQuote
+    chain = Chain(underlying=struct["underlying"], fetched_at=time.time(), source="recording")
+    for lg in struct["legs"]:
+        px = legs.get(lg["ticker"])
+        if px is not None:
+            extra = {"bid": px, "ask": px, "mark_source": "expiry_settlement"} if settled else {
+                "mark_source": "recorded_bar_close"}
+            chain.quotes.append(OptionQuote(ticker=lg["ticker"], kind=lg["kind"], strike=lg["strike"],
+                                            expiry=struct["expiry"], mid=px, **extra))
+    return {"underlying": struct["underlying"], "strike": struct.get("strike"), "expiry": struct["expiry"],
+            "k_lo": struct["k_lo"], "k_hi": struct["k_hi"], "above": struct["direction"] == "above", "chain": chain,
+            "available": True, "recorded": True}
 
 
 def _options_brief(enricher: OptionsEnricher | None) -> dict | None:
@@ -968,7 +1065,27 @@ async def _send_option_intent(bridge: Bridge, algo, intent: dict, t: Tick | None
     if combo is None:
         return refuse("rejected", f"broker {broker.name} cannot take multi-leg option orders")
     ctx = bridge.options.context() if bridge.options is not None else None
+    recorded = settled = False
     closing = bridge.opt_pos != 0 and side * bridge.opt_pos < 0
+    if ctx is None and bridge.effective_source == "replay" and bridge.recorded_options is not None:
+        # No current chain lists these contracts: price them at the recording's own closes for this replayed tick, or
+        # at its recorded expiry settlement. The bridge-end close (t None) uses the last recorded legs only when they
+        # are at most one bar older than the end of the replay, never a stale close.
+        if t is None:
+            legs_px, settled = bridge.last_legs, bridge.last_legs_settled
+            if legs_px:
+                age = (None if bridge.last_legs_ts_ns is None or bridge.last_replay_ts_ns is None
+                       else bridge.last_replay_ts_ns - bridge.last_legs_ts_ns)
+                if age is None or age > END_LEGS_MAX_AGE_NS:
+                    return refuse("rejected", stale_end_legs(age))
+        else:
+            legs_px, settled = getattr(t, "legs", None), bool(getattr(t, "settled", False))
+        if not legs_px:
+            return refuse("rejected", NO_FRESH_LEGS)
+        if settled and not closing:
+            return refuse("rejected", SETTLED_OPENS)
+        ctx, recorded = recorded_context(bridge.recorded_options, legs_px, settled), True
+        rec["price_source"] = RECORDED_SOURCE
     if closing and bridge.opt_open is not None:  # exits trade the open structure's own legs
         struct = {k: v for k, v in bridge.opt_open.items() if k != "legs"}
         legs = [(lg["sign"], lg["ticker"]) for lg in bridge.opt_open["legs"]]
@@ -1030,16 +1147,22 @@ async def _send_option_intent(bridge: Bridge, algo, intent: dict, t: Tick | None
         rec["unit_risk"] = risk
     note = None
     if bridge.effective_source == "replay":
-        note = "replay: option legs priced at the current chain snapshot, not the replayed time"
-        rec["price_note"] = note
+        note = RECORDED_OPTION_NOTE if recorded else "replay: option legs priced at the current chain snapshot, not the replayed time"
+        rec["price_note"] = (SETTLED_OPTION_PRICE_NOTE if settled else RECORDED_OPTION_PRICE_NOTE) if recorded else note
+        if settled:
+            rec["settlement"] = (bridge.recorded_options or {}).get("settlement") or {"rule": "intrinsic value at expiry"}
         rec["scope"] = "account" if bridge.replay_to_account else "replay_sandbox"
     if not isinstance(bridge.broker, SimBroker):
         rec["routed"] = "simulator (Webull paper takes equities only)"
     cid = f"{bridge.id}-{bridge.orders}"
     try:
+        if settled:  # an expired out-of-the-money leg is worth 0: closed at the simulator's price floor, no spread
+            priced = [(sign, tk, max(mid, SETTLE_MIN_PX) if mid is not None else None, 0.0, src)
+                      for sign, tk, mid, _half, src in priced]
         reqs = [OrderRequest(symbol=tk, asset="option", side="buy" if sign * side > 0 else "sell", qty=qty,
                              type="market", ref_px=mid if mid is not None and mid > 0 else None,
                              ref_half_spread=half if mid is not None and mid > 0 else None,
+                             ref_source=RECORDED_SOURCE if recorded and mid is not None and mid > 0 else None,
                              client_order_id=f"{cid}-L{i}", tag=bridge.id, combo_id=cid, note=note)
                 for i, (sign, tk, mid, half, _src) in enumerate(priced)]
         orders = await asyncio.wait_for(combo(reqs), BROKER_TIMEOUT_S)
@@ -1058,6 +1181,8 @@ async def _send_option_intent(bridge: Bridge, algo, intent: dict, t: Tick | None
         fee = sum(o.fee for o in orders)
         algo.on_fill("option", side * qty, px)
         bridge.broker_filled += 1
+        if recorded:
+            bridge.recorded_option_fills += 1
         was_flat = bridge.opt_pos == 0
         bridge.opt_pos += side * qty
         if was_flat:
@@ -1102,8 +1227,9 @@ async def _run(bridge: Bridge, app, hc, source, fallback: Path | None) -> None:
         # Replays keep the option fields they recorded; the current snapshot is only used to price the legs.
         await bridge.options({"ts_ns": time.time_ns()}, time.time_ns())
     if bridge.options is not None:
-        await bridge.emit("status", {"status": "running", "options": _options_brief(bridge.options)
-                                     if bridge.options.detail else {"supported": None, "reason": "resolving"}})
+        await bridge.emit("status", {"status": "running", "options": bridge.options_brief()
+                                     if bridge.options.detail or bridge.recorded_options else
+                                     {"supported": None, "reason": "resolving"}})
     try:
         try:
             await loop(source)

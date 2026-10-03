@@ -10,6 +10,35 @@ and the book depth at those times are unknown and are not invented (see record_b
         --market indiana-datacenter-2027=5126779 --equity VRT --out ../replays/indiana-datacenter-2027-history.jsonl
 
 Replay it at the demo speed: POLYBRIDGE_REPLAY_SPEED=36000 (hourly points, ten ticks per second).
+
+``--options`` (threshold questions ``app.options.match`` maps, e.g. "Will NVIDIA (NVDA) close above $230 end of
+September?") also records the options-implied history of the same threshold, so a replay can run the Opportunity
+division offline: ``opt_mid`` / ``opt_implied_prob`` / ``opt_iv`` and ``opt_legs`` ({leg ticker: bar close}) per row.
+
+- Structure: the YES-equivalent spread (call spread k_lo/k_hi around K for "above", put spread for "below") at the
+  listed expiry nearest the resolution date, chosen from Massive's contract LISTING as it stood on the first recorded
+  day (point in time: ``options_join.historical_structure`` passes Massive's ``as_of``, so contracts listed later are
+  not candidates): no price is looked at to choose it.
+- Values: the legs' Massive hourly bar CLOSES joined as of the time each close became known (bar end), through
+  ``options_join.option_columns`` (the fit's own builder): both legs must have closed within one bar interval of each
+  other, and (fresh-close rule, as the engine applies to equity fills) only inside the regular session once both legs
+  have printed that day; elsewhere the option fields are absent (NaN on replay). ``opt_iv`` is the Black-Scholes
+  inversion of those leg closes against the underlying's bar closes (paired within one bar interval), an estimate.
+  ``opt_legs`` is written only where ``opt_mid`` is (a fresh, synced pair), so a replay bridge can price each leg at
+  its recorded close at that replayed time.
+- Settlement: rows at or after the expiry close (16:00 New York on the expiry date) carry the structure's value at
+  expiry instead: each leg at its intrinsic value from the underlying's official close that day (Massive
+  ``/v1/open-close``, else its daily bar), as ``opt_legs`` / ``opt_mid`` plus ``opt_settlement`` {expiry,
+  underlying_close, source}. No ``opt_implied_prob`` / ``opt_iv`` there: it is a settlement value, not a quote, so no
+  family opens a trade on it; the engine marks an open structure to it and a replay bridge closes at it.
+- ``--since YYYY-MM-DD`` drops the rows before that New York day BEFORE the structure is chosen, so the listing is read
+  as of the replay's own first day. ``--since options`` (older recordings) cuts after the join, at the New York day of
+  the first option row; the structure is then chosen as of the uncut history's first day. 8-K scores are never
+  fetched here.
+- The sidecar ``<out>.meta.json`` names the market and carries the structure (``options``).
+
+    cd backend && uv run --env-file ../.env python scripts/history_with_equity.py --options --since 2026-09-16 \\
+        --market nvda-230-sep-2026=3961215 --equity NVDA --out replays/nvda-230-sep-2026-history.jsonl
 """
 from __future__ import annotations
 
@@ -44,15 +73,187 @@ def join(rows: list[dict], span_s: int, bars: list[dict]) -> list[dict]:
     return out
 
 
+def _round(x: float) -> float:
+    return float(f"{x:.6g}")
+
+
+async def _direct(fn, *args):
+    """``app.chain.bounded`` without its 8 s API bound: a one-off recording may wait for Massive."""
+    return fn(*args)
+
+
+def option_rows(rows: list[dict], question: str, end_date: str | None, client, *,
+                bars=None) -> tuple[list[dict], dict]:
+    """``rows`` with the options-implied fields of the question's threshold (see the module docstring), and the
+    structure (for the sidecar). Raises SystemExit when the question cannot be mapped or nothing is listed."""
+    import datetime as dt
+
+    import numpy as np
+
+    from app.options.match import _NY, match_question, why_no_match
+    from app.pipeline.options_join import historical_structure, leg_closes, option_columns
+    from app.pipeline.ticks import massive_bars
+    bars = bars or massive_bars
+    ts_s = np.array([r["ts_ns"] // 1_000_000_000 for r in rows], dtype=np.int64)
+    as_of = dt.datetime.fromtimestamp(int(ts_s[0]), dt.timezone.utc).astimezone(_NY).date()
+    m = match_question(question, end_date, as_of=as_of)
+    if m is None:
+        raise SystemExit(f"question not mapped: {why_no_match(question, end_date, as_of=as_of)}")
+    above = m.direction == "above"
+    und, k = m.underlying, m.strike
+    st = historical_structure(client, und, k, m.expiry, above=above, as_of=as_of)
+    if st is None and m.fallback:
+        und, k = m.fallback[0], round(m.level * m.fallback[1], 6)
+        st = historical_structure(client, und, k, m.expiry, above=above, as_of=as_of)
+    if st is None:
+        raise SystemExit(f"no listed {und} contracts near {k:g} and {m.expiry}")
+    start_s, end_s = int(ts_s.min()), int(ts_s.max())
+    legs = [(lg["sign"], bars(client, lg["ticker"], start_s, end_s)) for lg in st["legs"]]
+    cols, stats = asyncio.run(option_columns(
+        ts_s, legs, above=above, k_lo=st["k_lo"], k_hi=st["k_hi"], k=k, expiry=dt.date.fromisoformat(st["expiry"]),
+        und=und, client=client, bars=bars, bounded=_direct, session_fresh=True))
+    closes = [leg_closes(ts_s, b) for _, b in legs]
+    keep = stats["keep"]
+    out = []
+    for i, r in enumerate(rows):
+        row = dict(r)
+        for f in ("opt_mid", "opt_implied_prob", "opt_iv"):
+            v = float(cols[f][i])
+            if np.isfinite(v):
+                row[f] = _round(v)
+        if keep[i]:
+            row["opt_legs"] = {lg["ticker"]: _round(float(c[i])) for lg, c in zip(st["legs"], closes)}
+        out.append(row)
+    settlement = None
+    if int(ts_s.max()) >= settle_s(st["expiry"]):  # the history reaches the expiry close: record the settlement
+        got = official_close(client, und, dt.date.fromisoformat(st["expiry"]))
+        if got is None:
+            raise SystemExit(f"no official close for {und} on {st['expiry']}: cannot record the expiry settlement")
+        n_settled = settle_rows(out, st, *got)
+        settlement = {"underlying_close": got[0], "source": got[1], "rows": n_settled,
+                      "rule": "each leg at intrinsic value from the underlying's official close on the expiry date"}
+    st = {**st, "match": m.to_dict(), "as_of": as_of.isoformat(), "settlement": settlement,
+          "n_with_options": stats["n_with_options"], "n_with_iv": stats["n_with_iv"],
+          "n_unsynced_legs": stats["n_unsynced_legs"], "n_off_session": stats["n_off_session"],
+          "leg_bars": {lg["ticker"]: len(b) for lg, (_, b) in zip(st["legs"], legs)}}
+    return out, st
+
+
+SETTLE_SOURCE_OFFICIAL = "Massive /v1/open-close (official close)"
+SETTLE_SOURCE_DAILY = "Massive daily bar close"
+
+
+def official_close(client, underlying: str, day) -> tuple[float, str] | None:
+    """(the underlying's official close on ``day``, source): Massive /v1/open-close, else that day's daily bar."""
+    try:
+        r = client.get(f"/v1/open-close/{underlying.upper()}/{day.isoformat()}", {"adjusted": "true"}) or {}
+        c = float(r.get("close"))
+        if c > 0:
+            return c, SETTLE_SOURCE_OFFICIAL
+    except Exception:
+        pass
+    try:
+        rows = client.get_all(f"/v2/aggs/ticker/{underlying.upper()}/range/1/day/{day.isoformat()}/{day.isoformat()}",
+                              {"adjusted": "true"}, max_pages=1) or []
+        c = float(rows[-1]["c"])
+        if c > 0:
+            return c, SETTLE_SOURCE_DAILY
+    except Exception:
+        pass
+    return None
+
+
+def settle_s(expiry: str) -> int:
+    """Unix s of the expiry close: 16:00 New York on the expiry date (the listed contracts' last trade)."""
+    import datetime as dt
+
+    from app.options.match import _NY
+    return int(dt.datetime.combine(dt.date.fromisoformat(expiry), dt.time(16, 0), _NY).timestamp())
+
+
+def settle_rows(rows: list[dict], structure: dict, close: float, source: str) -> int:
+    """Stamp every row at or after the expiry close with the structure's settlement: each leg at its intrinsic value
+    (call max(S - K, 0), put max(K - S, 0)) at the official close ``close``. Replaces any option fields there, drops
+    opt_implied_prob / opt_iv (a settlement value is not a quote). Returns the number of rows stamped."""
+    at = settle_s(structure["expiry"])
+    legs = {lg["ticker"]: max((close - lg["strike"]) if lg["kind"] == "call" else (lg["strike"] - close), 0.0)
+            for lg in structure["legs"]}
+    mid = sum(lg["sign"] * legs[lg["ticker"]] for lg in structure["legs"])
+    n = 0
+    for r in rows:
+        if r["ts_ns"] // 1_000_000_000 < at:
+            continue
+        for f in ("opt_implied_prob", "opt_iv", "opt_delta"):
+            r.pop(f, None)
+        r["opt_mid"] = _round(mid)
+        r["opt_legs"] = {tk: _round(v) for tk, v in legs.items()}
+        r["opt_settlement"] = {"expiry": structure["expiry"], "underlying_close": close, "source": source}
+        n += 1
+    return n
+
+
+def since_day(rows: list[dict], day) -> list[dict]:
+    """Rows from the start of New York day ``day``."""
+    import datetime as dt
+
+    from app.options.match import _NY
+    start = dt.datetime.combine(day, dt.time(0, 0), _NY).timestamp()
+    return [r for r in rows if r["ts_ns"] // 1_000_000_000 >= start]
+
+
+def since_first_option(rows: list[dict]) -> list[dict]:
+    """Rows from the New York day of the first row that carries an options estimate."""
+    import datetime as dt
+
+    from app.options.match import _NY
+    first = next((r for r in rows if "opt_implied_prob" in r), None)
+    if first is None:
+        return rows
+    return since_day(rows, dt.datetime.fromtimestamp(first["ts_ns"] // 1_000_000_000, dt.timezone.utc).astimezone(_NY).date())
+
+
+def write_sidecar(out: Path, *, market_id: str, token: str, question: str, end_date: str | None,
+                  options: dict | None, rows: list[dict], equity: str) -> Path:
+    import datetime as dt
+    span = [dt.datetime.fromtimestamp(rows[i]["ts_ns"] // 1_000_000_000, dt.timezone.utc).isoformat()
+            .replace("+00:00", "Z") for i in (0, -1)]
+    meta = {"source": "polymarket", "id": market_id, "token_id": token, "question": question, "end_date": end_date,
+            "equity": equity.upper(), "rows": len(rows), "span": span,
+            "provenance": f"gamma-api.polymarket.com/markets/{market_id} (clobTokenIds[0]); CLOB prices-history "
+                          f"(hourly mid); Massive hourly bars ({equity.upper()}"
+                          + (", option legs" if options else "") + f"); recorded {dt.date.today().isoformat()} with "
+                          "scripts/history_with_equity.py" + (" --options" if options else "")}
+    if options:
+        meta["options"] = options
+    path = out.with_name(out.name + ".meta.json")
+    path.write_text(json.dumps(meta, indent=1) + "\n")
+    return path
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--market", required=True, metavar="SLUG=ID")
     ap.add_argument("--equity", required=True, metavar="TICKER")
     ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument("--options", action="store_true", help="also record the options-implied history (threshold markets)")
+    ap.add_argument("--since", metavar="YYYY-MM-DD|options",
+                    help="a New York day: drop earlier rows before the options join (the structure is chosen as of that "
+                         "day); 'options': cut after the join, at the day of the first option row")
     a = ap.parse_args()
+    since = None
+    if a.since and a.since != "options":
+        import datetime as dt
+        try:
+            since = dt.date.fromisoformat(a.since)
+        except ValueError:
+            ap.error("--since takes YYYY-MM-DD or 'options'")
     slug, token, question = asyncio.run(_resolve(a.market))
+    market_id = a.market.partition("=")[2]
+    end_date = None
     with httpx.Client() as http:
         rows = fetch_history(token, http)
+        if a.options and not (market_id.isdigit() and len(market_id) >= 30):
+            end_date = (http.get(f"https://gamma-api.polymarket.com/markets/{market_id}", timeout=15).json() or {}).get("endDate")
     from app import chain
     client = chain.make_client()
     if client is None:
@@ -66,11 +267,29 @@ def main() -> int:
             joined = rows
         else:
             joined = join(rows, BAR_SPAN_S[span], bars)
+    if since is not None:
+        joined = since_day(joined, since)
+        if not joined:
+            raise SystemExit(f"no history on or after {since}")
+    structure = None
+    if a.options:
+        if client is None:
+            raise SystemExit("--options needs MASSIVE_API_KEY")
+        joined, structure = option_rows(joined, question, end_date, client)
+        structure["counts_over_rows"] = len(joined)  # the rows the n_* counts above are over (before --since options)
+        if a.since == "options":
+            joined = since_first_option(joined)
     a.out.parent.mkdir(parents=True, exist_ok=True)
     a.out.write_text("".join(json.dumps(r, separators=(",", ":")) + "\n" for r in joined))
     ps = [r["p"] for r in joined]
     n_eq = sum(1 for r in joined if "under_px" in r)
-    print(f"{question or slug}: {len(joined)} points, p {min(ps):.4f}..{max(ps):.4f}, {n_eq} with under_px -> {a.out}")
+    n_opt = sum(1 for r in joined if "opt_implied_prob" in r)
+    print(f"{question or slug}: {len(joined)} points, p {min(ps):.4f}..{max(ps):.4f}, {n_eq} with under_px, "
+          f"{n_opt} with an options estimate -> {a.out}")
+    if a.options or a.since:
+        meta = write_sidecar(a.out, market_id=market_id, token=token, question=question, end_date=end_date,
+                             options=structure, rows=joined, equity=a.equity)
+        print(f"sidecar -> {meta}")
     return 0
 
 

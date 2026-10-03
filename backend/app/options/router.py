@@ -81,7 +81,8 @@ def kalshi_question(m: dict) -> str | None:
 
 
 async def resolve_market(http: httpx.AsyncClient, source: str, mid: str) -> dict:
-    """{question, end_date, yes_price, origin}; origin "universe" | "live" | None when nothing was found."""
+    """{question, end_date, yes_price, origin}; origin "universe" | "live" | "recording" (a replay sidecar, offline) |
+    None when nothing was found."""
     out: dict[str, Any] = {"question": None, "end_date": None, "yes_price": None, "origin": None}
     entry = _universe(source, mid)
     if entry:
@@ -106,6 +107,11 @@ async def resolve_market(http: httpx.AsyncClient, source: str, mid: str) -> dict
                        yes_price=px if px is not None else out["yes_price"], origin="live")
     except Exception:
         pass  # the universe entry (if any) stands; the response says where it came from
+    if out["origin"] is None:  # offline and not in the bundled list: the recording's sidecar names the market
+        from ..pipeline.ticks import recording_meta
+        meta = recording_meta(source, mid)
+        if meta.get("question"):
+            out.update(question=meta["question"], end_date=meta.get("end_date"), origin="recording")
     return out
 
 

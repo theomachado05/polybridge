@@ -18,6 +18,9 @@ Honesty rules:
 - Other-venue and 8-K fields are NaN / 0 here (``eightk_score`` 0 = none, per the MarketTick contract). Option fields
   are NaN here; for threshold questions the fit service then joins options-implied history from listed-contract bar
   closes (``app.pipeline.options_join``), which also sets ``eightk_score`` per date (NaN where no data covers it).
+  A recording made with ``scripts/history_with_equity.py --options`` already carries them (``opt_mid``,
+  ``opt_implied_prob``, ``opt_iv``, each as of its own row time, only where the leg closes were fresh): on the replay
+  source they are kept as recorded, and the fit service then skips the live join.
 """
 from __future__ import annotations
 
@@ -223,12 +226,19 @@ def _replay_candidates(source: str | None, mid: str | None, token_id: str | None
     return [replays / n for n in names if n and "/" not in n and ".." not in n]
 
 
-def replay_points(source: str | None, mid: str | None, token_id: str | None = None, data_dir: Path = DATA,
-                  replays: Path = REPLAYS) -> tuple[list[tuple[int, float]], str | None]:
+# Per-row columns a recording may carry beyond {ts_ns, p} that the fit reads (scripts/history_with_equity.py writes
+# them, each joined as of its own time when recorded): the option fields (``--options``) and the equity close.
+RECORDED_OPTION_FIELDS = ("opt_mid", "opt_implied_prob", "opt_iv", "opt_delta")
+
+
+def replay_rows(source: str | None, mid: str | None, token_id: str | None = None, data_dir: Path = DATA,
+                replays: Path = REPLAYS) -> tuple[list[dict], str | None]:
+    """The first recording of the market (replay index, then ``replays/<id>[-history].jsonl``) as parsed rows sorted by
+    time, one per timestamp (the first wins), each with an int ``t`` (unix s) and a finite ``p``."""
     for path in _replay_candidates(source, mid, token_id, data_dir, replays):
         if not path.is_file():
             continue
-        pts = []
+        rows: dict[int, dict] = {}
         for line in path.read_text().splitlines():
             if not line.strip():
                 continue
@@ -237,11 +247,51 @@ def replay_points(source: str | None, mid: str | None, token_id: str | None = No
                 t, p = int(row["ts_ns"]) // 1_000_000_000, _num(row["p"])
             except (ValueError, KeyError, TypeError):
                 continue
-            if p is not None:
-                pts.append((t, p))
-        if pts:
-            return sorted(set(pts)), path.name
+            if p is not None and isinstance(row, dict):
+                rows.setdefault(t, {**row, "t": t, "p": p})
+        if rows:
+            return [rows[t] for t in sorted(rows)], path.name
     return [], None
+
+
+def replay_points(source: str | None, mid: str | None, token_id: str | None = None, data_dir: Path = DATA,
+                  replays: Path = REPLAYS) -> tuple[list[tuple[int, float]], str | None]:
+    rows, name = replay_rows(source, mid, token_id, data_dir, replays)
+    return [(r["t"], r["p"]) for r in rows], name
+
+
+def recording_meta(source: str | None, mid: str | None, token_id: str | None = None, data_dir: Path = DATA,
+                   replays: Path = REPLAYS) -> dict:
+    """The sidecar (``<file>.meta.json``) of the market's first existing recording, when it names this market; else
+    {}. It carries the question, end date and equity the recording was made with (offline fallbacks)."""
+    for path in _replay_candidates(source, mid, token_id, data_dir, replays):
+        if path.is_file():
+            try:
+                meta = json.loads(path.with_name(path.name + ".meta.json").read_text())
+            except (OSError, ValueError):
+                return {}
+            if not isinstance(meta, dict) or meta.get("source") != source:
+                return {}
+            if str(meta.get("id")) != str(mid) and (not token_id or meta.get("token_id") != token_id):
+                return {}
+            return meta
+    return {}
+
+
+def _recorded_equity(source: str | None, mid: str | None, token_id: str | None, data_dir: Path,
+                     replays: Path) -> str | None:
+    """The equity a recording's under_px belongs to (its sidecar's "equity"), else None."""
+    eq = recording_meta(source, mid, token_id, data_dir, replays).get("equity")
+    return str(eq).upper() if eq else None
+
+
+def recorded_columns(rows: list[dict], fields: tuple[str, ...]) -> dict[str, np.ndarray]:
+    """{field: array aligned to rows} for each field some row carries (NaN where a row does not)."""
+    out = {}
+    for f in fields:
+        if any(f in r for r in rows):
+            out[f] = np.array([_num(r.get(f)) if _num(r.get(f)) is not None else np.nan for r in rows], dtype=np.float64)
+    return out
 
 
 # ---------------------------------------------------------------- equity bars
@@ -411,10 +461,12 @@ async def build_ticks(market: dict | None, ticker: str, *, http: httpx.AsyncClie
             notes.append(f"Kalshi history unavailable ({type(e).__name__})")
             points = []
 
+    recorded: list[dict] = []
     if ts_source == "none":
-        rp, name = replay_points(source, mid, token_id, data_dir, replays) if market else ([], None)
-        if len(rp) >= MIN_TICKS:
-            points, ts_source, quotes, quote_model = rp, "replay", None, "mid_only"
+        rows, name = replay_rows(source, mid, token_id, data_dir, replays) if market else ([], None)
+        if len(rows) >= MIN_TICKS:
+            points, ts_source, quotes, quote_model = [(r["t"], r["p"]) for r in rows], "replay", None, "mid_only"
+            recorded = rows
             notes.append(f"recorded replay {name}")
         else:
             points = []
@@ -440,6 +492,20 @@ async def build_ticks(market: dict | None, ticker: str, *, http: httpx.AsyncClie
             if bars:
                 notes.append(f"recorded equity bars for {ticker.upper()}")
     ticks = assemble(points, bars, venue=venue, quotes=quotes)
+    if recorded:
+        # A recording keeps what it recorded, each column joined as of its own time when it was written: the option
+        # fields (scripts/history_with_equity.py --options), and its under_px when no bars cover this ticker. Its
+        # under_px is only used for the equity it was recorded against (the sidecar's "equity"), never another ticker.
+        cols = recorded_columns(recorded, RECORDED_OPTION_FIELDS)
+        ticks.update(cols)
+        if cols.get("opt_implied_prob") is not None and np.isfinite(cols["opt_implied_prob"]).any():
+            notes.append(f"recorded option history ({int(np.isfinite(cols['opt_implied_prob']).sum())} ticks with an "
+                         "options-implied estimate from leg bar closes)")
+        if not bars and ticker and _recorded_equity(source, mid, token_id, data_dir, replays) == ticker.upper():
+            under = recorded_columns(recorded, ("under_px",)).get("under_px")
+            if under is not None and np.isfinite(under).any():
+                ticks["under_px"] = under
+                notes.append(f"recorded {ticker.upper()} closes from the replay")
     if ts_source == "live_history" and not offline and http is not None:  # verified twin -> p_other_venue
         from ..twins.overlay import overlay_other_venue
         note = await overlay_other_venue(ticks, points, source=source, market_id=mid, token_id=token_id, http=http)

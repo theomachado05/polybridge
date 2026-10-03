@@ -802,3 +802,156 @@ def test_zero_risk_quotes_never_bypass_the_notional_cap(opp_client):
     f = next(d for k, d in ev if k == "fill")
     assert f["status"] == "rejected" and "non-positive risk" in f["reject_reason"]
     assert FakeAlgo.instances[0].rejects == ["option"]
+
+
+# ---------------------------------------------------------------- 5. replays whose contracts no current chain lists
+
+class NoChainEnricher:
+    """A resolved market: its question no longer maps (the resolution date passed), so there is no live chain."""
+    detail = {"supported": False, "reason": "no resolution date (or it has passed)"}
+
+    def context(self):
+        return None
+
+    def supported(self):
+        return False
+
+    async def __call__(self, fields, ts=None):
+        return fields
+
+
+def test_replay_prices_legs_at_recorded_closes_only_where_the_recording_kept_a_fresh_pair(tmp_path):
+    from fastapi.testclient import TestClient
+    from app.main import create_app
+    from tests.test_bridges import write_meta
+    lo, hi = "O:NVDA260930C00227500", "O:NVDA260930C00232500"
+    rows = []
+    for i, p in enumerate(PS):
+        r = {"ts_ns": 1_000_000_000 * (i + 1), "p": p}
+        if i in (2, 3, 8):  # rows where the recording priced the spread (fresh pair)
+            r.update(opt_mid=2.0, opt_implied_prob=0.4, opt_legs={lo: 3.0, hi: 1.0})
+        rows.append(r)
+    f = tmp_path / "rec.jsonl"
+    f.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    write_meta(f, MKT)
+    meta = json.loads(f.with_name(f.name + ".meta.json").read_text())
+    meta["options"] = {"underlying": "NVDA", "strike": 230.0, "direction": "above", "kind": "call_spread",
+                       "expiry": "2026-09-30", "k_lo": 227.5, "k_hi": 232.5,
+                       "legs": [{"sign": 1, "ticker": lo, "strike": 227.5, "kind": "call"},
+                                {"sign": -1, "ticker": hi, "strike": 232.5, "kind": "call"}]}
+    f.with_name(f.name + ".meta.json").write_text(json.dumps(meta))
+    app = create_app()
+    app.state.replay_speed = 0
+    app.state.replay_path = str(f)
+    app.state.broker = SimBroker(None)
+    app.state.options_enricher_factory = lambda market: NoChainEnricher()
+    # tick 2 has no recorded legs (stale): refused; tick 3 is fresh: priced at the closes; tick 9 exits on fresh closes
+    FakeAlgo.script = {2: {"instrument": "option", "side": 1, "qty": 2.0, "reason": "entry"},
+                       3: {"instrument": "option", "side": 1, "qty": 2.0, "reason": "entry"},
+                       9: {"instrument": "option", "side": -1, "qty": 2.0, "reason": "exit"}}
+    with TestClient(app) as c:
+        p = opp_proposal(c)
+        bid = _start(c, p)
+        ev = _events(c, bid)
+        s = c.get(f"/bridges/{bid}").json()
+    fills = [d for k, d in ev if k == "fill"]
+    assert [x["status"] for x in fills] == ["rejected", "filled", "filled"]
+    assert "no fresh recorded option closes" in fills[0]["reject_reason"]
+    entry, exit_ = fills[1], fills[2]
+    assert [(lg["ticker"], lg["side"], lg["quote_mid"]) for lg in entry["legs"]] == [(lo, "buy", 3.0), (hi, "sell", 1.0)]
+    assert entry["fill_px"] == pytest.approx(3.0 * 1.02 - 1.0 * 0.98) and entry["price_source"] == "recorded"
+    assert {lg["price_source"] for lg in entry["legs"]} == {"recorded"} and "recorded leg closes" in entry["price_note"]
+    assert exit_["side"] == "sell" and exit_["fill_px"] == pytest.approx(3.0 * 0.98 - 1.0 * 1.02)
+    a = FakeAlgo.instances[0]
+    assert a.rejects == ["option"] and [q for _, q, _ in a.fills] == [2.0, -2.0]
+    assert s["recorded_option_fills"] == 2 and s["option_position"] == 0
+    assert s["options_detail"]["source"] == "recording" and s["options_detail"]["live_reason"].startswith("no resolution")
+
+
+def _recorded_nvda_app(tmp_path, rows):
+    """An app replaying ``rows`` (with the NVDA 227.5/232.5 call-spread sidecar) and no current chain."""
+    from app.main import create_app
+    from tests.test_bridges import write_meta
+    lo, hi = "O:NVDA260930C00227500", "O:NVDA260930C00232500"
+    f = tmp_path / "rec.jsonl"
+    f.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    write_meta(f, MKT)
+    meta = json.loads(f.with_name(f.name + ".meta.json").read_text())
+    meta["options"] = {"underlying": "NVDA", "strike": 230.0, "direction": "above", "kind": "call_spread",
+                       "expiry": "2026-09-30", "k_lo": 227.5, "k_hi": 232.5,
+                       "legs": [{"sign": 1, "ticker": lo, "strike": 227.5, "kind": "call"},
+                                {"sign": -1, "ticker": hi, "strike": 232.5, "kind": "call"}],
+                       "settlement": {"underlying_close": 228.0, "source": "test"}}
+    f.with_name(f.name + ".meta.json").write_text(json.dumps(meta))
+    app = create_app()
+    app.state.replay_speed = 0
+    app.state.replay_path = str(f)
+    app.state.broker = SimBroker(None)
+    app.state.options_enricher_factory = lambda market: NoChainEnricher()
+    return app, lo, hi
+
+
+def test_bridge_end_close_is_refused_at_stale_recorded_closes(tmp_path):
+    """A replay that ends hours after the last fresh leg closes (overnight, a weekend, past expiry with no recorded
+    settlement) does not close at them: the close is a rejected fill and the structure stays open, reported."""
+    from fastapi.testclient import TestClient
+    lo, hi = "O:NVDA260930C00227500", "O:NVDA260930C00232500"
+    rows = []
+    for i, p in enumerate(PS):
+        r = {"ts_ns": 3600 * 1_000_000_000 * (i + 1), "p": p}  # hourly rows
+        if i in (2, 3):  # only these two hours carry a fresh pair
+            r.update(opt_mid=2.0, opt_implied_prob=0.4, opt_legs={lo: 3.0, hi: 1.0})
+        rows.append(r)
+    app, lo, hi = _recorded_nvda_app(tmp_path, rows)
+    FakeAlgo.script = {3: {"instrument": "option", "side": 1, "qty": 2.0, "reason": "entry"}}
+    with TestClient(app) as c:
+        bid = _start(c, opp_proposal(c))
+        ev = _events(c, bid)
+        s = c.get(f"/bridges/{bid}").json()
+    fills = [d for k, d in ev if k == "fill"]
+    assert [(x["status"], x.get("close_reason")) for x in fills] == [("filled", None), ("rejected", "bridge_end")]
+    assert "h older than the end of the replay" in fills[1]["reject_reason"]
+    assert s["option_position"] == 2 and s["option_structure"] is not None  # never hidden
+
+
+def test_bridge_end_close_settles_at_the_recorded_expiry_value(tmp_path):
+    """A recording that reaches the expiry close carries the settlement (each leg at intrinsic from the official
+    close): the bridge-end close is priced there with no spread, labelled; an order that would open on it is refused."""
+    from fastapi.testclient import TestClient
+    lo, hi = "O:NVDA260930C00227500", "O:NVDA260930C00232500"
+    rows = []
+    for i, p in enumerate(PS):
+        r = {"ts_ns": 3600 * 1_000_000_000 * (i + 1), "p": p}
+        if i in (2, 3):
+            r.update(opt_mid=2.0, opt_implied_prob=0.4, opt_legs={lo: 3.0, hi: 1.0})
+        rows.append(r)
+    n = len(rows)
+    rows[-1].update(opt_mid=0.5, opt_legs={lo: 0.5, hi: 0.0},
+                    opt_settlement={"expiry": "2026-09-30", "underlying_close": 228.0, "source": "test"})
+    app, lo, hi = _recorded_nvda_app(tmp_path, rows)
+    FakeAlgo.script = {3: {"instrument": "option", "side": 1, "qty": 2.0, "reason": "entry"},
+                       n: {"instrument": "option", "side": 1, "qty": 1.0, "reason": "entry"}}  # adds on the settlement
+    with TestClient(app) as c:
+        bid = _start(c, opp_proposal(c))
+        ev = _events(c, bid)
+        s = c.get(f"/bridges/{bid}").json()
+    fills = [d for k, d in ev if k == "fill"]
+    assert [(x["status"], x["side"], x.get("close_reason")) for x in fills] == [
+        ("filled", "buy", None), ("rejected", "buy", None), ("filled", "sell", "bridge_end")]
+    assert "expiry settlement" in fills[1]["reject_reason"]
+    close = fills[2]
+    assert [(lg["ticker"], lg["side"], lg["fill_px"], lg["quote_half_spread"]) for lg in close["legs"]] == [
+        (lo, "sell", 0.5, 0.0), (hi, "buy", bridges.SETTLE_MIN_PX, 0.0)]
+    assert close["fill_px"] == pytest.approx(0.5 - bridges.SETTLE_MIN_PX)
+    assert "expiry settlement" in close["price_note"] and close["settlement"]["underlying_close"] == 228.0
+    assert s["option_position"] == 0 and s["option_structure"] is None
+
+
+def test_a_live_chain_still_prices_replay_legs_when_it_lists_them(opp_client):
+    """A recording with a structure does not override a current chain: a live market's replay keeps today's quotes."""
+    c = opp_client
+    FakeAlgo.script = {3: {"instrument": "option", "side": 1, "qty": 1.0, "reason": "entry"}}
+    p = opp_proposal(c)
+    fills = [d for k, d in _events(c, _start(c, p)) if k == "fill"]
+    assert fills[0]["status"] == "filled" and fills[0].get("price_source") != "recorded"
+    assert fills[0]["legs"][0]["quote_mid"] == 8.0  # the FakeEnricher chain, not a recording

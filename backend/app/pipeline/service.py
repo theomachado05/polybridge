@@ -16,7 +16,7 @@ from .llm import LLMProvider, RulesProvider, rules_classify
 from .shortlist import shortlist, unmet_requirements
 from .options_join import join_options
 from .ticks import (TickSet, _universe_entry, available_requirements, build_ticks, kalshi_series, orient_for_family,
-                    orient_to_adverse, resolve_polymarket)
+                    orient_to_adverse, recording_meta, resolve_polymarket)
 from .tune import tune
 
 Direction = Literal["down_on_yes", "up_on_yes"]
@@ -136,6 +136,9 @@ async def _question_for(req: FitRequest, deps: Deps) -> tuple[str, str | None]:
             return (question or ""), token
         except Exception:
             pass
+    meta = recording_meta(req.market.source, req.market.id, token)  # offline: the recording's sidecar names it
+    if meta.get("question"):
+        return str(meta["question"]), token or meta.get("token_id")
     return "", token
 
 
@@ -159,7 +162,8 @@ async def run_fit(req: FitRequest, deps: Deps) -> dict:
     if req.market:
         market = {"source": req.market.source, "id": req.market.id, "token_id": token}
 
-    end_date = req.end_date or (_universe_entry(req.market.source, req.market.id).get("end_date")
+    end_date = req.end_date or ((_universe_entry(req.market.source, req.market.id).get("end_date")
+                                 or recording_meta(req.market.source, req.market.id, token).get("end_date"))
                                 if req.market else None)
 
     # Options eligibility only changes an opportunity fit: a hedge fit (asked, or the default with shares held) skips
@@ -180,6 +184,22 @@ async def run_fit(req: FitRequest, deps: Deps) -> dict:
         except asyncio.TimeoutError:
             ts.notes.append(f"options history took over {OPTIONS_BUDGET_S:g} s")
 
+    async def with_options(ts: TickSet) -> TickSet:
+        """Join options-implied history; when the live history gets none (e.g. a resolved market: its contracts have
+        expired, so today's chain cannot price it) but this market's recording carries option history, fit on the
+        recording instead and say so."""
+        await join(ts)
+        if _has_options(ts) or ts.source != "live_history" or market is None:
+            return ts
+        rec = await build_ticks(market, req.ticker, http=None, massive=None, offline=True)
+        if rec.ticks is None or not _has_options(rec):
+            return ts
+        why = next((n for n in reversed(ts.notes) if n.startswith("options:")), "options: none joined")
+        rec.notes = ts.notes + [f"{why}; the recorded replay of this market carries options-implied history (leg "
+                                "bar closes, recorded as of each row), so the fit replays the recording"] + rec.notes
+        rec.token_id, rec.question = rec.token_id or ts.token_id, rec.question or ts.question
+        return rec
+
     async def ticks() -> TickSet:
         try:  # bound the whole network chain (Gamma + CLOB + Massive); on overrun use recorded data only
             ts = await asyncio.wait_for(
@@ -190,7 +210,7 @@ async def run_fit(req: FitRequest, deps: Deps) -> dict:
             ts.notes.append(f"live history took over {TICKS_BUDGET_S:g} s")
             return ts
         if want_options:
-            await join(ts)
+            ts = await with_options(ts)
         return ts
 
     (event_class, llm), ts = await asyncio.gather(
@@ -205,7 +225,7 @@ async def run_fit(req: FitRequest, deps: Deps) -> dict:
     # Families whose data needs this market cannot meet (second venue, listed options) are left out entirely.
     lists = lists_for(ts)
     if not want_options and req.division is None and not lists.get("hedge"):  # falls back to opportunity: join now
-        await join(ts)
+        ts = await with_options(ts)
         lists = lists_for(ts)
     division = choose_division(lists, req.shares_held, req.division)
     families = lists.get(division, []) if division else []

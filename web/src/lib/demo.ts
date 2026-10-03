@@ -169,6 +169,16 @@ export function isOpenMarket(m: Pick<Market, "end_date" | "yes_price">, now: num
   return true;
 }
 
+/** A market Build lists: an open one, or a resolved one the backend has a recording of (its replay is the demo). */
+export function isListedMarket(m: Pick<Market, "end_date" | "yes_price" | "recorded">, now: number = Date.now()): boolean {
+  return isOpenMarket(m, now) || !!m.recorded;
+}
+
+/** A resolved (or settled-price) market listed only because the backend has its recording. */
+export function isRecordedOnly(m: Pick<Market, "end_date" | "yes_price" | "recorded"> | null | undefined, now: number = Date.now()): boolean {
+  return !!m && !!m.recorded && !isOpenMarket(m, now);
+}
+
 /** The impact the AI names first: the largest move, a held ticker winning ties. */
 export function topImpact<T extends Pick<Impact, "t" | "move">>(impacts: readonly T[], held: (t: string) => boolean = () => false): T | undefined {
   return [...impacts].sort((a, b) => Math.abs(b.move) - Math.abs(a.move) || Number(held(b.t)) - Number(held(a.t)))[0];

@@ -13,6 +13,8 @@ screenshot pass over the 8 screens (web/e2e/screens/). Both servers are always s
     python3 scripts/e2e_demo.py                 # everything
     python3 scripts/e2e_demo.py --no-screens    # API flow only (no web server, no Chrome)
     python3 scripts/e2e_demo.py --reuse         # use servers already on :8000/:3000, stop nothing
+    python3 scripts/e2e_demo.py --opportunity   # the Opportunity division (API only): options fit -> approved options
+                                                # proposal -> replay bridge with simulated multi-leg option orders
 
 Only the standard library is used, so it runs with any python3 >= 3.9. Keys: MASSIVE_API_KEY is read from --env-file
 (default: ./.env, or the main checkout's .env when run from a git worktree) and handed to the backend through
@@ -59,6 +61,19 @@ SHARES = 1000.0  # the precompute's shares_held, so the fit matches fits.json
 SPEED = "21600"
 COVERAGE = 0.5
 DIRECTION = "down_on_yes"
+
+# --opportunity: "Will NVIDIA (NVDA) close above $230 end of September?" (resolved NO on 2026-09-30), recorded with its
+# options-implied history (backend/replays/nvda-230-sep-2026-history.jsonl, 353 hourly rows, 66 with an estimate). Its
+# contracts have expired, so the fit replays the recording and the bridge prices each call-spread leg at its recorded
+# bar close (simulated fills, labelled); its last row is the expiry settlement (each leg at intrinsic from NVDA's
+# official close), where the bridge-end close is priced. In-sample: binary_vs_spread_arb #6 scores -0.956 on it (11
+# orders, -$276.15: it loses money here).
+OPP_MARKET_ID = "3961215"
+OPP_QUERY = "NVIDIA close above $230 end of September"
+OPP_TICKER = "NVDA"
+OPP_REPLAY = BACKEND / "replays" / "nvda-230-sep-2026-history.jsonl"
+OPP_FAMILIES = ("binary_vs_spread_arb", "vol_vs_pm_move", "eightk_opportunity")  # what an opportunity bridge runs
+OPP_CAPS = {"max_contracts": 10, "max_notional": 10_000.0}  # the web's DEFAULT_OPP_CAPS
 
 results: list[tuple[str, bool, str]] = []
 children: list[subprocess.Popen] = []
@@ -375,6 +390,158 @@ def run_flow(base: str, args) -> dict:
     return out
 
 
+def options_pick(fit: dict) -> dict | None:
+    """The options family the Build screen offers (web/src/lib/realBridge.ts opportunityFit): the top pick when it is
+    an options family with a score, else the best-scored options family among the alternatives."""
+    cands = [{"family": fit.get("family"), "preset_index": fit.get("preset_index"), "score": fit.get("score"),
+              "stats": None}] + list(fit.get("alternatives") or [])
+    for c in cands:
+        if c.get("family") in OPP_FAMILIES and c.get("preset_index") is not None and isinstance(c.get("score"), (int, float)):
+            return c
+    return None
+
+
+def run_opportunity_flow(base: str, args) -> dict:
+    out: dict = {"mode": "opportunity"}
+    say("\n== 1. health")
+    s, b = call(base, "GET", "/health")
+    check("GET /health", s == 200 and isinstance(b, dict) and b.get("status") == "ok", f"{s} {b}")
+    if s != 200:
+        raise Abort("backend not healthy")
+
+    say("\n== 2. search the market (a resolved market stays listed when the backend has its recording)")
+    s, b = call(base, "GET", "/markets/search?q=" + urllib.request.quote(args.query), timeout=45)
+    mk = next((m for m in (b or {}).get("markets", []) if m["source"] == "polymarket" and m["id"] == args.market_id), None) if s == 200 else None
+    check("search finds the target market", mk is not None, f"{s} {len((b or {}).get('markets', []))} results stale={(b or {}).get('stale')}")
+    if mk is None:
+        raise Abort(f"market {args.market_id} not in search results")
+    check("the search row names its recording", mk.get("recorded") == Path(args.replay).name, f"recorded={mk.get('recorded')}")
+    out["market"] = mk
+    say(f"     market: {mk['question']}  yes={mk['yes_price']}  end={mk.get('end_date')}  recorded={mk.get('recorded')}")
+
+    say("\n== 3. GET /options/implied (the Opportunity card's live estimate)")
+    s, imp = call(base, "GET", f"/options/implied?market_source=polymarket&market_id={mk['id']}", timeout=45)
+    check("options/implied answers honestly (200; a resolved market has no live estimate)",
+          s == 200 and isinstance(imp, dict) and imp.get("available") is False and bool(imp.get("reason")),
+          f"{s} available={(imp or {}).get('available')} reason={(imp or {}).get('reason')!r}")
+
+    say("\n== 4. POST /pipeline/fit (division opportunity: the recorded options history is replayed)")
+    t = time.time()
+    s, fit = call(base, "POST", "/pipeline/fit", {
+        "market": {"source": "polymarket", "id": mk["id"]}, "question": mk["question"], "ticker": args.ticker,
+        "shares_held": 0, "division": "opportunity", "end_date": mk.get("end_date")}, timeout=120)
+    ok = s == 200 and isinstance(fit, dict) and fit.get("division") == "opportunity"
+    check("fit answers in the Opportunity division", ok, f"{s} in {time.time() - t:.1f}s division={(fit or {}).get('division')}")
+    if not ok:
+        raise Abort("no opportunity fit")
+    check("fit replays the recording (ticks_source replay)", fit.get("ticks_source") == "replay", f"{fit.get('ticks_source')} n={fit.get('n_ticks')}")
+    check("score basis is net P&L per drawdown", fit.get("score_basis") == "net_pnl_per_drawdown", str(fit.get("score_basis")))
+    pick = options_pick(fit)
+    arb = next((c for c in [{"family": fit["family"], "preset_index": fit["preset_index"], "score": fit["score"]}] + fit["alternatives"]
+                if c.get("family") == "binary_vs_spread_arb"), None)
+    check("binary_vs_spread_arb is scored on the replay (engine, real orders)",
+          arb is not None and isinstance(arb.get("score"), (int, float)) and (arb.get("stats") or {}).get("n_orders", 1) > 0,
+          f"{arb}")
+    if pick is None:
+        raise Abort("no scored options family to propose")
+    out["fit"], out["pick"] = fit, pick
+    st = pick.get("stats") or {}
+    say(f"     top opportunity pick: {fit['family']} #{fit['preset_index']} score={fit['score']:.3f} (ticks={fit['n_ticks']}, {fit['ticks_source']})")
+    say(f"     options family offered: {pick['family']} #{pick['preset_index']} score={pick['score']:.3f} "
+        f"(in-sample; orders={st.get('n_orders')} pnl=${st.get('pnl', float('nan')):.2f} max_dd=${st.get('max_dd', float('nan')):.2f})")
+    say(f"     rationale: {fit['rationale'][:200]}")
+
+    say("\n== 5. POST /proposals (opportunity, the options family, risk caps), then approve")
+    s, prop = call(base, "POST", "/proposals", {
+        "ticker": args.ticker, "market": {"source": "polymarket", "id": mk["id"], "token_id": mk.get("token_id")},
+        "division": "opportunity", **OPP_CAPS,
+        "algo": {"family": pick["family"], "preset_index": pick["preset_index"], "source": "ai_fit"}})
+    check("opportunity proposal created pending with the options algo", s == 201 and prop.get("family") == "opportunity"
+          and prop["status"] == "proposed" and (prop.get("algo") or {}).get("family") == pick["family"], f"{s} {prop if s != 201 else prop['id']}")
+    if s != 201:
+        raise Abort("proposal refused")
+    body = {"proposal_id": prop["id"], "source": "replay", "market": {"source": "polymarket", "id": mk["id"], "token_id": mk.get("token_id")},
+            "replay_to_account": True}  # so GET /orders shows the option legs (the default replay sandbox is invisible there)
+    s2, _ = call(base, "POST", "/bridges", body)
+    check("a bridge on an unapproved proposal is refused (409)", s2 == 409, f"{s2}")
+    s, prop = call(base, "POST", f"/proposals/{prop['id']}/approve")
+    check("approve", s == 200 and prop["status"] == "approved", f"{s}")
+    out["proposal"] = prop
+
+    say("\n== 6. POST /bridges (replay; option orders go to the SimBroker)")
+    s, br = call(base, "POST", "/bridges", body)
+    if not check("bridge started", s == 201 and "bridge_id" in br, f"{s} {br}"):
+        raise Abort("bridge not started")
+    bid = br["bridge_id"]
+    out["bridge_id"] = bid
+
+    say(f"\n== 7. SSE /bridges/{bid}/stream until the replay ends")
+    events, closed = read_sse(base, bid, 10 ** 9, args.finish_timeout, need_fill=False)
+    kinds: dict[str, int] = {}
+    for k, _ in events:
+        kinds[k] = kinds.get(k, 0) + 1
+    say(f"     read {len(events)} events: {kinds}  (server closed stream: {closed})")
+    decisions = [d for k, d in events if k == "decision"]
+    fills = [d for k, d in events if k == "fill"]
+    positions = [d for k, d in events if k == "position"]
+    gaps = [d["options"]["gap"] for k, d in events if k == "tick" and (d.get("options") or {}).get("gap") is not None]
+    check("decisions come from hedgecore.Algo running the approved options family",
+          bool(decisions) and all(d.get("engine") == "algo" and d.get("family") == pick["family"] for d in decisions), f"{len(decisions)} decisions")
+    check("ticks carry the PM-vs-options gap", len(gaps) > 0, f"{len(gaps)} ticks with a gap; first={gaps[0] if gaps else None}")
+    filled = [f for f in fills if f.get("status") == "filled"]
+    check("option orders filled as multi-leg combos (all legs filled)", bool(filled) and all(
+        f.get("instrument") == "option" and len(f.get("legs") or []) >= 2 and all(lg.get("status") == "filled" for lg in f["legs"])
+        for f in filled), f"{len(filled)}/{len(fills)} filled")
+    check("option fills are labelled simulated, with their price source", bool(filled) and all(
+        f.get("simulated") and f.get("price_note") for f in filled),
+          f"price sources={sorted({str(f.get('price_source')) for f in filled})} note={filled[0].get('price_note') if filled else None!r}")
+    pmax = max((abs(d.get("option_position") or 0) for d in positions), default=0)
+    rmax = max((d.get("risk_used") or 0 for d in positions), default=0)
+    check("open structures never exceed the approved caps", pmax <= OPP_CAPS["max_contracts"] and rmax <= OPP_CAPS["max_notional"],
+          f"max open {pmax} (cap {OPP_CAPS['max_contracts']}), max risk ${rmax:,.2f} (cap ${OPP_CAPS['max_notional']:,.0f})")
+    out["fills"] = fills
+
+    say("\n== 8. bridge summary")
+    deadline = time.time() + 30
+    summ = None
+    while time.time() < deadline:
+        s, summ = call(base, "GET", f"/bridges/{bid}")
+        if s == 200 and summ.get("status") != "running":
+            break
+        time.sleep(1.0)
+    check("bridge finished (replay complete)", bool(summ) and summ.get("status") == "finished", f"status={summ and summ.get('status')}")
+    out["summary"] = summ
+    sa = summ.get("algo") or {}
+    check("the algo that ran is the approved options family", summ.get("division") == "opportunity" and sa.get("family") == pick["family"]
+          and sa.get("preset_index") == pick["preset_index"], f"{summ.get('division')} {sa.get('family')} #{sa.get('preset_index')}")
+    check("no option structure is left open at the end", summ.get("option_position") == 0 and summ.get("option_structure") is None,
+          f"position={summ.get('option_position')}")
+    det = summ.get("options_detail") or {}
+    say(f"     ticks={summ['ticks']} orders={summ['orders']} broker_filled={summ['broker_filled']} rejects={summ['broker_rejects']} "
+        f"recorded_option_fills={summ.get('recorded_option_fills')} option_data={summ.get('option_data')}")
+    say(f"     structure: {det.get('underlying_used')} {det.get('method')} {det.get('k_lo')}/{det.get('k_hi')} exp {det.get('expiry')} "
+        f"(source={det.get('source')}; live: {det.get('live_reason')})")
+    say(f"     decision reasons: {summ['reasons']}")
+    for f in fills:
+        legs = "; ".join(f"{lg['side']} {lg['ticker']} @ {lg['fill_px']:.4f} (rec {lg.get('quote_mid')})" for lg in f.get("legs") or [])
+        say(f"     fill: {f.get('status')} {f.get('side')} {f.get('qty'):g} {f.get('structure')} net {f.get('fill_px')} fee {f.get('fee')} "
+            f"[{f.get('reason') or f.get('close_reason')}] {legs}")
+    pnl = sum((-1 if f["side"] == "buy" else 1) * f["qty"] * f["fill_px"] * 100 - (f.get("fee") or 0) for f in filled)
+    out["bridge_pnl"] = pnl
+    say(f"     bridge round trips net of fees: ${pnl:,.2f} (simulated fills at recorded closes +/- 2%; not the engine's fill model)")
+
+    say("\n== 9. GET /orders /positions (the sim account the bridge traded in)")
+    s, orders = call(base, "GET", "/orders")
+    mine = [o for o in orders if o.get("tag") == bid] if isinstance(orders, list) else []
+    check("every option leg reached the broker (tagged with the bridge id)",
+          len(mine) == sum(len(f.get("legs") or []) for f in filled) and all(o.get("asset") == "option" for o in mine),
+          f"{len(mine)} leg orders for {bid}")
+    s, pos = call(base, "GET", "/positions")
+    left = [p for p in pos if str(p.get("symbol", "")).startswith("O:NVDA")] if isinstance(pos, list) else None
+    check("no option legs left in the account", left == [], f"{left}")
+    return out
+
+
 # ------------------------------------------------------------------ screenshots
 
 SCREENS = [("landing", "/"), ("build", "/build"), ("connect", "/connect"), ("pipeline", "/pipeline"),
@@ -485,7 +652,16 @@ def main() -> int:
     ap.add_argument("--coverage", type=float, default=COVERAGE,
                     help="approved target_coverage (the cap on the fitted algo's coverage; the UI sends Max hedge, 100%% by default)")
     ap.add_argument("--screen-wait-ms", type=int, default=9000, help="how long Chrome lets each page render")
+    ap.add_argument("--opportunity", action="store_true",
+                    help="drive the Opportunity division instead (API only): NVDA > $230 end of September, its recorded "
+                         "options history, an approved binary_vs_spread_arb proposal, a replay bridge with option legs")
     args = ap.parse_args()
+    if args.opportunity:  # its own market, ticker and recording unless given explicitly
+        args.no_screens = True
+        args.market_id = OPP_MARKET_ID if args.market_id == MARKET_ID else args.market_id
+        args.query = OPP_QUERY if args.query == QUERY else args.query
+        args.ticker = OPP_TICKER if args.ticker == TICKER else args.ticker
+        args.replay = str(OPP_REPLAY) if args.replay == str(DEFAULT_REPLAY) else args.replay
 
     base, web = f"http://localhost:{args.backend_port}", f"http://localhost:{args.web_port}"
     work = Path(tempfile.mkdtemp(prefix="pb-e2e-"))
@@ -538,7 +714,7 @@ def main() -> int:
             s, _ = call(base, "POST", "/account/reset")  # reused backend: start from a clean sim account (409 if Webull is active)
             say(f"--reuse: reset sim account -> {s}")
 
-        out = run_flow(base, args)
+        out = run_opportunity_flow(base, args) if args.opportunity else run_flow(base, args)
         if need_web:
             screenshots(web, base, out.get("bridge_id"), args)
     except Abort as e:
@@ -555,7 +731,18 @@ def main() -> int:
 
     failed = [r for r in results if not r[1]]
     say("\n================ SUMMARY ================")
-    if out:
+    if out and out.get("mode") == "opportunity":
+        f, pk, sm = out.get("fit", {}), out.get("pick") or {}, out.get("summary") or {}
+        say(f"market   : {out['market']['question']}")
+        if f:
+            say(f"fit      : {f.get('event_class')} -> top {f.get('family')} #{f.get('preset_index')} ({f.get('score') and round(f['score'], 3)}); "
+                f"options family {pk.get('family')} #{pk.get('preset_index')} score {pk.get('score') and round(pk['score'], 3)} "
+                f"({f.get('score_basis')}, in-sample, {f.get('ticks_source')})")
+        if sm:
+            say(f"bridge   : {out['bridge_id']} ran {(sm.get('algo') or {}).get('family')} ticks={sm.get('ticks')} orders={sm.get('orders')} "
+                f"filled={sm.get('broker_filled')} recorded-price option fills={sm.get('recorded_option_fills')} "
+                f"P&L net of fees ${out.get('bridge_pnl', 0):,.2f} (simulated)")
+    elif out:
         f, sm = out.get("fit", {}), out.get("summary", {})
         say(f"market   : {out['market']['question']}")
         say(f"fit      : {f.get('event_class')} -> {f.get('family')} #{f.get('preset_index')} (score {f.get('score') and round(f['score'], 3)}, llm={f.get('llm')}, {f.get('ticks_source')})")

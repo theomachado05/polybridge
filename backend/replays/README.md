@@ -8,6 +8,7 @@
 | `russia-eu-military-2026-history.jsonl` | Russia military action against an EU country by December 31, 2026? (4713962) -> ITA, up on YES | 347 hourly, 2026-09-19 01:00Z to 2026-10-03 11:33Z | 0.065 to 0.285 (opening print 0.485) | energy_geo_hedge #54, score_vs_static +0.508 (engine replay: 136 sends, 8 fills; a bridge: 31 orders, 17 at a 50% cap) | 18000x, about 69 s |
 | `fed-hike-25bps-oct-2026-history.jsonl` | Will the Fed increase interest rates by 25 bps after the October 2026 meeting? (2589813) -> IWM | 721 hourly, 2026-09-02 to 2026-10-03 | 0.155 to 0.705 | IWM: equity_delta_bridge #15, score_vs_static -0.011 (no better than a static hedge; fits.json scores SPY at -0.004) | 36000x, about 72 s |
 | `fed-hike-25bps-oct-2026.jsonl` | same Fed October market | 1200 one-second polls, 20 min | constant 0.175 | (quiet: one initial hedge) | real time |
+| `nvda-230-sep-2026-history.jsonl` (**Opportunity division**) | Will NVIDIA (NVDA) close above $230 end of September? (3961215, resolved NO) -> NVDA call spread 227.5/232.5, expiry 2026-09-30 | 353 hourly, 2026-09-16 04:00Z to 2026-09-30 20:00Z; 66 carry an options estimate | 0.005 to 0.76 (options-implied 0.11 to 0.71) | opportunity fit: binary_vs_spread_arb #6, score -0.956 (11 orders, -$276.15 net of fees, max drawdown $288.95: it loses money here); a bridge: the same 11 orders at recorded leg closes + a bridge-end close at the expiry settlement, -$294.77 | 21600x, about 59 s |
 
 The two new files (recorded 2026-10-03 with `scripts/history_with_equity.py`) carry `{"ts_ns", "p", "under_px"}` per
 row: `p` is the CLOB `prices-history` mid (hourly, `interval=1m&fidelity=60`; spread and depth unknown, never
@@ -34,6 +35,60 @@ the bridge's. See `docs/contracts.md` ("Bridge vs engine replay").
     cd backend && uv run --env-file ../.env python scripts/history_with_equity.py \
         --market russia-eu-military-2026=4713962 --equity ITA --out replays/russia-eu-military-2026-history.jsonl
     cd backend && uv run --env-file ../.env python scripts/record_equity_bars.py ITA --replay russia-eu-military-2026-history.jsonl
+
+## nvda-230-sep-2026-history.jsonl (the Opportunity division)
+
+"Will NVIDIA (NVDA) close above $230 end of September?" (Polymarket 3961215, about $6,000 traded, resolved NO: NVDA
+closed at 228.38 on 2026-09-30, its official close). Recorded 2026-10-03 with options-implied history, so the Opportunity division
+(`binary_vs_spread_arb`) can be fitted and bridged on a replay, offline:
+
+    cd backend && uv run --env-file ../.env python scripts/history_with_equity.py --options --since 2026-09-16 \
+        --market nvda-230-sep-2026=3961215 --equity NVDA --out replays/nvda-230-sep-2026-history.jsonl
+
+Each row is `{"ts_ns", "p", "under_px"}` (as for the files above: CLOB hourly mid, NVDA hourly close of the last
+finished bar), plus, on 66 of the 353 rows, `opt_mid`, `opt_implied_prob`, `opt_iv` and `opt_legs`, and on the last
+row the expiry settlement:
+
+- **Structure** (sidecar `options`): the YES-equivalent call spread C(227.5) - C(232.5) at the 2026-09-30 expiry
+  (`O:NVDA260930C00227500` long, `O:NVDA260930C00232500` short), chosen from Massive's contract listing as it stood
+  on 2026-09-16, the replay's first day (point in time: Massive's `as_of`, so contracts listed later, whose strikes
+  follow the later price path, are not candidates): the listed expiry nearest the resolution date and the tightest
+  listed strikes around $230. No price is read to choose it.
+- **Values**: the two legs' Massive hourly bar closes (77 and 79 bars; the Sep 30 contracts trade from Sep 16),
+  each joined as of its bar END (no look-ahead), through `app.pipeline.options_join.option_columns`, the fit's own
+  builder. `opt_mid` = the spread close-to-close, `opt_implied_prob` = `opt_mid / 5 / DF` (digital approximation),
+  `opt_iv` = Black-Scholes inversion of the leg closes against NVDA's bar closes (paired within one bar interval),
+  `opt_legs` = each leg's close (what a replay bridge prices the legs at). All are estimates from bar closes, not
+  quotes.
+- **Fresh-close rule** (the engine's rule for equity fills, applied to the option legs): option fields only inside
+  the regular session (09:30-16:00 New York, trading days) and once both legs have printed that day, and only where
+  the two legs closed within one bar interval of each other. 277 synced but off-session or stale hours were dropped;
+  nights and weekends carry no estimate (NaN on replay), so no order is filled at a stale close. A bridge's end close
+  is priced at the last recorded legs only when they are at most one bar older than the end of the replay; otherwise
+  it is a rejected fill and the structure stays open in the summary.
+- **Expiry settlement** (the last row, 16:00:20 New York on 2026-09-30, after the close): `opt_legs` = each leg's
+  intrinsic value at NVDA's official close (Massive `/v1/open-close`, 228.38): C(227.5) = 0.88, C(232.5) = 0, so
+  `opt_mid` = 0.88, with `opt_settlement` naming the close and its source. No `opt_implied_prob` / `opt_iv` there (a
+  settlement value is not a quote, so no family opens a trade on it). The engine marks an open spread to it and a
+  replay bridge closes at it (no spread, the simulator's per-contract fee). Without it the spread bought at 15:00 that
+  day (mid 2.91) was marked (engine) and closed (bridge) at its 15:00 closes, hiding about $200 of loss.
+- `--since 2026-09-16` drops the 303 rows before that day (the market opened 2026-08-28; the Sep 30 contracts trade
+  from Sep 16) before the structure is chosen, so the listing is read as of the replay's first day. No 8-K data was
+  fetched.
+
+On this market the PM and the options agree closely: the median gap is under a point and the largest, on expiry day,
+is 11.6 points. Fit (`POST /pipeline/fit`, division opportunity, NVDA, offline or online: online, the live history
+has no option history because the contracts expired, so the fit replays this recording and says so): the top
+opportunity pick is `no_bid_seller` #3 at +11.149, a prediction-market-only family whose replay sells NO at the
+recorded mid (the spread is unknown, so its fills are optimistic) and which never runs on a bridge; the options
+family is `binary_vs_spread_arb` #6 (entry gap 0.03, exit 0.02, 1 spread) at **-0.956**: 11 orders, -$276.15 net of
+fees against a $288.95 max drawdown (#9, entry gap 0.05: 3 orders, all on expiry day, -$241.95, -0.959). In-sample
+and best of 36 presets, and still negative: the demo shows the mechanism, not alpha. Most of the loss is the last
+spread, bought at 15:00 on expiry day and worth 0.88 at the close. An approved proposal + `POST /bridges` on this
+replay places the same 11 orders, each a two-leg combo filled by the SimBroker at the recorded closes +/- 2% (the real
+spread is unknown), $0.65 per leg contract, and closes the last spread at the expiry settlement: -$294.77 over the six
+round trips (#9: -$249.75; our 2026-10-03 run, pinned in `tests/test_opportunity_replay.py`;
+`python3 scripts/e2e_demo.py --opportunity` drives it over HTTP).
 
 ## fed-hike-25bps-oct-2026.jsonl
 

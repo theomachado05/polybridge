@@ -145,16 +145,167 @@ def spread_series(ts_s: np.ndarray, legs: list[tuple[int, list[tuple[int, float]
     return out
 
 
+def _ny_dates(ts_s: np.ndarray) -> list[dt.date]:
+    from ..options.match import _NY
+    return [dt.datetime.fromtimestamp(int(t), dt.timezone.utc).astimezone(_NY).date() for t in ts_s]
+
+
+def us_session(ts_s: np.ndarray) -> np.ndarray:
+    """True where t (unix s) is inside the NYSE regular session (09:30-16:00 New York, trading days only): the same
+    rule as the engine's ``us_equity_session`` that refuses equity fills at a stale recorded close."""
+    from ..chain import calendar
+    from ..options.match import _NY
+    cal = calendar()
+    out = np.zeros(len(ts_s), dtype=bool)
+    open_day: dict[dt.date, bool] = {}
+    for i, t in enumerate(np.asarray(ts_s, dtype=np.int64)):
+        d = dt.datetime.fromtimestamp(int(t), dt.timezone.utc).astimezone(_NY)
+        day = d.date()
+        if day not in open_day:
+            try:
+                open_day[day] = day.weekday() < 5 and cal.on_or_after(day).date() == day
+            except Exception:
+                open_day[day] = day.weekday() < 5
+        sod = d.hour * 3600 + d.minute * 60 + d.second
+        out[i] = open_day[day] and 9 * 3600 + 30 * 60 <= sod < 16 * 3600
+    return out
+
+
+def session_fresh_mask(ts_s: np.ndarray, leg_bars: list[list[tuple[int, float]]]) -> np.ndarray:
+    """True where a spread built from bar closes is a price someone could have traded at that tick: the tick is in
+    the regular session (``us_session``) and every leg's last known bar ENDED on that same New York day (it printed in
+    this session; a bar ending exactly at 16:00 counts for its day). Overnight, on weekends and in a new session
+    before both legs have printed, the last close is stale and the mask is False (the hedge path's fresh-close rule).
+    A tick at or after 16:00 is outside the session, so the 15:00-16:00 bar is never used at a later tick; on the
+    expiry date the recorder writes the settlement there instead (``history_with_equity.settle_rows``)."""
+    ts_s = np.asarray(ts_s, dtype=np.int64)
+    n = len(ts_s)
+    if not leg_bars or any(not b for b in leg_bars) or n == 0:
+        return np.zeros(n, dtype=bool)
+    ok = us_session(ts_s)
+    day_t = _ny_dates(ts_s)
+    for bars in leg_bars:
+        known = asof_known(ts_s, bars)
+        for i in np.where(ok)[0]:
+            k = known[i]
+            ok[i] = bool(np.isfinite(k)) and _ny_dates(np.array([int(k) - 1]))[0] == day_t[i]
+    return ok
+
+
+def leg_closes(ts_s: np.ndarray, bars: list[tuple[int, float]]) -> np.ndarray:
+    """The close of the last bar of one leg known at each t (as-of join on bar END); NaN before the first bar."""
+    return spread_series(ts_s, [(1, bars or [])])
+
+
+async def option_columns(ts_s: np.ndarray, legs: list[tuple[int, list[tuple[int, float]]]], *, above: bool,
+                         k_lo: float, k_hi: float, k: float, expiry: dt.date, und: str, client: Any,
+                         bars: Callable[[Any, str, int, int], list[tuple[int, float]]], bounded,
+                         session_fresh: bool = False) -> tuple[dict[str, np.ndarray], dict]:
+    """opt_mid / opt_implied_prob / opt_iv / opt_delta per tick from the signed legs' bar closes (``legs`` =
+    [(+1, bars of the long leg), (-1, bars of the short leg)], the YES-equivalent spread). The one place both the fit's
+    live join and the replay recorder build option history. ``session_fresh`` also drops ticks where the closes are
+    stale (``session_fresh_mask``). Returns (columns, stats)."""
+    from ..options.implied import RISK_FREE
+    ts_s = np.asarray(ts_s, dtype=np.int64)
+    mid = spread_series(ts_s, legs)
+    # Both legs must have closed at about the same time: an illiquid strike's last close can be days older than
+    # the other leg's, and that spread never existed at one moment (a fake PM-vs-options gap that "converges"
+    # when the stale leg prints). Same rule as the IV path below; also drop pairs older than any weekend gap.
+    synced, n_unsynced = leg_sync_mask(ts_s, [b for _, b in legs])
+    keep = synced
+    n_off = 0
+    if session_fresh:
+        fresh = session_fresh_mask(ts_s, [b for _, b in legs])
+        n_off = int((synced & ~fresh).sum())
+        keep = synced & fresh
+    mid = np.where(keep, mid, NAN)
+    width = k_hi - k_lo
+    dates = [dt.datetime.fromtimestamp(int(t), dt.timezone.utc).date() for t in ts_s]
+    df = np.array([_discount(RISK_FREE, expiry, d) for d in dates])
+    prob = mid / width / df
+    with np.errstate(invalid="ignore"):
+        ok = np.isfinite(prob) & (prob >= -ARB_TOL) & (prob <= 1 + ARB_TOL) & (mid >= 0)
+    signed = [(s, None) for s, _ in legs]
+    iv = await _iv_history(client, bars, und, ts_s, legs, signed, above, k_lo, k_hi, k, expiry, RISK_FREE, bounded)
+    if session_fresh:
+        iv = np.where(keep, iv, NAN)
+    cols = {"opt_mid": np.where(ok, mid, NAN), "opt_implied_prob": np.where(ok, np.clip(prob, 0.0, 1.0), NAN),
+            "opt_iv": iv, "opt_delta": np.full(len(ts_s), NAN)}
+    stats = {"n_with_options": int(ok.sum()), "n_with_iv": int(np.isfinite(iv).sum()), "n_unsynced_legs": n_unsynced,
+             "n_off_session": n_off, "keep": ok}
+    return cols, stats
+
+
+REFERENCE_CONTRACTS = "/v3/reference/options/contracts"
+
+
+def historical_structure(client: Any, underlying: str, strike: float, resolution: dt.date, *, above: bool,
+                         as_of: dt.date, strike_pad: float = 0.2) -> dict | None:
+    """The YES-equivalent spread a past (or live) threshold question maps to, from Massive's contract LISTING
+    (``/v3/reference/options/contracts``), not from a quote snapshot: the listed expiry nearest the resolution date
+    (``implied.nearest_expiry`` as of ``as_of``, within ``max_expiry_gap_days``), and the tightest listed strikes
+    around K (``implied.bracket``). The listing is read point in time (Massive's ``as_of`` parameter: only contracts
+    that were listed and not yet expired on ``as_of``), so a strike or expiry added later, whose listing follows the
+    later price path, is never chosen; no price is read either. Index underlyings use the PM-settled root (SPXW, NDXP)
+    when a strike is listed twice. Sync: run through ``app.chain.bounded``. None when nothing fits."""
+    from ..options.implied import bracket, max_expiry_gap_days, nearest_expiry
+    kind = "call" if above else "put"
+    root = underlying[2:] if underlying.startswith("I:") else underlying
+    limit = max_expiry_gap_days(resolution, as_of)
+    lo = max(as_of, resolution - dt.timedelta(days=limit))
+    hi = resolution + dt.timedelta(days=limit)
+    # as_of: the listing as it stood that day (``expired`` is relative to as_of; every expiry asked for is >= as_of,
+    # so "false" is the listing then; "true" only adds a contract that expired on as_of itself, if Massive counts it)
+    rows: list[dict] = []
+    for expired in ("true", "false"):
+        rows += client.get_all(REFERENCE_CONTRACTS, {
+            "underlying_ticker": root, "contract_type": kind, "expired": expired, "as_of": as_of.isoformat(),
+            "expiration_date.gte": lo.isoformat(), "expiration_date.lte": hi.isoformat(),
+            "strike_price.gte": round(strike * (1 - strike_pad), 4), "strike_price.lte": round(strike * (1 + strike_pad), 4),
+            "limit": 1000}, max_pages=5) or []
+    by_exp: dict[str, dict[float, str]] = {}
+    for r in rows:
+        try:
+            e, k_, tk = str(r["expiration_date"])[:10], float(r["strike_price"]), str(r["ticker"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        cur = by_exp.setdefault(e, {}).get(k_)
+        # a strike listed under two roots (index AM/PM settlement): keep the PM-settled weekly root (SPXW / NDXP)
+        if cur is None or (underlying.startswith("I:") and not tk.startswith(f"O:{root}2") and cur.startswith(f"O:{root}2")):
+            by_exp[e][k_] = tk
+    exp = nearest_expiry(sorted(by_exp), resolution, as_of)
+    if exp is None:
+        return None
+    gap = (dt.date.fromisoformat(exp) - resolution).days
+    if abs(gap) > limit:
+        return None
+    br = bracket(list(by_exp[exp]), strike)
+    if br is None:
+        return None
+    k_lo, k_hi = br
+    t_lo, t_hi = by_exp[exp][k_lo], by_exp[exp][k_hi]
+    legs = ([{"sign": 1, "ticker": t_lo, "strike": k_lo, "kind": kind}, {"sign": -1, "ticker": t_hi, "strike": k_hi, "kind": kind}]
+            if above else
+            [{"sign": 1, "ticker": t_hi, "strike": k_hi, "kind": kind}, {"sign": -1, "ticker": t_lo, "strike": k_lo, "kind": kind}])
+    return {"underlying": underlying, "strike": strike, "direction": "above" if above else "below",
+            "kind": "call_spread" if above else "put_spread", "expiry": exp, "expiry_gap_days": gap,
+            "k_lo": k_lo, "k_hi": k_hi, "width": k_hi - k_lo, "legs": legs,
+            "listing": f"Massive /v3/reference/options/contracts as of {as_of.isoformat()} (point in time)"}
+
+
 async def join_options(ticks: dict[str, np.ndarray], question: str | None, end_date: Any, *,
                        massive: Callable[[], Any] | None, offline: bool = False,
                        refresh: Callable[..., Awaitable[Any]] | None = None,
                        bars: Callable[[Any, str, int, int], list[tuple[int, float]]] | None = None,
-                       eightk: bool = True, today: dt.date | None = None) -> tuple[dict[str, np.ndarray], dict]:
-    """(ticks with opt_* / eightk_score joined where available, info {available, notes, match, structure, ...})."""
+                       eightk: bool = True, today: dt.date | None = None,
+                       session_fresh: bool = False) -> tuple[dict[str, np.ndarray], dict]:
+    """(ticks with opt_* / eightk_score joined where available, info {available, notes, match, structure, ...}).
+    ``session_fresh``: also drop ticks outside the regular session or before both legs printed in it
+    (``session_fresh_mask``; the recorder sets it, live fits do not yet)."""
     from ..chain import bounded
     from ..options import enrich as en
     from ..options.eightk import eightk_score, refresh_eightk
-    from ..options.implied import RISK_FREE, implied_for_threshold
+    from ..options.implied import implied_for_threshold
     from ..options.match import match_question, why_no_match
 
     info: dict[str, Any] = {"available": False, "notes": [], "quote_model": "option_bar_closes"}
@@ -212,25 +363,12 @@ async def join_options(ticks: dict[str, np.ndarray], question: str | None, end_d
         legs = []
         for sign, tk in signed:
             legs.append((sign, await bounded(bars, client, tk, start_s, end_s)))
-        mid = spread_series(ts_s, legs)
-        # Both legs must have closed at about the same time: an illiquid strike's last close can be days older than
-        # the other leg's, and that spread never existed at one moment (a fake PM-vs-options gap that "converges"
-        # when the stale leg prints). Same rule as the IV path below; also drop pairs older than any weekend gap.
-        synced, n_unsynced = leg_sync_mask(ts_s, [b for _, b in legs])
-        mid = np.where(synced, mid, NAN)
-        width = k_hi - k_lo
-        dates = [dt.datetime.fromtimestamp(int(t), dt.timezone.utc).date() for t in ts_s]
-        df = np.array([_discount(RISK_FREE, expiry, d) for d in dates])
-        prob = mid / width / df
-        ok = np.isfinite(prob) & (prob >= -ARB_TOL) & (prob <= 1 + ARB_TOL) & (mid >= 0)
+        cols, st = await option_columns(ts_s, legs, above=above, k_lo=k_lo, k_hi=k_hi, k=k, expiry=expiry, und=und,
+                                        client=client, bars=bars, bounded=bounded, session_fresh=session_fresh)
         out = dict(ticks)
-        out["opt_mid"] = np.where(ok, mid, NAN)
-        out["opt_implied_prob"] = np.where(ok, np.clip(prob, 0.0, 1.0), NAN)
-        out["opt_iv"] = await _iv_history(client, bars, und, ts_s, legs, signed, above, k_lo, k_hi, k, expiry,
-                                          RISK_FREE, bounded)
-        out["opt_delta"] = np.full(len(ts_s), NAN)
-        n_ok = int(ok.sum())
-        n_iv = int(np.isfinite(out["opt_iv"]).sum())
+        out.update(cols)
+        n_ok, n_iv, n_unsynced = st["n_with_options"], st["n_with_iv"], st["n_unsynced_legs"]
+        dates = [dt.datetime.fromtimestamp(int(t), dt.timezone.utc).date() for t in ts_s]
         info.update(available=n_ok > 0, n_with_options=n_ok, underlying_used=und, strike_used=k,
                     structure={"kind": "call_spread" if above else "put_spread", "expiry": res["expiry"],
                                "k_lo": k_lo, "k_hi": k_hi, "legs": [t for _, t in signed]})
@@ -238,6 +376,10 @@ async def join_options(ticks: dict[str, np.ndarray], question: str | None, end_d
         if n_unsynced:
             notes.append(f"options: {n_unsynced}/{len(ts_s)} ticks dropped because the two legs' last bar closes "
                          "were more than one bar interval apart (or stale), so their spread never traded at once")
+        if session_fresh:
+            info["n_off_session"] = st["n_off_session"]
+            notes.append(f"options: {st['n_off_session']}/{len(ts_s)} synced ticks dropped outside the regular "
+                         "session or before both legs printed in it (a stale close is not a tradable price)")
         if n_ok == 0:
             notes.append("options: no bar closes for both legs inside the history window")
         else:

@@ -52,6 +52,33 @@ Two things to know before you say "and here is the account":
 
 If `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` is set and the tunnel is up (see `docs/voice-agent.md`), say "protect my TLT against another Fed rate hike" (the replay file only plays for the market it records, so a bridge on another market is refused with a 422). Approval and starting a bridge need an explicit "yes" from you.
 
+### Optional: the Opportunity division (20 seconds)
+
+The same event can also be **traded against listed options** instead of hedged: when the prediction market's
+probability and the options-implied probability of the same threshold disagree, `binary_vs_spread_arb` buys or sells
+the call spread. Today only one recording carries option history, a resolved market:
+**"Will NVIDIA (NVDA) close above $230 end of September?"** (resolved NO; 353 hourly points, 66 of them with an
+options estimate; `backend/replays/README.md`). No restart: with `make dev` as is, an opportunity bridge on this market
+finds its own recording through the replay index.
+
+Timing: at 21600x the replay runs about 59 s, and the options family first trades about 38 s in (Sep 25), then
+again in the last 5 seconds or so (Sep 29 and expiry day). Start this bridge before the segment (during the findings,
+or right after the hedge demo) and come back to it: the Bridge screen keeps the whole trade log.
+
+| Time | Screen | Click | Say |
+|---|---|---|---|
+| 0:00 | **Build chat** | Type `NVIDIA close above $230 end of September`; click the row tagged **resolved · recorded replay** | "A resolved market we recorded: its price and the options-implied estimate, hour by hour." |
+| 0:04 | Build chat | No mapping exists, so type `NVDA` and pick it; the **Hedge vs Opportunity** choice appears | "Besides a hedge, PolyBridge can offer an options trade on the same threshold." The Opportunity row reads "AI fit · replay score -0.956 (estimate)", Binary Vs Spread Arb preset #6. |
+| 0:08 | Build chat | Click **Opportunity**: the options fit card | "The family, the preset, the replay score and the risk caps I approve: at most 10 spreads open, $10,000 at risk. The score is negative: on this history it lost money, in-sample. We show the mechanism, not an edge." The card also says the division's top pick (No Bid Seller) trades prediction-market legs and never runs on a bridge, and that a resolved market has no live options estimate. |
+| 0:12 | Build, then **Bridge** | "Approve & start options bridge" (or open the bridge you started earlier) | Tags: REPLAY, RECORDED OPTION DATA, SIMULATED FILLS. "PM YES is measured; the options-implied number is a risk-neutral estimate from the option legs' bar closes; the gap is the difference, and the sparkline its history. Nights and weekends show no estimate, by design: a stale close is not a price." On the trades: "Each order is a two-leg call spread, 227.5 / 232.5, filled all-or-none by the simulator at the recorded leg closes plus an assumed 2% half-spread, because these contracts have expired. Eleven orders, and the last spread, bought an hour before expiry, is closed at its settlement value: NVDA closed at 228.38, so the 227.5 call is worth 88 cents and the 232.5 call nothing." |
+
+Labels to keep (all on screen): simulated option fills; in-sample replay estimate (best of 36 presets, still
+-0.956: 11 orders, -$276.15 net of fees, max drawdown $288.95); options-implied = estimate, not a measured probability;
+the PM price is the hourly mid (spread unknown). The bridge's simulated round trips come to -$294.77: a different fill
+model from the engine replay's, same eleven decisions; both value the last spread at its expiry settlement (intrinsic
+at the official close), labelled on the closing fill. Checked over HTTP by `make e2e-opportunity` (22 checks, also
+with `--offline`).
+
 ### Other recorded markets
 
 `REPLAY=<path from the repo root> make dev` plays a different recording (the replay file is global, so pick the matching market in Build; a replay bridge for any other market is refused with a 422 when the file's `.meta.json` sidecar names a different market). See `backend/replays/README.md` and `replays/README.md`.
@@ -71,6 +98,7 @@ Two fresh high-volume ones in `replays/` (`REPLAY=replays/<file> make dev`):
 - [ ] `.env` in the repo root has `MASSIVE_API_KEY` (live equity quotes for fills and the Portfolio exposure; see fallbacks). `GEMINI_API_KEY` is optional.
 - [ ] Ports 8000 and 3000 free: `lsof -i :8000 -i :3000`.
 - [ ] Smoke test: `make e2e-api` (about 75 s, uses a throwaway simulated account, stops what it starts). It must print `RESULT   : PASS`.
+- [ ] If you show the Opportunity segment: `make e2e-opportunity` (about 60 s, API only). It must print `RESULT   : PASS`.
 - [ ] `make dev`; `curl localhost:8000/health` returns ok; open http://localhost:3000.
 - [ ] Walk the click path once, then **restart the backend** before the talk: proposals and bridges are in memory, one bridge per proposal, so a rehearsed proposal re-attaches to its finished bridge instead of replaying.
 - [ ] Optional full rehearsal with screenshots: `make e2e` (headless Chrome clicks the same path; about 3 minutes).
@@ -80,7 +108,7 @@ Two fresh high-volume ones in `replays/` (`REPLAY=replays/<file> make dev`):
 
 | If | What happens | What to do |
 |---|---|---|
-| **Wi-Fi off** (no network at all) | Market search uses the bundled list ("offline: cached market list"); `/map` is precomputed; the fit tunes on the recorded replay file (tag "replay ticks" instead of "real price history"); the bridge replays fine and the decisions, gates and reasons all work. Orders fill in the sandbox at the **recorded price** from the replay file (each fill is marked "recorded price"), so the hedge builds as usual. `make e2e` checks this with `--offline` (26/26 pass). With an AI fit the approval button reads "Approve and open the bridge" (the algo's fee gate prices orders from the recorded price); only if the fit did not answer (tag "scripted demo steps") does it read "Approve without the fee gate", because the default spec then runs with no quote to price fees. | Prefer a phone hotspot. If offline, say the fills are priced from the recorded replay, not a live quote. |
+| **Wi-Fi off** (no network at all) | Market search uses the bundled list ("offline: cached market list"); `/map` is precomputed; the fit tunes on the recorded replay file (tag "replay ticks" instead of "real price history"); the bridge replays fine and the decisions, gates and reasons all work. Orders fill in the sandbox at the **recorded price** from the replay file (each fill is marked "recorded price"), so the hedge builds as usual. `make e2e` checks this with `--offline` (26/26 pass). The Opportunity segment works offline too (the fit and the option legs use the recording; `make e2e-opportunity` with `--offline`, 22/22). With an AI fit the approval button reads "Approve and open the bridge" (the algo's fee gate prices orders from the recorded price); only if the fit did not answer (tag "scripted demo steps") does it read "Approve without the fee gate", because the default spec then runs with no quote to price fees. | Prefer a phone hotspot. If offline, say the fills are priced from the recorded replay, not a live quote. |
 | **No Gemini key** | Rules-based classifier and a template rationale; the tag says "RULES-BASED FIT". The family and preset come from the same deterministic replay tuning. | Say "keyword rules today; Gemini refines the classification and the wording when a key is set". |
 | **No Webull key** | The account is the simulator. The Connect screen shows the Webull card as a saved preference only, and the account tag reads "Simulated account". | Say "simulated account; Webull paper takes over when its keys are set". Never imply a real broker. |
 | **No Massive key** | No live equity quote; replay fills use the recorded price from the replay (each fill is marked "recorded price"), and the Portfolio exposure is empty (no spot price). The fit still runs on recorded bars, so the approval button reads "Approve and open the bridge"; it reads "Approve without the fee gate" only if the fit did not answer and the default spec runs. | Put the key in `.env` before the talk. |
@@ -106,6 +134,7 @@ Do not make these:
 - Not "the demo market shows the signal works": "Another Fed rate hike in 2026?" was chosen for the demo because its fit scores near the top (+0.257, 4th of 122), in-sample and the best of many presets. Say it is a good case, not a typical one.
 - Not "the fit shows the signal works": over the 133 precomputed markets the median score is 0.0053, 36 of 122 scored fits are at or below zero (all negative), and only 53 are above 0.01 (`backend/app/data/fits.json`, our tally of the entries). Do not quote the raw variance reduction (median 0.339) as the hedge's edge: most of it is hedge size (median average hedge ratio 0.18).
 - Not "the arbitrage scan found money": 5 resolved gaps, 0 executable.
+- Not "the options trade makes money": on the NVDA replay `binary_vs_spread_arb` scores -0.956 in-sample and the bridge's simulated round trips lose $294.77. Do not quote the division's top pick, `no_bid_seller` (+11.149): it trades prediction-market legs only, and its replay sells NO at the recorded mid with the spread unknown.
 - Not "AI estimates are measurements": the stock mapping is a precomputed estimate.
 - Not "real orders": nothing here touches real money. The landing page's "1,284 algorithms" is a design figure; the library reports 1,278 presets, so say 1,278.
 

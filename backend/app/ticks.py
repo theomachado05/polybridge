@@ -53,10 +53,15 @@ class SourceError(RuntimeError):
 class Tick(tuple):
     """``(ts_ns, p)`` with the full MarketTick ``fields`` attached (raw YES orientation, NaN = unknown)."""
 
-    def __new__(cls, ts_ns: int, p: float, fields: dict[str, float] | None = None, venue: int = 0) -> "Tick":
+    def __new__(cls, ts_ns: int, p: float, fields: dict[str, float] | None = None, venue: int = 0,
+                legs: dict[str, float] | None = None, recorded_ts_ns: int | None = None,
+                settled: bool = False) -> "Tick":
         t = super().__new__(cls, (int(ts_ns), float(p)))
         t.fields = fields if fields is not None else mid_only_fields(p)
         t.venue = venue
+        t.legs = legs  # replay only: {option leg ticker: recorded bar close} where the recording had a fresh pair
+        t.recorded_ts_ns = recorded_ts_ns  # replay only: the row's original time (ts_ns is the wall-clock stamp)
+        t.settled = bool(settled and legs)  # replay only: legs are the expiry settlement (intrinsic), not a quote
         return t
 
     @property
@@ -364,11 +369,29 @@ class ReplaySource:
     is never "stale" because of the backend's own latency.
     speed <= 0 means no sleeping and each tick is stamped with the current time (used by tests).
     Rows with a non-finite p are skipped. ``bars``: recorded equity closes [(known_at_s, close)] joined as of each
-    row's original time (see ``app.pipeline.ticks.recorded_bars``)."""
+    row's original time (see ``app.pipeline.ticks.recorded_bars``). A row's ``opt_legs`` ({leg ticker: bar close},
+    written by ``scripts/history_with_equity.py --options`` only where the pair was fresh, or the expiry settlement
+    when the row also has ``opt_settlement``) rides on ``Tick.legs`` (``Tick.settled`` for a settlement), with the
+    row's original time on ``Tick.recorded_ts_ns``, so an opportunity bridge can price the legs at the replayed time
+    when no current chain lists them, and tell how old the last recorded legs are when it closes at bridge end."""
 
     def __init__(self, path: str | Path, speed: float = 1.0, bars: list[tuple[int, float]] | None = None) -> None:
         self.path, self.speed, self.bars = Path(path), speed, bars or []
         self._bar_t = [b[0] for b in self.bars]
+
+    @staticmethod
+    def legs_for(row: dict) -> dict[str, float] | None:
+        """The row's recorded option leg closes ({ticker: close}, all finite and >= 0), else None."""
+        legs = row.get("opt_legs")
+        if not isinstance(legs, dict) or not legs:
+            return None
+        out = {}
+        for tk, v in legs.items():
+            x = _num(v)
+            if not isinstance(tk, str) or x is None or x < 0:
+                return None
+            out[tk] = x
+        return out
 
     def fields_for(self, row: dict, p: float) -> dict[str, float]:
         f = mid_only_fields(p)
@@ -408,6 +431,7 @@ class ReplaySource:
                     # wall-clock staleness gate hold it (and the ticks behind it) for the backend's own latency.
                     start += now - target
                     target = now
-                yield Tick(min(target, time.time_ns()), p, fields, venue)  # never future-dated vs. now_ns
+                yield Tick(min(target, time.time_ns()), p, fields, venue, self.legs_for(row), ts,  # never future-dated
+                           bool(row.get("opt_settlement")))
             else:
-                yield Tick(time.time_ns(), p, fields, venue)
+                yield Tick(time.time_ns(), p, fields, venue, self.legs_for(row), ts, bool(row.get("opt_settlement")))
