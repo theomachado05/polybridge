@@ -351,11 +351,17 @@ class LiveSource:
                 await http.aclose()
 
 
+# ReplaySource only re-bases its schedule when the consumer is later than this; a sleep that overshoots by a few
+# milliseconds is timer jitter, not a slow consumer, and re-basing on it would drift the recorded spacing.
+REPLAY_REBASE_NS = 50_000_000
+
+
 class ReplaySource:
     """Reads JSONL ``{ts_ns, p, ...}`` and re-emits it on the wall clock: the first tick is stamped "now" and recorded
     gaps are preserved divided by ``speed`` (speed 3600 plays hourly history at one tick per second). When the consumer
-    falls behind (a slow broker call between ticks), the schedule shifts by the delay instead of catching up: every
-    tick is stamped when it is handed over, so a replay tick is never "stale" because of the backend's own latency.
+    falls behind by more than 50 ms (a slow broker call between ticks; a smaller sleep overshoot is ignored), the
+    schedule shifts by the delay instead of catching up: every tick is stamped when it is handed over, so a replay tick
+    is never "stale" because of the backend's own latency.
     speed <= 0 means no sleeping and each tick is stamped with the current time (used by tests).
     Rows with a non-finite p are skipped. ``bars``: recorded equity closes [(known_at_s, close)] joined as of each
     row's original time (see ``app.pipeline.ticks.recorded_bars``)."""
@@ -395,7 +401,7 @@ class ReplaySource:
                 now = time.time_ns()
                 if target > now:
                     await asyncio.sleep((target - now) / 1e9)
-                elif target < now:
+                elif now - target > REPLAY_REBASE_NS:
                     # The consumer (the bridge awaiting its broker) fell behind the schedule: re-base the clock so
                     # this tick is stamped now and the gaps after it keep their recorded spacing. A replayed tick
                     # handed over late is not old data; stamping it at its past slot would make the engine's

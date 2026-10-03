@@ -52,7 +52,9 @@ HEARTBEAT_S = 15.0
 MAX_EVENTS = 20_000
 REPLAYS_DIR = Path(__file__).resolve().parents[1] / "replays"
 NO_ENGINE = "engine not installed (uv sync --group engine)"
-# An order never stalls the bridge loop longer than this. It is above the longest chain of broker requests inside one
+# Each broker call (and the whole _lookup chain: orders() then find_order, under one deadline) is bounded by this, so
+# no single broker step stalls the bridge loop longer than 30 s; an order that goes through several steps (settle the
+# resting order, then place) can take one bound per step. It is above the longest chain of broker requests inside one
 # place_order (Webull: 6 requests x 4 s hard deadline each = 24 s), so a call that may still place an order is never
 # abandoned half-way; if it is (timeout or error after the request was built), the order is tracked as unconfirmed
 # and reconciled by client_order_id before anything else is sent.
@@ -643,14 +645,19 @@ async def _apply_order_state(bridge: Bridge, algo, o, side: str, instrument: str
 
 async def _lookup(broker: Broker, order_id: str, client_order_id: str | None = None):
     """The broker's current state of an order, by broker id or by our client_order_id (an unconfirmed order only has
-    the latter). A broker that can read one order by client id (Webull) is asked directly when the list misses it."""
+    the latter). A broker that can read one order by client id (Webull) is asked directly when the list misses it.
+    Both reads share one BROKER_TIMEOUT_S deadline (read-only, so cutting them off abandons nothing)."""
     ids = {order_id, client_order_id} - {None}
-    rows = await asyncio.wait_for(broker.orders(), BROKER_TIMEOUT_S)
-    hit = next((o for o in rows if o.id in ids or getattr(o, "client_order_id", None) in ids), None)
-    find = getattr(broker, "find_order", None)
-    if hit is None and find is not None:
-        hit = await asyncio.wait_for(find(client_order_id or order_id), BROKER_TIMEOUT_S)
-    return hit
+
+    async def read():
+        rows = await broker.orders()
+        hit = next((o for o in rows if o.id in ids or getattr(o, "client_order_id", None) in ids), None)
+        find = getattr(broker, "find_order", None)
+        if hit is None and find is not None:
+            hit = await find(client_order_id or order_id)
+        return hit
+
+    return await asyncio.wait_for(read(), BROKER_TIMEOUT_S)
 
 
 async def _settle_resting(bridge: Bridge, algo, broker: Broker | None, why: str, ref_px: float | None = None) -> bool:

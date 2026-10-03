@@ -25,8 +25,10 @@ setup-web:
 test-web:
 	cd web && pnpm lint && pnpm test && pnpm build
 
+# Engine group: the hedgecore binding tests AND the whole backend suite, so the tests that skip without the engine
+# (bridge/engine replay parity, test_bridges_engine, test_e2e_engine, ...) really run under `make test`.
 test-engine-py:
-	cd backend && uv sync --locked --group engine && uv run pytest ../engine/hedgecore/tests -q
+	cd backend && uv sync --locked --group engine && uv run --locked --group engine pytest ../engine/hedgecore/tests tests -q
 
 test: test-research test-backend test-engine test-engine-py test-web
 

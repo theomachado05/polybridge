@@ -44,9 +44,9 @@ CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 DEFAULT_REPLAY = BACKEND / "replays" / "another-fed-hike-2026-history.jsonl"
 SCREEN_DIR = WEB / "e2e" / "screens"
 
-# The default target: "Another Fed rate hike in 2026?" hedging TLT, the demo market where the prediction-market signal
-# measurably beats a static hedge in-sample (fits.json: score_vs_static +0.257 over 401 hourly ticks). YES token id and
-# provenance: backend/replays/another-fed-hike-2026-history.jsonl.meta.json. The Fed October 2026 market (2589813, IWM,
+# The default target: "Another Fed rate hike in 2026?" hedging TLT. +0.257 (fits.json: score_vs_static over 401 hourly
+# ticks) is the in-sample score of preset #75 (equity_delta_bridge) at 1,000 shares, uncapped; this e2e runs that preset
+# capped at 50% coverage, so it is not the score of what runs here. YES token id and provenance: backend/replays/another-fed-hike-2026-history.jsonl.meta.json. The Fed October 2026 market (2589813, IWM,
 # fed-hike-25bps-oct-2026-history.jsonl, query "fed october") remains an alternative: pass --query/--market-id/
 # --market-text/--ticker/--replay/--speed 36000.
 MARKET_ID = "4620900"

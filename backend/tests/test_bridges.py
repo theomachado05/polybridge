@@ -111,6 +111,40 @@ def test_replay_source_skips_non_finite_and_shifts_time(tmp_path):
     assert abs(ticks[0][0] - time.time_ns()) < 5e9
 
 
+def test_replay_source_rebases_only_on_real_lateness(tmp_path, monkeypatch):
+    """Sub-threshold sleep overshoot keeps the recorded schedule; a slow consumer (> 50 ms) shifts it."""
+    import asyncio
+    from types import SimpleNamespace
+
+    from app import ticks as ticks_mod
+
+    f = tmp_path / "r.jsonl"
+    f.write_text("".join(f'{{"ts_ns": {i * 1_000_000_000}, "p": 0.{i + 1}}}\n' for i in range(4)))
+    clock = {"now": 10_000_000_000_000}
+    monkeypatch.setattr(ticks_mod, "time", SimpleNamespace(time_ns=lambda: clock["now"], monotonic=time.monotonic))
+
+    async def fake_sleep(s):  # every sleep overshoots by 20 ms (below the re-base threshold)
+        clock["now"] += int(s * 1e9) + 20_000_000
+
+    monkeypatch.setattr(ticks_mod.asyncio, "sleep", fake_sleep)
+    start = clock["now"]
+
+    async def run(slow_after=None):
+        out = []
+        async for t in ReplaySource(f, speed=1):
+            out.append(t[0])
+            if slow_after == len(out):
+                clock["now"] += 5_000_000_000  # the consumer stalls 5 s
+        return out
+
+    out = asyncio.run(run())
+    assert [x - start for x in out] == [0, 1_000_000_000, 2_000_000_000, 3_000_000_000]  # no drift from jitter
+    clock["now"] = start
+    out = asyncio.run(run(slow_after=1))
+    # tick 2 is handed over 5 s late: stamped now, and the gaps after it keep their exact 1 s spacing
+    assert [x - start for x in out] == [0, 5_000_000_000, 6_000_000_000, 7_000_000_000]
+
+
 def test_replay_market_id_is_sanitized(client, monkeypatch):
     monkeypatch.setattr(bridges, "_load_engine", lambda: object())
     client.app.state.replay_path = None

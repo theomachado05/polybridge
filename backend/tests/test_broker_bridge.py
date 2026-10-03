@@ -147,6 +147,26 @@ def test_a_hanging_broker_is_cut_off_by_the_timeout(client, monkeypatch):
     assert ev[-1][1]["status"] == "finished"
 
 
+def test_lookup_chain_shares_one_deadline(monkeypatch):
+    """orders() then find_order() must not take 2 x BROKER_TIMEOUT_S: one deadline covers the whole chain."""
+    class Slow:
+        name = "slow"
+
+        async def orders(self):
+            await asyncio.sleep(0.04)
+            return []
+
+        async def find_order(self, cid):
+            await asyncio.sleep(0.04)
+            return None
+
+    monkeypatch.setattr(bridges, "BROKER_TIMEOUT_S", 0.06)
+    with pytest.raises(asyncio.TimeoutError):
+        asyncio.run(bridges._lookup(Slow(), "o1", "c1"))
+    monkeypatch.setattr(bridges, "BROKER_TIMEOUT_S", 1.0)
+    assert asyncio.run(bridges._lookup(Slow(), "o1", "c1")) is None
+
+
 def test_broker_construction_failure_leaves_the_bridge_running(client, monkeypatch):
     def broken(app):
         raise RuntimeError("no broker")

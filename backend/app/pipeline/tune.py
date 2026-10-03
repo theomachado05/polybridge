@@ -106,14 +106,17 @@ def _entry(family: dict | str, preset_index: int, params: dict, score: float | N
     return e
 
 
-def rules_pick(families: list[dict], reason: str) -> dict:
-    """The first family in rule order with its default preset; the next three families as alternatives."""
+def rules_pick(families: list[dict], reason: str, no_static_benchmark: bool = False) -> dict:
+    """The first family in rule order with its default preset; the next three families as alternatives.
+    ``no_static_benchmark``: the pick is unscored because no preset had a defined vs-static score (structured, so
+    callers never have to search ``reason``)."""
     if not families:
         return {"family": None, "preset_index": None, "params": {}, "score": None, "scored": False,
-                "alternatives": [], "unscored_reason": reason}
+                "alternatives": [], "unscored_reason": reason, "no_static_benchmark": no_static_benchmark}
     picks = [_entry(f, *default_preset(f), None) for f in families[:4]]
     best = picks[0]
-    return {**best, "scored": False, "alternatives": picks[1:], "unscored_reason": reason}
+    return {**best, "scored": False, "alternatives": picks[1:], "unscored_reason": reason,
+            "no_static_benchmark": no_static_benchmark}
 
 
 def _alternatives(ranked: list[dict], best: dict, k: int = 3) -> list[dict]:
@@ -184,7 +187,7 @@ def tune(adapter: EngineAdapter, families: list[dict], division: str, position: 
             why = "no preset placed a single order on this market's history, so there is no replay score"
         if skipped:
             why += "; not replayed: " + ", ".join(skipped)
-        return rules_pick(families, why)
+        return rules_pick(families, why, no_static_benchmark=division == "hedge" and raw_only)
     # Highest score; ties -> fewer orders (cheaper to run), then the earlier family in rule order, then lower index.
     order = {f["id"]: i for i, f in enumerate(families)}
     ranked.sort(key=lambda e: (-e["score"], e.get("stats", {}).get("n_orders", 0), order[e["family"]], e["preset_index"]))

@@ -32,7 +32,6 @@ import httpx  # noqa: E402
 from app.pipeline.engine_adapter import EngineAdapter  # noqa: E402
 from app.pipeline.llm import RulesProvider, default_provider  # noqa: E402
 from app.pipeline.service import Deps, FitRequest, MarketRef, fit  # noqa: E402
-from app.pipeline.tune import NO_STATIC_BENCHMARK  # noqa: E402
 
 DATA = BACKEND / "app" / "data"
 FIT_TIMEOUT_S = 60.0
@@ -132,7 +131,7 @@ def summarize(fits: dict) -> dict:
         "score_vs_static": hedge_score_stats(fits),
         # rules picks because no preset had a defined vs-static score (never ranked on raw variance reduction)
         "no_static_benchmark": sorted(k for k, f in fits.items()
-                                      if not f["scored"] and NO_STATIC_BENCHMARK in (f.get("rationale") or "")),
+                                      if not f["scored"] and f.get("no_static_benchmark")),
     }
 
 

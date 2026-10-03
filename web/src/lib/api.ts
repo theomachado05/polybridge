@@ -313,6 +313,7 @@ export interface FitOut {
   ticks_source: "live_history" | "replay" | "none" | string;
   n_ticks: number;
   /** What `score` measures (null or absent: unscored, or an older backend whose hedge score was the raw cut). */
+  no_static_benchmark?: boolean;
   score_basis?: ScoreBasis | null;
   score_note?: string | null;
   /** Hedge fits only (null otherwise): raw variance reduction, reported but never ranked. */

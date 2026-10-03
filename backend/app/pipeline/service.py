@@ -94,6 +94,8 @@ class FitResponse(BaseModel):
     score_raw: float | None = None
     score_vs_static: float | None = None
     avg_hedge_ratio: float | None = None
+    # True when the pick is unscored because no preset had a defined vs-static score (see tune.NO_STATIC_BENCHMARK).
+    no_static_benchmark: bool = False
 
 
 @dataclass
@@ -225,7 +227,7 @@ async def run_fit(req: FitRequest, deps: Deps) -> dict:
         "event_class": event_class, "division": division if t["family"] else None, "family": t["family"],
         "preset_index": t["preset_index"], "params": t["params"], "score": t["score"] if t["scored"] else None,
         "alternatives": t["alternatives"], "llm": llm, "ticks_source": ts.source if ts.ticks is not None else "none",
-        "n_ticks": ts.n, "scored": bool(t["scored"]),
+        "n_ticks": ts.n, "scored": bool(t["scored"]), "no_static_benchmark": bool(t.get("no_static_benchmark")),
         **{k: (t.get(k) if t["scored"] else None)
            for k in ("score_basis", "score_note", "score_raw", "score_vs_static", "avg_hedge_ratio")},
         # facts for the rationale only (not part of the response):

@@ -92,7 +92,7 @@ def test_no_vs_static_anywhere_falls_back_to_rules_with_an_honest_reason():
     fams = [{"id": "fam", "params": [{"name": "k", "grid": [0.0, 1.0], "default": 0.0}]}]
     out = _tune([_row(0, 0.999, 1.0), _row(1, 0.99, 1.0)], fams)
     assert not out["scored"] and out["score"] is None and out["unscored_reason"] == NO_STATIC_BENCHMARK
-    assert "score_vs_static" not in out
+    assert "score_vs_static" not in out and out["no_static_benchmark"] is True
     # An engine that does not report the benchmark at all (an older build) is not ranked on raw var reduction either.
     old = [{"preset_index": 0, "params": {}, "hedge_var_reduction": 0.95, "n_orders": 1}]
     out = _tune(old, fams)
@@ -108,6 +108,7 @@ def test_a_preset_that_never_hedges_is_unscored_not_zero():
     fams = [{"id": "fam", "params": [{"name": "k", "grid": [0.0, 1.0], "default": 0.0}]}]
     out = _tune([idle, {**_row(1, 0.0, 0.0), "n_orders": 4}], fams)  # orders, but nothing ever filled / held
     assert not out["scored"] and "no preset held a hedge" in out["unscored_reason"]
+    assert out["no_static_benchmark"] is False
 
 
 def test_score_row_and_stat_keys():

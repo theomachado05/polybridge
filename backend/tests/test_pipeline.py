@@ -649,7 +649,8 @@ def test_opportunity_ranking_does_not_charge_fees_twice():
 
 RESPONSE_KEYS = {"event_class", "division", "family", "preset_index", "params", "score", "alternatives", "rationale",
                  "llm", "ticks_source", "n_ticks",  # spec §4
-                 "score_basis", "score_note", "score_raw", "score_vs_static", "avg_hedge_ratio"}  # what score means
+                 "score_basis", "score_note", "score_raw", "score_vs_static", "avg_hedge_ratio",  # what score means
+                 "no_static_benchmark"}
 
 
 def test_fit_scored_end_to_end_with_fake_engine_and_mocked_http():
@@ -822,6 +823,8 @@ def test_precomputed_fits_route_and_script(tmp_path):
     import importlib.util
     from pathlib import Path
 
+    from app.pipeline.tune import NO_STATIC_BENCHMARK
+
     spec = importlib.util.spec_from_file_location("precompute_fits",
                                                   Path(__file__).resolve().parents[1] / "scripts" / "precompute_fits.py")
     mod = importlib.util.module_from_spec(spec)
@@ -855,6 +858,10 @@ def test_precomputed_fits_route_and_script(tmp_path):
     assert f["score_basis"] == "hedge_var_reduction_vs_static" and f["score_vs_static"] == f["score"] == 0.90
     assert f["score_raw"] == pytest.approx(1 - 0.1 * 0.25) and f["avg_hedge_ratio"] == 0.5
     assert sm["score_vs_static"]["n"] == 2 and sm["score_vs_static"]["gt0"] == 2 and sm["no_static_benchmark"] == []
+    # no_static_benchmark reads the structured flag, not the free-text rationale
+    assert mod.summarize({"a": {**f, "scored": False, "no_static_benchmark": True, "rationale": "x"},
+                          "b": {**f, "scored": False, "rationale": NO_STATIC_BENCHMARK},
+                          "c": {**f, "scored": True, "no_static_benchmark": True}})["no_static_benchmark"] == ["a"]
     assert mod.hedge_score_stats({"a": {"score": -0.1, "score_basis": "hedge_var_reduction_vs_static"},
                                   "b": {"score": 0.3, "score_basis": "hedge_var_reduction_vs_static"},
                                   "c": {"score": 2.0, "score_basis": "net_pnl_per_drawdown"}}) == \
