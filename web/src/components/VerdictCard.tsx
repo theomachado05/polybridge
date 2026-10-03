@@ -19,7 +19,7 @@ export function VerdictCard({ v }: { v: TagVerdict }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2"><span className="text-sm font-medium">{v.tag}</span><VerdictBadge v={v} /></div>
-      {v.label === "no_edge" && <p className="text-sm text-slate-700">No edge found — try another event or stock.</p>}
+      {v.kind === "none" ? <p className="text-sm text-slate-700">Not tested</p> : v.label === "no_edge" && <p className="text-sm text-slate-700">No edge found — try another event or stock.</p>}
       {v.kind === "exploratory" && <p className="text-xs text-amber-700">Exploratory atlas result: a hypothesis, not a confirmed finding.</p>}
       {e.strategy && (
         <p className="text-xs text-slate-600">

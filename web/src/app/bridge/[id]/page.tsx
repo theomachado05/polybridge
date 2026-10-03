@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { getBridge, getEquity, listProposals } from "@/lib/api";
+import { getBridge, getEquity } from "@/lib/api";
 import { useAsync } from "@/lib/hooks";
 import { useBridgeStream } from "@/lib/useBridgeStream";
 import { BridgeEquityCard } from "@/components/BridgeEquityCard";
@@ -18,7 +18,6 @@ export default function BridgePage() {
   const s = useBridgeStream(id, summary.data?.source ?? null);
   const ticker = summary.data?.ticker ?? null;
   const equity = useAsync(ticker ? `e:${ticker}` : null, () => getEquity(ticker!));
-  const props = useAsync(summary.data ? `p:${summary.data.proposal_id}` : null, async () => (await listProposals()).find((p) => p.id === summary.data!.proposal_id) ?? null);
   const source = s.source ?? summary.data?.source ?? null;
   return (
     <>
@@ -31,6 +30,7 @@ export default function BridgePage() {
           {summary.data?.direction && <Badge title={summary.data.direction === "down_on_yes" ? "Adverse for a long holder if YES happens" : "Adverse for a long holder if NO happens"}>hedging the {summary.data.direction === "down_on_yes" ? "YES" : "NO"} outcome</Badge>}
           <Badge tone={s.status === "running" ? "info" : s.status === "stopped" ? "bad" : "neutral"}>{s.status}</Badge>
         </div>
+        {summary.data?.label && <p className="text-sm text-slate-600">{summary.data.label}</p>}
         {summary.error && <ErrorText>Could not load bridge: {summary.error}</ErrorText>}
         {s.status === "reconnecting" && <ErrorText>Connection to the backend dropped; reconnecting...</ErrorText>}
         {s.error && <ErrorText>Engine message: {s.error}</ErrorText>}
@@ -41,7 +41,7 @@ export default function BridgePage() {
         </div>
         <StagePills reasons={s.reasons} last={s.lastReason} />
         <div className="grid gap-4 md:grid-cols-[1fr_2fr]">
-          <PositionPanel shares={props.data?.shares_held ?? null} targetCoverage={props.data?.target_coverage ?? null} hedge={s.hedge} coverage={s.coverage} />
+          <PositionPanel shares={summary.data?.shares_held ?? null} targetCoverage={summary.data?.target_coverage ?? null} hedge={s.hedge} />
           <TradeLog log={s.log} />
         </div>
       </main>
