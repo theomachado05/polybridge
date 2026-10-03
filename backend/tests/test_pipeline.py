@@ -817,6 +817,30 @@ def test_precomputed_fits_route_and_script(tmp_path):
     assert (f["family"], f["preset_index"], f["scored"], f["ticker"]) == ("crypto_reg_hedge", 2, True, "COIN")
     assert saved["fits"][f"polymarket:{FED_ID}"]["event_class"] == "macro_fed"
     assert mod.load_jobs(uni, amap, limit=1)[0]["ticker"] == "TLT"
+    sm = saved["summary"]
+    assert sm["n"] == 2 and sm["scored"] == 2 and sm["ticks_source"] == {"live_history": 2}
+    assert sm["fell_back_to_replay"] == [] and sm["no_history"] == [] and sm["timed_out"] == []
+    assert saved["provider"] == "rules"
+
+    # offline: the Fed market falls back to its recorded replay, the other has no history; both are listed
+    log = tmp_path / "run.log"
+    res = run(mod.amain(["--out", str(out), "--offline", "--log", str(log)], universe=uni, ai_map=amap,
+                        deps=service.Deps(adapter=EngineAdapter(module=None), offline=True)))
+    assert res["summary"]["fell_back_to_replay"] == [f"polymarket:{FED_ID}"]
+    assert res["summary"]["no_history"] == ["polymarket:555"] and res["can_score"] is False
+    text = log.read_text()
+    assert "# summary" in text and f"polymarket:{FED_ID}" in text and "library=" in text
+
+    # a fit that overruns its budget is recorded as unfitted, not retried
+    async def slow_fit(req, deps):
+        await asyncio.sleep(5)
+
+    mod.fit = slow_fit  # the module was loaded for this test only
+    res = run(mod.amain(["--out", str(out), "--offline", "--fit-timeout", "0.05", "--limit", "1"], universe=uni,
+                        ai_map=amap, deps=service.Deps(adapter=EngineAdapter(module=None), offline=True)))
+    f = res["fits"][f"polymarket:{FED_ID}"]
+    assert f["timed_out"] and f["family"] is None and "took over" in f["rationale"]
+    assert res["summary"]["timed_out"] == [f"polymarket:{FED_ID}"]
 
     c = make_client(module=None, offline=True)
     j = c.get("/pipeline/fits").json()

@@ -2,11 +2,15 @@
 
     cd backend && uv run python scripts/precompute_fits.py --limit 3            # live APIs, first 3 mapped markets
     cd backend && uv run python scripts/precompute_fits.py --offline            # recorded replays only, no network
-    cd backend && uv run --group engine python scripts/precompute_fits.py ...   # with replay scores from hedgecore
+    cd backend && uv run --group engine --env-file ../.env python scripts/precompute_fits.py \
+        --provider rules --log data_logs/precompute_fits.log                    # the committed run: real engine
 
 Each market is fitted against the first ticker mapped to it in app/data/ai_map.json (markets without a mapping are
-skipped). Writes app/data/fits.json keyed "source:id". Without the compiled engine the fits are unscored
-(scored=false) and say so. Do not run it live against the whole universe during the event (rate limits).
+skipped). Writes app/data/fits.json keyed "source:id", plus a "summary" block: how many fits were scored by the
+compiled engine, and which markets fell back to a recorded replay or had no price history at all. Without the
+compiled engine the fits are unscored (scored=false) and say so. Every fit is bounded by --fit-timeout (the network
+chain inside a fit is bounded too); a fit that overruns is recorded as unfitted, never retried in a loop.
+Do not run it live against the whole universe during the event (rate limits).
 """
 from __future__ import annotations
 
@@ -14,6 +18,8 @@ import argparse
 import asyncio
 import json
 import sys
+import time
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -24,10 +30,11 @@ if str(BACKEND) not in sys.path:
 import httpx  # noqa: E402
 
 from app.pipeline.engine_adapter import EngineAdapter  # noqa: E402
-from app.pipeline.llm import default_provider  # noqa: E402
+from app.pipeline.llm import RulesProvider, default_provider  # noqa: E402
 from app.pipeline.service import Deps, FitRequest, MarketRef, fit  # noqa: E402
 
 DATA = BACKEND / "app" / "data"
+FIT_TIMEOUT_S = 60.0
 
 
 def load_jobs(universe: Path, ai_map: Path, limit: int | None = None, only: list[str] | None = None) -> list[dict]:
@@ -49,7 +56,14 @@ def load_jobs(universe: Path, ai_map: Path, limit: int | None = None, only: list
     return jobs
 
 
-async def run(jobs: list[dict], deps: Deps, shares: float) -> dict:
+def _unfitted(req: FitRequest, why: str) -> dict:
+    return {"event_class": "unsupported", "division": None, "family": None, "preset_index": None, "params": {},
+            "score": None, "alternatives": [], "rationale": f"No fit: {why}.", "llm": "rules", "ticks_source": "none",
+            "n_ticks": 0}
+
+
+async def run(jobs: list[dict], deps: Deps, shares: float, fit_timeout_s: float = FIT_TIMEOUT_S,
+              log=None) -> dict:
     fits = {}
     for j in jobs:
         try:
@@ -60,12 +74,38 @@ async def run(jobs: list[dict], deps: Deps, shares: float) -> dict:
         except Exception as e:
             print(f"skip {j['key']}: {type(e).__name__}", file=sys.stderr)
             continue
-        res = await fit(req, deps)
+        t0 = time.monotonic()
+        timed_out = False
+        try:
+            res = (await asyncio.wait_for(fit(req, deps), fit_timeout_s)).model_dump()
+        except asyncio.TimeoutError:
+            res, timed_out = _unfitted(req, f"the fit took over {fit_timeout_s:g} s"), True
         fits[j["key"]] = {"question": j.get("question"), "ticker": req.ticker, "direction": req.direction,
-                          "shares_held": shares, **res.model_dump(), "scored": res.score is not None}
-        print(f"{j['key']:>24} {req.ticker:<6} {res.event_class:<18} {res.family or '-':<22} "
-              f"scored={res.score is not None} ticks={res.ticks_source}:{res.n_ticks}", file=sys.stderr)
+                          "shares_held": shares, **res, "scored": res["score"] is not None,
+                          "timed_out": timed_out, "elapsed_s": round(time.monotonic() - t0, 2)}
+        line = (f"{j['key']:>24} {req.ticker:<6} {res['event_class']:<18} {res['family'] or '-':<22} "
+                f"preset={res['preset_index'] if res['preset_index'] is not None else '-':<4} "
+                f"scored={res['score'] is not None!s:<5} ticks={res['ticks_source']}:{res['n_ticks']}"
+                f"{' TIMEOUT' if timed_out else ''}")
+        print(line, file=sys.stderr)
+        if log is not None:
+            log.append(line)
     return fits
+
+
+def summarize(fits: dict) -> dict:
+    by_source = Counter(f["ticks_source"] for f in fits.values())
+    return {
+        "n": len(fits),
+        "scored": sum(1 for f in fits.values() if f["scored"]),
+        "fitted": sum(1 for f in fits.values() if f["family"]),
+        "ticks_source": dict(by_source),
+        "fell_back_to_replay": sorted(k for k, f in fits.items() if f["ticks_source"] == "replay"),
+        "no_history": sorted(k for k, f in fits.items() if f["ticks_source"] == "none"),
+        "timed_out": sorted(k for k, f in fits.items() if f.get("timed_out")),
+        "families": dict(Counter(f["family"] or "-" for f in fits.values()).most_common()),
+        "event_classes": dict(Counter(f["event_class"] for f in fits.values()).most_common()),
+    }
 
 
 async def amain(argv: list[str] | None = None, deps: Deps | None = None, universe: Path = DATA / "market_universe.json",
@@ -75,6 +115,10 @@ async def amain(argv: list[str] | None = None, deps: Deps | None = None, univers
     ap.add_argument("--markets", nargs="*", default=None, help="only these ids or source:id keys")
     ap.add_argument("--offline", action="store_true", help="no network: recorded replays only")
     ap.add_argument("--shares", type=float, default=1000.0, help="shares held for the hedge division (default 1000)")
+    ap.add_argument("--provider", choices=("auto", "rules"), default="auto",
+                    help="auto: Gemini when GEMINI_API_KEY is set, else rules; rules: keyword rules only")
+    ap.add_argument("--fit-timeout", type=float, default=FIT_TIMEOUT_S, help="seconds per market (default 60)")
+    ap.add_argument("--log", type=Path, default=None, help="also write the per-market lines and the summary here")
     ap.add_argument("--out", type=Path, default=DATA / "fits.json")
     a = ap.parse_args(argv)
 
@@ -90,22 +134,34 @@ async def amain(argv: list[str] | None = None, deps: Deps | None = None, univers
                 client_box.append(chain.make_client())
             return client_box[0]
 
-        deps = Deps(adapter=EngineAdapter(), provider=default_provider(own_http), http=own_http,
-                    massive=massive, offline=a.offline)
+        provider = RulesProvider() if a.provider == "rules" else default_provider(own_http)
+        deps = Deps(adapter=EngineAdapter(), provider=provider, http=own_http, massive=massive, offline=a.offline)
+    lines: list[str] = []
+    started = datetime.now(timezone.utc)
     try:
-        fits = await run(jobs, deps, a.shares)
+        fits = await run(jobs, deps, a.shares, a.fit_timeout, lines)
     finally:
         if own_http is not None:
             await own_http.aclose()
     _, lib_source = deps.adapter.library()
+    summary = summarize(fits)
     out = {"generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
            "generator": "scripts/precompute_fits.py", "library_source": lib_source,
-           "can_score": deps.adapter.can_score, "offline": bool(deps.offline), "n": len(fits), "fits": fits}
+           "can_score": deps.adapter.can_score, "offline": bool(deps.offline),
+           "provider": getattr(deps.provider, "name", type(deps.provider).__name__),
+           "n": len(fits), "summary": summary, "fits": fits}
     a.out.parent.mkdir(parents=True, exist_ok=True)
     tmp = a.out.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(out, indent=1))
     tmp.replace(a.out)
     print(f"wrote {len(fits)} fits to {a.out}", file=sys.stderr)
+    if a.log is not None:
+        head = [f"# precompute_fits run {started.isoformat(timespec='seconds')} -> {out['generated_at']}",
+                f"# library={lib_source} can_score={out['can_score']} provider={out['provider']} "
+                f"offline={out['offline']} shares={a.shares:g} fit_timeout={a.fit_timeout:g}s jobs={len(jobs)}", ""]
+        tail = ["", "# summary", json.dumps(summary, indent=1)]
+        a.log.parent.mkdir(parents=True, exist_ok=True)
+        a.log.write_text("\n".join(head + lines + tail) + "\n")
     return out
 
 
