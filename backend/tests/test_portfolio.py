@@ -107,7 +107,7 @@ def test_total_flags_fuzzy_mappings(tmp_path, monkeypatch):
     lib = {"items": {"polymarket:Apple": {"question": "Apple q", "mappings": [
         {"ticker": "AAPL", "direction": "down_on_yes", "impact_pct": 2.0, "rationale": "r"}]}}}
     setup(tmp_path, monkeypatch, [{"ticker": "AAPL", "shares": 10}], lib)
-    real = portfolio.map_event
-    monkeypatch.setattr(portfolio, "map_event", lambda req: {**real(req), "match_type": "fuzzy"})
+    real = portfolio.lookup_precomputed
+    monkeypatch.setattr(portfolio, "lookup_precomputed", lambda req: {**real(req), "match_type": "fuzzy"})
     d = make(StubClient(market=rf.FakeMarket({"AAPL": 100.0})), monkeypatch).get("/portfolio").json()
     assert d["total_includes_fuzzy"] is True

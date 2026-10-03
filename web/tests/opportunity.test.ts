@@ -3,7 +3,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { DEFAULT_OPP_CAPS, opportunityFit, startOpportunityBridge, type BridgeApi } from "../src/lib/realBridge.ts";
-import { isListedMarket, isOpenMarket, isRecordedOnly, questionFromMarket } from "../src/lib/demo.ts";
+import { isListedMarket, isOpenMarket, isRecordedOnly, questionFromMarket } from "../src/lib/markets.ts";
 import type { Proposal, ProposalBody } from "../src/lib/api.ts";
 import { init, reduce } from "../src/lib/bridgeStream.ts";
 import { OPP_REPLAY_NOTE, gapPts, legLine, libraryIdea, optionFamilyIdea, optionFillText } from "../src/lib/opportunity.ts";

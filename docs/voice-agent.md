@@ -1,30 +1,75 @@
 # Talk to PolyBridge: ElevenLabs voice agent
 
-The voice agent is an ElevenLabs Conversational AI agent whose tools are PolyBridge's own backend. The browser
-widget handles audio; the agent calls `POST /agent/tool/{name}` on your backend and reads the `summary` field aloud.
-Nothing is bought or started by voice alone: `approve` and `start_bridge` are refused unless the request carries
-`confirm: true`, and the agent is instructed to ask first.
+The voice agent is an ElevenLabs Conversational AI agent whose tools are PolyBridge's own backend, called from the
+browser. It uses **client tools**: when the agent decides to call a tool, the ElevenLabs widget on
+`http://localhost:3000` receives the call, the page sends `POST /agent/tool/{name}` to the backend on
+`localhost:8000`, and hands the response's `summary` back to the agent, which reads it aloud. ElevenLabs never reaches
+the backend, so **no tunnel** is needed and nothing on the backend is exposed.
+
+Nothing is bought or started by voice alone: `approve` and `start_bridge` are refused unless the call carries
+`confirm: true`, and the agent is instructed to set it only after the user said yes.
+
+```
+you (mic) -> ElevenLabs agent (cloud: speech, LLM) -> client tool call -> widget in your browser
+          -> POST localhost:8000/agent/tool/<name> -> {ok, summary, data} -> widget -> agent speaks the summary
+```
+
+## Setup in three commands
+
+Keys go in the repo-root `.env` (gitignored; never commit them, never paste them in chat or code):
+`GEMINI_API_KEY=...` and `ELEVENLABS_API_KEY=...`.
+
+```bash
+make keys-check      # which keys are present (names only); runs the Gemini check and read-only ElevenLabs calls
+make voice-agent     # creates (or updates) the agent and its 8 client tools; writes web/.env.local
+make dev             # restart so Next.js picks up NEXT_PUBLIC_ELEVENLABS_AGENT_ID; open http://localhost:3000
+```
+
+`make voice-agent ARGS=--dry-run` prints the exact tools and agent body without a key or any network call.
+
+### What `make voice-agent` does (`backend/scripts/elevenlabs_agent.py`, logic in `backend/app/agent/elevenlabs.py`)
+
+1. Reads `ELEVENLABS_API_KEY` (exit 2 with a clear message if missing) and refuses to continue unless git ignores
+   `web/.env.local` (exit 3).
+2. Creates one **client** workspace tool per entry of `GET /agent/tools` (`POST /v1/convai/tools`), or updates it in
+   place when it already exists (`PATCH /v1/convai/tools/{id}`; ours are recognised by name, type `client` and the
+   `PolyBridge:` description prefix). Each tool waits for the page's answer (`expects_response: true`); timeouts:
+   `fit` 90 s (it replays history), `start_bridge` 30 s, the rest 15 to 20 s. Parameters are the same JSON Schema as
+   `GET /agent/tools`; `approve` and `start_bridge` keep `confirm` required and their descriptions say to set it only
+   after a spoken yes.
+3. Creates the agent (`POST /v1/convai/agents/create`), or updates it (`PATCH /v1/convai/agents/{id}`) when an id is
+   known (`ELEVENLABS_AGENT_ID`, else `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` from the environment or `web/.env.local`; a
+   stale id that 404s gets a new agent, with a note). The agent gets the system prompt and first message below (read
+   from this file, so the doc and the agent never drift), the tools by id (`prompt.tool_ids`; inline `tools` is
+   deprecated), LLM `gemini-2.5-flash` (`ELEVENLABS_LLM` to change; if ElevenLabs rejects the name the platform
+   default is used and the script says so), the platform default voice unless `ELEVENLABS_VOICE_ID` is set, and a
+   widget allowlist of `localhost:3000` and `127.0.0.1:3000` with authentication off (the embed widget needs a
+   public agent).
+4. Writes **only** `NEXT_PUBLIC_ELEVENLABS_AGENT_ID=<id>` into `web/.env.local` (other lines kept) and prints the id
+   masked. The API key is never written anywhere.
+
+Running it again updates the same tools and agent, so edit the prompt below and rerun.
 
 ## Environment variables
 
 | Variable | Where | Purpose |
 |---|---|---|
-| `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` | `web/.env.local` | Agent id from the ElevenLabs dashboard. Unset means no voice button renders and no script loads. |
-| `ELEVENLABS_API_KEY` | your shell or `.env` (never commit) | Only needed if you create or edit the agent through the ElevenLabs API or CLI. The web app and backend do not read it. |
-| `AGENT_TOOL_SECRET` | backend env (the repo `.env` that `make dev` loads) | **Required for the tunnel.** A random string; every write that reaches the backend from outside localhost must send it as `X-Agent-Secret`, or the backend answers 401. See [Required shared secret](#required-shared-secret). |
-| `GEMINI_API_KEY` | backend env | Optional. The `fit` tool uses Gemini to classify and explain when set, and falls back to rules when not. |
+| `ELEVENLABS_API_KEY` | repo-root `.env` | Used only by `make voice-agent` and `make keys-check`. The web app and backend never read it. |
+| `GEMINI_API_KEY` | repo-root `.env` | The `fit` tool (and `/pipeline/fit`, `/map`) use Gemini when set; keyword rules otherwise, labelled. `make gemini-check` verifies it. |
+| `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` | `web/.env.local` (written by `make voice-agent`) | Agent id (not a secret). Unset: no voice button renders and no script loads. |
+| `AGENT_TOOL_SECRET` | repo-root `.env` | Required for any call to `/agent/tool/*` from outside the web page on localhost (curl, a tunnel). The page itself needs none (below). |
+| `ELEVENLABS_AGENT_ID`, `ELEVENLABS_LLM`, `ELEVENLABS_VOICE_ID` | shell, optional | Update a specific agent; pick the agent's LLM or voice. |
 
 ## Backend surface
 
-- `GET /agent/tools` returns the tool schemas (name, short voice-friendly description, JSON Schema parameters,
-  the underlying `method` and `path`, and the `webhook` the agent should call).
-- `POST /agent/tool/{name}` takes the tool arguments as a flat JSON body and returns
-  `{ ok, tool, summary, data }`. Failures are `ok: false` with a speakable `summary` (HTTP 200); an unknown tool is 404.
-  The dispatcher never answers 500.
+- `GET /agent/tools` returns the tool schemas (name, voice-friendly description, JSON Schema parameters, the
+  underlying `method` and `path`). `make voice-agent` turns exactly these into client tools.
+- `POST /agent/tool/{name}` takes the tool arguments as a flat JSON body and returns `{ ok, tool, summary, data }`.
+  Failures are `ok: false` with a speakable `summary` (HTTP 200); an unknown tool is 404. Never a 500.
 
 | Tool | Underlying route | Needs confirm |
 |---|---|---|
-| `search_markets` | `GET /markets/search` | no |
+| `search_markets` | `GET /markets/search` (plus matching recorded markets, labelled, e.g. the demo weekend) | no |
 | `fit` | `POST /pipeline/fit` | no |
 | `propose` | `POST /proposals` | no (does nothing until approved) |
 | `approve` | `POST /proposals/{pid}/approve` | **yes** |
@@ -33,152 +78,144 @@ Nothing is bought or started by voice alone: `approve` and `start_bridge` are re
 | `account` | `GET /account` | no |
 | `positions` | `GET /positions` | no |
 
-## Expose the backend
+`search_markets` appends recorded markets whose question contains every query word (from the replay index), because
+a live search does not list resolved markets; the summary names them as "Recorded replays ... (id ...)".
 
-ElevenLabs servers must reach your backend, so run a tunnel to the local FastAPI port:
+## The web page's side of the contract
 
-```bash
-cd backend && uv run --env-file ../.env uvicorn app.main:app --port 8000
-ngrok http 8000        # or: cloudflared tunnel --url http://localhost:8000
+The agent only calls client tools the page registers, one handler per tool name, each posting the agent's arguments
+unchanged (confirm included) to `POST /agent/tool/{name}` and returning a string for the agent to read. In this repo
+`web/src/lib/voice.ts` (`buildClientTools`, used by `web/src/components/voice/VoiceAgent.tsx` through the ElevenLabs
+React SDK's `clientTools`) does this. With the plain embed widget the equivalent is:
+
+```ts
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const TOOLS = ["search_markets", "fit", "propose", "approve", "start_bridge", "bridge_status", "account", "positions"];
+
+widget.addEventListener("elevenlabs-convai:call", (event: any) => {
+  event.detail.config.clientTools = Object.fromEntries(TOOLS.map((name) => [name, async (params: object) => {
+    const r = await fetch(`${API}/agent/tool/${name}`, {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(params ?? {}),
+    });
+    const j = await r.json().catch(() => ({}));
+    return j.summary ?? `The ${name} tool did not answer (HTTP ${r.status}).`;   // the agent speaks this string
+  }]));
+});
 ```
 
-Use the HTTPS URL it prints as `TUNNEL_URL` below. A tunnel exposes the **whole** backend, not just `/agent/*`, while
-it is up. Two things limit the damage (details in [Required shared secret](#required-shared-secret)): the backend
-refuses every tunnelled write without the secret, but tunnelled **reads** (`GET /account`, `/positions`, `/orders`,
-`/bridges/{id}` and so on) are open to anyone who has the URL. So set the secret before you start the tunnel, limit the
-tunnel to `/agent/*` if your provider can (the agent only needs `POST /agent/tool/<name>`, plus `GET /agent/tools` for
-the one-off schema copy), and close the tunnel after the demo. CORS is not an issue for server tools (ElevenLabs
-calls them server to server).
+The browser sends `Origin: http://localhost:3000`; the backend accepts `/agent/tool/*` without the secret only for
+a local request with that origin (`app.security.is_local_web_app`). CORS stops any other site's JSON POST from being
+sent, and a tunnelled request (proxy headers, public Host) still needs `X-Agent-Secret`. `confirm` is still enforced
+by the backend whoever calls.
 
-## Create the agent
+## Security model
 
-1. ElevenLabs dashboard, Agents, Create agent, blank template. Name it `PolyBridge`.
-2. **First message:** `Hi, I'm PolyBridge. Tell me a stock you hold and an event you worry about, and I'll find a hedge.`
-3. **Voice:** pick a calm, clear voice such as "Sarah" or "Charlie" from the library. Set stability around 0.5 and
-   keep speed at 1.0 so numbers are easy to follow. Any voice works; clarity beats character here.
-4. **LLM:** any fast model (Gemini 2.5 Flash is a good default). Low latency matters more than depth.
-5. **System prompt** (paste as is):
+- **No tunnel.** The backend stays on localhost. `app/security.py` still refuses every remote write without
+  `X-Agent-Secret` (constant-time compare), and a remote `POST /orders` never chooses its own fill price.
+- **`/agent/tool/*` with `AGENT_TOOL_SECRET` set:** a local request (loopback client, localhost Host, no proxy
+  header) that carries the web app's `Origin` (`http://localhost:3000` or `http://127.0.0.1:3000`) needs no secret;
+  that is how the page's client tools get through, since a browser page cannot hold a secret. Any other caller needs
+  `X-Agent-Secret`. A local process can set that `Origin` header itself (the sanity check below does), but a local
+  process can already call every other write route without a secret, so this exemption adds no new access. **The
+  secret only protects tunnelled and remote callers**; it is not a guard against other software on this machine.
+  With the secret unset, local callers are open and remote ones are refused.
+- **The agent cannot act alone.** `approve` and `start_bridge` need `confirm: true` (strictly the boolean). The
+  prompt tells the agent to set it only after a spoken yes; the backend refuses without it either way.
+- **Evidence gate.** On an unvalidated market, `approve` also needs `ack_unvalidated: true`, which the prompt allows
+  only after the user acknowledged that the market's signal has not passed its out-of-sample test. The demo weekend
+  (US recession 2025 on SPY) is validated and approves without it.
+- Open the UI at `http://localhost:3000` (the allowlisted host); the widget does not start elsewhere.
 
+## Agent configuration (read by `make voice-agent`)
+
+First message:
+
+<!-- agent-first-message:start -->
+```text
+Hi, I'm PolyBridge. Tell me a stock you hold and an event you worry about, and I'll find a hedge.
+```
+<!-- agent-first-message:end -->
+
+System prompt:
+
+<!-- agent-system-prompt:start -->
 ```text
 You are PolyBridge, a voice assistant that helps a retail investor hedge a stock position using prediction-market
-signals. This is a simulated paper-trading account; say so if asked about real money.
+signals. Orders go to a paper or simulated account, never real money; say so if asked.
 
 Speak in short plain sentences, no markdown, no lists longer than three items. Say prices as percent, money as
 whole dollars. Never read ids aloud except a proposal id or bridge id when the user needs it.
 
 Workflow:
 1. Learn the ticker, roughly how many shares, and the event the user worries about.
-2. Call search_markets, read the top one or two results, and confirm which market they mean.
-3. Call fit to choose a hedge. Explain the result in one or two sentences. The score is how much extra risk the
-   hedge removed beyond a plain fixed hedge of the same average size, measured on past data, not a forecast. A score
-   near zero or below means the market signal added little; say so. Never call it the hedge's edge or promise it
-   will repeat. A score of "unscored" means a rules-based pick, not a tested one.
-4. Call propose. Read back the ticker, share count, coverage, and the market.
-5. ASK: "Shall I approve this?" Only after the user clearly says yes, call approve with confirm true.
+2. Call search_markets. Read the top one or two results and confirm which market they mean. Results named as
+   recorded replays are past markets that replay recorded prices; say "recorded" when you offer one. For a replay
+   demo, prefer the recorded market the user's topic matches.
+3. Call fit to choose a hedge (say "one moment" first; it replays history). Explain the result in one or two
+   sentences. The score is how much extra risk the hedge removed beyond a plain fixed hedge of the same average
+   size, measured on past data, not a forecast. A score near zero or below means the market signal added little;
+   say so. Never call it the hedge's edge or promise it will repeat. "Unscored" means a rules-based pick, not a
+   tested one. If the result says Gemini was not used, do not claim it was.
+4. Call propose with the same ticker, market and direction. Read back the ticker, share count, coverage and market,
+   and whether the market's signal is validated or an unvalidated estimate.
+5. ASK: "Shall I approve this?" Only after the user clearly says yes, call approve with confirm true. If the market
+   is unvalidated, first say that its signal has not passed its out-of-sample test and ask if they accept that; only
+   after a yes to that, set ack_unvalidated true.
 6. ASK again before starting the hedge: "Shall I start it on replay?" Only after yes, call start_bridge with
    confirm true. Use source replay unless the user asks for live.
-7. Use bridge_status, account, and positions when asked how it is going.
+7. Use bridge_status, account and positions when asked how it is going.
 
 Rules:
-- Never set confirm to true on your own. A confirmation must come from the user's last turn.
+- Never set confirm or ack_unvalidated to true on your own. A confirmation must come from the user's last turn.
 - If a tool returns ok false, say its summary plainly and offer the next step. Do not retry confirm-gated tools.
 - This is not investment advice. Do not promise returns. A hedge reduces a specific risk and costs money.
 - If you do not know something, say so.
 ```
-
-6. **Tools:** add one **Server tool (webhook)** per tool in the table above. For each:
-   - URL: `TUNNEL_URL/agent/tool/<name>`, method `POST`, content type `application/json`.
-   - Header: **`X-Agent-Secret: <your AGENT_TOOL_SECRET>`, on every tool, with no exception.** A tool without it gets
-     401 from the backend and the agent will say the call "did not work".
-   - Description: copy it from `GET /agent/tools`.
-   - Body parameters: copy the `parameters.properties` from the same response (all are flat JSON fields). Mark
-     `required` as listed. For `approve` and `start_bridge`, keep `confirm` required and add to the tool description:
-     "Only set confirm true after the user has said yes in their last message."
-   - Tip: `curl TUNNEL_URL/agent/tools` prints every schema in one go (a GET, so it needs no secret).
-7. Under Security, enable the allowlist for your web origin (for example `http://localhost:3000`) so the widget only
-   runs on your site.
-8. Copy the agent id into `web/.env.local`:
-
-```bash
-echo 'NEXT_PUBLIC_ELEVENLABS_AGENT_ID=agent_xxxxxxxx' >> web/.env.local
-cd web && pnpm dev
-```
-
-Open the UI at **http://localhost:3000** on the machine that runs the backend, never through the tunnel URL (see
-[Required shared secret](#required-shared-secret)). A "Talk to PolyBridge" pill appears bottom right. Click it: the
-widget script loads from the ElevenLabs embed on first click and the widget opens. Press the widget's own Start call
-button and allow the microphone; then the agent greets you.
-
-## Required shared secret
-
-`AGENT_TOOL_SECRET` is mandatory whenever the tunnel is up. The check lives in `backend/app/security.py` and runs on
-every route, not only `/agent/*`:
-
-- A request is **local** when it comes from the loopback interface (127.0.0.1 or ::1), carries a `localhost`,
-  `127.0.0.1` or `[::1]` Host header, and has no proxy-forwarding header (`X-Forwarded-For`, `X-Forwarded-Host`,
-  `Forwarded`, `X-Real-Ip`, `Cf-Connecting-Ip`, `True-Client-Ip`, `Ngrok-Trace-Id`). A tunnel forwards from 127.0.0.1
-  but adds those headers and keeps its public Host, so everything through the tunnel counts as **remote**.
-- A remote request that is not `GET`, `HEAD` or `OPTIONS` (`POST /agent/tool/*`, `POST /orders`, `DELETE /orders/{id}`,
-  `POST /account/reset`, `POST /proposals/{id}/approve`, `POST /bridges`, ...) must carry `X-Agent-Secret` equal to
-  `AGENT_TOOL_SECRET`. With the variable **unset** it gets 401 ("Remote write refused ... Set AGENT_TOOL_SECRET");
-  with a missing or wrong header it gets 401 ("Missing or wrong X-Agent-Secret."). The comparison is constant time.
-- Remote reads (`GET`) are not blocked. That is why you should also limit the tunnel to `/agent/*`.
-- A remote `POST /orders` never chooses its own fill price: the backend drops any `ref_px`, `ref_half_spread` and
-  `ref_source` it carries, even with the right secret.
-- Local requests are unaffected: the browser UI on localhost and every test client work without the secret. If the
-  secret **is** set, `/agent/tool/*` also requires it from local callers.
-
-Setup:
-
-```bash
-openssl rand -hex 24                    # copy the output
-echo 'AGENT_TOOL_SECRET=<that string>' >> .env      # then restart the backend so it has the variable
-```
-
-Then in ElevenLabs add the custom header `X-Agent-Secret: <same string>` to **every** server tool (step 6 above).
-Do not paste the secret into the system prompt or the agent's first message.
-
-Recommended hardening:
-
-- **Limit the tunnel to `/agent/*`.** Use your tunnel provider's path or traffic rules so only `/agent/...` reaches
-  the backend (for example a Cloudflare Tunnel ingress rule with a `path`, or an ngrok traffic policy; the exact
-  syntax is provider-specific and not part of this repo). Then the account, positions and bridge reads are not
-  reachable from outside at all.
-- **Open the UI on localhost, never on the tunnel URL.** A page opened at `TUNNEL_URL` sends its writes as remote
-  requests without the secret, so every approve, start and order from that page returns 401 (and the UI's CORS
-  allowlist is `http://localhost:3000` and `http://127.0.0.1:3000` only). Use `http://localhost:3000` on the backend's
-  own machine; the tunnel is for ElevenLabs only.
-- Rotate the secret after the demo (change the env var and the ElevenLabs header) and close the tunnel.
+<!-- agent-system-prompt:end -->
 
 ## Sanity check before the demo
 
-Run these from a shell on any machine, with `SECRET` set to your `AGENT_TOOL_SECRET`:
-
 ```bash
-curl -s TUNNEL_URL/agent/tools | head -c 300                       # a GET: 200 with no secret
-curl -s -X POST TUNNEL_URL/agent/tool/account -H 'content-type: application/json' -d '{}'
-                                                                   # no secret: must answer 401 (the guard works)
-curl -s -X POST TUNNEL_URL/agent/tool/approve -H 'content-type: application/json' -H "X-Agent-Secret: $SECRET" \
-  -d '{"proposal_id":"x"}'                                         # must answer ok:false, needs_confirmation:true
-curl -s -X POST TUNNEL_URL/agent/tool/account -H 'content-type: application/json' -H "X-Agent-Secret: $SECRET" -d '{}'
-                                                                   # ok:true with the account summary
+make keys-check                                   # Gemini live? ElevenLabs key accepted? agent exists, 8 tools?
+curl -s localhost:8000/agent/tools | head -c 300  # backend up (make dev)
+curl -s -X POST localhost:8000/agent/tool/approve -H 'content-type: application/json' \
+  -H 'Origin: http://localhost:3000' -d '{"proposal_id":"x"}'
+                                                  # ok:false, needs_confirmation:true (the confirm gate works)
+curl -s -X POST localhost:8000/agent/tool/account -H 'content-type: application/json' -d '{}'
+                                                  # 401 when AGENT_TOOL_SECRET is set: no web-app Origin, no exemption
+curl -s -X POST localhost:8000/agent/tool/account -H 'content-type: application/json' \
+  -H 'Origin: http://localhost:3000' -d '{}'      # ok:true with the account summary
 ```
 
-If the second call answers 200, the secret is not set in the backend's environment: stop and fix that before anyone
-else has the URL. If the last call answers 401, the header value does not match.
+Then on `http://localhost:3000` click **Talk to PolyBridge**, press the widget's Start call button and allow the
+microphone.
 
-## 60-second spoken demo script
+## 60-second spoken demo (on `make dev`: the validated recession weekend, SPY)
 
-Times are approximate. Lines in quotes are what you say; the agent's reply is paraphrased.
+`make dev` replays "US recession in 2025?" over the April 2025 tariff weekend (Friday 15:30 ET to Monday 10:00 ET,
+hedging SPY, the one market whose expected gap is validated out of sample). Times are approximate; lines in quotes
+are what you say, the agent's replies are paraphrased.
 
-- **0:00** Click the pill, press Start in the widget, allow the mic. Agent greets. *"I hold two hundred shares of Airbnb and I'm nervous about the Fed."*
-- **0:10** Agent searches and reads the top market: a Fed rate decision at some percent. *"Yes, that one."*
-- **0:20** Agent calls fit and explains the chosen hedge in a sentence, noting if it is rules-based. *"Make a proposal at fifty percent coverage."*
-- **0:30** Agent reads back the proposal and asks: "Shall I approve this?" Say *"Yes, approve it."*
-- **0:38** Agent approves, then asks whether to start on replay. Say *"Yes, start it on replay."*
-- **0:45** Agent starts the bridge and says it is running. Point at the Bridge page, where ticks and decisions stream.
-- **0:50** *"How is it doing, and what's in my account?"* Agent reads bridge status, cash, and total value.
-- **0:58** Close with: *"That is PolyBridge: a spoken question to a confirmed, fee-aware hedge, and nothing runs without my yes."*
+- **0:00** Click the pill, press Start, allow the mic. Agent greets. *"I hold a thousand shares of SPY and I'm
+  worried about a recession."*
+- **0:08** Agent searches and reads the top live market, then the recorded replay "US recession in 2025?".
+  *"Use the recorded 2025 one."*
+- **0:16** Agent says "one moment", calls fit and explains the chosen hedge in a sentence (Gemini-written when the
+  key is set; it says when the pick is rules-based). *"Make a proposal at fifty percent coverage."*
+- **0:28** Agent reads back SPY, 1,000 shares, 50 percent, the market, and that its signal is validated, then asks
+  "Shall I approve this?" Say *"Yes, approve it."*
+- **0:36** Agent approves, then asks whether to start on replay. Say *"Yes, start it on replay."*
+- **0:42** Agent starts the bridge. Point at the Bridge page: the weekend replays, the closed-market panel shows the
+  expected gap and the staged order for Monday's open.
+- **0:50** *"How is it doing, and what's in my account?"* Agent reads bridge status, cash and total value.
+- **0:58** Close with: *"A spoken question to a confirmed, evidence-gated hedge, and nothing runs without my yes."*
 
-If the agent ever skips the confirmation question, stop and tighten step 5 and 6 of the system prompt; the backend
-will refuse anyway, which is also a good thing to show.
+If the agent ever skips a confirmation question, tighten steps 5 and 6 of the prompt and rerun `make voice-agent`;
+the backend refuses anyway, which is also worth showing.
+
+## Without client tools (not recommended)
+
+The older setup used ElevenLabs **server tools** (webhooks) that call the backend over a public tunnel
+(`ngrok http 8000`) with `X-Agent-Secret: <AGENT_TOOL_SECRET>` on every tool. It still works (the backend's remote
+write guard is unchanged), but it exposes every backend read to anyone with the URL while the tunnel is up, so the
+client-tools flow above replaces it.

@@ -7,12 +7,12 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Literal
 
 import httpx
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, PrivateAttr, field_validator, model_validator
 
 from .classify import classify
 from .engine_adapter import EngineAdapter
 from .explain import explain
-from .llm import LLMProvider, RulesProvider, rules_classify
+from .llm import NO_KEY_REASON, LLMProvider, RulesProvider, rules_classify, rules_info
 from .shortlist import shortlist, unmet_requirements
 from .options_join import join_options
 from .ticks import (TickSet, _universe_entry, available_requirements, build_ticks, kalshi_series, orient_for_family,
@@ -68,6 +68,24 @@ class Alternative(BaseModel):
     stats: dict[str, float] | None = None
 
 
+class AIInfo(BaseModel):
+    """Who wrote the AI parts of this answer, truthfully.
+
+    provider: "gemini" when Gemini produced the event class or the rationale in this response, else "rules".
+    model: the Gemini model that answered (after any 404 fallback); null for rules.
+    live: Gemini answered during the request that produced this response (false for rules).
+    cached: this response was served from the fit cache (its Gemini call, if any, happened earlier, within 5 min).
+    steps: what produced each step: classify "gemini" | "rules", explain "gemini" | "template".
+    fell_back_reason: why rules/templates were used where Gemini was expected (no key, an error), or why the
+        configured model was replaced (it returned 404); null when nothing fell back."""
+    provider: Literal["gemini", "rules"]
+    model: str | None = None
+    live: bool = False
+    cached: bool = False
+    steps: dict[str, str] = Field(default_factory=dict)
+    fell_back_reason: str | None = None
+
+
 class FitResponse(BaseModel):
     event_class: str
     division: Literal["hedge", "opportunity"] | None
@@ -77,7 +95,8 @@ class FitResponse(BaseModel):
     score: float | None
     alternatives: list[Alternative]
     rationale: str
-    llm: Literal["gemini", "rules"]
+    # "gemini:<model>" when Gemini classified the market, else "rules" (the keyword classifier).
+    llm: str = Field(pattern=r"^(rules|gemini:[A-Za-z0-9._\-]+)$")
     ticks_source: Literal["live_history", "replay", "none"]
     n_ticks: int
     # The spec §4 keys above, plus what `score` means. An unscored (rules) pick is visible as score == null;
@@ -96,6 +115,34 @@ class FitResponse(BaseModel):
     avg_hedge_ratio: float | None = None
     # True when the pick is unscored because no preset had a defined vs-static score (see tune.NO_STATIC_BENCHMARK).
     no_static_benchmark: bool = False
+    ai: AIInfo = Field(default_factory=lambda: AIInfo(**rules_info()))
+    # Internal, never serialised: a Gemini call was tried for this response and failed (HTTP error, timeout, an
+    # answer outside the allowed set), so rules or the template stood in. The fit cache skips such answers, so a
+    # transient outage is not pinned for the cache TTL and the next identical request (the UI's Retry) asks again.
+    _gemini_failed: bool = PrivateAttr(default=False)
+
+    @property
+    def gemini_failed(self) -> bool:
+        return self._gemini_failed
+
+
+def ai_block(provider: LLMProvider, classify_by: str, explain_by_llm: bool, errors: list[str]) -> dict:
+    """The response's `ai` block from what actually answered."""
+    steps = {"classify": "gemini" if classify_by.startswith("gemini") else "rules",
+             "explain": "gemini" if explain_by_llm else "template"}
+    if isinstance(provider, RulesProvider):
+        return {**rules_info(NO_KEY_REASON), "steps": steps}
+    used = steps["classify"] == "gemini" or explain_by_llm
+    reasons = [e for e in errors if e]
+    fb = getattr(provider, "fell_back_reason", None)
+    if fb:
+        reasons.insert(0, fb)
+    reason = "; ".join(dict.fromkeys(reasons)) or None
+    if not used:
+        return {**rules_info(f"Gemini did not answer ({reason or 'unknown error'}); keyword rules and template used"),
+                "steps": steps}
+    return {"provider": "gemini", "model": getattr(provider, "model", None), "live": True, "steps": steps,
+            "fell_back_reason": reason}
 
 
 @dataclass
@@ -213,8 +260,9 @@ async def run_fit(req: FitRequest, deps: Deps) -> dict:
             ts = await with_options(ts)
         return ts
 
+    classify_trace: dict = {}
     (event_class, llm), ts = await asyncio.gather(
-        classify(question, deps.provider, manifest.get("event_classes"), req.ticker), ticks())
+        classify(question, deps.provider, manifest.get("event_classes"), req.ticker, classify_trace), ticks())
 
     def lists_for(ts: TickSet) -> dict[str, list[dict]]:
         available = available_requirements(ts)
@@ -257,7 +305,15 @@ async def run_fit(req: FitRequest, deps: Deps) -> dict:
         "question_unresolved": question_unresolved or None,
         "reason": None if t["family"] else _no_fit_reason(event_class, question_unresolved, t),
     }
-    result["rationale"], _ = await explain(result, deps.provider)
+    explain_trace: dict = {}
+    result["rationale"], by_llm = await explain(result, deps.provider, explain_trace)
+    errors = []
+    if classify_trace.get("error"):
+        errors.append(f"classify: {classify_trace['error']}")
+    if explain_trace.get("error"):
+        errors.append(f"explain: {explain_trace['error']}")
+    result["ai"] = ai_block(deps.provider, llm, by_llm, errors)
+    result["gemini_failed"] = bool(errors)
     return result
 
 
@@ -287,6 +343,7 @@ def degraded(req: FitRequest | None, err: Exception) -> dict:
     return {"event_class": rules_classify(q) if q else "unsupported", "division": None, "family": None,
             "preset_index": None, "params": {}, "score": None, "alternatives": [], "llm": "rules",
             "ticks_source": "none", "n_ticks": 0,
+            "ai": rules_info(f"internal error ({type(err).__name__}); keyword rules only"),
             "rationale": f"The fit pipeline hit an internal error ({type(err).__name__}), so no algo was fitted. "
                          "Nothing here is a recommendation; retry in a moment."}
 
@@ -297,7 +354,9 @@ async def fit(req: FitRequest, deps: Deps) -> FitResponse:
     except Exception as e:  # never a 500
         r = degraded(req, e)
     try:
-        return FitResponse(**{k: r[k] for k in FitResponse.model_fields if k in r})
+        resp = FitResponse(**{k: r[k] for k in FitResponse.model_fields if k in r})
+        resp._gemini_failed = bool(r.get("gemini_failed"))
+        return resp
     except Exception as e:
         r = degraded(req, e)
         return FitResponse(**{k: r[k] for k in FitResponse.model_fields if k in r})

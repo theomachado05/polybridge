@@ -123,16 +123,16 @@ try {
 
   // 3. Connect
   await click("button", "Connect brokerage");
-  await waitFor(has("button", "Run the AI pipeline"), "Connect screen", 30_000);
+  await waitFor(has("button", "pipeline"), "Connect screen", 30_000);  // "Run the AI pipeline" (Gemini answered) or "Run the fit pipeline"
   check("UI: connect names the account orders route to", await ev(`/Simulated account|Webull paper/.test(document.body.innerText)`), "");
   await shot(3, "connect");
 
-  // 4. AI pipeline: wait for the fit, read what it says it picked, then approve
-  await click("button", "Run the AI pipeline");
+  // 4. Pipeline: wait for the fit, read what it says it picked, then approve
+  await click("button", "pipeline");
   await waitFor(has("h2", "Approve the"), "pipeline reaches the approval gate", 90_000);
   const pipeText = await ev("document.body.innerText");
-  const fitTag = /rules-based fit|Gemini/i.exec(pipeText)?.[0];
-  check("UI: pipeline shows a fit, labelled rules-based or Gemini", !!fitTag, fitTag ?? "no label");
+  const fitTag = /Rules \+ C\+\+ replay|AI · Gemini[^\n]*/.exec(pipeText)?.[0];
+  check("UI: pipeline shows a fit, labelled \"Rules + C++ replay\" or \"AI · Gemini <model>\"", !!fitTag, fitTag ?? "no label");
   const fam = /AI fit for \w+: ([A-Za-z0-9 ]+?)(?: preset|\.|\n)/.exec(pipeText)?.[1]?.trim();
   check("UI: pipeline names the chosen family", !!fam, fam ?? "");
   // The approval step reads the pending proposal first: evidence gate + liquidity & capacity card.

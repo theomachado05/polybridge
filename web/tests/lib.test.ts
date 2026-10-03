@@ -2,10 +2,9 @@
 import { afterEach, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { fmtK, fmtMoney, fmtNs, fmtPct, prettyId, sparkPath } from "../src/lib/fmt.ts";
-import { initSim, seeded, simCover, simPnl, stepSim } from "../src/lib/sim.ts";
 import { blockUi, parseLibrary, shortlist } from "../src/lib/library.ts";
-import { demoSteps, fitSteps, type PipeContext } from "../src/lib/pipeline.ts";
-import { DEMO_MARKET, INSTRUMENTS, QUESTIONS, demoFirst, demoImpacts, isDemoMarket, questionFromMarket } from "../src/lib/demo.ts";
+import { fitSteps, noFitSteps, type PipeContext } from "../src/lib/pipeline.ts";
+import { FEATURED_REPLAY, HEDGE_INSTRUMENTS, featuredFirst, isFeaturedReplay, questionFromMarket } from "../src/lib/markets.ts";
 import { getAccount, getLibrary, getOrders, getPositions, postFit, type FitOut } from "../src/lib/api.ts";
 
 describe("fmt", () => {
@@ -26,44 +25,6 @@ describe("fmt", () => {
     const d = sparkPath([1, 2, 3], 300, 56);
     assert.match(d, /^M0\.0 52\.0 L150\.0 28\.0 L300\.0 4\.0$/);
     assert.equal(sparkPath([1], 300, 56), "");
-  });
-});
-
-describe("demo simulator", () => {
-  const seed = () => initSim({ ticker: "ABNB", px: 128.4, held: 1200, yesCents: 23, volN: 48200, movePct: -3.2 }, seeded(7), 1_700_000_000_000);
-
-  it("seeds 60 points of history and the two prototype trades", () => {
-    const s = seed();
-    assert.equal(s.hist.length, 60);
-    assert.equal(s.phist.length, 60);
-    assert.equal(s.trades.length, 2);
-    assert.equal(s.hedge, Math.round(1200 * 0.38));
-    assert.equal(s.trades[0].side, "SELL");
-    assert.match(s.trades[0].reason, /^Polymarket YES \+1\.8¢ on 62\.7k volume; Kalshi 25¢ confirming\. Delta-Bridge expects ABNB drift /);
-  });
-
-  it("is deterministic for a seed and keeps prices and probabilities bounded", () => {
-    let a = seed(), b = seed();
-    const ra = seeded(11), rb = seeded(11);
-    for (let i = 0; i < 400; i++) { a = stepSim(a, ra, 1e12 + i); b = stepSim(b, rb, 1e12 + i); }
-    assert.deepEqual(a, b);
-    assert.ok(a.p >= 0.03 && a.p <= 0.92);
-    assert.ok(a.vol >= 0.18 && a.vol <= 0.62);
-    assert.ok(a.hedge >= 0);
-    assert.ok(a.trades.length <= 8);
-    assert.ok(a.tradeCount > 7, "hedges fire over 400 ticks");
-    assert.ok(simCover(a) >= 0 && simCover(a) <= 100);
-    assert.ok(Number.isFinite(simPnl(a)));
-  });
-
-  it("adds to the short hedge when the adverse probability jumps", () => {
-    const s = { ...seed(), lastTradeTick: -9 };
-    const rng = (() => { const xs = [0.01, 0.9, 0.99, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]; let i = 0; return () => xs[i++ % xs.length]; })();
-    const n = stepSim(s, rng, 1e12);
-    assert.ok(n.p > s.pAtHedge + 0.011);
-    assert.equal(n.trades[0].side, "SELL");
-    assert.ok(n.hedge > s.hedge);
-    assert.equal(n.tradeCount, s.tradeCount + 1);
   });
 });
 
@@ -122,17 +83,21 @@ describe("pipeline steps", () => {
   it("labels replay and missing history honestly", () => {
     assert.match(fitSteps({ ...fit, ticks_source: "replay", n_ticks: 50 }, ctx)[2].text, /recorded replay file \(not live history\)/);
     assert.match(fitSteps({ ...fit, ticks_source: "none", n_ticks: 0 }, ctx)[2].text, /No usable price history/);
-    assert.match(fitSteps({ ...fit, llm: "gemini" }, ctx)[0].text, /\(Gemini\)/);
+    assert.match(fitSteps({ ...fit, llm: "gemini:gemini-2.5-flash" }, ctx)[0].text, /\(Gemini 2\.5 Flash\)/);
+    assert.match(fitSteps(fit, ctx)[5].text, /^Fit \(rules \+ C\+\+ replay\) for JPM/);
+    assert.match(fitSteps({ ...fit, llm: "gemini:gemini-2.5-flash" }, ctx)[5].text, /^AI fit for JPM/);
   });
-  it("keeps the prototype's scripted steps as the demo fallback", () => {
-    const steps = demoSteps(ctx);
+  it("without a fit, shows the pick's real facts and the engine's default spec, never scripted numbers", () => {
+    const steps = noFitSteps(ctx);
     assert.equal(steps.length, 6);
-    assert.equal(steps[0].name, "Parsing question");
     assert.match(steps[2].text, /expected move on YES −0\.9%/);
+    assert.match(steps[3].text, /no presets were scored/);
+    assert.doesNotMatch(steps.map((x) => x.text).join(" "), /lots|comps|confidence 0\.71|NYC LL18|71%/);
+    assert.match(noFitSteps({ ...ctx, noDirection: true })[5].text, /until you say which outcome hurts it/);
   });
 });
 
-describe("demo data adapters", () => {
+describe("market adapters", () => {
   it("turns a search hit into a wizard question", () => {
     const q = questionFromMarket({ source: "polymarket", id: "m1", question: "Will Congress pass X?", yes_price: 0.234, volume_24h: 48200, end_date: null, url: null, token_id: "t" });
     assert.equal(q.id, "polymarket:m1");
@@ -141,12 +106,10 @@ describe("demo data adapters", () => {
     assert.equal(q.vol, "48.2k");
     assert.deepEqual(q.venues, ["Polymarket"]);
   });
-  it("has impacts for every sample question and four instruments", () => {
-    for (const q of QUESTIONS) assert.ok(demoImpacts(q).length > 0);
-    const inst = INSTRUMENTS(128.4, "Taxable");
-    assert.equal(inst.length, 4);
-    assert.equal(inst.filter((i) => i.rec).length, 1);
-    assert.equal(inst[1].short, "Put spread 119/110");
+  it("offers only the hedge the engine runs, priced from a quote or not at all", () => {
+    assert.deepEqual(HEDGE_INSTRUMENTS(null).map((i) => i.id), ["shares"]);
+    assert.equal(HEDGE_INSTRUMENTS(null)[0].cost, "quote unavailable");
+    assert.equal(HEDGE_INSTRUMENTS(null)[0].rec, false);
   });
 });
 
@@ -175,7 +138,7 @@ describe("api client (mocked HTTP)", () => {
     assert.equal((await getPositions())[0].qty, -40);
     assert.equal((await getOrders())[0].status, "filled");
   });
-  it("surfaces a missing endpoint as an error the screens fall back on", async () => {
+  it("surfaces a missing endpoint as an error the screens show with a retry", async () => {
     mock({});
     await assert.rejects(getLibrary(), /Not Found/);
     await assert.rejects(getAccount(), (e: Error & { status?: number }) => e.status === 404);
@@ -186,12 +149,12 @@ describe("api client (mocked HTTP)", () => {
   });
 });
 
-describe("demo market", () => {
+describe("featured replay market", () => {
   it("is moved to the front of the held-market rows, the others keep their order", () => {
-    const rows = [{ id: "polymarket:2589813" }, { id: "kalshi:X" }, { id: `polymarket:${DEMO_MARKET.id}` }, { id: "polymarket:1" }];
-    assert.deepEqual(demoFirst(rows).map((r) => r.id), [`polymarket:${DEMO_MARKET.id}`, "polymarket:2589813", "kalshi:X", "polymarket:1"]);
-    assert.deepEqual(demoFirst([{ id: "a" }, { id: "b" }]).map((r) => r.id), ["a", "b"]);
-    assert.equal(isDemoMarket({ id: "kalshi:4620900" }), false);
-    assert.equal(DEMO_MARKET.ticker, "TLT");
+    const rows = [{ id: "polymarket:2589813" }, { id: "kalshi:X" }, { id: `polymarket:${FEATURED_REPLAY.id}` }, { id: "polymarket:1" }];
+    assert.deepEqual(featuredFirst(rows).map((r) => r.id), [`polymarket:${FEATURED_REPLAY.id}`, "polymarket:2589813", "kalshi:X", "polymarket:1"]);
+    assert.deepEqual(featuredFirst([{ id: "a" }, { id: "b" }]).map((r) => r.id), ["a", "b"]);
+    assert.equal(isFeaturedReplay({ id: "kalshi:4620900" }), false);
+    assert.equal(FEATURED_REPLAY.ticker, "TLT");
   });
 });

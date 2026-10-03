@@ -1,9 +1,9 @@
 "use client";
 
-import { BROKERS, LOGO } from "@/lib/demo";
+import { BROKERS, LOGO } from "@/lib/brokers";
 import { fmtMoney } from "@/lib/fmt";
 import { brokerLabel, useStore, type Settings } from "@/lib/store";
-import { ChipGroup, DemoTag, Glass, Label, LogoTile, Switch, Tag } from "@/components/pb";
+import { ChipGroup, Glass, Label, LogoTile, Switch, Tag, Unavailable } from "@/components/pb";
 
 const MARKETS = [
   { name: "Polymarket", sub: "CLOB websocket · read-only", logo: LOGO("polymarket.com") },
@@ -49,7 +49,7 @@ export default function Profile() {
               </div>
             ) : (
               <div style={{ fontSize: 12, color: "#5A627A", display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                {account.status === "loading" ? "Loading account…" : <>GET /account unavailable ({account.error}). <DemoTag what="no account data" /></>}
+                {account.status === "loading" ? "Loading account…" : <Unavailable what="The account (GET /account)" error={account.error} onRetry={s.refreshAccount} compact />}
               </div>
             )}
             <div style={{ fontSize: 11.5, color: "#5A627A", lineHeight: 1.45 }}>Paper or simulated accounts only. The broker toggles below are this session’s preferences; Webull paper turns on server-side when its API keys are set.</div>

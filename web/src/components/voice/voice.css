@@ -1,7 +1,11 @@
-.pb-voice { position: fixed; right: clamp(16px, 3vw, 28px); bottom: clamp(16px, 3vw, 28px); z-index: 50; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
-.pb-voice-pill { display: inline-flex; align-items: center; gap: 10px; height: 48px; padding: 0 20px 0 12px; border-radius: 999px; background: rgba(255,255,255,.62); color: var(--ink); font: 600 14px var(--sans); cursor: pointer; transition: transform .2s ease, box-shadow .2s ease; }
+.pb-voice { position: fixed; right: clamp(16px, 3vw, 28px); bottom: clamp(16px, 3vw, 28px); z-index: 50; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; max-width: min(360px, calc(100vw - 32px)); }
+.pb-voice-pill { display: inline-flex; align-items: center; gap: 10px; height: 48px; padding: 0 20px 0 12px; border-radius: 999px; background: rgba(255,255,255,.62); color: var(--ink); font: 600 14px var(--sans); cursor: pointer; border: 1px solid rgba(255,255,255,.9); transition: transform .2s ease, box-shadow .2s ease; }
 .pb-voice-pill:hover { transform: translateY(-1px); }
 .pb-voice-pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.pb-voice-end { height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid rgba(15,22,38,.14); background: rgba(255,255,255,.7); color: var(--ink); font: 500 12px var(--sans); cursor: pointer; }
+.pb-voice-note { padding: 10px 14px; border-radius: 16px; background: rgba(255,255,255,.82); border: 1px solid rgba(255,255,255,.95); box-shadow: 0 10px 30px rgba(40,60,120,.14); font: 400 12.5px/1.45 var(--sans); color: #3C4458; }
+.pb-voice-note[data-tone="error"] { color: var(--down-text); }
 .pb-voice[data-phase="listening"] .pb-voice-pill { box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 0 0 2px var(--accent-tint), 0 12px 36px rgba(59,108,246,.28); }
+.pb-voice[data-phase="speaking"] .pb-voice-pill, .pb-voice[data-phase="thinking"] .pb-voice-pill { box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 0 0 2px rgba(154,123,255,.35), 0 12px 36px rgba(91,63,209,.22); }
 .pb-voice[data-phase="error"] .pb-voice-pill { color: var(--down-text); }
 @media (prefers-reduced-motion: reduce) { .pb-voice-pill { transition: none; } }

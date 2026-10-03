@@ -8,7 +8,7 @@ import {
   stagedBadges, usd,
 } from "../src/lib/risk.ts";
 import { bridgeable, markEvidenceRefused, hedgeTerms, prepareHedgeProposal, prepareOpportunityProposal, startOpportunityBridge, startRealBridge, type BridgeApi } from "../src/lib/realBridge.ts";
-import { questionFromMarket, type EquityPick } from "../src/lib/demo.ts";
+import { questionFromMarket, type EquityPick } from "../src/lib/markets.ts";
 import type { AccountOut, Capacity, CapitalOut, LiquidityEquity, Proposal } from "../src/lib/api.ts";
 import { init, reduce, sandboxFills } from "../src/lib/bridgeStream.ts";
 

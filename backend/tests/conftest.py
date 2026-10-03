@@ -22,6 +22,24 @@ def _isolated_broker(tmp_path, monkeypatch):
     broker.reset_default_broker()
 
 
+@pytest.fixture(autouse=True)
+def _no_llm_keys(monkeypatch):
+    """Hermetic AI: GEMINI_API_KEY / ELEVENLABS_API_KEY in the shared .env must never reach the network from a test.
+    ``gemini_key()`` reads .env when the variable is empty, so it is patched too; tests that exercise Gemini build a
+    GeminiProvider over mocked HTTP themselves."""
+    from app.pipeline import llm
+
+    monkeypatch.setenv("GEMINI_API_KEY", "")
+    monkeypatch.setenv("ELEVENLABS_API_KEY", "")
+    monkeypatch.delenv("GEMINI_MODEL", raising=False)
+    monkeypatch.setattr(llm, "gemini_key", lambda: None)
+    llm._models_cache.clear()
+    llm._resolved.clear()
+    yield
+    llm._models_cache.clear()
+    llm._resolved.clear()
+
+
 def pytest_configure(config):
     config.addinivalue_line("markers", "real_twins: read the committed twin map (app/data/kalshi_twins.json) "
                                        "instead of the empty map every other test gets")

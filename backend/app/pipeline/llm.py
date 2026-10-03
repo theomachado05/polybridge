@@ -6,18 +6,24 @@ callers then fall back to ``RulesProvider``.
 """
 from __future__ import annotations
 
+import hashlib
 import json
+import logging
 import os
 import re
+import time
 from pathlib import Path
 from typing import Any, Protocol, runtime_checkable
 
 import httpx
 
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+MODELS_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 DEFAULT_MODEL = "gemini-2.5-flash"
 TIMEOUT_S = 8.0
+MODELS_TTL_S = 3600.0
 BACKEND = Path(__file__).resolve().parents[2]
+log = logging.getLogger("polybridge.llm")
 
 
 class LLMError(RuntimeError):
@@ -102,7 +108,9 @@ def template_rationale(r: dict) -> str:
                 "to fit it.")
     if not fam:
         reason = r.get("reason") or "no algo family in the library covers this event class"
-        return (f"Classified as {cls} by {r.get('llm', 'rules')}. No algo was fitted: {reason}. "
+        by = r.get("llm") or "rules"
+        by = f"Gemini ({by.split(':', 1)[1]})" if by.startswith("gemini:") else ("keyword rules" if by == "rules" else by)
+        return (f"Classified as {cls} by {by}. No algo was fitted: {reason}. "
                 f"Try a market about rates, elections, trade, energy, housing, banks, tech regulation, crypto or a company.")
     ticker = r.get("ticker") or "the position"
     first = f"Classified as {cls}; {r.get('n_shortlisted', 0)} {div} families in the library cover it, and {fam} was chosen for {ticker}."
@@ -128,6 +136,9 @@ def template_rationale(r: dict) -> str:
 
 class RulesProvider:
     name = "rules"
+    label = "rules"
+    model = None
+    fell_back_reason = None
 
     async def classify(self, question: str, allowed: list[str], ticker: str | None = None) -> str:
         return rules_classify(question, allowed)
@@ -172,29 +183,139 @@ def parse_json_text(text: str) -> dict:
     return v
 
 
+# ---------------------------------------------------------------- Gemini model list (cached) and fallback
+
+# Specialised Gemini variants that answer generateContent but are not general text models.
+_SPECIAL = re.compile(r"(tts|image|audio|live|embedding|vision|robotics|computer-use|thinking|learnlm|aqa)")
+_FLASH = re.compile(r"^gemini-(\d+(?:\.\d+)?)-flash(?:-(.*))?$")
+_models_cache: dict[str, tuple[float, list[dict]]] = {}   # sha256(key) -> (fetched monotonic, models)
+_resolved: dict[str, str] = {}                            # configured model -> the flash model that replaced it
+
+
+def _key_id(api_key: str) -> str:
+    return hashlib.sha256(api_key.encode()).hexdigest()[:16]  # never the key itself
+
+
+def newest_flash(models: list[dict]) -> str | None:
+    """The newest general-purpose "flash" model that supports generateContent, as a bare id ("gemini-2.5-flash").
+
+    Ranked by version number, then stable over preview/experimental, then the full model over "-lite", then the plain
+    name over a dated or suffixed one. Aliases without a version ("gemini-flash-latest") and specialised variants
+    (tts, image, audio, live, ...) are skipped."""
+    best: tuple | None = None
+    best_id: str | None = None
+    for m in models or []:
+        if not isinstance(m, dict):
+            continue
+        mid = str(m.get("name") or "").removeprefix("models/")
+        if "generateContent" not in (m.get("supportedGenerationMethods") or []):
+            continue
+        hit = _FLASH.match(mid)
+        if not hit or _SPECIAL.search(mid):
+            continue
+        version = tuple(int(x) for x in hit.group(1).split("."))
+        suffix = hit.group(2) or ""
+        stable = not re.search(r"(preview|exp)", suffix)
+        full = "lite" not in suffix
+        rank = (version, stable, full, suffix == "", -len(mid))
+        if best is None or rank > best:
+            best, best_id = rank, mid
+    return best_id
+
+
+async def list_models(api_key: str, http: httpx.AsyncClient | None = None, timeout_s: float = TIMEOUT_S,
+                      use_cache: bool = True) -> list[dict]:
+    """GET /v1beta/models (all pages, bounded), cached per key for an hour. Raises LLMError (never echoes the key);
+    the message carries the HTTP status so a caller can tell an invalid key (400/401/403) from an outage."""
+    kid = _key_id(api_key)
+    hit = _models_cache.get(kid)
+    if use_cache and hit and time.monotonic() - hit[0] < MODELS_TTL_S:
+        return hit[1]
+    own = http is None
+    client = http or httpx.AsyncClient()
+    models: list[dict] = []
+    try:
+        token = None
+        for _ in range(10):
+            params = {"pageSize": 1000, **({"pageToken": token} if token else {})}
+            r = await client.get(MODELS_URL, params=params, headers={"x-goog-api-key": api_key},
+                                 timeout=httpx.Timeout(timeout_s))
+            if r.status_code >= 400:
+                raise LLMError(f"Gemini model list failed: HTTP {r.status_code}")
+            body = r.json()
+            models.extend(m for m in body.get("models") or [] if isinstance(m, dict))
+            token = body.get("nextPageToken")
+            if not token:
+                break
+    except LLMError:
+        raise
+    except Exception as e:
+        raise LLMError(f"Gemini model list failed: {type(e).__name__}") from None
+    finally:
+        if own:
+            await client.aclose()
+    _models_cache[kid] = (time.monotonic(), models)
+    return models
+
+
 class GeminiProvider:
     name = "gemini"
 
     def __init__(self, api_key: str, model: str | None = None, http: httpx.AsyncClient | None = None,
                  timeout_s: float = TIMEOUT_S) -> None:
         self.api_key = api_key
-        self.model = model or os.environ.get("GEMINI_MODEL") or DEFAULT_MODEL
+        self.configured_model = model or os.environ.get("GEMINI_MODEL") or DEFAULT_MODEL
+        self.model = self.configured_model
+        self.fell_back_reason: str | None = None
+        if self.configured_model in _resolved:  # an earlier call in this process found the configured model gone
+            self.model = _resolved[self.configured_model]
+            self.fell_back_reason = (f"configured model {self.configured_model} returned 404; "
+                                     f"using {self.model}, the newest flash model this key lists")
         self._http, self.timeout_s = http, timeout_s
+
+    @property
+    def label(self) -> str:
+        return f"gemini:{self.model}"
+
+    def info(self, live: bool) -> dict:
+        return {"provider": "gemini", "model": self.model, "live": live, "fell_back_reason": self.fell_back_reason}
+
+    async def _fallback_model(self, http: httpx.AsyncClient) -> str | None:
+        """Once per configured model: the newest flash model from the (cached) model list, or None."""
+        try:
+            new = newest_flash(await list_models(self.api_key, http, self.timeout_s))
+        except LLMError:
+            return None
+        if not new or new == self.model:
+            return None
+        log.warning("Gemini model %s returned 404; falling back to %s (newest flash model listed for this key)",
+                    self.model, new)
+        _resolved[self.configured_model] = new
+        self.fell_back_reason = (f"configured model {self.model} returned 404; using {new}, the newest flash model "
+                                 "this key lists")
+        self.model = new
+        return new
 
     async def _generate(self, prompt: str, schema: dict) -> dict:
         body = {"contents": [{"role": "user", "parts": [{"text": prompt}]}],
                 "generationConfig": {"responseMimeType": "application/json", "responseSchema": schema,
                                      "temperature": 0.0}}
-        url = GEMINI_URL.format(model=self.model)
         headers = {"x-goog-api-key": self.api_key, "content-type": "application/json"}
         http = self._http or httpx.AsyncClient()
         try:
-            r = await http.post(url, json=body, headers=headers, timeout=httpx.Timeout(self.timeout_s))
-            r.raise_for_status()
-            return parse_json_text(_response_text(r.json()))
+            for attempt in range(2):
+                r = await http.post(GEMINI_URL.format(model=self.model), json=body, headers=headers,
+                                    timeout=httpx.Timeout(self.timeout_s))
+                if r.status_code == 404 and attempt == 0 and await self._fallback_model(http):
+                    continue  # retried once on the newest flash model
+                r.raise_for_status()
+                return parse_json_text(_response_text(r.json()))
+            raise LLMError("Gemini call failed: model not found")  # not reached: attempt 1 returns or raises
         except LLMError:
             raise
-        except Exception as e:  # timeout, transport, HTTP status, bad JSON body
+        except httpx.HTTPStatusError as e:
+            raise LLMError(f"Gemini call failed: HTTP {e.response.status_code}") from None
+        except Exception as e:  # timeout, transport, bad JSON body
             raise LLMError(f"Gemini call failed: {type(e).__name__}") from None  # never echo the key-bearing request
         finally:
             if self._http is None:
@@ -231,6 +352,47 @@ class GeminiProvider:
             raise LLMError("Gemini returned an empty rationale")
         sentences = re.split(r"(?<=[.!?])\s+", text)
         return " ".join(sentences[:3])[:800]
+
+
+    async def map_tickers(self, question: str, universe: list[dict], max_items: int = 6) -> list:
+        """Which listed stocks a prediction-market question moves, chosen ONLY from ``universe`` ([{ticker, name}]).
+        Returns Gemini's raw rows; ``app.mapping.validate_mappings`` checks every field before anything is served."""
+        tickers = [u["ticker"] for u in universe]
+        lines = "\n".join(f"{u['ticker']}: {u.get('name') or u['ticker']}" for u in universe)
+        prompt = ("You map a prediction-market question to the US-listed stocks or ETFs whose price would move if the "
+                  "question resolved YES. Choose ONLY tickers from the list below; never invent a ticker. "
+                  f"Return at most {max_items}, most affected first, and an empty list when no listed ticker has a "
+                  "clear, direct link (do not stretch). For each: direction 'down_on_yes' if the stock would fall on "
+                  "YES, 'up_on_yes' if it would rise; impact_pct = your estimate of the stock's move in percent "
+                  "(a positive number, at most 20) if YES became certain; rationale = one plain sentence, no numbers "
+                  "that are not in the question.\n"
+                  f"Question: {question!r}\nTickers:\n{lines}\n"
+                  'Answer as JSON: {"mappings": [{"ticker": "...", "direction": "down_on_yes|up_on_yes", '
+                  '"impact_pct": 1.5, "rationale": "..."}]}')
+        item = {"type": "OBJECT", "properties": {
+            "ticker": {"type": "STRING", "enum": tickers},
+            "direction": {"type": "STRING", "enum": ["down_on_yes", "up_on_yes"]},
+            "impact_pct": {"type": "NUMBER"},
+            "rationale": {"type": "STRING"}}, "required": ["ticker", "direction", "impact_pct", "rationale"]}
+        schema = {"type": "OBJECT", "properties": {"mappings": {"type": "ARRAY", "items": item}},
+                  "required": ["mappings"]}
+        out = await self._generate(prompt, schema)
+        rows = out.get("mappings")
+        if not isinstance(rows, list):
+            raise LLMError("Gemini returned no mappings list")
+        return rows
+
+
+NO_KEY_REASON = "no GEMINI_API_KEY: keyword rules and templates, no LLM call"
+
+
+def rules_info(reason: str | None = None) -> dict:
+    return {"provider": "rules", "model": None, "live": False, "fell_back_reason": reason}
+
+
+def ai_label(provider: object) -> str:
+    """'gemini:<model>' for a Gemini provider, else 'rules'."""
+    return getattr(provider, "label", None) or "rules"
 
 
 def default_provider(http: httpx.AsyncClient | None = None) -> LLMProvider:
