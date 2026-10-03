@@ -36,7 +36,7 @@ from .broker import Broker, OrderRequest, SimBroker, get_broker
 from .models import AlgoChoice, MarketRef, Proposal
 from .pipeline.engine_adapter import (AlgoChoiceError, cap_contracts, cap_coverage, is_option_family,
                                       normalize_manifest, resolve_algo)
-from .pipeline.ticks import orient_to_adverse, recorded_bars
+from .pipeline.ticks import orient_for_family, orient_to_adverse, recorded_bars
 from .store import NotFound, ProposalStore
 from .ticks import TICK_FIELDS, LiveSource, OptionsEnricher, ReplaySource, SourceError, Tick, as_tick
 
@@ -533,7 +533,9 @@ async def _run_algo_source(bridge: Bridge, algo, source) -> None:
             ev["under_source"] = bridge.equity_source if bridge.effective_source == "live" else (
                 "recorded" if ev["under_px"] is not None else None)
         await bridge.emit("tick", ev)
-        oriented = t.fields if opp else orient_to_adverse(t.fields, bridge.direction)  # the one orientation step
+        # the one orientation step: hedge -> adverse per the proposal's direction; opportunity -> raw YES, except a
+        # family that reads the PM adverse probability (eightk_opportunity), oriented by the matched question
+        oriented = opp_engine_fields(bridge, t.fields) if opp else orient_to_adverse(t.fields, bridge.direction)
         i = algo.on_tick(engine_tick(oriented, t.ts_ns, t.venue), time.time_ns())
         reason = str(i.get("reason"))
         bridge.reasons[reason] += 1
@@ -584,6 +586,13 @@ def _options_brief(enricher: OptionsEnricher | None) -> dict | None:
     keep = ("supported", "available", "reason", "underlying_used", "strike_used", "expiry", "k_lo", "k_hi",
             "method", "direction", "expiry_gap_days", "notes", "eightk_coverage")
     return {k: (None if isinstance(d[k], float) and not math.isfinite(d[k]) else d[k]) for k in keep if k in d}
+
+
+def opp_engine_fields(bridge: Bridge, fields: dict) -> dict:
+    """The tick an opportunity family sees: raw YES, or for eightk_opportunity the adverse orientation of the matched
+    threshold question ("above K" -> NO is adverse). The UI's PM-vs-options gap always uses the raw fields."""
+    qdir = (bridge.options.detail or {}).get("direction") if bridge.options is not None else None
+    return orient_for_family(fields, bridge.algo["family"], qdir)
 
 
 def pm_vs_options(fields: dict) -> dict:
@@ -712,8 +721,11 @@ async def _send_option_intent(bridge: Bridge, algo, intent: dict, t: Tick) -> di
         risk = unit_risk(struct, side, net_mid, net_half)
         if risk is None:
             return refuse("rejected", "no option quote to size the max_notional cap")
+        if risk <= 0:  # stale / crossed leg quotes: zero risk is never unlimited room
+            return refuse("rejected", "the leg quotes give a non-positive risk per structure (stale or crossed "
+                                      "quotes), so the max_notional cap cannot be sized")
         used = abs(bridge.opt_pos) * bridge.opt_risk_per_unit
-        room_n = math.floor((float(p.max_notional) - used) / risk + 1e-9) if p.max_notional and risk > 0 else qty
+        room_n = math.floor((float(p.max_notional) - used) / risk + 1e-9) if p.max_notional else qty
         allowed = float(math.floor(min(qty, room_c, room_n)))
         if allowed < qty:
             rec["capped_from"] = qty

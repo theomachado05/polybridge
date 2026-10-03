@@ -15,8 +15,8 @@ from .explain import explain
 from .llm import LLMProvider, RulesProvider, rules_classify
 from .shortlist import shortlist, unmet_requirements
 from .options_join import join_options
-from .ticks import (TickSet, _universe_entry, available_requirements, build_ticks, kalshi_series, orient_to_adverse,
-                    resolve_polymarket)
+from .ticks import (TickSet, _universe_entry, available_requirements, build_ticks, kalshi_series, orient_for_family,
+                    orient_to_adverse, resolve_polymarket)
 from .tune import tune
 
 Direction = Literal["down_on_yes", "up_on_yes"]
@@ -147,6 +147,24 @@ async def run_fit(req: FitRequest, deps: Deps) -> dict:
     end_date = req.end_date or (_universe_entry(req.market.source, req.market.id).get("end_date")
                                 if req.market else None)
 
+    # Options eligibility only changes an opportunity fit: a hedge fit (asked, or the default with shares held) skips
+    # the chain snapshot + leg bars + 8-K refresh against Massive.
+    want_options = req.division == "opportunity" or (req.division is None and not (req.shares_held or 0) > 0)
+    opt_info: dict = {}
+
+    async def join(ts: TickSet) -> None:
+        if ts.ticks is None or _has_options(ts):  # threshold questions only: options-implied history
+            return
+        try:
+            joined, info = await asyncio.wait_for(
+                join_options(ts.ticks, question or ts.question, end_date, massive=deps.massive,
+                             offline=deps.offline), OPTIONS_BUDGET_S)
+            ts.ticks = joined
+            opt_info.update(info)
+            ts.notes.extend(info.get("notes") or [])
+        except asyncio.TimeoutError:
+            ts.notes.append(f"options history took over {OPTIONS_BUDGET_S:g} s")
+
     async def ticks() -> TickSet:
         try:  # bound the whole network chain (Gamma + CLOB + Massive); on overrun use recorded data only
             ts = await asyncio.wait_for(
@@ -156,25 +174,24 @@ async def run_fit(req: FitRequest, deps: Deps) -> dict:
             ts = await build_ticks(market, req.ticker, http=None, massive=None, offline=True)
             ts.notes.append(f"live history took over {TICKS_BUDGET_S:g} s")
             return ts
-        if ts.ticks is not None and not _has_options(ts):  # threshold questions: options-implied history
-            try:
-                joined, info = await asyncio.wait_for(
-                    join_options(ts.ticks, question or ts.question, end_date, massive=deps.massive,
-                                 offline=deps.offline), OPTIONS_BUDGET_S)
-                ts.ticks = joined
-                ts.notes.extend(info.get("notes") or [])
-            except asyncio.TimeoutError:
-                ts.notes.append(f"options history took over {OPTIONS_BUDGET_S:g} s")
+        if want_options:
+            await join(ts)
         return ts
 
     (event_class, llm), ts = await asyncio.gather(
         classify(question, deps.provider, manifest.get("event_classes"), req.ticker), ticks())
 
+    def lists_for(ts: TickSet) -> dict[str, list[dict]]:
+        available = available_requirements(ts)
+        return {d: [f for f in fams if not unmet_requirements(f, available)]
+                for d, fams in shortlist(manifest, event_class, available).items()}
+
     question_unresolved = req.market is not None and not question
     # Families whose data needs this market cannot meet (second venue, listed options) are left out entirely.
-    available = available_requirements(ts)
-    lists = {d: [f for f in fams if not unmet_requirements(f, available)]
-             for d, fams in shortlist(manifest, event_class, available).items()}
+    lists = lists_for(ts)
+    if not want_options and req.division is None and not lists.get("hedge"):  # falls back to opportunity: join now
+        await join(ts)
+        lists = lists_for(ts)
     division = choose_division(lists, req.shares_held, req.division)
     families = lists.get(division, []) if division else []
     # §3.3 Position fields only. The direction reaches the engine through the ticks: for a hedge, YES is re-oriented
@@ -184,7 +201,11 @@ async def run_fit(req: FitRequest, deps: Deps) -> dict:
     if division == "hedge" and ts.ticks is not None:
         ts = TickSet(orient_to_adverse(ts.ticks, req.direction), ts.source, ts.n, ts.has_underlying, ts.quote_model,
                      ts.notes, ts.token_id, ts.question)
-    t = tune(deps.adapter, families, division or "hedge", position, ts)
+    family_ticks = None
+    if division == "opportunity" and ts.ticks is not None:
+        qdir = (opt_info.get("match") or {}).get("direction") or _question_direction(question or ts.question, end_date)
+        family_ticks = {f["id"]: orient_for_family(ts.ticks, f["id"], qdir) for f in families}
+    t = tune(deps.adapter, families, division or "hedge", position, ts, family_ticks)
 
     fam = next((f for f in families if f["id"] == t["family"]), None)
     result = {
@@ -201,6 +222,18 @@ async def run_fit(req: FitRequest, deps: Deps) -> dict:
     }
     result["rationale"], _ = await explain(result, deps.provider)
     return result
+
+
+def _question_direction(question: str | None, end_date: Any) -> str | None:
+    """"above" / "below" for a threshold question options/match.py can map, else None. Never raises."""
+    if not question:
+        return None
+    try:
+        from ..options.match import match_question
+        m = match_question(question, end_date)
+        return m.direction if m is not None else None
+    except Exception:
+        return None
 
 
 def _no_fit_reason(event_class: str, question_unresolved: bool, t: dict) -> str | None:

@@ -184,7 +184,7 @@ def test_spread_series_needs_every_leg():
     assert spread_series(ts, [(1, [(15, 2.0)]), (-1, [(5, 0.5)])]).tolist()[1:] == [1.5, 1.5]
 
 
-def _fit(monkeypatch, with_options: bool):
+def _fit(monkeypatch, with_options: bool, with_iv: bool = True, question: str = Q_ABOVE, hc=None):
     pts = _points(48)
     ticks = assemble(pts, bars=[(p[0] - 1, 100.0) for p in pts])
 
@@ -197,12 +197,14 @@ def _fit(monkeypatch, with_options: bool):
         out = dict(t)
         out["opt_implied_prob"] = np.full(len(pts), 0.4)
         out["opt_mid"] = np.full(len(pts), 4.0)
+        if with_iv:
+            out["opt_iv"] = np.linspace(0.40, 0.45, len(pts))
         return out, {"available": True, "notes": []}
     monkeypatch.setattr(service, "build_ticks", fake_build)
     monkeypatch.setattr(service, "join_options", fake_join)
-    hc = fake_hedgecore()
+    hc = hc or fake_hedgecore()
     deps = service.Deps(adapter=EngineAdapter(module=hc))
-    req = service.FitRequest(question=Q_ABOVE, ticker="NVDA", division="opportunity")
+    req = service.FitRequest(question=question, ticker="NVDA", division="opportunity")
     return run(service.run_fit(req, deps)), hc
 
 
@@ -479,3 +481,174 @@ def test_real_binary_vs_spread_arb_trades_the_gap(opp_client, monkeypatch):
     # PS starts at 0.20 vs an options-implied 0.35: PM trails by > entry_gap -> sell the call spread
     assert fills and fills[0]["status"] == "filled" and fills[0]["side"] == "sell" and fills[0]["qty"] == 2
     assert fills[0]["structure"] == "call_spread"
+
+
+# ---------------------------------------------------------------- review fixes: honest scores, eightk orientation
+
+from app.pipeline.ticks import orient_for_family  # noqa: E402
+from app.pipeline.tune import missing_signal, score_row, tune  # noqa: E402
+
+
+def test_zero_order_opportunity_replay_is_unscored():
+    assert score_row({"n_orders": 0, "pnl": 0.0, "fees": 0.0, "max_dd": 0.0}, "opportunity") is None
+    assert score_row({"n_orders": 2, "pnl": -10.0, "fees": 0.0, "max_dd": 20.0}, "opportunity") == pytest.approx(-0.5)
+    assert score_row({"n_orders": 0, "hedge_var_reduction": 0.3}, "hedge") == 0.3  # hedge scoring unchanged
+
+
+class _IdleAdapter:
+    """Every preset of one family holds on every tick; another family trades at a loss."""
+    can_score = True
+
+    def __init__(self, idle=("vol_vs_pm_move",)):
+        self.idle, self.calls = set(idle), []
+
+    def replay_grid(self, family, position, ticks):
+        self.calls.append(family)
+        if family in self.idle:
+            return [{"preset_index": i, "params": {}, "n_orders": 0, "pnl": 0.0, "fees": 0.0, "max_dd": 0.0}
+                    for i in range(3)]
+        return [{"preset_index": 0, "params": {}, "n_orders": 4, "pnl": -30.0, "fees": 2.0, "max_dd": 40.0}]
+
+
+def _opt_ticks(n=48, iv=True, eightk=False):
+    pts = _points(n)
+    t = assemble(pts)
+    t["opt_implied_prob"] = np.full(n, 0.4)
+    t["opt_mid"] = np.full(n, 4.0)
+    t["opt_iv"] = np.full(n, 0.4) if iv else np.full(n, NAN)
+    t["eightk_score"] = np.full(n, 0.7) if eightk else np.full(n, NAN)
+    return TickSet(t, "replay", n, True)
+
+
+def test_idle_family_never_beats_a_losing_family_and_all_idle_is_unscored():
+    fams = [{"id": "vol_vs_pm_move"}, {"id": "binary_vs_spread_arb"}]
+    out = tune(_IdleAdapter(), fams, "opportunity", {"option": 0.0}, _opt_ticks())
+    assert out["scored"] and out["family"] == "binary_vs_spread_arb" and out["score"] < 0
+    out = tune(_IdleAdapter(idle=("vol_vs_pm_move", "binary_vs_spread_arb")), fams, "opportunity", {}, _opt_ticks())
+    assert not out["scored"] and out["score"] is None and "no preset placed a single order" in out["unscored_reason"]
+
+
+def test_family_without_its_signal_history_is_not_replayed():
+    a = _IdleAdapter(idle=())
+    fams = [{"id": "vol_vs_pm_move"}, {"id": "eightk_opportunity"}, {"id": "binary_vs_spread_arb"}]
+    out = tune(a, fams, "opportunity", {}, _opt_ticks(iv=False, eightk=False))
+    assert a.calls == ["binary_vs_spread_arb"] and out["family"] == "binary_vs_spread_arb"
+    assert missing_signal("vol_vs_pm_move", _opt_ticks(iv=False).ticks) == "opt_iv"
+    assert missing_signal("eightk_opportunity", _opt_ticks(eightk=True).ticks) is None
+    a = _IdleAdapter(idle=())
+    out = tune(a, fams[:2], "opportunity", {}, _opt_ticks(iv=False))
+    assert a.calls == [] and not out["scored"] and "opt_iv has no history" in out["unscored_reason"]
+
+
+def test_fit_skips_vol_vs_pm_move_without_iv_history(monkeypatch):
+    r, hc = _fit(monkeypatch, with_options=True, with_iv=False)
+    called = {c[0] for c in hc.calls}
+    assert "binary_vs_spread_arb" in called and "vol_vs_pm_move" not in called
+
+
+def test_orient_for_family_flips_only_eightk_on_above_questions():
+    t = {"yes_bid": 0.30, "yes_ask": 0.32, "opt_implied_prob": 0.4}
+    up = orient_for_family(t, "eightk_opportunity", "above")
+    assert up["yes_bid"] == pytest.approx(0.68) and up["yes_ask"] == pytest.approx(0.70)
+    assert orient_for_family(t, "eightk_opportunity", "below") is t
+    assert orient_for_family(t, "eightk_opportunity", None) is t
+    assert orient_for_family(t, "binary_vs_spread_arb", "above") is t
+    assert orient_for_family(t, "vol_vs_pm_move", "above") is t
+
+
+def test_fit_feeds_eightk_the_adverse_probability_on_an_above_question():
+    fams = [{"id": "eightk_opportunity"}, {"id": "binary_vs_spread_arb"}]
+    ts = _opt_ticks(eightk=True)
+    seen = {}
+
+    class Rec(_IdleAdapter):
+        def replay_grid(self, family, position, ticks):
+            seen[family] = np.array(ticks["yes_bid"], copy=True)
+            return super().replay_grid(family, position, ticks)
+    ft = {f["id"]: orient_for_family(ts.ticks, f["id"], "above") for f in fams}
+    tune(Rec(idle=()), fams, "opportunity", {}, ts, ft)
+    assert np.allclose(seen["binary_vs_spread_arb"], ts.ticks["yes_bid"])  # raw YES
+    assert np.allclose(seen["eightk_opportunity"], 1.0 - ts.ticks["yes_ask"])  # adverse = NO on "above K"
+
+
+def test_service_orients_eightk_by_the_matched_question(monkeypatch):
+    seen = {}
+    pts = _points(48)
+
+    async def fake_build(market, ticker, **kw):
+        return TickSet(assemble(pts, bars=[(p[0] - 1, 100.0) for p in pts]), "replay", len(pts), True)
+
+    async def fake_join(t, question, end_date, **kw):
+        out = dict(t)
+        n = len(pts)
+        out.update(opt_implied_prob=np.full(n, 0.4), opt_mid=np.full(n, 4.0), opt_iv=np.full(n, 0.4),
+                   eightk_score=np.full(n, 0.8))
+        return out, {"available": True, "notes": [], "match": {"direction": "above"}}
+
+    class Rec(_IdleAdapter):
+        def library(self):
+            return EngineAdapter(module=fake_hedgecore()).library()
+
+        def replay_grid(self, family, position, ticks):
+            seen[family] = np.array(ticks["yes_bid"], copy=True)
+            return super().replay_grid(family, position, ticks)
+    monkeypatch.setattr(service, "build_ticks", fake_build)
+    monkeypatch.setattr(service, "join_options", fake_join)
+    monkeypatch.setattr(service, "shortlist", lambda manifest, ec, available: {
+        "opportunity": [{"id": "eightk_opportunity"}, {"id": "binary_vs_spread_arb"}], "hedge": []})
+    monkeypatch.setattr(service, "unmet_requirements", lambda f, available: [])
+    req = service.FitRequest(question=Q_ABOVE, ticker="NVDA", division="opportunity")
+    run(service.run_fit(req, service.Deps(adapter=Rec(idle=()))))
+    raw_bid = seen["binary_vs_spread_arb"]
+    assert not np.allclose(seen["eightk_opportunity"], raw_bid)
+    assert np.allclose(seen["eightk_opportunity"], 1.0 - raw_bid, atol=0.05)  # NO side of the raw book
+
+
+def test_hedge_fit_skips_the_options_join(monkeypatch):
+    joins = []
+    pts = _points(48)
+
+    async def fake_build(market, ticker, **kw):
+        return TickSet(assemble(pts, bars=[(p[0] - 1, 100.0) for p in pts]), "replay", len(pts), True)
+
+    async def fake_join(t, question, end_date, **kw):
+        joins.append(question)
+        return t, {"available": False, "notes": []}
+    monkeypatch.setattr(service, "build_ticks", fake_build)
+    monkeypatch.setattr(service, "join_options", fake_join)
+    deps = service.Deps(adapter=EngineAdapter(module=fake_hedgecore()))
+    run(service.run_fit(service.FitRequest(question=Q_ABOVE, ticker="NVDA", division="hedge", shares_held=100), deps))
+    run(service.run_fit(service.FitRequest(question=Q_ABOVE, ticker="NVDA", shares_held=100), deps))
+    assert joins == []
+    run(service.run_fit(service.FitRequest(question=Q_ABOVE, ticker="NVDA", division="opportunity"), deps))
+    assert joins == [Q_ABOVE]
+
+
+def test_bridge_feeds_eightk_the_adverse_probability(opp_client):
+    c = opp_client
+    p = opp_proposal(c, {"family": "eightk_opportunity", "preset_index": 0})
+    ev = _events(c, _start(c, p))
+    a = FakeAlgo.instances[-1]
+    assert a.ticks[0]["yes_bid"] == pytest.approx(1 - PS[0])  # "above K": YES is bullish, adverse = NO
+    tick = next(d for k, d in ev if k == "tick")
+    assert tick["options"]["gap"] == pytest.approx(PS[0] - 0.35)  # the UI gap stays on raw YES
+    FakeAlgo.instances = []
+    c.app.state.enricher = FakeEnricher(above=False)
+    p = opp_proposal(c, {"family": "eightk_opportunity", "preset_index": 1})
+    _events(c, _start(c, p))
+    assert FakeAlgo.instances[-1].ticks[0]["yes_bid"] == pytest.approx(PS[0])  # "below K": YES already adverse
+
+
+def test_zero_risk_quotes_never_bypass_the_notional_cap(opp_client):
+    c = opp_client
+    crossed = ch.Chain(underlying="NVDA", fetched_at=time.time())
+    for k, m in ((145.0, 3.0), (150.0, 4.0), (155.0, 5.0)):  # stale: the lower call is cheaper than the upper
+        tag = f"{int(k * 1000):08d}"
+        crossed.quotes.append(ch.OptionQuote(f"O:NVDA261218C{tag}", "call", k, EXP, bid=m, ask=m, mid=m,
+                                             mark_source="quote"))
+    c.app.state.enricher = FakeEnricher(chain=crossed)
+    FakeAlgo.script = {2: {"instrument": "option", "side": 1, "qty": 3.0}}
+    ev = _events(c, _start(c, opp_proposal(c, max_notional=1000)))
+    f = next(d for k, d in ev if k == "fill")
+    assert f["status"] == "rejected" and "non-positive risk" in f["reject_reason"]
+    assert FakeAlgo.instances[0].rejects == ["option"]
