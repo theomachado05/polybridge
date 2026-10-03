@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request
 
-from polybridge_research.schema import STRATEGY_FOR_FAMILY, assign_family
+from polybridge_research.schema import STRATEGY_FOR_FAMILY, assign_family, normalize_ticker
 
 from .models import ClassifyIn, ClassifyOut, Proposal, ProposalIn
 from .store import AlreadyDecided, NotFound, ProposalStore
@@ -30,7 +30,10 @@ def create_proposal(body: ProposalIn, request: Request) -> Proposal:
     fam = assign_family(body.tags)
     if fam is None:
         raise HTTPException(422, "These tags map to no pre-registered family, so there is no hedge to propose.")
-    return _store(request).propose(ticker=body.ticker.upper(), family=fam.value, strategy=STRATEGY_FOR_FAMILY[fam],
+    ticker = normalize_ticker(body.ticker)
+    if ticker is None:
+        raise HTTPException(422, "ticker must not be blank.")
+    return _store(request).propose(ticker=ticker, family=fam.value, strategy=STRATEGY_FOR_FAMILY[fam],
                                    shares_held=body.shares_held, target_coverage=body.target_coverage)
 
 

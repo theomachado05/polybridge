@@ -55,3 +55,20 @@ def test_input_validation(client):
     bad = client.post("/proposals", json={"ticker": "X", "tags": ["material_litigation"], "shares_held": 10,
                                           "target_coverage": 1.5})
     assert bad.status_code == 422
+
+
+def test_infinite_shares_rejected(client):
+    r = client.post("/proposals", content='{"ticker":"X","tags":["material_litigation"],"shares_held":Infinity}',
+                    headers={"content-type": "application/json"})
+    assert r.status_code == 422
+
+
+def test_blank_ticker_rejected(client):
+    r = client.post("/proposals", json={"ticker": "   ", "tags": ["material_litigation"], "shares_held": 10})
+    assert r.status_code == 422
+
+
+def test_share_class_ticker_normalized(client):
+    r = client.post("/proposals", json={"ticker": "brk/b", "tags": ["material_litigation"], "shares_held": 10})
+    assert r.status_code == 201
+    assert r.json()["ticker"] == "BRK.B"

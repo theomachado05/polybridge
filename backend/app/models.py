@@ -21,8 +21,8 @@ class ClassifyOut(BaseModel):
 class ProposalIn(BaseModel):
     ticker: str = Field(min_length=1, max_length=12)
     tags: list[str] = Field(min_length=1)
-    shares_held: float = Field(gt=0)
-    target_coverage: float = Field(default=0.5, ge=0, le=1)
+    shares_held: float = Field(gt=0, allow_inf_nan=False)
+    target_coverage: float = Field(default=0.5, ge=0, le=1, allow_inf_nan=False)
 
 
 class Proposal(BaseModel):
