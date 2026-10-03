@@ -30,16 +30,22 @@ def _p(x):
     return "<0.001" if x < 0.001 else f"{x:.3f}"
 
 
+def _pe(x):
+    """'p = 0.123' or 'p < 0.001'."""
+    s = _p(x)
+    return f"p {s[0]} {s[1:]}" if s.startswith("<") else f"p = {s}"
+
+
 def _pct(r):
     return "n/a" if r is None or not np.isfinite(r) else f"{100 * r:.1f}%"
 
 
 def g1s(g):
-    return f"{g['k']} of {g['n']} ({_pct(g['rate'])}), binomial p = {_p(g['p'])}" if g["n"] else "n/a (no rows)"
+    return f"{g['k']} of {g['n']} ({_pct(g['rate'])}), binomial {_pe(g['p'])}" if g["n"] else "n/a (no rows)"
 
 
 def g2s(g):
-    return (f"{_f(g['c'], 2, True)} (HC3 t {_f(g['t'], 2, True)}, permutation p = {_p(g['p_perm'])}, "
+    return (f"{_f(g['c'], 2, True)} (HC3 t {_f(g['t'], 2, True)}, permutation {_pe(g['p_perm'])}, "
             f"R² {_f(g['r2'], 3)}, n {g['n']})")
 
 
@@ -94,14 +100,14 @@ def chart(pred: pd.DataFrame, res: dict, path: Path) -> None:
         s["d"] = pd.to_datetime(s["closure"])
         own = s["source"] == "own"
         ax2.plot(s["d"], s["rate"], color=COLOR[m], lw=2, label=LABEL[m])
-        ax2.fill_between(s["d"], s["rate"] - 1.96 * s["rate_se"], s["rate"] + 1.96 * s["rate_se"], color=COLOR[m],
+        ax2.fill_between(s["d"], s["rate"] - 1.96 * s["se_eff"], s["rate"] + 1.96 * s["se_eff"], color=COLOR[m],
                          alpha=0.15, lw=0)
         if (~own).any():
             ax2.plot(s.loc[~own, "d"], s.loc[~own, "rate"], color=COLOR[m], lw=0, marker="o", ms=3, mfc="white",
                      label=f"{m}: pooled fallback")
     ax2.axhline(0, color=GREY, lw=0.8)
     ax2.set_ylabel("Rate used for the prediction (bp per pp)", fontsize=9, color=INK)
-    ax2.set_title("Expanding-window rate (±1.96 SE)", fontsize=10, color=INK, loc="left")
+    ax2.set_title("Expanding-window rate (±1.96 effective SE)", fontsize=10, color=INK, loc="left")
     ax2.legend(fontsize=7, frameon=False)
     _style(ax2)
     fig.autofmt_xdate()
