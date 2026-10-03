@@ -20,6 +20,28 @@ def _iso(t) -> str:
     return "" if t is None or pd.isna(t) else pd.Timestamp(t).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def _rel(t, anchor) -> str:
+    """Minutes from the scheduled/news anchor to a move time ('n/a' if either is missing)."""
+    if t is None or pd.isna(t) or anchor is None or pd.isna(anchor):
+        return "n/a"
+    return f"{(pd.Timestamp(t) - pd.Timestamp(anchor)).total_seconds() / 60:+.0f}"
+
+
+def _rel_val(t, anchor):
+    if t is None or pd.isna(t) or anchor is None or pd.isna(anchor):
+        return None
+    return (pd.Timestamp(t) - pd.Timestamp(anchor)).total_seconds() / 60
+
+
+def _session(t) -> str:
+    """'RTH' if the time falls in the regular 09:30-16:00 ET session, else 'ext' (pre/after-hours); '' if no time."""
+    if t is None or pd.isna(t):
+        return ""
+    et = pd.Timestamp(t).tz_convert("America/New_York")
+    mins = et.hour * 60 + et.minute
+    return "RTH" if 9 * 60 + 30 <= mins < 16 * 60 else "ext"
+
+
 # ------------------------------------------------------------------ pooled tests
 
 
@@ -85,19 +107,81 @@ def verdict(tests: dict, p=PARAMS) -> tuple[str, str]:
     return v, t
 
 
-def robust_reading(tests: dict, p=PARAMS) -> str:
-    """Same tests with HAC (Newey-West) Wald statistics instead of classical F: reported next to the pre-set verdict."""
+def hac_evidence(tests: dict, p=PARAMS) -> dict:
+    """Every HAC-based statistic declared in METHOD.md section 6, with flags for which are significant.
+
+    Items: Granger HAC Wald (both directions, both p) on all usable events; Regression A/B joint Wald and cumulative
+    response t in every subset. Each item records direction, whether it is significant at 5% (Wald p < 0.05 or
+    |cumulative t| > 1.96), and the sign of the relevant cumulative response where one exists.
+    """
+    items = []
+    s_all = tests["subsets"].get("all usable")
+    if s_all:
+        for pp in (p.granger_p, p.granger_p_robust):
+            for d, lab in (("pm_to_eq", "PM to equity"), ("eq_to_pm", "equity to PM")):
+                g = s_all["granger"][(d, pp)]
+                items.append(dict(dir=d, kind="granger", label=f"all usable, Granger HAC Wald p={pp}, {lab}", p=g["hac_wald_p"],
+                                  sig=g["hac_wald_p"] < 0.05, cum=None))
+    for name, s in tests["subsets"].items():
+        if not s:
+            continue
+        for d, key, lab in (("pm_to_eq", "A", "Reg A (PM to equity)"), ("eq_to_pm", "B", "Reg B (equity to PM)")):
+            st = s[key][1]
+            items.append(dict(dir=d, kind="wald", label=f"{name}, {lab} joint Wald", p=st["wald_p"], t=st["cum_t"], sig=st["wald_p"] < 0.05, cum=st["cum"]))
+            items.append(dict(dir=d, kind="cum", label=f"{name}, {lab} cumulative response", p=None, t=st["cum_t"], sig=abs(st["cum_t"]) > 1.96, cum=st["cum"]))
+    return dict(items=items)
+
+
+def robust_reading(tests: dict, p=PARAMS) -> tuple[str, str]:
+    """HAC reading over all pre-declared HAC statistics: (robustness line, plain-reading line)."""
+    ev = hac_evidence(tests, p)
+    items = ev["items"]
     s = tests["subsets"].get("all usable")
-    if not s:
-        return ""
+    if not s or not items:
+        return "", ""
     parts = []
     for pp in (p.granger_p, p.granger_p_robust):
         a, b = s["granger"][("pm_to_eq", pp)], s["granger"][("eq_to_pm", pp)]
         parts.append(f"p={pp}: PM to equity p={a['hac_wald_p']:.3f}, equity to PM p={b['hac_wald_p']:.3f}")
-    sig = [s["granger"][(d, pp)]["hac_wald_p"] < 0.05 for d in ("pm_to_eq", "eq_to_pm") for pp in (p.granger_p, p.granger_p_robust)]
-    reading = ("no direction is significant at 5% once errors are made robust to heteroskedasticity and serial correlation"
-               if not any(sig) else "at least one direction stays significant with robust errors")
-    return "HAC-robust Wald versions of the same Granger tests (" + "; ".join(parts) + "): " + reading + "."
+    g_sig = [i for i in items if i["kind"] == "granger" and i["sig"]]
+    a_all, b_all = s["A"][1], s["B"][1]
+    rob = ("HAC-robust statistics (Newey-West, 30 lags), all pre-declared in METHOD.md section 6. "
+           f"Granger HAC Wald, all usable events ({'; '.join(parts)}): {len(g_sig)} of 4 significant at 5%. "
+           f"All usable events, Regression A (PM to equity): cumulative response {a_all['cum']:+.3f} (t={a_all['cum_t']:+.2f}), joint Wald p={_fmt_p(a_all['wald_p'])}; "
+           f"Regression B (equity to PM): cumulative response {b_all['cum']:+.3f} (t={b_all['cum_t']:+.2f}), joint Wald p={_fmt_p(b_all['wald_p'])}.")
+    sub_bits = []
+    for name, st in tests["subsets"].items():
+        if name == "all usable" or not st:
+            continue
+        a, b = st["A"][1], st["B"][1]
+        sub_bits.append(f"{name}: Reg A Wald p={_fmt_p(a['wald_p'])} (cumulative {a['cum']:+.3f}, t={a['cum_t']:+.2f}), "
+                        f"Reg B Wald p={_fmt_p(b['wald_p'])} (cumulative {b['cum']:+.3f}, t={b['cum_t']:+.2f})")
+    if sub_bits:
+        rob += " Subsets, " + "; ".join(sub_bits) + "."
+    # plain reading, built from the flags
+    pm_sig = [i for i in items if i["dir"] == "pm_to_eq" and i["sig"]]
+    pm_sig_pos = [i for i in pm_sig if i["cum"] is None or i["cum"] > 0]
+    eq_sig = [i for i in items if i["dir"] == "eq_to_pm" and i["sig"]]
+    if pm_sig_pos:
+        plain = ("Plain reading: at least one HAC statistic in the PM-to-equity direction is significant with a positive (expected-direction) "
+                 "cumulative response (" + "; ".join(i["label"] for i in pm_sig_pos) + "), so the evidence is mixed rather than absent; read the table.")
+    else:
+        pm_w = [i for i in pm_sig if i["kind"] == "wald"]
+        plain = "Plain reading: **no HAC statistic supports prediction markets leading equities**. "
+        if pm_w:
+            plain += ("The PM-to-equity joint Wald tests that are significant (" + "; ".join(
+                f"{i['label']}, p={_fmt_p(i['p'])}, cumulative response {i['cum']:+.3f} with t={i['t']:+.2f}" for i in pm_w) +
+                ") do not show a positive, expected-direction response; the lag pattern is not the one a PM lead would produce. ")
+        if eq_sig:
+            plain += ("In the other direction some HAC statistics are significant: " + "; ".join(
+                f"{i['label']} ({'p=' + _fmt_p(i['p']) if i['p'] is not None else 't=' + format(i['t'], '+.2f')})" for i in eq_sig) +
+                ". So the data are more consistent with equities leading the PM than the reverse, but the HAC Granger tests are not significant at 5%, "
+                "so this is weak and not uniform across tests. ")
+        else:
+            plain += "No equity-to-PM HAC statistic is significant either. "
+        plain += ("The 30-lag HAC Wald tests can be oversized (as found per event, see below), so even these significant joint tests deserve caution. "
+                  "The classical F is also unreliable here because PM changes are jumpy.")
+    return rob, plain
 
 
 # ------------------------------------------------------------------ CSVs
@@ -214,16 +298,15 @@ def write_summary(results: list[EventResult], failed: list[tuple[Event, str]], t
         conc = lambda rs: sum(1 for r in rs if np.sign(r.pm_move.delta * r.event.expected_sign) == np.sign(r.primary.eq_move.delta))
         L.append(f"- Descriptive only: the first PM move and the first equity move went in the same (pre-set, oriented) direction in "
                  f"{conc(both)} of {len(both)} events ({conc(pm_first)} of {len(pm_first)} PM-first events). A PM-first event whose first PM move "
-                 f"points the other way is a stray tick, not a lead.")
+                 f"points the other way may be a stray tick rather than a lead (or the pre-set sign may be wrong, or the market may be reacting to something else).")
     if n_dec:
         L.append(f"- Exact two-sided sign test, PM first vs equity first ({len(pm_first)} of {n_dec}): p = {_fmt_p(sign_p)}.")
     L.append(f"- No significant move detected in one of the two series: {len(no_det)} usable events (lead not defined, still in the pooled test).")
     L.append(f"- Pooled test verdict (rule fixed in advance, classical F): **{verd}**. {vtext}")
-    rr = robust_reading(tests)
-    if rr:
-        L.append(f"- Robustness: {rr}")
-        if "no direction is significant" in rr and verd != "supports PM leading":
-            L.append("- Plain reading: **no evidence in this sample that prediction markets lead equities**. The classical F ignores heteroskedasticity and PM changes are jumpy, so a significant classical F (if any) overstates the case; with robust errors nothing is significant.")
+    rob, plain = robust_reading(tests)
+    if rob:
+        L.append(f"- Robustness: {rob}")
+        L.append(f"- {plain}")
     pe = tests.get("per_event_granger")
     if pe is not None and len(pe):
         m = len(pe)
@@ -231,7 +314,7 @@ def write_summary(results: list[EventResult], failed: list[tuple[Event, str]], t
         chi_r = -2 * np.log(pe["eq_to_pm_p"].clip(lower=1e-300)).sum()
         from .stats import chi2_sf
         L.append(f"- Exploratory, sign-free, added after the first run (METHOD.md Amendment 2): per-event Granger tests (p={PARAMS.granger_p}, classical F, 5% level) are significant "
-                 f"PM to equity in {int((pe['pm_to_eq_p'] < 0.05).sum())} of {m} events and equity to PM in {int((pe['eq_to_pm_p'] < 0.05).sum())} of {m} (about {0.05 * m:.1f} expected by chance); "
+                 f"PM to equity in {int((pe['pm_to_eq_p'] < 0.05).sum())} of {m} events and equity to PM in {int((pe['eq_to_pm_p'] < 0.05).sum())} of {m} (about {0.05 * m:.1f} expected by chance if the classical F were correctly sized, which it likely is not here); "
                  f"(the per-event HAC Wald columns in `granger_per_event.csv` are not used: with about 200 rows, 20 regressors and 30 HAC lags they are badly oversized, "
                  f"{int((pe['pm_to_eq_hac_p'] < 0.05).sum())} of {m} events 'significant' PM to equity, which is not credible). "
                  f"Fisher-combined p (classical F) = {_fmt_p(chi2_sf(chi_f, 2 * m))} (PM to equity) and {_fmt_p(chi2_sf(chi_r, 2 * m))} (equity to PM); "
@@ -239,16 +322,35 @@ def write_summary(results: list[EventResult], failed: list[tuple[Event, str]], t
     L.append("")
     L.append("## Event table (primary instrument per event)\n")
     L.append("Lead = equity first-move time minus PM first-move time, in minutes; positive means the prediction market moved first. "
-             "xcorr lag = peak of the 1-minute-change cross-correlation (positive = PM leads), with rho in brackets; `*` marks |rho| > 2/sqrt(n).\n")
-    L.append("| Event | Date | Instr. | PM move (UTC) | Equity move (UTC) | Lead (min) | Class | xcorr lag [rho] | Chart |")
-    L.append("|---|---|---|---|---|---|---|---|---|")
+             "xcorr lag = peak of the 1-minute-change cross-correlation (positive = PM leads), with rho in brackets; `*` marks |rho| > 2/sqrt(n). "
+             "Descriptive columns (not part of the pre-set rule): `PM vs anchor` and `Eq vs anchor` are each first move minus the event anchor time in `events.yaml` "
+             "(statement time or news time), in minutes, so a negative value means the first move came before the event; `Eq session` is RTH (regular hours, "
+             "09:30-16:00 ET) or ext (pre/after-hours) at the equity move time.\n")
+    L.append("| Event | Date | Instr. | PM move (UTC) | Equity move (UTC) | Lead (min) | Class | PM vs anchor (min) | Eq vs anchor (min) | Eq session | xcorr lag [rho] | Chart |")
+    L.append("|---|---|---|---|---|---|---|---|---|---|---|---|")
     for r in usable:
         ir, ev = r.primary, r.event
         lead = "n/a" if ir.lead is None else f"{ir.lead:+.0f}"
         xl = "n/a" if ir.xc.peak_lag is None else f"{ir.xc.peak_lag:+d} [{ir.xc.peak_rho:+.2f}{'*' if ir.xc.significant else ''}]"
         L.append(f"| {ev.name} | {ev.date} | {ir.ticker} | {_hm(r.pm_move.time if r.pm_move else None)} | {_hm(ir.eq_move.time if ir.eq_move else None)} "
-                 f"| {lead} | {ir.lead_cls} | {xl} | [png](charts/{ev.id}.png) |")
+                 f"| {lead} | {ir.lead_cls} | {_rel(r.pm_move.time if r.pm_move else None, ev.anchor)} "
+                 f"| {_rel(ir.eq_move.time if ir.eq_move else None, ev.anchor)} | {_session(ir.eq_move.time if ir.eq_move else None) or 'n/a'} "
+                 f"| {xl} | [png](charts/{ev.id}.png) |")
     L.append("")
+    # moves that predate the event anchor, and equity moves in extended hours
+    def _pre(rs, which):
+        n = 0
+        for r in rs:
+            mv = r.pm_move if which == "pm" else r.primary.eq_move
+            v = _rel_val(mv.time if mv else None, r.event.anchor)
+            n += v is not None and v < 0
+        return n
+    eq_ext = sum(1 for r in eq_first if _session(r.primary.eq_move.time) == "ext")
+    L.append(f"Anchor check (descriptive): of the {len(pm_first)} PM-first events, {_pre(pm_first, 'pm')} have the first PM move before the event anchor "
+             f"(so it cannot be a reaction to the event); of the {len(eq_first)} equity-first events, {_pre(eq_first, 'eq')} have the first equity move "
+             f"before the anchor and {eq_ext} {"falls" if eq_ext == 1 else "fall"} in extended hours. A move before the anchor is not information about the event, so the lead count "
+             f"for those events says little about who reacts first to news. Equity moves in extended hours, or right at the 16:00 ET close or the "
+             f"04:00/20:00 ET session seams, can reflect thin trading or the session boundary rather than the event.\n")
     L.append("## Events where equities moved first (kept, as required)\n")
     if eq_first:
         for r in sorted(eq_first, key=lambda r: r.primary.lead):
@@ -320,6 +422,20 @@ def write_summary(results: list[EventResult], failed: list[tuple[Event, str]], t
         med = f"{np.median(leads_k):+.1f}" if leads_k else "n/a"
         L.append(f"| {k:g} | {len(leads_k)} | {cls.count('PM first')} | {cls.count('simultaneous')} | {cls.count('equity first')} | {med} |")
     L.append("")
+    from dataclasses import replace
+    p2 = replace(PARAMS, sim_tol=2)
+    lead_all = [r.primary.lead for r in usable if r.primary.lead is not None]
+    c1 = [lead_class(v) for v in lead_all]
+    c2 = [lead_class(v, p2) for v in lead_all]
+    L.append("## Sensitivity of the simultaneity band (k = 4; descriptive, not headline)\n")
+    L.append("The CLOB points are snapshots stamped a few seconds after the minute, while an equity bar closed at :59 of the same minute, so the PM series is on "
+             "average about 45-55 seconds staler than equity at each grid point (METHOD.md Amendment 3). Widening the simultaneous band from 1 to 2 minutes shows how much "
+             "of the 'equity first' count could come from that phase offset.\n")
+    L.append("| simultaneous band | events with both moves | PM first | simultaneous | equity first |")
+    L.append("|---|---|---|---|---|")
+    L.append(f"| within 1 min (headline) | {len(c1)} | {c1.count('PM first')} | {c1.count('simultaneous')} | {c1.count('equity first')} |")
+    L.append(f"| within 2 min | {len(c2)} | {c2.count('PM first')} | {c2.count('simultaneous')} | {c2.count('equity first')} |")
+    L.append("")
     L.append("## Dropped events\n")
     L.append("\n".join(f"- **{e.name}** ({e.date}, `{e.market_slug}`): {why}" for e, why in dropped) or "- None.")
     L.append("")
@@ -333,6 +449,9 @@ def write_summary(results: list[EventResult], failed: list[tuple[Event, str]], t
     L.append("- Events are not independent: the 2025 recession market appears in four tariff windows, the Russia-Ukraine ceasefire market twice, and consecutive FOMC markets overlap. Fixed effects and per-event HAC handle serial correlation within an event, not dependence across events.")
     L.append("- PM history is one point per minute at most, stale in quiet minutes, and moves in 0.1 to 1 point ticks. Detection times are coarse, and PM-to-equity correlations are biased toward zero.")
     L.append("- Thin PM markets print isolated 1 to 2 point ticks that can pass the first-move rule without any news behind them, which can bias the first-move lead toward 'PM first'. The concordance line, the cross-correlation and the pooled regression are less exposed to this than the lead count; the sensitivity table shows the effect of a stricter k.")
+    n_m2 = sum(1 for r in eq_first if r.primary.lead <= -2 and r.primary.lead > -3)
+    L.append(f"- Sampling phase: cached CLOB points are snapshots stamped about 4-17 seconds past each minute; they are assigned to the next minute-end grid point, while the equity value at that grid point includes trades up to :59. So the PM series is about 45-55 seconds staler than equity on average. This is not look-ahead, but it biases first-move leads against the PM ({n_m2} of the {len(eq_first)} 'equity first' events are at -2 minutes). See the simultaneity-band table and METHOD.md Amendment 3.")
+    L.append("- Several first moves are unrelated to the event: some PM moves precede the scheduled anchor (a market cannot be reacting to a statement that has not happened), and some equity moves sit in after-hours trading, for example the SPY move in the 2026-01-28 FOMC event that falls about two hours after the statement and after the 16:00 ET close. The `vs anchor` and `Eq session` columns and the anchor check line make this visible; the pre-set rule does not filter on it.")
     L.append("- Equity ETF prices in these windows are also driven by futures and options that this study does not observe. 'Equity moved first' means first relative to the PM series only.")
     L.append("- The curated events were chosen from memory of famous dates; the scheduled FOMC set is the unselected part of the sample and is reported separately.")
     L.append("- The first-move rule (k = 4, 3-minute change, 5-minute persistence) is a convention. See the sensitivity table for how much the counts move.")

@@ -4,7 +4,7 @@ import pandas as pd
 import requests
 
 from leadlag.data import fetch_equity_minutes, fetch_pm_history
-from leadlag.report import robust_reading, verdict
+from leadlag.report import _rel, _session, robust_reading, verdict
 
 S = pd.Timestamp("2025-03-19 14:00:00", tz="UTC")
 E = S + pd.Timedelta(hours=3)
@@ -71,12 +71,18 @@ def test_equity_fetch_builds_utc_close_frame_and_uses_ms_range():
     assert len(empty) == 0
 
 
-def _tests(pm_p, eq_p, pm_hac=0.5, eq_hac=0.5):
+def _reg(wald_p=0.5, cum=0.0, cum_t=0.0):
+    return (None, dict(wald_p=wald_p, cum=cum, cum_t=cum_t, n=100, events=3))
+
+
+def _tests(pm_p, eq_p, pm_hac=0.5, eq_hac=0.5, A=None, B=None, extra=None):
     g = {}
     for pp in (10, 30):
         g[("pm_to_eq", pp)] = dict(F=3.0, F_p=pm_p, hac_wald_p=pm_hac)
         g[("eq_to_pm", pp)] = dict(F=2.0 if eq_p < 0.05 else 1.0, F_p=eq_p, hac_wald_p=eq_hac)
-    return {"subsets": {"all usable": dict(granger=g)}}
+    subsets = {"all usable": dict(granger=g, A=A or _reg(), B=B or _reg())}
+    subsets.update(extra or {})
+    return {"subsets": subsets}
 
 
 def test_decision_rule_branches():
@@ -90,6 +96,36 @@ def test_decision_rule_branches():
     assert verdict({"subsets": {"all usable": None}})[0] == "no verdict"
 
 
-def test_robust_reading_flags_when_hac_kills_significance():
-    assert "no direction is significant" in robust_reading(_tests(0.5, 0.0001, pm_hac=0.6, eq_hac=0.2))
-    assert "stays significant" in robust_reading(_tests(0.5, 0.0001, pm_hac=0.6, eq_hac=0.01))
+def test_robust_reading_no_pm_lead_when_nothing_significant():
+    rob, plain = robust_reading(_tests(0.5, 0.0001, pm_hac=0.6, eq_hac=0.2))
+    assert "0 of 4 significant" in rob
+    assert "no HAC statistic supports prediction markets leading" in plain
+    assert "No equity-to-PM HAC statistic is significant either" in plain
+
+
+def test_robust_reading_does_not_claim_nothing_is_significant_when_reg_tests_are():
+    """Reviewer case: Granger HAC not significant, but Reg B cumulative t=2.29 and a curated-subset Wald p=0.003 both ways."""
+    t = _tests(0.5, 0.0001, pm_hac=0.88, eq_hac=0.07, A=_reg(0.74, -0.08, -1.2), B=_reg(0.14, 0.20, 2.29),
+               extra={"curated": dict(granger={}, A=_reg(0.003, -0.04, -0.45), B=_reg(0.002, 0.41, 3.16))})
+    rob, plain = robust_reading(t)
+    assert "nothing is significant" not in plain and "nothing is significant" not in rob
+    assert "+2.29" in rob and "0.003" in plain and "0.002" in plain
+    assert "not significant at 5%" in plain  # HAC Granger tests
+    assert "oversized" in plain
+    assert "no HAC statistic supports prediction markets leading" in plain
+
+
+def test_robust_reading_notes_pm_lead_when_a_positive_pm_statistic_is_significant():
+    t = _tests(0.001, 0.5, A=_reg(0.01, 0.3, 2.5))
+    _, plain = robust_reading(t)
+    assert "mixed rather than absent" in plain
+
+
+def test_anchor_relative_and_session_helpers():
+    anchor = pd.Timestamp("2025-03-19 18:00:00", tz="UTC")
+    assert _rel(pd.Timestamp("2025-03-19 17:45:00", tz="UTC"), anchor) == "-15"
+    assert _rel(pd.Timestamp("2025-03-19 18:02:00", tz="UTC"), anchor) == "+2"
+    assert _rel(None, anchor) == "n/a" and _rel(anchor, None) == "n/a"
+    assert _session(pd.Timestamp("2026-01-28 19:00:00", tz="UTC")) == "RTH"   # 14:00 ET
+    assert _session(pd.Timestamp("2026-01-28 21:01:00", tz="UTC")) == "ext"   # 16:01 ET, after the close
+    assert _session(None) == ""
