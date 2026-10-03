@@ -56,7 +56,7 @@ Decision Engine::on_tick(const Tick& t, std::int64_t now_ns) {
   };
 
   if (!(t.p >= 0.0 && t.p <= 1.0)) return finish(Action::Hold, Reason::Invalid, 0, hedge_);
-  if (!spec_valid_) return finish(Action::Hold, Reason::Invalid, 0, hedge_);
+  if (!spec_valid_ || fill_invalid_ || !std::isfinite(hedge_)) return finish(Action::Hold, Reason::Invalid, 0, hedge_);
 
   for (auto& gate : gates_) {
     Reason failed = Reason::Rebalance;
@@ -75,6 +75,8 @@ Decision Engine::on_tick(const Tick& t, std::int64_t now_ns) {
   const bool capped = uncapped > cap;
   const double target = capped ? cap : uncapped;
   const double qty = target - hedge_;
+  if (!std::isfinite(qty) || !std::isfinite(target) || !std::isfinite(hedge_))
+    return finish(Action::Hold, Reason::Invalid, 0, hedge_);
 
   if (std::abs(qty) < spec_.band_shares) return finish(Action::Hold, Reason::InsideBand, 0, target);
   sized_once_ = true;

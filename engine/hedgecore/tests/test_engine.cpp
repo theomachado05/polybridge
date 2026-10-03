@@ -107,3 +107,29 @@ TEST(Engine, CoverageAboveOneHoldsInvalid) {
   EXPECT_EQ(d.action, Action::Hold);
   EXPECT_EQ(d.reason, Reason::Invalid);
 }
+
+TEST(Engine, NaNFillLatchesInvalid) {
+  Engine e(spec());
+  e.on_fill(std::numeric_limits<double>::quiet_NaN());
+  EXPECT_DOUBLE_EQ(e.current_hedge(), 0.0);
+  auto d = e.on_tick({kSec, 0.20}, kSec);
+  EXPECT_EQ(d.action, Action::Hold);
+  EXPECT_EQ(d.reason, Reason::Invalid);
+  e.on_fill(std::numeric_limits<double>::infinity());
+  d = e.on_tick({2 * kSec, 0.20}, 2 * kSec);
+  EXPECT_EQ(d.action, Action::Hold);
+  EXPECT_EQ(d.reason, Reason::Invalid);
+}
+
+TEST(Engine, FutureTickHoldsStale) {
+  Engine e(spec());
+  auto d = e.on_tick({kSec + 4 * kSec, 0.20}, kSec);
+  EXPECT_EQ(d.action, Action::Hold);
+  EXPECT_EQ(d.reason, Reason::Stale);
+}
+
+TEST(Engine, ExtremeTimestampsDoNotOverflow) {
+  Engine e(spec());
+  auto d = e.on_tick({std::numeric_limits<std::int64_t>::min(), 0.20}, std::numeric_limits<std::int64_t>::max());
+  EXPECT_EQ(d.reason, Reason::Stale);
+}
