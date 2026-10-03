@@ -19,14 +19,172 @@ export interface Proposal {
   status: ProposalStatus;
   created_at: string;
   decided_at: string | null;
+  bridge_started_at?: string | null;
+}
+
+export class ApiError extends Error {
+  constructor(message: string, public status: number) {
+    super(message);
+  }
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, { cache: "no-store", ...init });
-  if (!res.ok) throw new Error(`${init?.method ?? "GET"} ${path} failed with ${res.status}`);
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, { cache: "no-store", ...init });
+  } catch {
+    throw new ApiError(`Cannot reach the backend at ${API_URL}. Is it running?`, 0);
+  }
+  if (!res.ok) {
+    let detail = "";
+    try {
+      const body = await res.json();
+      detail = typeof body.detail === "string" ? body.detail : Array.isArray(body.detail) ? body.detail.map((d: { msg: string }) => d.msg).join("; ") : "";
+    } catch {}
+    throw new ApiError(detail || `${init?.method ?? "GET"} ${path} failed with ${res.status}`, res.status);
+  }
   return res.json() as Promise<T>;
 }
+
+const post = <T>(path: string, body: unknown) =>
+  request<T>(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+
+export type MarketSource = "polymarket" | "kalshi";
+export interface Market {
+  source: MarketSource;
+  id: string;
+  question: string;
+  yes_price: number | null;
+  volume_24h: number;
+  end_date: string | null;
+  url: string | null;
+  token_id: string | null;
+}
+export interface SearchOut { markets: Market[]; stale: boolean }
+export interface HistoryPoint { t: number; p: number }
+
+export interface Evidence {
+  strategy: string | null;
+  horizon: string | null;
+  difference: number | null;
+  ci_lo: number | null;
+  ci_hi: number | null;
+  q_value: number | null;
+}
+export type VerdictLabel = "hedge" | "opportunity" | "no_edge";
+export interface TagVerdict {
+  tag: string;
+  family: Family | null;
+  kind: "confirmatory" | "exploratory" | "none";
+  label: VerdictLabel;
+  evidence: Evidence;
+  note: string;
+}
+
+export interface ImpliedMove { value: number; expiry: string; spot: number; as_of: string }
+export interface Filing {
+  date: string;
+  accession: string | null;
+  url: string | null;
+  tags: string[];
+  verdict: TagVerdict | null;
+}
+export interface EquityCard {
+  ticker: string;
+  name: string | null;
+  implied_move: ImpliedMove | null;
+  filings: Filing[];
+  markets: Market[];
+  notes: string[];
+}
+
+export interface MapItem { ticker: string; direction: string; impact_pct: number | null; rationale: string | null }
+export interface MapCandidate { source_key: string; matched_question: string; score: number; items: MapItem[] }
+export interface MapOut {
+  source: "precomputed" | "none";
+  label: string;
+  match_type: "exact" | "fuzzy" | null;
+  score: number | null;
+  matched_question: string | null;
+  items: MapItem[];
+  candidates: MapCandidate[];
+  note: string | null;
+}
+
+export interface HedgeLeg { action: "buy" | "sell"; leg: string; contract: string; kind: string; strike: number; mark: number | null }
+export interface HedgeOption {
+  strategy: string;
+  legs: HedgeLeg[];
+  premium_per_share: number | null;
+  premium_total: number | null;
+  max_loss_per_share: number | null;
+  breakeven_price: number | null;
+  fees: number;
+  half_spread_cost: number | null;
+  covers: string;
+  rank: number;
+  why: string;
+}
+export interface HedgeMenu { ticker: string; spot: number | null; expiry: string | null; options: HedgeOption[]; notes: string[] }
+
+export interface BridgeSummary {
+  bridge_id: string;
+  proposal_id: string;
+  ticker: string;
+  status: string;
+  source: "live" | "replay";
+  requested_source: string;
+  ticks: number;
+  orders: number;
+  hedge: number;
+  reasons: Record<string, number>;
+  latency_ns: { p50: number | null; p99: number | null };
+}
+
+export interface HedgeStatus { status: "none" | "proposed" | "approved" | "bridging" | "rejected"; proposal_id: string | null; bridge_id: string | null }
+export interface Exposure {
+  market: Market;
+  direction: string;
+  impact_pct: number;
+  rationale: string | null;
+  remaining_usd: number;
+  label: string;
+  match_type: string | null;
+  matched_question: string | null;
+  score: number | null;
+}
+export interface Holding {
+  ticker: string;
+  name: string | null;
+  shares: number;
+  spot: number | null;
+  value: number | null;
+  markets: Market[];
+  filings: Filing[];
+  exposure: Exposure | null;
+  hedge: HedgeStatus;
+  notes: string[];
+}
+export interface PortfolioOut { holdings: Holding[]; total_value: number | null; total_exposure: number | null; stale: boolean }
 
 export const getHealth = () => request<{ status: string }>("/health");
 export const listProposals = () => request<Proposal[]>("/proposals");
 export const approveProposal = (id: string) => request<Proposal>(`/proposals/${id}/approve`, { method: "POST" });
+export const searchMarkets = (q: string) => request<SearchOut>(`/markets/search?q=${encodeURIComponent(q)}`);
+export const getMarketHistory = (source: string, id: string) =>
+  request<HistoryPoint[]>(`/markets/${source}/${encodeURIComponent(id)}/history`);
+export const getEquity = (ticker: string) => request<EquityCard>(`/equities/${encodeURIComponent(ticker)}`);
+export const getVerdict = (tag: string) => request<TagVerdict>(`/verdicts/${encodeURIComponent(tag)}`);
+export const mapEvent = (body: { question?: string; source?: string; market_id?: string }) => post<MapOut>("/map", body);
+export const getHedges = (ticker: string, shares: number, label: VerdictLabel) =>
+  request<HedgeMenu>(`/hedges/${encodeURIComponent(ticker)}?shares=${shares}&label=${label}`);
+export const createProposal = (body: { ticker: string; tags: string[]; shares_held: number; target_coverage: number }) =>
+  post<Proposal>("/proposals", body);
+export const startBridge = (body: {
+  proposal_id: string;
+  source: "live" | "replay";
+  market: { source: string; id: string; token_id?: string | null };
+  gap_per_share: number;
+}) => post<{ bridge_id: string }>("/bridges", body);
+export const getBridge = (id: string) => request<BridgeSummary>(`/bridges/${id}`);
+export const getPortfolio = () => request<PortfolioOut>("/portfolio");
