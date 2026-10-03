@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import math
 import time
 from pathlib import Path
 from typing import AsyncIterator
@@ -49,20 +50,31 @@ class LiveSource:
 
 
 class ReplaySource:
-    """Reads JSONL `{ts_ns, p}` and re-emits it, sleeping the recorded gaps divided by `speed`.
-    speed <= 0 means no sleeping (used by tests). Timestamps are the recorded ones."""
+    """Reads JSONL `{ts_ns, p}` and re-emits it on the wall clock: the first tick is stamped "now" and recorded
+    gaps are preserved divided by `speed` (speed 3600 plays hourly history at one tick per second).
+    speed <= 0 means no sleeping and each tick is stamped with the current time (used by tests).
+    Rows with a non-finite p are skipped."""
 
     def __init__(self, path: str | Path, speed: float = 1.0) -> None:
         self.path, self.speed = Path(path), speed
 
     async def __aiter__(self) -> AsyncIterator[Tick]:
-        prev: int | None = None
+        start = time.time_ns()
+        first: int | None = None
         for line in self.path.read_text().splitlines():
             if not line.strip():
                 continue
             row = json.loads(line)
             ts, p = int(row["ts_ns"]), float(row["p"])
-            if prev is not None and self.speed > 0 and ts > prev:
-                await asyncio.sleep((ts - prev) / 1e9 / self.speed)
-            prev = ts
-            yield ts, p
+            if not math.isfinite(p):
+                continue
+            if first is None:
+                first = ts
+            if self.speed > 0:
+                target = start + int((ts - first) / self.speed)
+                delay = (target - time.time_ns()) / 1e9
+                if delay > 0:
+                    await asyncio.sleep(delay)
+                yield min(target, time.time_ns()), p  # never future-dated vs. the engine's now_ns
+            else:
+                yield time.time_ns(), p

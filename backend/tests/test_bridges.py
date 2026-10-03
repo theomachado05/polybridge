@@ -1,4 +1,5 @@
 import json
+import time
 
 import pytest
 from fastapi.testclient import TestClient
@@ -85,79 +86,26 @@ async def _collect(src):
 def test_replay_source_reads_jsonl(replay_file):
     import asyncio
     ticks = asyncio.run(_collect(ReplaySource(replay_file, speed=0)))
-    assert len(ticks) == 20 and ticks[0] == (1_000_000_000, 0.20)
+    assert len(ticks) == 20 and ticks[0][1] == 0.20
+    assert all(abs(t - time.time_ns()) < 5e9 for t, _ in ticks)  # stamped on the wall clock
 
 
-# --- needs hedgecore (engine group / CI engine job) ---------------------------------------
-
-hedgecore = pytest.importorskip("hedgecore")
 
 
-def test_replay_bridge_end_to_end(client):
-    pid = _approved(client)
-    r = client.post("/bridges", json=_body(pid, gap_per_share=1.0))
-    assert r.status_code == 201
-    bid = r.json()["bridge_id"]
-    ev = _events(client, bid)
-    kinds = [k for k, _ in ev]
-    assert kinds.count("tick") == 20 and kinds.count("decision") == 20
-    assert kinds[-1] == "status" and ev[-1][1]["status"] == "finished"
-    decisions = [d for k, d in ev if k == "decision"]
-    assert decisions[0]["action"] == "order" and decisions[0]["order_qty"] == 120.0  # 0.5*1200*0.20
-    orders = [d for d in decisions if d["action"] == "order"]
-    positions = [d for k, d in ev if k == "position"]
-    assert len(orders) >= 2 and len(positions) == len(orders)  # a position follows every order (simulated fill)
-    assert positions[-1]["hedge"] == pytest.approx(sum(o["order_qty"] for o in orders))
-    assert positions[-1]["coverage"] == pytest.approx(positions[-1]["hedge"] / 1200)
-    s = client.get(f"/bridges/{bid}").json()
-    assert s["ticks"] == 20 and s["orders"] == len(orders) and s["status"] == "finished"
-    assert sum(s["reasons"].values()) == 20 and s["latency_ns"]["p50"] is not None
-    assert client.get("/proposals").json()[0]["bridge_started_at"]
+def test_replay_source_skips_non_finite_and_shifts_time(tmp_path):
+    import asyncio
+    f = tmp_path / "r.jsonl"
+    f.write_text('{"ts_ns": 5, "p": 0.1}\n{"ts_ns": 6, "p": NaN}\n{"ts_ns": 2000000005, "p": 0.2}\n')
+    ticks = asyncio.run(_collect(ReplaySource(f, speed=1000)))  # 2 s gap -> 2 ms
+    assert [p for _, p in ticks] == [0.1, 0.2]
+    assert 1_500_000 <= ticks[1][0] - ticks[0][0] <= 50_000_000
+    assert abs(ticks[0][0] - time.time_ns()) < 5e9
 
 
-def test_fee_gate_reaches_the_stream(client):
-    pid = _approved(client)
-    bid = client.post("/bridges", json=_body(pid, gap_per_share=0.0001)).json()["bridge_id"]
-    reasons = {d["reason"] for k, d in _events(client, bid) if k == "decision"}
-    assert "below_fees" in reasons
-
-
-def test_start_is_idempotent_per_proposal(client):
-    pid = _approved(client)
-    first = client.post("/bridges", json=_body(pid))
-    again = client.post("/bridges", json=_body(pid))
-    assert first.status_code == 201 and again.status_code == 200
-    assert again.json() == first.json()
-    assert client.post("/bridges", json=_body(pid, source="live")).status_code == 409
-    assert len(client.app.state.bridges) == 1
-
-
-class _FailingLive:
-    def __init__(self, *_):
-        pass
-
-    async def __aiter__(self):
-        raise SourceError("network down")
-        yield  # pragma: no cover
-
-
-def test_live_failure_switches_to_replay(client):
-    client.app.state.live_source_factory = _FailingLive
-    pid = _approved(client)
-    bid = client.post("/bridges", json=_body(pid, source="live")).json()["bridge_id"]
-    ev = _events(client, bid)
-    kinds = [k for k, _ in ev]
-    assert kinds[0] == "error" and "network down" in ev[0][1]["message"]
-    assert kinds.count("tick") == 20 and ev[-1][1]["status"] == "finished"
-    assert client.get(f"/bridges/{bid}").json()["source"] == "replay"
-
-
-def test_live_failure_without_replay_stops(client):
-    client.app.state.live_source_factory = _FailingLive
+def test_replay_market_id_is_sanitized(client, monkeypatch):
+    monkeypatch.setattr(bridges, "_load_engine", lambda: object())
     client.app.state.replay_path = None
     pid = _approved(client)
-    bid = client.post("/bridges", json=_body(pid, source="live")).json()["bridge_id"]
-    ev = _events(client, bid)
-    assert [k for k, _ in ev] == ["error", "status"]
-    assert ev[-1][1] == {"status": "stopped", "reason": "source_failed"}
-    assert client.get(f"/bridges/{bid}").json()["status"] == "stopped"
+    bad = _body(pid)
+    bad["market"]["id"] = "../../etc/passwd"
+    assert client.post("/bridges", json=bad).status_code == 422

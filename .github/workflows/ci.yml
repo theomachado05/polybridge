@@ -30,7 +30,7 @@ jobs:
       - run: cmake --build engine/hedgecore/build
       - run: ctest --test-dir engine/hedgecore/build --output-on-failure
       - run: cd backend && uv sync --locked --group engine && uv run pytest ../engine/hedgecore/tests -q
-      - run: cd backend && uv run --locked pytest -q tests/test_bridges.py
+      - run: cd backend && uv run --locked --group engine pytest -q tests/test_bridges_engine.py
 
   web:
     runs-on: ubuntu-latest

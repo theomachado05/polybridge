@@ -6,6 +6,8 @@ import asyncio
 import datetime as dt
 import json
 import os
+import re
+import time
 import uuid
 from collections import Counter
 from pathlib import Path
@@ -85,10 +87,23 @@ class Bridge:
                 "latency_ns": {"p50": q(0.5), "p99": q(0.99)}}
 
 
+def _replay_speed(app) -> float:
+    """app.state.replay_speed (tests) or POLYBRIDGE_REPLAY_SPEED; 1.0 = real time."""
+    v = getattr(app.state, "replay_speed", None)
+    if v is None:
+        try:
+            v = float(os.environ.get("POLYBRIDGE_REPLAY_SPEED", "1"))
+        except ValueError:
+            v = 1.0
+    return v
+
+
 def _replay_path(request: Request, market: MarketRef) -> Path | None:
     configured = getattr(request.app.state, "replay_path", None) or os.environ.get("POLYBRIDGE_REPLAY_PATH")
     if configured:
         return Path(configured)
+    if not re.fullmatch(r"[A-Za-z0-9_-]+", market.id):
+        raise HTTPException(422, "market.id must match [A-Za-z0-9_-]+ to select a replay file.")
     guess = REPLAYS_DIR / f"{market.id}.jsonl"
     return guess if guess.is_file() else None
 
@@ -102,7 +117,7 @@ async def _run_source(bridge: Bridge, engine, hc, source) -> None:
     async for ts_ns, p in source:
         bridge.ticks += 1
         await bridge.emit("tick", {"ts_ns": ts_ns, "p": p})
-        d = engine.on_tick(ts_ns=ts_ns, p=p, now_ns=ts_ns)
+        d = engine.on_tick(ts_ns=ts_ns, p=p, now_ns=time.time_ns())
         bridge.reasons[d.reason] += 1
         bridge.latencies.append(d.latency_ns)
         await bridge.emit("decision", {"action": d.action, "reason": d.reason, "order_qty": d.order_qty,
@@ -128,16 +143,16 @@ async def _run(bridge: Bridge, app, hc, source, fallback: Path | None) -> None:
             if bridge.effective_source == "live" and fallback is not None and fallback.is_file():
                 bridge.effective_source = "replay"
                 await bridge.emit("status", {"status": "running", "source": "replay", "note": "live failed; replaying"})
-                await _run_source(bridge, engine, hc, ReplaySource(fallback, speed=getattr(app.state, "replay_speed", 1.0)))
+                await _run_source(bridge, engine, hc, ReplaySource(fallback, speed=_replay_speed(app)))
             else:
                 await bridge.emit("status", {"status": "stopped", "reason": "source_failed"}, status="stopped")
                 return
         await bridge.emit("status", {"status": "finished"}, status="finished")
     except asyncio.CancelledError:
-        bridge.status = "stopped"
+        await bridge.emit("status", {"status": "stopped", "reason": "cancelled"}, status="stopped")
         raise
     except Exception as e:  # never leave a stream hanging
-        await bridge.emit("error", {"message": f"{type(e).__name__}: {e}"})
+        await bridge.emit("error", {"message": type(e).__name__})
         await bridge.emit("status", {"status": "stopped", "reason": "internal_error"}, status="stopped")
 
 
@@ -173,7 +188,7 @@ async def start_bridge(body: BridgeIn, request: Request, response: Response) -> 
         path = _replay_path(request, body.market)
         if path is None or not path.is_file():
             raise HTTPException(422, "No replay file configured (set POLYBRIDGE_REPLAY_PATH or add replays/<market id>.jsonl).")
-        source: Any = ReplaySource(path, speed=getattr(request.app.state, "replay_speed", 1.0))
+        source: Any = ReplaySource(path, speed=_replay_speed(request.app))
     else:
         if not body.market.token_id:
             raise HTTPException(422, "Live bridge needs a Polymarket market.token_id.")
@@ -207,7 +222,9 @@ async def bridge_stream(bridge_id: str, request: Request) -> StreamingResponse:
     async def gen():
         seen = 0  # absolute index into the event history (incl. dropped)
         while True:
-            async with bridge.cond:
+            batch: list = []
+            done = heartbeat = False
+            async with bridge.cond:  # decide what to send under the lock, send after releasing it
                 start = max(seen, bridge.dropped)
                 batch = bridge.events[start - bridge.dropped:]
                 seen = start + len(batch)
@@ -215,12 +232,12 @@ async def bridge_stream(bridge_id: str, request: Request) -> StreamingResponse:
                 if not batch and not done:
                     try:
                         await asyncio.wait_for(bridge.cond.wait(), HEARTBEAT_S)
-                    except asyncio.TimeoutError:
-                        pass
-                    else:
                         continue
-                    yield ": heartbeat\n\n"
-                    continue
+                    except asyncio.TimeoutError:
+                        heartbeat = True
+            if heartbeat:
+                yield ": heartbeat\n\n"
+                continue
             for kind, data in batch:
                 yield f"event: {kind}\ndata: {json.dumps(data)}\n\n"
             if done:
