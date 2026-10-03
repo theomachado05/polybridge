@@ -232,7 +232,8 @@ def write_summary(results: list[EventResult], failed: list[tuple[Event, str]], t
         from .stats import chi2_sf
         L.append(f"- Exploratory, sign-free, added after the first run (METHOD.md Amendment 2): per-event Granger tests (p={PARAMS.granger_p}, classical F, 5% level) are significant "
                  f"PM to equity in {int((pe['pm_to_eq_p'] < 0.05).sum())} of {m} events and equity to PM in {int((pe['eq_to_pm_p'] < 0.05).sum())} of {m} (about {0.05 * m:.1f} expected by chance); "
-                 f"with HAC Wald instead of F: {int((pe['pm_to_eq_hac_p'] < 0.05).sum())} and {int((pe['eq_to_pm_hac_p'] < 0.05).sum())} of {m}. "
+                 f"(the per-event HAC Wald columns in `granger_per_event.csv` are not used: with about 200 rows, 20 regressors and 30 HAC lags they are badly oversized, "
+                 f"{int((pe['pm_to_eq_hac_p'] < 0.05).sum())} of {m} events 'significant' PM to equity, which is not credible). "
                  f"Fisher-combined p (classical F) = {_fmt_p(chi2_sf(chi_f, 2 * m))} (PM to equity) and {_fmt_p(chi2_sf(chi_r, 2 * m))} (equity to PM); "
                  f"Fisher's method is driven by the few smallest p-values, so read it with the counts.")
     L.append("")
