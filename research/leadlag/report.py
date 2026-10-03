@@ -51,6 +51,17 @@ def pooled_tests(usable: list[EventResult], p=PARAMS) -> dict:
             _, st = distributed_lag(sub, "x", "ys", p.reg_lags, p.hac_lags)
             loo.append((eid, st["cum"], st["cum_t"]))
     out["loo"] = loo
+    # Exploratory robustness (Amendment 2): sign-free per-event Granger tests, p = granger_p, both directions
+    per = []
+    for r in usable:
+        fr = {r.event.id: r.primary.frame}
+        try:
+            fwd, rev = granger(fr, "x", "ys", p.granger_p, p.hac_lags), granger(fr, "ys", "x", p.granger_p, p.hac_lags)
+        except Exception:  # noqa: BLE001  (too few rows)
+            continue
+        per.append(dict(event_id=r.event.id, pm_to_eq_F=fwd["F"], pm_to_eq_p=fwd["F_p"], pm_to_eq_hac_p=fwd["hac_wald_p"],
+                        eq_to_pm_F=rev["F"], eq_to_pm_p=rev["F_p"], eq_to_pm_hac_p=rev["hac_wald_p"], n=fwd["n"]))
+    out["per_event_granger"] = pd.DataFrame(per)
     return out
 
 
@@ -64,12 +75,29 @@ def verdict(tests: dict, p=PARAMS) -> tuple[str, str]:
     desc = (f"Granger F (p={p.granger_p}, event fixed effects): PM to equity F={ga['F']:.2f} (p={ga['F_p']:.3g}); "
             f"equity to PM F={gb['F']:.2f} (p={gb['F_p']:.3g}).")
     if sa and (not sb or gb["F"] < ga["F"]):
-        return "supports PM leading", desc + " PM to equity is significant and the reverse is absent or weaker."
-    if sa and sb:
-        return "mixed", desc + " Both directions are significant and the reverse is at least as strong."
-    if sb and not sa:
-        return "points the other way", desc + " Only equity to PM is significant."
-    return "no evidence", desc + " Neither direction is significant at 5%."
+        v, t = "supports PM leading", desc + " PM to equity is significant and the reverse is absent or weaker."
+    elif sa and sb:
+        v, t = "mixed", desc + " Both directions are significant and the reverse is at least as strong."
+    elif sb and not sa:
+        v, t = "points the other way", desc + " Only equity to PM is significant."
+    else:
+        v, t = "no evidence", desc + " Neither direction is significant at 5%."
+    return v, t
+
+
+def robust_reading(tests: dict, p=PARAMS) -> str:
+    """Same tests with HAC (Newey-West) Wald statistics instead of classical F: reported next to the pre-set verdict."""
+    s = tests["subsets"].get("all usable")
+    if not s:
+        return ""
+    parts = []
+    for pp in (p.granger_p, p.granger_p_robust):
+        a, b = s["granger"][("pm_to_eq", pp)], s["granger"][("eq_to_pm", pp)]
+        parts.append(f"p={pp}: PM to equity p={a['hac_wald_p']:.3f}, equity to PM p={b['hac_wald_p']:.3f}")
+    sig = [s["granger"][(d, pp)]["hac_wald_p"] < 0.05 for d in ("pm_to_eq", "eq_to_pm") for pp in (p.granger_p, p.granger_p_robust)]
+    reading = ("no direction is significant at 5% once errors are made robust to heteroskedasticity and serial correlation"
+               if not any(sig) else "at least one direction stays significant with robust errors")
+    return "HAC-robust Wald versions of the same Granger tests (" + "; ".join(parts) + "): " + reading + "."
 
 
 # ------------------------------------------------------------------ CSVs
@@ -147,6 +175,8 @@ def write_csvs(results: list[EventResult], failed: list[tuple[Event, str]], test
                                   cumulative=g["other_sum"], cumulative_se=np.nan, cumulative_t=np.nan, n=g["n"], events=g["events"]))
     pd.DataFrame(lag_rows).to_csv(RESULTS_DIR / "regression_lags.csv", index=False)
     pd.DataFrame(test_rows).to_csv(RESULTS_DIR / "pooled_tests.csv", index=False)
+    if len(tests.get("per_event_granger", [])):
+        tests["per_event_granger"].to_csv(RESULTS_DIR / "granger_per_event.csv", index=False)
     if tests["loo"]:
         pd.DataFrame(tests["loo"], columns=["left_out_event", "cumulative_beta", "cumulative_t"]).to_csv(
             RESULTS_DIR / "leave_one_out.csv", index=False)
@@ -188,7 +218,21 @@ def write_summary(results: list[EventResult], failed: list[tuple[Event, str]], t
     if n_dec:
         L.append(f"- Exact two-sided sign test, PM first vs equity first ({len(pm_first)} of {n_dec}): p = {_fmt_p(sign_p)}.")
     L.append(f"- No significant move detected in one of the two series: {len(no_det)} usable events (lead not defined, still in the pooled test).")
-    L.append(f"- Pooled test verdict (rule fixed in advance): **{verd}**. {vtext}")
+    L.append(f"- Pooled test verdict (rule fixed in advance, classical F): **{verd}**. {vtext}")
+    rr = robust_reading(tests)
+    if rr:
+        L.append(f"- Robustness: {rr}")
+        if "no direction is significant" in rr and verd != "supports PM leading":
+            L.append("- Plain reading: **no evidence in this sample that prediction markets lead equities**. The classical F ignores heteroskedasticity and PM changes are jumpy, so a significant classical F (if any) overstates the case; with robust errors nothing is significant.")
+    pe = tests.get("per_event_granger")
+    if pe is not None and len(pe):
+        m = len(pe)
+        chi_f = -2 * np.log(pe["pm_to_eq_p"].clip(lower=1e-300)).sum()
+        chi_r = -2 * np.log(pe["eq_to_pm_p"].clip(lower=1e-300)).sum()
+        from .stats import chi2_sf
+        L.append(f"- Exploratory, sign-free, added after the first run (METHOD.md Amendment 2): per-event Granger tests (p={PARAMS.granger_p}, classical F, 5% level) are significant "
+                 f"PM to equity in {int((pe['pm_to_eq_p'] < 0.05).sum())} of {m} events and equity to PM in {int((pe['eq_to_pm_p'] < 0.05).sum())} of {m} (about {0.05 * m:.1f} expected by chance); "
+                 f"Fisher-combined p = {_fmt_p(chi2_sf(chi_f, 2 * m))} (PM to equity) and {_fmt_p(chi2_sf(chi_r, 2 * m))} (equity to PM).")
     L.append("")
     L.append("## Event table (primary instrument per event)\n")
     L.append("Lead = equity first-move time minus PM first-move time, in minutes; positive means the prediction market moved first. "
