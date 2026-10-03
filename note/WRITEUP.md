@@ -6,53 +6,60 @@ PolyBridge · Gator Quant Hacks 2026 · Massive "Trade the 8-K" challenge
 
 An option chain prices how far a stock should move after a corporate event. We ask whether that price is wrong in a predictable direction for two kinds of 8-K filings, and we measure it with the parity ratio R, the realized move divided by the move the chain priced on the session before the filing, scaled to each horizon.
 
-**H1 (hedge side).** After a litigation, regulatory investigation, cybersecurity incident or impairment 8-K, the stock keeps moving by more than the options priced over 21 to 63 sessions. Dealers mark implied volatility down once the headline passes, while the legal or accounting damage resolves over weeks. If true, a protective put bought at the filing close earns more than the same put bought on an ordinary day.
+**H1 (hedge side).** After a litigation, regulatory investigation, cybersecurity incident or impairment 8-K, the stock keeps moving by more than the options priced over 21 to 63 sessions. Dealers mark implied volatility down once the headline passes, while the legal or accounting damage resolves over weeks. If true, a protective put bought at the close of the session after the filing earns more than the same position opened on an ordinary day.
 
-**H2 (opportunity side).** After a restructuring, workforce reduction, facility closure or business-line exit 8-K, holders who must stay in the stock buy puts, and dealers charge for absorbing that one-sided demand (Gârleanu, Pedersen and Poteshman, 2009). If true, a cash-secured put sold at the filing close earns more than one sold on an ordinary day.
+**H2 (opportunity side).** After a restructuring, workforce reduction, facility closure or business-line exit 8-K, holders who must stay in the stock buy puts, and dealers charge for absorbing that one-sided demand (Gârleanu, Pedersen and Poteshman, 2009). If true, a cash-secured put sold at the close of the session after the filing earns more than one sold on an ordinary day.
 
 Both hypotheses, the tag lists and the pass rule were committed to git before any event or price was downloaded (`research/HYPOTHESIS.md`, `HYPOTHESIS_TAGS.md`).
 
 ## 2. Method
 
-**Universe and windows.** The starter's static top-100 list. In-sample 2024-01-01 to 2025-12-31; out-of-sample 2026-01-01 to 2026-08-31, run once after the method freeze on 3 October.
+**Universe and windows.** The starter's static top-100 list. In-sample 2024-01-01 to 2025-12-31; out-of-sample 2026-01-01 to 2026-08-31, frozen at 13:00 ET on 3 October and run once (tag `method-freeze`). That run used a branch that did not yet contain the robustness additions below; they leave the pass rule unchanged, and applying the INSUFFICIENT rule to the saved output relabels H1 from NULL to INSUFFICIENT.
 
-**Events.** One event per company per filing date. Filings that carry tags from both families are dropped (5). Every filing is treated as public after the close, so the trade enters at the close of the next session.
+**Events.** One event per company per filing date. Filings that carry tags from both families are dropped (5 in-sample). Every filing is treated as public after the close, so the trade enters at the close of the next session.
 
 **Trade.** Options 90 to 180 days to expiry, put strike 5% below spot, legs marked from daily option bars, stock replaced by the synthetic position from put-call parity, as in the starter.
 
-**Baseline.** 120 ordinary days per family for the same companies, at least 30 days from any of their events. The edge is the event mean minus the ordinary-day mean.
+**Baseline.** 120 ordinary days per family for the same companies, at least 30 days from any of their events. The edge is the event mean minus the ordinary-day mean, per $1 of spot.
 
-**Pass rule.** A 97.5% bootstrap interval on the edge (95% split across the two tests) above zero at 2 or more of 21 sessions, 42 sessions and expiry, with R moving in the predicted direction. All eight fixed horizons and expiry are reported.
+**Pass rule.** A 97.5% bootstrap interval on the edge (95% split across the two tests) above zero at 2 or more of 21 sessions, 42 sessions and expiry, with R moving in the predicted direction. A hypothesis with fewer than 2 headline horizons holding the 5 events an interval needs is reported as INSUFFICIENT. All eight fixed horizons and expiry are reported.
 
-**Robustness.** A bootstrap that resamples whole companies, and for H1 the put's own P&L, since the stock leg hides the put's gain when the stock falls. Neither can change a verdict.
+**Robustness.** Added after the in-sample NULLs were seen, as robustness only: a company-clustered bootstrap and, for H1, the put's own edge (protective put minus stock), because the stock leg dominates the protective put when a stock keeps falling. Neither can turn a NULL into a PASS, and the out-of-sample run predates both.
 
 ## 3. Results
 
-Neither hypothesis passes in-sample. The table gives the edge per $1 of stock at every fixed horizon with its 97.5% interval.
+Neither hypothesis passes, in-sample (both NULL) or out of sample (H1 INSUFFICIENT on 3 events, H2 NULL with the sign reversed). The in-sample table gives the edge per $1 of stock with its 97.5% interval.
 
 | Sessions | H1 protective put edge (n = 28–33) | H2 cash-secured put edge (n = 23–24) | H1 R, events / ordinary | H2 R, events / ordinary |
 |---|---|---|---|---|
 | 1 | −0.002 [−0.006, +0.002] | −0.003 [−0.005, −0.000] | 0.68 / 0.99 | 1.03 / 0.86 |
 | 5 | −0.001 [−0.019, +0.018] | −0.001 [−0.005, +0.003] | 1.22 / 1.01 | 0.87 / 1.01 |
-| 10 | −0.005 [−0.025, +0.018] | +0.001 [−0.006, +0.008] | 1.04 / 1.05 | 0.99 / 0.94 |
-| **21** | +0.001 [−0.026, +0.029] | +0.001 [−0.007, +0.009] | 1.11 / 1.09 | 0.77 / 0.94 |
-| **42** | +0.005 [−0.045, +0.060] | +0.002 [−0.009, +0.014] | 1.36 / 1.15 | 0.91 / 1.01 |
+| 10 | −0.005 [−0.025, +0.018] | +0.000 [−0.006, +0.008] | 1.04 / 1.05 | 0.99 / 0.94 |
+| **21** | +0.001 [−0.027, +0.029] | +0.001 [−0.007, +0.009] | 1.11 / 1.09 | 0.77 / 0.94 |
+| **42** | +0.005 [−0.045, +0.058] | +0.002 [−0.009, +0.014] | 1.36 / 1.15 | 0.91 / 1.01 |
 | 63 | +0.032 [−0.028, +0.091] | +0.007 [−0.003, +0.017] | 1.19 / 1.01 | 1.11 / 0.92 |
-| **Expiry** | +0.033 [−0.029, +0.100] | +0.009 [−0.004, +0.023] | 1.18 / 1.06 | 1.06 / 0.88 |
-| Out-of-sample | [OOS] | [OOS] | [OOS] | [OOS] |
+| **Expiry** | +0.033 [−0.030, +0.101] | +0.009 [−0.004, +0.023] | 1.18 / 1.06 | 1.06 / 0.88 |
 
-Horizons 2 and 3 are in `research/results/in_sample/`. Bold rows are the pre-registered headline horizons.
+Bold rows are the pre-registered headline horizons; horizons 2 and 3 are in `research/results/in_sample/`.
 
-**What the nulls rule out.** After an H1 filing, a protective put earns no excess return over an ordinary day that we can detect; edges larger than about 3% of the stock price at 21 sessions are ruled out. After an H2 filing, short puts are not overpriced by more than about 0.9% at 21 sessions. For a portfolio manager this means post-headline insurance costs about what it is worth.
+**Out of sample, 2026-01-01 to 2026-08-31, run once.**
 
-**The shape is the finding worth following.** For H1, R is 0.68 one session after the filing and 1.36 at 42 sessions, against 0.92 to 1.15 on ordinary days. The chain prices the first move generously and the slow follow-through cheaply, which is the mechanism H1 describes, but with 30 events the gap is inside the noise. For H2, the short put loses on the first session (−0.25%, interval excluding zero), consistent with put demand arriving after the headline. That is one of nine horizons and is not corrected for multiple comparisons.
+| Horizon | H1 n (events / ordinary) | H1 edge | H2 n | H2 edge [97.5% CI] | H2 R, events / ordinary |
+|---|---|---|---|---|---|
+| 21 | 3 / 107 | not computable (n < 5) | 7 / 90 | −0.0215 [−0.0759, +0.0203] | 1.57 / 1.10 |
+| 42 | 3 / 81 | not computable | 7 / 68 | −0.0138 [−0.0729, +0.0260] | 1.17 / 0.90 |
+| Expiry | 1 / 65 | not computable | 4 / 51 | not computable | 0.79 / 1.11 |
 
-**Costs.** At a 5% premium haircut per side the edges move by less than 0.3% of spot, and doubling the haircut changes no conclusion. Median option volume on the entry day was 34 contracts (H1) and 49 (H2), so capacity is a few contracts per event without moving the market.
+**What the in-sample nulls bound.** In 2024 and 2025, a stock-plus-put position after an H1 filing did no better or worse than on ordinary days by more than about 3% of spot at 21 sessions, and short puts after H2 filings were not overpriced by more than about 0.9%. Out of sample there were too few events to recheck either bound, and H2's edge and parity ratio moved against its premise at 21 and 42 sessions on 7 events.
+
+**The decay curve.** In-sample the H1 parity ratio was 0.68 one session after the filing and 1.36 at 42, against 0.92 to 1.15 on ordinary days. That is the shape H1 describes, but the event intervals overlap the placebo's at every horizon. Out of sample, on 3 events and with no interval, it went the other way (1.86 against 0.93 at one session, 0.61 against 0.92 at 42). We do not treat it as a finding.
+
+**Costs.** The 5% premium haircut moves the edge by at most 0.04% of spot (net edge at 1x: H1 +0.0011, +0.0052, +0.0336; H2 +0.0011, +0.0024, +0.0095), and the quoted half-spread costs about 0.0029 per $1 of spot at 21 sessions. Median option leg volume was 33.5 (H1) and 48.5 (H2) contracts. We did no capacity analysis.
 
 ## 4. What would break it
 
-The result rests on 24 to 36 events per family, a static list that includes companies that were not top-100 throughout, spot inferred from put-call parity, and last-trade marks. A wave of litigation or cyber filings would give the test more power and could change the verdict. Before any sealed window was run we committed a forecast (`research/FORECAST.md`): a 3-month window gives about 4 H1 and 3 H2 events and should be reported as INSUFFICIENT, longer windows should return NULL, and we gave probabilities for four signs. A PASS on the sealed window would contradict our forecast.
+The result rests on 24 to 36 events per family in-sample and 3 and 7 out of sample, a static list that includes companies that were not top-100 throughout, spot inferred from put-call parity, and last-trade marks. Before the out-of-sample run we committed a forecast (`research/FORECAST.md`). It had the verdicts' direction right (no pass, H2 NULL) and the H2 event count right. It got the H1 event count wrong (3, not about 11), understated the out-of-sample interval width by a factor of 2 to 3, and got the one scorable sign wrong (H2's edge was negative at 21 and 42 sessions, where we gave a positive sign probability 0.60). For a 3-month sealed window the same forecast predicts INSUFFICIENT for both families.
 
 ## 5. How to trade it
 
-We would not trade either rule as a standalone strategy. The usable rule is a cost statement: after these filings, buying protection at the close does not overpay, so a holder who wants the hedge can buy it without waiting. The lead worth a pre-registered follow-up is entry timing on the H2 side, selling the put a few sessions after the filing rather than at the first close, tested on a fresh window with a sample large enough to detect a 0.5% edge.
+We would not trade either rule. Our product, PolyBridge, lets a signal act on positions only after it passes a pre-registered out-of-sample test. Both 8-K families failed it, so 8-K tags are shown as untested and never size a hedge. H2 entry timing (selling the put a few sessions after the filing, after the first-day loss of −0.25%) remains a candidate for a fresh pre-registered window, but the out-of-sample short put lost to ordinary days.
