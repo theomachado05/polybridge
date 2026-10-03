@@ -55,8 +55,8 @@ def plot_event(ev: Event, frame: pd.DataFrame, ticker: str, pm_move: Move | None
     ax.plot(eq_n.index, eq_n.to_numpy(), color=EQ_COLOR, lw=1.6, label=ticker)
     ax.axhline(0, color="#9ca3af", lw=0.8)
     if ev.anchor is not None and win.index.min() <= ev.anchor <= win.index.max():
-        ax.axvline(ev.anchor, color=MUTED, lw=1, ls=":")
-        ax.text(ev.anchor, 1.08, "scheduled\n" + _fmt_t(ev.anchor) + "Z", color=MUTED, fontsize=8, ha="center", va="bottom")
+        ax.axvline(ev.anchor, color=MUTED, lw=1, ls=":", ymax=0.93)
+        ax.text(ev.anchor, 1.36, "scheduled " + _fmt_t(ev.anchor) + "Z", color=MUTED, fontsize=8, ha="center", va="bottom")
     ymax = 1.06
     for mv, col, lab, dy in ((pm_move, PM_COLOR, "PM first move", 0.0), (eq_move, EQ_COLOR, f"{ticker} first move", -0.12)):
         if mv is not None:
@@ -65,16 +65,16 @@ def plot_event(ev: Event, frame: pd.DataFrame, ticker: str, pm_move: Move | None
                     ha="left", va="bottom",
                     bbox=dict(boxstyle="round,pad=0.2", fc="white", ec=col, lw=0.8))
     if pm_move is not None and eq_move is not None:
-        ax.annotate("", xy=(eq_move.time, 0.93), xytext=(pm_move.time, 0.93),
+        ax.annotate("", xy=(eq_move.time, 1.12), xytext=(pm_move.time, 1.12),
                     arrowprops=dict(arrowstyle="<->", color=INK, lw=1))
         mid = pm_move.time + (eq_move.time - pm_move.time) / 2
         word = {"PM first": "PM first", "equity first": "equity first", "simultaneous": "simultaneous"}.get(lead_cls, lead_cls)
-        ax.text(mid, 0.96, f"lead {lead:+.0f} min ({word})", ha="center", va="bottom", fontsize=9, color=INK, weight="bold")
-    ax.set_ylim(-1.15, ymax + 0.18)
+        ax.text(mid, 1.15, f"lead {lead:+.0f} min ({word})", ha="center", va="bottom", fontsize=9, color=INK, weight="bold")
+    ax.set_ylim(-1.15, 1.5)
     ax.set_ylabel("change since window start\n(each series scaled to max |move| = 1)", color=MUTED, fontsize=9)
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
     ax.set_xlim(win.index.min(), win.index.max())
-    ax.legend(loc="upper left", frameon=False, fontsize=9, labelcolor=INK, ncol=2, bbox_to_anchor=(0, 0.995))
+    ax.legend(loc="lower right", frameon=False, fontsize=9, labelcolor=INK, ncol=2, bbox_to_anchor=(1, 1.0))
     sign_word = "up = bullish" if ev.expected_sign == 1 else "oriented so that up = bullish (PM price inverted)"
     ax.set_title(f"{ev.name} ({ev.date})\n{ev.question}", fontsize=11, color=INK, loc="left")
     ax.text(1.0, -0.115, f"UTC. PM {sign_word}. First move = |3-min change| > 4 sigma, persisting 5 min. Positive lead = PM first.",

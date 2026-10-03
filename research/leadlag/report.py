@@ -90,6 +90,7 @@ def _events_metrics(results: list[EventResult]) -> pd.DataFrame:
                 eq_move_utc=_iso(ir.eq_move.time) if ir.eq_move else "", eq_move_delta_bp=ir.eq_move.delta if ir.eq_move else np.nan,
                 eq_move_z=ir.eq_move.z if ir.eq_move else np.nan,
                 lead_minutes=ir.lead if ir.lead is not None else np.nan, lead_class=ir.lead_cls,
+                moves_concordant=(np.sign(r.pm_move.delta * ev.expected_sign) == np.sign(ir.eq_move.delta)) if (r.pm_move and ir.eq_move) else np.nan,
                 xcorr_peak_lag=ir.xc.peak_lag if ir.xc.peak_lag is not None else np.nan,
                 xcorr_peak_rho=ir.xc.peak_rho if ir.xc.peak_rho is not None else np.nan, xcorr_n=ir.xc.n,
                 xcorr_significant=ir.xc.significant, pm_lead_mass=ir.xc.pm_lead_mass, eq_lead_mass=ir.xc.eq_lead_mass,
@@ -179,6 +180,11 @@ def write_summary(results: list[EventResult], failed: list[tuple[Event, str]], t
     if both:
         L.append(f"- Where both series had a significant move ({len(both)} events): **PM first {len(pm_first)}, simultaneous (within 1 min) {len(simul)}, "
                  f"equity first {len(eq_first)}**. Median lead {np.median(leads):+.1f} min, mean {leads.mean():+.1f} min (positive = PM first).")
+    if both:
+        conc = lambda rs: sum(1 for r in rs if np.sign(r.pm_move.delta * r.event.expected_sign) == np.sign(r.primary.eq_move.delta))
+        L.append(f"- Descriptive only: the first PM move and the first equity move went in the same (pre-set, oriented) direction in "
+                 f"{conc(both)} of {len(both)} events ({conc(pm_first)} of {len(pm_first)} PM-first events). A PM-first event whose first PM move "
+                 f"points the other way is a stray tick, not a lead.")
     if n_dec:
         L.append(f"- Exact two-sided sign test, PM first vs equity first ({len(pm_first)} of {n_dec}): p = {_fmt_p(sign_p)}.")
     L.append(f"- No significant move detected in one of the two series: {len(no_det)} usable events (lead not defined, still in the pooled test).")
@@ -279,6 +285,7 @@ def write_summary(results: list[EventResult], failed: list[tuple[Event, str]], t
     L.append("## Caveats\n")
     L.append("- Events are not independent: the 2025 recession market appears in four tariff windows, the Russia-Ukraine ceasefire market twice, and consecutive FOMC markets overlap. Fixed effects and per-event HAC handle serial correlation within an event, not dependence across events.")
     L.append("- PM history is one point per minute at most, stale in quiet minutes, and moves in 0.1 to 1 point ticks. Detection times are coarse, and PM-to-equity correlations are biased toward zero.")
+    L.append("- Thin PM markets print isolated 1 to 2 point ticks that can pass the first-move rule without any news behind them, which biases the first-move lead toward 'PM first'. The concordance line, the cross-correlation and the pooled regression are less exposed to this than the lead count; the sensitivity table shows the effect of a stricter k.")
     L.append("- Equity ETF prices in these windows are also driven by futures and options that this study does not observe. 'Equity moved first' means first relative to the PM series only.")
     L.append("- The curated events were chosen from memory of famous dates; the scheduled FOMC set is the unselected part of the sample and is reported separately.")
     L.append("- The first-move rule (k = 4, 3-minute change, 5-minute persistence) is a convention. See the sensitivity table for how much the counts move.")
