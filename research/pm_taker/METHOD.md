@@ -91,4 +91,5 @@ Polymarket taker fee per the market's feeSchedule (at most 1c per share). Entry 
 
 ## Amendments
 
-(none)
+
+1. **2026-10-03, post-run, editorial only.** The single run stopped at the day-one kill test (projected 77.5 trades < 100), so the verdict is INSUFFICIENT and no outcome was fetched. Because the outcome-based chart could not be drawn, `chart.png` shows the prices-only distribution of gaps at the kill-window prints. Observed after the stop, and not used to change anything: SPY daily markets in the frozen universe start on 2026-04-21, not in January as section 6 assumed. No rule, threshold or parameter was changed, and no rerun was made.
