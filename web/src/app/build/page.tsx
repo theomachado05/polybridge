@@ -63,6 +63,7 @@ function Build() {
         <div className="grid gap-5 lg:grid-cols-3">
           <Glass className="space-y-3">
             <div className="flex items-center justify-between"><h2 className="font-semibold">Event</h2>{search.data?.stale && <StaleBadge />}</div>
+            {search.data?.note && <p className="text-xs text-amber-700">{search.data.note}</p>}
             {search.loading && <Loading what="markets" />}
             {search.error && <ErrorText>Market search failed: {search.error}</ErrorText>}
             {search.data && markets.length === 0 && <p className="text-sm text-slate-500">No open markets found for that search.</p>}

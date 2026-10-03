@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from pathlib import Path
 from typing import Literal
 
 import httpx
@@ -32,6 +33,42 @@ class Market(BaseModel):
 class SearchOut(BaseModel):
     markets: list[Market]
     stale: bool = False
+    note: str | None = None
+
+
+DATA = Path(__file__).parent / "data"
+OFFLINE_NOTE = "offline: cached market list"
+
+
+def offline_search(q: str, data_dir: Path = DATA) -> list[Market]:
+    """Case-insensitive search of the bundled market list (market_universe.json + ai_map.json questions)."""
+    words = q.lower().split()
+    found: dict[tuple[str, str], Market] = {}
+    try:
+        uni = json.loads((data_dir / "market_universe.json").read_text()).get("markets", [])
+    except (OSError, ValueError):
+        uni = []
+    for m in uni:
+        try:
+            mk = Market(source=m["source"], id=str(m["id"]), question=m.get("question") or "",
+                        yes_price=_num(m.get("yes_price")), volume_24h=_num(m.get("volume_24h")) or 0.0,
+                        end_date=m.get("end_date"), url=m.get("url"), token_id=m.get("token_id"))
+        except (KeyError, ValueError):
+            continue
+        if all(w in mk.question.lower() for w in words):
+            found[(mk.source, mk.id)] = mk
+    try:
+        items = json.loads((data_dir / "ai_map.json").read_text()).get("items", {})
+    except (OSError, ValueError):
+        items = {}
+    for key, v in items.items():
+        src, _, mid = str(key).partition(":")
+        question = (v or {}).get("question") or ""
+        if src not in ("polymarket", "kalshi") or not mid or (src, mid) in found:
+            continue
+        if all(w in question.lower() for w in words):
+            found[(src, mid)] = Market(source=src, id=mid, question=question)
+    return sorted(found.values(), key=lambda m: m.volume_24h, reverse=True)
 
 
 class HistoryPoint(BaseModel):
@@ -164,6 +201,9 @@ async def markets_search(q: str, request: Request) -> SearchOut:
     try:
         markets, stale = await _cache(request, "search", 60).get_or_set(q.lower(), lambda: search_all(http, q))
     except Exception:
+        offline = offline_search(q)
+        if offline:
+            return SearchOut(markets=offline, stale=True, note=OFFLINE_NOTE)
         raise HTTPException(502, "Both market sources are unavailable and nothing is cached.")
     return SearchOut(markets=markets, stale=stale)
 

@@ -64,7 +64,7 @@ export interface Market {
   url: string | null;
   token_id: string | null;
 }
-export interface SearchOut { markets: Market[]; stale: boolean }
+export interface SearchOut { markets: Market[]; stale: boolean; note?: string | null }
 export interface HistoryPoint { t: number; p: number }
 
 export interface Evidence {

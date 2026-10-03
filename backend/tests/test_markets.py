@@ -94,3 +94,15 @@ def test_ttlcache_stale_and_raise():
         with pytest.raises(RuntimeError):
             await cache.get_or_set("other", bad)
     asyncio.run(run())
+
+
+def test_both_sources_raising_falls_back_to_bundled_list():
+    def h(req):
+        raise httpx.ConnectError("offline", request=req)
+    c = make_client(h)
+    body = c.get("/markets/search", params={"q": "FED increase 25 BPS october"}).json()
+    assert body["stale"] is True and body["note"] == "offline: cached market list"
+    ids = [m["id"] for m in body["markets"]]
+    assert "2589813" in ids  # the Fed October 25 bps hike market, from market_universe.json / ai_map.json
+    assert all("fed" in m["question"].lower() for m in body["markets"])
+    assert c.get("/markets/search", params={"q": "zzqx-never-seen"}).status_code == 502
