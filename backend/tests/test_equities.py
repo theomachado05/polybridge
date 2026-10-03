@@ -94,3 +94,13 @@ def test_markets_down_is_a_note(monkeypatch):
     r = c.get("/equities/AAA")
     assert r.status_code == 200 and "prediction-market search unavailable" in r.json()["notes"]
     assert r.json()["implied_move"] is not None
+
+
+def test_stale_option_prices_note_and_no_accession(monkeypatch):
+    nr = {k: v for k, v in row("zz", "X").items() if k != "accession_number"}
+    c = make(StubClient([nr], market=rf.FakeMarket({"AAA": 100.0}, end="2026-09-30")), monkeypatch)
+    d = c.get("/equities/AAA").json()
+    assert d["implied_move"] is not None and any("option prices from 2026-09-30" in n for n in d["notes"])
+    assert d["filings"][0]["accession"] is None
+    c = make(StubClient(market=rf.FakeMarket({"AAA": 100.0}, end="2026-09-25")), monkeypatch)
+    assert c.get("/equities/AAA").json()["implied_move"] is None

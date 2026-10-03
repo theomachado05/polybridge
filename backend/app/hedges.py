@@ -29,12 +29,13 @@ class Leg(BaseModel):
 
 
 class HedgeOption(BaseModel):
+    """Units: premium_per_share/max_loss_per_share in $/share; premium_total, fees, half_spread_cost in total $."""
     strategy: str
     legs: list[Leg]
     premium_per_share: float | None
     premium_total: float | None
-    max_loss: float | None
-    breakeven: float | None
+    max_loss_per_share: float | None  # dollars per share
+    breakeven_price: float | None  # underlying price at expiry
     fees: float
     half_spread_cost: float | None
     covers: str
@@ -88,7 +89,7 @@ def build_options(snap: dict, shares: float, client, label: str) -> list[HedgeOp
             max_loss, breakeven = prem, call_k.strike + prem
         opts.append(HedgeOption(strategy=strat, legs=legs, premium_per_share=prem,
                                 premium_total=None if prem is None else prem * shares,
-                                max_loss=None if max_loss is None else max_loss, breakeven=breakeven, fees=fees,
+                                max_loss_per_share=max_loss, breakeven_price=breakeven, fees=fees,
                                 half_spread_cost=spread, covers=COVERS[strat], rank=0, why=""))
     return _rank(opts, label)
 
@@ -126,5 +127,8 @@ async def hedges(ticker: str, request: Request, shares: float = 100, label: Lite
         return HedgeMenu(ticker=ticker, options=[], notes=["options data unavailable"])
     if snap is None:
         return HedgeMenu(ticker=ticker, options=[], notes=[note or "no listed options"])
-    opts = await asyncio.to_thread(build_options, snap, shares, client, label)
-    return HedgeMenu(ticker=ticker, spot=snap["spot"], expiry=snap["expiry"], options=opts)
+    try:
+        opts = await asyncio.to_thread(build_options, snap, shares, client, label)
+    except Exception as e:
+        return HedgeMenu(ticker=ticker, options=[], notes=[f"pricing unavailable: {type(e).__name__}"])
+    return HedgeMenu(ticker=ticker, spot=snap["spot"], expiry=snap["expiry"], options=opts, notes=list(snap.get("notes", [])))

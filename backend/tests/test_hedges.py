@@ -23,11 +23,11 @@ def test_prices_and_legs(monkeypatch):
     # FakeMarket: OTM options trade at 1.0, ATM call at 1.0 (flat spot, intrinsic 0)
     assert o["protective_put"]["premium_per_share"] == pytest.approx(1.0)
     assert o["protective_put"]["premium_total"] == pytest.approx(200.0)
-    assert o["protective_put"]["breakeven"] == pytest.approx(sp + 1.0)
-    assert o["protective_put"]["max_loss"] == pytest.approx(sp - o["protective_put"]["legs"][0]["strike"] + 1.0)
+    assert o["protective_put"]["breakeven_price"] == pytest.approx(sp + 1.0)
+    assert o["protective_put"]["max_loss_per_share"] == pytest.approx(sp - o["protective_put"]["legs"][0]["strike"] + 1.0)
     assert o["collar"]["premium_per_share"] == pytest.approx(0.0)
     assert o["covered_call"]["premium_per_share"] == pytest.approx(-1.0)
-    assert o["cash_secured_put"]["max_loss"] == pytest.approx(o["cash_secured_put"]["legs"][0]["strike"] - 1.0)
+    assert o["cash_secured_put"]["max_loss_per_share"] == pytest.approx(o["cash_secured_put"]["legs"][0]["strike"] - 1.0)
     assert o["long_call"]["legs"][0]["strike"] == pytest.approx(100.0)
     assert o["collar"]["fees"] == pytest.approx(0.0035 * 200 * 2)
     assert o["protective_put"]["legs"][0]["contract"].startswith("O:AAA")
@@ -62,3 +62,18 @@ def test_bad_input_and_no_key(monkeypatch):
     assert c.get("/hedges/AAA?label=bogus").status_code == 422
     d = make(None, monkeypatch).get("/hedges/AAA").json()
     assert d["options"] == [] and "Massive key not configured" in d["notes"]
+
+
+def test_stale_marks_and_pricing_failure(monkeypatch):
+    def run(end, qs=""):
+        c = make(StubClient(market=rf.FakeMarket({"AAA": 100.0}, end=end)), monkeypatch)
+        return c.get(f"/hedges/AAA{qs}").json()
+    d = run("2026-09-30")  # 2 sessions old: used, with a note
+    assert d["options"] and any("option prices from 2026-09-30" in n for n in d["notes"])
+    d = run("2026-09-25")  # 5 sessions old: no price
+    assert all(o["premium_per_share"] is None for o in d["options"])
+    c = make(StubClient(market=rf.FakeMarket({"AAA": 100.0})), monkeypatch)
+    import app.hedges as h
+    monkeypatch.setattr(h, "build_options", lambda *a, **k: (_ for _ in ()).throw(ValueError("x")))
+    r = c.get("/hedges/AAA")
+    assert r.status_code == 200 and r.json()["options"] == [] and "pricing unavailable: ValueError" in r.json()["notes"]

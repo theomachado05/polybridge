@@ -57,7 +57,15 @@ def snapshot(client, ticker: str, today=None, cfg: StudyConfig | None = None) ->
     for name, (kind, k) in wanted.items():
         tk = _contract(e, k, kind)
         bars = option_bars(client, tk, day - pd.Timedelta(days=7), day)
-        mark = float(bars["close"].iloc[-1]) if len(bars) else None
-        legs[name] = {"ticker": tk, "kind": kind, "strike": float(k), "mark": mark}
+        mark, mark_date = None, None
+        if len(bars):
+            last = bars.index[-1]
+            if cal.between(last, day) <= cfg.max_stale_sessions:  # research rule (Leg.max_stale): older is not a price
+                mark, mark_date = float(bars["close"].iloc[-1]), last.strftime("%Y-%m-%d")
+        legs[name] = {"ticker": tk, "kind": kind, "strike": float(k), "mark": mark, "mark_date": mark_date}
+    notes = []
+    stale = sorted({legs[n]["mark_date"] for n in ("C_K", "P_K") if legs[n]["mark_date"] not in (None, day.strftime("%Y-%m-%d"))})
+    if stale:
+        notes.append(f"option prices from {stale[0]}, not the last session")
     return {"spot": loc["spot"], "expiry": expiry.strftime("%Y-%m-%d"), "as_of": day.strftime("%Y-%m-%d"),
-            "strikes": strikes, "legs": legs, "otm": cfg.otm_pct}, None
+            "strikes": strikes, "legs": legs, "notes": notes, "otm": cfg.otm_pct}, None

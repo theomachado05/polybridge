@@ -11,7 +11,6 @@ import pandas as pd
 from fastapi import APIRouter, Request
 from polybridge_research.schema import normalize_ticker
 from polybridge_research.parity import implied_move
-from polybridge_research.pricing import locate_spot  # noqa: F401  (re-exported for patching in tests)
 from pydantic import BaseModel
 
 from . import chain
@@ -93,12 +92,14 @@ def fetch_filings(client, ticker: str, today: pd.Timestamp, book) -> list[Filing
         tk = r.get("tickers")
         if not isinstance(tk, list) or want not in {normalize_ticker(t) for t in tk}:
             continue  # the API may ignore its filter; never show another company's filing
-        key = r.get("accession_number") or f"{r.get('filing_date')}-{len(groups)}"
-        g = groups.setdefault(key, {"date": str(r.get("filing_date"))[:10], "url": r.get("filing_url"), "tags": []})
+        acc = r.get("accession_number")
+        key = acc or f"{r.get('filing_date')}-{len(groups)}"  # internal grouping key only
+        g = groups.setdefault(key, {"date": str(r.get("filing_date"))[:10], "url": r.get("filing_url"), "tags": [],
+                                    "acc": acc})
         for t in _row_tags(r):
             if t not in g["tags"]:
                 g["tags"].append(t)
-    out = [Filing(date=g["date"], accession=k, url=g["url"], tags=sorted(g["tags"]),
+    out = [Filing(date=g["date"], accession=g["acc"], url=g["url"], tags=sorted(g["tags"]),
                   verdict=_headline([_verdict(book, t) for t in sorted(g["tags"])])) for k, g in groups.items()]
     return sorted(out, key=lambda f: f.date, reverse=True)
 
@@ -117,6 +118,17 @@ def _http(request: Request) -> httpx.AsyncClient:
     if not hasattr(request.app.state, "http"):
         request.app.state.http = httpx.AsyncClient(timeout=TIMEOUT)
     return request.app.state.http
+
+
+_BOOK: dict = {"key": None, "book": None}
+
+
+def _book_sync():
+    d = results_dir()
+    key = (str(d), tuple(sorted((str(f), f.stat().st_mtime_ns) for f in d.rglob("*") if f.suffix in (".txt", ".csv"))))
+    if _BOOK["key"] != key:
+        _BOOK.update(key=key, book=load_verdicts(d))
+    return _BOOK["book"]
 
 
 def get_client(request: Request):
@@ -155,12 +167,13 @@ async def equity(ticker: str, request: Request) -> EquityCard:
                 notes.append(note or "no listed options")
             else:
                 move = implied_card(snap)
+                notes.extend(snap.get("notes", []))
                 if move is None:
                     notes.append("ATM pair did not trade on the last session")
         except Exception:
             notes.append("options data unavailable")
         try:
-            book = load_verdicts(results_dir())
+            book = await asyncio.to_thread(_book_sync)
             filings = await asyncio.to_thread(fetch_filings, client, ticker, today, book)
             if not filings:
                 notes.append("no 8-K filings in the last 180 days")
