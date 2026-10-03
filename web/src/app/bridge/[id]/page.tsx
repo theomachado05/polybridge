@@ -1,50 +1,10 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { getBridge, getEquity } from "@/lib/api";
-import { useAsync } from "@/lib/hooks";
-import { useBridgeStream } from "@/lib/useBridgeStream";
-import { BridgeEquityCard } from "@/components/BridgeEquityCard";
-import { EngineNode } from "@/components/EngineNode";
-import { PositionPanel } from "@/components/PositionPanel";
-import { PriceCard } from "@/components/PriceCard";
-import { StagePills } from "@/components/StagePills";
-import { TradeLog } from "@/components/TradeLog";
-import { Badge, ErrorText, Nav } from "@/components/ui";
+import { BridgeScreen } from "@/components/bridge/BridgeScreen";
 
-export default function BridgePage() {
+/** A backend engine bridge by id (live or replay over SSE), shown in the multi-bridge screen. */
+export default function BridgeByIdPage() {
   const { id } = useParams<{ id: string }>();
-  const summary = useAsync(`b:${id}`, () => getBridge(id));
-  const s = useBridgeStream(id, summary.data?.source ?? null);
-  const ticker = summary.data?.ticker ?? null;
-  const equity = useAsync(ticker ? `e:${ticker}` : null, () => getEquity(ticker!));
-  const source = s.source ?? summary.data?.source ?? null;
-  return (
-    <>
-      <Nav />
-      <main className="mx-auto w-full max-w-6xl space-y-5 px-6 py-6">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-xl font-semibold">Bridge {id}</h1>
-          {source === "replay" && <Badge tone="warn" title="Ticks come from a recording, not the live market">Replay</Badge>}
-          {source === "live" && <Badge tone="good">Live</Badge>}
-          {summary.data?.direction && <Badge title={summary.data.direction === "down_on_yes" ? "Adverse for a long holder if YES happens" : "Adverse for a long holder if NO happens"}>hedging the {summary.data.direction === "down_on_yes" ? "YES" : "NO"} outcome</Badge>}
-          <Badge tone={s.status === "running" ? "info" : s.status === "stopped" ? "bad" : "neutral"}>{s.status}</Badge>
-        </div>
-        {summary.data?.label && <p className="text-sm text-slate-600">{summary.data.label}</p>}
-        {summary.error && <ErrorText>Could not load bridge: {summary.error}</ErrorText>}
-        {s.status === "reconnecting" && <ErrorText>Connection to the backend dropped; reconnecting...</ErrorText>}
-        {s.error && <ErrorText>Engine message: {s.error}</ErrorText>}
-        <div className="grid items-stretch gap-4 md:grid-cols-3">
-          <PriceCard prices={s.prices} last={s.lastP} source={source} tickCount={s.prices.length + s.decisions} running={s.status === "running"} />
-          <EngineNode lat={s.lat} decisions={s.decisions} status={s.status} />
-          <BridgeEquityCard ticker={ticker} card={equity} />
-        </div>
-        <StagePills reasons={s.reasons} last={s.lastReason} />
-        <div className="grid gap-4 md:grid-cols-[1fr_2fr]">
-          <PositionPanel shares={summary.data?.shares_held ?? null} targetCoverage={summary.data?.target_coverage ?? null} hedge={s.hedge} />
-          <TradeLog log={s.log} />
-        </div>
-      </main>
-    </>
-  );
+  return <BridgeScreen routeBridgeId={id} />;
 }

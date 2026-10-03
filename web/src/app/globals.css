@@ -110,7 +110,11 @@ button { font: inherit; color: inherit; }
 
 .pb-table-scroll { overflow-x: auto; }
 
+.pb-lib-row { grid-template-columns: 84px minmax(0,1.6fr) minmax(160px,.9fr) 130px; }
+
 @media (max-width: 720px) {
+  .pb-lib-row { grid-template-columns: minmax(0,1fr) !important; gap: 8px !important; }
+  .pb-lib-row > :last-child { text-align: left !important; align-items: flex-start !important; }
   .pb-bridge-top { grid-template-columns: minmax(0, 1fr) !important; row-gap: 12px; }
   .pb-bridge-top > .pb-connector { display: none; }
   .pb-hide-sm { display: none !important; }
