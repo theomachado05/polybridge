@@ -107,6 +107,20 @@ def test_analyse_flags_general_comovement_in_placebo():
     assert res["p3"]["b_t"] > 5
 
 
+def test_leave_one_out_flags_single_point_leverage():
+    from leadlag_closed.analysis import leave_one_out
+
+    rng = np.random.default_rng(11)
+    x = np.append(rng.normal(0, 1, 14), 40.0)           # one huge PM move
+    y = np.append(rng.normal(0, 30, 14), 300.0)          # with a huge gap, everything else is noise
+    ev = pd.DataFrame({"dpm_o_pp": x, "gap_bp": y, "event": [f"e{i:02d}" for i in range(15)],
+                       "market": ["recession"] * 14 + ["election"]})
+    lo = leave_one_out(ev)
+    assert lo["min_drop"] == "e14" and abs(lo["min"]) < abs(lo["full"]) / 3         # dropping the big point collapses the slope
+    assert lo["no_election"]["n"] == 14 and abs(lo["no_election"]["rho"]) < 0.8
+    assert leave_one_out(ev.iloc[:3]) == {"n": 3}
+
+
 def test_analyse_handles_empty_or_tiny_event_set():
     rows = _rows(n_ev=2, n_pl=50, seed=9)
     res = analyse(rows)

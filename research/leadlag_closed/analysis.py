@@ -49,6 +49,7 @@ def analyse(rows: pd.DataFrame) -> dict:
         res[f"t2_{name}"] = slope_test(sub["dpm_o_pp"], sub["gap_bp"], PARAMS.n_perm, PARAMS.seed)
     for name, sub in (("election", ev[ev["market"] == "election"]), ("recession", ev[ev["market"] == "recession"])):
         res[f"t1_{name}"] = sign_agreement(sub["dpm_o_pp"], sub["gap_bp"], PARAMS.theta_pp)
+    res["loo"] = leave_one_out(ev)
     # placebo
     res["p1_t1"] = _t1(pl, "gap_bp")
     res["p1_t2"] = _t2(pl, "gap_bp")
@@ -67,6 +68,29 @@ def analyse(rows: pd.DataFrame) -> dict:
     res["median_abs_gap_placebo"] = float(pl["gap_bp"].abs().median()) if len(pl) else float("nan")
     res["verdict"], res["verdict_detail"] = verdict(res)
     return res
+
+
+def _ols_slope(x: np.ndarray, y: np.ndarray) -> float:
+    xc = x - x.mean()
+    d = float((xc ** 2).sum())
+    return float((xc * (y - y.mean())).sum() / d) if d > 0 else float("nan")
+
+
+def leave_one_out(ev: pd.DataFrame) -> dict:
+    """Exploratory (METHOD.md Amendment 2, not in the decision rule): how much does the T2 slope depend on single events?"""
+    x, y = ev["dpm_o_pp"].to_numpy(float), ev["gap_bp"].to_numpy(float)
+    n = len(x)
+    if n < 5:
+        return {"n": n}
+    slopes = [(_ols_slope(np.delete(x, i), np.delete(y, i)), ev["event"].iloc[i]) for i in range(n)]
+    lo, hi = min(slopes), max(slopes)
+    out = {"n": n, "full": _ols_slope(x, y), "min": lo[0], "min_drop": lo[1], "max": hi[0], "max_drop": hi[1],
+           "n_positive": int(sum(s > 0 for s, _ in slopes))}
+    keep = (ev["market"] != "election").to_numpy()
+    if keep.sum() >= 5:
+        sub = slope_test(x[keep], y[keep], PARAMS.n_perm, PARAMS.seed)
+        out["no_election"] = {k: sub[k] for k in ("n", "b", "t", "p_perm", "rho", "p_rho")}
+    return out
 
 
 def verdict(res: dict) -> tuple[str, dict]:

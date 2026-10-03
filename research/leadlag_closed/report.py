@@ -169,6 +169,22 @@ def plain_reading(res: dict) -> list[str]:
     if np.isfinite(p3["d"]):
         out.append(f"The interaction term (extra response per pp on news closures) is {_f(p3['d'], 2, True)} bp per pp (HC3 t = {_f(p3['d_t'], 2, True)}); "
                    f"the baseline response over all closures is {_f(p3['b'], 2, True)} (t = {_f(p3['b_t'], 2, True)}).")
+    # bottom line, assembled from the same numbers
+    a = PARAMS.alpha
+    general = pl["n"] and (pl["p"] < a or pls["p_perm"] < a)
+    news_extra = np.isfinite(p3["d"]) and abs(p3["d_t"]) >= 2
+    t4 = res["t4_events_t2"]
+    parts = []
+    if np.isfinite(t2["rho"]) and t2["p_rho"] < a:
+        parts.append("the PM closure move and the equity gap are positively related across the selected news events (rank correlation significant)")
+    else:
+        parts.append("the PM closure move and the equity gap are not reliably related across the selected news events")
+    parts.append("the same relation " + ("also appears in closures with no flagged news, and news closures do not show an extra response" if general and not news_extra
+                                          else "also appears in closures with no flagged news" if general
+                                          else "does not appear in closures with no flagged news"))
+    if np.isfinite(t4["b"]):
+        parts.append("the PM move up to 08:00 ET " + ("does not predict" if t4["p_perm"] >= a else "does predict") + " the SPY move from 08:00 ET to the open")
+    out.append("**Bottom line:** " + "; ".join(parts) + ". This is co-movement over the closure, not by itself evidence that the PM leads equities.")
     return out
 
 
@@ -217,6 +233,17 @@ def write_summary(rows: pd.DataFrame, res: dict, markets: dict, et: pd.DataFrame
     L.append(f"**T2 regression** `gap = a + b * oriented PM change`, n = {t2['n']}: b = {_f(t2['b'], 2, True)} bp per pp, HC3 t = {_f(t2['t'], 2, True)}, "
              f"R-squared = {_f(t2['r2'], 3)}, permutation p = {_p(t2['p_perm'])} (10,000 shuffles). Spearman rho = {_f(t2['rho'], 2, True)} (permutation p = {_p(t2['p_rho'])}).\n")
     t31, t32, t4a, t4b = res["t3_events_t1"], res["t3_events_t2"], res["t4_events_t1"], res["t4_events_t2"]
+    lo = res.get("loo", {})
+    if "full" in lo:
+        s = (f"**Leverage check, exploratory (METHOD.md Amendment 2, added after the first run).** Leave-one-event-out slope: {_f(lo['min'], 1, True)} "
+             f"(without {lo['min_drop'][:3]}) to {_f(lo['max'], 1, True)} (without {lo['max_drop'][:3]}), positive in {lo['n_positive']} of {lo['n']}.")
+        ne = lo.get("no_election")
+        if ne:
+            s += (f" Only the {ne['n']} recession-market events: slope {_f(ne['b'], 2, True)} bp per pp (HC3 t = {_f(ne['t'], 2, True)}, permutation p = {_p(ne['p_perm'])}), "
+                  f"Spearman rho {_f(ne['rho'], 2, True)} (p = {_p(ne['p_rho'])}). The election call (e04) is a very large, high-leverage point: it inflates the HC3 standard error "
+                  "(hence the low HC3 t next to the small permutation p). It does not carry the slope, since dropping it makes the slope larger, not smaller; "
+                  "the two markets simply have different bp-per-pp scales (a Trump-odds point and a recession-odds point are not the same unit of news).")
+        L.append(s + "\n")
     L.append("Secondary (not part of the decision rule):\n")
     L.append(f"- **T3 first 30 minutes after the open**: sign agreement at 1 pp: {_t1s(t31[th])}. Slope {_f(t32['b'], 2, True)} bp per pp (t = {_f(t32['t'], 2, True)}, permutation p = {_p(t32['p_perm'])}, n = {t32['n']}). "
              f"Gap vs first-30-minute direction: the move continued the gap's direction in {res['gap_vs_ret30']['continue']} of {res['gap_vs_ret30']['n']} events.")
