@@ -1,0 +1,69 @@
+"""Routes: POST /pipeline/fit, GET /library, GET /pipeline/fits (the precomputed batch)."""
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from fastapi import APIRouter, Request
+
+from ..cache import TTLCache
+from .engine_adapter import EngineAdapter
+from .llm import LLMProvider, default_provider
+from .service import Deps, FitRequest, FitResponse, fit
+
+router = APIRouter()
+FITS = Path(__file__).resolve().parents[1] / "data" / "fits.json"
+FIT_TTL_S = 300.0
+
+
+def get_adapter(request: Request) -> EngineAdapter:
+    """Tests set app.state.pipeline_adapter (e.g. an adapter around a fake hedgecore)."""
+    if not hasattr(request.app.state, "pipeline_adapter"):
+        request.app.state.pipeline_adapter = EngineAdapter()
+    return request.app.state.pipeline_adapter
+
+
+def get_provider(request: Request, http) -> LLMProvider:
+    """Tests set app.state.pipeline_provider; otherwise Gemini when GEMINI_API_KEY is set, else rules."""
+    p = getattr(request.app.state, "pipeline_provider", None)
+    return p if p is not None else default_provider(http)
+
+
+def _deps(request: Request) -> Deps:
+    from ..markets import _http
+    from ..equities import get_client
+    http = _http(request)
+    return Deps(adapter=get_adapter(request), provider=get_provider(request, http), http=http,
+                massive=lambda: get_client(request),
+                offline=bool(getattr(request.app.state, "pipeline_offline", False)))
+
+
+@router.post("/pipeline/fit", response_model=FitResponse)
+async def pipeline_fit(req: FitRequest, request: Request) -> FitResponse:
+    if not hasattr(request.app.state, "cache_fit"):
+        request.app.state.cache_fit = TTLCache(FIT_TTL_S)
+    key = req.model_dump_json()
+    try:
+        deps = _deps(request)
+    except Exception:
+        deps = Deps(adapter=EngineAdapter(module=None))
+    value, _ = await request.app.state.cache_fit.get_or_set(key, lambda: fit(req, deps))
+    return value
+
+
+@router.get("/library")
+async def library(request: Request) -> dict:
+    try:
+        adapter = get_adapter(request)
+        manifest, source = adapter.library()
+        return {**manifest, "source": source, "can_score": adapter.can_score}
+    except Exception:
+        return {"families": [], "event_classes": [], "total_presets": 0, "source": "fallback", "can_score": False}
+
+
+@router.get("/pipeline/fits")
+async def precomputed_fits() -> dict:
+    try:
+        return json.loads(FITS.read_text())
+    except (OSError, ValueError):
+        return {"generated_at": None, "fits": {}}
