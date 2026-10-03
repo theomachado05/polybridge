@@ -128,4 +128,8 @@ expected answer and will be reported as that.** n is reported for every cell.
 
 ## Amendments
 
-None.
+**Amendment 1, 2026-10-03 23:42 UTC, before any S3 result existed: source of the S&P 500 close.** Section 1 takes the
+index close from Massive daily bars. Massive refused the index (`403` on `I:SPX`; the plan covers options and stocks,
+not index aggregates). The index close is taken instead from Kalshi's own settlement value (`expiration_value`) of the
+previous session's 16:00 `KXINXU` event, which is the S&P 500 level Kalshi settled on. SPY's close still comes from
+Massive. The ratio rule is otherwise unchanged. The first run stopped at the refused request; no set had been built.

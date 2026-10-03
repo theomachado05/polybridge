@@ -60,6 +60,21 @@ def ratio_for(date: str, spx: dict, spy: dict) -> tuple[str, float] | None:
     return (prior[-1], spx[prior[-1]] / spy[prior[-1]]) if prior else None
 
 
+def kalshi_event(date: str, kt) -> list[dict]:
+    ev = event_ticker(date)
+    return cached(f"markets_{ev}.json", lambda: ds.get_json(f"{ds.KALSHI}/markets", {"event_ticker": ev, "limit": 1000},
+                                                            throttle=kt).get("markets", []))
+
+
+def kalshi_settlement(markets: list[dict]) -> float | None:
+    """The S&P 500 level the 16:00 event settled on (amendment 1)."""
+    vals = {m.get("expiration_value") for m in markets if m.get("expiration_value")}
+    try:
+        return float(vals.pop()) if len(vals) == 1 else None
+    except ValueError:
+        return None
+
+
 def map_strike(k_spy: float, ratio: float, listed: list[float]) -> tuple[float, float] | None:
     """Nearest listed Kalshi strike to ratio x K, kept only within the tolerance. Returns (strike, distance)."""
     if not listed:
@@ -211,12 +226,18 @@ def main() -> int:
 
     client = MassiveClient(load_api_key(search_from=RESEARCH), cache_dir=RESEARCH / ".massive_cache")
     spy = closes(client, "SPY", "2026-08-03", dates[-1])
-    spx = closes(client, "I:SPX", "2026-08-03", dates[-1])
     divs = client.get_all("/v3/reference/dividends", {"ticker": "SPY", "ex_dividend_date.gte": "2026-08-01", "ex_dividend_date.lte": dates[-1]})
     ex_dates = sorted({d["ex_dividend_date"] for d in divs})
     log.append(f"SPY ex-dividend dates in range: {ex_dates}")
 
     kt, pt = ds.Throttle(3.0), ds.Throttle(3.0)
+    sessions = sorted(spy)
+    spx = {}
+    for d in sorted({max(x for x in sessions if x < date) for date in dates if any(x < date for x in sessions)}):
+        v = kalshi_settlement(kalshi_event(d, kt))
+        if v is not None:
+            spx[d] = v
+    log.append(f"S&P 500 closes from Kalshi settlement values: {len(spx)} sessions")
     series = cached("series.json", lambda: ds.get_json(f"{ds.KALSHI}/series/{cfg.KALSHI_SERIES}", throttle=kt)["series"])
     k_mult = float(series.get("fee_multiplier") or 1.0)
     log.append(f"Kalshi {cfg.KALSHI_SERIES}: fee_type {series.get('fee_type')}, fee_multiplier {k_mult}")
@@ -232,8 +253,7 @@ def main() -> int:
         if rt is None:
             drops["no_ratio"] += len(rows)
             continue
-        ev = event_ticker(date)
-        mk = cached(f"markets_{ev}.json", lambda: ds.get_json(f"{ds.KALSHI}/markets", {"event_ticker": ev, "limit": 1000}, throttle=kt).get("markets", []))
+        mk = kalshi_event(date, kt)
         above = {round(float(m["floor_strike"]) + 0.0001, 2): m for m in mk
                  if m.get("strike_type") in ("greater", "greater_or_equal") and m.get("floor_strike") is not None}
         if not above:

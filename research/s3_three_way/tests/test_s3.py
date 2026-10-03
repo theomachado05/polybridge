@@ -100,3 +100,9 @@ def test_print_check_direction():
 def test_day_metrics():
     m = s3.day_metrics(__import__("numpy").array([10.0, -5.0, 0.0, 15.0]), 1000.0, 400.0)
     assert m["total_return"] == pytest.approx(0.02) and m["max_drawdown"] == pytest.approx(0.005)
+
+
+def test_kalshi_settlement_value_needs_one_agreed_level():
+    assert s3.kalshi_settlement([{"expiration_value": "7722.7200"}, {"expiration_value": "7722.7200"}]) == 7722.72
+    assert s3.kalshi_settlement([{"expiration_value": "7722.72"}, {"expiration_value": "7700.00"}]) is None
+    assert s3.kalshi_settlement([{"expiration_value": ""}]) is None
