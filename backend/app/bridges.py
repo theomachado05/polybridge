@@ -30,7 +30,7 @@ from pydantic import BaseModel, Field, ValidationError
 
 from .broker import Broker, OrderRequest, SimBroker, get_broker
 from .models import AlgoChoice, MarketRef, Proposal
-from .pipeline.engine_adapter import AlgoChoiceError, normalize_manifest, resolve_algo
+from .pipeline.engine_adapter import AlgoChoiceError, cap_coverage, normalize_manifest, resolve_algo
 from .pipeline.ticks import orient_to_adverse, recorded_bars
 from .store import NotFound, ProposalStore
 from .ticks import TICK_FIELDS, LiveSource, ReplaySource, SourceError, Tick, as_tick
@@ -99,9 +99,14 @@ class Bridge:
         self.broker_hedge = 0.0  # net short quantity actually filled by the broker (sell adds, buy reduces)
         self.fills: list[dict] = []
         self.broker_filled = self.broker_rejects = self.broker_errors = 0
-        self.algo = algo  # {family, preset_index, params, source} or None (legacy Engine)
-        self.resting: dict | None = None  # the bridge's open broker order: {order_id, instrument, side, qty}
+        self.algo = algo  # {family, preset_index, params, source, coverage_cap, capped} or None (legacy Engine)
+        self.choice: AlgoChoice | None = None  # what the algo was chosen as (idempotent re-POSTs are compared to it)
+        # The bridge's open broker order: {order_id, instrument, side, qty, applied (filled qty already fed back)}.
+        self.resting: dict | None = None
         self.cancels = 0
+        self.cap_holds = 0  # sell intents the approved coverage cap clipped to zero
+        self.equity_source: str | None = None  # where the last live under_px came from (None: no quote)
+        self.equity_price = "live_quote"  # "live_quote" | "recorded" | "none": what under_px the algo can see
 
     async def emit(self, kind: str, data: dict, status: str | None = None) -> None:
         async with self.cond:
@@ -141,6 +146,8 @@ class Bridge:
                 "algo": dict(self.algo) if self.algo else None,
                 "resting_order": dict(self.resting) if self.resting else None, "cancels": self.cancels,
                 "hedge_basis": "broker_fill" if self.algo else "engine_intent", "broker_hedge": self.broker_hedge,
+                "coverage_cap": self.proposal.target_coverage if self.algo else None, "cap_holds": self.cap_holds,
+                "equity_price": self.equity_price if self.algo else None, "equity_source": self.equity_source,
                 "broker_coverage": self.broker_hedge / self.proposal.shares_held if self.proposal.shares_held else 0.0,
                 "broker_filled": self.broker_filled,
                 "broker_rejects": self.broker_rejects, "broker_errors": self.broker_errors,
@@ -296,15 +303,39 @@ async def _run_source(bridge: Bridge, engine, hc, source) -> None:
 
 # ---------------------------------------------------------------- algo engine (hedgecore.Algo)
 
-def _equity_quote(bridge: Bridge):
+EQUITY_TTL_S = 15.0  # one Massive quote per ticker per 15 s, shared by every bridge on that ticker
+STALE_QUOTE_SOURCES = ("massive_prev_close",)  # yesterday's close is not a current under_px
+
+
+def _equity_quote(bridge: Bridge, app):
     """Async callable -> the broker's equity quote for the proposal's ticker (Massive via the broker quote source),
-    or None. Used by the live source to fill under_px / under_bid / under_ask."""
+    or None. Used by the live source of an algo bridge to fill under_px / under_bid / under_ask. Quotes are cached
+    per ticker for EQUITY_TTL_S across bridges (rate limits); a previous-close fallback is reported as the source but
+    returned as None, so the algo sees NaN (unknown) rather than a stale price as current."""
+    if not hasattr(app.state, "equity_quotes"):
+        app.state.equity_quotes = {}
+    cache: dict = app.state.equity_quotes
+
     async def quote():
-        b = bridge.broker
-        quotes = getattr(b, "quotes", None) or getattr(getattr(b, "sim", None), "quotes", None)
-        if quotes is None:
+        ticker = bridge.proposal.ticker
+        hit = cache.get(ticker)
+        now = time.monotonic()
+        if hit is not None and now - hit[0] < EQUITY_TTL_S:
+            q = hit[1]
+        else:
+            b = bridge.broker
+            quotes = getattr(b, "quotes", None) or getattr(getattr(b, "sim", None), "quotes", None)
+            if quotes is None:
+                bridge.equity_source = None
+                return None
+            q = await quotes.equity(ticker)
+            cache[ticker] = (now, q)
+        src = getattr(q, "source", None) if q is not None else None
+        if src in STALE_QUOTE_SOURCES:
+            bridge.equity_source = f"{src} (stale: not used)"
             return None
-        return await quotes.equity(bridge.proposal.ticker)
+        bridge.equity_source = src
+        return q
     return quote
 
 
@@ -316,20 +347,25 @@ def _signed(side: str, qty: float) -> float:
     return qty if side == "buy" else -qty
 
 
-async def _apply_order_state(bridge: Bridge, algo, o, side: str, instrument: str) -> None:
+async def _apply_order_state(bridge: Bridge, algo, o, side: str, instrument: str, applied: float = 0.0) -> None:
     """Feed the broker's answer back to the algo: filled -> on_fill(signed qty, fill px); rejected / cancelled ->
-    on_reject; open -> the bridge remembers it as resting (cancel/replace before the next order)."""
+    on_reject; open -> the bridge remembers it as resting (cancel/replace before the next order).
+
+    ``filled_qty`` is cumulative per order, so only the part not fed back yet (``applied``: a partial fill already
+    applied while the order rested) reaches on_fill and the broker hedge; a partial fill is never counted twice."""
     filled = float(getattr(o, "filled_qty", 0.0) or 0.0)
+    new = filled - applied
     px = _fin(getattr(o, "fill_px", None))
-    if filled > 0 and px is not None:
-        algo.on_fill(instrument, _signed(side, filled), px)
-        bridge.broker_hedge += filled if side == "sell" else -filled
+    if new > 1e-9 and px is not None:
+        algo.on_fill(instrument, _signed(side, new), px)
+        bridge.broker_hedge += new if side == "sell" else -new
         bridge.hedge = bridge.broker_hedge
+        applied = filled
     if o.status == "filled":
         bridge.broker_filled += 1
         bridge.resting = None
     elif o.status == "open":
-        bridge.resting = {"order_id": o.id, "instrument": instrument, "side": side, "qty": o.qty}
+        bridge.resting = {"order_id": o.id, "instrument": instrument, "side": side, "qty": o.qty, "applied": applied}
     else:  # rejected or cancelled: nothing (more) traded
         if o.status == "rejected":
             bridge.broker_rejects += 1
@@ -342,12 +378,16 @@ async def _lookup(broker: Broker, order_id: str):
     return next((o for o in rows if o.id == order_id), None)
 
 
-async def _settle_resting(bridge: Bridge, algo, broker: Broker | None, why: str) -> None:
+async def _settle_resting(bridge: Bridge, algo, broker: Broker | None, why: str) -> bool:
     """Cancel/replace: before a new order (or when the bridge ends), the bridge's resting order is looked up; if it
-    filled meanwhile the fill goes to the algo, otherwise it is cancelled and the algo hears on_reject (expired)."""
+    filled meanwhile the fill goes to the algo, otherwise it is cancelled and the algo hears on_reject (expired).
+
+    Returns True when nothing rests any more. When the broker cannot be read or the cancel did not take, the order
+    may still be working: it stays in ``bridge.resting`` (retried before the next order and at bridge end) and the
+    caller must not send another order on top of it (False)."""
     r = bridge.resting
     if r is None or broker is None:
-        return
+        return r is None
     rec: dict = {"order_id": r["order_id"], "reason": why, "broker": broker.name}
     try:
         current = await _lookup(broker, r["order_id"])
@@ -358,21 +398,32 @@ async def _settle_resting(bridge: Bridge, algo, broker: Broker | None, why: str)
                 current = await _lookup(broker, r["order_id"])
     except Exception as e:
         bridge.broker_errors += 1
-        bridge.resting = None
-        algo.on_reject(r["instrument"])
-        rec.update(status="error", error=type(e).__name__)
+        rec.update(status="error", error=type(e).__name__, kept_resting=True)
         await bridge.emit("cancel", rec)
-        return
-    if current is None or current.status == "open":  # unknown, or a cancel that did not take: treat as expired
+        return False
+    if current is None:  # the broker no longer knows it: nothing can still trade, treat as expired
         bridge.resting = None
         algo.on_reject(r["instrument"])
-        rec["status"] = "unknown" if current is None else "cancel_failed"
+        rec["status"] = "unknown"
+    elif current.status == "open":  # the cancel did not take: it may still fill, so keep tracking it
+        await _apply_order_state(bridge, algo, current, r["side"], r["instrument"], float(r.get("applied") or 0.0))
+        rec.update(status="cancel_failed", kept_resting=True, filled_qty=current.filled_qty)
+        await bridge.emit("cancel", rec)
+        return False
     else:
         if current.status == "cancelled":
             bridge.cancels += 1
-        await _apply_order_state(bridge, algo, current, r["side"], r["instrument"])
+        await _apply_order_state(bridge, algo, current, r["side"], r["instrument"], float(r.get("applied") or 0.0))
         rec.update(status=current.status, filled_qty=current.filled_qty, fill_px=current.fill_px)
     await bridge.emit("cancel", rec)
+    return True
+
+
+def _coverage_room(bridge: Bridge) -> float:
+    """Shares the bridge may still sell short: the approved target_coverage of shares_held minus the hedge the broker
+    filled. The approval gate is a hard cap for every family, including one without a coverage param."""
+    cap = math.floor(bridge.proposal.target_coverage * bridge.proposal.shares_held + 1e-9)
+    return max(0.0, cap - bridge.broker_hedge)
 
 
 async def _send_intent(bridge: Bridge, algo, intent: dict, t: Tick) -> dict:
@@ -393,9 +444,25 @@ async def _send_intent(bridge: Bridge, algo, intent: dict, t: Tick) -> dict:
         bridge.broker_errors += 1
         rec.update(status="error", error="no broker", filled_qty=0.0, broker=None)
         return rec
-    await _settle_resting(bridge, algo, broker, "replace")
-    bridge.broker_name = broker.name
     rec["broker"] = broker.name
+    if not await _settle_resting(bridge, algo, broker, "replace"):
+        algo.on_reject(instrument)  # the old order may still be working: never stack a new one on top of it
+        rec.update(status="held", reject_reason="previous order still resting at the broker (retried next time)",
+                   filled_qty=0.0)
+        return rec
+    if side == "sell":
+        room = _coverage_room(bridge)
+        if qty > room:
+            rec["capped_from"] = qty
+            qty = float(math.floor(room))
+            rec["qty"] = qty
+            if qty <= 0:
+                bridge.cap_holds += 1
+                algo.on_reject(instrument)
+                rec.update(status="held", reject_reason=f"coverage cap: the approved target_coverage "
+                           f"{bridge.proposal.target_coverage:g} is already hedged", filled_qty=0.0)
+                return rec
+    bridge.broker_name = broker.name
     limit = _fin(intent.get("limit_px"))
     limit = limit if limit is not None and limit > 0 else None
     note = ref = None
@@ -429,7 +496,10 @@ async def _run_algo_source(bridge: Bridge, algo, source) -> None:
     async for raw in source:
         t = as_tick(raw)
         bridge.ticks += 1
-        await bridge.emit("tick", _tick_event(t))
+        ev = _tick_event(t)
+        ev["under_source"] = bridge.equity_source if bridge.effective_source == "live" else (
+            "recorded" if ev["under_px"] is not None else None)
+        await bridge.emit("tick", ev)
         oriented = orient_to_adverse(t.fields, bridge.direction)  # the one orientation step
         i = algo.on_tick(engine_tick(oriented, t.ts_ns, t.venue), time.time_ns())
         reason = str(i.get("reason"))
@@ -490,7 +560,9 @@ async def _run(bridge: Bridge, app, hc, source, fallback: Path | None) -> None:
             if bridge.effective_source == "live" and fallback is not None and fallback.is_file():
                 bridge.effective_source = "replay"
                 await bridge.emit("status", {"status": "running", "source": "replay", "note": "live failed; replaying"})
-                await loop(ReplaySource(fallback, speed=_replay_speed(app), bars=_bars(bridge.proposal.ticker)))
+                bars = _bars(bridge.proposal.ticker)
+                bridge.equity_price = _replay_equity_price(fallback, bars)
+                await loop(ReplaySource(fallback, speed=_replay_speed(app), bars=bars))
             else:
                 await _finish_orders(bridge, engine)
                 await bridge.emit("status", {"status": "stopped", "reason": "source_failed"}, status="stopped")
@@ -509,6 +581,21 @@ async def _finish_orders(bridge: Bridge, engine) -> None:
     """A bridge that ends leaves no order resting at the broker."""
     if bridge.algo and bridge.resting is not None:
         await _settle_resting(bridge, engine, bridge.order_broker(), "bridge_end")
+
+
+def _replay_equity_price(path: Path, bars: list[tuple[int, float]]) -> str:
+    """"recorded" when a replay can show the algo an equity price (an under_px column in the recording, or a recorded
+    bar known by its last row), else "none": the hedge families then hold (fee_unknown) on every tick."""
+    try:
+        last_s = None
+        for line in path.read_text().splitlines():
+            if '"under_px"' in line:
+                return "recorded"
+            if line.strip():
+                last_s = int(json.loads(line)["ts_ns"]) // 1_000_000_000
+    except (OSError, ValueError, KeyError, TypeError):
+        return "none"
+    return "recorded" if bars and last_s is not None and bars[0][0] <= last_s else "none"
 
 
 def _bars(ticker: str) -> list[tuple[int, float]]:
@@ -530,33 +617,51 @@ def _catalog_manifest(hc) -> dict:
     return EngineAdapter(module=None).library()[0]
 
 
-def _algo_for(prop: Proposal, body: BridgeIn, hc) -> dict | None:
-    """Which algo this bridge runs. A proposal approved with an algo runs exactly that algo (a body naming another is
-    a 409: the approval gate covers what runs); otherwise the body's algo; otherwise None (legacy Engine)."""
-    asked: AlgoChoice | None = None
+def _asked_algo(body: BridgeIn) -> AlgoChoice | None:
+    """The algo named in a POST /bridges body, or None."""
     if body.family is not None:
         try:
-            asked = AlgoChoice(family=body.family, preset_index=body.preset_index, params=body.params)
+            return AlgoChoice(family=body.family, preset_index=body.preset_index, params=body.params)
         except ValidationError as e:
             raise HTTPException(422, f"algo: {e.errors()[0]['msg']}")
-    elif body.preset_index is not None or body.params is not None:
+    if body.preset_index is not None or body.params is not None:
         raise HTTPException(422, "algo: preset_index / params need a family.")
+    return None
+
+
+def _same_algo(a: AlgoChoice, b: AlgoChoice) -> bool:
+    return (a.family == b.family and a.preset_index == b.preset_index
+            and (a.params or None) == (b.params or None))
+
+
+def _algo_label(c: AlgoChoice | None) -> str:
+    if c is None:
+        return "no algo (the legacy Engine)"
+    return f"algo {c.family}{'' if c.preset_index is None else ' preset ' + str(c.preset_index)}"
+
+
+def _algo_for(prop: Proposal, body: BridgeIn, hc) -> tuple[dict | None, AlgoChoice | None]:
+    """Which algo this bridge runs. A proposal approved with an algo runs exactly that algo (a body naming another is
+    a 409: the approval gate covers what runs); otherwise the body's algo; otherwise None (legacy Engine).
+
+    The approved target_coverage caps every hedge-size param (``cap_coverage``): a preset with coverage 1.0 on a 0.5
+    proposal runs with coverage 0.5. The bridge also clips sell intents at that coverage (``_coverage_room``)."""
+    asked = _asked_algo(body)
     choice = prop.algo
-    if choice is not None and asked is not None:
-        same = (asked.family == choice.family and asked.preset_index == choice.preset_index
-                and (asked.params or None) == (choice.params or None))
-        if not same:
-            raise HTTPException(409, f"Proposal {prop.id} was approved with algo {choice.family}"
-                                     f"{'' if choice.preset_index is None else ' preset ' + str(choice.preset_index)};"
-                                     " a bridge runs exactly what was approved.")
+    if choice is not None and asked is not None and not _same_algo(asked, choice):
+        raise HTTPException(409, f"Proposal {prop.id} was approved with {_algo_label(choice)};"
+                                 " a bridge runs exactly what was approved.")
     choice = choice or asked
     if choice is None:
-        return None
+        return None, None
     try:
         r = resolve_algo(_catalog_manifest(hc), choice.family, choice.preset_index, choice.params)
     except AlgoChoiceError as e:
         raise HTTPException(422, f"algo: {e}.")
-    return {"family": r["family"], "preset_index": r["preset_index"], "params": r["params"], "source": choice.source}
+    run, lowered = cap_coverage(r["params"], prop.target_coverage)
+    return ({"family": r["family"], "preset_index": r["preset_index"], "params": run, "source": choice.source,
+             "coverage_cap": prop.target_coverage, "capped": lowered},
+            AlgoChoice(family=choice.family, preset_index=choice.preset_index, params=choice.params))
 
 
 def _live_primary(market: MarketRef) -> tuple[str, str]:
@@ -601,6 +706,10 @@ async def start_bridge(body: BridgeIn, request: Request, response: Response) -> 
     if existing is not None:  # idempotent: one bridge per approved proposal id
         if existing.requested_source != body.source:
             raise HTTPException(409, f"Bridge {existing.id} already started for proposal {prop.id} with source {existing.requested_source}.")
+        asked = _asked_algo(body)  # a body naming an algo must name the one running (else the caller is misled)
+        if asked is not None and (existing.choice is None or not _same_algo(asked, existing.choice)):
+            raise HTTPException(409, f"Bridge {existing.id} for proposal {prop.id} already runs "
+                                     f"{_algo_label(existing.choice)}; it cannot switch algos.")
         response.status_code = 200
         return {"bridge_id": existing.id}
     market, direction = _resolve(prop, body)
@@ -608,20 +717,25 @@ async def start_bridge(body: BridgeIn, request: Request, response: Response) -> 
     if hc is None:
         raise HTTPException(503, NO_ENGINE)
 
-    algo = _algo_for(prop, body, hc)
+    algo, choice = _algo_for(prop, body, hc)
     bridge = Bridge(prop, body.source, market, body.gap_per_share, direction, body.replay_to_account, algo)
+    bridge.choice = choice
 
     fallback = _fallback_path(request.app)
     if body.source == "replay":
         path = _replay_path(request, market, body.market)
         if path is None or not path.is_file():
             raise HTTPException(422, "No replay file configured (set POLYBRIDGE_REPLAY_PATH or add replays/<market id>.jsonl).")
-        source: Any = ReplaySource(path, speed=_replay_speed(request.app), bars=_bars(prop.ticker))
+        bars = _bars(prop.ticker)
+        source: Any = ReplaySource(path, speed=_replay_speed(request.app), bars=bars)
+        bridge.equity_price = _replay_equity_price(path, bars)
     else:
         primary, mid = _live_primary(market)
         twin = _twin(body.twin, primary)
         factory = getattr(request.app.state, "live_source_factory", None) or LiveSource
-        source = factory(mid, primary=primary, twin=twin, equity=_equity_quote(bridge))
+        # Only the algo reads under_px; a legacy bridge never polls the equity quote (Massive rate limits).
+        source = factory(mid, primary=primary, twin=twin,
+                         equity=_equity_quote(bridge, request.app) if algo else None)
 
     # No await between the registry check above and this insert: exactly one bridge per proposal.
     reg[prop.id] = bridge

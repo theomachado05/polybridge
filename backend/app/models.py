@@ -25,6 +25,11 @@ class AlgoChoice(BaseModel):
     preset_index: int | None = Field(default=None, ge=0)
     params: dict[str, float] | None = None
     source: Literal["ai_fit", "user"] = "ai_fit"  # label only: who chose it
+    # Set by the server on the stored proposal (ignored in requests): the exact params that will run, after the
+    # approved target_coverage capped the hedge-size params, and which params the cap lowered ({name: original}).
+    resolved_params: dict[str, float] | None = None
+    coverage_cap: float | None = None
+    capped: dict[str, float] | None = None
 
     @model_validator(mode="after")
     def _one_of(self) -> "AlgoChoice":

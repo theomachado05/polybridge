@@ -25,20 +25,24 @@ def classify(body: ClassifyIn) -> ClassifyOut:
     return ClassifyOut(family=fam.value if fam else None, strategy=STRATEGY_FOR_FAMILY[fam] if fam else None)
 
 
-def checked_algo(request: Request, algo: AlgoChoice | None) -> AlgoChoice | None:
+def checked_algo(request: Request, algo: AlgoChoice | None, target_coverage: float) -> AlgoChoice | None:
     """Validate an algo choice against the library (compiled catalog, else the committed manifest) and pin it to
-    concrete params, so the approved proposal says exactly what will run. 422 when the library cannot run it."""
+    concrete params, so the approved proposal says exactly what will run: ``resolved_params`` are the preset's (or
+    the explicit) params with every hedge-size param capped at the proposal's target_coverage (the approval gate
+    limits how much is hedged; ``capped`` lists what the cap lowered). 422 when the library cannot run it."""
     if algo is None:
         return None
-    from .pipeline.engine_adapter import AlgoChoiceError, resolve_algo
+    from .pipeline.engine_adapter import AlgoChoiceError, cap_coverage, resolve_algo
     from .pipeline.router import get_adapter
     manifest, _ = get_adapter(request).library()
     try:
         r = resolve_algo(manifest, algo.family, algo.preset_index, algo.params)
     except AlgoChoiceError as e:
         raise HTTPException(422, f"algo: {e}.")
+    run, lowered = cap_coverage(r["params"], target_coverage)
     return AlgoChoice(family=r["family"], preset_index=r["preset_index"],
-                      params=r["params"] if r["preset_index"] is None else None, source=algo.source)
+                      params=r["params"] if r["preset_index"] is None else None, source=algo.source,
+                      resolved_params=run, coverage_cap=float(target_coverage), capped=lowered)
 
 
 @router.post("/proposals", response_model=Proposal, status_code=201)
@@ -50,7 +54,7 @@ def create_proposal(body: ProposalIn, request: Request) -> Proposal:
         return _store(request).propose(ticker=ticker, family="hedge", strategy="protective_put", basis="market_event",
                                        label=MARKET_EVENT_LABEL, market=body.market, direction=body.direction,
                                        shares_held=body.shares_held, target_coverage=body.target_coverage,
-                                       algo=checked_algo(request, body.algo))
+                                       algo=checked_algo(request, body.algo, body.target_coverage))
     fam = assign_family(body.tags)
     if fam is None:
         raise HTTPException(422, "These tags map to no pre-registered family, so there is no hedge to propose.")
@@ -58,7 +62,7 @@ def create_proposal(body: ProposalIn, request: Request) -> Proposal:
         raise HTTPException(422, "algo: opportunity proposals are executed outside hedgecore; an algo applies to hedges only.")
     return _store(request).propose(ticker=ticker, family=fam.value, strategy=STRATEGY_FOR_FAMILY[fam],
                                    basis="filing_tags", shares_held=body.shares_held,
-                                   target_coverage=body.target_coverage, algo=checked_algo(request, body.algo))
+                                   target_coverage=body.target_coverage, algo=checked_algo(request, body.algo, body.target_coverage))
 
 
 @router.get("/proposals", response_model=list[Proposal])

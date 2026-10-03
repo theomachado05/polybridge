@@ -296,3 +296,22 @@ def resolve_algo(manifest: dict, family_id: str, preset_index: int | None = None
             raise AlgoChoiceError(f"'{family_id}' param {name}={v} is outside [{lo}, {hi}]")
         out[name] = v
     return {"family": family_id, "preset_index": None, "params": out, "division": "hedge"}
+
+
+# The hedge-size parameters of the hedge families: "coverage" (fraction hedged at p = 1) and "max_cov" (the
+# LinearExposure ceiling). A family without one (election_hedge: beta * (p - p_neutral), capped at 1) is held to the
+# approved coverage by the bridge's own clip on sell intents (bridges._coverage_room).
+COVERAGE_PARAMS = ("coverage", "max_cov")
+
+
+def cap_coverage(params: dict[str, float], target_coverage: float) -> tuple[dict[str, float], dict[str, float] | None]:
+    """The approved target_coverage is a hard cap on what the algo may hedge: every hedge-size parameter above it is
+    lowered to it. Returns (capped params, {param: original value} for the ones lowered, or None)."""
+    cap = float(target_coverage)
+    out, lowered = dict(params), {}
+    for name in COVERAGE_PARAMS:
+        v = out.get(name)
+        if v is not None and math.isfinite(float(v)) and float(v) > cap:
+            lowered[name] = float(v)
+            out[name] = cap
+    return out, (lowered or None)

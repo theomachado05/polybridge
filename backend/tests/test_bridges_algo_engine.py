@@ -124,6 +124,30 @@ def test_real_algo_bridge_on_replay_orders_fills_and_reports(client, tmp_path):
     assert s["status"] == "finished" and s["latency_ns"]["p50"] is not None
 
 
+def test_real_coverage_1_preset_on_a_half_proposal_stays_within_half(client, tmp_path):
+    """The real equity_delta_bridge preset with coverage 1.0, approved at target_coverage 0.5, runs with coverage 0.5
+    and never shorts more than 50% of the shares, even with the adverse odds at 0.95."""
+    client.app.state.broker = SimBroker(tmp_path / "s.json", FakeQuotes(equity={"SPY": Quote(500.0, None, "q")}))
+    f = tmp_path / "fed.jsonl"
+    ps = [0.30, 0.60, 0.80, 0.95, 0.95, 0.95, 0.95, 0.95]
+    f.write_text("".join(json.dumps({"ts_ns": (1_790_000_000 + 3600 * i) * 1_000_000_000, "p": p}) + "\n"
+                         for i, p in enumerate(ps)))
+    client.app.state.replay_path = str(f)
+    fam = real_families()["equity_delta_bridge"]
+    idx = next(i for i, g in enumerate(preset_grid(fam)) if g["coverage"] == 1.0)
+    prop = client.post("/proposals", json={"ticker": "SPY", "market": FED, "direction": "down_on_yes",
+                                           "shares_held": 1000, "target_coverage": 0.5,
+                                           "algo": {"family": "equity_delta_bridge", "preset_index": idx}}).json()
+    assert prop["algo"]["resolved_params"]["coverage"] == 0.5 and prop["algo"]["capped"] == {"coverage": 1.0}
+    client.post(f"/proposals/{prop['id']}/approve")
+    r = client.post("/bridges", json={"proposal_id": prop["id"], "source": "replay", "replay_to_account": True})
+    ev = _events(client, r.json()["bridge_id"])
+    s = client.get(f"/bridges/{r.json()['bridge_id']}").json()
+    assert s["algo"]["params"]["coverage"] == 0.5 and s["algo"]["preset_index"] == idx
+    assert 0 < s["broker_hedge"] <= 500.0
+    assert all(d["broker_coverage"] <= 0.5 for k, d in ev if k == "position")
+
+
 def test_pipeline_fit_scores_with_the_real_engine():
     """POST /pipeline/fit with the compiled library: a real replay score, and the preset it names resolves to the
     params replay_grid scored."""

@@ -14,7 +14,7 @@ from app import bridges
 from app.broker import SimBroker
 from app.broker.models import Order
 from app.broker.quotes import Quote
-from app.pipeline.engine_adapter import ENGINE_MANIFEST, normalize_manifest, preset_grid
+from app.pipeline.engine_adapter import ENGINE_MANIFEST, cap_coverage, normalize_manifest, preset_grid
 from app.ticks import LiveSource, ReplaySource, SourceError, Tick, kalshi_book, polymarket_book
 from tests.test_bridges import PS, _events, client, replay_file  # noqa: F401
 from tests.test_broker_support import FakeQuotes, run
@@ -94,7 +94,10 @@ def start(client, pid, **kw):
 
 def test_proposal_algo_is_validated_and_pinned(client):
     p = proposal(client, {"family": "macro_fed_hedge", "preset_index": 5}, approve=False)
-    assert p["algo"] == {"family": "macro_fed_hedge", "preset_index": 5, "params": None, "source": "ai_fit"}
+    grid5 = preset_grid(FAMS["macro_fed_hedge"])[5]
+    run5, lowered = cap_coverage(grid5, 0.5)
+    assert p["algo"] == {"family": "macro_fed_hedge", "preset_index": 5, "params": None, "source": "ai_fit",
+                         "resolved_params": run5, "coverage_cap": 0.5, "capped": lowered}
     for bad, msg in [({"family": "nope"}, "unknown algo family"),
                      ({"family": "no_bid_seller"}, "hedge-division families only"),
                      ({"family": "poly_kalshi_spread"}, "hedge-division families only"),
@@ -112,6 +115,12 @@ def test_proposal_algo_is_validated_and_pinned(client):
     p = proposal(client, {"family": "macro_fed_hedge", "params": {"coverage": 1.0}, "source": "user"}, approve=False)
     assert p["algo"]["params"]["coverage"] == 1.0 and p["algo"]["params"]["mom_alpha"] == 0.3
     assert p["algo"]["preset_index"] is None and p["algo"]["source"] == "user"
+    # ... and the approved record shows the coverage that will run: capped at the proposal's target_coverage
+    assert p["algo"]["resolved_params"]["coverage"] == 0.5 and p["algo"]["capped"] == {"coverage": 1.0}
+    # server-only fields in a request are ignored, never trusted
+    p = proposal(client, {"family": "macro_fed_hedge", "params": {"coverage": 0.25},
+                          "resolved_params": {"coverage": 1.0}, "capped": None}, approve=False)
+    assert p["algo"]["resolved_params"]["coverage"] == 0.25 and p["algo"]["capped"] is None
 
 
 def test_bridge_runs_the_approved_algo_with_its_preset(client):
@@ -121,7 +130,7 @@ def test_bridge_runs_the_approved_algo_with_its_preset(client):
     bid = r.json()["bridge_id"]
     ev = _events(client, bid)
     a = FakeAlgo.instances[0]
-    assert a.family == "macro_fed_hedge" and a.params == preset_grid(FAMS["macro_fed_hedge"])[5]
+    assert a.family == "macro_fed_hedge" and a.params == cap_coverage(preset_grid(FAMS["macro_fed_hedge"])[5], 0.5)[0]
     assert a.position == {"shares_held": 1000.0} and a.direction == "down_on_yes"  # direction never reaches hedgecore
     decisions = [d for k, d in ev if k == "decision"]
     assert len(decisions) == 20
@@ -132,7 +141,9 @@ def test_bridge_runs_the_approved_algo_with_its_preset(client):
     assert s["reasons"] == {"inside_band": 20} and s["hedge_basis"] == "broker_fill"
     # approval gate unchanged: one bridge per proposal, idempotent; a different algo in the body is refused
     assert start(client, p["id"]).status_code == 200
-    assert start(client, p["id"], family="housing_rates").status_code == 200  # existing bridge wins (idempotent)
+    assert start(client, p["id"], family="macro_fed_hedge", preset_index=5).status_code == 200  # same algo: fine
+    r = start(client, p["id"], family="housing_rates")  # the caller is never told a different algo is running
+    assert r.status_code == 409 and "already runs algo macro_fed_hedge preset 5" in r.json()["detail"]
     assert len(client.app.state.bridges) == 1
 
 
@@ -141,7 +152,7 @@ def test_body_algo_when_the_proposal_has_none_and_conflicts(client):
     r = start(client, p["id"], family="crypto_reg_hedge", preset_index=3)
     assert r.status_code == 201
     _events(client, r.json()["bridge_id"])
-    assert FakeAlgo.instances[0].params == preset_grid(FAMS["crypto_reg_hedge"])[3]
+    assert FakeAlgo.instances[0].params == cap_coverage(preset_grid(FAMS["crypto_reg_hedge"])[3], 0.5)[0]
 
     q = proposal(client, {"family": "macro_fed_hedge", "preset_index": 5})
     r = start(client, q["id"], family="macro_fed_hedge", preset_index=6)
@@ -431,3 +442,173 @@ def test_replay_fills_only_what_it_has(tmp_path):
     assert (b.fields["yes_bid"], b.fields["yes_ask"], b.fields["under_px"]) == (0.29, 0.31, 99.0)  # recorded wins
     ts, p = a  # still a (ts_ns, p) pair for older callers
     assert p == 0.2
+
+
+# ---------------------------------------------------------------- the approved coverage is a hard cap
+
+def test_a_coverage_1_preset_on_a_half_proposal_never_hedges_more_than_half(client, tmp_path):
+    b = pin(client, SimBroker(tmp_path / "s.json", FakeQuotes(equity={"SPY": Quote(500.0, None, "q")})))
+    fam = FAMS["macro_fed_hedge"]
+    idx = next(i for i, g in enumerate(preset_grid(fam)) if g["coverage"] == 1.0)
+    # the (fake) algo asks for 400 + 300 + 50 short on 1000 shares: 75%, above the approved 50%
+    FakeAlgo.script = {2: {"side": -1, "qty": 400.0}, 4: {"side": -1, "qty": 300.0}, 6: {"side": -1, "qty": 50.0},
+                       8: {"side": 1, "qty": 20.0}, 10: {"side": -1, "qty": 40.0}}
+    p = proposal(client, {"family": "macro_fed_hedge", "preset_index": idx})
+    assert p["algo"]["resolved_params"]["coverage"] == 0.5 and p["algo"]["capped"] == {"coverage": 1.0}
+    bid = start(client, p["id"], replay_to_account=True).json()["bridge_id"]
+    ev = _events(client, bid)
+    a = FakeAlgo.instances[0]
+    assert a.params["coverage"] == 0.5  # the algo itself aims within the approval
+    fills = [d for k, d in ev if k == "fill"]
+    assert [(f["side"], f["qty"], f["status"]) for f in fills] == [
+        ("sell", 400.0, "filled"), ("sell", 100.0, "filled"), ("sell", 0.0, "held"), ("buy", 20.0, "filled"),
+        ("sell", 20.0, "filled")]
+    assert fills[1]["capped_from"] == 300.0 and "coverage cap" in fills[2]["reject_reason"]
+    assert [q for _, q, _ in a.fills] == [-400.0, -100.0, 20.0, -20.0] and a.rejects == ["equity"]
+    assert max(d["broker_coverage"] for k, d in ev if k == "position") == 0.5
+    assert [(x.symbol, x.qty) for x in run(b.positions())] == [("SPY", -500.0)]
+    s = client.get(f"/bridges/{bid}").json()
+    assert s["coverage_cap"] == 0.5 and s["algo"]["capped"] == {"coverage": 1.0} and s["cap_holds"] == 1
+    assert s["algo"]["params"]["coverage"] == 0.5 and s["broker_coverage"] == 0.5
+
+
+def test_the_cap_holds_a_family_without_a_coverage_param(client, tmp_path):
+    pin(client, SimBroker(tmp_path / "s.json", FakeQuotes(equity={"SPY": Quote(500.0, None, "q")})))
+    FakeAlgo.script = {1: {"side": -1, "qty": 900.0}}
+    p = proposal(client, {"family": "election_hedge"}, target_coverage=0.25)
+    assert p["algo"]["capped"] is None  # beta * (p - p_neutral): nothing to lower, the bridge clips instead
+    ev = _events(client, start(client, p["id"], replay_to_account=True).json()["bridge_id"])
+    f = next(d for k, d in ev if k == "fill")
+    assert (f["qty"], f["capped_from"], f["status"]) == (250.0, 900.0, "filled")
+
+
+# ---------------------------------------------------------------- partial fills, unreadable broker
+
+class ScriptedBroker:
+    """A broker whose answers are scripted: place -> open with a partial fill; orders()/cancel() per test."""
+    name = "scripted"
+
+    def __init__(self, partial=30.0, final="cancelled", final_filled=30.0, lookup_fails=0):
+        self.partial, self.final, self.final_filled, self.lookup_fails = partial, final, final_filled, lookup_fails
+        self.placed: list = []
+        self.cancelled: list = []
+        self.lookups = 0
+
+    def _order(self, req, i, status, filled):
+        return Order(id=f"o{i}", client_order_id=req.client_order_id, broker=self.name, symbol=req.symbol,
+                     asset="equity", side=req.side, qty=req.qty, type=req.type, limit_px=req.limit_px, status=status,
+                     filled_qty=filled, fill_px=500.0 if filled else None, created_at="t")
+
+    async def place_order(self, req):
+        self.placed.append(req)
+        return self._order(req, len(self.placed), "open", self.partial)
+
+    async def orders(self):
+        self.lookups += 1
+        if self.lookups <= self.lookup_fails:
+            raise RuntimeError("broker unreachable")
+        return [self._order(r, i + 1, "open", self.partial) for i, r in enumerate(self.placed)
+                if f"o{i + 1}" not in self.cancelled]
+
+    async def cancel(self, oid):
+        self.cancelled.append(oid)
+        i = int(oid[1:])
+        return self._order(self.placed[i - 1], i, self.final, self.final_filled)
+
+
+def test_a_partial_fill_is_fed_back_once(client):
+    br = pin(client, ScriptedBroker(partial=30.0, final="cancelled", final_filled=30.0))
+    FakeAlgo.script = {2: {"side": -1, "qty": 100.0, "limit_px": 600.0}}
+    p = proposal(client, {"family": "stress_lead_hedge"})
+    bid = start(client, p["id"], replay_to_account=True).json()["bridge_id"]
+    _events(client, bid)
+    a = FakeAlgo.instances[0]
+    assert a.fills == [("equity", -30.0, 500.0)]  # once, at placement; the cancel (same cumulative 30) adds nothing
+    assert a.rejects == ["equity"]  # the unfilled rest expired at bridge end
+    assert br.cancelled == ["o1"]
+    s = client.get(f"/bridges/{bid}").json()
+    assert s["broker_hedge"] == 30.0 and s["hedge"] == 30.0 and s["resting_order"] is None
+
+
+def test_a_partial_fill_that_grows_before_the_cancel_feeds_only_the_difference(client):
+    pin(client, ScriptedBroker(partial=30.0, final="cancelled", final_filled=70.0))
+    FakeAlgo.script = {2: {"side": -1, "qty": 100.0, "limit_px": 600.0}, 5: {"side": -1, "qty": 100.0, "limit_px": 600.0}}
+    p = proposal(client, {"family": "stress_lead_hedge"})
+    bid = start(client, p["id"], replay_to_account=True).json()["bridge_id"]
+    _events(client, bid)
+    a = FakeAlgo.instances[0]
+    # each order: 30 filled at placement, 70 cumulative when cancelled (replace / bridge end) -> +40, never +70
+    assert [q for _, q, _ in a.fills] == [-30.0, -40.0, -30.0, -40.0]
+    assert client.get(f"/bridges/{bid}").json()["broker_hedge"] == 140.0
+
+
+def test_an_unreadable_broker_keeps_the_resting_order_and_sends_nothing_on_top(client):
+    br = pin(client, ScriptedBroker(partial=0.0, lookup_fails=1))
+    FakeAlgo.script = {2: {"side": -1, "qty": 100.0, "limit_px": 600.0}, 4: {"side": -1, "qty": 100.0}}
+    p = proposal(client, {"family": "stress_lead_hedge"})
+    bid = start(client, p["id"], replay_to_account=True).json()["bridge_id"]
+    ev = _events(client, bid)
+    assert len(br.placed) == 1  # the second intent was held, not stacked on the possibly-working first order
+    fills = [d for k, d in ev if k == "fill"]
+    assert [f["status"] for f in fills] == ["open", "held"] and "still resting" in fills[1]["reject_reason"]
+    cancels = [d for k, d in ev if k == "cancel"]
+    assert cancels[0]["status"] == "error" and cancels[0]["kept_resting"] is True
+    assert cancels[-1]["reason"] == "bridge_end" and cancels[-1]["status"] == "cancelled"  # retried at the end
+    assert br.cancelled == ["o1"]
+    assert FakeAlgo.instances[0].rejects == ["equity", "equity"]  # the held intent, then the expired order
+
+
+# ---------------------------------------------------------------- equity quotes: algo only, cached, never stale
+
+def test_legacy_live_bridges_never_poll_the_equity_quote(client):
+    seen = []
+
+    class Live:
+        def __init__(self, market_id, *, primary, twin, equity):
+            seen.append(equity)
+
+        async def __aiter__(self):
+            if False:
+                yield
+    client.app.state.live_source_factory = Live
+    p = proposal(client)
+    _events(client, client.post("/bridges", json={"proposal_id": p["id"], "source": "live"}).json()["bridge_id"])
+    q = proposal(client, {"family": "macro_fed_hedge"})
+    _events(client, client.post("/bridges", json={"proposal_id": q["id"], "source": "live"}).json()["bridge_id"])
+    assert seen[0] is None and callable(seen[1])
+
+
+def test_equity_quote_is_shared_and_a_previous_close_is_not_a_current_price(client, tmp_path):
+    calls = []
+
+    class Q:
+        def __init__(self, source):
+            self.source = source
+
+        async def equity(self, sym):
+            calls.append(sym)
+            return Quote(500.0, None, self.source)
+    app = client.app
+    prop = SimpleNamespace(ticker="SPY", shares_held=10.0, target_coverage=0.5, id="x")
+    b1, b2 = SimpleNamespace(proposal=prop, equity_source=None), SimpleNamespace(proposal=prop, equity_source=None)
+    b1.broker = b2.broker = SimpleNamespace(quotes=Q("massive_last_trade"))
+    q1, q2 = bridges._equity_quote(b1, app), bridges._equity_quote(b2, app)
+    assert run(q1()).mid == 500.0 and run(q2()).mid == 500.0 and calls == ["SPY"]  # one call for both bridges
+    assert b2.equity_source == "massive_last_trade"
+    app.state.equity_quotes.clear()
+    b1.broker = SimpleNamespace(quotes=Q("massive_prev_close"))
+    assert run(q1()) is None and b1.equity_source == "massive_prev_close (stale: not used)"
+
+
+def test_replay_reports_whether_the_algo_can_see_an_equity_price(client, tmp_path, monkeypatch):
+    p = proposal(client, {"family": "macro_fed_hedge"})
+    bid = start(client, p["id"]).json()["bridge_id"]
+    _events(client, bid)
+    s = client.get(f"/bridges/{bid}").json()
+    assert s["equity_price"] == "none"  # the fixture replay is from 2001: no recorded SPY bar is known by then
+    monkeypatch.setattr(bridges, "_bars", lambda t: [(1, 400.0)])
+    q = proposal(client, {"family": "macro_fed_hedge"})
+    bid = start(client, q["id"]).json()["bridge_id"]
+    _events(client, bid)
+    assert client.get(f"/bridges/{bid}").json()["equity_price"] == "recorded"
+    assert client.get(f"/bridges/{start(client, proposal(client)['id']).json()['bridge_id']}").json()["equity_price"] is None
