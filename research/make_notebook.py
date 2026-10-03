@@ -22,8 +22,8 @@ and the price-gap ratio points the predicted way (H1 above ordinary days, H2 bel
 
 If a pairing fails, PolyBridge reports "no edge for this event and stock — try another", and that is a valid result.
 
-**How to run.** Only `MASSIVE_API_KEY` is required (environment variable or a `.env` file). Optionally set
-`SEC_USER_AGENT="Name email"` to use EDGAR acceptance times. Edit `START, END` in the next cell and rerun all cells.
+**How to run.** Only `MASSIVE_API_KEY` is required (environment variable or a `.env` file). Edit `START, END` in the next cell and rerun all cells.
+Timing is frozen to the conservative rule (every filing is treated as public after the close).
 """
 
 C2 = '''\
@@ -33,8 +33,8 @@ RUN_OOS = False          # flipped once, after the method freeze (see research/H
 RUN_ATLAS = False        # exploratory atlas over every 8-K tag (HYPOTHESIS.md §5); stretch goal, slow
 ATLAS_MAX_EVENTS = 15
 MAX_WORKERS = 8
+LAST_SESSION = None      # pinned at the method freeze, e.g. "2026-10-03"; None = today's last completed session
 
-import os
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -61,12 +61,11 @@ from IPython.display import Markdown, display
 key = load_api_key(search_from=Path.cwd())
 client = MassiveClient(key)
 cal = TradingCalendar()
-LAST = cal.last_completed()
-UA = os.environ.get("SEC_USER_AGENT")
+LAST = pd.Timestamp(LAST_SESSION) if LAST_SESSION else cal.last_completed()
 FAMILIES = ["hedge", "opportunity"]
 HEADS = list(cfg.headline_horizons)
-print("Timing mode:", "EDGAR acceptance times" if UA else "conservative (every filing treated as public after the close)")
-print(f"Window {START} -> {END}; last completed session {LAST.date()}")
+print("Timing mode: conservative (every filing treated as public after the close; frozen for all confirmatory runs)")
+print(f"Window {START} -> {END}; last session used for exits {LAST.date()} ({'pinned' if LAST_SESSION else 'today, not pinned'})")
 
 
 def show(df, title=None):
@@ -91,7 +90,7 @@ def hpos(horizons):
 '''
 
 C4 = '''\
-study = run_family_study(client, cal, cfg, START, END, LAST, user_agent=UA, max_workers=MAX_WORKERS)
+study = run_family_study(client, cal, cfg, START, END, LAST, user_agent=None, max_workers=MAX_WORKERS)
 ev = study["events"]
 if ev.empty:
     print("no events in this window")
@@ -214,13 +213,17 @@ print("Variants in this sensitivity grid (one tag):", count_variants(cfg))
 '''
 
 C9 = '''\
+from polybridge_research.costs import cost_summary
+
 cost_summ = []
 QUOTES_OK = True
 for fam in FAMILIES:
     strat = STRATEGY_FOR_FAMILY[Family(fam)]
     res_f = of_family(study["results"], fam)
+    pl_f = of_family(study["placebo_results"], fam)
     priced_f = [p for p in study["priced"] if str(getattr(p.family, "value", p.family)) == fam]
-    for h in (21, 42):
+    pl_priced_f = [p for p in study["placebo_priced"] if str(getattr(p.family, "value", p.family)) == fam]
+    for h in (21, 42, "exp"):
         if res_f.empty or not priced_f:
             print(f"[{fam}] h={h}: no events in this window")
             continue
@@ -228,21 +231,20 @@ for fam in FAMILIES:
         if QUOTES_OK:
             try:
                 ct = cost_table(res_f, priced_f, strat, h, cfg, client=client)
-            except Exception:
+            except Exception as e:
                 QUOTES_OK = False
-                print("Options quotes unavailable on this key; spread cost not computed (haircut costs shown).")
+                print(f"Options quotes unavailable on this key ({type(e).__name__}: {e}); spread cost not computed (haircut costs shown).")
         if ct is None:
             ct = cost_table(res_f, priced_f, strat, h, cfg, client=None)
         if ct.empty:
             print(f"[{fam}] h={h}: no events in this window")
             continue
-        cost_summ.append({"family": fam, "strategy": strat, "horizon": h, "n": len(ct),
-                          "gross": ct["gross"].mean(), "net_haircut_1x": ct["net_haircut_1x"].mean(),
-                          "net_haircut_2x": ct["net_haircut_2x"].mean(), "spread_cost": ct["spread_cost"].mean(),
-                          "net_spread": ct["net_spread"].mean(), "median_leg_volume": ct["leg_volume"].median()})
+        ct_pl = cost_table(pl_f, pl_priced_f, strat, h, cfg, client=None) if len(pl_f) and pl_priced_f else None
+        cost_summ.append({"family": fam, "strategy": strat, "horizon": h, **cost_summary(ct, ct_pl)})
 if cost_summ:
     show(pd.DataFrame(cost_summ).set_index(["family", "horizon"]),
-         "Costs: mean P&L per $1 of spot, gross vs net (5% premium haircut 1x/2x; real half-spreads where quotes exist)")
+         "Costs: mean P&L per $1 of spot. *_paired columns use only rows with both gross and spread (one common sample); "
+         "net_haircut_Nx = net of the 5% premium haircut at Nx; net_edge_Nx = events minus placebo, both net of the haircut")
 '''
 
 C10 = '''\
@@ -267,17 +269,28 @@ else:
 
 C11 = '''\
 if RUN_OOS:
-    oos = run_family_study(client, cal, cfg, cfg.oos_start, cfg.oos_end, LAST, user_agent=UA, max_workers=MAX_WORKERS)
+    oos = run_family_study(client, cal, cfg, cfg.oos_start, cfg.oos_end, LAST, user_agent=None, max_workers=MAX_WORKERS)
+    print(f"Out-of-sample window {cfg.oos_start} -> {cfg.oos_end}; last session used for exits {LAST.date()}")
+    IN_SAMPLE = Path("results/in_sample")
     for fam, chk in oos["checks"].items():
-        ins = study["checks"].get(fam)
-        if ins is None:
-            print(f"{fam}: no in-sample events to compare")
-            continue
-        merged = ins["pnl"][["horizon", "difference"]].merge(chk["pnl"][["horizon", "difference"]], on="horizon",
-                                                             suffixes=("_in", "_oos"))
-        merged["same_sign"] = np.sign(merged.difference_in) == np.sign(merged.difference_oos)
-        print(f"{fam}: in-sample -> out-of-sample edge of {chk['strategy']} (events minus placebo)")
-        display(merged)
+        heads = chk["pnl"][["horizon", "n_a", "n_b", "difference", "ci_lo", "ci_hi"]].rename(
+            columns={"n_a": "n_events", "n_b": "n_placebo", "difference": "edge_oos"})
+        print(f"{fam}: OOS n per headline horizon (events / placebo), edge of {chk['strategy']} and verdict")
+        display(heads.set_index("horizon"))
+        print(f"{fam}: OOS verdict {'PASS' if chk['passed'] else 'NULL'}")
+        saved = IN_SAMPLE / f"{fam}_pass_check.csv"
+        if saved.exists():
+            ins = pd.read_csv(saved)[["horizon", "pnl_difference"]].rename(columns={"pnl_difference": "edge_in_sample"})
+            ins["horizon"] = ins["horizon"].astype(str)
+            cmp_ = heads[["horizon", "edge_oos"]].assign(horizon=lambda d: d["horizon"].astype(str)).merge(ins, on="horizon")
+            cmp_["same_sign"] = np.sign(cmp_.edge_in_sample) == np.sign(cmp_.edge_oos)
+            print(f"{fam}: committed in-sample result (research/results/in_sample) vs out-of-sample edge")
+            display(cmp_)
+        else:
+            print(f"{fam}: committed in-sample pass check not found; no comparison")
+        ins_now = study["checks"].get(fam)
+        if ins_now is not None and (START, END) != (cfg.study_start, cfg.study_end):
+            print(f"note: the `study` object above covers {START} -> {END}, not the in-sample window")
 else:
     print("Out-of-sample not run: it runs once, after the method freeze.")
 '''
@@ -302,9 +315,13 @@ C13 = """\
 - **Last-trade marks, no spreads.** P&L is theoretical, mid-market at best. The cost section applies a 5% premium haircut (1x and 2x) and real half-spreads where quotes exist.
 - **Small samples.** Intervals are wide; read the `n` columns before the means.
 - **No earnings flag.** Events that share their window with an earnings release are not separated.
-- **Filing lag and time of day.** `filing_date` has no time of day. With `SEC_USER_AGENT` set, EDGAR acceptance times decide the first tradable session. **Without it, every filing is treated as public after the close** (the next session is `t_0`): conservative, no lookahead, and slightly late for pre-market filings.
+- **Filing lag and time of day.** `filing_date` has no time of day. **Every filing is treated as public after the close** (the next session is `t_0`): conservative, no lookahead, and slightly late for pre-market filings. EDGAR acceptance times are not used in the confirmatory path (the conservative rule is frozen; EDGAR's fixed 16:00 cutoff also mishandles 13:00 early closes).
+- **Pre-event reference under conservative timing.** `t_pre` is the filing day itself, which may already contain intraday news for filings made during market hours.
+- **Bootstrap.** The intervals are iid bootstraps: they ignore same-ticker clustering and overlapping windows, so they are likely too narrow.
+- **Multi-ticker filings** keep the first in-universe ticker.
+- **Run date and cache.** The client caches bar responses for unexpired contracts, so a cache built on one run date must not be treated as complete on a later date. Pin `LAST_SESSION` at the freeze and run the out-of-sample window once.
 - **Strike availability.** When no strike sits at the requested OTM distance, the nearest listed one is used.
-- **Exploratory material** (the atlas) never replaces H1 or H2.
+- **Exploratory material** (the atlas, off by default) shares one placebo across tags and never replaces H1 or H2.
 """
 
 
