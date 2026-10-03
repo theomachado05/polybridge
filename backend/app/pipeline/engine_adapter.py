@@ -250,3 +250,49 @@ class EngineAdapter:
             if isinstance(r, dict):
                 rows.append({**r, "preset_index": int(r.get("preset_index", i)), "params": dict(r.get("params") or {})})
         return rows
+
+
+class AlgoChoiceError(ValueError):
+    """A requested family/preset/params that the library cannot run on a bridge (the API answers 422)."""
+
+
+def resolve_algo(manifest: dict, family_id: str, preset_index: int | None = None,
+                 params: dict[str, float] | None = None) -> dict:
+    """Validate a bridge's algo choice against the library and resolve it to concrete params.
+
+    Returns {family, preset_index, params, division}. ``preset_index`` follows the compiled library's ordering
+    (mixed radix, last parameter fastest), so ``preset_grid(f)[i]`` is the preset ``replay_grid`` scored as index i.
+    Explicit ``params`` are checked against the catalog bounds; parameters left out take the family default (as the
+    engine does), and ``preset_index`` is then None. Only hedge-division families run on a bridge: a bridge hedges an
+    equity position, and the other families trade prediction-market or option contracts.
+    """
+    fam = next((f for f in manifest.get("families") or [] if f.get("id") == family_id), None)
+    if fam is None:
+        raise AlgoChoiceError(f"unknown algo family '{family_id}'")
+    if fam.get("divisions") != ["hedge"]:
+        raise AlgoChoiceError(f"'{family_id}' is a {'/'.join(fam.get('divisions') or [])} family; bridges run "
+                              "hedge-division families only (they hedge an equity position)")
+    if preset_index is not None and params is not None:
+        raise AlgoChoiceError("send preset_index or params, not both")
+    if params is None:
+        if preset_index is None:
+            idx, chosen = default_preset(fam)
+            return {"family": family_id, "preset_index": idx, "params": chosen, "division": "hedge"}
+        grid = preset_grid(fam)
+        if not 0 <= int(preset_index) < len(grid):
+            raise AlgoChoiceError(f"'{family_id}' has presets 0..{len(grid) - 1}; got {preset_index}")
+        return {"family": family_id, "preset_index": int(preset_index), "params": grid[int(preset_index)],
+                "division": "hedge"}
+    defs = {p["name"]: p for p in fam.get("params") or []}
+    unknown = sorted(set(params) - set(defs))
+    if unknown:
+        raise AlgoChoiceError(f"'{family_id}' has no param(s) {', '.join(unknown)}")
+    out = {}
+    for name, d in defs.items():
+        g = d.get("grid") or []
+        v = float(params.get(name, d.get("default", g[(len(g) - 1) // 2] if g else math.nan)))
+        lo, hi = float(d.get("min", -math.inf)), float(d.get("max", math.inf))
+        if not math.isfinite(v) or (math.isfinite(lo) and v < lo) or (math.isfinite(hi) and v > hi):
+            raise AlgoChoiceError(f"'{family_id}' param {name}={v} is outside [{lo}, {hi}]")
+        out[name] = v
+    return {"family": family_id, "preset_index": None, "params": out, "division": "hedge"}

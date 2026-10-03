@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Request
 
 from polybridge_research.schema import STRATEGY_FOR_FAMILY, assign_family, normalize_ticker
 
-from .models import MARKET_EVENT_LABEL, ClassifyIn, ClassifyOut, Proposal, ProposalIn
+from .models import MARKET_EVENT_LABEL, AlgoChoice, ClassifyIn, ClassifyOut, Proposal, ProposalIn
 from .store import AlreadyDecided, NotFound, ProposalStore
 
 router = APIRouter()
@@ -25,6 +25,22 @@ def classify(body: ClassifyIn) -> ClassifyOut:
     return ClassifyOut(family=fam.value if fam else None, strategy=STRATEGY_FOR_FAMILY[fam] if fam else None)
 
 
+def checked_algo(request: Request, algo: AlgoChoice | None) -> AlgoChoice | None:
+    """Validate an algo choice against the library (compiled catalog, else the committed manifest) and pin it to
+    concrete params, so the approved proposal says exactly what will run. 422 when the library cannot run it."""
+    if algo is None:
+        return None
+    from .pipeline.engine_adapter import AlgoChoiceError, resolve_algo
+    from .pipeline.router import get_adapter
+    manifest, _ = get_adapter(request).library()
+    try:
+        r = resolve_algo(manifest, algo.family, algo.preset_index, algo.params)
+    except AlgoChoiceError as e:
+        raise HTTPException(422, f"algo: {e}.")
+    return AlgoChoice(family=r["family"], preset_index=r["preset_index"],
+                      params=r["params"] if r["preset_index"] is None else None, source=algo.source)
+
+
 @router.post("/proposals", response_model=Proposal, status_code=201)
 def create_proposal(body: ProposalIn, request: Request) -> Proposal:
     ticker = normalize_ticker(body.ticker)
@@ -33,13 +49,16 @@ def create_proposal(body: ProposalIn, request: Request) -> Proposal:
     if body.market is not None:  # market-event path: a product hedge, no filing tags invented, no research claim
         return _store(request).propose(ticker=ticker, family="hedge", strategy="protective_put", basis="market_event",
                                        label=MARKET_EVENT_LABEL, market=body.market, direction=body.direction,
-                                       shares_held=body.shares_held, target_coverage=body.target_coverage)
+                                       shares_held=body.shares_held, target_coverage=body.target_coverage,
+                                       algo=checked_algo(request, body.algo))
     fam = assign_family(body.tags)
     if fam is None:
         raise HTTPException(422, "These tags map to no pre-registered family, so there is no hedge to propose.")
+    if body.algo is not None and fam.value != "hedge":
+        raise HTTPException(422, "algo: opportunity proposals are executed outside hedgecore; an algo applies to hedges only.")
     return _store(request).propose(ticker=ticker, family=fam.value, strategy=STRATEGY_FOR_FAMILY[fam],
                                    basis="filing_tags", shares_held=body.shares_held,
-                                   target_coverage=body.target_coverage)
+                                   target_coverage=body.target_coverage, algo=checked_algo(request, body.algo))
 
 
 @router.get("/proposals", response_model=list[Proposal])
