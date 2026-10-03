@@ -119,6 +119,9 @@ class Bridge:
         self.replay_broker: Broker | None = None  # isolated in-memory sim used by replay bridges by default
         self.broker_name: str | None = None  # the broker that took the latest order (else the active one)
         self.broker_hedge = 0.0  # net short quantity actually filled by the broker (sell adds, buy reduces)
+        # Net short this proposal holds at the ACCOUNT broker (never the replay sandbox), cumulative over every run of
+        # the proposal: a restart is seeded with it, so one approval stays one target_coverage budget at the account.
+        self.account_hedge = 0.0
         self.fills: list[dict] = []
         self.broker_filled = self.broker_rejects = self.broker_errors = 0
         self.algo = algo  # {family, preset_index, params, source, coverage_cap, capped} or None (legacy Engine)
@@ -186,6 +189,7 @@ class Bridge:
                 "algo": dict(self.algo) if self.algo else None,
                 "resting_order": dict(self.resting) if self.resting else None, "cancels": self.cancels,
                 "hedge_basis": "broker_fill" if self.algo else "engine_intent", "broker_hedge": self.broker_hedge,
+                "account_hedge": self.account_hedge,
                 "coverage_cap": self.proposal.target_coverage if self.algo and self.division == "hedge" else None,
                 "cap_holds": self.cap_holds,
                 "equity_price": self.equity_price if self.algo and self.division == "hedge" else None,
@@ -284,27 +288,54 @@ def _check_replay_market(path: Path, market: MarketRef | None, replay_file: str 
                                  "(replay_file) or a sidecar says it records this market.")
 
 
+def _own_recordings(market: MarketRef) -> list[Path]:
+    """Where a recording of ``market`` may live: the replay index (``app/data/replay_index.json``), then
+    ``replays/<market id>-history.jsonl`` and ``replays/<market id>.jsonl`` (``pipeline.ticks._replay_candidates``)."""
+    from .pipeline.ticks import DATA, _replay_candidates
+    try:
+        return _replay_candidates(market.source, market.id, market.token_id, DATA, REPLAYS_DIR)
+    except Exception:
+        return []
+
+
+def _first_recording(candidates: list[Path], market: MarketRef) -> Path | None:
+    """The first existing candidate that records ``market``: its sidecar names it, or it has no sidecar (its name
+    came from the index / the market-id naming)."""
+    for c in candidates:
+        if c.is_file() and ((meta := replay_meta(c)) is None or _meta_matches(meta, market)):
+            return c
+    return None
+
+
 def _replay_path(request: Request, *markets: MarketRef | None, replay_file: str | None = None) -> Path | None:
-    """The replay file for the first (resolved) market: POLYBRIDGE_REPLAY_PATH when it records that market (else
-    422, see ``_check_replay_market``), otherwise ``replays/<market id>.jsonl`` of the given markets."""
+    """The replay file for the first (resolved) market: POLYBRIDGE_REPLAY_PATH when it records that market, else that
+    market's own recording (``_own_recordings`` of the given markets). A configured file of another market is a 422
+    only when no recording of the requested market exists (see ``_check_replay_market``)."""
     configured = getattr(request.app.state, "replay_path", None) or os.environ.get("POLYBRIDGE_REPLAY_PATH")
     target = next((m for m in markets if m is not None), None)
+    mismatch: HTTPException | None = None
     if configured:
         path = Path(configured)
+        if target is None:
+            return path
         if path.is_file():
-            _check_replay_market(path, target, replay_file)
-        return path
+            try:
+                _check_replay_market(path, target, replay_file)
+                return path
+            except HTTPException as e:
+                mismatch = e
     for market in markets:
         if market is None:
             continue
         if not re.fullmatch(r"[A-Za-z0-9_-]+", market.id):
+            if configured:
+                continue
             raise HTTPException(422, "market.id must match [A-Za-z0-9_-]+ to select a replay file.")
-        guess = REPLAYS_DIR / f"{market.id}.jsonl"
-        if guess.is_file():
-            if target is not None and (meta := replay_meta(guess)) is not None and not _meta_matches(meta, target):
-                continue  # a recording of another market under a colliding name
-            return guess
-    return None
+        if (own := _first_recording(_own_recordings(market), target)) is not None:
+            return own
+    if mismatch is not None:
+        raise mismatch
+    return Path(configured) if configured else None
 
 
 def _resolve(prop: Proposal, body: BridgeIn) -> tuple[MarketRef, str]:
@@ -324,14 +355,10 @@ def _fallback_path(app, market: MarketRef | None = None) -> Path | None:
     """The recording a live bridge falls back to when its source fails: only a recording of THIS market (the replay
     index / ``replays/<market id>.jsonl``, see ``pipeline.ticks._replay_candidates``). POLYBRIDGE_REPLAY_PATH is used
     only when it is one of those files; another market's history is never replayed under this market's title."""
-    from .pipeline.ticks import DATA, _replay_candidates
     configured = getattr(app.state, "replay_path", None) or os.environ.get("POLYBRIDGE_REPLAY_PATH")
     if market is None:
         return None
-    try:
-        cands = _replay_candidates(market.source, market.id, market.token_id, DATA, REPLAYS_DIR)
-    except Exception:
-        cands = []
+    cands = _own_recordings(market)
     if configured:
         conf = Path(configured)
         meta = replay_meta(conf)
@@ -341,10 +368,7 @@ def _fallback_path(app, market: MarketRef | None = None) -> Path | None:
                 return conf
         elif conf.name in names or conf.stem in (market.id, market.token_id):
             return conf
-    for c in cands:
-        if c.is_file() and ((meta := replay_meta(c)) is None or _meta_matches(meta, market)):
-            return c
-    return None
+    return _first_recording(cands, market)
 
 
 async def _send_to_broker(bridge: Bridge, order_qty: float) -> dict | None:
@@ -556,7 +580,7 @@ def _positive(x: Any) -> float | None:
 
 async def _apply_order_state(bridge: Bridge, algo, o, side: str, instrument: str, applied: float = 0.0,
                              hedged: float | None = None, ref_px: float | None = None,
-                             broker: Broker | None = None) -> None:
+                             broker: Broker | None = None, inherited: bool = False) -> None:
     """Feed the broker's answer back to the algo: filled -> on_fill(signed qty, fill px); rejected / cancelled ->
     on_reject; open -> the bridge remembers it as resting (cancel/replace before the next order). ``algo`` None is the
     legacy Engine (it already advanced on the intent): only the broker hedge and the resting order are tracked.
@@ -565,12 +589,21 @@ async def _apply_order_state(bridge: Bridge, algo, o, side: str, instrument: str
     broker hedge (``hedged``); a partial fill is never counted twice. The filled quantity always reaches broker_hedge
     (the coverage cap must see every share the broker sold). The algo's fill price is the broker's fill price, else
     the order's limit, else ``ref_px`` (the tick's equity price); with none of them the order stays resting (flagged
-    ``unpriced``) so a later lookup can price it, and no further order is stacked on top of it."""
+    ``unpriced``) so a later lookup can price it, and no further order is stacked on top of it.
+
+    A fill at the account broker (not the replay sandbox) also reaches ``account_hedge``. An ``inherited`` order (left
+    resting at the account by an earlier run of the proposal) never reaches a sandboxed bridge's broker_hedge: the
+    sandbox does not hold that position."""
     filled = float(getattr(o, "filled_qty", 0.0) or 0.0)
     hedged = applied if hedged is None else hedged
     if filled - hedged > 1e-9:
         d = filled - hedged
-        bridge.broker_hedge += d if side == "sell" else -d
+        signed = d if side == "sell" else -d
+        src = broker or bridge.resting_broker
+        if src is not None and src is not bridge.replay_broker:
+            bridge.account_hedge += signed
+        if not (inherited and bridge._sandboxed()):
+            bridge.broker_hedge += signed
         if algo is not None:
             bridge.hedge = bridge.broker_hedge
         hedged = filled
@@ -586,6 +619,8 @@ async def _apply_order_state(bridge: Bridge, algo, o, side: str, instrument: str
         applied = filled
     keep = {"order_id": o.id, "client_order_id": getattr(o, "client_order_id", None) or o.id,
             "instrument": instrument, "side": side, "qty": o.qty, "applied": applied, "hedged": hedged}
+    if inherited:
+        keep["inherited"] = True
     if unpriced:
         bridge.resting = {**keep, "unpriced": True, "status": o.status}
         bridge.resting_broker = broker or bridge.resting_broker
@@ -630,6 +665,9 @@ async def _settle_resting(bridge: Bridge, algo, broker: Broker | None, why: str,
     if r is None or broker is None:
         return r is None
     cid = r.get("client_order_id")
+    inherited = bool(r.get("inherited"))
+    if inherited:  # placed by an earlier run of the proposal: this run's algo never sent it, so never hears of it
+        algo = None
     rec: dict = {"order_id": r["order_id"], "reason": why, "broker": broker.name}
     try:
         current = await _lookup(broker, r["order_id"], cid)
@@ -650,14 +688,16 @@ async def _settle_resting(bridge: Bridge, algo, broker: Broker | None, why: str,
             algo.on_reject(r["instrument"])
         rec["status"] = "unknown"
     elif current.status == "open":  # the cancel did not take: it may still fill, so keep tracking it
-        await _apply_order_state(bridge, algo, current, r["side"], r["instrument"], applied, hedged, ref_px, broker)
+        await _apply_order_state(bridge, algo, current, r["side"], r["instrument"], applied, hedged, ref_px, broker,
+                                 inherited)
         rec.update(status="cancel_failed", kept_resting=True, filled_qty=current.filled_qty)
         await bridge.emit("cancel", rec)
         return False
     else:
         if current.status == "cancelled":
             bridge.cancels += 1
-        await _apply_order_state(bridge, algo, current, r["side"], r["instrument"], applied, hedged, ref_px, broker)
+        await _apply_order_state(bridge, algo, current, r["side"], r["instrument"], applied, hedged, ref_px, broker,
+                                 inherited)
         rec.update(status=current.status, filled_qty=current.filled_qty, fill_px=current.fill_px)
         if bridge.resting is not None:  # filled but still unpriced: keep it, send nothing on top
             rec["kept_resting"] = True
@@ -1280,11 +1320,13 @@ async def start_bridge(body: BridgeIn, request: Request, response: Response) -> 
                                  "executed as a single simulated options order, not by hedgecore.")
     reg = _registry(request)
     existing = reg.get(prop.id)
+    prior: Bridge | None = None
     if existing is not None and existing.status != "running":
         # finished / stopped: a new POST starts a fresh bridge (it replaces the registry entry); the old one stays
-        # readable by its id (summary / stream) but is never handed back as if it were the new run
+        # readable by its id (summary / stream) but is never handed back as if it were the new run. The new run
+        # starts from what the old one left at the account (_carry_account_exposure).
         _history(request)[existing.id] = existing
-        existing = None
+        prior, existing = existing, None
     if existing is not None:  # idempotent: one running bridge per approved proposal id
         if existing.requested_source != body.source:
             raise HTTPException(409, f"Bridge {existing.id} already started for proposal {prop.id} with source {existing.requested_source}.")
@@ -1302,6 +1344,8 @@ async def start_bridge(body: BridgeIn, request: Request, response: Response) -> 
     algo, choice = _algo_for(prop, body, hc)
     bridge = Bridge(prop, body.source, market, body.gap_per_share, direction, body.replay_to_account, algo)
     bridge.choice = choice
+    if prior is not None:
+        _carry_account_exposure(prior, bridge)
 
     fallback = _fallback_path(request.app, market)
     if body.source == "replay":
@@ -1336,6 +1380,23 @@ async def start_bridge(body: BridgeIn, request: Request, response: Response) -> 
     store.mark_bridge_started(prop.id)
     bridge.task = asyncio.create_task(_run(bridge, request.app, hc, source, fallback))
     return {"bridge_id": bridge.id}
+
+
+def _carry_account_exposure(old: Bridge, new: Bridge) -> None:
+    """A restarted proposal starts from its cumulative exposure at the account broker, never from zero: bridges do not
+    unwind their hedge when they end, so a fresh broker_hedge would hand every run the full target_coverage budget
+    again and one approval could grow the account short without bound. A run that trades at the account is seeded
+    with the short earlier runs left there (``_coverage_room`` then caps the total at the approved coverage), and an
+    order an earlier run left resting at the account is handed over so this run reconciles it. A replay-sandbox run
+    starts from its own empty sim (it never touches the account) but still carries the account total forward."""
+    new.account_hedge = old.account_hedge
+    if not new._sandboxed():
+        new.broker_hedge = old.account_hedge
+        if new.algo:
+            new.hedge = new.broker_hedge
+    r, rb = old.resting, old.resting_broker
+    if r is not None and rb is not None and rb is not old.replay_broker:
+        new.resting, new.resting_broker = {**r, "inherited": True}, rb
 
 
 def _history(request: Request) -> dict[str, Bridge]:

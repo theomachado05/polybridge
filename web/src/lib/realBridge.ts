@@ -17,8 +17,17 @@ const defaultApi: BridgeApi = http;
 export const gapPerShare = (spot: number | null | undefined, move: number | null | undefined) =>
   spot && move ? (spot * Math.abs(move)) / 100 : 0;
 
-/** True when a live bridge for this pick would start with the engine's fee gate off (contracts.md). */
-export const feeGateOff = (q: Question, eq: EquityPick) => !!q.real && gapPerShare(eq.px, eq.move) === 0;
+/** True when a live bridge for this pick would start with the engine's fee gate off (contracts.md). `gap_per_share`
+ *  applies only to the legacy Engine: a bridge that runs a hedgecore algo (a runnable AI fit) prices orders with its
+ *  own FeeGate from the tick's `under_px` (a replay supplies it from recorded bars), so its gate is never "off" for
+ *  want of a quote here. Pass the fit approval will send (`runnableFit`), or null when the default spec runs. */
+export const feeGateOff = (q: Question, eq: EquityPick, fit: AppliedFit | null = null) =>
+  !!q.real && !fit && gapPerShare(eq.px, eq.move) === 0;
+
+/** The Bridge screen's "fee gate off" tag: only a bridge on the legacy Engine (no algo running) started with
+ *  gap_per_share = 0. `running` is the algo the bridge runs (null on the legacy Engine); `gap` is what it was
+ *  started with (null when unknown, e.g. a bridge opened from its URL or an opportunity bridge). */
+export const bridgeFeeGateOff = (gap: number | null | undefined, running: AppliedFit | null) => gap === 0 && !running;
 
 const sameMarket = (p: Proposal, m: NonNullable<Question["real"]>) => p.market?.source === m.source && p.market?.id === m.id;
 

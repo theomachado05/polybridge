@@ -10,7 +10,7 @@ import { parseLibrary, type Library } from "./library";
 import { initSim, stepSim, type Sim } from "./sim";
 import { fitDirection, opportunityFit, runnableFit, startOpportunityBridge, startRealBridge, type AppliedFit, type Settings } from "./realBridge.ts";
 
-export { algoRunLabel, feeGateOff, gapPerShare, runnableFit } from "./realBridge.ts";
+export { algoRunLabel, bridgeFeeGateOff, feeGateOff, gapPerShare, runnableFit } from "./realBridge.ts";
 
 export type { AppliedFit, Settings };
 export type BridgeEntry =

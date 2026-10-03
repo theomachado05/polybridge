@@ -50,7 +50,7 @@ def test_start_is_idempotent_per_proposal(client):
     assert len(client.app.state.bridges) == 1
 
 
-def test_a_finished_bridge_is_never_handed_back_a_new_post_starts_a_fresh_one(client):
+def test_a_finished_bridge_is_never_handed_back_a_new_post_starts_a_fresh_run_not_a_fresh_budget(client):
     pid = _approved(client)
     first = client.post("/bridges", json=_body(pid)).json()["bridge_id"]
     assert _events(client, first)[-1][1]["status"] == "finished"
@@ -60,6 +60,10 @@ def test_a_finished_bridge_is_never_handed_back_a_new_post_starts_a_fresh_one(cl
     assert [k for k, _ in ev].count("tick") == 20  # a full fresh run, not the old history in one burst
     assert client.app.state.bridges[pid].id == again.json()["bridge_id"]
     assert client.get(f"/bridges/{first}").json()["status"] == "finished"  # the old run is still readable by id
+    # fresh events, but not a fresh budget: the run starts from what earlier runs left at the account (none here:
+    # replay sandbox), see test_bridges_restart_and_replay_lookup for the cap across restarts
+    assert (client.get(f"/bridges/{again.json()['bridge_id']}").json()["account_hedge"]
+            == client.get(f"/bridges/{first}").json()["account_hedge"] == 0.0)
     # a stopped one (e.g. a live source that failed) can be restarted too, with another source
     client.app.state.bridges[pid].status = "stopped"
     assert client.post("/bridges", json=_body(pid, source="live")).status_code == 201

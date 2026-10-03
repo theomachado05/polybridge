@@ -23,7 +23,7 @@ setup-web:
 	cd web && pnpm install
 
 test-web:
-	cd web && pnpm lint && pnpm build
+	cd web && pnpm lint && pnpm test && pnpm build
 
 test-engine-py:
 	cd backend && uv sync --locked --group engine && uv run pytest ../engine/hedgecore/tests -q

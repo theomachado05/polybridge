@@ -1,7 +1,7 @@
 // Offline tests for opening a live bridge (proposal reuse, approval, fee gate) with the API injected.
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { algoRunLabel, feeGateOff, gapPerShare, runnableFit, startRealBridge, type BridgeApi } from "../src/lib/realBridge.ts";
+import { algoRunLabel, bridgeFeeGateOff, feeGateOff, gapPerShare, runnableFit, startRealBridge, type BridgeApi } from "../src/lib/realBridge.ts";
 import { QUESTIONS, REAL_INSTRUMENTS, questionFromMarket, type EquityPick } from "../src/lib/demo.ts";
 import type { Proposal } from "../src/lib/api.ts";
 import { init, reduce, sandboxFills } from "../src/lib/bridgeStream.ts";
@@ -139,6 +139,24 @@ describe("fee gate and real hedge menu", () => {
     assert.equal(feeGateOff(q, { ...eq, px: null }), true);
     assert.equal(feeGateOff(q, eq), false);
     assert.equal(feeGateOff(QUESTIONS[0], { ...eq, px: null }), false); // demo markets never reach the engine
+  });
+  it("never flags an AI-fit algo bridge: gap_per_share applies only to the legacy Engine (contracts.md)", () => {
+    // No spot quote (Wi-Fi off, no Massive key): the algo's FeeGate still prices orders from the tick's under_px.
+    const fit = runnableFit({ family: "equity_delta_bridge", preset_index: 75, division: "hedge" });
+    assert.equal(feeGateOff(q, { ...eq, px: null }, fit), false);
+    assert.equal(feeGateOff(q, { ...eq, move: 0 }, fit), false);
+    // A fit that does not run (options family, no preset) leaves the default spec, whose gate is off without a quote.
+    assert.equal(feeGateOff(q, { ...eq, px: null }, runnableFit({ family: "vol_vs_pm_move", preset_index: 1, division: "opportunity" })), true);
+    assert.equal(feeGateOff(q, { ...eq, px: null }, null), true);
+  });
+  it("tags 'fee gate off' on the Bridge screen only for a legacy-Engine bridge started with gap 0", () => {
+    const algo = { family: "equity_delta_bridge", preset_index: 75 };
+    assert.equal(bridgeFeeGateOff(0, null), true);
+    assert.equal(bridgeFeeGateOff(0, algo), false);
+    assert.equal(bridgeFeeGateOff(0, { family: "equity_delta_bridge", preset_index: null }), false);
+    assert.equal(bridgeFeeGateOff(1.5, null), false);
+    assert.equal(bridgeFeeGateOff(null, null), false); // unknown gap (opened from its URL)
+    assert.equal(bridgeFeeGateOff(undefined, null), false);
   });
   it("offers only the engine's hedge on live markets, with no invented prices", () => {
     const menu = REAL_INSTRUMENTS(null);

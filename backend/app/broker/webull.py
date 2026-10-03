@@ -227,7 +227,10 @@ class WebullBroker:
         self.client, self.sim = client, sim
         self._account_id = account_id or None
         self._placed: dict[str, Order] = {}  # client_order_id -> last known state of orders placed through us
-        self._legs: dict[str, list[str]] = {}  # split sell: client_order_id -> its leg client ids
+        # split sell: client_order_id -> its leg client ids (recorded BEFORE each leg is posted, so a split that
+        # fails half way can still be reconciled by the parent id) and the parent's total quantity
+        self._legs: dict[str, list[str]] = {}
+        self._split_qty: dict[str, float] = {}
 
     async def _aid(self) -> str:
         if self._account_id is None:
@@ -297,8 +300,8 @@ class WebullBroker:
         cid = req.client_order_id
         if (dup := self._placed.get(cid)) is not None:
             return dup
-        if (legs := self._legs.get(cid)) is not None:
-            return self._merge(req, legs, None)
+        if (legs := self._legs.get(cid)) is not None and (merged := self._merge(cid, legs)) is not None:
+            return merged
         if req.side == "buy":
             return await self._submit(req, cid, "BUY", req.qty)
         held = max(await self._held(req.symbol), 0.0)  # long quantity only; a short is already negative
@@ -306,27 +309,36 @@ class WebullBroker:
             return await self._submit(req, cid, "SELL", req.qty)
         if held <= 0:
             return await self._submit(req, cid, "SHORT", req.qty)  # nothing long to sell: this opens a short (hedges)
-        # Part long, part short (hold 50, sell 100): a SELL for what is held plus a SHORT for the rest.
-        sell = await self._submit(req, f"{cid}-sell", "SELL", held)
-        legs = [sell.client_order_id]
+        # Part long, part short (hold 50, sell 100): a SELL for what is held plus a SHORT for the rest. Each leg is
+        # recorded under the parent id before it is posted: if a leg's POST fails (5xx Webull cannot confirm, or the
+        # caller's timeout cancels mid-split), find_order(cid) still reaches the legs and reports what really filled.
+        legs = self._legs[cid] = [f"{cid}-sell"]
+        self._split_qty[cid] = req.qty
+        sell = await self._submit(req, legs[0], "SELL", held)
         if sell.status != "rejected":
-            legs.append((await self._submit(req, f"{cid}-short", "SHORT", req.qty - held)).client_order_id)
-        self._legs[cid] = legs
-        return self._merge(req, legs, held)
+            legs.append(f"{cid}-short")
+            await self._submit(req, legs[1], "SHORT", req.qty - held)
+        return self._merge(cid, legs) or sell
 
-    def _merge(self, req: OrderRequest, legs: list[str], held: float | None) -> Order:
-        """One Order summarising the SELL and SHORT legs of a split sell (the legs stay separate in orders())."""
-        got = [self._placed[c] for c in legs]
+    def _merge(self, cid: str, legs: list[str]) -> Order | None:
+        """One Order summarising the SELL and SHORT legs of a split sell (the legs stay separate in orders()), under
+        the parent client id (also its id, so cancel(cid) reaches every leg). A leg Webull never took counts as
+        nothing traded; None when no leg is known at all."""
+        got = [self._placed[c] for c in legs if c in self._placed]
+        if not got:
+            return None
+        qty = self._split_qty.get(cid) or sum(o.qty for o in got)
         filled = sum(o.filled_qty for o in got)
         priced = [(o.filled_qty, o.fill_px) for o in got if o.filled_qty and o.fill_px is not None]
-        status = ("rejected" if any(o.status == "rejected" for o in got)
-                  else "filled" if all(o.status == "filled" for o in got) and len(got) == 2
-                  else "cancelled" if all(o.status == "cancelled" for o in got) else "open")
+        status = ("open" if any(o.status == "open" for o in got)  # a leg may still trade: keep tracking it
+                  else "rejected" if any(o.status == "rejected" for o in got)
+                  else "filled" if len(got) == 2 and all(o.status == "filled" for o in got)
+                  else "cancelled")  # done, but not all of it traded (a leg cancelled, or never taken by Webull)
         reason = next((o.reject_reason for o in got if o.status == "rejected"), None)
         if status == "rejected" and filled:
-            reason = f"partial: {filled:g} of {req.qty:g} filled; {reason or 'a leg was rejected'}"
+            reason = f"partial: {filled:g} of {qty:g} filled; {reason or 'a leg was rejected'}"
         return got[0].model_copy(update={
-            "client_order_id": req.client_order_id, "qty": req.qty, "filled_qty": filled, "status": status,
+            "id": cid, "client_order_id": cid, "qty": qty, "filled_qty": filled, "status": status,
             "fill_px": sum(q * p for q, p in priced) / sum(q for q, _ in priced) if priced else None,
             "reject_reason": reason})
 
@@ -369,7 +381,12 @@ class WebullBroker:
 
     async def find_order(self, client_order_id: str, fallback: Order | None = None) -> Order | None:
         """Webull's state of an order by our client_order_id, or None when Webull does not know it (never placed).
-        Used to reconcile an order whose place call timed out or failed after it may have been accepted."""
+        Used to reconcile an order whose place call timed out or failed after it may have been accepted. A split sell
+        is read leg by leg and reported as one merged order under its parent id (see ``_merge``)."""
+        if (legs := self._legs.get(client_order_id)) is not None:
+            for leg in list(legs):
+                await self.find_order(leg)  # refreshes a known leg; asks Webull for one whose POST never confirmed
+            return self._merge(client_order_id, legs)
         if (o := self._placed.get(client_order_id)) is not None:
             try:
                 return await self._refresh(o)
@@ -420,6 +437,18 @@ class WebullBroker:
     async def cancel(self, order_id: str) -> Order:
         if order_id.startswith("sim-"):
             return await self.sim.cancel(order_id)
+        if (legs := self._legs.get(order_id)) is not None:  # a split sell: cancel every leg that may still trade
+            for leg in list(legs):
+                if (o := self._placed.get(leg)) is not None and o.status != "open":
+                    continue
+                try:
+                    await self.cancel(leg)
+                except WebullAPIError as e:
+                    if not e.refused:  # a 4xx: already done, or never taken by Webull (read again below)
+                        raise
+            if (merged := await self.find_order(order_id)) is None:
+                raise BrokerError(f"Webull does not know order {order_id}.", 404)
+            return merged
         local = next((o for o in self._placed.values() if order_id in (o.id, o.client_order_id)), None)
         cid = local.client_order_id if local else order_id
         await self.client.request("POST", "/trading/orders/cancel", body={"account_id": await self._aid(), "client_order_id": cid})

@@ -4,8 +4,8 @@
 
 | File | Market (Polymarket id) -> ticker | Rows, span | p range | Fit on this replay (engine, 1,000 shares) | Replay speed |
 |---|---|---|---|---|---|
-| `another-fed-hike-2026-history.jsonl` (**default demo**) | Another Fed rate hike in 2026? (4620900) -> TLT, down on YES | 401 hourly, 2026-09-16 19:00Z to 2026-10-03 11:33Z | 0.705 to 0.92 | equity_delta_bridge #75, score_vs_static +0.257 (17 orders in the engine replay) | 21600x, about 67 s |
-| `russia-eu-military-2026-history.jsonl` | Russia military action against an EU country by December 31, 2026? (4713962) -> ITA, up on YES | 347 hourly, 2026-09-19 01:00Z to 2026-10-03 11:33Z | 0.065 to 0.285 (opening print 0.485) | energy_geo_hedge #54, score_vs_static +0.508 (136 orders in the engine replay) | 18000x, about 69 s |
+| `another-fed-hike-2026-history.jsonl` (**default demo**) | Another Fed rate hike in 2026? (4620900) -> TLT, down on YES | 401 hourly, 2026-09-16 19:00Z to 2026-10-03 11:33Z | 0.705 to 0.92 | equity_delta_bridge #75, score_vs_static +0.257 (engine replay: 17 sends, 4 fills; a bridge: 4 orders, 3 at a 50% cap) | 21600x, about 67 s |
+| `russia-eu-military-2026-history.jsonl` | Russia military action against an EU country by December 31, 2026? (4713962) -> ITA, up on YES | 347 hourly, 2026-09-19 01:00Z to 2026-10-03 11:33Z | 0.065 to 0.285 (opening print 0.485) | energy_geo_hedge #54, score_vs_static +0.508 (engine replay: 136 sends, 8 fills; a bridge: 31 orders, 17 at a 50% cap) | 18000x, about 69 s |
 | `fed-hike-25bps-oct-2026-history.jsonl` | Will the Fed increase interest rates by 25 bps after the October 2026 meeting? (2589813) -> IWM | 721 hourly, 2026-09-02 to 2026-10-03 | 0.155 to 0.705 | IWM: equity_delta_bridge #15, score_vs_static -0.011 (no better than a static hedge; fits.json scores SPY at -0.004) | 36000x, about 72 s |
 | `fed-hike-25bps-oct-2026.jsonl` | same Fed October market | 1200 one-second polls, 20 min | constant 0.175 | (quiet: one initial hedge) | real time |
 
@@ -17,10 +17,17 @@ offline fallback at them, and `app/data/equity_bars/TLT.json` / `ITA.json` hold 
 "Fit on this replay" is `POST /pipeline/fit` with no network (ticks from the recording): the same pick and score as
 `app/data/fits.json`. It is in-sample (tuned and scored on this history, the best of many presets), and these two
 markets were chosen for the demo because they score near the top of the 122 scored markets (most add little: median
-+0.0053, 36 at or below 0; see `docs/demo.md` section 5). A bridge on the replay placed fewer orders than the engine replay
-counts (4 for TLT, 31 for ITA with no coverage cap in our 2026-10-03 runs; 3 and 17 at a 50% cap). The bridge fills
-through the broker (today's Massive quote) while the engine replay uses its own fill model; the gap was not
-investigated further, so read the order count off the Bridge screen rather than from this table.
++0.0053, 36 at or below 0; see `docs/demo.md` section 5). A bridge on the replay makes
+the same decisions as the engine for the same preset and the same fills (tick by tick, pinned for the default demo in
+`tests/test_bridge_replay_parity.py`); only the order counts differ, because of the fill model. The engine replay's
+order count is every send, and its fill model refuses an equity fill at a stale recorded close (outside regular hours,
+or in a session before the price has changed), so the algo re-sends the same order on the next tick until a fill is
+allowed: the TLT replay's 17 orders are 4 fills + 13 refused sends (11 = 2 + 9 at a 50% cap), ITA's 136 are 8 + 128
+(101 = 4 + 97 at 50%). The bridge's SimBroker fills each market order at today's Massive quote (or the recorded price
+offline) whenever it arrives, so every order fills once: 4 for TLT, 31 for ITA with no coverage cap, 3 and 17 at a 50%
+cap (our 2026-10-03 runs, and what `Algo` decides on the same ticks when every order fills). After the first refused
+send the two hedge paths differ, so the in-sample score describes the engine replay's (session-respecting) fills, not
+the bridge's. See `docs/contracts.md` ("Bridge vs engine replay").
 
     cd backend && uv run --env-file ../.env python scripts/history_with_equity.py \
         --market another-fed-hike-2026=4620900 --equity TLT --out replays/another-fed-hike-2026-history.jsonl

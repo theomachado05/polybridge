@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import datetime as dt
 import hashlib
@@ -462,3 +463,118 @@ def test_fill_price_is_read_from_the_avg_price_key_too():
     o = order_from_webull({"order_id": "1", "status": "FILLED", "filled_quantity": "5", "avg_price": "10.5",
                            "client_order_id": "c"})
     assert o.fill_px == 10.5
+
+
+# --- review fix: a split sell whose second leg fails is still reconciled by the parent client id --------
+
+class ShortLegFails(Sandbox):
+    """Holds 4: a sell of 10 is SELL 4 (fills) + SHORT 6, whose POST answers 503. Webull does not know the SHORT leg
+    (``short_known`` False) or took it anyway (True, it then fills)."""
+
+    def __init__(self, short_known=False, **kw):
+        super().__init__(held=4.0, **kw)
+        self.short_known = short_known
+
+    def handler(self, r):
+        p = r.url.path
+        if p == "/trading/orders/place" and json.loads(r.content)["new_orders"][0]["side"] == "SHORT":
+            self.requests.append(r)
+            item = json.loads(r.content)["new_orders"][0]
+            if self.short_known:
+                self.qty[item["client_order_id"]] = item["quantity"]
+            return httpx.Response(503, json={"message": "gateway"})
+        if p == "/trading/orders/get" and r.url.params["client_order_id"] not in self.qty:
+            self.requests.append(r)
+            return httpx.Response(404, json={"message": "order not found"})
+        return super().handler(r)
+
+
+def _sell10(cid="sp"):
+    return OrderRequest(symbol="AAPL", asset="equity", side="sell", qty=10, client_order_id=cid)
+
+
+def test_a_split_whose_short_leg_fails_unconfirmed_is_found_by_the_parent_id_with_what_filled(tmp_path):
+    sb = ShortLegFails()
+    b = make(sb, tmp_path)
+
+    async def go():
+        with pytest.raises(BrokerError):  # the caller tracks "sp" as unconfirmed
+            await b.place_order(_sell10())
+        return await b.find_order("sp")
+    o = run(go())
+    assert o is not None and o.client_order_id == "sp" and o.id == "sp"
+    assert o.filled_qty == 4 and o.qty == 10  # the SELL leg filled; the SHORT leg never reached Webull
+    assert o.status == "cancelled"  # done: nothing more can trade
+
+
+def test_a_split_short_leg_webull_took_despite_the_5xx_is_counted(tmp_path):
+    sb = ShortLegFails(short_known=True)
+    b = make(sb, tmp_path)
+
+    async def go():
+        o = await b.place_order(_sell10())  # _submit asks Webull, which knows the SHORT leg: no exception
+        return o, await b.find_order("sp")
+    o, again = run(go())
+    assert o.status == "filled" and o.filled_qty == 10 and again.filled_qty == 10
+
+
+def test_a_split_interrupted_before_its_short_leg_answers_keeps_its_legs(tmp_path):
+    sb = ShortLegFails()
+    b = make(sb, tmp_path)
+
+    async def boom(*a, **kw):
+        raise asyncio.CancelledError()  # the bridge's wait_for cancels mid-split
+
+    async def go():
+        real = b._submit
+
+        async def submit(req, cid, side, qty):
+            if side == "SHORT":
+                await boom()
+            return await real(req, cid, side, qty)
+        b._submit = submit
+        with pytest.raises(asyncio.CancelledError):
+            await b.place_order(_sell10())
+        b._submit = real
+        return await b.find_order("sp")
+    o = run(go())
+    assert b._legs["sp"] == ["sp-sell", "sp-short"]
+    assert o.filled_qty == 4 and o.status == "cancelled"
+
+
+def test_cancelling_a_split_parent_cancels_every_open_leg_and_reports_the_merged_order(tmp_path):
+    sb = Sandbox(held=4.0, status="SUBMITTED")
+    b = make(sb, tmp_path)
+
+    async def go():
+        o = await b.place_order(_sell10("sc"))
+        assert o.status == "open" and o.id == "sc"
+        sb.status = "CANCELLED"
+        return await b.cancel(o.id)
+    o = run(go())
+    cancelled = [json.loads(r.content)["client_order_id"] for r in sb.requests if r.url.path == "/trading/orders/cancel"]
+    assert cancelled == ["sc-sell", "sc-short"]
+    assert o.client_order_id == "sc" and o.status == "cancelled"
+
+
+def test_the_bridge_books_the_filled_sell_leg_of_a_split_whose_short_leg_failed(tmp_path):
+    from types import SimpleNamespace
+
+    from app import bridges
+    from app.models import MarketRef
+
+    sb = ShortLegFails()
+    b = make(sb, tmp_path)
+    prop = SimpleNamespace(id="p", ticker="AAPL", shares_held=100, target_coverage=0.5, family="hedge")
+    bridge = bridges.Bridge(prop, "live", MarketRef(source="polymarket", id="m", token_id="t"), 1.0)
+    req = _sell10("br-1")
+
+    async def go():
+        try:
+            await b.place_order(req)
+        except BrokerError:
+            bridges._track_unconfirmed(bridge, b, req, "equity")
+        return await bridges._settle_resting(bridge, None, b, "replace")
+    assert run(go()) is True
+    assert bridge.resting is None
+    assert bridge.broker_hedge == 4.0 and bridge.account_hedge == 4.0  # never dropped as "unknown, nothing traded"

@@ -41,15 +41,17 @@ export default function Pipeline() {
   // Approving starts the engine, which sends orders to the account. That needs a click, unless the user turned
   // on auto-approve in Profile; a bridge that would run with its fee gate off always waits when the edge guard is on.
   const real = !!q.real;
-  const gateOff = feeGateOff(q, e);
+  // What approving starts: openBridge sends the runnable AI fit (hedge family + preset) when the fit answered, else
+  // the engine runs its default delta-bridge spec. Same rule as the store, so the copy matches what runs.
+  const applied = runnableFit(fitOk ? fit!.data : null);
+  const runs = algoRunLabel(applied);
+  // Only the default spec (legacy Engine) reads gap_per_share; an AI-fit algo is fee-gated on the tick's under_px.
+  const gateOff = feeGateOff(q, e, applied);
   const { guards } = s.settings;
   const autoOpen = !real || (guards.auto && !(gateOff && guards.edge));
   const acct = brokerLabel(s.account);
   // A ticker outside the market's mapping: no hedge fit, and startRealBridge refuses (adverse outcome unknown).
   const noDir = real && !e.direction;
-  // What approving starts: openBridge sends the runnable AI fit (hedge family + preset) when the fit answered, else
-  // the engine runs its default delta-bridge spec. Same rule as the store, so the copy matches what runs.
-  const runs = algoRunLabel(runnableFit(fitOk ? fit!.data : null));
 
   const goBridge = async () => {
     if (openingRef.current) return;

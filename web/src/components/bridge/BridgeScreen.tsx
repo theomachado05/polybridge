@@ -8,7 +8,7 @@ import { fmtK, fmtMoney, fmtNs, fmtPct, prettyId } from "@/lib/fmt";
 import { useAsync } from "@/lib/hooks";
 import { simCover, simPnl } from "@/lib/sim";
 import { algoRunLabel, brokerLabel, useStore, type BridgeEntry } from "@/lib/store";
-import { fillScopeLabel, liveVenue, priceSubtitle, replayInfo, replayNotice } from "@/lib/realBridge";
+import { bridgeFeeGateOff, fillScopeLabel, liveVenue, priceSubtitle, replayInfo, replayNotice } from "@/lib/realBridge";
 import { quantile, useBridgeStream } from "@/lib/useBridgeStream";
 import { Btn, DemoTag, Glass, Label, Orb, Tag, upColor } from "@/components/pb";
 import { AlgoDock, PortfolioPanel, TopRow, TradesPanel, type DockAlgo, type TradeCard } from "./parts";
@@ -223,8 +223,9 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
   const holdTag = summary.data?.engine === "algo" && summary.data.equity_price === "none"
     ? <Tag tone="sim" title={`No equity price for ${summary.data.ticker ?? "this ticker"} on this replay (no recorded bars), so the algo's fee gate cannot price a trade and it holds with reason fee_unknown.`}>holding: no equity price on replay</Tag>
     : null;
-  const gateTag = entry.gap === 0
-    ? <Tag tone="sim" title="Started with gap_per_share = 0 because there was no quote or impact estimate; the engine's fee gate is off (docs/contracts.md).">fee gate off (no quote/impact)</Tag>
+  // gap_per_share applies only to the legacy Engine; an algo bridge prices its fee gate from the tick's under_px.
+  const gateTag = bridgeFeeGateOff(entry.gap, running)
+    ? <Tag tone="sim" title="Started on the engine's default spec with gap_per_share = 0 because there was no quote or impact estimate; the legacy Engine's fee gate is off (docs/contracts.md).">fee gate off (no quote/impact)</Tag>
     : null;
   const question = entry.q?.q ?? summary.data?.label ?? `Bridge ${id}`;
   const replayAlert = notice && (notice.tone === "warn"
