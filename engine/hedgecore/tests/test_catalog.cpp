@@ -25,7 +25,7 @@ TEST(Catalog, PresetTotalIsTheHonestSumNearDesignFigure) {
     sum += f.preset_count;
   }
   EXPECT_EQ(c.total, sum);
-  EXPECT_EQ(c.total, 1287u);
+  EXPECT_EQ(c.total, 1278u);  // spec §3.2 design figure ~1,284
 }
 
 TEST(Catalog, PresetsAreDistinctAndInsideBounds) {
@@ -42,7 +42,7 @@ TEST(Catalog, PresetsAreDistinctAndInsideBounds) {
       const auto& d = f.spec.defs[k];
       std::set<double> g(d.grid.begin(), d.grid.begin() + d.n_grid);
       EXPECT_EQ(static_cast<int>(g.size()), d.n_grid) << f.id << "." << d.name;
-      EXPECT_TRUE(d.n_grid == 1 || d.n_grid >= 2) << f.id << "." << d.name;
+      EXPECT_TRUE(d.n_grid == 1 || (d.n_grid >= 3 && d.n_grid <= 6)) << f.id << "." << d.name;  // spec §3.2
     }
   }
 }

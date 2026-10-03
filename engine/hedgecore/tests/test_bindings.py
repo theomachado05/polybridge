@@ -46,7 +46,7 @@ import pytest
 def test_catalog_shape_and_honest_total():
     cat = hedgecore.catalog()
     assert cat["n_families"] == 16
-    assert cat["total"] == sum(f["preset_count"] for f in cat["families"]) == 1287
+    assert cat["total"] == sum(f["preset_count"] for f in cat["families"]) == 1278
     ids = [f["id"] for f in cat["families"]]
     assert ids[:8] == ["equity_delta_bridge", "stress_lead_hedge", "book_imbalance_hedge", "poly_kalshi_spread",
                        "no_bid_seller", "fig_stress", "housing_rates", "macro_fed_hedge"]
@@ -60,7 +60,7 @@ def test_catalog_shape_and_honest_total():
         assert p["min"] <= p["default"] <= p["max"]
         assert edb["grid"][p["name"]] == p["grid"]
         n *= len(p["grid"])
-    assert n == edb["preset_count"] == 144
+    assert n == edb["preset_count"] == 108
     assert cat["block_kinds"]["sizers"] == "Impact"
     assert cat["reasons"][str(0x0601)]["name"] == "wash_sale"
 
@@ -136,8 +136,8 @@ def test_replay_grid_covers_every_preset_deterministically():
     t = _ticks()
     g1 = hedgecore.replay_grid("macro_fed_hedge", {"shares_held": 1000}, t)
     g2 = hedgecore.replay_grid("macro_fed_hedge", {"shares_held": 1000}, t)
-    assert [r["preset_index"] for r in g1] == list(range(72))
-    assert len({tuple(sorted(r["params"].items())) for r in g1}) == 72
+    assert [r["preset_index"] for r in g1] == list(range(81))
+    assert len({tuple(sorted(r["params"].items())) for r in g1}) == 81
     for a, b in zip(g1, g2):
         assert (a["pnl"], a["n_fills"], a["turnover"]) == (b["pnl"], b["n_fills"], b["turnover"])
 
@@ -156,3 +156,31 @@ def test_replay_rejects_ragged_ticks():
     with pytest.raises(ValueError):
         hedgecore.replay("equity_delta_bridge", {}, {"shares_held": 1}, t)
     assert math.isfinite(hedgecore.replay("equity_delta_bridge", {}, {"shares_held": 1}, _ticks())["pnl"])
+
+
+def test_direction_up_on_yes_only_for_hedge_families():
+    tick = {"ts_ns": 1, "yes_bid": 0.29, "yes_ask": 0.31, "opt_implied_prob": 0.3, "opt_mid": 2.0}
+    # Opportunity / PM-leg families name the real contract in their intents: flipping would trade the wrong leg.
+    for fam in ("binary_vs_spread_arb", "no_bid_seller", "poly_kalshi_spread", "vol_vs_pm_move"):
+        with pytest.raises(ValueError):
+            hedgecore.Algo(fam, {}, {}, direction="up_on_yes")
+        with pytest.raises(ValueError):
+            hedgecore.replay(fam, {}, {}, _ticks(), direction="up_on_yes")
+        with pytest.raises(ValueError):
+            hedgecore.replay_grid(fam, {}, _ticks(), direction="up_on_yes")
+    # Unflipped, YES 0.3 against an option-implied 0.3 is no gap: hold.
+    assert hedgecore.Algo("binary_vs_spread_arb").on_tick(tick)["action"] == "hold"
+    # Hedge families accept it.
+    hedgecore.Algo("macro_fed_hedge", {}, {"shares_held": 10}, direction="up_on_yes")
+
+
+def test_on_reject_lets_a_passive_hedge_requote():
+    a = hedgecore.Algo("stress_lead_hedge", {}, {"shares_held": 1000})  # default impact: fee gate on
+    t = {"ts_ns": 1_000_000_000, "yes_bid": 0.195, "yes_ask": 0.205,
+         "under_px": 100.0, "under_bid": 99.99, "under_ask": 100.01}
+    first = a.on_tick(t)
+    assert first["action"] == "order" and first["qty"] == 100.0
+    a.on_reject("equity")
+    again = a.on_tick({**t, "ts_ns": 2_000_000_000})
+    assert again["action"] == "order" and again["qty"] == 100.0
+    assert again["reason"] != hedgecore.reason_name(1026)

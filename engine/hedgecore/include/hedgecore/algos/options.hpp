@@ -18,7 +18,7 @@ struct BinaryVsSpreadArb : AlgoBase<BinaryVsSpreadArb> {
   static constexpr const char* instruments[] = {"option:call_spread", "option:put_spread"};
   static constexpr BlockRef blocks[] = {
       {"signals", "ImpliedProb"}, {"signals", "OptionImpliedProb"}, {"signals", "PMvsOptionGap"},
-      {"gates", "Staleness"},     {"sizers", "FixedNotional"},      {"risk", "PositionCap"}};
+      {"gates", "Staleness"},     {"risk", "PositionCap"}};
   enum P { kEntry, kExit, kContracts };
   static constexpr ParamSpec kSpec{
       param("entry_gap", 0, 1, 0.05, {0.03, 0.05, 0.08, 0.12}, "|PM - option prob| to enter"),
@@ -60,8 +60,7 @@ struct VolVsPmMove : AlgoBase<VolVsPmMove> {
   static constexpr auto& event_classes = ev::kAll;
   static constexpr const char* instruments[] = {"option:straddle", "option:strangle"};
   static constexpr BlockRef blocks[] = {
-      {"signals", "PMid"},    {"signals", "DeltaDp"},     {"gates", "Staleness"},
-      {"sizers", "FixedNotional"}, {"risk", "PositionCap"}};
+      {"signals", "PMid"}, {"signals", "DeltaDp"}, {"gates", "Staleness"}, {"risk", "PositionCap"}};
   enum P { kWindow, kPmMove, kIvStill, kContracts, kMaxHold };
   static constexpr ParamSpec kSpec{
       param("window", 1, 64, 5, {3.0, 5.0, 10.0}, "ticks over which PM and IV changes are measured"),
@@ -124,14 +123,13 @@ struct EightKOpportunity : AlgoBase<EightKOpportunity> {
   static constexpr const char* instruments[] = {"option:cash_secured_put", "option:put_spread"};
   static constexpr BlockRef blocks[] = {
       {"signals", "EightKScore"}, {"signals", "ImpliedProb"}, {"signals", "DeltaDp"},
-      {"gates", "Staleness"},     {"gates", "EventWindow"},   {"sizers", "FixedNotional"},
-      {"risk", "PositionCap"}};
+      {"gates", "Staleness"},     {"gates", "EventWindow"},   {"risk", "PositionCap"}};
   enum P { kWindowH, kScoreThr, kConfirm, kContracts };
   static constexpr ParamSpec kSpec{
       param("window_h", 0.1, 720, 24, {1.0, 24.0, 72.0}, "hours the event window stays open after a tag"),
       param("score_thr", 0, 1, 0.5, {0.3, 0.5, 0.7}, "|8-K score| that opens the window"),
       param("pm_confirm", 0, 1, 0.01, {0.0, 0.01, 0.02}, "PM move (5 ticks) in the tag's direction required"),
-      param("contracts", 1, 1e5, 1, {1.0, 5.0}, "contracts per entry")};
+      param("contracts", 1, 1e5, 1, {1.0, 3.0, 5.0}, "contracts per entry")};
   static ParamSpec spec() noexcept { return kSpec; }
 
   OppCore core;

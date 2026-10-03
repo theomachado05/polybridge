@@ -24,10 +24,10 @@ struct StressLeadHedge : AlgoBase<StressLeadHedge> {
   enum P { kCoverage, kWindow, kStressK, kBand, kChildMax, kImpact, kSession, kWash };
   static constexpr ParamSpec kSpec{
       param("coverage", 0, 1, 0.75, {0.5, 0.75, 1.0}, "c: fraction hedged at p = 1"),
-      param("window", 1, 64, 5, {3.0, 5.0, 10.0}, "ticks over which dp is measured"),
+      param("window", 1, 64, 5, {5.0}, "ticks over which dp is measured (fixed; stress_k tunes sensitivity)"),
       param("stress_k", 0, 20, 2, {1.5, 2.0, 3.0}, "stress when |dp| >= k * sigma * sqrt(window)"),
       hp::band(25),
-      param("child_max", 0, 1e7, 100, {100.0, 500.0}, "calm-regime child order cap in shares"),
+      param("child_max", 0, 1e7, 100, {100.0, 250.0, 500.0}, "calm-regime child order cap in shares"),
       hp::impact(), hp::session(), hp::wash()};
   static ParamSpec spec() noexcept { return kSpec; }
 

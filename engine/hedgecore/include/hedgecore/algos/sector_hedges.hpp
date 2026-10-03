@@ -24,8 +24,8 @@ struct HousingRates : AlgoBase<HousingRates> {
       {"execution", "NoTradeBand"}, {"execution", "FeeGate"}};
   enum P { kBeta, kMaxCov, kBand, kSigmaK, kImpact, kSession, kWash };
   static constexpr ParamSpec kSpec{
-      param("beta", 0, 5, 1, {0.5, 0.75, 1.0, 1.5}, "hedge fraction per unit of adverse probability"),
-      param("max_cov", 0, 1, 1, {0.5, 1.0}, "maximum hedged fraction"), hp::band(), hp::sigma_k(), hp::impact(),
+      param("beta", 0, 5, 1, {0.5, 1.0, 1.5}, "hedge fraction per unit of adverse probability"),
+      param("max_cov", 0, 1, 1, {0.5, 0.75, 1.0}, "maximum hedged fraction"), hp::band(), hp::sigma_k(), hp::impact(),
       hp::session(), hp::wash()};
   static ParamSpec spec() noexcept { return kSpec; }
 
@@ -67,7 +67,7 @@ struct FigStress : AlgoBase<FigStress> {
   static constexpr ParamSpec kSpec{
       param("coverage", 0, 1, 0.75, {0.5, 0.75, 1.0}, "c: fraction hedged at p = 1"),
       param("gamma", 0.1, 5, 1, {0.5, 1.0, 2.0}, "convexity of the response to p"), hp::band(),
-      param("dd_frac", 0, 1, 0.05, {0.02, 0.05}, "kill the hedge leg after losing this fraction of N * price"),
+      param("dd_frac", 0, 1, 0.05, {0.02, 0.05, 0.10}, "kill the hedge leg after losing this fraction of N * price"),
       hp::impact(), hp::session(), hp::wash()};
   static ParamSpec spec() noexcept { return kSpec; }
 
@@ -106,8 +106,8 @@ struct MacroFedHedge : AlgoBase<MacroFedHedge> {
       {"execution", "NoTradeBand"}, {"execution", "FeeGate"}};
   enum P { kCoverage, kMomAlpha, kCooldownS, kBand, kImpact, kSession, kWash };
   static constexpr ParamSpec kSpec{
-      param("coverage", 0, 1, 0.5, {0.25, 0.5, 0.75, 1.0}, "c: fraction hedged at p = 1"),
-      param("mom_alpha", 0.01, 1, 0.3, {0.1, 0.3}, "EWMA weight of the momentum signal"),
+      param("coverage", 0, 1, 0.5, {0.25, 0.5, 1.0}, "c: fraction hedged at p = 1"),
+      param("mom_alpha", 0.01, 1, 0.3, {0.1, 0.3, 0.6}, "EWMA weight of the momentum signal"),
       param("cooldown_s", 0, 86400, 60, {0.0, 60.0, 300.0}, "minimum seconds between orders"), hp::band(),
       hp::impact(), hp::session(), hp::wash()};
   static ParamSpec spec() noexcept { return kSpec; }
@@ -152,8 +152,8 @@ struct ElectionHedge : AlgoBase<ElectionHedge> {
       {"execution", "NoTradeBand"}, {"execution", "FeeGate"}};
   enum P { kBeta, kNeutral, kBand, kSigmaK, kImpact, kSession, kWash };
   static constexpr ParamSpec kSpec{
-      param("beta", 0, 10, 1, {0.5, 1.0, 1.5, 2.0}, "hedge fraction per unit of probability above neutral"),
-      param("p_neutral", 0, 1, 0.5, {0.3, 0.5}, "probability at which no hedge is held"), hp::band(),
+      param("beta", 0, 10, 1, {0.5, 1.0, 2.0}, "hedge fraction per unit of probability above neutral"),
+      param("p_neutral", 0, 1, 0.5, {0.3, 0.4, 0.5}, "probability at which no hedge is held"), hp::band(),
       hp::sigma_k(), hp::impact(), hp::session(), hp::wash()};
   static ParamSpec spec() noexcept { return kSpec; }
 
@@ -328,9 +328,9 @@ struct TechRegHedge : AlgoBase<TechRegHedge> {
       {"execution", "NoTradeBand"}, {"execution", "FeeGate"},   {"execution", "Slicer"}};
   enum P { kCoverage, kChildMax, kBand, kFeeRatio, kImpact, kSession, kWash };
   static constexpr ParamSpec kSpec{
-      param("coverage", 0, 1, 0.5, {0.25, 0.5, 0.75, 1.0}, "c: fraction hedged at p = 1"),
+      param("coverage", 0, 1, 0.5, {0.25, 0.5, 1.0}, "c: fraction hedged at p = 1"),
       param("child_max", 0, 1e7, 200, {50.0, 200.0, 1000.0}, "child order cap in shares"), hp::band(),
-      param("fee_ratio", 0, 100, 1, {1.0, 2.0}, "trade only if benefit >= ratio * cost"), hp::impact(),
+      param("fee_ratio", 0, 100, 1, {0.5, 1.0, 2.0}, "trade only if benefit >= ratio * cost"), hp::impact(),
       hp::session(), hp::wash()};
   static ParamSpec spec() noexcept { return kSpec; }
 

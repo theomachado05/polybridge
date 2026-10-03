@@ -1,6 +1,6 @@
 {
   "schema": "hedgecore.catalog/v1",
-  "total": 1287,
+  "total": 1278,
   "n_families": 16,
   "event_classes": [
     "macro_fed",
@@ -271,7 +271,6 @@
           "max": 1000000.0,
           "default": 10.0,
           "grid": [
-            5.0,
             10.0,
             25.0,
             50.0
@@ -347,7 +346,6 @@
           1.0
         ],
         "band_shares": [
-          5.0,
           10.0,
           25.0,
           50.0
@@ -372,7 +370,7 @@
           0.0
         ]
       },
-      "preset_count": 144
+      "preset_count": 108
     },
     {
       "id": "stress_lead_hedge",
@@ -471,12 +469,10 @@
           "max": 64.0,
           "default": 5.0,
           "grid": [
-            3.0,
-            5.0,
-            10.0
+            5.0
           ],
-          "tuned": true,
-          "help": "ticks over which dp is measured"
+          "tuned": false,
+          "help": "ticks over which dp is measured (fixed; stress_k tunes sensitivity)"
         },
         {
           "name": "stress_k",
@@ -511,6 +507,7 @@
           "default": 100.0,
           "grid": [
             100.0,
+            250.0,
             500.0
           ],
           "tuned": true,
@@ -557,9 +554,7 @@
           1.0
         ],
         "window": [
-          3.0,
-          5.0,
-          10.0
+          5.0
         ],
         "stress_k": [
           1.5,
@@ -573,6 +568,7 @@
         ],
         "child_max": [
           100.0,
+          250.0,
           500.0
         ],
         "impact": [
@@ -585,7 +581,7 @@
           0.0
         ]
       },
-      "preset_count": 162
+      "preset_count": 81
     },
     {
       "id": "book_imbalance_hedge",
@@ -842,11 +838,6 @@
           "ui_kind": "Gate"
         },
         {
-          "kind": "sizers",
-          "name": "FixedNotional",
-          "ui_kind": "Impact"
-        },
-        {
           "kind": "risk",
           "name": "PositionCap",
           "ui_kind": "Gate"
@@ -865,7 +856,6 @@
       "ui_kinds": [
         "Execution",
         "Gate",
-        "Impact",
         "Reader"
       ],
       "params": [
@@ -877,8 +867,7 @@
           "grid": [
             0.01,
             0.02,
-            0.03,
-            0.05
+            0.04
           ],
           "tuned": true,
           "help": "net edge (gap - half-spread - fee) to enter"
@@ -916,7 +905,8 @@
           "default": 0.03,
           "grid": [
             0.03,
-            0.06
+            0.05,
+            0.08
           ],
           "tuned": true,
           "help": "skip entries when this venue's YES spread is wider"
@@ -926,8 +916,7 @@
         "entry_gap": [
           0.01,
           0.02,
-          0.03,
-          0.05
+          0.04
         ],
         "exit_gap": [
           0.0,
@@ -941,10 +930,11 @@
         ],
         "max_spread": [
           0.03,
-          0.06
+          0.05,
+          0.08
         ]
       },
-      "preset_count": 72
+      "preset_count": 81
     },
     {
       "id": "no_bid_seller",
@@ -1019,8 +1009,7 @@
           "grid": [
             0.01,
             0.02,
-            0.03,
-            0.05
+            0.04
           ],
           "tuned": true,
           "help": "all-in NO bid minus fair NO needed to sell"
@@ -1058,7 +1047,8 @@
           "default": 0.5,
           "grid": [
             0.25,
-            0.5
+            0.5,
+            1.0
           ],
           "tuned": true,
           "help": "max fraction of displayed size per order"
@@ -1079,8 +1069,7 @@
         "edge": [
           0.01,
           0.02,
-          0.03,
-          0.05
+          0.04
         ],
         "kelly_cap": [
           0.05,
@@ -1094,13 +1083,14 @@
         ],
         "iceberg_frac": [
           0.25,
-          0.5
+          0.5,
+          1.0
         ],
         "bankroll": [
           10000.0
         ]
       },
-      "preset_count": 72
+      "preset_count": 81
     },
     {
       "id": "fig_stress",
@@ -1211,7 +1201,8 @@
           "default": 0.05,
           "grid": [
             0.02,
-            0.05
+            0.05,
+            0.1
           ],
           "tuned": true,
           "help": "kill the hedge leg after losing this fraction of N * price"
@@ -1268,7 +1259,8 @@
         ],
         "dd_frac": [
           0.02,
-          0.05
+          0.05,
+          0.1
         ],
         "impact": [
           0.03
@@ -1280,7 +1272,7 @@
           0.0
         ]
       },
-      "preset_count": 54
+      "preset_count": 81
     },
     {
       "id": "housing_rates",
@@ -1356,7 +1348,6 @@
           "default": 1.0,
           "grid": [
             0.5,
-            0.75,
             1.0,
             1.5
           ],
@@ -1370,6 +1361,7 @@
           "default": 1.0,
           "grid": [
             0.5,
+            0.75,
             1.0
           ],
           "tuned": true,
@@ -1438,12 +1430,12 @@
       "grid": {
         "beta": [
           0.5,
-          0.75,
           1.0,
           1.5
         ],
         "max_cov": [
           0.5,
+          0.75,
           1.0
         ],
         "band_shares": [
@@ -1466,7 +1458,7 @@
           0.0
         ]
       },
-      "preset_count": 72
+      "preset_count": 81
     },
     {
       "id": "macro_fed_hedge",
@@ -1543,7 +1535,6 @@
           "grid": [
             0.25,
             0.5,
-            0.75,
             1.0
           ],
           "tuned": true,
@@ -1556,7 +1547,8 @@
           "default": 0.3,
           "grid": [
             0.1,
-            0.3
+            0.3,
+            0.6
           ],
           "tuned": true,
           "help": "EWMA weight of the momentum signal"
@@ -1625,12 +1617,12 @@
         "coverage": [
           0.25,
           0.5,
-          0.75,
           1.0
         ],
         "mom_alpha": [
           0.1,
-          0.3
+          0.3,
+          0.6
         ],
         "cooldown_s": [
           0.0,
@@ -1652,7 +1644,7 @@
           0.0
         ]
       },
-      "preset_count": 72
+      "preset_count": 81
     },
     {
       "id": "election_hedge",
@@ -1727,7 +1719,6 @@
           "grid": [
             0.5,
             1.0,
-            1.5,
             2.0
           ],
           "tuned": true,
@@ -1740,6 +1731,7 @@
           "default": 0.5,
           "grid": [
             0.3,
+            0.4,
             0.5
           ],
           "tuned": true,
@@ -1809,11 +1801,11 @@
         "beta": [
           0.5,
           1.0,
-          1.5,
           2.0
         ],
         "p_neutral": [
           0.3,
+          0.4,
           0.5
         ],
         "band_shares": [
@@ -1836,7 +1828,7 @@
           0.0
         ]
       },
-      "preset_count": 72
+      "preset_count": 81
     },
     {
       "id": "tariff_trade_hedge",
@@ -2467,7 +2459,6 @@
           "grid": [
             0.25,
             0.5,
-            0.75,
             1.0
           ],
           "tuned": true,
@@ -2505,6 +2496,7 @@
           "max": 100.0,
           "default": 1.0,
           "grid": [
+            0.5,
             1.0,
             2.0
           ],
@@ -2549,7 +2541,6 @@
         "coverage": [
           0.25,
           0.5,
-          0.75,
           1.0
         ],
         "child_max": [
@@ -2563,6 +2554,7 @@
           50.0
         ],
         "fee_ratio": [
+          0.5,
           1.0,
           2.0
         ],
@@ -2576,7 +2568,7 @@
           0.0
         ]
       },
-      "preset_count": 72
+      "preset_count": 81
     },
     {
       "id": "binary_vs_spread_arb",
@@ -2621,11 +2613,6 @@
           "ui_kind": "Gate"
         },
         {
-          "kind": "sizers",
-          "name": "FixedNotional",
-          "ui_kind": "Impact"
-        },
-        {
           "kind": "risk",
           "name": "PositionCap",
           "ui_kind": "Gate"
@@ -2633,7 +2620,6 @@
       ],
       "ui_kinds": [
         "Gate",
-        "Impact",
         "Reader"
       ],
       "params": [
@@ -2736,11 +2722,6 @@
           "ui_kind": "Gate"
         },
         {
-          "kind": "sizers",
-          "name": "FixedNotional",
-          "ui_kind": "Impact"
-        },
-        {
           "kind": "risk",
           "name": "PositionCap",
           "ui_kind": "Gate"
@@ -2748,7 +2729,6 @@
       ],
       "ui_kinds": [
         "Gate",
-        "Impact",
         "Reader"
       ],
       "params": [
@@ -2883,11 +2863,6 @@
           "ui_kind": "Gate"
         },
         {
-          "kind": "sizers",
-          "name": "FixedNotional",
-          "ui_kind": "Impact"
-        },
-        {
           "kind": "risk",
           "name": "PositionCap",
           "ui_kind": "Gate"
@@ -2895,7 +2870,6 @@
       ],
       "ui_kinds": [
         "Gate",
-        "Impact",
         "Reader"
       ],
       "params": [
@@ -2945,6 +2919,7 @@
           "default": 1.0,
           "grid": [
             1.0,
+            3.0,
             5.0
           ],
           "tuned": true,
@@ -2969,10 +2944,11 @@
         ],
         "contracts": [
           1.0,
+          3.0,
           5.0
         ]
       },
-      "preset_count": 54
+      "preset_count": 81
     }
   ]
 }

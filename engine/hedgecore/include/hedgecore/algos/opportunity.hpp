@@ -43,21 +43,21 @@ struct PolyKalshiSpread : AlgoBase<PolyKalshiSpread> {
   static constexpr auto& event_classes = ev::kAll;
   static constexpr const char* instruments[] = {"pred_yes", "pred_no"};
   static constexpr BlockRef blocks[] = {
-      {"signals", "CrossVenueGap"}, {"gates", "Staleness"},  {"gates", "Spread"},
-      {"sizers", "FixedNotional"},  {"risk", "PositionCap"}, {"risk", "GapFlipKill"},
-      {"execution", "FeeGate"}};
+      {"signals", "CrossVenueGap"}, {"gates", "Staleness"},   {"gates", "Spread"},
+      {"risk", "PositionCap"},      {"risk", "GapFlipKill"}, {"execution", "FeeGate"}};
   enum P { kEntry, kExit, kSize, kMaxSpread };
   static constexpr ParamSpec kSpec{
-      param("entry_gap", 0, 1, 0.02, {0.01, 0.02, 0.03, 0.05}, "net edge (gap - half-spread - fee) to enter"),
+      param("entry_gap", 0, 1, 0.02, {0.01, 0.02, 0.04}, "net edge (gap - half-spread - fee) to enter"),
       param("exit_gap", 0, 1, 0.005, {0.0, 0.005, 0.01}, "exit once the gap on the entry side is <= this"),
       param("size", 1, 1e7, 500, {100.0, 500.0, 1000.0}, "contracts per entry (one clip, no pyramiding)"),
-      param("max_spread", 0, 1, 0.03, {0.03, 0.06}, "skip entries when this venue's YES spread is wider")};
+      param("max_spread", 0, 1, 0.03, {0.03, 0.05, 0.08}, "skip entries when this venue's YES spread is wider")};
   static ParamSpec spec() noexcept { return kSpec; }
 
   OppCore core;
   blocks::Spread spread;
   blocks::GapFlipKill kill;
   blocks::PositionCap cap;
+  blocks::FeeGate fee_gate{1.0};
   FeeModel fees{};
   double entry, exit_gap;
 
@@ -87,9 +87,11 @@ struct PolyKalshiSpread : AlgoBase<PolyKalshiSpread> {
     const Instrument inst = gap > 0 ? Instrument::PredNo : Instrument::PredYes;
     const double px = gap > 0 ? no_ask_or_parity(t) : t.yes_ask;
     const double fee = fees.unit_fee(inst, t.venue, px);
-    const double edge = std::abs(gap) - half_spread(t.yes_bid, t.yes_ask) - fee;
-    if (!num(edge)) return hold(Rc::FeeUnknown, gap);
-    if (edge < entry) return hold(Rc::NoSignal, gap);
+    if (std::abs(gap) < entry) return hold(Rc::NoSignal, gap);
+    // FeeGate: the gap beyond the entry threshold must pay this venue's half-spread plus the taker fee, i.e.
+    // |gap| - half-spread - fee >= entry_gap.
+    const Rc fr = fee_gate.check(std::abs(gap) - entry, half_spread(t.yes_bid, t.yes_ask) + fee);
+    if (fr != Rc::None) return hold(fr, gap);
     bool capped = false;
     const double qty = cap.clamp(cap.max_abs, capped);
     kill.arm(gap);
@@ -122,10 +124,10 @@ struct NoBidSeller : AlgoBase<NoBidSeller> {
       {"routing", "VenueRouter"}};
   enum P { kEdge, kKellyCap, kFairSrc, kIceberg, kBankroll };
   static constexpr ParamSpec kSpec{
-      param("edge", 0, 1, 0.02, {0.01, 0.02, 0.03, 0.05}, "all-in NO bid minus fair NO needed to sell"),
+      param("edge", 0, 1, 0.02, {0.01, 0.02, 0.04}, "all-in NO bid minus fair NO needed to sell"),
       param("kelly_cap", 0, 1, 0.1, {0.05, 0.1, 0.25}, "cap on the Kelly fraction of bankroll"),
       param("fair_source", 0, 2, 0, {0.0, 1.0, 2.0}, "fair YES from 0 other venue, 1 EWMA of mid, 2 options"),
-      param("iceberg_frac", 0, 1, 0.5, {0.25, 0.5}, "max fraction of displayed size per order"),
+      param("iceberg_frac", 0, 1, 0.5, {0.25, 0.5, 1.0}, "max fraction of displayed size per order"),
       param("bankroll", 1, 1e9, 10000, {10000.0}, "$ at risk for Kelly sizing")};
   static ParamSpec spec() noexcept { return kSpec; }
 

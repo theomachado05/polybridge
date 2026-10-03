@@ -22,7 +22,7 @@ struct EquityDeltaBridge : AlgoBase<EquityDeltaBridge> {
   enum P { kCoverage, kBand, kSigmaK, kFeeRatio, kImpact, kSession, kWash };
   static constexpr ParamSpec kSpec{
       param("coverage", 0, 1, 0.5, {0.25, 0.5, 0.75, 1.0}, "c: fraction of the position hedged at p = 1"),
-      param("band_shares", 0, 1e6, 10, {5.0, 10.0, 25.0, 50.0}, "no-trade band in shares"),
+      param("band_shares", 0, 1e6, 10, {10.0, 25.0, 50.0}, "no-trade band in shares"),
       hp::sigma_k(),
       param("fee_ratio", 0, 100, 1, {0.5, 1.0, 2.0}, "trade only if benefit >= ratio * (fee + half-spread)"),
       hp::impact(), hp::session(), hp::wash()};

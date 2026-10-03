@@ -51,12 +51,12 @@ TEST(PolyKalshiSpread, GapFlipKillsAndLatches) {
 
 TEST(PolyKalshiSpread, FeeSpreadAndSizeCap) {
   F narrow(params<F>(), Position{});
-  EXPECT_EQ(narrow.on_tick(gap_tick(kSec, 0.525), kSec).reason, rc(Rc::NoSignal));  // edge 0.015 < 0.02
+  EXPECT_EQ(narrow.on_tick(gap_tick(kSec, 0.525), kSec).reason, rc(Rc::BelowFees));  // edge 0.015 < 0.02
   F wide(params<F>(), Position{});
   EXPECT_EQ(wide.on_tick(gap_tick(kSec, 0.50, 0.03), kSec).reason, rc(Rc::SpreadTooWide));
   // On Kalshi the fee 0.07 * 0.46 * 0.54 = 0.0174 eats the edge at entry 0.03: 0.05 - 0.01 - 0.0174 < 0.03.
   F k(params<F>({{"entry_gap", 0.03}}), Position{});
-  EXPECT_EQ(k.on_tick(gap_tick(kSec, 0.50, 0.01, Venue::Kalshi), kSec).reason, rc(Rc::NoSignal));
+  EXPECT_EQ(k.on_tick(gap_tick(kSec, 0.50, 0.01, Venue::Kalshi), kSec).reason, rc(Rc::BelowFees));
   F p(params<F>({{"entry_gap", 0.03}}), Position{});
   EXPECT_TRUE(is_order(p.on_tick(gap_tick(kSec, 0.50, 0.01, Venue::Poly), kSec)));
   F one(params<F>({{"size", 100}}), Position{});
@@ -67,4 +67,17 @@ TEST(PolyKalshiSpread, MissingOtherVenue) {
   F a(params<F>(), Position{});
   EXPECT_EQ(a.on_tick(gap_tick(kSec, NaN), kSec).reason, rc(Rc::SignalMissing));
   expect_nan_and_stale_safety<F>(params<F>(), Position{});
+}
+
+TEST(PolyKalshiSpread, GapBelowEntryIsNoSignalNotFees) {
+  F a(params<F>(), Position{});
+  EXPECT_EQ(a.on_tick(gap_tick(kSec, 0.54), kSec).reason, rc(Rc::NoSignal));  // gap 0.01 < entry 0.02
+}
+
+TEST(PolyKalshiSpread, RejectedEntryDisarmsTheStop) {
+  F a(params<F>(), Position{});
+  ASSERT_TRUE(is_order(a.on_tick(gap_tick(kSec, 0.50), kSec)));
+  EXPECT_NE(a.kill.entry_sign, 0);
+  a.on_reject(Instrument::PredNo);  // never filled: still flat
+  EXPECT_EQ(a.kill.entry_sign, 0);
 }
