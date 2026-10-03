@@ -89,6 +89,10 @@ class BridgeIn(BaseModel):
     params: dict[str, float] | None = None
     # The same question on the other venue (e.g. the Kalshi twin of a Polymarket market) -> p_other_venue.
     twin: MarketRef | None = None
+    # Names the configured replay file (POLYBRIDGE_REPLAY_PATH) explicitly: needed to replay a file with no
+    # <file>.meta.json sidecar (its market is unknown) under this market. A file whose sidecar names another market is
+    # refused either way. Only compared with the configured file's name; never opens a path from the request.
+    replay_file: str | None = Field(default=None, min_length=1, max_length=200, pattern=r"^[A-Za-z0-9_.-]+$")
 
 
 class Bridge:
@@ -138,6 +142,8 @@ class Bridge:
         self.opt_risk_per_unit = 0.0  # USD at risk per open structure (premium or max loss), set at entry
         self.opt_last: dict | None = None  # latest PM-vs-options view for the UI
         self.option_data = "none"    # "live_chain" | "recorded" | "none"
+        self.replay_file: str | None = None    # the replay file's name once the bridge replays one
+        self.replay_market: dict | None = None  # the market its .meta.json sidecar says it records (None: unknown)
 
     async def emit(self, kind: str, data: dict, status: str | None = None) -> None:
         async with self.cond:
@@ -163,6 +169,9 @@ class Bridge:
             self.replay_broker = SimBroker(None, getattr(sim, "quotes", None), start)
             self.replay_broker.name = REPLAY_BROKER_NAME
         return self.replay_broker
+
+    def set_replay(self, path: Path) -> None:
+        self.replay_file, self.replay_market = path.name, replay_meta(path)
 
     def summary(self) -> dict:
         lat = sorted(self.latencies)
@@ -191,6 +200,7 @@ class Bridge:
                 "coverage": self.hedge / self.proposal.shares_held if self.proposal.shares_held else 0.0,
                 "basis": self.proposal.basis, "label": self.proposal.label,
                 "market": self.market.model_dump(), "twin": self.twin,
+                "replay_file": self.replay_file, "replay_market": self.replay_market,
                 "latency_ns": {"p50": q(0.5), "p99": q(0.99)},
                 "division": self.division,
                 **(self._opp_summary() if self.division == "opportunity" else {})}
@@ -224,10 +234,66 @@ def _replay_speed(app) -> float:
     return v
 
 
-def _replay_path(request: Request, *markets: MarketRef | None) -> Path | None:
+def replay_meta(path: Path) -> dict | None:
+    """The market a replay file records, from its sidecar ``<file>.meta.json`` (``{source, id, token_id}``, next to the
+    file); None when there is no readable sidecar (the file's market is then unknown)."""
+    try:
+        raw = json.loads(path.with_name(path.name + ".meta.json").read_text())
+    except (OSError, ValueError):
+        return None
+    if not isinstance(raw, dict) or not raw.get("source") or not (raw.get("id") or raw.get("token_id")):
+        return None
+    return {"source": str(raw["source"]), "id": str(raw["id"]) if raw.get("id") else None,
+            "token_id": str(raw["token_id"]) if raw.get("token_id") else None}
+
+
+def _meta_matches(meta: dict, market: MarketRef) -> bool:
+    """Same venue, and the same market id or the same (YES) token id."""
+    if meta["source"] != market.source:
+        return False
+    keys = {k for k in (market.id, market.token_id) if k}
+    return bool(({meta.get("id"), meta.get("token_id")} - {None}) & keys)
+
+
+def _names_file(path: Path, market: MarketRef, replay_file: str | None) -> bool:
+    """The request names this file explicitly: ``replay_file`` is its name, or the market id / token id is its stem
+    (the ``replays/<market id>[-history].jsonl`` convention)."""
+    if replay_file and replay_file in (path.name, path.stem):
+        return True
+    stems = {k for k in (market.id, market.token_id) if k}
+    return path.stem in stems | {f"{k}-history" for k in stems}
+
+
+def _check_replay_market(path: Path, market: MarketRef | None, replay_file: str | None) -> None:
+    """422 unless ``path`` records ``market``: its sidecar names this market, or (no sidecar: the file's market is
+    unknown) the request names the file explicitly. Another market's history is never replayed under this title."""
+    if market is None:
+        return
+    meta = replay_meta(path)
+    label = f"{market.source}:{market.id}"
+    if meta is not None:
+        if not _meta_matches(meta, market):
+            raise HTTPException(422, f"The configured replay file {path.name} records {meta['source']}:"
+                                     f"{meta.get('id') or meta.get('token_id')}, not the requested market {label} "
+                                     "(see its .meta.json sidecar). Point POLYBRIDGE_REPLAY_PATH at a recording of "
+                                     "this market.")
+        return
+    if not _names_file(path, market, replay_file):
+        raise HTTPException(422, f"The configured replay file {path.name} has no {path.name}.meta.json sidecar, so its "
+                                 f"market is unknown; it is replayed for {label} only when the request names it "
+                                 "(replay_file) or a sidecar says it records this market.")
+
+
+def _replay_path(request: Request, *markets: MarketRef | None, replay_file: str | None = None) -> Path | None:
+    """The replay file for the first (resolved) market: POLYBRIDGE_REPLAY_PATH when it records that market (else
+    422, see ``_check_replay_market``), otherwise ``replays/<market id>.jsonl`` of the given markets."""
     configured = getattr(request.app.state, "replay_path", None) or os.environ.get("POLYBRIDGE_REPLAY_PATH")
+    target = next((m for m in markets if m is not None), None)
     if configured:
-        return Path(configured)
+        path = Path(configured)
+        if path.is_file():
+            _check_replay_market(path, target, replay_file)
+        return path
     for market in markets:
         if market is None:
             continue
@@ -235,6 +301,8 @@ def _replay_path(request: Request, *markets: MarketRef | None) -> Path | None:
             raise HTTPException(422, "market.id must match [A-Za-z0-9_-]+ to select a replay file.")
         guess = REPLAYS_DIR / f"{market.id}.jsonl"
         if guess.is_file():
+            if target is not None and (meta := replay_meta(guess)) is not None and not _meta_matches(meta, target):
+                continue  # a recording of another market under a colliding name
             return guess
     return None
 
@@ -266,10 +334,17 @@ def _fallback_path(app, market: MarketRef | None = None) -> Path | None:
         cands = []
     if configured:
         conf = Path(configured)
+        meta = replay_meta(conf)
         names = {c.name for c in cands}
-        if conf.name in names or conf.stem in (market.id, market.token_id):
+        if meta is not None:
+            if _meta_matches(meta, market):
+                return conf
+        elif conf.name in names or conf.stem in (market.id, market.token_id):
             return conf
-    return next((c for c in cands if c.is_file()), None)
+    for c in cands:
+        if c.is_file() and ((meta := replay_meta(c)) is None or _meta_matches(meta, market)):
+            return c
+    return None
 
 
 async def _send_to_broker(bridge: Bridge, order_qty: float) -> dict | None:
@@ -992,6 +1067,7 @@ async def _run(bridge: Bridge, app, hc, source, fallback: Path | None) -> None:
                 # switch, orders go to the replay sandbox and must never orphan what the live phase left working.
                 await _finish_orders(bridge, engine)
                 bridge.effective_source = "replay"
+                bridge.set_replay(fallback)
                 await bridge.emit("status", {"status": "running", "source": "replay", "note": "live failed; replaying"})
                 bars = _bars(bridge.proposal.ticker)
                 bridge.equity_price = _replay_equity_price(fallback, bars)
@@ -1229,9 +1305,10 @@ async def start_bridge(body: BridgeIn, request: Request, response: Response) -> 
 
     fallback = _fallback_path(request.app, market)
     if body.source == "replay":
-        path = _replay_path(request, market, body.market)
+        path = _replay_path(request, market, body.market, replay_file=body.replay_file)
         if path is None or not path.is_file():
             raise HTTPException(422, "No replay file configured (set POLYBRIDGE_REPLAY_PATH or add replays/<market id>.jsonl).")
+        bridge.set_replay(path)
         bars = _bars(prop.ticker)
         source: Any = ReplaySource(path, speed=_replay_speed(request.app), bars=bars)
         bridge.equity_price = _replay_equity_price(path, bars)

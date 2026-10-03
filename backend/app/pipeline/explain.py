@@ -3,7 +3,8 @@ from __future__ import annotations
 
 from .llm import LLMProvider, RulesProvider, template_rationale
 
-FACT_KEYS = ("event_class", "division", "family", "preset_index", "params", "score", "scored", "unscored_reason",
+FACT_KEYS = ("event_class", "division", "family", "preset_index", "params", "score", "score_basis", "score_raw",
+             "avg_hedge_ratio", "scored", "unscored_reason",
              "ticks_source", "n_ticks", "ticker", "direction", "shares_held", "n_shortlisted", "family_idea",
              "proxies", "llm", "reason", "question_unresolved")
 

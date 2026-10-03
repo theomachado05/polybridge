@@ -80,7 +80,20 @@ class FitResponse(BaseModel):
     llm: Literal["gemini", "rules"]
     ticks_source: Literal["live_history", "replay", "none"]
     n_ticks: int
-    # Exactly the spec §4 keys. An unscored (rules) pick is visible as score == null; `scored` stays internal.
+    # The spec §4 keys above, plus what `score` means. An unscored (rules) pick is visible as score == null;
+    # `scored` stays internal. `score` is always the RANKING score, named by `score_basis`:
+    #   "hedge_var_reduction_vs_static" (hedge): variance cut beyond a static short of the same average size, i.e.
+    #       what the prediction-market signal adds (0 = no better than a static hedge, < 0 = the timing hurt);
+    #   "net_pnl_per_drawdown" (opportunity): replay P&L net of fees / max drawdown (floored at $1);
+    #   null: not scored.
+    # Hedge only (null otherwise): score_vs_static (== score), score_raw = plain hedge variance reduction (any static
+    # short of a fraction h earns 1 - (1 - h)^2 of it, so it is reported, never ranked) and avg_hedge_ratio = the
+    # mean short as a fraction of shares_held over the replay. The same three are in each alternative's stats.
+    score_basis: Literal["hedge_var_reduction_vs_static", "net_pnl_per_drawdown"] | None = None
+    score_note: str | None = None
+    score_raw: float | None = None
+    score_vs_static: float | None = None
+    avg_hedge_ratio: float | None = None
 
 
 @dataclass
@@ -213,6 +226,8 @@ async def run_fit(req: FitRequest, deps: Deps) -> dict:
         "preset_index": t["preset_index"], "params": t["params"], "score": t["score"] if t["scored"] else None,
         "alternatives": t["alternatives"], "llm": llm, "ticks_source": ts.source if ts.ticks is not None else "none",
         "n_ticks": ts.n, "scored": bool(t["scored"]),
+        **{k: (t.get(k) if t["scored"] else None)
+           for k in ("score_basis", "score_note", "score_raw", "score_vs_static", "avg_hedge_ratio")},
         # facts for the rationale only (not part of the response):
         "ticker": req.ticker, "direction": req.direction, "shares_held": req.shares_held,
         "n_shortlisted": len(families), "unscored_reason": t.get("unscored_reason"),
@@ -260,7 +275,7 @@ async def fit(req: FitRequest, deps: Deps) -> FitResponse:
     except Exception as e:  # never a 500
         r = degraded(req, e)
     try:
-        return FitResponse(**{k: r[k] for k in FitResponse.model_fields})
+        return FitResponse(**{k: r[k] for k in FitResponse.model_fields if k in r})
     except Exception as e:
         r = degraded(req, e)
-        return FitResponse(**{k: r[k] for k in FitResponse.model_fields})
+        return FitResponse(**{k: r[k] for k in FitResponse.model_fields if k in r})

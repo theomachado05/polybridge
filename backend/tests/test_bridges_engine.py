@@ -6,7 +6,7 @@ from app.ticks import SourceError
 
 hedgecore = pytest.importorskip("hedgecore")
 
-from tests.test_bridges import _approved, _body, _events, client, replay_file  # noqa: E402,F401
+from tests.test_bridges import _approved, _body, _events, client, replay_file, write_meta  # noqa: E402,F401
 
 
 def test_replay_bridge_end_to_end(client):
@@ -85,7 +85,8 @@ def test_live_failure_switches_to_replay(client, replay_file):
     kinds = [k for k, _ in ev]
     assert kinds[0] == "error" and "network down" in ev[0][1]["message"]
     assert kinds.count("tick") == 20 and ev[-1][1]["status"] == "finished"
-    assert client.get(f"/bridges/{bid}").json()["source"] == "replay"
+    s = client.get(f"/bridges/{bid}").json()
+    assert s["source"] == "replay" and s["replay_file"] == "m1.jsonl" and s["replay_market"] is None
 
 
 def test_live_failure_never_replays_another_markets_recording(client):
@@ -136,7 +137,7 @@ def test_market_event_proposal_runs_a_bridge(client):
     client.post(f"/proposals/{p['id']}/approve")
     # the body's direction/market are ignored: the proposal's own market and direction drive the engine
     body = {"proposal_id": p["id"], "source": "replay", "gap_per_share": 1.0, "direction": "up_on_yes",
-            "market": {"source": "polymarket", "id": "fed-hike-25bps-oct-2026"}}
+            "market": {"source": "polymarket", "id": "fed-hike-25bps-oct-2026"}, "replay_file": "fixture.jsonl"}
     r = client.post("/bridges", json=body)
     assert r.status_code == 201
     bid = r.json()["bridge_id"]
@@ -158,3 +159,77 @@ def test_summary_carries_shares_and_coverage(client):
     s = client.get(f"/bridges/{bid}").json()
     assert s["shares_held"] == 1200 and s["target_coverage"] == 0.5
     assert s["coverage"] == pytest.approx(s["hedge"] / 1200)
+
+
+# --- the configured replay file must record the requested market ------------------------------------------------
+
+def test_replay_of_another_markets_file_is_a_422(client, replay_file):
+    """POLYBRIDGE_REPLAY_PATH recording market X is never replayed under market m1's title, named or not."""
+    write_meta(replay_file, {"source": "polymarket", "id": "2589813", "token_id": "tokFED"})
+    pid = _approved(client)
+    r = client.post("/bridges", json=_body(pid))  # names fixture.jsonl, but its sidecar says another market
+    assert r.status_code == 422 and "polymarket:2589813" in r.json()["detail"] and "polymarket:m1" in r.json()["detail"]
+    assert not getattr(client.app.state, "bridges", {})  # nothing started
+
+
+def test_replay_whose_sidecar_names_the_market_runs_and_reports_it(client, replay_file):
+    write_meta(replay_file, {"source": "polymarket", "id": "m1", "token_id": "t1"})
+    pid = _approved(client)
+    body = {k: v for k, v in _body(pid).items() if k != "replay_file"}  # no explicit name needed
+    r = client.post("/bridges", json=body)
+    assert r.status_code == 201, r.text
+    _events(client, r.json()["bridge_id"])
+    s = client.get(f"/bridges/{r.json()['bridge_id']}").json()
+    assert s["replay_file"] == "fixture.jsonl"
+    assert s["replay_market"] == {"source": "polymarket", "id": "m1", "token_id": "t1"}
+
+
+def test_matching_by_token_id_alone(client, replay_file):
+    write_meta(replay_file, {"source": "polymarket", "token_id": "t1"})
+    pid = _approved(client)
+    body = {k: v for k, v in _body(pid).items() if k != "replay_file"}
+    assert client.post("/bridges", json=body).status_code == 201
+
+
+def test_unknown_market_file_needs_the_request_to_name_it(client):
+    pid = _approved(client)
+    body = {k: v for k, v in _body(pid).items() if k != "replay_file"}
+    r = client.post("/bridges", json=body)  # fixture.jsonl has no sidecar and the request does not name it
+    assert r.status_code == 422 and "sidecar" in r.json()["detail"]
+    r = client.post("/bridges", json={**body, "replay_file": "other.jsonl"})  # naming a different file does not count
+    assert r.status_code == 422
+    r = client.post("/bridges", json={**body, "replay_file": "fixture.jsonl"})
+    assert r.status_code == 201
+    s = client.get(f"/bridges/{r.json()['bridge_id']}").json()
+    assert s["replay_file"] == "fixture.jsonl" and s["replay_market"] is None
+
+
+def test_live_bridge_summary_has_no_replay_file(client):
+    client.app.state.live_source_factory = _FailingLive
+    client.app.state.replay_path = None
+    pid = _approved(client)
+    bid = client.post("/bridges", json=_body(pid, source="live")).json()["bridge_id"]
+    _events(client, bid)
+    s = client.get(f"/bridges/{bid}").json()
+    assert s["replay_file"] is None and s["replay_market"] is None
+
+
+def test_live_fallback_follows_the_sidecar(client, replay_file):
+    """A live bridge falls back to the configured file when its sidecar names this market (whatever the file is
+    called), and never to a file whose sidecar names another market (even one named like this market)."""
+    client.app.state.live_source_factory = _FailingLive
+    write_meta(replay_file, {"source": "polymarket", "id": "m1"})
+    pid = _approved(client)
+    bid = client.post("/bridges", json=_body(pid, source="live")).json()["bridge_id"]
+    _events(client, bid)
+    s = client.get(f"/bridges/{bid}").json()
+    assert s["source"] == "replay" and s["replay_market"] == {"source": "polymarket", "id": "m1", "token_id": None}
+
+    own = replay_file.with_name("m1.jsonl")
+    own.write_text(replay_file.read_text())
+    write_meta(own, {"source": "kalshi", "id": "KXOTHER"})
+    client.app.state.replay_path = str(own)
+    pid = _approved(client)
+    bid = client.post("/bridges", json=_body(pid, source="live")).json()["bridge_id"]
+    ev = _events(client, bid)
+    assert ev[-1][1] == {"status": "stopped", "reason": "source_failed"}

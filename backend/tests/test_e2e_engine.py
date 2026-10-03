@@ -17,6 +17,7 @@ MAX_LINES = 500  # bound on SSE lines read
 def client(tmp_path, monkeypatch):
     f = tmp_path / "fed.jsonl"
     f.write_text("".join(json.dumps({"ts_ns": 1_000_000_000 * (i + 1), "p": p}) + "\n" for i, p in enumerate(PS)))
+    f.with_name("fed.jsonl.meta.json").write_text(json.dumps({"source": "polymarket", "id": "2589813"}))
     monkeypatch.setenv("POLYBRIDGE_REPLAY_PATH", str(f))
     monkeypatch.setenv("POLYBRIDGE_REPLAY_SPEED", "0")  # no sleeping between ticks
     with TestClient(create_app()) as c:

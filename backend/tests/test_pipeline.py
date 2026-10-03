@@ -72,9 +72,13 @@ def fake_hedgecore(best: tuple[str, int] = ("macro_fed_hedge", 5), catalog_raise
                 vr = 0.90
             if family == "stress_lead_hedge" and i == 0:
                 vr = 0.80
+            # vr is the vs-static score (what the engine ranks on); the raw var reduction is what the same hedged
+            # variance gives against the unhedged one at an average hedge ratio of 0.5: 1 - (1 - vr) * (1 - 0.5)^2.
             rows.append({"preset_index": i, "params": params, "n_ticks": len(ticks["ts_ns"]), "n_orders": 3 + i,
                          "pnl": 100.0 - i, "fees": 2.0, "max_dd": 50.0,
-                         "hedge_var_reduction": float("nan") if nan_scores else vr,
+                         "hedge_var_reduction": float("nan") if nan_scores else 1.0 - (1.0 - vr) * 0.25,
+                         "hedge_var_reduction_vs_static": float("nan") if nan_scores else vr,
+                         "avg_hedge_ratio": 0.5,
                          "turnover": 1000.0, "p50_ns": 120, "p99_ns": 900})
         return rows
 
@@ -619,7 +623,8 @@ def test_opportunity_score_is_net_pnl_per_unit_drawdown():
     assert score_row({"pnl": 100.0, "fees": 10.0, "max_dd": 50.0}, "opportunity") == pytest.approx(2.0)
     assert score_row({"pnl_net": 30.0, "pnl": 999.0, "max_dd": 0.0}, "opportunity") == pytest.approx(30.0)
     assert score_row({"pnl": float("nan")}, "opportunity") is None
-    assert score_row({"hedge_var_reduction": 0.4}, "hedge") == 0.4
+    assert score_row({"hedge_var_reduction_vs_static": 0.4, "hedge_var_reduction": 0.9}, "hedge") == 0.4
+    assert score_row({"hedge_var_reduction": 0.9}, "hedge") is None  # raw var reduction alone is never a score
 
 
 def test_opportunity_ranking_does_not_charge_fees_twice():
@@ -643,7 +648,8 @@ def test_opportunity_ranking_does_not_charge_fees_twice():
 # ---------------------------------------------------------------- POST /pipeline/fit
 
 RESPONSE_KEYS = {"event_class", "division", "family", "preset_index", "params", "score", "alternatives", "rationale",
-                 "llm", "ticks_source", "n_ticks"}  # exactly spec §4
+                 "llm", "ticks_source", "n_ticks",  # spec §4
+                 "score_basis", "score_note", "score_raw", "score_vs_static", "avg_hedge_ratio"}  # what score means
 
 
 def test_fit_scored_end_to_end_with_fake_engine_and_mocked_http():
@@ -658,6 +664,11 @@ def test_fit_scored_end_to_end_with_fake_engine_and_mocked_http():
     assert j["event_class"] == "macro_fed" and j["division"] == "hedge" and j["llm"] == "rules"
     assert (j["family"], j["preset_index"]) == ("macro_fed_hedge", 7)
     assert j["score"] == pytest.approx(0.9)
+    assert j["score_basis"] == "hedge_var_reduction_vs_static" and j["score_vs_static"] == pytest.approx(0.9)
+    assert j["score_raw"] == pytest.approx(1 - 0.1 * 0.25) and j["avg_hedge_ratio"] == pytest.approx(0.5)
+    assert "static" in j["score_note"] and "beyond a static hedge" in j["rationale"]
+    assert all("hedge_var_reduction_vs_static" in a["stats"] and "avg_hedge_ratio" in a["stats"]
+               for a in j["alternatives"])
     assert j["ticks_source"] == "live_history" and j["n_ticks"] == N_POINTS
     assert len(j["alternatives"]) == 3 and "SPY" in j["rationale"]
     fam, position, lens = eng.calls[0]
@@ -679,9 +690,9 @@ def _trend_engine():
         rows = base(family, position, ticks)
         dear = float(np.nanmean(ticks["yes_bid"])) > 0.5
         for r in rows:
-            r["hedge_var_reduction"] = 0.01
+            r["hedge_var_reduction_vs_static"] = 0.01
             if family == "macro_fed_hedge" and r["preset_index"] == (1 if dear else 0):
-                r["hedge_var_reduction"] = 0.95
+                r["hedge_var_reduction_vs_static"] = 0.95
         return rows
 
     mod.replay_grid = replay_grid
@@ -840,6 +851,14 @@ def test_precomputed_fits_route_and_script(tmp_path):
     assert sm["n"] == 2 and sm["scored"] == 2 and sm["ticks_source"] == {"live_history": 2}
     assert sm["fell_back_to_replay"] == [] and sm["no_history"] == [] and sm["timed_out"] == []
     assert saved["provider"] == "rules"
+    # the hedge ranking score and what it is read against reach fits.json, and the summary describes its spread
+    assert f["score_basis"] == "hedge_var_reduction_vs_static" and f["score_vs_static"] == f["score"] == 0.90
+    assert f["score_raw"] == pytest.approx(1 - 0.1 * 0.25) and f["avg_hedge_ratio"] == 0.5
+    assert sm["score_vs_static"]["n"] == 2 and sm["score_vs_static"]["gt0"] == 2 and sm["no_static_benchmark"] == []
+    assert mod.hedge_score_stats({"a": {"score": -0.1, "score_basis": "hedge_var_reduction_vs_static"},
+                                  "b": {"score": 0.3, "score_basis": "hedge_var_reduction_vs_static"},
+                                  "c": {"score": 2.0, "score_basis": "net_pnl_per_drawdown"}}) == \
+        {"n": 2, "gt0": 1, "le0": 1, "median": 0.1, "max": 0.3, "min": -0.1}
 
     # offline: the Fed market falls back to its recorded replay, the other has no history; both are listed
     log = tmp_path / "run.log"

@@ -16,7 +16,7 @@ from app.pipeline import service  # noqa: E402
 from app.pipeline.engine_adapter import EngineAdapter, normalize_manifest, preset_grid  # noqa: E402
 from app.pipeline.ticks import assemble, orient_to_adverse  # noqa: E402
 from app.ticks import mid_only_fields  # noqa: E402
-from tests.test_bridges import _events, client, replay_file  # noqa: E402,F401
+from tests.test_bridges import _events, client, replay_file, write_meta  # noqa: E402,F401
 from tests.test_broker_support import FakeQuotes  # noqa: E402
 
 FED = {"source": "polymarket", "id": "2589813", "token_id": "tokYES"}
@@ -102,6 +102,7 @@ def test_real_algo_bridge_on_replay_orders_fills_and_reports(client, tmp_path):
     f.write_text("".join(json.dumps({"ts_ns": (1_790_000_000 + 3600 * i) * 1_000_000_000, "p": p}) + "\n"
                          for i, p in enumerate(ps)))
     client.app.state.replay_path = str(f)
+    write_meta(f, FED)  # a recording of the proposal's market
     pid = client.post("/proposals", json={"ticker": "SPY", "market": FED, "direction": "down_on_yes",
                                           "shares_held": 1000, "algo": {"family": "equity_delta_bridge",
                                                                          "params": {"sigma_k": 0.0, "fee_ratio": 0.5,
@@ -133,6 +134,7 @@ def test_real_coverage_1_preset_on_a_half_proposal_stays_within_half(client, tmp
     f.write_text("".join(json.dumps({"ts_ns": (1_790_000_000 + 3600 * i) * 1_000_000_000, "p": p}) + "\n"
                          for i, p in enumerate(ps)))
     client.app.state.replay_path = str(f)
+    write_meta(f, FED)  # a recording of the proposal's market
     fam = real_families()["equity_delta_bridge"]
     idx = next(i for i, g in enumerate(preset_grid(fam)) if g["coverage"] == 1.0)
     prop = client.post("/proposals", json={"ticker": "SPY", "market": FED, "direction": "down_on_yes",

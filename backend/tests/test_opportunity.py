@@ -346,6 +346,8 @@ def opp_client(tmp_path):
     app = create_app()
     app.state.replay_speed = 0
     app.state.replay_path = str(f)
+    from tests.test_bridges import write_meta
+    write_meta(f, MKT)  # a recording of the proposals' market
     app.state.broker = SimBroker(None)
     app.state.enricher = FakeEnricher()
     app.state.options_enricher_factory = lambda market: app.state.enricher
@@ -610,7 +612,8 @@ from app.pipeline.tune import missing_signal, score_row, tune  # noqa: E402
 def test_zero_order_opportunity_replay_is_unscored():
     assert score_row({"n_orders": 0, "pnl": 0.0, "fees": 0.0, "max_dd": 0.0}, "opportunity") is None
     assert score_row({"n_orders": 2, "pnl": -10.0, "fees": 0.0, "max_dd": 20.0}, "opportunity") == pytest.approx(-0.5)
-    assert score_row({"n_orders": 0, "hedge_var_reduction": 0.3}, "hedge") == 0.3  # hedge scoring unchanged
+    assert score_row({"n_orders": 2, "hedge_var_reduction_vs_static": 0.3}, "hedge") == 0.3
+    assert score_row({"n_orders": 0, "hedge_var_reduction_vs_static": 0.0}, "hedge") is None  # never hedged
 
 
 class _IdleAdapter:

@@ -87,7 +87,10 @@ def proposal(client, algo=None, direction="down_on_yes", approve=True, **kw):
 
 
 def start(client, pid, **kw):
-    return client.post("/bridges", json={"proposal_id": pid, "source": "replay", **kw})
+    # the tests' replay files carry no .meta.json sidecar (market unknown): a replay request names the file
+    conf = getattr(client.app.state, "replay_path", None)
+    named = {"replay_file": conf.rsplit("/", 1)[-1]} if conf and kw.get("source", "replay") == "replay" else {}
+    return client.post("/bridges", json={"proposal_id": pid, "source": "replay", **named, **kw})
 
 
 # ---------------------------------------------------------------- choosing the algo

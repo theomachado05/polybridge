@@ -107,9 +107,16 @@ def template_rationale(r: dict) -> str:
     ticker = r.get("ticker") or "the position"
     first = f"Classified as {cls}; {r.get('n_shortlisted', 0)} {div} families in the library cover it, and {fam} was chosen for {ticker}."
     if r.get("scored") and r.get("score") is not None:
-        metric = "hedge variance reduction" if div == "hedge" else "P&L net of fees per unit of drawdown"
+        metric = ("hedge variance reduction beyond a static hedge of the same average size"
+                  if div == "hedge" else "P&L net of fees per unit of drawdown")
+        extra = ""
+        if div == "hedge" and r.get("score_raw") is not None:
+            extra = f"; raw variance reduction {r['score_raw']:.3f}"
+            if r.get("avg_hedge_ratio") is not None:
+                extra += f" at an average hedge ratio of {r['avg_hedge_ratio']:.2f}"
         second = (f"Preset #{r.get('preset_index')} ({_fmt_params(r.get('params') or {})}) scored best on {metric} "
-                  f"({r['score']:.3f}) over {r.get('n_ticks', 0)} replayed ticks from {r.get('ticks_source')} price history.")
+                  f"({r['score']:.3f}{extra}) over {r.get('n_ticks', 0)} replayed ticks from {r.get('ticks_source')} "
+                  "price history.")
     else:
         why = r.get("unscored_reason") or "the compiled engine is not available"
         second = (f"Preset #{r.get('preset_index')} ({_fmt_params(r.get('params') or {})}) is the family's default, picked by "
@@ -211,6 +218,9 @@ class GeminiProvider:
         prompt = ("Write a 2-3 sentence rationale for an investor explaining why this algo and preset were chosen. "
                   "Use ONLY the facts in the JSON below; do not add numbers, events, or claims that are not in it. "
                   "If 'scored' is false, say plainly that the preset was picked by rules without a replay score. "
+                  "For a hedge, 'score' is the variance reduction BEYOND a static hedge of the same average size "
+                  "(what the market signal adds); 'score_raw' is plain variance reduction, which any static short "
+                  "earns, so never present score_raw as the hedge's edge. "
                   "Say 'replay' for replayed history, never 'live performance'.\n"
                   f"{json.dumps(result, default=str, sort_keys=True)}\n"
                   'Answer as JSON: {"rationale": "<2-3 sentences>"}')

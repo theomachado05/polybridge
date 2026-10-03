@@ -35,7 +35,16 @@ def _approved(client, tags=("material_litigation",)):
 
 
 def _body(pid, source="replay", **kw):
-    return {"proposal_id": pid, "source": source, "market": {"source": "polymarket", "id": "m1", "token_id": "t1"}, **kw}
+    # fixture.jsonl has no .meta.json sidecar (its market is unknown), so a replay request names it explicitly
+    named = {"replay_file": "fixture.jsonl"} if source == "replay" else {}
+    return {"proposal_id": pid, "source": source, "market": {"source": "polymarket", "id": "m1", "token_id": "t1"},
+            **named, **kw}
+
+
+def write_meta(path, market: dict):
+    """The replay file's sidecar: which market it records."""
+    path.with_name(path.name + ".meta.json").write_text(json.dumps(
+        {"source": market["source"], "id": market.get("id"), "token_id": market.get("token_id")}))
 
 
 def _events(client, bridge_id):
@@ -148,3 +157,53 @@ def test_high_speed_replay_of_hourly_history_is_never_stale(tmp_path):
     assert all(0 <= now - ts < 2_000_000_000 for ts, now in got)  # fresh vs. the default max_staleness_ns
     gaps = [b[0] - a[0] for a, b in zip(got, got[1:])]
     assert all(80_000_000 <= g <= 400_000_000 for g in gaps)  # 1 h / 36000 = 0.1 s
+
+
+# --- replay sidecars (no engine needed) ---------------------------------------------------------------------------
+
+def test_replay_meta_and_matching(tmp_path):
+    from app.models import MarketRef
+    f = tmp_path / "x.jsonl"
+    f.write_text("")
+    assert bridges.replay_meta(f) is None
+    f.with_name("x.jsonl.meta.json").write_text("not json")
+    assert bridges.replay_meta(f) is None
+    f.with_name("x.jsonl.meta.json").write_text(json.dumps({"source": "polymarket"}))  # no id / token: unknown
+    assert bridges.replay_meta(f) is None
+    write_meta(f, {"source": "polymarket", "id": "2589813", "token_id": "tok"})
+    meta = bridges.replay_meta(f)
+    assert meta == {"source": "polymarket", "id": "2589813", "token_id": "tok"}
+    m = bridges._meta_matches
+    assert m(meta, MarketRef(source="polymarket", id="2589813"))
+    assert m(meta, MarketRef(source="polymarket", id="other", token_id="tok"))
+    assert m(meta, MarketRef(source="polymarket", id="tok"))  # a market given by its token id
+    assert not m(meta, MarketRef(source="kalshi", id="2589813"))
+    assert not m(meta, MarketRef(source="polymarket", id="2589812", token_id="tok2"))
+
+
+def test_check_replay_market(tmp_path):
+    from fastapi import HTTPException
+    from app.models import MarketRef
+    f = tmp_path / "fed-history.jsonl"
+    f.write_text("")
+    fed = MarketRef(source="polymarket", id="fed")
+    bridges._check_replay_market(f, fed, None)  # no sidecar, but the stem is "<market id>-history": named
+    with pytest.raises(HTTPException) as e:
+        bridges._check_replay_market(f, MarketRef(source="polymarket", id="m1"), None)
+    assert e.value.status_code == 422 and "sidecar" in e.value.detail
+    bridges._check_replay_market(f, MarketRef(source="polymarket", id="m1"), "fed-history.jsonl")  # named
+    write_meta(f, {"source": "polymarket", "id": "2589813"})
+    with pytest.raises(HTTPException) as e:  # the sidecar wins over the name
+        bridges._check_replay_market(f, fed, "fed-history.jsonl")
+    assert e.value.status_code == 422 and "polymarket:2589813" in e.value.detail
+    bridges._check_replay_market(f, MarketRef(source="polymarket", id="2589813"), None)
+
+
+def test_committed_replays_carry_sidecars():
+    """Every recording in backend/replays/ says which market it records (the fed recordings: polymarket 2589813)."""
+    files = sorted(bridges.REPLAYS_DIR.glob("*.jsonl"))
+    assert files
+    for f in files:
+        meta = bridges.replay_meta(f)
+        assert meta is not None, f.name
+        assert meta["source"] == "polymarket" and meta["id"] == "2589813"

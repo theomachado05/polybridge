@@ -32,6 +32,7 @@ import httpx  # noqa: E402
 from app.pipeline.engine_adapter import EngineAdapter  # noqa: E402
 from app.pipeline.llm import RulesProvider, default_provider  # noqa: E402
 from app.pipeline.service import Deps, FitRequest, MarketRef, fit  # noqa: E402
+from app.pipeline.tune import NO_STATIC_BENCHMARK  # noqa: E402
 
 DATA = BACKEND / "app" / "data"
 FIT_TIMEOUT_S = 60.0
@@ -86,11 +87,33 @@ async def run(jobs: list[dict], deps: Deps, shares: float, fit_timeout_s: float 
         line = (f"{j['key']:>24} {req.ticker:<6} {res['event_class']:<18} {res['family'] or '-':<22} "
                 f"preset={res['preset_index'] if res['preset_index'] is not None else '-':<4} "
                 f"scored={res['score'] is not None!s:<5} ticks={res['ticks_source']}:{res['n_ticks']}"
-                f"{' TIMEOUT' if timed_out else ''}")
+                f"{_score_text(res)}{' TIMEOUT' if timed_out else ''}")
         print(line, file=sys.stderr)
         if log is not None:
             log.append(line)
     return fits
+
+
+def _score_text(res: dict) -> str:
+    if res.get("score") is None:
+        return ""
+    if res.get("score_basis") == "hedge_var_reduction_vs_static":
+        raw, h = res.get("score_raw"), res.get("avg_hedge_ratio")
+        return (f" vs_static={res['score']:+.3f} raw={raw:.3f}" if raw is not None else f" vs_static={res['score']:+.3f}") \
+            + (f" h={h:.2f}" if h is not None else "")
+    return f" score={res['score']:+.3f}"
+
+
+def hedge_score_stats(fits: dict) -> dict:
+    """Distribution of the hedge ranking score (variance cut beyond a same-size static hedge) over scored fits."""
+    v = sorted(f["score"] for f in fits.values()
+               if f.get("score") is not None and f.get("score_basis") == "hedge_var_reduction_vs_static")
+    if not v:
+        return {"n": 0}
+    mid = len(v) // 2
+    median = v[mid] if len(v) % 2 else (v[mid - 1] + v[mid]) / 2
+    return {"n": len(v), "gt0": sum(1 for x in v if x > 0), "le0": sum(1 for x in v if x <= 0),
+            "median": round(median, 4), "max": round(v[-1], 4), "min": round(v[0], 4)}
 
 
 def summarize(fits: dict) -> dict:
@@ -105,6 +128,11 @@ def summarize(fits: dict) -> dict:
         "timed_out": sorted(k for k, f in fits.items() if f.get("timed_out")),
         "families": dict(Counter(f["family"] or "-" for f in fits.values()).most_common()),
         "event_classes": dict(Counter(f["event_class"] for f in fits.values()).most_common()),
+        # score_vs_static: hedge variance cut beyond a static short of the same average size (the ranking score)
+        "score_vs_static": hedge_score_stats(fits),
+        # rules picks because no preset had a defined vs-static score (never ranked on raw variance reduction)
+        "no_static_benchmark": sorted(k for k, f in fits.items()
+                                      if not f["scored"] and NO_STATIC_BENCHMARK in (f.get("rationale") or "")),
     }
 
 

@@ -34,8 +34,13 @@ Failed polls are skipped. Find a token id via `GET /markets/search?q=...` (`toke
     POLYBRIDGE_REPLAY_PATH=replays/fed-hike-25bps-oct-2026-history.jsonl POLYBRIDGE_REPLAY_SPEED=36000 uv run --group engine uvicorn app.main:app
     # approve a hedge proposal, then:
     curl -X POST localhost:8000/bridges -H 'content-type: application/json' \
-      -d '{"proposal_id":"<id>","source":"replay","market":{"source":"polymarket","id":"fed"},"gap_per_share":1.0}'
+      -d '{"proposal_id":"<id>","source":"replay","market":{"source":"polymarket","id":"2589813"},"gap_per_share":1.0}'
     curl -N localhost:8000/bridges/<bridge_id>/stream
+
+Each recording has a sidecar `<file>.meta.json` (`{"source", "id", "token_id"}`) naming the market it records; both
+Fed files here record `polymarket:2589813`. A replay bridge for another market answers 422 instead of replaying this
+history under that market's title. A file with no sidecar (market unknown) is replayed only when the request names it
+(`"replay_file": "<file name>"`, or a market id equal to the file's stem). Add a sidecar next to any new recording.
 
 Without `POLYBRIDGE_REPLAY_PATH`, `source: "replay"` looks for `replays/<market.id>.jsonl`. The same variable is the automatic
 fallback when a live bridge loses its network connection. With the 1 s recording, leave `POLYBRIDGE_REPLAY_SPEED` unset (real time).
