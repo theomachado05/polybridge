@@ -130,3 +130,4 @@ the static universe, parity-recovered spot error, last-trade marks without sprea
 ## Change log
 
 - 2026-10-02: initial registration.
+- 2026-10-02: tag mapping committed as HYPOTHESIS_TAGS.md (taxonomy only, before any events).

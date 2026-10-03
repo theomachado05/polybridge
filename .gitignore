@@ -31,3 +31,7 @@ engine/cmake-build-*/
 compile_commands.json
 engine/recordings/*.jsonl
 !engine/recordings/demo-*.jsonl
+
+# research data (API responses are not committed)
+.massive_cache/
+research/taxonomy/
