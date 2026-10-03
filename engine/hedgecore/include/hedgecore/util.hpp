@@ -14,6 +14,8 @@ inline bool num(double x) noexcept { return std::isfinite(x); }
 inline bool prob(double p) noexcept { return p >= 0.0 && p <= 1.0; }  // false for NaN
 inline double clampd(double x, double lo, double hi) noexcept { return x < lo ? lo : (x > hi ? hi : x); }
 inline int sgn(double x) noexcept { return (x > 0) - (x < 0); }
+// floor() tolerant of binary rounding (0.2 * 1000 / 0.5 is 399.999...); sizes are whole units.
+inline double floor_units(double x) noexcept { return std::floor(x + 1e-9); }
 
 // Mid of a two-sided quote; NaN unless both sides exist and bid <= ask.
 inline double mid(double bid, double ask) noexcept {
