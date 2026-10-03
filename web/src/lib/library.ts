@@ -26,9 +26,11 @@ add("Execution", "NoTradeBand FeeGate Slicer PassiveAggressive IcebergCap");
 add("Tax", "TaxLotSelector WashSaleGuard");
 add("Routing", "VenueRouter");
 
-export function blockUi(b: string | { name: string; kind?: string }): UiFamily | null {
+export function blockUi(b: string | { name: string; kind?: string; ui_kind?: string }): UiFamily | null {
   const name = typeof b === "string" ? b : b.name;
   const kind = typeof b === "string" ? undefined : b.kind;
+  const ui = typeof b === "string" ? undefined : b.ui_kind;  // the compiled manifest names the UI family itself
+  if (ui && (UI_FAMILIES as readonly string[]).includes(ui)) return ui as UiFamily;
   if (kind && KIND_TO_UI[kind.toLowerCase()]) return KIND_TO_UI[kind.toLowerCase()];
   const key = name.replace(/Gate$|Block$/, "").toLowerCase();
   return BLOCK_KIND[name.toLowerCase()] ?? BLOCK_KIND[key] ?? null;

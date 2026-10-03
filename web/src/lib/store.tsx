@@ -4,18 +4,15 @@
 // route). It lives in the root layout, so it survives client navigation between screens.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
-import {
-  approveProposal, createProposal, getAccount, getEquity, getLibrary, getPortfolio, listProposals, postFit, startBridge,
-  type AccountOut, type FitOut, type PortfolioOut, type Proposal,
-} from "./api";
+import { getAccount, getLibrary, getPortfolio, postFit, type AccountOut, type FitOut, type PortfolioOut } from "./api";
 import { EQ, QUESTIONS, demoImpacts, type EquityPick, type Question } from "./demo";
 import { parseLibrary, type Library } from "./library";
 import { initSim, stepSim, type Sim } from "./sim";
+import { startRealBridge, type Settings } from "./realBridge.ts";
 
-export interface Settings {
-  broker: string | null; conns: string[]; account: "Taxable" | "IRA"; rate: string; taxState: string; maxHedge: string;
-  markets: Record<string, boolean>; guards: { edge: boolean; wash: boolean; auto: boolean };
-}
+export { feeGateOff, gapPerShare } from "./realBridge.ts";
+
+export type { Settings };
 export type BridgeEntry =
   | { id: string; kind: "demo"; q: Question; eq: EquityPick; inst: string; sim: Sim }
   | {
@@ -88,46 +85,6 @@ export function useStore(): Store {
 }
 
 const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e));
-
-/** $/share per unit of probability for the engine's fee gate; 0 (no spot or no impact estimate) turns the gate off. */
-export const gapPerShare = (spot: number | null | undefined, move: number | null | undefined) =>
-  spot && move ? (spot * Math.abs(move)) / 100 : 0;
-
-/** True when a live bridge for this pick would start with the engine's fee gate off (contracts.md). */
-export const feeGateOff = (q: Question, eq: EquityPick) => !!q.real && gapPerShare(eq.px, eq.move) === 0;
-
-const sameMarket = (p: Proposal, m: NonNullable<Question["real"]>) => p.market?.source === m.source && p.market?.id === m.id;
-
-/** Proposal → approval → engine bridge on the real backend (market-event path, contracts.md).
- *  Reuses an earlier proposal for the same ticker, market and direction instead of creating one per run: an
- *  approved one (POST /bridges is idempotent per proposal, so this re-attaches to its bridge, or finally starts
- *  the bridge if an earlier attempt failed after approval), else a pending one, which is approved here. */
-async function startRealBridge(q: Question, eq: EquityPick, settings: Settings): Promise<{ bridgeId: string; gap: number }> {
-  const m = q.real;
-  if (!m) throw new Error("this market is from the demo set, not the live search");
-  if (!eq.direction) throw new Error(`${eq.t} is not in this market's mapping, so the adverse outcome is unknown`);
-  let spot = eq.px;
-  if (!spot) spot = await getEquity(eq.t).then((c) => c.implied_move?.spot ?? null, () => null);
-  const cap = Math.min(1, (parseInt(settings.maxHedge, 10) || 100) / 100);
-  const market = { source: m.source, id: m.id, token_id: m.token_id };
-  const mine = (await listProposals().catch(() => [] as Proposal[]))
-    .filter((p) => p.ticker === eq.t && p.family === "hedge" && sameMarket(p, m) && (p.direction ?? "down_on_yes") === eq.direction);
-  const approved = mine.find((p) => p.status === "approved");
-  const pending = mine.find((p) => p.status === "proposed");
-  const ok = approved
-    ?? (pending ? await approveProposal(pending.id) : null)
-    ?? await createProposal({ ticker: eq.t, market, direction: eq.direction, shares_held: eq.held || 500, target_coverage: Math.min(0.5, cap) })
-      .then((prop) => (prop.status === "approved" ? prop : approveProposal(prop.id)));
-  const gap = gapPerShare(spot, eq.move);
-  const sources: ("replay" | "live")[] = m.token_id ? ["replay", "live"] : ["replay"];
-  let last: unknown = null;
-  for (const source of sources) {
-    try { return { bridgeId: (await startBridge({ proposal_id: ok.id, source, gap_per_share: gap, direction: eq.direction, market })).bridge_id, gap }; }
-    catch (e) { last = e; }
-  }
-  const why = last instanceof Error ? last.message : "the backend refused to start a bridge";
-  throw new Error(`${why}; proposal ${ok.id} stays approved and is reused on the next try`);
-}
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [question, setQuestionS] = useState<Question | null>(null);
@@ -208,7 +165,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const run = (async () => {
       try {
         if (q.real && instId !== "shares") throw new Error("the engine runs only the dynamic short-shares hedge; option and contract hedges are demo-only");
-        const { bridgeId, gap } = await startRealBridge(q, eq, settings);
+        const { bridgeId, gap } = await startRealBridge(q, eq, settings.maxHedge);
         const f = fit && fit.key === key && fit.status === "ok" && fit.data?.family ? { family: fit.data.family, preset_index: fit.data.preset_index ?? null } : null;
         const entry: BridgeEntry = { id: `live:${bridgeId}`, kind: "live", bridgeId, q, eq, inst: instId, fit: f, gap };
         setBridges((bs) => (bs.some((b) => b.id === entry.id) ? bs : [...bs, entry]));

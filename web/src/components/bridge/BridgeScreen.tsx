@@ -176,12 +176,22 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
   }));
   const coverage = Math.min(100, Math.round((shares ? st.hedge / shares : 0) * 100));
   const orders = st.log.filter((l) => l.action === "order" && l.qty !== 0).slice(-8).reverse();
-  const trades: TradeCard[] = orders.map((l) => ({
-    id: l.n, side: l.qty > 0 ? "SELL" : "BUY", time: `#${l.n}`,
-    head: `${Math.abs(l.qty)} ${ticker ?? ""}${spot ? ` @ ~${spot.toFixed(2)}` : ""}`,
-    algo: "Delta-Bridge Sizer",
-    reason: `YES at ${l.p == null ? "n/a" : Math.round(l.p * 100) + "¢"}; engine ${l.reason.replace("_", " ")}: target hedge ${l.target} sh, was ${l.current} sh. Decided in ${fmtNs(l.ns)}.${spot ? " Fill price is the last quote, not a broker fill." : ""}`,
-  }));
+  const trades: TradeCard[] = orders.map((l) => {
+    const f = l.fill;
+    const filledPx = f && f.status === "filled" && f.fill_px != null ? f.fill_px : null;
+    const px = filledPx != null ? ` @ ${filledPx.toFixed(2)}` : spot ? ` @ ~${spot.toFixed(2)}` : "";
+    const brokerLine = !f ? (spot ? " Price shown is the last quote, not a broker fill." : "")
+      : f.status === "filled" ? ` Filled by ${f.broker ?? "the broker"}${f.price_source ? ` (price: ${f.price_source})` : ""}${f.fee ? `, fee $${f.fee.toFixed(2)}` : ""}.${f.note || f.scope === "replay_sandbox" ? ` ${f.note ?? "Replay sandbox: not your account."}` : ""}`
+      : f.status === "rejected" ? ` Broker rejected it${f.reject_reason ? `: ${f.reject_reason}` : ""}.`
+      : f.status === "error" ? ` Broker error (${f.error ?? "unknown"}); nothing filled.`
+      : ` Broker status: ${f.status ?? "unknown"}.`;
+    return {
+      id: l.n, side: l.qty > 0 ? "SELL" : "BUY", time: `#${l.n}`,
+      head: `${Math.abs(l.qty)} ${ticker ?? ""}${px}`,
+      algo: "Delta-Bridge Sizer",
+      reason: `YES at ${l.p == null ? "n/a" : Math.round(l.p * 100) + "¢"}; engine ${l.reason.replace("_", " ")}: target hedge ${l.target} sh, was ${l.current} sh. Decided in ${fmtNs(l.ns)}.${brokerLine}`,
+    };
+  });
   // POST /bridges takes no family or preset: the engine runs its default delta-bridge spec. The AI fit is shown
   // beside it, labelled as not applied.
   const fitTag = entry.fit
@@ -213,11 +223,11 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,340px),1fr))", gap: 16, alignItems: "stretch" }}>
         <PortfolioPanel
           tag={<Tag tone={acct.tone} title="Account that receives the engine's orders (GET /account)">{acct.name}</Tag>}
-          big={`${st.hedge.toLocaleString("en-US")} sh`} bigColor="#0F1626" bigNote="hedge short now"
+          big={`${st.hedge.toLocaleString("en-US")} sh`} bigColor="#0F1626" bigNote={st.brokerHedge != null ? "engine's intended hedge" : "hedge short now (engine)"}
           left={[`Long ${ticker ?? ""}`, `${shares.toLocaleString("en-US")} sh`, spot ? fmtMoney(shares * spot) : "value n/a"]}
           right={["Engine orders", String(orders.length ? st.log.filter((l) => l.action === "order").length : summary.data?.orders ?? 0), `${st.decisions} decisions`]}
           ratio={coverage} ratioLabel={`Coverage (target ${Math.round((summary.data?.target_coverage ?? 0.5) * 100)}%)`}
-          footL={`Status ${st.status}`} footR={`p50 ${fmtNs(p50)} · p99 ${fmtNs(p99)}`}
+          footL={st.brokerHedge != null ? `Broker filled ${st.brokerHedge.toLocaleString("en-US")} sh short · ${st.fills} fills` : `Status ${st.status}`} footR={`p50 ${fmtNs(p50)} · p99 ${fmtNs(p99)}`}
         />
         <TradesPanel trades={trades} tag={sourceTag} empty={st.decisions ? `No orders yet — the gates are holding (${st.decisions} decisions).` : "Waiting for the first tick…"} />
       </div>

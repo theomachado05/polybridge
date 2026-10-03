@@ -235,7 +235,7 @@ export interface FitOut {
 export const postFit = (body: FitBody) => post<FitOut>("/pipeline/fit", body);
 
 export interface CatalogParam { name: string; min?: number; max?: number; grid?: number[] }
-export interface CatalogBlock { name: string; kind?: string }
+export interface CatalogBlock { name: string; kind?: string; ui_kind?: string }
 export interface CatalogFamily {
   id: string;
   division?: string;
@@ -259,12 +259,18 @@ export interface LibraryOut {
 }
 export const getLibrary = () => request<LibraryOut | CatalogFamily[]>("/library");
 
+// Field names checked against origin/v4/broker (backend/app/broker/models.py) and origin/v4/ai-pipeline.
 export interface AccountOut {
-  broker?: string;
+  broker?: string;          // "sim" | "webull-paper"
   cash: number;
   equity: number;
   buying_power: number;
   currency: string;
+  simulated?: boolean;
+  starting_cash?: number | null;
+  realized_pnl?: number | null;
+  fees_paid?: number | null;
+  note?: string | null;
 }
 export interface BrokerPosition {
   symbol: string;
@@ -273,7 +279,10 @@ export interface BrokerPosition {
   avg_px?: number | null;
   avg_price?: number | null;
   market_px?: number | null;
+  mark_px?: number | null;
   market_value?: number | null;
+  unrealized_pnl?: number | null;
+  broker?: string;
 }
 export interface BrokerOrder {
   id: string;
@@ -292,6 +301,9 @@ export interface BrokerOrder {
   created_at?: string | null;
   filled_at?: string | null;
   broker?: string;
+  price_source?: string | null;
+  reject_reason?: string | null;
+  note?: string | null;
 }
 export const getAccount = () => request<AccountOut>("/account");
 const unwrap = <T,>(key: string) => (x: unknown): T[] =>
