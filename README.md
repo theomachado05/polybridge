@@ -7,7 +7,7 @@ Hedge equity positions using live prediction-market prices (Polymarket + Kalshi)
 | Folder | Stack | Role |
 |---|---|---|
 | `engine/` | C++20 | Hot path: feeds → algos → paper fills (ZeroMQ out) |
-| `api/` | Python 3.12 · FastAPI | Control plane: markets, AI impact, hedge ranking, portfolio |
+| `backend/` | Python 3.12 · FastAPI | Control plane: markets, AI impact, hedge ranking, portfolio |
 | `web/` | Next.js · TypeScript | UI: Build · Bridge · Library · Portfolio |
 
 ## Workflow
