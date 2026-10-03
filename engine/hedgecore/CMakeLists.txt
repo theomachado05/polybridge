@@ -13,6 +13,13 @@ add_library(hedgecore_lib STATIC src/engine.cpp src/replay.cpp)
 target_include_directories(hedgecore_lib PUBLIC include)
 target_compile_options(hedgecore_lib PRIVATE -Wall -Wextra -Wpedantic)
 
+option(HEDGECORE_BUILD_BENCH "Build the latency benchmark" ON)
+if(HEDGECORE_BUILD_BENCH)
+  add_executable(hedgecore_bench bench/hedgecore_bench.cpp)
+  target_link_libraries(hedgecore_bench PRIVATE hedgecore_lib)
+  target_compile_options(hedgecore_bench PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
 if(HEDGECORE_BUILD_TESTS)
   include(FetchContent)
   FetchContent_Declare(googletest

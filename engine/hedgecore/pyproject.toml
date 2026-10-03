@@ -10,5 +10,6 @@ requires-python = ">=3.12"
 [tool.scikit-build]
 cmake.version = ">=3.24"
 cmake.define.HEDGECORE_BUILD_TESTS = "OFF"
+cmake.define.HEDGECORE_BUILD_BENCH = "OFF"
 cmake.define.HEDGECORE_BUILD_PYTHON = "ON"
 wheel.packages = []
