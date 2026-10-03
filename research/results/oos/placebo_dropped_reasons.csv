@@ -1,0 +1,12 @@
+family,reason,n
+hedge,1m: ATM pair did not trade on or near the pre-event session,22
+hedge,2m: ATM pair did not trade on or near the pre-event session,10
+hedge,3-6m: ATM pair did not trade on or near the pre-event session,4
+hedge,could not recover spot from the chain (no liquid near-dated pair),2
+opportunity,1m: ATM pair did not trade on or near the pre-event session,13
+opportunity,2m: ATM pair did not trade on or near the pre-event session,9
+opportunity,2m: no expiry 46-80 days out,2
+opportunity,2m: no paired strikes near spot,5
+opportunity,3-6m: ATM pair did not trade on or near the pre-event session,16
+opportunity,3-6m: no paired strikes near spot,6
+opportunity,could not recover spot from the chain (no liquid near-dated pair),2

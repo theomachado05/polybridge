@@ -1,0 +1,4 @@
+horizon,n_events_in_sample,edge_in_sample,ratio_diff_in_sample,n_events_oos,edge_oos,ratio_diff_oos,edge_same_sign,ratio_same_sign
+21,32,0.0007002098472119,0.0187083508355798,3,,,False,False
+42,30,0.0049088489044617,0.2087413948886567,3,,,False,False
+exp,28,0.0332916712622991,0.1211410640178023,1,,,False,False

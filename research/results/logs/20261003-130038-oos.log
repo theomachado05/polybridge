@@ -1,0 +1,12 @@
+[      0s] OUT-OF-SAMPLE window 2026-01-01 -> 2026-08-31; last session used for exits 2026-10-02 (pinned); timing conservative (user_agent=None)
+events: 11 events -> 30 priced (event, bucket) pairs; 3 drops
+placebo hedge: 120 events -> 318 priced (event, bucket) pairs; 38 drops
+placebo opportunity: 120 events -> 303 priced (event, bucket) pairs; 53 drops
+[     90s] study done (.done written)
+[     90s] global tables written
+[     90s] [hedge] exporting
+[     93s] [hedge] verdict NULL
+[     93s] [opportunity] exporting
+[    102s] [opportunity] verdict NULL
+[    102s] SUMMARY.md written
+[    102s] export complete

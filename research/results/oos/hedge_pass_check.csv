@@ -1,0 +1,4 @@
+horizon,n_events,n_placebo,pnl_difference,ci_lo,ci_hi,ratio_difference,pnl_ok,ratio_ok
+21,3,107,,,,,False,False
+42,3,81,,,,,False,False
+exp,1,65,,,,,False,False
