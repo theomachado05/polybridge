@@ -1,7 +1,7 @@
 // Offline tests for opening a live bridge (proposal reuse, approval, fee gate) with the API injected.
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { feeGateOff, gapPerShare, startRealBridge, type BridgeApi } from "../src/lib/realBridge.ts";
+import { feeGateOff, gapPerShare, runnableFit, startRealBridge, type BridgeApi } from "../src/lib/realBridge.ts";
 import { QUESTIONS, REAL_INSTRUMENTS, questionFromMarket, type EquityPick } from "../src/lib/demo.ts";
 import type { Proposal } from "../src/lib/api.ts";
 import { init, reduce } from "../src/lib/bridgeStream.ts";
@@ -36,7 +36,7 @@ describe("startRealBridge", () => {
   it("creates and approves a new proposal when none exists, with the fee-gate gap from spot and move", async () => {
     const { api, calls } = fakeApi([]);
     const r = await startRealBridge(q, eq, "100%", api);
-    assert.deepEqual(r, { bridgeId: "b-new", gap: 3.9 });
+    assert.deepEqual(r, { bridgeId: "b-new", gap: 3.9, applied: null });
     assert.deepEqual(calls, ["list", "create", "approve:new", "bridge:new:replay:3.9"]);
   });
   it("reuses an approved proposal for the same market, ticker and direction (no new proposal per run)", async () => {
@@ -68,6 +68,67 @@ describe("startRealBridge", () => {
     const { api, calls } = fakeApi([]);
     await assert.rejects(startRealBridge(QUESTIONS[0], eq, "100%", api), /demo set/);
     assert.deepEqual(calls, []);
+  });
+});
+
+describe("startRealBridge with an AI fit", () => {
+  function fitApi(existing: Proposal[]) {
+    const calls: { create?: unknown; bridges: unknown[] } = { bridges: [] };
+    const api: BridgeApi = {
+      listProposals: async () => existing,
+      createProposal: async (body) => { calls.create = body; return prop({ id: "new", algo: (body as { algo?: Proposal["algo"] }).algo ?? null }); },
+      approveProposal: async (id: string) => prop({ id, status: "approved" }),
+      getEquity: async () => { throw new Error("no quote"); },
+      startBridge: async (body) => { calls.bridges.push(body); return { bridge_id: `b-${body.proposal_id}` }; },
+    };
+    return { api, calls };
+  }
+  const fit = { family: "macro_fed_hedge", preset_index: 5 };
+
+  it("sends the family and preset with the proposal and the bridge, and reports them as applied", async () => {
+    const { api, calls } = fitApi([]);
+    const r = await startRealBridge(q, eq, "100%", api, fit);
+    assert.deepEqual(r.applied, fit);
+    assert.deepEqual((calls.create as { algo: unknown }).algo, { family: "macro_fed_hedge", preset_index: 5, source: "ai_fit" });
+    const b = calls.bridges[0] as { family: string; preset_index: number };
+    assert.equal(b.family, "macro_fed_hedge");
+    assert.equal(b.preset_index, 5);
+  });
+  it("reuses only a proposal approved with the same algo", async () => {
+    const same = prop({ id: "same", status: "approved", target_coverage: 1, algo: { family: "macro_fed_hedge", preset_index: 5 } });
+    const other = prop({ id: "other", status: "approved", algo: { family: "macro_fed_hedge", preset_index: 6 } });
+    const none = prop({ id: "none", status: "approved" });
+    assert.equal((await startRealBridge(q, eq, "100%", fitApi([other, none, same]).api, fit)).bridgeId, "b-same");
+    const { api, calls } = fitApi([other, none]);
+    assert.equal((await startRealBridge(q, eq, "100%", api, fit)).bridgeId, "b-new");
+    assert.ok(calls.create);
+    // no fit: a proposal approved with an algo is not reused (the bridge would run that algo, not the default)
+    assert.equal((await startRealBridge(q, eq, "100%", fitApi([same, none]).api)).bridgeId, "b-none");
+  });
+  it("with a fit the approved target_coverage is the user's Max hedge (the backend caps the algo at it)", async () => {
+    const { api, calls } = fitApi([]);
+    await startRealBridge(q, eq, "40%", api, fit);
+    assert.equal((calls.create as { target_coverage: number }).target_coverage, 0.4);
+    const noFit = fitApi([]);
+    await startRealBridge(q, eq, "100%", noFit.api);
+    assert.equal((noFit.calls.create as { target_coverage: number }).target_coverage, 0.5); // default Engine: half
+    // a proposal approved at another cap is not reused: the approval bounds what the bridge may hedge
+    const atHalf = prop({ id: "half", status: "approved", target_coverage: 0.5, algo: { family: "macro_fed_hedge", preset_index: 5 } });
+    assert.equal((await startRealBridge(q, eq, "40%", fitApi([atHalf]).api, fit)).bridgeId, "b-new");
+    assert.equal((await startRealBridge(q, eq, "50%", fitApi([atHalf]).api, fit)).bridgeId, "b-half");
+  });
+  it("without a fit the bridge body carries no family (the engine default spec runs)", async () => {
+    const { api, calls } = fitApi([]);
+    const r = await startRealBridge(q, eq, "100%", api);
+    assert.equal(r.applied, null);
+    assert.equal((calls.bridges[0] as { family?: string }).family, undefined);
+    assert.equal((calls.create as { algo?: unknown }).algo, undefined);
+  });
+  it("only a hedge-division fit with a preset is runnable on a bridge", () => {
+    assert.deepEqual(runnableFit({ family: "macro_fed_hedge", preset_index: 5, division: "hedge" }), fit);
+    assert.equal(runnableFit({ family: "no_bid_seller", preset_index: 2, division: "opportunity" }), null);
+    assert.equal(runnableFit({ family: null, preset_index: null, division: "hedge" }), null);
+    assert.equal(runnableFit(null), null);
   });
 });
 

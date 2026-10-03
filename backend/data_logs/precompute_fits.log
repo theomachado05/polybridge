@@ -1,0 +1,171 @@
+# precompute_fits run 2026-10-03T08:52:05+00:00 -> 2026-10-03T08:52:52+00:00
+# library=engine can_score=True provider=rules offline=False shares=1000 fit_timeout=60s jobs=133
+
+      polymarket:5126779 VRT    tech_regulation    tech_reg_hedge         preset=60   scored=True  ticks=live_history:88
+      polymarket:4662693 AMZN   company_specific   equity_delta_bridge    preset=87   scored=True  ticks=live_history:371
+       polymarket:562831 ICLN   elections          equity_delta_bridge    preset=83   scored=True  ticks=live_history:721
+      polymarket:2589813 SPY    macro_fed          fig_stress             preset=57   scored=True  ticks=live_history:721
+       polymarket:562828 ICLN   elections          equity_delta_bridge    preset=99   scored=True  ticks=live_history:721
+       polymarket:665374 XLE    geopolitics_energy equity_delta_bridge    preset=87   scored=True  ticks=live_history:721
+       polymarket:562802 ICLN   elections          equity_delta_bridge    preset=82   scored=True  ticks=live_history:721
+      polymarket:5179198 VRT    tech_regulation    equity_delta_bridge    preset=87   scored=True  ticks=live_history:41
+      polymarket:5170735 IBIT   crypto             equity_delta_bridge    preset=83   scored=True  ticks=live_history:51
+      polymarket:1365861 EWZ    elections          equity_delta_bridge    preset=86   scored=True  ticks=live_history:722
+      polymarket:4037599 EWZ    elections          election_hedge         preset=60   scored=True  ticks=live_history:718
+       polymarket:562803 XLE    elections          election_hedge         preset=54   scored=True  ticks=live_history:718
+      polymarket:4985048 IBIT   crypto             equity_delta_bridge    preset=83   scored=True  ticks=live_history:160
+      polymarket:4985052 IBIT   crypto             equity_delta_bridge    preset=84   scored=True  ticks=live_history:161
+      polymarket:2589810 IWM    macro_fed          fig_stress             preset=54   scored=True  ticks=live_history:720
+      polymarket:5126782 VRT    tech_regulation    tech_reg_hedge         preset=60   scored=True  ticks=live_history:89
+      polymarket:4037600 EWZ    elections          election_hedge         preset=60   scored=True  ticks=live_history:721
+      polymarket:5062249 IBIT   crypto             crypto_reg_hedge       preset=63   scored=True  ticks=live_history:124
+      polymarket:2589814 SPY    macro_fed          fig_stress             preset=54   scored=True  ticks=live_history:719
+      polymarket:5123857 VRT    tech_regulation    tech_reg_hedge         preset=78   scored=True  ticks=live_history:90
+      polymarket:2176270 XLE    geopolitics_energy equity_delta_bridge    preset=105  scored=True  ticks=live_history:721
+      polymarket:5164765 XLE    geopolitics_energy equity_delta_bridge    preset=83   scored=True  ticks=live_history:59
+      polymarket:2589811 SPY    macro_fed          fig_stress             preset=54   scored=True  ticks=live_history:721
+      polymarket:4985072 IBIT   crypto             equity_delta_bridge    preset=87   scored=True  ticks=live_history:161
+      polymarket:5062265 IBIT   crypto             equity_delta_bridge    preset=87   scored=True  ticks=live_history:125
+      polymarket:5126781 VRT    tech_regulation    tech_reg_hedge         preset=60   scored=True  ticks=live_history:88
+      polymarket:5062275 COIN   crypto             equity_delta_bridge    preset=87   scored=True  ticks=live_history:124
+      polymarket:5179177 VRT    tech_regulation    tech_reg_hedge         preset=60   scored=True  ticks=live_history:40
+      polymarket:5180113 IBIT   crypto             crypto_reg_hedge       preset=73   scored=True  ticks=live_history:41
+      polymarket:5126778 VRT    tech_regulation    tech_reg_hedge         preset=60   scored=True  ticks=live_history:88
+      polymarket:3215007 IWM    macro_fed          fig_stress             preset=60   scored=True  ticks=live_history:721
+      polymarket:5062278 COIN   crypto             equity_delta_bridge    preset=87   scored=True  ticks=live_history:124
+      polymarket:5081860 XLE    unsupported        -                      preset=-    scored=False ticks=live_history:112
+      polymarket:4662694 AMZN   company_specific   tech_reg_hedge         preset=72   scored=True  ticks=live_history:371
+      polymarket:4662696 SMR    corporate_8k       equity_delta_bridge    preset=99   scored=True  ticks=live_history:370
+      polymarket:4906127 XLE    company_specific   equity_delta_bridge    preset=105  scored=True  ticks=live_history:212
+       polymarket:567621 TSM    geopolitics_energy energy_geo_hedge       preset=55   scored=True  ticks=live_history:722
+      polymarket:4641065 XLE    geopolitics_energy equity_delta_bridge    preset=83   scored=True  ticks=live_history:376
+      polymarket:1107582 XLE    geopolitics_energy equity_delta_bridge    preset=87   scored=True  ticks=live_history:721
+      polymarket:4985083 COIN   crypto             equity_delta_bridge    preset=81   scored=True  ticks=live_history:160
+       polymarket:666861 SPY    elections          equity_delta_bridge    preset=90   scored=True  ticks=live_history:721
+      polymarket:4985077 COIN   crypto             equity_delta_bridge    preset=81   scored=True  ticks=live_history:160
+      polymarket:4985067 COIN   crypto             equity_delta_bridge    preset=87   scored=True  ticks=live_history:161
+      polymarket:5062327 COIN   crypto             equity_delta_bridge    preset=105  scored=True  ticks=live_history:124
+      polymarket:3554657 GOOGL  company_specific   tech_reg_hedge         preset=69   scored=True  ticks=live_history:721
+      polymarket:5170731 COIN   crypto             crypto_reg_hedge       preset=24   scored=True  ticks=live_history:51
+      polymarket:4662584 MSFT   company_specific   tech_reg_hedge         preset=69   scored=True  ticks=live_history:370
+      polymarket:1535973 XLE    geopolitics_energy stress_lead_hedge      preset=57   scored=True  ticks=live_history:718
+      polymarket:5179176 EQIX   tech_regulation    equity_delta_bridge    preset=105  scored=True  ticks=live_history:41
+      polymarket:2126461 XLE    geopolitics_energy energy_geo_hedge       preset=54   scored=True  ticks=live_history:721
+      polymarket:2170255 XLE    unsupported        -                      preset=-    scored=False ticks=live_history:720
+      polymarket:3399459 XLE    geopolitics_energy energy_geo_hedge       preset=54   scored=True  ticks=live_history:718
+      polymarket:5170746 COIN   crypto             crypto_reg_hedge       preset=7    scored=True  ticks=live_history:51
+      polymarket:3128888 XLE    company_specific   equity_delta_bridge    preset=96   scored=True  ticks=live_history:721
+       polymarket:663583 XLE    unsupported        -                      preset=-    scored=False ticks=live_history:718
+      polymarket:4824013 VLO    tariffs_trade      tariff_trade_hedge     preset=60   scored=True  ticks=live_history:275
+       polymarket:560317 SPY    elections          election_hedge         preset=54   scored=True  ticks=live_history:721
+      polymarket:3491459 XLE    geopolitics_energy energy_geo_hedge       preset=56   scored=True  ticks=live_history:721
+      polymarket:4620900 TLT    macro_fed          fig_stress             preset=60   scored=True  ticks=live_history:398
+      polymarket:3215008 TLT    macro_fed          fig_stress             preset=57   scored=True  ticks=live_history:721
+      polymarket:3554666 TSLA   unsupported        -                      preset=-    scored=False ticks=live_history:721
+      polymarket:3554659 GOOGL  company_specific   tech_reg_hedge         preset=66   scored=True  ticks=live_history:721
+       polymarket:562829 SPY    elections          equity_delta_bridge    preset=63   scored=True  ticks=live_history:721
+      polymarket:5130978 XLE    geopolitics_energy energy_geo_hedge       preset=54   scored=True  ticks=live_history:88
+      polymarket:5062258 COIN   crypto             crypto_reg_hedge       preset=72   scored=True  ticks=live_history:125
+      polymarket:5170771 COIN   crypto             equity_delta_bridge    preset=102  scored=True  ticks=live_history:51
+      polymarket:4985100 COIN   crypto             equity_delta_bridge    preset=81   scored=True  ticks=live_history:161
+       polymarket:701494 COIN   crypto             crypto_reg_hedge       preset=54   scored=True  ticks=live_history:721
+      polymarket:5130977 XLE    geopolitics_energy equity_delta_bridge    preset=83   scored=True  ticks=live_history:88
+      polymarket:5123850 AEP    tech_regulation    equity_delta_bridge    preset=84   scored=True  ticks=live_history:91
+      polymarket:5170773 ETHA   crypto             equity_delta_bridge    preset=87   scored=True  ticks=live_history:52
+      polymarket:4985089 IBIT   crypto             equity_delta_bridge    preset=81   scored=True  ticks=live_history:160
+      polymarket:3758964 XLE    unsupported        -                      preset=-    scored=False ticks=live_history:718
+      polymarket:5062280 IBIT   crypto             equity_delta_bridge    preset=87   scored=True  ticks=live_history:124
+      polymarket:5062325 ETHA   crypto             equity_delta_bridge    preset=86   scored=True  ticks=live_history:124
+      polymarket:5170730 IBIT   crypto             equity_delta_bridge    preset=84   scored=True  ticks=live_history:52
+       polymarket:701502 IBIT   crypto             crypto_reg_hedge       preset=56   scored=True  ticks=live_history:718
+       polymarket:701496 IBIT   crypto             crypto_reg_hedge       preset=65   scored=True  ticks=live_history:721
+      polymarket:5126792 AEE    tech_regulation    equity_delta_bridge    preset=87   scored=True  ticks=live_history:89
+      polymarket:5126795 ETR    tech_regulation    tech_reg_hedge         preset=78   scored=True  ticks=live_history:88
+       polymarket:559651 FXI    unsupported        -                      preset=-    scored=False ticks=live_history:721
+      polymarket:5170728 IBIT   crypto             equity_delta_bridge    preset=99   scored=True  ticks=live_history:51
+      polymarket:4984993 ETHA   crypto             equity_delta_bridge    preset=83   scored=True  ticks=live_history:160
+      polymarket:5170740 IBIT   crypto             crypto_reg_hedge       preset=65   scored=True  ticks=live_history:51
+      polymarket:4936105 XLE    geopolitics_energy energy_geo_hedge       preset=54   scored=True  ticks=live_history:197
+      polymarket:3501950 XLE    geopolitics_energy equity_delta_bridge    preset=105  scored=True  ticks=live_history:718
+      polymarket:5180122 ETHA   crypto             equity_delta_bridge    preset=81   scored=True  ticks=live_history:41
+       polymarket:701548 ETHA   crypto             equity_delta_bridge    preset=87   scored=True  ticks=live_history:718
+      polymarket:5170744 IBIT   crypto             equity_delta_bridge    preset=87   scored=True  ticks=live_history:51
+      polymarket:5170772 ETHA   crypto             equity_delta_bridge    preset=89   scored=True  ticks=live_history:51
+      polymarket:5062323 ETHA   crypto             equity_delta_bridge    preset=84   scored=True  ticks=live_history:125
+      polymarket:1163699 COIN   unsupported        -                      preset=-    scored=False ticks=live_history:718
+      polymarket:5036103 IBIT   crypto             equity_delta_bridge    preset=102  scored=True  ticks=live_history:136
+      polymarket:5036098 IBIT   crypto             equity_delta_bridge    preset=105  scored=True  ticks=live_history:136
+      polymarket:4713962 ITA    geopolitics_energy equity_delta_bridge    preset=96   scored=True  ticks=live_history:344
+      polymarket:4985057 IBIT   crypto             equity_delta_bridge    preset=84   scored=True  ticks=live_history:161
+      polymarket:5170732 IBIT   crypto             equity_delta_bridge    preset=83   scored=True  ticks=live_history:51
+      polymarket:4951230 XLE    geopolitics_energy energy_geo_hedge       preset=56   scored=True  ticks=live_history:183
+      polymarket:4662695 AMZN   company_specific   tech_reg_hedge         preset=72   scored=True  ticks=live_history:370
+      polymarket:2774057 XLE    geopolitics_energy energy_geo_hedge       preset=55   scored=True  ticks=live_history:721
+       polymarket:562794 XLE    elections          equity_delta_bridge    preset=81   scored=True  ticks=live_history:719
+      polymarket:5170734 MSTR   crypto             crypto_reg_hedge       preset=72   scored=True  ticks=live_history:51
+      polymarket:1090496 ITA    geopolitics_energy equity_delta_bridge    preset=96   scored=True  ticks=live_history:721
+      polymarket:5170745 MSTR   crypto             equity_delta_bridge    preset=84   scored=True  ticks=live_history:52
+      polymarket:4885967 XLE    geopolitics_energy equity_delta_bridge    preset=87   scored=True  ticks=live_history:230
+      polymarket:5170743 MSTR   crypto             equity_delta_bridge    preset=102  scored=True  ticks=live_history:51
+      polymarket:4936100 XLE    geopolitics_energy energy_geo_hedge       preset=55   scored=True  ticks=live_history:196
+      polymarket:3554662 GOOGL  company_specific   equity_delta_bridge    preset=105  scored=True  ticks=live_history:721
+      polymarket:2467206 MSTR   crypto             equity_delta_bridge    preset=96   scored=True  ticks=live_history:720
+      polymarket:5126794 DLR    tech_regulation    equity_delta_bridge    preset=87   scored=True  ticks=live_history:88
+      polymarket:5062329 COIN   crypto             equity_delta_bridge    preset=87   scored=True  ticks=live_history:125
+      polymarket:3554658 META   company_specific   tech_reg_hedge         preset=78   scored=True  ticks=live_history:719
+       polymarket:701488 MSTR   crypto             crypto_reg_hedge       preset=55   scored=True  ticks=live_history:720
+      polymarket:4412200 MSFT   company_specific   tech_reg_hedge         preset=54   scored=True  ticks=live_history:569
+      polymarket:3399450 XLE    geopolitics_energy energy_geo_hedge       preset=56   scored=True  ticks=live_history:721
+      polymarket:5170729 MSTR   crypto             equity_delta_bridge    preset=84   scored=True  ticks=live_history:51
+      polymarket:1345531 MSTR   crypto             crypto_reg_hedge       preset=74   scored=True  ticks=live_history:720
+      polymarket:3399468 XLE    geopolitics_energy equity_delta_bridge    preset=84   scored=True  ticks=live_history:719
+      polymarket:5062285 MSTR   crypto             equity_delta_bridge    preset=87   scored=True  ticks=live_history:125
+      polymarket:4936101 XLE    geopolitics_energy equity_delta_bridge    preset=83   scored=True  ticks=live_history:197
+kalshi:KXCOLONIZEMARS-50 TSLA   unsupported        -                      preset=-    scored=False ticks=live_history:257
+ kalshi:KXOAIANTH-40-OAI MSFT   company_specific   tech_reg_hedge         preset=72   scored=True  ticks=live_history:440
+kalshi:KXFUSION-30-JAN01 CCJ    geopolitics_energy energy_geo_hedge       preset=59   scored=True  ticks=live_history:214
+kalshi:KXGDPYEAR-36-T0.1 SPY    macro_fed          fig_stress             preset=58   scored=True  ticks=live_history:151
+kalshi:KXFEDFUNDSYEAR-37JAN01-T1.00 TLT    macro_fed          fig_stress             preset=54   scored=True  ticks=live_history:77
+kalshi:KXGDPYEAR-35-T0.1 SPY    macro_fed          fig_stress             preset=55   scored=True  ticks=live_history:199
+kalshi:KXFEDFUNDSYEAR-36JAN01-T1.00 TLT    macro_fed          fig_stress             preset=54   scored=True  ticks=live_history:164
+kalshi:KXEARTHQUAKECALIFORNIA-35 SPY    unsupported        -                      preset=-    scored=False ticks=live_history:282
+kalshi:KXGDPYEAR-34-T0.1 SPY    macro_fed          fig_stress             preset=55   scored=True  ticks=live_history:235
+kalshi:KXFEDFUNDSYEAR-35JAN01-T1.00 TLT    macro_fed          fig_stress             preset=54   scored=True  ticks=live_history:100
+   kalshi:KXROBOTMARS-35 TSLA   unsupported        -                      preset=-    scored=False ticks=live_history:302
+kalshi:KXFDAVERVE102-VERV-30JAN01 LLY    unsupported        -                      preset=-    scored=False ticks=live_history:309
+kalshi:KXGDPYEAR-33-T0.1 SPY    macro_fed          fig_stress             preset=54   scored=True  ticks=live_history:32
+
+# summary
+{
+ "n": 133,
+ "scored": 122,
+ "fitted": 122,
+ "ticks_source": {
+  "live_history": 133
+ },
+ "fell_back_to_replay": [],
+ "no_history": [],
+ "timed_out": [],
+ "families": {
+  "equity_delta_bridge": 64,
+  "tech_reg_hedge": 15,
+  "fig_stress": 14,
+  "crypto_reg_hedge": 12,
+  "-": 11,
+  "energy_geo_hedge": 11,
+  "election_hedge": 4,
+  "stress_lead_hedge": 1,
+  "tariff_trade_hedge": 1
+ },
+ "event_classes": {
+  "crypto": 47,
+  "geopolitics_energy": 24,
+  "macro_fed": 14,
+  "tech_regulation": 12,
+  "company_specific": 12,
+  "elections": 11,
+  "unsupported": 11,
+  "corporate_8k": 1,
+  "tariffs_trade": 1
+ }
+}

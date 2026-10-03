@@ -49,7 +49,7 @@ def test_start_is_idempotent_per_proposal(client):
 
 
 class _FailingLive:
-    def __init__(self, *_):
+    def __init__(self, *_, **__):
         pass
 
     async def __aiter__(self):

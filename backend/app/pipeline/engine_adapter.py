@@ -56,15 +56,59 @@ def _params(raw: Any) -> list[dict]:
     return out
 
 
+def _block_names(blocks: Any) -> set[str]:
+    """Block names from either ['Name', ...] (fallback manifest) or [{kind, name}, ...] (compiled catalog)."""
+    out = set()
+    for b in blocks or []:
+        name = b.get("name") if isinstance(b, dict) else b
+        if name:
+            out.add(str(name))
+    return out
+
+
+def derive_requires(family: dict) -> list[str]:
+    """Data a family cannot run without, derived from what the compiled catalog declares (its blocks and
+    instruments) when the manifest does not list ``requires`` itself:
+
+    - a ``CrossVenueGap`` signal needs the other venue's price      -> 'both_venues'
+    - any ``option:*`` instrument needs a listed option chain        -> 'listed_options'
+    """
+    req = []
+    if "CrossVenueGap" in _block_names(family.get("blocks")):
+        req.append("both_venues")
+    if any(str(i).lower().startswith("option") for i in family.get("instruments") or []):
+        req.append("listed_options")
+    return req
+
+
+def derive_proxies(instruments: list) -> list[str]:
+    """Tradable proxy tickers named by the catalog ('etf:SPY', 'equity:COIN'); placeholders like 'etf:sector'
+    or 'equity:megacap_tech' are not tickers and are skipped."""
+    out = []
+    for i in instruments or []:
+        kind, _, sym = str(i).partition(":")
+        if kind in ("etf", "equity") and sym and sym.isupper() and sym.isalpha() and sym not in out:
+            out.append(sym)
+    return out
+
+
 def normalize_manifest(raw: Any) -> dict:
     """Coerce whatever catalog()/manifest.json returns into the shape the pipeline uses.
 
-    families: list of {id, divisions, division, event_classes, instruments, blocks, params, preset_count, ...}.
+    families: list of {id, divisions, division, event_classes, instruments, blocks, params, preset_count, requires,
+    generic, proxies, ...}.
+
+    The compiled catalog is authoritative but terser than the hand-written fallback: it spells a family that applies
+    to every class as the full list of classes (not 'all') and has no ``requires`` / ``proxies``. So:
+    ``generic`` is True when the family's classes are a wildcard or cover every supported class; ``requires`` and
+    ``proxies`` are derived from blocks and instruments when absent (``derive_requires``, ``derive_proxies``).
     """
     raw = raw if isinstance(raw, dict) else {}
     fams_raw = raw.get("families") or []
     if isinstance(fams_raw, dict):
         fams_raw = [{"id": k, **v} for k, v in fams_raw.items()]
+    classes = [str(c) for c in (raw.get("event_classes") or EVENT_CLASSES)]
+    supported = {c for c in classes if c != "unsupported"}
     families = []
     for f in fams_raw:
         if not isinstance(f, dict) or not f.get("id"):
@@ -76,12 +120,20 @@ def normalize_manifest(raw: Any) -> dict:
         count = f.get("preset_count")
         if count is None:
             count = math.prod(len(p["grid"]) for p in params) if params else 0
-        families.append({**f, "id": str(f["id"]), "divisions": divs, "division": divs[0], "event_classes": ecs,
-                         "instruments": list(f.get("instruments") or []), "blocks": list(f.get("blocks") or []),
-                         "params": params, "preset_count": int(count)})
-    classes = raw.get("event_classes") or EVENT_CLASSES
+        instruments = list(f.get("instruments") or [])
+        generic = bool(set(ecs) & WILDCARDS) or (bool(supported) and supported <= set(ecs))
+        fam = {**f, "id": str(f["id"]), "divisions": divs, "division": divs[0], "event_classes": ecs,
+               "instruments": instruments, "blocks": list(f.get("blocks") or []),
+               "params": params, "preset_count": int(count), "generic": generic}
+        if f.get("requires") is None:
+            fam["requires"] = derive_requires(fam)
+        if f.get("proxies") is None:
+            proxies = derive_proxies(instruments)
+            if proxies:
+                fam["proxies"] = proxies
+        families.append(fam)
     total = raw.get("total_presets", raw.get("preset_count", raw.get("total")))
-    return {**raw, "event_classes": [str(c) for c in classes], "families": families,
+    return {**raw, "event_classes": classes, "families": families,
             "total_presets": int(total) if total is not None else sum(f["preset_count"] for f in families)}
 
 
@@ -93,8 +145,9 @@ def family_matches(family: dict, event_class: str) -> bool:
 
 
 def is_specific(family: dict, event_class: str) -> bool:
-    """True when the family names this class explicitly (not only through a wildcard)."""
-    return event_class in (family.get("event_classes") or [])
+    """True when the family names this class explicitly and is not a generic family (one that covers every class,
+    whether spelled 'all' or as the full list, as the compiled catalog does)."""
+    return event_class in (family.get("event_classes") or []) and not family.get("generic", False)
 
 
 def preset_grid(family: dict) -> list[dict[str, float]]:
@@ -107,10 +160,11 @@ def preset_grid(family: dict) -> list[dict[str, float]]:
 
 
 def default_preset(family: dict) -> tuple[int, dict[str, float]]:
-    """The family's declared default preset, else the middle grid value of every parameter.
+    """The family's declared default preset; else, per parameter, its declared ``default`` when that value is on
+    the grid (the compiled catalog declares one for every parameter), else the middle grid value.
 
-    The index assumes row-major ordering (last parameter fastest); a manifest may override with
-    ``default_preset`` (int index) when the compiled library orders presets differently.
+    The index uses the compiled library's ordering: mixed radix, last parameter fastest (``ParamSpec::preset``),
+    the same as itertools.product. A manifest may override with ``default_preset`` (int index).
     """
     params = family.get("params") or []
     declared = family.get("default_preset")
@@ -122,7 +176,10 @@ def default_preset(family: dict) -> tuple[int, dict[str, float]]:
         g = p["grid"]
         if not g:
             continue
+        d = p.get("default")
         i = (len(g) - 1) // 2
+        if isinstance(d, (int, float)) and float(d) in g:
+            i = g.index(float(d))
         idx = idx * len(g) + i
         chosen[p["name"]] = g[i]
     return idx, chosen
@@ -193,3 +250,68 @@ class EngineAdapter:
             if isinstance(r, dict):
                 rows.append({**r, "preset_index": int(r.get("preset_index", i)), "params": dict(r.get("params") or {})})
         return rows
+
+
+class AlgoChoiceError(ValueError):
+    """A requested family/preset/params that the library cannot run on a bridge (the API answers 422)."""
+
+
+def resolve_algo(manifest: dict, family_id: str, preset_index: int | None = None,
+                 params: dict[str, float] | None = None) -> dict:
+    """Validate a bridge's algo choice against the library and resolve it to concrete params.
+
+    Returns {family, preset_index, params, division}. ``preset_index`` follows the compiled library's ordering
+    (mixed radix, last parameter fastest), so ``preset_grid(f)[i]`` is the preset ``replay_grid`` scored as index i.
+    Explicit ``params`` are checked against the catalog bounds; parameters left out take the family default (as the
+    engine does), and ``preset_index`` is then None. Only hedge-division families run on a bridge: a bridge hedges an
+    equity position, and the other families trade prediction-market or option contracts.
+    """
+    fam = next((f for f in manifest.get("families") or [] if f.get("id") == family_id), None)
+    if fam is None:
+        raise AlgoChoiceError(f"unknown algo family '{family_id}'")
+    if fam.get("divisions") != ["hedge"]:
+        raise AlgoChoiceError(f"'{family_id}' is a {'/'.join(fam.get('divisions') or [])} family; bridges run "
+                              "hedge-division families only (they hedge an equity position)")
+    if preset_index is not None and params is not None:
+        raise AlgoChoiceError("send preset_index or params, not both")
+    if params is None:
+        if preset_index is None:
+            idx, chosen = default_preset(fam)
+            return {"family": family_id, "preset_index": idx, "params": chosen, "division": "hedge"}
+        grid = preset_grid(fam)
+        if not 0 <= int(preset_index) < len(grid):
+            raise AlgoChoiceError(f"'{family_id}' has presets 0..{len(grid) - 1}; got {preset_index}")
+        return {"family": family_id, "preset_index": int(preset_index), "params": grid[int(preset_index)],
+                "division": "hedge"}
+    defs = {p["name"]: p for p in fam.get("params") or []}
+    unknown = sorted(set(params) - set(defs))
+    if unknown:
+        raise AlgoChoiceError(f"'{family_id}' has no param(s) {', '.join(unknown)}")
+    out = {}
+    for name, d in defs.items():
+        g = d.get("grid") or []
+        v = float(params.get(name, d.get("default", g[(len(g) - 1) // 2] if g else math.nan)))
+        lo, hi = float(d.get("min", -math.inf)), float(d.get("max", math.inf))
+        if not math.isfinite(v) or (math.isfinite(lo) and v < lo) or (math.isfinite(hi) and v > hi):
+            raise AlgoChoiceError(f"'{family_id}' param {name}={v} is outside [{lo}, {hi}]")
+        out[name] = v
+    return {"family": family_id, "preset_index": None, "params": out, "division": "hedge"}
+
+
+# The hedge-size parameters of the hedge families: "coverage" (fraction hedged at p = 1) and "max_cov" (the
+# LinearExposure ceiling). A family without one (election_hedge: beta * (p - p_neutral), capped at 1) is held to the
+# approved coverage by the bridge's own clip on sell intents (bridges._coverage_room).
+COVERAGE_PARAMS = ("coverage", "max_cov")
+
+
+def cap_coverage(params: dict[str, float], target_coverage: float) -> tuple[dict[str, float], dict[str, float] | None]:
+    """The approved target_coverage is a hard cap on what the algo may hedge: every hedge-size parameter above it is
+    lowered to it. Returns (capped params, {param: original value} for the ones lowered, or None)."""
+    cap = float(target_coverage)
+    out, lowered = dict(params), {}
+    for name in COVERAGE_PARAMS:
+        v = out.get(name)
+        if v is not None and math.isfinite(float(v)) and float(v) > cap:
+            lowered[name] = float(v)
+            out[name] = cap
+    return out, (lowered or None)

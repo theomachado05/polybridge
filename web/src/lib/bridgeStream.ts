@@ -5,7 +5,11 @@ export interface FillInfo {
   broker?: string | null; side?: string; qty?: number; filled_qty?: number; status?: string; fill_px?: number | null; fee?: number | null;
   price_source?: string | null; reject_reason?: string | null; note?: string | null; scope?: string | null; error?: string | null;
 }
-export interface LogEntry { n: number; p: number | null; action: string; reason: string; qty: number; target: number; current: number; ns: number; fill?: FillInfo }
+export interface LogEntry {
+  n: number; p: number | null; action: string; reason: string; qty: number; target: number | null; current: number; ns: number; fill?: FillInfo;
+  /** Set when hedgecore.Algo decided (the fitted family): its family, preset and the signal that triggered it. */
+  family?: string | null; preset?: number | null; signal?: number | null;
+}
 export interface StreamState {
   prices: number[];
   lastP: number | null;
@@ -27,7 +31,8 @@ export interface StreamState {
 type Ev =
   | { k: "open" } | { k: "drop" }
   | { k: "tick"; p: number }
-  | { k: "decision"; d: { action: string; reason: string; order_qty: number; target_hedge: number; current_hedge: number; latency_ns: number } }
+  | { k: "decision"; d: { action: string; reason: string; order_qty: number; target_hedge: number | null; current_hedge: number; latency_ns: number;
+      engine?: "algo" | "legacy"; family?: string | null; preset?: number | null; signal?: number | null } }
   | { k: "position"; hedge: number; coverage: number; broker_hedge?: number; broker?: string | null }
   | { k: "fill"; f: FillInfo }
   | { k: "status"; status: string; source?: string }
@@ -44,7 +49,8 @@ export function reduce(s: StreamState, e: Ev): StreamState {
     case "tick": return { ...s, prices: cap([...s.prices, e.p], 300), lastP: e.p };
     case "decision": {
       const d = e.d;
-      const entry: LogEntry = { n: s.decisions + 1, p: s.lastP, action: d.action, reason: d.reason, qty: d.order_qty, target: d.target_hedge, current: d.current_hedge, ns: d.latency_ns };
+      const entry: LogEntry = { n: s.decisions + 1, p: s.lastP, action: d.action, reason: d.reason, qty: d.order_qty, target: d.target_hedge ?? null, current: d.current_hedge, ns: d.latency_ns,
+        ...(d.family ? { family: d.family, preset: d.preset ?? null, signal: d.signal ?? null } : {}) };
       return { ...s, decisions: s.decisions + 1, lastReason: d.reason, reasons: { ...s.reasons, [d.reason]: (s.reasons[d.reason] ?? 0) + 1 }, lat: cap([...s.lat, d.latency_ns], 2000), log: cap([...s.log, entry], 200) };
     }
     case "position": return { ...s, hedge: e.hedge, coverage: e.coverage, brokerHedge: typeof e.broker_hedge === "number" ? e.broker_hedge : s.brokerHedge, broker: e.broker ?? s.broker };

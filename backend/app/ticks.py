@@ -1,31 +1,241 @@
-"""Tick sources for the bridge loop. Each is an async iterator of (ts_ns, p)."""
+"""Tick sources for the bridge loop.
+
+Each source is an async iterator of ``Tick``: a ``(ts_ns, p)`` pair (``p`` = the market's raw YES mid, for the UI
+and the legacy Engine) that also carries ``.fields``, the hedgecore ``MarketTick`` fields in the market's own YES
+orientation (direction is applied later, in exactly one place: ``app.pipeline.ticks.orient_to_adverse``).
+
+Honesty rules (same as the fit pipeline):
+- A field the source does not have is NaN, never invented. ``eightk_score`` is 0 (= none, per the contract).
+- Live (``LiveSource``): the primary venue's order book (Polymarket CLOB ``/book`` for the YES token, or the Kalshi
+  orderbook), top 5 levels each side; ``no_bid = 1 - yes_ask`` and ``no_ask = 1 - yes_bid`` (YES and NO are one book
+  on both venues). ``p_other_venue`` = the twin market's YES mid on the other venue when a twin is given and its
+  book has both sides, else NaN. ``under_*`` from the broker's quote source (Massive), refreshed at most every
+  ``equity_interval_s``; ``under_bid``/``under_ask`` only when the quote has a spread.
+- Replay (``ReplaySource``): the recorded mid (``yes_bid = yes_ask = p``, as in the fit replays) plus any other
+  MarketTick field the JSONL row carries; ``under_px`` from recorded equity bars as of the row's ORIGINAL time
+  (bar close known at that time), else NaN.
+"""
 from __future__ import annotations
 
 import asyncio
+import bisect
 import json
 import math
 import time
 from pathlib import Path
-from typing import AsyncIterator
+from typing import Any, AsyncIterator, Awaitable, Callable
 
 import httpx
 
-from .markets import polymarket_midpoint
+from .markets import CLOB, polymarket_midpoint
 
-Tick = tuple[int, float]
+KDEPTH = 5
+KALSHI_API = "https://api.elections.kalshi.com/trade-api/v2"
+POLL_TIMEOUT = httpx.Timeout(3.0)
+NAN = math.nan
+BOOK_FIELDS = [f"{side}_{kind}_{i}" for side in ("bid", "ask") for kind in ("px", "qty") for i in range(KDEPTH)]
+TICK_FIELDS = (["yes_bid", "yes_ask", "no_bid", "no_ask"] + BOOK_FIELDS
+               + ["p_other_venue", "under_px", "under_bid", "under_ask",
+                  "opt_mid", "opt_delta", "opt_iv", "opt_implied_prob", "eightk_score"])
+
+Level = tuple[float, float]  # (px, qty)
 
 
 class SourceError(RuntimeError):
     """The tick source failed and cannot continue."""
 
 
-class LiveSource:
-    """Polls the Polymarket CLOB midpoint every `interval_s`. Raises SourceError after
-    `max_failures` consecutive failed polls (one blip does not end the bridge)."""
+class Tick(tuple):
+    """``(ts_ns, p)`` with the full MarketTick ``fields`` attached (raw YES orientation, NaN = unknown)."""
 
-    def __init__(self, token_id: str, interval_s: float = 1.0, max_failures: int = 3,
-                 http: httpx.AsyncClient | None = None) -> None:
-        self.token_id, self.interval_s, self.max_failures, self._http = token_id, interval_s, max_failures, http
+    def __new__(cls, ts_ns: int, p: float, fields: dict[str, float] | None = None, venue: int = 0) -> "Tick":
+        t = super().__new__(cls, (int(ts_ns), float(p)))
+        t.fields = fields if fields is not None else mid_only_fields(p)
+        t.venue = venue
+        return t
+
+    @property
+    def ts_ns(self) -> int:
+        return self[0]
+
+    @property
+    def p(self) -> float:
+        return self[1]
+
+
+def as_tick(x: Any) -> Tick:
+    """Accept a Tick or a bare (ts_ns, p) pair (e.g. a test source)."""
+    return x if isinstance(x, Tick) else Tick(x[0], x[1])
+
+
+def _num(x: Any) -> float | None:
+    try:
+        v = float(x)
+    except (TypeError, ValueError):
+        return None
+    return v if math.isfinite(v) else None
+
+
+def blank_fields() -> dict[str, float]:
+    f = {k: NAN for k in TICK_FIELDS}
+    f["eightk_score"] = 0.0
+    return f
+
+
+def mid_only_fields(p: float) -> dict[str, float]:
+    """A mid-price-only tick: yes_bid = yes_ask = p (the spread is unknown), NO = 1 - p, everything else NaN."""
+    f = blank_fields()
+    f["yes_bid"] = f["yes_ask"] = float(p)
+    f["no_bid"] = f["no_ask"] = 1.0 - float(p)
+    return f
+
+
+def book_fields(bids: list[Level], asks: list[Level]) -> dict[str, float]:
+    """YES book (best first) -> MarketTick quote and depth fields."""
+    f = blank_fields()
+    for i in range(KDEPTH):
+        if i < len(bids):
+            f[f"bid_px_{i}"], f[f"bid_qty_{i}"] = bids[i]
+        if i < len(asks):
+            f[f"ask_px_{i}"], f[f"ask_qty_{i}"] = asks[i]
+    if bids:
+        f["yes_bid"] = bids[0][0]
+        f["no_ask"] = 1.0 - bids[0][0]
+    if asks:
+        f["yes_ask"] = asks[0][0]
+        f["no_bid"] = 1.0 - asks[0][0]
+    return f
+
+
+def book_mid(bids: list[Level], asks: list[Level]) -> float | None:
+    return (bids[0][0] + asks[0][0]) / 2.0 if bids and asks else None
+
+
+# ---------------------------------------------------------------- venue books
+
+def _levels(rows: Any, px_key: str = "price", qty_key: str = "size") -> list[Level]:
+    out = []
+    for r in rows or []:
+        if isinstance(r, dict):
+            px, qty = _num(r.get(px_key)), _num(r.get(qty_key))
+        elif isinstance(r, (list, tuple)) and len(r) >= 2:
+            px, qty = _num(r[0]), _num(r[1])
+        else:
+            continue
+        if px is not None and qty is not None and 0.0 <= px <= 1.0 and qty > 0:
+            out.append((px, qty))
+    return out
+
+
+async def polymarket_book(http: httpx.AsyncClient, token_id: str) -> tuple[list[Level], list[Level]]:
+    """CLOB ``/book`` for one token: (bids best first, asks best first), top 5 each. The API's own ordering is not
+    relied on: bids are sorted by price descending, asks ascending."""
+    r = await http.get(f"{CLOB}/book", params={"token_id": token_id}, timeout=POLL_TIMEOUT)
+    r.raise_for_status()
+    j = r.json() or {}
+    bids = sorted(_levels(j.get("bids")), key=lambda lv: -lv[0])[:KDEPTH]
+    asks = sorted(_levels(j.get("asks")), key=lambda lv: lv[0])[:KDEPTH]
+    return bids, asks
+
+
+def _kalshi_side(ob: dict, side: str) -> list[Level]:
+    """Kalshi resting bids on one side as [(px in dollars, qty)]: ``<side>_dollars`` ([["0.4500", qty]]) or the
+    legacy integer cents ``<side>`` ([[45, qty]])."""
+    rows = ob.get(f"{side}_dollars")
+    if rows:
+        return _levels(rows)
+    out = []
+    for r in ob.get(side) or []:
+        if isinstance(r, (list, tuple)) and len(r) >= 2:
+            c, q = _num(r[0]), _num(r[1])
+            if c is not None and q is not None and 0 <= c <= 100 and q > 0:
+                out.append((c / 100.0, q))
+    return out
+
+
+async def kalshi_book(http: httpx.AsyncClient, ticker: str) -> tuple[list[Level], list[Level]]:
+    """Kalshi ``/markets/{ticker}/orderbook`` as the YES book. Kalshi lists bids only: YES bids are the ``yes`` side;
+    a NO bid at q is a YES ask at 1 - q (same size)."""
+    r = await http.get(f"{KALSHI_API}/markets/{ticker}/orderbook", params={"depth": KDEPTH}, timeout=POLL_TIMEOUT)
+    r.raise_for_status()
+    ob = (r.json() or {}).get("orderbook") or {}
+    bids = sorted(_kalshi_side(ob, "yes"), key=lambda lv: -lv[0])[:KDEPTH]
+    asks = sorted(((1.0 - px, q) for px, q in _kalshi_side(ob, "no")), key=lambda lv: lv[0])[:KDEPTH]
+    return bids, asks
+
+
+# ---------------------------------------------------------------- sources
+
+EquityQuote = Callable[[], Awaitable[Any]]  # -> object with .mid and .half_spread (broker Quote), or None
+
+
+class LiveSource:
+    """Polls the primary venue's book every ``interval_s`` (plus the twin's book and the equity quote).
+
+    ``primary``: "polymarket" (``market_id`` = the YES token id) or "kalshi" (``market_id`` = the market ticker).
+    ``twin``: (source, id) of the same question on the other venue, or None. Only a failure of the primary book (and
+    of the Polymarket midpoint fallback) counts toward ``max_failures`` consecutive failures -> SourceError; a twin or
+    equity failure leaves those fields NaN for that tick."""
+
+    def __init__(self, market_id: str, interval_s: float = 1.0, max_failures: int = 3,
+                 http: httpx.AsyncClient | None = None, *, primary: str = "polymarket",
+                 twin: tuple[str, str] | None = None, equity: EquityQuote | None = None,
+                 equity_interval_s: float = 5.0) -> None:
+        self.market_id, self.interval_s, self.max_failures, self._http = market_id, interval_s, max_failures, http
+        self.primary, self.twin, self.equity, self.equity_interval_s = primary, twin, equity, equity_interval_s
+        self._quote: Any = None
+        self._quote_at = -math.inf
+
+    @property
+    def token_id(self) -> str:  # backward compatible name
+        return self.market_id
+
+    async def _book(self, http: httpx.AsyncClient, source: str, mid: str) -> tuple[list[Level], list[Level]]:
+        return await (kalshi_book(http, mid) if source == "kalshi" else polymarket_book(http, mid))
+
+    async def _twin_mid(self, http: httpx.AsyncClient) -> float:
+        if not self.twin:
+            return NAN
+        try:
+            m = book_mid(*await self._book(http, *self.twin))
+        except Exception:
+            return NAN
+        return m if m is not None else NAN
+
+    async def _equity(self) -> Any:
+        if self.equity is None:
+            return None
+        now = time.monotonic()
+        if now - self._quote_at >= self.equity_interval_s:
+            self._quote_at = now
+            try:
+                self._quote = await asyncio.wait_for(self.equity(), 10.0)
+            except Exception:
+                self._quote = None
+        return self._quote
+
+    async def poll(self, http: httpx.AsyncClient) -> Tick:
+        """One tick, or raises when the primary venue gave nothing usable."""
+        book_task = asyncio.ensure_future(self._book(http, self.primary, self.market_id))
+        twin_mid, quote = await asyncio.gather(self._twin_mid(http), self._equity())
+        try:
+            bids, asks = await book_task
+        except Exception:
+            bids, asks = [], []
+        p = book_mid(bids, asks)
+        if p is None and self.primary == "polymarket":  # one-sided or empty book: fall back to the CLOB midpoint
+            p = await polymarket_midpoint(http, self.market_id)
+        if p is None:
+            raise ValueError("no book and no midpoint")
+        f = book_fields(bids, asks) if (bids or asks) else mid_only_fields(p)
+        f["p_other_venue"] = twin_mid
+        mid = _num(getattr(quote, "mid", None))
+        if mid is not None and mid > 0:
+            f["under_px"] = mid
+            hs = _num(getattr(quote, "half_spread", None))
+            if hs is not None and hs >= 0:
+                f["under_bid"], f["under_ask"] = mid - hs, mid + hs
+        return Tick(time.time_ns(), p, f, venue=1 if self.primary == "kalshi" else 0)
 
     async def __aiter__(self) -> AsyncIterator[Tick]:
         http = self._http or httpx.AsyncClient()
@@ -33,16 +243,14 @@ class LiveSource:
         try:
             while True:
                 try:
-                    p = await polymarket_midpoint(http, self.token_id)
-                    if p is None:
-                        raise ValueError("no midpoint")
+                    tick = await self.poll(http)
                 except Exception as e:
                     failures += 1
                     if failures >= self.max_failures:
                         raise SourceError(f"live source failed {failures}x: {type(e).__name__}") from e
                 else:
                     failures = 0
-                    yield time.time_ns(), p
+                    yield tick
                 await asyncio.sleep(self.interval_s)
         finally:
             if self._http is None:
@@ -50,13 +258,27 @@ class LiveSource:
 
 
 class ReplaySource:
-    """Reads JSONL `{ts_ns, p}` and re-emits it on the wall clock: the first tick is stamped "now" and recorded
-    gaps are preserved divided by `speed` (speed 3600 plays hourly history at one tick per second).
+    """Reads JSONL ``{ts_ns, p, ...}`` and re-emits it on the wall clock: the first tick is stamped "now" and recorded
+    gaps are preserved divided by ``speed`` (speed 3600 plays hourly history at one tick per second).
     speed <= 0 means no sleeping and each tick is stamped with the current time (used by tests).
-    Rows with a non-finite p are skipped."""
+    Rows with a non-finite p are skipped. ``bars``: recorded equity closes [(known_at_s, close)] joined as of each
+    row's original time (see ``app.pipeline.ticks.recorded_bars``)."""
 
-    def __init__(self, path: str | Path, speed: float = 1.0) -> None:
-        self.path, self.speed = Path(path), speed
+    def __init__(self, path: str | Path, speed: float = 1.0, bars: list[tuple[int, float]] | None = None) -> None:
+        self.path, self.speed, self.bars = Path(path), speed, bars or []
+        self._bar_t = [b[0] for b in self.bars]
+
+    def fields_for(self, row: dict, p: float) -> dict[str, float]:
+        f = mid_only_fields(p)
+        for k in TICK_FIELDS:  # whatever the recording has, it keeps
+            if k in row:
+                v = _num(row[k])
+                f[k] = v if v is not None else NAN
+        if "under_px" not in row and self.bars:
+            j = bisect.bisect_right(self._bar_t, int(row["ts_ns"]) // 1_000_000_000) - 1
+            if j >= 0:
+                f["under_px"] = self.bars[j][1]
+        return f
 
     async def __aiter__(self) -> AsyncIterator[Tick]:
         start = time.time_ns()
@@ -68,6 +290,8 @@ class ReplaySource:
             ts, p = int(row["ts_ns"]), float(row["p"])
             if not math.isfinite(p):
                 continue
+            fields = self.fields_for(row, p)
+            venue = 1 if row.get("venue") in (1, "kalshi") else 0
             if first is None:
                 first = ts
             if self.speed > 0:
@@ -75,6 +299,6 @@ class ReplaySource:
                 delay = (target - time.time_ns()) / 1e9
                 if delay > 0:
                     await asyncio.sleep(delay)
-                yield min(target, time.time_ns()), p  # never future-dated vs. the engine's now_ns
+                yield Tick(min(target, time.time_ns()), p, fields, venue)  # never future-dated vs. now_ns
             else:
-                yield time.time_ns(), p
+                yield Tick(time.time_ns(), p, fields, venue)

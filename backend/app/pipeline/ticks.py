@@ -286,23 +286,54 @@ def recorded_bars(ticker: str, data_dir: Path = DATA) -> list[tuple[int, float]]
 
 # ---------------------------------------------------------------- orientation
 
-def orient_to_adverse(ticks: dict[str, np.ndarray], direction: str) -> dict[str, np.ndarray]:
-    """Make the series direction-neutral for the engine: afterwards YES always means the outcome that HURTS the
-    held equity. ``down_on_yes`` is already oriented. For ``up_on_yes`` the adverse outcome is NO, so the YES and
-    NO quotes swap; depth on the YES book becomes the mirrored NO book (bid <- 1 - ask, same size); other-venue
-    and option-implied probabilities become 1 - p. NaN stays NaN. Returns a new dict; the input is untouched.
+def _flip(x: Any) -> Any:
+    """1 - x for a float or an array; NaN stays NaN."""
+    return 1.0 - x
 
-    The §3.3 Position struct has no direction field, so this is how the direction reaches the replay."""
+
+def _pick(have_both: Any, a: Any, b: Any) -> Any:
+    """Elementwise ``a if have_both else b`` for floats or arrays."""
+    if isinstance(have_both, np.ndarray):
+        return np.where(have_both, a, b)
+    return a if have_both else b
+
+
+def orient_to_adverse(ticks: dict[str, Any], direction: str) -> dict[str, Any]:
+    """THE one place where direction is applied (fit replays and live bridges both call it; docs/contracts.md).
+
+    Makes the series direction-neutral for hedgecore: afterwards YES always means the outcome that HURTS the held
+    equity. ``down_on_yes`` is already oriented and returned as is. For ``up_on_yes`` the adverse outcome is NO:
+    - YES quotes become the NO quotes (when the NO side is missing they are derived from the YES side: NO bid =
+      1 - YES ask, NO ask = 1 - YES bid), and the NO quotes become the old YES quotes;
+    - depth on the YES book becomes the mirrored NO book (bid px <- 1 - ask px, same size);
+    - other-venue and option-implied probabilities become 1 - p. NaN stays NaN.
+
+    Works on a dict of equal-length numpy arrays (replay) or of floats (one live MarketTick); missing keys are
+    left missing. Returns a new dict; the input is untouched. hedgecore is then always called with its default
+    direction ('down_on_yes'): the backend never asks the engine to flip (its own flip refuses non-hedge families,
+    whose intents name the real YES/NO contract; those families are never oriented here either)."""
     if direction != "up_on_yes":
         return ticks
     out = dict(ticks)
-    out["yes_bid"], out["no_bid"] = ticks["no_bid"].copy(), ticks["yes_bid"].copy()
-    out["yes_ask"], out["no_ask"] = ticks["no_ask"].copy(), ticks["yes_ask"].copy()
+    nan = math.nan
+    yb, ya = ticks.get("yes_bid", nan), ticks.get("yes_ask", nan)
+    nb, na = ticks.get("no_bid", nan), ticks.get("no_ask", nan)
+    no_q = np.isfinite(nb) & np.isfinite(na)
+    out["yes_bid"] = _pick(no_q, nb, _flip(ya))
+    out["yes_ask"] = _pick(no_q, na, _flip(yb))
+    out["no_bid"], out["no_ask"] = yb, ya
     for i in range(KDEPTH):
-        out[f"bid_px_{i}"], out[f"ask_px_{i}"] = 1.0 - ticks[f"ask_px_{i}"], 1.0 - ticks[f"bid_px_{i}"]
-        out[f"bid_qty_{i}"], out[f"ask_qty_{i}"] = ticks[f"ask_qty_{i}"].copy(), ticks[f"bid_qty_{i}"].copy()
+        if f"bid_px_{i}" in ticks or f"ask_px_{i}" in ticks:
+            out[f"bid_px_{i}"] = _flip(ticks.get(f"ask_px_{i}", nan))
+            out[f"ask_px_{i}"] = _flip(ticks.get(f"bid_px_{i}", nan))
+            out[f"bid_qty_{i}"] = ticks.get(f"ask_qty_{i}", nan)
+            out[f"ask_qty_{i}"] = ticks.get(f"bid_qty_{i}", nan)
     for f in ("p_other_venue", "opt_implied_prob"):
-        out[f] = 1.0 - ticks[f]
+        if f in ticks:
+            out[f] = _flip(ticks[f])
+    for k, v in list(out.items()):  # numpy scalars from np.isfinite/np.where -> plain floats for the binding
+        if isinstance(v, np.generic):
+            out[k] = float(v)
     return out
 
 

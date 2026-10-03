@@ -16,8 +16,8 @@ from app.main import create_app
 from app.pipeline import llm as llm_mod
 from app.pipeline import service
 from app.pipeline.classify import classify
-from app.pipeline.engine_adapter import (FALLBACK_MANIFEST, EngineAdapter, default_preset, normalize_manifest,
-                                         preset_grid)
+from app.pipeline.engine_adapter import (ENGINE_MANIFEST, FALLBACK_MANIFEST, EngineAdapter, default_preset,
+                                         normalize_manifest, preset_grid)
 from app.pipeline.explain import explain, facts
 from app.pipeline.llm import GeminiProvider, LLMError, RulesProvider, parse_json_text, rules_classify
 from app.pipeline.shortlist import shortlist
@@ -163,9 +163,28 @@ class FakeMassive:
         return self.daily
 
 
-def make_client(*, module=None, router: Router | None = None, massive=None, offline=False, provider=None):
+def pinned_adapter(module=None, library: str = "real") -> EngineAdapter:
+    """An adapter whose manifest source is pinned, so a test never depends on which files happen to exist.
+
+    library="real": the committed engine/hedgecore/manifest.json (generated from the compiled catalog; authoritative)
+    library="fallback": the hand-written app/data/manifest_fallback.json (as on a checkout without the engine manifest)
+    A ``module`` (fake or real hedgecore) still wins over both, as in production."""
+    if library == "fallback":
+        return EngineAdapter(module=module, engine_manifest=FALLBACK_MANIFEST.parent / "no-such-manifest.json")
+    assert ENGINE_MANIFEST.is_file(), "the committed engine manifest is missing"
+    return EngineAdapter(module=module, engine_manifest=ENGINE_MANIFEST)
+
+
+@pytest.fixture(params=["real", "fallback"])
+def library(request) -> str:
+    """Runs a test once against the real catalog manifest and once against the fallback: behavior must agree."""
+    return request.param
+
+
+def make_client(*, module=None, router: Router | None = None, massive=None, offline=False, provider=None,
+                library: str = "real"):
     app = create_app()
-    app.state.pipeline_adapter = EngineAdapter(module=module)
+    app.state.pipeline_adapter = pinned_adapter(module, library)
     app.state.massive = massive
     app.state.pipeline_offline = offline
     if provider is not None:
@@ -669,8 +688,8 @@ def test_unresolved_market_question_says_so():
     assert "could not be resolved" in j["rationale"] and "outside every supported" not in j["rationale"]
 
 
-def test_unmet_requirement_families_are_left_out():
-    c = make_client(module=None, offline=True)
+def test_unmet_requirement_families_are_left_out(library):
+    c = make_client(module=None, offline=True, library=library)
     j = c.post("/pipeline/fit", json={"market": {"source": "polymarket", "id": FED_ID}, "ticker": "TLT",
                                       "shares_held": 500}).json()
     assert "poly_kalshi_spread" not in {a["family"] for a in j["alternatives"]}
@@ -693,8 +712,8 @@ def test_fit_cache_is_bounded_and_expires():
     assert cache.get("k2") is None and len(cache) == 2
 
 
-def test_fit_scored_false_without_engine_offline():
-    c = make_client(module=None, offline=True)
+def test_fit_scored_false_without_engine_offline(library):
+    c = make_client(module=None, offline=True, library=library)
     j = c.post("/pipeline/fit", json={"market": {"source": "polymarket", "id": FED_ID}, "ticker": "TLT",
                                       "shares_held": 500}).json()
     assert j["score"] is None
@@ -711,13 +730,13 @@ def test_fit_unsupported_class():
     assert j["alternatives"] == [] and j["params"] == {} and j["ticks_source"] == "none"
 
 
-def test_fit_without_shares_uses_opportunity_division():
-    c = make_client(module=None, offline=True)
+def test_fit_without_shares_uses_opportunity_division(library):
+    c = make_client(module=None, offline=True, library=library)
     j = c.post("/pipeline/fit", json={"question": "Will Bitcoin hit $150k in 2026?", "ticker": "COIN"}).json()
     assert j["division"] == "opportunity" and j["family"] == "no_bid_seller" and j["score"] is None
 
 
-def test_fit_uses_gemini_when_provider_works():
+def test_fit_uses_gemini_when_provider_works(library):
     def handler(request):
         body = json.loads(request.content)
         if "event_class" in json.dumps(body["generationConfig"]["responseSchema"]):
@@ -726,7 +745,7 @@ def test_fit_uses_gemini_when_provider_works():
 
     r = Router(gemini=handler)
     p = GeminiProvider("k", http=mock_http(r))
-    c = make_client(module=None, offline=True, provider=p)
+    c = make_client(module=None, offline=True, provider=p, library=library)
     j = c.post("/pipeline/fit", json={"question": "Will the 30-year mortgage rate fall below 6%?", "ticker": "ITB",
                                       "shares_held": 100}).json()
     assert j["llm"] == "gemini" and j["event_class"] == "housing" and j["family"] == "housing_rates"
@@ -798,20 +817,108 @@ def test_precomputed_fits_route_and_script(tmp_path):
     assert (f["family"], f["preset_index"], f["scored"], f["ticker"]) == ("crypto_reg_hedge", 2, True, "COIN")
     assert saved["fits"][f"polymarket:{FED_ID}"]["event_class"] == "macro_fed"
     assert mod.load_jobs(uni, amap, limit=1)[0]["ticker"] == "TLT"
+    sm = saved["summary"]
+    assert sm["n"] == 2 and sm["scored"] == 2 and sm["ticks_source"] == {"live_history": 2}
+    assert sm["fell_back_to_replay"] == [] and sm["no_history"] == [] and sm["timed_out"] == []
+    assert saved["provider"] == "rules"
+
+    # offline: the Fed market falls back to its recorded replay, the other has no history; both are listed
+    log = tmp_path / "run.log"
+    res = run(mod.amain(["--out", str(out), "--offline", "--log", str(log)], universe=uni, ai_map=amap,
+                        deps=service.Deps(adapter=EngineAdapter(module=None), offline=True)))
+    assert res["summary"]["fell_back_to_replay"] == [f"polymarket:{FED_ID}"]
+    assert res["summary"]["no_history"] == ["polymarket:555"] and res["can_score"] is False
+    text = log.read_text()
+    assert "# summary" in text and f"polymarket:{FED_ID}" in text and "library=" in text
+
+    # a fit that overruns its budget is recorded as unfitted, not retried
+    async def slow_fit(req, deps):
+        await asyncio.sleep(5)
+
+    mod.fit = slow_fit  # the module was loaded for this test only
+    res = run(mod.amain(["--out", str(out), "--offline", "--fit-timeout", "0.05", "--limit", "1"], universe=uni,
+                        ai_map=amap, deps=service.Deps(adapter=EngineAdapter(module=None), offline=True)))
+    f = res["fits"][f"polymarket:{FED_ID}"]
+    assert f["timed_out"] and f["family"] is None and "took over" in f["rationale"]
+    assert res["summary"]["timed_out"] == [f"polymarket:{FED_ID}"]
 
     c = make_client(module=None, offline=True)
     j = c.get("/pipeline/fits").json()
     assert "fits" in j
 
 
-def test_slow_live_history_falls_back_to_replay_within_budget(monkeypatch):
+def test_slow_live_history_falls_back_to_replay_within_budget(monkeypatch, library):
     async def slow(request):
         await asyncio.sleep(2)
         return httpx.Response(200, json={"history": history()})
 
     monkeypatch.setattr(service, "TICKS_BUDGET_S", 0.1)
-    c = make_client(module=None)
+    c = make_client(module=None, library=library)
     c.app.state.http = httpx.AsyncClient(transport=httpx.MockTransport(slow))
     j = c.post("/pipeline/fit", json={"market": {"source": "polymarket", "id": FED_ID, "token_id": "tokYES"},
                                       "ticker": "SPY", "shares_held": 5}).json()
     assert j["ticks_source"] == "replay" and j["family"] == "macro_fed_hedge"
+
+
+# ---------------------------------------------------------------- the real catalog (engine/hedgecore/manifest.json)
+
+def real_manifest() -> dict:
+    return normalize_manifest(json.loads(ENGINE_MANIFEST.read_text()))
+
+
+def test_real_catalog_is_the_library_without_the_module():
+    m, src = pinned_adapter(None, "real").library()
+    assert src == "manifest_file" and m["total_presets"] == 1278 and len(m["families"]) == 16
+    assert sum(f["preset_count"] for f in m["families"]) == 1278
+    assert make_client(module=None).get("/library").json()["source"] == "manifest_file"
+
+
+def test_real_catalog_generic_families_are_not_specific():
+    """The compiled catalog spells 'applies to every class' as the full list; those families are generic."""
+    fams = {f["id"]: f for f in real_manifest()["families"]}
+    generic = {fid for fid, f in fams.items() if f["generic"]}
+    assert generic == {"equity_delta_bridge", "book_imbalance_hedge", "poly_kalshi_spread", "no_bid_seller",
+                       "binary_vs_spread_arb", "vol_vs_pm_move"}
+    sl = shortlist(real_manifest(), "macro_fed")
+    # the family built for the class leads; narrower specific families before broader ones, generic ones last
+    assert [f["id"] for f in sl["hedge"]][:3] == ["macro_fed_hedge", "fig_stress", "stress_lead_hedge"]
+    assert [f["id"] for f in sl["hedge"]][3:5] == ["equity_delta_bridge", "book_imbalance_hedge"]
+    assert shortlist(real_manifest(), "housing")["hedge"][0]["id"] == "housing_rates"
+    assert shortlist(real_manifest(), "crypto")["hedge"][0]["id"] == "crypto_reg_hedge"
+
+
+def test_real_catalog_requirements_and_proxies_are_derived():
+    fams = {f["id"]: f for f in real_manifest()["families"]}
+    assert fams["poly_kalshi_spread"]["requires"] == ["both_venues"]  # CrossVenueGap block
+    for fid in ("binary_vs_spread_arb", "vol_vs_pm_move", "eightk_opportunity"):  # option:* instruments
+        assert fams[fid]["requires"] == ["listed_options"]
+    assert fams["no_bid_seller"]["requires"] == [] and fams["equity_delta_bridge"]["requires"] == []
+    assert fams["macro_fed_hedge"]["proxies"] == ["SPY", "IWM", "TLT"]
+    assert fams["crypto_reg_hedge"]["proxies"] == ["COIN", "MSTR"]
+    assert "proxies" not in fams["election_hedge"]  # 'etf:sector' is a placeholder, not a ticker
+    # the fallback manifest declares its own requires; derivation never overrides a declared list
+    fb = {f["id"]: f for f in normalize_manifest(fallback_manifest())["families"]}
+    assert fb["poly_kalshi_spread"]["requires"] == ["both_venues"]
+
+
+def test_real_catalog_default_preset_uses_declared_defaults():
+    fams = {f["id"]: f for f in real_manifest()["families"]}
+    idx, params = default_preset(fams["equity_delta_bridge"])
+    assert params == {"coverage": 0.5, "band_shares": 10.0, "sigma_k": 1.0, "fee_ratio": 1.0, "impact": 0.03,
+                      "session": 0.0, "wash_guard": 0.0}
+    assert preset_grid(fams["equity_delta_bridge"])[idx] == params
+    for f in fams.values():  # every family: the index points at its declared defaults
+        idx, params = default_preset(f)
+        assert preset_grid(f)[idx] == params == {p["name"]: p["default"] for p in f["params"]}
+
+
+def test_real_catalog_rules_pick_for_each_supported_class():
+    """Unscored picks (no engine): every supported class gets its dedicated hedge family when shares are held."""
+    want = {"macro_fed": "macro_fed_hedge", "housing": "housing_rates", "fig": "fig_stress",
+            "elections": "election_hedge", "tariffs_trade": "tariff_trade_hedge",
+            "geopolitics_energy": "energy_geo_hedge", "crypto": "crypto_reg_hedge",
+            "tech_regulation": "tech_reg_hedge", "corporate_8k": "equity_delta_bridge",
+            "company_specific": "tech_reg_hedge"}
+    m = real_manifest()
+    for ec, fid in want.items():
+        assert shortlist(m, ec)["hedge"][0]["id"] == fid, ec
