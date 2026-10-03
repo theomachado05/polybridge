@@ -54,6 +54,26 @@ TEST(Gates, SessionHoursAndDst) {
   EXPECT_TRUE((Session{false}.pass({pm(at(2026, 10, 3, 3, 0), 0.5), 0})));
 }
 
+TEST(Gates, SessionClosedOnNyseHolidays) {
+  const auto day = [](int y, unsigned m, unsigned d) { return days_from_civil(y, m, d); };
+  // 2026 NYSE calendar.
+  for (auto d : {day(2026, 1, 1), day(2026, 1, 19), day(2026, 2, 16), day(2026, 4, 3), day(2026, 5, 25),
+                 day(2026, 6, 19), day(2026, 7, 3), day(2026, 9, 7), day(2026, 11, 26), day(2026, 12, 25)})
+    EXPECT_TRUE(nyse_holiday(d)) << d;
+  // Weekend observance: Sat -> Fri, Sun -> Mon; a Saturday New Year is not made up.
+  EXPECT_TRUE(nyse_holiday(day(2027, 6, 18)));
+  EXPECT_TRUE(nyse_holiday(day(2027, 12, 24)));
+  EXPECT_TRUE(nyse_holiday(day(2023, 1, 2)));
+  EXPECT_FALSE(nyse_holiday(day(2021, 12, 31)));
+  EXPECT_FALSE(nyse_holiday(day(2021, 6, 18)));  // before Juneteenth became an NYSE holiday
+  EXPECT_TRUE(nyse_holiday(day(2025, 4, 18)));   // Good Friday 2025
+  for (auto d : {day(2026, 7, 2), day(2026, 11, 27), day(2026, 12, 24), day(2026, 10, 2)})
+    EXPECT_FALSE(nyse_holiday(d)) << d;
+  Session g{true};
+  EXPECT_FALSE(g.pass({pm((day(2026, 11, 26) * 86400 + 15 * 3600) * kSec, 0.5), 0}));  // Thanksgiving 10:00 EST
+  EXPECT_TRUE(g.pass({pm((day(2026, 11, 27) * 86400 + 15 * 3600) * kSec, 0.5), 0}));   // the Friday after: open
+}
+
 TEST(Gates, CooldownAfterOrder) {
   Cooldown g{5 * kSec};
   const MarketTick t = pm(kSec, 0.5);

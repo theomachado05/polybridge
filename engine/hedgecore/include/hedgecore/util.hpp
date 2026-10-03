@@ -69,8 +69,49 @@ constexpr std::int64_t nth_sunday(std::int64_t y, unsigned m, unsigned n) noexce
   const unsigned wd = weekday_from_days(first);
   return first + (7 - wd) % 7 + 7 * (n - 1);
 }
-// True when ts_ns (UTC) falls in the US equity regular session, 09:30-16:00 America/New_York, Mon-Fri.
-// DST per the 2007 rule (2nd Sunday of March to 1st Sunday of November, 02:00 local). Exchange holidays are not modeled.
+// Day number of the n-th (1-based) given weekday (0 = Sunday) of a month, and of the last one.
+constexpr std::int64_t nth_weekday(std::int64_t y, unsigned m, unsigned wd, unsigned n) noexcept {
+  const std::int64_t first = days_from_civil(y, m, 1);
+  return first + (7 + wd - weekday_from_days(first)) % 7 + 7 * (n - 1);
+}
+constexpr std::int64_t last_weekday(std::int64_t y, unsigned m, unsigned wd) noexcept {
+  const std::int64_t last = days_from_civil(m == 12 ? y + 1 : y, m == 12 ? 1 : m + 1, 1) - 1;
+  return last - (7 + weekday_from_days(last) - wd) % 7;
+}
+// Gregorian Easter Sunday (anonymous / Meeus-Jones-Butcher algorithm).
+constexpr std::int64_t easter_sunday(std::int64_t y) noexcept {
+  const std::int64_t a = y % 19, b = y / 100, c = y % 100, d = b / 4, e = b % 4, f = (b + 8) / 25,
+                     g = (b - f + 1) / 3, h = (19 * a + b - d - g + 15) % 30, i = c / 4, k = c % 4,
+                     l = (32 + 2 * e + 2 * i - h - k) % 7, m = (a + 11 * h + 22 * l) / 451,
+                     month = (h + l - 7 * m + 114) / 31, day = (h + l - 7 * m + 114) % 31 + 1;
+  return days_from_civil(y, static_cast<unsigned>(month), static_cast<unsigned>(day));
+}
+// A fixed-date holiday moves to Friday when it falls on Saturday and to Monday when it falls on Sunday.
+constexpr std::int64_t observed(std::int64_t day) noexcept {
+  const unsigned wd = weekday_from_days(day);
+  return wd == 6 ? day - 1 : (wd == 0 ? day + 1 : day);
+}
+// NYSE full-day closures (rule 7.2): New Year's Day (Sunday -> Monday; a Saturday New Year is not made up on the
+// Friday before), MLK Day, Washington's Birthday, Good Friday, Memorial Day, Juneteenth (from 2022), Independence
+// Day, Labor Day, Thanksgiving, Christmas. Early (13:00) closes and one-off closures are not modeled.
+constexpr bool nyse_holiday(std::int64_t lday) noexcept {
+  const Civil c = civil_from_days(lday);
+  const std::int64_t y = c.y;
+  const std::int64_t ny = days_from_civil(y, 1, 1);
+  if (weekday_from_days(ny) == 0 && lday == ny + 1) return true;
+  if (lday == ny) return true;
+  if (lday == nth_weekday(y, 1, 1, 3) || lday == nth_weekday(y, 2, 1, 3)) return true;
+  if (lday == easter_sunday(y) - 2) return true;
+  if (lday == last_weekday(y, 5, 1)) return true;
+  if (y >= 2022 && lday == observed(days_from_civil(y, 6, 19))) return true;
+  if (lday == observed(days_from_civil(y, 7, 4))) return true;
+  if (lday == nth_weekday(y, 9, 1, 1) || lday == nth_weekday(y, 11, 4, 4)) return true;
+  if (lday == observed(days_from_civil(y, 12, 25))) return true;
+  return false;
+}
+
+// True when ts_ns (UTC) falls in the US equity regular session, 09:30-16:00 America/New_York, Mon-Fri, outside NYSE
+// full-day holidays. DST per the 2007 rule (2nd Sunday of March to 1st Sunday of November, 02:00 local).
 constexpr bool us_equity_session(std::int64_t ts_ns) noexcept {
   const std::int64_t s = ts_ns >= 0 ? ts_ns / kNsPerSec : -((-ts_ns + kNsPerSec - 1) / kNsPerSec);
   const std::int64_t utc_day = s >= 0 ? s / 86400 : -((-s + 86399) / 86400);
@@ -81,7 +122,7 @@ constexpr bool us_equity_session(std::int64_t ts_ns) noexcept {
   const std::int64_t ls = s + offset;
   const std::int64_t lday = ls >= 0 ? ls / 86400 : -((-ls + 86399) / 86400);
   const unsigned wd = weekday_from_days(lday);
-  if (wd == 0 || wd == 6) return false;
+  if (wd == 0 || wd == 6 || nyse_holiday(lday)) return false;
   const std::int64_t sod = ls - lday * 86400;
   return sod >= 9 * 3600 + 30 * 60 && sod < 16 * 3600;
 }
