@@ -6,7 +6,7 @@ All times UTC, 2026-10-03. Commands are run from `research/`.
 |---|---|---|
 | 23:38 | `METHOD.md` and `config.py` committed (`83ce137`) | Before any S3 data was pulled |
 | 23:41 | `python -m s3_three_way.run --rate 0.0417`, first attempt | Stopped: Massive answered 403 for the index `I:SPX`. No set had been built |
-| 23:42 | Amendment 1 committed (`25ff2d8`): S&P 500 close from Kalshi's settlement value | Before any result |
+| 23:42 | Amendment 1 committed (`6c3b753`): S&P 500 close from Kalshi's settlement value | Before any result |
 | 23:42 | `python -m s3_three_way.run --rate 0.0417` | 42 s. Part H: 60 matched sets on 33 dates; primary V0: 0 entries at 1× and 2× |
 | 23:44 | `python -m s3_three_way.report` | `SUMMARY.md`, `metrics.csv`, charts, `capacity.md` |
 
