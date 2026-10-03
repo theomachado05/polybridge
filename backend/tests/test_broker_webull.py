@@ -57,6 +57,7 @@ class Sandbox:
     def __init__(self, status="FILLED", place_error=None, held=0.0):
         self.requests: list[httpx.Request] = []
         self.status, self.place_error, self.held = status, place_error, held
+        self.qty: dict[str, str] = {}  # client_order_id -> quantity sent
 
     def handler(self, r: httpx.Request) -> httpx.Response:
         self.requests.append(r)
@@ -73,11 +74,14 @@ class Sandbox:
         if p == "/trading/orders/place":
             if self.place_error:
                 return httpx.Response(400, json={"error_code": "INVALID", "message": self.place_error})
-            return httpx.Response(200, json={"data": {"client_order_id": json.loads(r.content)["new_orders"][0]["client_order_id"],
-                                                      "order_id": "WB-1"}})
+            item = json.loads(r.content)["new_orders"][0]
+            self.qty[item["client_order_id"]] = item["quantity"]
+            return httpx.Response(200, json={"data": {"client_order_id": item["client_order_id"], "order_id": "WB-1"}})
         if p == "/trading/orders/get":
-            return httpx.Response(200, json={"data": {"order_id": "WB-1", "status": self.status, "filled_quantity": "10",
-                                                      "filled_price": "189.9", "client_order_id": r.url.params["client_order_id"]}})
+            cid = r.url.params["client_order_id"]
+            return httpx.Response(200, json={"data": {"order_id": "WB-1", "status": self.status,
+                                                      "filled_quantity": self.qty.get(cid, "10"), "filled_price": "189.9",
+                                                      "client_order_id": cid}})
         if p == "/trading/orders/open-orders/list":
             return httpx.Response(200, json={"data": []})
         if p == "/trading/orders/cancel":
@@ -151,16 +155,108 @@ def test_limit_order_carries_a_limit_price_and_open_status_is_reported(tmp_path)
     assert o.status == "open"
 
 
+def _placed(sb):
+    return [json.loads(r.content)["new_orders"][0] for r in sb.requests if r.url.path == "/trading/orders/place"]
+
+
 def test_selling_more_than_held_is_a_short_and_selling_held_shares_is_a_sell(tmp_path):
-    for held, qty, side in ((0.0, 10, "SHORT"), (4.0, 10, "SHORT"), (50.0, 10, "SELL")):
+    for held, qty, side in ((0.0, 10, "SHORT"), (-30.0, 10, "SHORT"), (50.0, 10, "SELL")):
         sb = Sandbox(held=held)
 
         async def go():
             return await make(sb, tmp_path).place_order(OrderRequest(symbol="AAPL", asset="equity", side="sell", qty=qty,
                                                                      client_order_id="s"))
         run(go())
-        item = json.loads(next(r for r in sb.requests if r.url.path == "/trading/orders/place").content)["new_orders"][0]
-        assert item["side"] == side, (held, qty)
+        items = _placed(sb)
+        assert [i["side"] for i in items] == [side] and items[0]["quantity"] == "10", (held, qty)
+
+
+def test_a_sell_larger_than_the_long_position_is_split_into_a_sell_and_a_short(tmp_path):
+    sb = Sandbox(held=4.0)
+    b = make(sb, tmp_path)
+
+    async def go():
+        o = await b.place_order(OrderRequest(symbol="AAPL", asset="equity", side="sell", qty=10, client_order_id="s"))
+        again = await b.place_order(OrderRequest(symbol="AAPL", asset="equity", side="sell", qty=10, client_order_id="s"))
+        return o, again, await b.orders()
+    o, again, rows = run(go())
+    items = _placed(sb)  # the retry is idempotent: still only two orders at Webull
+    assert [(i["side"], i["quantity"], i["client_order_id"]) for i in items] == [("SELL", "4", "s-sell"), ("SHORT", "6", "s-short")]
+    assert o.status == "filled" and o.qty == 10 and o.filled_qty == 10 and o.client_order_id == "s"
+    assert again.filled_qty == 10 and again.status == "filled"
+    assert {r.client_order_id for r in rows} == {"s-sell", "s-short"}
+
+
+def test_a_rejected_short_leg_is_reported_with_what_did_fill(tmp_path):
+    class Half(Sandbox):
+        def handler(self, r):
+            if r.url.path == "/trading/orders/place" and json.loads(r.content)["new_orders"][0]["side"] == "SHORT":
+                self.requests.append(r)
+                return httpx.Response(400, json={"message": "not shortable"})
+            return super().handler(r)
+    sb = Half(held=4.0)
+
+    async def go():
+        return await make(sb, tmp_path).place_order(OrderRequest(symbol="AAPL", asset="equity", side="sell", qty=10))
+    o = run(go())
+    assert o.status == "rejected" and o.filled_qty == 4 and "partial: 4 of 10 filled" in o.reject_reason
+    assert "not shortable" in o.reject_reason
+
+
+def test_quantity_and_limit_price_are_exact_decimal_text(tmp_path):
+    sb = Sandbox(status="SUBMITTED")
+
+    async def go():
+        return await make(sb, tmp_path).place_order(OrderRequest(symbol="BRK.A", asset="equity", side="buy", qty=1234567,
+                                                                 type="limit", limit_px=650123.45, client_order_id="big"))
+    run(go())
+    item = _placed(sb)[0]
+    assert item["quantity"] == "1234567" and item["limit_price"] == "650123.45"
+    from app.broker.webull import _dec
+    assert [_dec(x) for x in (0.00001, 100.0, 0.1, 1e9, 187.5)] == ["0.00001", "100", "0.1", "1000000000", "187.5"]
+
+
+def test_the_order_note_is_kept_on_a_webull_order(tmp_path):
+    sb = Sandbox()
+
+    async def go():
+        return await make(sb, tmp_path).place_order(OrderRequest(symbol="AAPL", asset="equity", side="buy", qty=1,
+                                                                 note="replay: test"))
+    assert run(go()).note == "replay: test"
+
+
+@pytest.mark.parametrize("balance", [{"data": [{"cash_balance": "5", "total_net_liquidation_value": "7"}]},
+                                     {"data": None}, {"data": "oops"}, [1, 2], None])
+def test_odd_balance_shapes_never_raise_a_non_broker_error(tmp_path, balance):
+    def h(r):
+        if r.url.path == "/trading/assets/balances/get":
+            return httpx.Response(200, json=balance)
+        return httpx.Response(200, json=[{"account_id": "A"}])
+
+    async def go():
+        b = WebullBroker(WebullClient("K", "S", http=httpx.AsyncClient(transport=httpx.MockTransport(h))), SimBroker(None))
+        return await b.account()
+    try:
+        a = run(go())
+        assert a.cash == 5.0 and a.equity == 7.0  # the list-of-one-row shape is understood
+    except BrokerError as e:
+        assert e.status_code == 502
+
+
+def test_unexpected_parsing_errors_become_a_502_through_the_api(tmp_path, monkeypatch):
+    import app.broker.webull as wb
+
+    def explode(*a, **k):
+        raise RuntimeError("surprise")
+    monkeypatch.setattr(wb, "_rows", explode)
+
+    async def go():
+        b = WebullBroker(WebullClient("K", "S", http=httpx.AsyncClient(transport=httpx.MockTransport(Sandbox().handler))),
+                         SimBroker(None))
+        return await b.positions()
+    with pytest.raises(BrokerError) as e:
+        run(go())
+    assert e.value.status_code == 502 and "RuntimeError" in e.value.message
 
 
 def test_a_refused_order_is_a_rejected_order_not_an_exception(tmp_path):

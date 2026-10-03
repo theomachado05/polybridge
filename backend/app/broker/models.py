@@ -36,6 +36,7 @@ class OrderRequest(BaseModel):
     # Reference price supplied by the caller: the bridge's last price (equity), the quote mid (option) or the
     # prediction-market book price on the side being taken (prediction legs).
     ref_px: float | None = Field(default=None, gt=0, allow_inf_nan=False)
+    note: str | None = Field(default=None, max_length=200)  # label copied to the Order (e.g. replay origin)
 
     @field_validator("symbol")
     @classmethod

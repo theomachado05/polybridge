@@ -155,8 +155,9 @@ class SimBroker:
         """(mid, half_spread, source) or a reject reason."""
         a = req.asset
         if a == "prediction":
-            px = req.ref_px or req.limit_px
-            return (px, 0.0, "supplied_book_price") if px else "no_price: prediction legs need ref_px (the book price)"
+            # limit_px is the user's bound, never the book price: without ref_px there is nothing to fill against
+            return ((req.ref_px, 0.0, "supplied_book_price") if req.ref_px
+                    else "no_price: prediction legs need ref_px (the book price); limit_px is only a bound")
         if req.ref_px:
             mid, src, half = req.ref_px, "supplied", None
         else:
@@ -215,7 +216,7 @@ class SimBroker:
             o = Order(id=f"sim-{self.seq:06d}", client_order_id=req.client_order_id, broker=self.name,
                       symbol=req.symbol, asset=req.asset, side=req.side, qty=req.qty, type=req.type,
                       limit_px=req.limit_px, status="open", created_at=self._clock(), tag=req.tag,
-                      note=self.order_note)
+                      note=" | ".join(n for n in (req.note, self.order_note) if n) or None)
             self._orders.append(o)
             if isinstance(priced, str):
                 o.status, o.reject_reason = "rejected", priced

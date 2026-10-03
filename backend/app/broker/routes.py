@@ -1,6 +1,7 @@
 """HTTP surface for the active broker. A broker failure is a clean 4xx/502, never a 500."""
 from __future__ import annotations
 
+import logging
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Request
@@ -11,6 +12,7 @@ from .models import Account, BrokerError, Order, OrderRequest, Position
 from .sim import SimBroker
 
 router = APIRouter()
+log = logging.getLogger(__name__)
 
 
 class ResetIn(BaseModel):
@@ -22,6 +24,9 @@ async def _call(coro):
         return await coro
     except BrokerError as e:
         raise HTTPException(e.status_code, e.message)
+    except Exception as e:  # the API never answers 500 for a broker problem
+        log.warning("broker call failed: %s", type(e).__name__)
+        raise HTTPException(502, f"Broker error ({type(e).__name__}).")
 
 
 @router.get("/account", response_model=Account)
@@ -32,8 +37,10 @@ async def get_account(request: Request) -> Account:
 @router.get("/positions", response_model=list[Position])
 async def get_positions(request: Request, refresh: bool = False) -> list[Position]:
     b = get_broker(request.app)
-    if refresh and isinstance(b, SimBroker):
-        await b.refresh_marks()
+    if refresh:  # the sim itself, or the sim behind Webull that holds the option and prediction legs
+        sim = b if isinstance(b, SimBroker) else getattr(b, "sim", None)
+        if sim is not None:
+            await sim.refresh_marks()
     return await _call(b.positions())
 
 

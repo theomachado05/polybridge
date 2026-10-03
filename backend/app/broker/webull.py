@@ -17,11 +17,13 @@ from __future__ import annotations
 import asyncio
 import base64
 import datetime as dt
+import functools
 import hashlib
 import hmac
 import json
 import logging
 import uuid
+from decimal import Decimal
 from typing import Any, Callable
 from urllib.parse import quote
 
@@ -40,6 +42,25 @@ _LISTS = ("data", "accounts", "positions", "orders", "holdings", "items", "list"
 
 class WebullAPIError(BrokerError):
     """Webull answered with an error status (the request was understood and refused)."""
+
+
+def _dec(x: float) -> str:
+    """Exact decimal text for a quantity or price: never scientific notation, never rounded to 6 digits."""
+    return format(Decimal(repr(float(x))).normalize(), "f")
+
+
+def _guard(fn):
+    """Any unexpected failure while talking to or parsing Webull becomes a clean 502, never a 500."""
+    @functools.wraps(fn)
+    async def wrapper(self, *args, **kwargs):
+        try:
+            return await fn(self, *args, **kwargs)
+        except BrokerError:
+            raise
+        except Exception as e:
+            log.warning("Webull %s failed: %s", fn.__name__, type(e).__name__)
+            raise BrokerError(f"Webull response could not be processed ({type(e).__name__}).", 502) from e
+    return wrapper
 
 
 def body_json(body: Any) -> str:
@@ -167,6 +188,7 @@ def order_from_webull(d: dict, fallback: Order | None = None) -> Order:
                  created_at=fallback.created_at if fallback else now_iso(),
                  filled_at=now_iso() if status == "filled" else None,
                  tag=fallback.tag if fallback else None, price_source="webull_paper",
+                 note=fallback.note if fallback else None,
                  reject_reason=_str(d, "error_message", "reject_reason", "message") if status == "rejected" else None)
 
 
@@ -177,6 +199,7 @@ class WebullBroker:
         self.client, self.sim = client, sim
         self._account_id = account_id or None
         self._placed: dict[str, Order] = {}  # client_order_id -> last known state of orders placed through us
+        self._legs: dict[str, list[str]] = {}  # split sell: client_order_id -> its leg client ids
 
     async def _aid(self) -> str:
         if self._account_id is None:
@@ -188,16 +211,18 @@ class WebullBroker:
         return self._account_id
 
     # ---- account and positions --------------------------------------------------------------------
+    @_guard
     async def account(self) -> Account:
         aid = await self._aid()
         payload = await self.client.request("GET", "/trading/assets/balances/get",
                                             {"account_id": aid, "total_asset_currency": "USD"})
-        d = payload.get("data", payload) if isinstance(payload, dict) else {}
-        if isinstance(d, dict):
-            for k in ("account_currency_assets", "currency_assets"):  # per-currency breakdown: prefer USD
-                sub = _rows(d.get(k))
-                if sub:
-                    d = {**d, **next((s for s in sub if (_str(s, "currency") or "USD") == "USD"), sub[0])}
+        d = payload.get("data", payload) if isinstance(payload, dict) else payload
+        if not isinstance(d, dict):
+            d = _row(d)  # a list of one row, or nothing
+        for k in ("account_currency_assets", "currency_assets"):  # per-currency breakdown: prefer USD
+            sub = _rows(d.get(k))
+            if sub:
+                d = {**d, **next((s for s in sub if (_str(s, "currency") or "USD") == "USD"), sub[0])}
         cash = _num(d, "cash_balance", "total_cash_balance", "settled_cash", "cash", "account_cash")
         equity = _num(d, "total_net_liquidation_value", "net_liquidation_value", "net_liquidation", "total_asset",
                       "total_assets", "equity")
@@ -209,6 +234,7 @@ class WebullBroker:
                        buying_power=bp if bp is not None else (cash or 0.0), simulated=True,
                        note="Webull paper (simulated money). Options and prediction legs are simulated separately.")
 
+    @_guard
     async def positions(self) -> list[Position]:
         aid = await self._aid()
         out: list[Position] = []
@@ -232,34 +258,67 @@ class WebullBroker:
         except BrokerError:
             return 0.0
 
+    @_guard
     async def place_order(self, req: OrderRequest) -> Order:
         if req.asset != "equity":
             return await self.sim.place_order(req)  # the sim stamps SIM_NOTE on every order it takes here
-        if (dup := self._placed.get(req.client_order_id)) is not None:
+        cid = req.client_order_id
+        if (dup := self._placed.get(cid)) is not None:
             return dup
+        if (legs := self._legs.get(cid)) is not None:
+            return self._merge(req, legs, None)
+        if req.side == "buy":
+            return await self._submit(req, cid, "BUY", req.qty)
+        held = max(await self._held(req.symbol), 0.0)  # long quantity only; a short is already negative
+        if held >= req.qty:
+            return await self._submit(req, cid, "SELL", req.qty)
+        if held <= 0:
+            return await self._submit(req, cid, "SHORT", req.qty)  # nothing long to sell: this opens a short (hedges)
+        # Part long, part short (hold 50, sell 100): a SELL for what is held plus a SHORT for the rest.
+        sell = await self._submit(req, f"{cid}-sell", "SELL", held)
+        legs = [sell.client_order_id]
+        if sell.status != "rejected":
+            legs.append((await self._submit(req, f"{cid}-short", "SHORT", req.qty - held)).client_order_id)
+        self._legs[cid] = legs
+        return self._merge(req, legs, held)
+
+    def _merge(self, req: OrderRequest, legs: list[str], held: float | None) -> Order:
+        """One Order summarising the SELL and SHORT legs of a split sell (the legs stay separate in orders())."""
+        got = [self._placed[c] for c in legs]
+        filled = sum(o.filled_qty for o in got)
+        priced = [(o.filled_qty, o.fill_px) for o in got if o.filled_qty and o.fill_px is not None]
+        status = ("rejected" if any(o.status == "rejected" for o in got)
+                  else "filled" if all(o.status == "filled" for o in got) and len(got) == 2
+                  else "cancelled" if all(o.status == "cancelled" for o in got) else "open")
+        reason = next((o.reject_reason for o in got if o.status == "rejected"), None)
+        if status == "rejected" and filled:
+            reason = f"partial: {filled:g} of {req.qty:g} filled; {reason or 'a leg was rejected'}"
+        return got[0].model_copy(update={
+            "client_order_id": req.client_order_id, "qty": req.qty, "filled_qty": filled, "status": status,
+            "fill_px": sum(q * p for q, p in priced) / sum(q for q, _ in priced) if priced else None,
+            "reject_reason": reason})
+
+    async def _submit(self, req: OrderRequest, cid: str, side: str, qty: float) -> Order:
+        """Place one equity order at Webull and (once) ask for its state; a refusal is a rejected order."""
         aid = await self._aid()
-        side = req.side.upper()
-        if req.side == "sell" and await self._held(req.symbol) < req.qty:
-            side = "SHORT"  # selling more than is held opens a short (hedges)
         item: dict[str, Any] = {
-            "client_order_id": req.client_order_id, "combo_type": "NORMAL", "symbol": req.symbol,
+            "client_order_id": cid, "combo_type": "NORMAL", "symbol": req.symbol,
             "instrument_type": "EQUITY", "market": "US", "order_type": req.type.upper(),
-            "quantity": f"{req.qty:g}", "support_trading_session": "CORE", "side": side,
+            "quantity": _dec(qty), "support_trading_session": "CORE", "side": side,
             "time_in_force": "DAY", "entrust_type": "QTY"}
         if req.type == "limit":
-            item["limit_price"] = f"{req.limit_px:g}"
-        base = Order(id=req.client_order_id, client_order_id=req.client_order_id, broker=self.name, symbol=req.symbol,
-                     asset="equity", side=req.side, qty=req.qty, type=req.type, limit_px=req.limit_px, status="open",
-                     created_at=now_iso(), tag=req.tag, price_source="webull_paper")
+            item["limit_price"] = _dec(req.limit_px)
+        base = Order(id=cid, client_order_id=cid, broker=self.name, symbol=req.symbol, asset="equity", side=req.side,
+                     qty=qty, type=req.type, limit_px=req.limit_px, status="open", created_at=now_iso(), tag=req.tag,
+                     price_source="webull_paper", note=req.note)
         try:
             resp = await self.client.request("POST", "/trading/orders/place", body={"account_id": aid, "new_orders": [item]})
         except WebullAPIError as e:  # understood and refused: a rejected order, not a crash
             base.status, base.reject_reason = "rejected", e.message
-            self._placed[req.client_order_id] = base
+            self._placed[cid] = base
             return base
-        row = _row(resp)
-        base.id = _str(row, "order_id") or base.id
-        self._placed[req.client_order_id] = base
+        base.id = _str(_row(resp), "order_id") or base.id
+        self._placed[cid] = base
         try:  # paper orders usually fill at once; ask once, otherwise it is reported open
             base = await self._refresh(base)
         except BrokerError:
@@ -273,6 +332,7 @@ class WebullBroker:
         self._placed[o.client_order_id] = fresh
         return fresh
 
+    @_guard
     async def orders(self, status: str | None = None) -> list[Order]:
         aid = await self._aid()
         merged: dict[str, Order] = dict(self._placed)
@@ -290,6 +350,7 @@ class WebullBroker:
         rows = [o for o in rows if status is None or o.status == status]
         return sorted(rows, key=lambda o: o.created_at, reverse=True)
 
+    @_guard
     async def cancel(self, order_id: str) -> Order:
         if order_id.startswith("sim-"):
             return await self.sim.cancel(order_id)

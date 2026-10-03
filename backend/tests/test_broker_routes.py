@@ -88,3 +88,33 @@ def test_broker_failure_is_a_502_not_a_500(client):
     client.app.state.broker.account = boom
     r = client.get("/account")
     assert r.status_code == 502 and "ConnectError" in r.json()["detail"]
+
+
+def test_refresh_also_re_marks_the_sim_behind_webull(tmp_path):
+    import httpx
+    from app.broker import WebullBroker, WebullClient
+
+    quotes = FakeQuotes(option={OCC: Quote(2.0, 0.1, "q")})
+    sim = SimBroker(tmp_path / "w.json", quotes)
+    http = httpx.AsyncClient(transport=httpx.MockTransport(
+        lambda r: httpx.Response(200, json={"data": {"holdings": []}})))
+    app = create_app()
+    app.state.broker = WebullBroker(WebullClient("K", "S", http=http), sim, account_id="A")
+    with TestClient(app) as c:
+        c.post("/orders", json={"symbol": OCC, "asset": "option", "side": "buy", "qty": 1})
+        quotes.opt[OCC] = Quote(3.0, 0.1, "q")
+        pos = c.get("/positions", params={"refresh": True}).json()
+    assert [(p["broker"], p["mark_px"]) for p in pos] == [("sim", 3.0)]
+
+
+def test_an_unexpected_broker_exception_is_a_502_not_a_500(tmp_path):
+    class Broken:
+        name = "broken"
+
+        async def account(self):
+            raise KeyError("boom")
+    app = create_app()
+    app.state.broker = Broken()
+    with TestClient(app, raise_server_exceptions=False) as c:
+        r = c.get("/account")
+    assert r.status_code == 502 and "KeyError" in r.json()["detail"]

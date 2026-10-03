@@ -94,6 +94,22 @@ def test_prediction_leg_fills_at_supplied_book_price_without_extra_spread(sim):
         OrderRequest(symbol="x", asset="prediction", side="buy", qty=1, ref_px=1.5)
 
 
+def test_a_prediction_limit_price_is_a_bound_never_the_book_price(sim):
+    nobook = run(sim.place_order(OrderRequest(symbol="m", asset="prediction", side="buy", qty=10, type="limit", limit_px=0.4)))
+    assert nobook.status == "rejected" and "ref_px" in nobook.reject_reason and run(sim.positions()) == []
+    resting = run(sim.place_order(OrderRequest(symbol="m", asset="prediction", side="buy", qty=10, type="limit",
+                                               limit_px=0.4, ref_px=0.5)))
+    assert resting.status == "open"  # the book is above the limit
+    filled = run(sim.place_order(OrderRequest(symbol="m", asset="prediction", side="buy", qty=10, type="limit",
+                                              limit_px=0.6, ref_px=0.5)))
+    assert filled.status == "filled" and filled.fill_px == 0.5 and filled.price_source == "supplied_book_price"
+
+
+def test_the_request_note_is_kept_on_the_order(sim):
+    o = run(sim.place_order(req(note="replay: labelled")))
+    assert o.note == "replay: labelled"
+
+
 # --- shorts ---------------------------------------------------------------------------------------
 
 def test_short_then_cover_realises_the_pnl(sim):
