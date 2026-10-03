@@ -32,7 +32,7 @@ Servers up (section 4). Open http://localhost:3000 (not 127.0.0.1). The default 
 | 0:00 | **Landing** | "Build a bridge" | "You hold a stock. A prediction market is putting a live probability on an event that moves it. PolyBridge reads that probability and hedges the stock, only after you approve." |
 | 0:05 | **Build chat** | Type `fed october`, pick "the Fed increase interest rates by 25 bps after the October 2026 meeting" | "This is the live Polymarket market, 18 cents YES, about 450 thousand dollars traded today. The search hits Polymarket and Kalshi; with no network it falls back to a bundled list and says so." |
 | 0:15 | Build chat | Pick **IWM** (400 shares held) | "Which stock does it move? This mapping is an AI estimate, labelled as one: a hike hits small caps, about 3 percent. It is an estimate, not a measurement." |
-| 0:22 | Build chat | Pick "a dynamic short hedge" | "The engine hedges by shorting shares in proportion to the adverse probability. Behind the scenes the AI is already fitting an algorithm." The **AI fit card** appears: event class, family and preset, score, rationale, alternatives. "It classified the event as Macro Fed and tuned the preset on the market's own price history: Fig Stress, preset 54. That score is measured on the same history it then replays, so it is in-sample and not a forecast." |
+| 0:22 | Build chat | Pick "a dynamic short hedge" | "The engine hedges by shorting shares in proportion to the adverse probability. Behind the scenes the AI is already fitting an algorithm." The **AI fit card** appears: event class, family and preset, score, rationale, alternatives. "It classified the event as Macro Fed and tuned the preset on the market's own price history. Read the family, preset and score off the card; they come from a fresh fit and can differ from run to run. The score is what the market signal adds beyond a plain fixed hedge of the same average size, measured on the same history it then replays: in-sample, not a forecast. If it is near zero or negative, say so: that means the signal added little on this history, which is an honest result." |
 | 0:35 | Build chat, **Connect** | "Connect brokerage", then "Run the AI pipeline" | "Orders go to the simulated account. Webull paper takes over when its keys are set; real money is out of scope." Point at the account tag: "Simulated account". |
 | 0:42 | **AI pipeline** | Wait for "Approve the IWM bridge?" | "Six steps: classify, shortlist from the library, load real price history, tune presets on replay, explain, ready. Nothing runs until I approve." |
 | 0:52 | AI pipeline | "Approve and open the bridge" | "This is the approval gate. The proposal is pinned to this exact algorithm and capped at the coverage I approved; the backend refuses to run anything else." |
@@ -53,7 +53,7 @@ If `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` is set and the tunnel is up (see `docs/voic
 
 ### Other recorded markets
 
-`REPLAY=replays/<file> make dev` (path from the repo root) plays a different recording (the replay file is global, so pick the matching market in Build). See `replays/README.md`. Two fresh high-volume ones:
+`REPLAY=replays/<file> make dev` (path from the repo root) plays a different recording (the replay file is global, so pick the matching market in Build; a replay bridge for any other market is refused with a 422 when the file's `.meta.json` sidecar names a different market). See `replays/README.md`. Two fresh high-volume ones:
 
 - Indiana data-center moratorium by end of 2027 (about 1.9 million dollars traded in 24 h): pick **VRT**, "tech_regulation" class. History: p moves 14.5c to 53.5c.
 - US x Iran ceasefire through October 31: pick **XLE** (down on YES, 4 percent, AI estimate), "geopolitics_energy" class. History: p moves 36.5c to 70.5c.
@@ -87,15 +87,17 @@ If `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` is set and the tunnel is up (see `docs/voic
 
 Make these:
 
-- The hedge is human-approved, pinned to the approved algorithm and capped at the approved coverage; fills are on a simulated (or Webull paper) account.
+- The hedge is human-approved, pinned to the approved algorithm and capped at the approved coverage; fills are on a simulated (or Webull paper) account (Webull means its sandbox, `api.sandbox.webull.com`; any other `WEBULL_BASE_URL` is refused and the simulator is used).
 - The library is compiled C++ (1,278 presets, 16 families); the AI picks and tunes from it, and falls back to rules without a key.
 - Labels are honest: replay vs live, AI estimate vs measured, simulated vs paper, rules vs Gemini.
+- The fit ranks presets by how much variance they remove beyond a static hedge of the same average size (what the signal adds), not by raw variance reduction, which any static short earns. Say it is an in-sample replay.
 - The decision latency shown on the bridge screen is measured per tick (hundreds of nanoseconds to a few microseconds).
 
 Do not make these:
 
 - Not "prediction markets lead equities": market-hours lead-lag is mixed to negative and the closed-market study is mixed. The signal is the probability, not a head start.
-- Not "the fit predicts returns": the preset score is hedge variance reduction on the same history it is tuned on (in-sample).
+- Not "the fit predicts returns": the preset score is the hedge variance reduction beyond a static hedge of the same size, on the same history it is tuned on (in-sample), and the best of many presets.
+- Not "the fit shows the signal works": over the 133 precomputed markets the median score is 0.0053, 36 of 122 scored fits are at or below zero (all negative), and only 53 are above 0.01 (`backend/app/data/fits.json`, our tally of the entries). Do not quote the raw variance reduction (median 0.339) as the hedge's edge: most of it is hedge size (median average hedge ratio 0.18).
 - Not "the arbitrage scan found money": 5 resolved gaps, 0 executable.
 - Not "AI estimates are measurements": the stock mapping is a precomputed estimate.
 - Not "real orders": nothing here touches real money. The landing page's "1,284 algorithms" is a design figure; the library reports 1,278 presets, so say 1,278.
@@ -108,4 +110,6 @@ Do not make these:
 - **What stops it overtrading?** A fee gate holds any order whose expected benefit does not beat its cost, a band holds small rebalances, and a hard coverage cap (the approved `target_coverage`) clips every sell. The bridge's summary counts each reason.
 - **Approval gate?** A proposal starts pending; `POST /bridges` is 409 until it is approved and 409 again for any algorithm other than the approved one. Opportunity (options) proposals never reach the hedge engine.
 - **Where does book depth come from?** Live bridges read the top five levels per side from Polymarket or Kalshi. History replays are mid-price only (the spread and depth at the time are unknown and left empty, never invented); `replays/*-book.jsonl` carry real recorded depth.
+- **What does the fit score mean?** Plain variance reduction rewards any static short: a fixed short of a fraction h of the shares scores `1 - (1 - h)^2` even if the prediction market never moves. So the fit ranks on `hedge_var_reduction_vs_static`, the variance cut beyond a static hedge of the same average size, i.e. what the PM signal adds (0 = no better than static, negative = timing hurt). It is in-sample (tuned and scored on the same history, best of many presets), so a few thousandths is noise. Over the 133 precomputed markets: 122 scored, median 0.0053, 86 above 0 but only 53 above 0.01, 31 above 0.05, 14 above 0.1, 7 above 0.2; 36 at or below 0, all negative. The signal adds a material amount on roughly 14 to 31 markets at most (`backend/app/data/fits.json`; `research/EVIDENCE.md` section 6).
+- **Do fit fills use stale prices?** No. In the engine's replay an equity order with no live quote is rejected outside the US regular session and until the price has changed inside the session, so the opening gap is never booked as hedge P&L (`engine/hedgecore/include/hedgecore/replay.hpp`). A night-time PM move is hedged at the next fresh in-session price.
 - **What is exploratory?** The atlas and the AI stock mappings. They suggest where to look and carry no confirmatory weight; 96,390 variants were counted against any hit (`research/results/RUN_LOG.md`).

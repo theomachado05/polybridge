@@ -67,11 +67,32 @@ The fit pipeline (`backend/app/pipeline`) is: question -> event class -> shortli
 
 1. **Classify**: the question (or market) maps to one of the event classes (Gemini when a key is present, a keyword rules provider otherwise).
 2. **Shortlist**: only families whose event classes and data requirements match are considered.
-3. **Replay**: for each shortlisted family, `replay_grid` runs every preset over recent price history of that market and the underlying (or a recorded replay file when offline, labelled as such), filling at the touch plus fees. Each preset gets P&L net of fees, max drawdown, turnover, and `hedge_var_reduction` (how much the hedge cut the variance of the user's P&L).
-4. **Pick**: hedge families score on `hedge_var_reduction`; opportunity families score on net P&L per unit of drawdown. Highest score wins; ties go to fewer orders, then rule order. The runner-up presets are returned as alternatives.
+3. **Replay**: for each shortlisted family, `replay_grid` runs every preset over recent price history of that market and the underlying (or a recorded replay file when offline, labelled as such), filling at the touch plus fees. Each preset gets P&L net of fees, max drawdown, turnover and three hedge numbers (next section). **Fills respect the equity session:** when an equity order has no live quote (recorded ticks price off the close of the last finished bar), the engine's replay rejects it outside the US regular session and until that price has changed inside the session, so a stale close (a night, a weekend, a holiday, or a new session before its first bar) is never booked as a fill that harvests the opening gap (`engine/hedgecore/include/hedgecore/replay.hpp` header comment, `engine/hedgecore/src/replay.cpp`). A hedge that wants to trade on a prediction-market move at night therefore waits for the next fresh in-session price, as it would have to in reality.
+4. **Pick**: hedge families are ranked by `hedge_var_reduction_vs_static` (below); opportunity families by net P&L per unit of drawdown. Highest score wins; ties go to fewer orders, then rule order. The runner-up presets are returned as alternatives. A hedge preset that never holds a short (no orders, or an average hedge ratio of 0) is **unscored**: its score against a static hedge is exactly 0 by construction, and it would otherwise win every market where each real hedge did worse than a static one (`backend/app/pipeline/tune.py`, `never_hedged`). If no preset has a defined score against a static hedge, the pick falls back to rules with the reason `NO_STATIC_BENCHMARK`.
 5. **Explain**: the rationale cites the measured replay numbers. If the engine cannot score (no compiled module, too few ticks), the pick is by rules, flagged `scored: false`, and labelled as unscored rather than presented as measured.
 
-Replay is what makes tuning cheap: scoring the whole library once (1,278 presets over 20,000 synthetic ticks) took 1.68 s on one thread (BENCH.md). Replay results are in-sample estimates on recent history, not out-of-sample proof. The pipeline page shows the tick source (real price history or replay ticks) and the score, but it has no separate in-sample label.
+### What the fit score means (and what it does not)
+
+Plain hedge variance reduction, `hedge_var_reduction = 1 - var(hedged P&L changes) / var(unhedged P&L changes)`, **rewards any static short of the stock, signal or not**: a fixed short of a fraction h of the shares scores `1 - (1 - h)^2` even when the prediction-market series is constant (`replay.hpp`). Ranking on it picks the biggest hedge, not the best signal. So the fit now ranks on a different number and reports the other two beside it:
+
+| field in `/pipeline/fit` and `fits.json` | what it is |
+|---|---|
+| `score` (= `score_vs_static`, `score_basis: "hedge_var_reduction_vs_static"`) | the ranking score: `1 - var(hedged) / var(unhedged x (1 - h))`, the variance cut **beyond a static hedge of the same average size**, i.e. what the prediction-market signal adds. 0 means no better than a static hedge; negative means the timing made it worse. |
+| `avg_hedge_ratio` | h: the mean short as a fraction of the shares held, over the scored intervals. |
+| `score_raw` | the plain `hedge_var_reduction`. Reported, never ranked, and not the hedge's edge: most of it is hedge size (`score_raw = 1 - (1 - h)^2` for a static hedge; the engine's numbers satisfy `vs_static = 1 - (1 - raw) / (1 - h)^2`). |
+
+`score`, `score_vs_static`, `score_raw` and `avg_hedge_ratio` can be negative or near zero, and that is a valid, honest result. The three hedge numbers are `null` for opportunity fits and for unscored fits (`score_basis` is `null` then). Opportunity fits keep their own score, net P&L per unit of max drawdown.
+
+**Distribution over the 133 precomputed markets** (`backend/app/data/fits.json`, `summary.score_vs_static` and our tally of the per-market entries **(tally)**; `backend/data_logs/precompute_fits.log`; engine library, provider `rules`, live price history for all 133, 1,000 shares held, generated 2026-10-03T11:22:50+00:00): 122 markets have a score and 11 have no fit because the question was classified unsupported. Of the 122 scores:
+
+- 86 are above 0 and 36 are at or below 0; all 36 are negative, meaning even the best preset did worse than a static hedge of the same size.
+- Only 53 are above 0.01, 31 above 0.05, 14 above 0.1 and 7 above 0.2 **(tally)**.
+- Median 0.0053, quartiles -0.0009 / 0.0053 / 0.0534, mean 0.037, min -0.0596, max 0.508 (`polymarket:4713962`, `energy_geo_hedge` on ITA: raw 0.956 at an average hedge ratio of 0.70) **(tally except median, max, min)**.
+- For comparison, the median raw `hedge_var_reduction` is 0.339 and the median average hedge ratio is 0.18; 24 of the 122 picks hedge less than 5 percent on average **(tally)**. Most of what the old score showed was hedge size, not signal.
+
+How to read it: each score is the best of many presets on the same history it is reported on, so a few thousandths (the median is 0.005) is inside selection noise. The honest reading is that the signal adds a material amount on roughly 14 to 31 of 122 markets at most, not on the 86 that are positive. These are in-sample numbers, not a forecast, and no out-of-sample test of the fits exists.
+
+Replay is what makes tuning cheap: scoring the whole library once (1,278 presets over 20,000 synthetic ticks) took 1.68 s on one thread (BENCH.md). Replay results are in-sample estimates on recent history, not out-of-sample proof, and the Build and pipeline screens label fit scores as an in-sample replay (`web/src/lib/pipeline.ts`). The score is measured on the same history it is tuned on, and the picker maximises it over many presets.
 
 ## Latency
 

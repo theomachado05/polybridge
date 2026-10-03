@@ -46,16 +46,17 @@ Keys live only in `.env` (gitignored) or your shell. A missing key means a grace
 | `ELEVENLABS_API_KEY` | only to create or edit the voice agent through the ElevenLabs API/CLI | nothing: the app does not read it |
 | `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` | web (`web/.env.local`): embeds the voice widget | no voice button renders |
 | `BROKER` (`sim` default, or `webull`) | backend: which account takes orders | the simulated account ($1,000,000, deterministic) |
-| `WEBULL_APP_KEY`, `WEBULL_APP_SECRET` (optional `WEBULL_ACCOUNT_ID`, `WEBULL_BASE_URL`) | backend: Webull OpenAPI paper trading when `BROKER=webull` | the simulated account, labelled "Simulated account" |
-| `POLYBRIDGE_REPLAY_PATH`, `POLYBRIDGE_REPLAY_SPEED` | backend: replay file and speed for `source: "replay"` bridges and the offline fallback | `replays/<market id>.jsonl` at real time |
+| `WEBULL_APP_KEY`, `WEBULL_APP_SECRET` (optional `WEBULL_ACCOUNT_ID`, `WEBULL_BASE_URL`) | backend: Webull OpenAPI paper trading when `BROKER=webull`. `WEBULL_BASE_URL` is **sandbox only**: leave it unset or set it to `https://api.sandbox.webull.com`. Any other host (for example production `api.webull.com`) is refused, an error is logged, and the simulator is used. | the simulated account, labelled "Simulated account" |
+| `AGENT_TOOL_SECRET` | backend: shared secret for the voice-agent tunnel. Every write from outside localhost (anything but GET/HEAD/OPTIONS) must send it as `X-Agent-Secret`, else 401. Required before you tunnel the backend; see [docs/voice-agent.md](docs/voice-agent.md#required-shared-secret) | writes from localhost work; tunnelled writes are refused |
+| `POLYBRIDGE_REPLAY_PATH`, `POLYBRIDGE_REPLAY_SPEED` | backend: replay file and speed for `source: "replay"` bridges and the offline fallback. The file is used only for the market it records, named in its `<file>.meta.json` sidecar (see [replays/README.md](replays/README.md)); another market gets a 422 | `replays/<market id>.jsonl` at real time |
 | `NEXT_PUBLIC_API_URL` | web: backend URL | `http://localhost:8000` |
 | `SIM_ACCOUNT_PATH`, `SIM_START_CASH` | backend: where the simulated account is saved and its starting cash | `backend/.sim_account.json` (gitignored), $1,000,000 |
 
-Real-money execution is out of scope: accounts are simulated or Webull paper only.
+Real-money execution is out of scope: accounts are simulated or Webull paper only, and the Webull client talks only to `api.sandbox.webull.com` (`backend/app/broker/webull.py` refuses any other host).
 
 ## Honest labels
 
-Replay vs live, AI estimate vs measured, simulated vs Webull paper, case study vs proof: the UI says which one you are looking at. A replay bridge trades in a replay sandbox (not your account) unless started with `replay_to_account`. Evidence so far: lead-lag during market hours is mixed to negative, the closed-market study is mixed, and the options-arbitrage scan found 5 resolved gaps and 0 executable ones. See [docs/demo.md](docs/demo.md#claims-we-make-and-do-not-make).
+Replay vs live, AI estimate vs measured, simulated vs Webull paper, case study vs proof: the UI says which one you are looking at. The AI fit score is an in-sample replay number: how much variance the hedge removed beyond a static hedge of the same average size on the history it was tuned on (the raw variance reduction is reported but never ranked, because any static short earns it). It is not a forecast; see [docs/library.md](docs/library.md#how-the-ai-picks-and-tunes). A replay bridge trades in a replay sandbox (not your account) unless started with `replay_to_account`. Evidence so far: lead-lag during market hours is mixed to negative, the closed-market study is mixed, and the options-arbitrage scan found 5 resolved gaps and 0 executable ones. See [docs/demo.md](docs/demo.md#claims-we-make-and-do-not-make).
 
 ## Workflow
 

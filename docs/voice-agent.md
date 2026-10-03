@@ -11,6 +11,7 @@ Nothing is bought or started by voice alone: `approve` and `start_bridge` are re
 |---|---|---|
 | `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` | `web/.env.local` | Agent id from the ElevenLabs dashboard. Unset means no voice button renders and no script loads. |
 | `ELEVENLABS_API_KEY` | your shell or `.env` (never commit) | Only needed if you create or edit the agent through the ElevenLabs API or CLI. The web app and backend do not read it. |
+| `AGENT_TOOL_SECRET` | backend env (the repo `.env` that `make dev` loads) | **Required for the tunnel.** A random string; every write that reaches the backend from outside localhost must send it as `X-Agent-Secret`, or the backend answers 401. See [Required shared secret](#required-shared-secret). |
 | `GEMINI_API_KEY` | backend env | Optional. The `fit` tool uses Gemini to classify and explain when set, and falls back to rules when not. |
 
 ## Backend surface
@@ -41,8 +42,13 @@ cd backend && uv run --env-file ../.env uvicorn app.main:app --port 8000
 ngrok http 8000        # or: cloudflared tunnel --url http://localhost:8000
 ```
 
-Use the HTTPS URL it prints as `TUNNEL_URL` below. The tunnel makes the paper-trading API public while it is up,
-so close it after the demo. CORS is not an issue for server tools (ElevenLabs calls them server to server).
+Use the HTTPS URL it prints as `TUNNEL_URL` below. A tunnel exposes the **whole** backend, not just `/agent/*`, while
+it is up. Two things limit the damage (details in [Required shared secret](#required-shared-secret)): the backend
+refuses every tunnelled write without the secret, but tunnelled **reads** (`GET /account`, `/positions`, `/orders`,
+`/bridges/{id}` and so on) are open to anyone who has the URL. So set the secret before you start the tunnel, limit the
+tunnel to `/agent/*` if your provider can (the agent only needs `POST /agent/tool/<name>`, plus `GET /agent/tools` for
+the one-off schema copy), and close the tunnel after the demo. CORS is not an issue for server tools (ElevenLabs
+calls them server to server).
 
 ## Create the agent
 
@@ -63,8 +69,10 @@ whole dollars. Never read ids aloud except a proposal id or bridge id when the u
 Workflow:
 1. Learn the ticker, roughly how many shares, and the event the user worries about.
 2. Call search_markets, read the top one or two results, and confirm which market they mean.
-3. Call fit to choose a hedge. Explain the result in one or two sentences, including that a score of "unscored" means
-   a rules-based pick, not a tested one.
+3. Call fit to choose a hedge. Explain the result in one or two sentences. The score is how much extra risk the
+   hedge removed beyond a plain fixed hedge of the same average size, measured on past data, not a forecast. A score
+   near zero or below means the market signal added little; say so. Never call it the hedge's edge or promise it
+   will repeat. A score of "unscored" means a rules-based pick, not a tested one.
 4. Call propose. Read back the ticker, share count, coverage, and the market.
 5. ASK: "Shall I approve this?" Only after the user clearly says yes, call approve with confirm true.
 6. ASK again before starting the hedge: "Shall I start it on replay?" Only after yes, call start_bridge with
@@ -80,11 +88,13 @@ Rules:
 
 6. **Tools:** add one **Server tool (webhook)** per tool in the table above. For each:
    - URL: `TUNNEL_URL/agent/tool/<name>`, method `POST`, content type `application/json`.
+   - Header: **`X-Agent-Secret: <your AGENT_TOOL_SECRET>`, on every tool, with no exception.** A tool without it gets
+     401 from the backend and the agent will say the call "did not work".
    - Description: copy it from `GET /agent/tools`.
    - Body parameters: copy the `parameters.properties` from the same response (all are flat JSON fields). Mark
      `required` as listed. For `approve` and `start_bridge`, keep `confirm` required and add to the tool description:
      "Only set confirm true after the user has said yes in their last message."
-   - Tip: `curl TUNNEL_URL/agent/tools` prints every schema in one go.
+   - Tip: `curl TUNNEL_URL/agent/tools` prints every schema in one go (a GET, so it needs no secret).
 7. Under Security, enable the allowlist for your web origin (for example `http://localhost:3000`) so the widget only
    runs on your site.
 8. Copy the agent id into `web/.env.local`:
@@ -94,22 +104,68 @@ echo 'NEXT_PUBLIC_ELEVENLABS_AGENT_ID=agent_xxxxxxxx' >> web/.env.local
 cd web && pnpm dev
 ```
 
-A "Talk to PolyBridge" pill appears bottom right. Click it: the widget script loads from the ElevenLabs embed on
-first click and the widget opens. Press the widget's own Start call button and allow the microphone; then the agent greets you.
+Open the UI at **http://localhost:3000** on the machine that runs the backend, never through the tunnel URL (see
+[Required shared secret](#required-shared-secret)). A "Talk to PolyBridge" pill appears bottom right. Click it: the
+widget script loads from the ElevenLabs embed on first click and the widget opens. Press the widget's own Start call
+button and allow the microphone; then the agent greets you.
 
-## Optional shared secret
+## Required shared secret
 
-The tunnel URL is public. Set `AGENT_TOOL_SECRET=<random string>` in the backend env, and add a custom header
-`X-Agent-Secret: <same string>` on each ElevenLabs server tool. With the variable unset, `/agent/tool/*` stays open.
+`AGENT_TOOL_SECRET` is mandatory whenever the tunnel is up. The check lives in `backend/app/security.py` and runs on
+every route, not only `/agent/*`:
+
+- A request is **local** when it comes from the loopback interface (127.0.0.1 or ::1), carries a `localhost`,
+  `127.0.0.1` or `[::1]` Host header, and has no proxy-forwarding header (`X-Forwarded-For`, `X-Forwarded-Host`,
+  `Forwarded`, `X-Real-Ip`, `Cf-Connecting-Ip`, `True-Client-Ip`, `Ngrok-Trace-Id`). A tunnel forwards from 127.0.0.1
+  but adds those headers and keeps its public Host, so everything through the tunnel counts as **remote**.
+- A remote request that is not `GET`, `HEAD` or `OPTIONS` (`POST /agent/tool/*`, `POST /orders`, `DELETE /orders/{id}`,
+  `POST /account/reset`, `POST /proposals/{id}/approve`, `POST /bridges`, ...) must carry `X-Agent-Secret` equal to
+  `AGENT_TOOL_SECRET`. With the variable **unset** it gets 401 ("Remote write refused ... Set AGENT_TOOL_SECRET");
+  with a missing or wrong header it gets 401 ("Missing or wrong X-Agent-Secret."). The comparison is constant time.
+- Remote reads (`GET`) are not blocked. That is why you should also limit the tunnel to `/agent/*`.
+- A remote `POST /orders` never chooses its own fill price: the backend drops any `ref_px`, `ref_half_spread` and
+  `ref_source` it carries, even with the right secret.
+- Local requests are unaffected: the browser UI on localhost and every test client work without the secret. If the
+  secret **is** set, `/agent/tool/*` also requires it from local callers.
+
+Setup:
+
+```bash
+openssl rand -hex 24                    # copy the output
+echo 'AGENT_TOOL_SECRET=<that string>' >> .env      # then restart the backend so it has the variable
+```
+
+Then in ElevenLabs add the custom header `X-Agent-Secret: <same string>` to **every** server tool (step 6 above).
+Do not paste the secret into the system prompt or the agent's first message.
+
+Recommended hardening:
+
+- **Limit the tunnel to `/agent/*`.** Use your tunnel provider's path or traffic rules so only `/agent/...` reaches
+  the backend (for example a Cloudflare Tunnel ingress rule with a `path`, or an ngrok traffic policy; the exact
+  syntax is provider-specific and not part of this repo). Then the account, positions and bridge reads are not
+  reachable from outside at all.
+- **Open the UI on localhost, never on the tunnel URL.** A page opened at `TUNNEL_URL` sends its writes as remote
+  requests without the secret, so every approve, start and order from that page returns 401 (and the UI's CORS
+  allowlist is `http://localhost:3000` and `http://127.0.0.1:3000` only). Use `http://localhost:3000` on the backend's
+  own machine; the tunnel is for ElevenLabs only.
+- Rotate the secret after the demo (change the env var and the ElevenLabs header) and close the tunnel.
 
 ## Sanity check before the demo
 
+Run these from a shell on any machine, with `SECRET` set to your `AGENT_TOOL_SECRET`:
+
 ```bash
-curl -s TUNNEL_URL/agent/tools | head -c 300
-curl -s -X POST TUNNEL_URL/agent/tool/approve -H 'content-type: application/json' \
-  -d '{"proposal_id":"x"}'          # must answer ok:false, needs_confirmation:true
+curl -s TUNNEL_URL/agent/tools | head -c 300                       # a GET: 200 with no secret
 curl -s -X POST TUNNEL_URL/agent/tool/account -H 'content-type: application/json' -d '{}'
+                                                                   # no secret: must answer 401 (the guard works)
+curl -s -X POST TUNNEL_URL/agent/tool/approve -H 'content-type: application/json' -H "X-Agent-Secret: $SECRET" \
+  -d '{"proposal_id":"x"}'                                         # must answer ok:false, needs_confirmation:true
+curl -s -X POST TUNNEL_URL/agent/tool/account -H 'content-type: application/json' -H "X-Agent-Secret: $SECRET" -d '{}'
+                                                                   # ok:true with the account summary
 ```
+
+If the second call answers 200, the secret is not set in the backend's environment: stop and fix that before anyone
+else has the URL. If the last call answers 401, the header value does not match.
 
 ## 60-second spoken demo script
 

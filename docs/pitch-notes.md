@@ -22,9 +22,9 @@ Say it plainly; a null is a result. Speak the bold words, skip the brackets.
 "Fourth: does the prediction market disagree with option prices by more than costs? We scanned thousands of thresholds. After costs and a trade-print check, **5 gaps survive and 0 are executable**: each rests on a single print of 5 to 100 shares, too small to hedge with one option contract. Nothing was traded. [`research/results/arb/SUMMARY.md`] We also corrected an earlier version of that report that had overstated it, and the correction is in the file."
 
 **2:25 to 3:00, so what we built.**
-"So the value is not alpha. It is execution and risk control. A prediction-market price is a live public read on event risk. PolyBridge turns it into a hedge you approve, sized to your position, with every decision explained and every limit enforced. The hedging brain is a compiled C++ library: **16 families, 1,278 presets**. [`docs/library.md`] A decision takes **27.1 to 34.6 nanoseconds** on our benchmark, including its own timing stamp. [`engine/hedgecore/BENCH.md`] The AI never writes trading code; it only picks and tunes from that tested catalog, and its scores are in-sample replays, not forecasts. Let me show you."
+"So the value is not alpha. It is execution and risk control. A prediction-market price is a live public read on event risk. PolyBridge turns it into a hedge you approve, sized to your position, with every decision explained and every limit enforced. The hedging brain is a compiled C++ library: **16 families, 1,278 presets**. [`docs/library.md`] A decision takes **27.1 to 34.6 nanoseconds** on our benchmark, including its own timing stamp. [`engine/hedgecore/BENCH.md`] The AI never writes trading code; it only picks and tunes from that tested catalog. Its fit score is what the prediction-market signal adds beyond a plain fixed hedge of the same size, measured on the same history it was tuned on: in-sample, and small on most markets. Let me show you."
 
-Time check: about 540 spoken words including the stage directions' quoted text, which is 3 minutes only at a brisk pace (about 180 words per minute). Rehearse with a timer; if long, cut the 0:55 sensitivity sentence, the atlas sentence and the correction sentence first.
+Time check: about 540 spoken words including the stage directions' quoted text, which is 3 minutes only at a brisk pace (about 180 words per minute). The fit-score sentence in the last paragraph was added after that count, so re-time it. Rehearse with a timer; if long, cut the 0:55 sensitivity sentence, the atlas sentence and the correction sentence first.
 
 ## 2. Demo cues (90 s)
 
@@ -35,7 +35,7 @@ Same click path and times as `docs/demo.md` section 2 (servers up, http://localh
 | 0:00 | Landing | "Build a bridge" | "You hold a stock. A prediction market puts a live probability on an event that moves it. PolyBridge reads it and hedges the stock, only after you approve." |
 | 0:05 | Build chat | Type `fed october`, pick the Fed 25 bps market | "Live Polymarket market. Search covers Polymarket and Kalshi; offline it falls back to a bundled list and says so." |
 | 0:15 | Build chat | Pick **IWM** (400 shares held) | "This stock mapping is an AI estimate, labelled as one. It is not a measurement." |
-| 0:22 | Build chat | Pick "a dynamic short hedge" | "The AI is fitting an algorithm now." On the **AI fit card**: "event class, family, preset, score, rationale, alternatives. The score is measured on the same history it then replays: in-sample, not a forecast. [EVIDENCE.md section 6]" |
+| 0:22 | Build chat | Pick "a dynamic short hedge" | "The AI is fitting an algorithm now." On the **AI fit card**: "event class, family, preset, score, rationale, alternatives. The score is how much extra variance the hedge removes beyond a fixed hedge of the same average size, so it is what the signal adds. It is measured on the same history it then replays: in-sample, not a forecast. If it reads near zero or negative, the signal added little here, and that is a real result. [EVIDENCE.md section 6]" |
 | 0:35 | Connect | "Connect brokerage", then "Run the AI pipeline" | "Orders go to the simulated account; Webull paper takes over when its keys are set. Real money is out of scope." Point at the "Simulated account" tag. |
 | 0:42 | AI pipeline | Wait for "Approve the IWM bridge?" | "Classify, shortlist from the library, load real price history, tune presets on replay, explain, ready. Nothing runs until I approve." |
 | 0:52 | AI pipeline | "Approve and open the bridge" | "The proposal is pinned to this exact algorithm and capped at the coverage I approved; the backend refuses to run anything else." |
@@ -62,13 +62,19 @@ Close on the Bridge or Library screen. Replay fills are priced at today's market
 | 5 verified gaps, 0 executable; each on a print of 5 to 100 shares | `research/results/arb/SUMMARY.md` |
 | 16 families, 1,278 presets | `docs/library.md`, `engine/hedgecore/manifest.json` |
 | `on_tick` batch mean 27.1 to 34.6 ns (synthetic tape, includes its own stamp) | `engine/hedgecore/BENCH.md` |
-| AI fit scores are in-sample replays; 133 markets fitted, 122 scored | `backend/app/data/fits.json`, `backend/data_logs/precompute_fits.log` |
+| AI fit scores are in-sample replays; 133 markets, 122 scored, 11 unsupported (no fit) | `backend/app/data/fits.json`, `backend/data_logs/precompute_fits.log` |
+| Fit ranking score = variance cut beyond a static hedge of the same average size (what the signal adds); raw variance reduction rewards any static short and is not ranked | `engine/hedgecore/include/hedgecore/replay.hpp`, `docs/library.md`, `research/EVIDENCE.md` section 6 |
+| Fit score distribution over the 122: median 0.0053; 86 above 0 and 36 at or below 0 (all negative); 53 above 0.01, 31 above 0.05, 14 above 0.1, 7 above 0.2; max 0.508, min -0.0596 | `backend/app/data/fits.json` `summary.score_vs_static`, our tally of the entries (`research/EVIDENCE.md` section 6) |
+| Median raw variance reduction of the picks 0.339 at a median average hedge ratio of 0.18 (most of it is hedge size) | `backend/app/data/fits.json`, our tally (`research/EVIDENCE.md` section 6) |
+| Fit replay fills respect the equity session and a fresh close (no stale-close fills) | `engine/hedgecore/include/hedgecore/replay.hpp`, `engine/hedgecore/src/replay.cpp` |
+| Webull is sandbox only (`api.sandbox.webull.com`); other hosts refused, simulator used | `backend/app/broker/webull.py`, `backend/app/broker/__init__.py` |
 | Human-approved, capped, simulated account; real money out of scope | `docs/demo.md` section 5 |
 
 ## 5. Do not say
 
 - "Prediction markets lead equities" or "a head start". Market-hours lead-lag found none; the closed-market study is mixed and shows co-movement.
-- "The AI fit predicts returns" or any headline fit score. Scores are in-sample hedge-variance replays and the top of the range is unaudited (EVIDENCE.md section 6).
+- "The AI fit predicts returns", "the signal works on 86 markets", or any headline fit score. Scores are in-sample, best-of-many-presets replays; the median is 0.0053 and only 14 of 122 are above 0.1 (EVIDENCE.md section 6).
+- The raw variance reduction (median 0.339) as the hedge's edge. Any static short earns it; the ranking score is what the signal adds beyond that.
 - "The scan found arbitrage" or "free money". 5 verified, 0 executable.
 - "The 8-K signal works", or any out-of-sample claim before the run. In-sample is null.
 - "27 nanoseconds end to end". That is `on_tick` on a synthetic tape, not network or Python.
@@ -78,6 +84,8 @@ Close on the Bridge or Library screen. Replay fills are priced at today's market
 ## 6. If asked
 
 - **Why is a null valid?** The rules were written before the data; a failed pre-registered test bounds the effect and prevents a false claim (`docs/demo.md` Q&A). In-sample samples are 23 to 36 events per family, so the CIs are wide: a null here is not proof of no effect.
+- **What does the fit score mean, and why did it change?** Plain variance reduction rewards any static short: a fixed short of a fraction h of the shares scores 1 - (1 - h)^2 with no signal at all. The fit now ranks on the variance cut beyond a static hedge of the same average size, which is what the PM signal adds; 0 is no better than static and negative is worse. Over the 133 precomputed markets, 122 are scored: median 0.0053, 36 at or below 0 (all negative), 53 above 0.01, 14 above 0.1. Each is the best of many presets on the history it is scored on, so values of a few thousandths are noise; the signal adds a material amount on roughly 14 to 31 markets at most (`research/EVIDENCE.md` section 6). Do not describe it as returns or out-of-sample.
+- **Could the replay book a stale price?** Not in the fit: with no live quote, an equity fill in the engine's replay is rejected outside the US regular session and until the price has changed inside it, so the opening gap is not booked as hedge P&L (`engine/hedgecore/include/hedgecore/replay.hpp`).
 - **Why not trade the closed-market relation?** It appears in closures with no flagged news too, news closures show no extra response, and the timing test is null; an intra-closure timing design was not tested (`research/results/leadlag_closed/SUMMARY.md`, Caveats).
 - **Are the lead-lag events cherry-picked?** The 13 curated events were chosen from memory; the 15 scheduled FOMC statements are the unselected part and are reported separately (`research/results/leadlag/SUMMARY.md`, Caveats).
 - **Why does the bridge screen show hundreds of nanoseconds to microseconds when you said 27 to 35 ns?** Both time the decision itself: the bridge shows the `step()` stamp, the same one as the benchmark's decision-logic figure (4.2 to 22.9 ns; 27 to 35 ns is `on_tick` with its own clock reads). The benchmark runs a million ticks in a hot loop; the bridge decides one tick at a time inside Python, with cold caches, and the clock tick is about 42 ns (`engine/hedgecore/BENCH.md`; `docs/demo.md` section 5).
