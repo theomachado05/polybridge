@@ -82,8 +82,8 @@ _DATE_ISO = re.compile(r"\b(\d{4})-(\d{2})-(\d{2})\b")
 _MONTH_YEAR = re.compile(
     r"\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|"
     r"nov(?:ember)?|dec(?:ember)?)\.?\s+(\d{4})\b", re.I)
-_NUM = re.compile(r"(?<![\w.])(\$)?\s?(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)\s*(%|percent|bp|bps|basis points?|"
-                  r"k|m|mm|b|bn|million|billion|thousand|trillion|t)?\b", re.I)
+_NUM = re.compile(r"(?<![\w.])(\$)?\s?(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)\s*(%|(?:percent|bp|bps|basis points?|"
+                  r"k|m|mm|b|bn|million|billion|thousand|trillion|t)\b)?", re.I)
 _MULT = {"k": 1e3, "thousand": 1e3, "m": 1e6, "mm": 1e6, "million": 1e6, "b": 1e9, "bn": 1e9, "billion": 1e9,
          "t": 1e12, "trillion": 1e12}
 
@@ -210,8 +210,13 @@ def stem(w: str) -> str:
     return w[:-1] if len(w) > 4 and w.endswith("e") else w
 
 
+def _canon_phrases(text: str) -> str:
+    """Multi-word names that must tokenise identically on both venues."""
+    return re.sub(r"\bfederal reserve(?: board| system)?\b", "Fed", text, flags=re.I)
+
+
 def _tokens(text: str) -> set[str]:
-    t = text.lower().replace("’", "'")
+    t = _canon_phrases(text).lower().replace("’", "'")
     t = re.sub(r"\bu\.s\.a?\.?", "us", t)
     t = re.sub(r"'s\b", "", t)
     out = set()
@@ -227,7 +232,7 @@ def _tokens(text: str) -> set[str]:
 def _entities(question: str) -> set[str]:
     """Capitalised words (not sentence starters) and all-caps tickers: the proper nouns that must agree."""
     out = set()
-    words = re.findall(r"[A-Za-z][A-Za-z0-9&.\-']*", question)
+    words = re.findall(r"[A-Za-z][A-Za-z0-9&.\-']*", _canon_phrases(question))
     for i, w in enumerate(words):
         w = w.rstrip(".")
         if not w or not (w[0].isupper() or w.isupper()):
@@ -249,7 +254,7 @@ _GENERIC_CAPS = frozenset({"this", "market", "yes", "no", "otherwise", "if", "fo
 def _cond_entities(text: str) -> set[str]:
     """Proper nouns and tickers in the condition sentence(s) of a resolution text, minus boilerplate capitals."""
     # First sentence only; "U.S." must not split into "U" and "S".
-    text = re.sub(r"\bU\.S\.A?\.?", "US", text)
+    text = re.sub(r"\bU\.S\.A?\.?", "US", _canon_phrases(text))
     m = re.search(r"(?<=[a-z0-9\"”)])\.\s+(?=[A-Z])|\n", text)
     words = re.findall(r"[A-Za-z][A-Za-z0-9&\-']*|\S", text[: m.start()] if m else text)
     out = set()
