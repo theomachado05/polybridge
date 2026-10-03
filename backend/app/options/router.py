@@ -95,7 +95,7 @@ async def resolve_market(http: httpx.AsyncClient, source: str, mid: str) -> dict
             bid, ask = _num(m.get("yes_bid_dollars")), _num(m.get("yes_ask_dollars"))
             px = (bid + ask) / 2 if bid is not None and ask is not None else _num(m.get("last_price_dollars"))
             out.update(question=m.get("title") or out["question"],
-                       end_date=m.get("expiration_time") or m.get("close_time") or out["end_date"],
+                       end_date=m.get("close_time") or m.get("expiration_time") or out["end_date"],
                        yes_price=px if px is not None else out["yes_price"], origin="live")
     except Exception:
         pass  # the universe entry (if any) stands; the response says where it came from
