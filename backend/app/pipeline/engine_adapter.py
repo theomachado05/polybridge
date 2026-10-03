@@ -257,9 +257,9 @@ class AlgoChoiceError(ValueError):
 
 
 def is_option_family(family: dict) -> bool:
-    """An Opportunity-division family that trades listed options (every instrument is ``option:*``)."""
+    """An Opportunity-division family that trades listed options (an ``option`` / ``option:*`` instrument)."""
     ins = [str(i).lower() for i in family.get("instruments") or []]
-    return ("opportunity" in (family.get("divisions") or [])) and bool(ins) and all(i.startswith("option") for i in ins)
+    return "opportunity" in (family.get("divisions") or []) and any(i.startswith("option") for i in ins)
 
 
 def resolve_algo(manifest: dict, family_id: str, preset_index: int | None = None,
