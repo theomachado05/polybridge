@@ -223,7 +223,7 @@ def run_log(meta: dict, df: pd.DataFrame) -> str:
         f"- Request failures after retries: {meta['n_failures']}" + (f" ({'; '.join(meta['failures'][:5])})" if meta['failures'] else "") + ".",
         "- First pass (uncached) request totals: Massive 16,572; Polymarket CLOB 3,136; Kalshi 1,173; gamma 15. Failures after retries: 2.",
         "- The first pass logged 2 Kalshi candlestick requests that stayed at HTTP 429 after retries (both rows counted as `no_pm_price`); the second pass fetched them. Rows with errors never abort the scan; they are counted in `row_errors` (0).",
-        "- First pass, then amendment 3: the pre-registered scoring produced 247 resolved Polymarket `gap_robust` rows and was then tightened with trade-print verification; the second pass scored the same markets again with the verification stage (the Massive and gamma data were served from the cache, so the two passes share one set of quotes; live books were re-read, so live rows differ slightly).",
+        "- First pass, then amendment 3: the pre-registered scoring produced 247 resolved Polymarket `gap_robust` rows and was then tightened with trade-print verification; the second pass scored the same markets again with the verification stage (the Massive and gamma data were served from the cache, so the two passes share one set of quotes; live books were re-read, so live rows differ slightly). After the review that found the snapshot-timezone bug (the verification window was 4 hours early), the run and the verification were repeated: the candidate count went from 247 to 224 because the live books were re-read and the assumed half-spread moved from 0.045 to 0.050.",
         "- Out-of-scope data: no 8-K disclosure data and no EDGAR request was made. Live raw books are saved in `raw_live/` (JSON).",
         "",
         "## Counters",
@@ -238,6 +238,19 @@ def run_log(meta: dict, df: pd.DataFrame) -> str:
         "```",
     ]
     return "\n".join(lines) + "\n"
+
+
+ERRATA = (
+    "## Correction to the earlier version of this report\n\n"
+    "An earlier version of this report said one verified gap (NVDA > $215, 2026-09-02, YES bought at 0.71) survived. That was a bug, now fixed. "
+    "The snapshot time was an America/New_York wall-clock written with a 'Z' (UTC) suffix, so the trade-print window of the verification step "
+    "(amendment 3) was centred 4 hours too early (08:00 ET instead of 12:00 ET; 11:45 ET instead of 15:45 ET). The NVDA > $215 print it matched was a "
+    "pre-market trade at 07:55 ET, and no print near 12:00 ET qualifies, so that row no longer verifies. Scoring itself was unaffected (it used the "
+    "aware timestamp). The CSV now has a true-UTC `snap_utc` and an exact `snap_epoch`, and a test pins the conversion. Every candidate was re-verified "
+    "at the right time. The candidate count also moved from 247 to 224 because the assumed Polymarket half-spread is the median of the live books at "
+    "run time, and the live books were re-read (0.045 then, 0.050 now). A second fix: index option legs now use only the PM-settled roots "
+    "(SPXW, NDXP); on monthly expiry days the contract listing also holds the AM-settled SPX and NDX roots, which could have been picked for a duplicated strike. "
+    "The Kalshi counts did not change from that fix.")
 
 
 def main(argv=None) -> int:
@@ -268,6 +281,13 @@ def main(argv=None) -> int:
     if len(vv):
         headline += (f" Of the {len(vv)} verified, {small} had a print smaller than the {int(vv.hedge_shares_per_contract.min())}+ PM shares one option "
                      "contract hedges, so none could be hedged cleanly at the size that actually traded.")
+        distinct = vv.drop_duplicates(["underlying", "res_date", "strike"]).shape[0]
+        headline += (f" The {len(vv)} verified rows are {distinct} distinct (underlying, date, strike) gaps, each backed by a single print "
+                     f"of {vv.verify_size.min():.0f} to {vv.verify_size.max():.0f} shares, within 10 minutes of the snapshot, not at it.")
+        nco = int(vv.coarse.fillna(False).astype(bool).sum()) if "coarse" in vv else 0
+        if nco:
+            headline += (f" {nco} of them is flagged `coarse` (narrow and wide call spreads disagree by more than 5 points), so its option-implied "
+                         "probability is the least reliable of the five.")
     parts = [
         "# Options-arbitrage scan: prediction-market probability vs option-implied probability",
         f"Run date {meta['now_utc'][:10]} (Saturday; US options closed). Window of resolved markets: {meta['start']} to {meta['end']}. "
@@ -277,6 +297,7 @@ def main(argv=None) -> int:
         "\n\nA descriptive scan of listed threshold contracts against call spreads built from Massive NBBO quotes; nothing was traded and "
         "'zero' would have been an acceptable answer. Read the counts below with the caveats at the end: the hedge is an approximation, the "
         "resolved Polymarket spread is assumed, and the live rows are weekend-stale.",
+        ERRATA,
         "## Funnel (rows are market x snapshot)\n\n" +
         f"Polymarket: {sc.get('pm_markets_seen', 0)} markets seen in {sc.get('pm_events', 0)} equity-tag events; {sc.get('pm_in_scope', 0)} are 'close above $K' thresholds "
         f"(excluded: {sc.get('pm_excluded_out_of_scope_type', 0)} up/down, hit, range, market-cap, earnings or crypto; {sc.get('pm_excluded_not_above_threshold', 0)} other). "
