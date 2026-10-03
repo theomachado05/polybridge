@@ -81,7 +81,8 @@ def brier_block(df: pd.DataFrame, rng) -> str:
                                diff_pm_minus_options=("diff", "mean")).reset_index()
     return (md_table(t, "{:.4f}") + f"\n\nPooled: mean(Brier_PM - Brier_options) = {d['diff'].mean():+.4f} over {len(d)} rows in "
             f"{len(ev)} events; event-cluster bootstrap 95% interval [{lo:+.4f}, {hi:+.4f}]. Negative means the PM mid was closer to the "
-            "realised result. Descriptive only (strikes of one ladder share one price path).")
+            "realised result. Descriptive only (strikes of one ladder share one price path), and the PM mid of a thin market is sometimes the midpoint of a very wide book, which "
+            "handicaps it against options quotes.")
 
 
 def gap_stats(df: pd.DataFrame) -> str:
@@ -137,7 +138,7 @@ def verification_block(df: pd.DataFrame, sc: dict) -> str:
         v = v.copy()
         v["market"] = v.underlying + " > " + v.strike.map(lambda x: f"{x:g}")
         v["need"] = v.verify_price_needed
-        out += "\n\nVerified rows:\n\n" + md_table(v[["market", "res_date", "snapshot", "trade", "pm_mid", "p_lo", "p_hi", "need", "verify_n", "verify_size", "edge", "outcome"]].head(25), "{:.3f}")
+        out += "\n\nVerified rows:\n\n" + md_table(v[["market", "res_date", "snapshot", "trade", "pm_mid", "p_lo", "p_hi", "need", "verify_n", "verify_size", "hedge_shares_per_contract", "edge", "outcome"]].head(25), "{:.3f}")
     return out
 
 
@@ -156,17 +157,22 @@ def make_chart(df: pd.DataFrame, path: Path) -> None:
         g = d[d.live == live]
         for lab_set, color, marker, size, name in (
                 (["none", "gap_mid"], gray, "o", 14, "inside option bounds"),
-                (["gap_beyond_bounds"], blue, "o", 18, "outside bounds, edge < 1c after costs"),
-                (["gap_net", "gap_robust", "gap_executable"], orange, "D", 34, "edge >= 1c after costs")):
+                (["gap_beyond_bounds"], blue, "o", 18, "outside bounds, edge < 1c"),
+                (["gap_net", "gap_robust", "gap_executable"], orange, "D", 34, "edge >= 1c after costs, unverified")):
             s = g[g.label.isin(lab_set)]
             if s.empty:
                 continue
-            if not live:
-                err = np.vstack([(s.p_mid - s.p_lo).clip(lower=0), (s.p_hi - s.p_mid).clip(lower=0)])
-                ax.errorbar(s.p_mid, s.pm_mid, xerr=err, fmt="none", ecolor=color, elinewidth=0.5, alpha=0.18, zorder=2)
+            if not live and name != "inside option bounds":
+                b = s[(s.p_hi - s.p_lo) <= 0.30]          # very wide bounds only add horizontal clutter
+                err = np.vstack([(b.p_mid - b.p_lo).clip(lower=0), (b.p_hi - b.p_mid).clip(lower=0)])
+                ax.errorbar(b.p_mid, b.pm_mid, xerr=err, fmt="none", ecolor=color, elinewidth=0.5, alpha=0.18, zorder=2)
             ax.scatter(s.p_mid, s.pm_mid, s=size, marker=marker, facecolors=color if filled else "none", edgecolors=color if not filled else surf,
                        linewidths=0.6 if filled else 1.0, alpha=0.9 if filled else 0.9, zorder=3,
                        label=f"{name} ({'live' if live else 'resolved'}, n={len(s)})")
+    v = d[d.label.isin(["gap_verified", "gap_executable"])]
+    if len(v):
+        ax.scatter(v.p_mid, v.pm_mid, s=150, marker="*", facecolors="none", edgecolors=ink, linewidths=1.4, zorder=5,
+                   label=f"verified by a trade print (n={len(v)})")
     ax.set_xlim(-0.02, 1.02)
     ax.set_ylim(-0.02, 1.02)
     ax.set_xlabel("Option-implied probability (call-spread mid, bars = bid/ask bounds)", color=muted)
@@ -177,9 +183,9 @@ def make_chart(df: pd.DataFrame, path: Path) -> None:
         sp.set_visible(False)
     ax.tick_params(colors=muted, length=0)
     leg = ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.12), ncol=2, fontsize=7.5, frameon=False, labelcolor=muted)
-    fig.text(0.01, 0.005, "Filled = resolved snapshots (PM spread assumed for Polymarket); hollow = live book on 2026-10-03 (options closed). "
-             "Bars omitted for live rows.", fontsize=6.5, color=muted)
-    fig.tight_layout(rect=(0, 0.04, 1, 1))
+    fig.text(0.01, 0.005, "Filled = resolved snapshots (Polymarket spread assumed); hollow = live books on 2026-10-03 (options closed).\n"
+             "Bars (bid/ask bounds) omitted for live rows and where wider than 0.30.", fontsize=6.5, color=muted)
+    fig.tight_layout(rect=(0, 0.05, 1, 1))
     fig.savefig(path, facecolor=surf)
     plt.close(fig)
 
@@ -197,6 +203,41 @@ CAVEATS = """\
 - **Smoothing.** The spread is an average of the risk-neutral probability over [K1, K2]; `width_sens` and `coarse` show where narrow and wide spreads disagree by more than 5 points.
 - **Fees** are the venues' published formulas as read from market metadata (Polymarket `feeSchedule`) or assumed at the standard Kalshi rate; option commission is an assumed $0.65 per contract per leg.
 """
+
+
+def run_log(meta: dict, df: pd.DataFrame) -> str:
+    sc = meta["scope"]
+    lines = [
+        "# Run log: options-arbitrage scan",
+        f"- Run started (UTC): {meta['now_utc']}; scan wall time {meta['seconds']:.0f} s on the second pass (first pass 674 s, mostly uncached; both passes use the on-disk cache in `research/arb/.cache`, not committed).",
+        f"- Window of resolved markets: {meta['start']} to {meta['end']}. Rows written: {len(df)}.",
+        "- Commands (from `research/arb`):",
+        "  ```",
+        "  uv run --no-project --env-file ../../.env --with pandas --with numpy --with requests --with matplotlib python -m arbscan.run --workers 8",
+        "  uv run --no-project --with pandas --with numpy --with matplotlib python -m arbscan.report",
+        "  uv run --no-project --with pandas --with numpy --with requests --with matplotlib --with pytest pytest tests -q",
+        "  ```",
+        "  Re-run the live part on a trading day (US options open) to test executability: the same `arbscan.run` command, which re-reads the live books.",
+        "- The API key is read from the environment or `.env` (`MASSIVE_API_KEY`); it is never printed or written to any output. A missing key makes the runner exit with a message and no output.",
+        f"- HTTP requests by host (cache misses only): {json.dumps(meta['http'])}; Massive: {json.dumps(meta['massive_requests'])}.",
+        f"- Request failures after retries: {meta['n_failures']}" + (f" ({'; '.join(meta['failures'][:5])})" if meta['failures'] else "") + ".",
+        "- First pass (uncached) request totals: Massive 16,572; Polymarket CLOB 3,136; Kalshi 1,173; gamma 15. Failures after retries: 2.",
+        "- The first pass logged 2 Kalshi candlestick requests that stayed at HTTP 429 after retries (both rows counted as `no_pm_price`); the second pass fetched them. Rows with errors never abort the scan; they are counted in `row_errors` (0).",
+        "- First pass, then amendment 3: the pre-registered scoring produced 247 resolved Polymarket `gap_robust` rows and was then tightened with trade-print verification; the second pass scored the same markets again with the verification stage (the Massive and gamma data were served from the cache, so the two passes share one set of quotes; live books were re-read, so live rows differ slightly).",
+        "- Out-of-scope data: no 8-K disclosure data and no EDGAR request was made. Live raw books are saved in `raw_live/` (JSON).",
+        "",
+        "## Counters",
+        "```",
+        json.dumps(sc, indent=1),
+        "```",
+        f"- Assumed Polymarket half-spread for resolved rows: {meta['half_spread']:.4f} (median over {meta['half_spread_n']} live two-sided books).",
+        "",
+        "## Row statuses",
+        "```",
+        df.groupby(["venue", df.live.astype(bool), "status"]).size().to_string(),
+        "```",
+    ]
+    return "\n".join(lines) + "\n"
 
 
 def main(argv=None) -> int:
@@ -217,11 +258,16 @@ def main(argv=None) -> int:
     exe = int(lc["gap_executable (>=)"].sum())
     net_all = int(lc["gap_net (>=)"].sum())
     vp = sc.get("verified_poly", 0)
-    headline = (f"**{gen_resolved + gen_live} genuine gaps survive costs and verification** ({gen_resolved} resolved, {gen_live} live; {exe} executable). "
+    headline = (f"**{gen_resolved + gen_live} genuine gap(s) survive costs and verification** ({gen_resolved} resolved, {gen_live} live; {exe} executable). "
                 f"Before verification the pre-registered cost screen alone passes {robust_all} rows (`gap_robust`) and {net_all} clear one cent on the narrow spread "
                 f"(`gap_net`), but those all rest on an *assumed* Polymarket spread, and only {vp} of {sc.get('verify_candidates', 0)} resolved Polymarket candidates "
                 "have a public trade print at the price they need (section 'Verification').")
     ver = verification_block(df, sc)
+    vv = df[df.label == "gap_verified"]
+    small = int((vv.verify_size.fillna(0) < vv.hedge_shares_per_contract.fillna(0)).sum()) if len(vv) and "verify_size" in vv else 0
+    if len(vv):
+        headline += (f" Of the {len(vv)} verified, {small} had a print smaller than the {int(vv.hedge_shares_per_contract.min())}+ PM shares one option "
+                     "contract hedges, so none could be hedged cleanly at the size that actually traded.")
     parts = [
         "# Options-arbitrage scan: prediction-market probability vs option-implied probability",
         f"Run date {meta['now_utc'][:10]} (Saturday; US options closed). Window of resolved markets: {meta['start']} to {meta['end']}. "
@@ -245,6 +291,7 @@ def main(argv=None) -> int:
         "![PM mid vs option-implied probability](arb_gap_chart.png)",
         "## Caveats\n\n" + CAVEATS,
     ]
+    (res / "RUN_LOG.md").write_text(run_log(meta, df))
     (res / "SUMMARY.md").write_text("\n\n".join(parts) + "\n")
     print(headline)
     return 0
