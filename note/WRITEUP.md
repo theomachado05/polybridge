@@ -14,7 +14,7 @@ Both hypotheses, the tag lists and the pass rule were committed to git before an
 
 ## 2. Method
 
-**Universe and windows.** The starter's static top-100 list. In-sample 2024-01-01 to 2025-12-31; out-of-sample 2026-01-01 to 2026-08-31, frozen at 13:00 ET on 3 October and run once (tag `method-freeze`). That run used a branch that did not yet contain the robustness additions below; they leave the pass rule unchanged, and applying the INSUFFICIENT rule to the saved output relabels H1 from NULL to INSUFFICIENT.
+**Universe and windows.** The starter's static top-100 list. In-sample 2024-01-01 to 2025-12-31; out-of-sample 2026-01-01 to 2026-08-31, frozen at 13:00 ET on 3 October and run once (tag `method-freeze`). The frozen branch did not contain the robustness additions or the INSUFFICIENT label below, which were committed to main at 10:59 ET, before the freeze. Under the frozen method H1's computed verdict is NULL; applying the INSUFFICIENT label afterwards marks it as untestable (3 events). Neither label is a pass.
 
 **Events.** One event per company per filing date. Filings that carry tags from both families are dropped (5 in-sample). Every filing is treated as public after the close, so the trade enters at the close of the next session.
 
@@ -28,7 +28,7 @@ Both hypotheses, the tag lists and the pass rule were committed to git before an
 
 ## 3. Results
 
-Neither hypothesis passes, in-sample (both NULL) or out of sample (H1 INSUFFICIENT on 3 events, H2 NULL with the sign reversed). The in-sample table gives the edge per $1 of stock with its 97.5% interval.
+Neither hypothesis passes, in-sample (both NULL) or out of sample (H1 computed NULL on 3 events, too few for an interval; H2 NULL with the sign reversed). The in-sample table gives the edge per $1 of stock with its 97.5% interval.
 
 | Sessions | H1 protective put edge (n = 28–33) | H2 cash-secured put edge (n = 23–24) | H1 R, events / ordinary | H2 R, events / ordinary |
 |---|---|---|---|---|
@@ -58,7 +58,7 @@ Bold rows are the pre-registered headline horizons; horizons 2 and 3 are in `res
 
 ## 4. What would break it
 
-The result rests on 24 to 36 events per family in-sample and 3 and 7 out of sample, a static list that includes companies that were not top-100 throughout, spot inferred from put-call parity, and last-trade marks. Before the out-of-sample run we committed a forecast (`research/FORECAST.md`). It had the verdicts' direction right (no pass, H2 NULL) and the H2 event count right. It got the H1 event count wrong (3, not about 11), understated the out-of-sample interval width by a factor of 2 to 3, and got the one scorable sign wrong (H2's edge was negative at 21 and 42 sessions, where we gave a positive sign probability 0.60). For a 3-month sealed window the same forecast predicts INSUFFICIENT for both families.
+The result rests on 24 to 36 events per family in-sample and 3 (H1) and 8 (H2, 7 priced at 21 and 42 sessions) out of sample, a static list that includes companies that were not top-100 throughout, spot inferred from put-call parity, and last-trade marks. Before the out-of-sample run we committed a forecast (`research/FORECAST.md`). It had the verdicts' direction right (no pass, H2 NULL) and the H2 event count right. It got the H1 event count wrong (3, not about 11), understated the out-of-sample interval width by a factor of 2 to 3, and got the one scorable sign wrong (H2's edge was negative at 21 and 42 sessions, where we gave a positive sign probability 0.60). For a 3-month sealed window the same forecast predicts INSUFFICIENT for both families.
 
 ## 5. How to trade it
 

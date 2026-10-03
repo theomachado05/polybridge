@@ -6,7 +6,7 @@ Gator Quant Hacks 2026 · Systematic Trading track · quant note · Jacob Craini
 
 US stocks trade about 6.5 hours a day; prediction markets trade around the clock. A holder of equities is exposed to news that breaks overnight and at weekends, and a prediction market is often the only liquid price that moves with that news while the stock is shut. PolyBridge turns prediction-market prices into hedges for an equity book. Its principle is that a market's signal may act on a position only after it has passed a pre-registered out-of-sample test, and the product says so when a market fails. Every signal carries the label **validated** or **unvalidated estimate**, and the label is enforced in code: an order on an unvalidated market needs an explicit acknowledgement at approval (`backend/app/closed/evidence.py`, HTTP 409 without it).
 
-We ran six pre-registered tests on 3 October, each with its method committed to git before its data was fetched. The four on new data failed or were NULL. The two that passed did so on a panel we had already seen, and we state that scope wherever we cite them. The record is the reason for the gate: most markets carry no usable signal, and a hedging product that acts on all of them by default would add noise to a book.
+On 3 October we ran six pre-registered follow-up tests, each with its method committed to git before its data was fetched and one confirmatory run each (extra passes and re-renders are disclosed in each run log). The four that did not pass include the two that used mostly new data. The two that passed did so on a panel we had already seen, and we state that scope wherever we cite them. The record is the reason for the gate: most markets carry no usable signal, and a hedging product that acts on all of them by default would add noise to a book.
 
 ## 1. Economic foundation
 
@@ -32,10 +32,10 @@ We ran six pre-registered tests on 3 October, each with its method committed to 
 
 | Test | Data | Verdict | Key numbers |
 |---|---|---|---|
-| Replication of the 380-closure relation | new PM series, 10 rule-selected markets | does not replicate | pooled slope +0.63 bp per pp (date-permutation p = 0.126, n = 1,211) against +7.52 originally |
-| Walk-forward of the AI fit | live histories, 122 markets | fails | median test gain over a static hedge −0.0040; 19 above 0, 72 below; Wilcoxon p = 1.000 |
-| 8-K implied-move parity, out of sample | new, 2026-01 to 2026-08 | H1 INSUFFICIENT, H2 NULL | H1 3 events; H2 edge −0.0215 [−0.0759, +0.0203] at 21 sessions, sign opposite to in-sample |
-| R3 options catch-up at the Monday open | new, 1,535 events over 44 closures | NULL | net residual gap +0.79 pt [−1.21, +2.78]; catch-up slope 0.44 [0.33, 0.57] |
+| Replication of the 380-closure relation | new PM series on mostly already-seen SPY gap dates, 10 rule-selected markets | does not replicate | pooled slope +0.63 bp per pp (date-permutation p = 0.126, n = 1,211) against +7.52 originally |
+| Walk-forward of the AI fit | time split of already-seen histories, 122 markets | fails | median test gain over a static hedge −0.0040; 19 above 0, 72 below; Wilcoxon p = 1.000 |
+| 8-K implied-move parity, out of sample | new, 2026-01 to 2026-08 | H1 NULL as computed (3 events, untestable), H2 NULL | H1 3 events; H2 edge −0.0215 [−0.0759, +0.0203] at 21 sessions, sign opposite to in-sample |
+| R3 options catch-up at the reopening | mostly new (210 of 1,535 events overlap markets scored earlier in the arb scan), 44 closures | NULL | net residual gap +0.79 pt [−1.21, +2.78]; catch-up slope 0.44 [0.33, 0.57] |
 | R2 expected-gap model | already-seen 380 panel | passes on the panel via one market; fails on replication | recession market 97 of 151 signs (64.2%), slope +1.28; election 52.4% (p = 0.744); replication 50.2% of 878 |
 | R1 closed-market hedge | already-seen 380 panel | hedge A no evidence; hedge B passes, fragile | hedge B variance cut +11.42% [+5.10, +18.14] vs no hedge, +6.82% [+0.50, +13.54] vs a same-size static hedge |
 
@@ -43,7 +43,7 @@ Sources: `research/results/<study>/SUMMARY.md` for each row; methods and commit 
 
 ### What cleared a test, with its scope
 
-**Options lag the prediction market at the Monday open, but not in a way anyone can trade.** At 09:45 on the reopening day, options had repriced 0.44 of the prediction market's closure move (95% CI 0.33 to 0.57; closure-clustered bootstrap over 44 closures). R3's pass test was the residual gap net of option costs, +0.79 pt [−1.21, +2.78], so its verdict is NULL. After the open the options did not keep moving toward the prediction market (−0.59 pt), the prediction market gave back part of its move (−3.48 pt [−5.40, −1.62]), and on the 1,535 resolved events the options were the better forecaster (Brier 0.120 against 0.146). The gap looks at least as much like prediction-market overshoot as slow options.
+**Options move less than the prediction market over a closure, but not in a way anyone can trade.** At 09:45 on the reopening day (weekends and holidays), options had repriced 0.44 of the prediction market's closure move (95% CI 0.33 to 0.57; closure-clustered bootstrap over 44 closures). R3's pass test was the residual gap net of option costs, +0.79 pt [−1.21, +2.78], so its verdict is NULL. After the open the options did not keep moving toward the prediction market (−0.59 pt), the prediction market gave back part of its move (−3.48 pt [−5.40, −1.62]), and on the 1,535 resolved events the options had the lower Brier score (0.120 against 0.146, options marked 15 minutes later). The gap looks at least as much like prediction-market overshoot as slow options.
 
 **The expected-gap model held out of sample in time on one market.** Fitting each closure's rate only on earlier closures, the US-recession market predicted the sign of the SPY gap in 97 of 151 closures (64.2%, p < 0.001). The election market did not (52.4%), and on the 10-market replication panel the model failed (50.2%, slope −0.23). Out-of-sample R-squared on the panel is +0.050. This is a pre-registered re-analysis of a panel we had already seen.
 
