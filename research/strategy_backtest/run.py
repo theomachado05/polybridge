@@ -135,6 +135,9 @@ def execute(client, pm_session, cal: TradingCalendar, today: pd.Timestamp, log: 
                     "pm_both_ends": n_cov, "fetch_failed": n_fail, "v4": n_cov >= PARAMS.v4_min_closures})
         print(f"  {m['market_slug'][:60]:<60} closures {len(cl):>3}, quoted {n_cov:>3}, failed {n_fail}", flush=True)
     cov = pd.DataFrame(cov)
+    empty = sorted(set(m["market_slug"] for m in primary) & set(cov.loc[cov["closures"] == 0, "market"]))
+    if empty:
+        raise RuntimeError(f"primary-universe markets with no closure in the span: {empty}")
     v4_slugs = set(cov.loc[cov["v4"], "market"])
     v4 = [m for m in every if m["market_slug"] in v4_slugs]
     universes = {"primary": primary, "V4": v4}

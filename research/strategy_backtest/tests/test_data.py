@@ -49,3 +49,44 @@ def test_panel_a_markets_from_cached_metadata(monkeypatch, tmp_path):
     ms = data.panel_a_markets()
     assert {m["label"] for m in ms} == {"election", "recession"}
     assert all(m["end"].startswith("2024-11-07T15:38:41") for m in ms)
+
+
+class FakeGamma:
+    def __init__(self):
+        self.calls = []
+
+    def get(self, url, params=None, timeout=None):
+        self.calls.append(dict(params))
+        rows = [] if "closed" not in params else [{"startDate": "2025-01-08T01:33:54Z", "closedTime": "2026-01-01 09:23:25+00",
+                                                   "endDate": "2026-02-28T12:00:00Z", "closed": True}]
+
+        class R:
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                return rows
+        return R()
+
+
+def test_panel_a_markets_retries_closed_and_never_caches_empty(monkeypatch, tmp_path):
+    monkeypatch.setattr(data, "CACHE_DIR", tmp_path)
+    g = FakeGamma()
+    ms = data.panel_a_markets(g)
+    assert len(ms) == 2 and all(m["start"].startswith("2025-01-08") for m in ms)
+    assert any("closed" in c for c in g.calls)
+
+
+def test_panel_a_markets_raises_without_metadata(monkeypatch, tmp_path):
+    import pytest
+
+    monkeypatch.setattr(data, "CACHE_DIR", tmp_path)
+
+    class Empty(FakeGamma):
+        def get(self, url, params=None, timeout=None):
+            r = super().get(url, params, timeout)
+            r.json = lambda: []
+            return r
+    with pytest.raises(RuntimeError):
+        data.panel_a_markets(Empty())
+    assert not list((tmp_path / "gamma").glob("*.json")) if (tmp_path / "gamma").exists() else True
