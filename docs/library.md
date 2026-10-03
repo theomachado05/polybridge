@@ -1,6 +1,6 @@
 # The hedgecore algo library
 
-PolyBridge's hedging brain is a compiled C++20 library, `hedgecore`: **16 families, 1,278 presets, built from 37 reusable blocks**. The AI never writes trading code. It only chooses a family and a preset from this fixed, tested catalog, so everything it can recommend has been compiled, unit-tested, and benchmarked ahead of time. Counts below come from `engine/hedgecore/manifest.json` (schema `hedgecore.catalog/v1`); latencies come from `engine/hedgecore/BENCH.md`.
+PolyBridge's hedging brain is a compiled C++20 library, `hedgecore`: **16 families, 1,278 presets, built from 37 reusable blocks**. The AI never writes trading code. It only chooses a family and a preset from this fixed, tested catalog, so every family is compiled, unit-tested, and benchmarked (default preset) ahead of time. Counts below come from `engine/hedgecore/manifest.json` (schema `hedgecore.catalog/v1`); latencies come from `engine/hedgecore/BENCH.md`.
 
 ## Blocks, families, presets
 
@@ -20,26 +20,26 @@ Each family wires a subset of these into a pipeline, roughly: read signals, chec
 
 ## The 16 families
 
-Division: **hedge** protects a stock the user holds against an adverse prediction-market event; **opportunity** takes a position from a prediction-market mispricing. p50 and p99 are `on_tick` ns per call from the 64-call-block view in BENCH.md (clock cost amortized); mean is the batch mean.
+Division: **hedge** protects a stock the user holds against an adverse prediction-market event; **opportunity** takes a position from a prediction-market mispricing. mean is the `on_tick` batch mean; p50 and p99 are the 64-call-block view (ns per `on_tick` call). All three include `on_tick`'s own latency stamp (two clock reads, about 15 ns), so they are the full `on_tick` cost, not the decision logic alone; BENCH.md also reports the `step()`-only mean.
 
 | family | division | event classes | instruments | blocks | tuned params (grid) | presets | mean ns | p50 ns | p99 ns |
 |---|---|---:|---|---:|---|---:|---:|---:|---:|
-| `equity_delta_bridge` | hedge | all 10 | equity | 11 | 4 (4 x 3 x 3 x 3 = 108) | 108 | 28.6 | 28 | 36 |
-| `stress_lead_hedge` | hedge | 3 | equity, etf | 11 | 4 (3 x 3 x 3 x 3 = 81) | 81 | 30.1 | 29 | 39 |
-| `book_imbalance_hedge` | hedge | all 10 | equity | 11 | 4 (3 x 3 x 3 x 3 = 81) | 81 | 32.5 | 32 | 35 |
-| `poly_kalshi_spread` | hedge/opportunity | all 10 | pred_yes, pred_no | 6 | 4 (3 x 3 x 3 x 3 = 81) | 81 | 34.7 | 27 | 28 |
-| `no_bid_seller` | opportunity | all 10 | pred_no | 9 | 4 (3 x 3 x 3 x 3 = 81) | 81 | 29.2 | 29 | 41 |
-| `fig_stress` | hedge | 2 | etf:KRE, etf:XLF, etf:KBE | 8 | 4 (3 x 3 x 3 x 3 = 81) | 81 | 34.0 | 34 | 45 |
-| `housing_rates` | hedge | 1 | etf:ITB, etf:XHB, etf:VNQ | 9 | 4 (3 x 3 x 3 x 3 = 81) | 81 | 29.2 | 29 | 35 |
-| `macro_fed_hedge` | hedge | 1 | etf:SPY, etf:IWM, etf:TLT | 9 | 4 (3 x 3 x 3 x 3 = 81) | 81 | 28.7 | 29 | 35 |
-| `election_hedge` | hedge | 1 | etf:sector | 9 | 4 (3 x 3 x 3 x 3 = 81) | 81 | 29.4 | 28 | 36 |
-| `tariff_trade_hedge` | hedge | 1 | etf:importers, etf:exporters | 8 | 4 (3 x 3 x 3 x 3 = 81) | 81 | 29.7 | 29 | 39 |
-| `energy_geo_hedge` | hedge | 1 | etf:XLE, etf:USO | 10 | 4 (3 x 3 x 3 x 3 = 81) | 81 | 29.9 | 29 | 31 |
-| `crypto_reg_hedge` | hedge | 1 | equity:COIN, equity:MSTR | 9 | 4 (3 x 3 x 3 x 3 = 81) | 81 | 31.3 | 31 | 39 |
-| `tech_reg_hedge` | hedge | 2 | equity:megacap_tech | 9 | 4 (3 x 3 x 3 x 3 = 81) | 81 | 28.8 | 29 | 31 |
-| `binary_vs_spread_arb` | opportunity | all 10 | option:call_spread, option:put_spread | 5 | 3 (4 x 3 x 3 = 36) | 36 | 28.4 | 26 | 32 |
-| `vol_vs_pm_move` | opportunity | all 10 | option:straddle, option:strangle | 4 | 4 (3 x 3 x 3 x 3 = 81) | 81 | 28.5 | 28 | 35 |
-| `eightk_opportunity` | opportunity | 2 | option:cash_secured_put, option:put_spread | 6 | 4 (3 x 3 x 3 x 3 = 81) | 81 | 28.8 | 28 | 35 |
+| `equity_delta_bridge` | hedge | all 10 | equity | 11 | 4 (4 x 3 x 3 x 3 = 108) | 108 | 30.7 | 29 | 37 |
+| `stress_lead_hedge` | hedge | 3 | equity, etf | 11 | 4 (3 x 3 x 3 x 3 = 81) | 81 | 29.8 | 29 | 37 |
+| `book_imbalance_hedge` | hedge | all 10 | equity | 11 | 4 (3 x 3 x 3 x 3 = 81) | 81 | 32.7 | 32 | 46 |
+| `poly_kalshi_spread` | hedge/opportunity | all 10 | pred_yes, pred_no | 6 | 4 (3 x 3 x 3 x 3 = 81) | 81 | 27.1 | 27 | 73 |
+| `no_bid_seller` | opportunity | all 10 | pred_no | 9 | 4 (3 x 3 x 3 x 3 = 81) | 81 | 29.7 | 30 | 39 |
+| `fig_stress` | hedge | 2 | etf:KRE, etf:XLF, etf:KBE | 8 | 4 (3 x 3 x 3 x 3 = 81) | 81 | 30.3 | 30 | 37 |
+| `housing_rates` | hedge | 1 | etf:ITB, etf:XHB, etf:VNQ | 9 | 4 (3 x 3 x 3 x 3 = 81) | 81 | 31.6 | 31 | 42 |
+| `macro_fed_hedge` | hedge | 1 | etf:SPY, etf:IWM, etf:TLT | 9 | 4 (3 x 3 x 3 x 3 = 81) | 81 | 30.0 | 29 | 36 |
+| `election_hedge` | hedge | 1 | etf:sector | 9 | 4 (3 x 3 x 3 x 3 = 81) | 81 | 30.6 | 29 | 39 |
+| `tariff_trade_hedge` | hedge | 1 | etf:importers, etf:exporters | 8 | 4 (3 x 3 x 3 x 3 = 81) | 81 | 34.6 | 34 | 44 |
+| `energy_geo_hedge` | hedge | 1 | etf:XLE, etf:USO | 10 | 4 (3 x 3 x 3 x 3 = 81) | 81 | 30.2 | 30 | 36 |
+| `crypto_reg_hedge` | hedge | 1 | equity:COIN, equity:MSTR | 9 | 4 (3 x 3 x 3 x 3 = 81) | 81 | 31.4 | 31 | 39 |
+| `tech_reg_hedge` | hedge | 2 | equity:megacap_tech | 9 | 4 (3 x 3 x 3 x 3 = 81) | 81 | 29.2 | 29 | 37 |
+| `binary_vs_spread_arb` | opportunity | all 10 | option:call_spread, option:put_spread | 5 | 3 (4 x 3 x 3 = 36) | 36 | 27.7 | 27 | 35 |
+| `vol_vs_pm_move` | opportunity | all 10 | option:straddle, option:strangle | 4 | 4 (3 x 3 x 3 x 3 = 81) | 81 | 28.9 | 29 | 35 |
+| `eightk_opportunity` | opportunity | 2 | option:cash_secured_put, option:put_spread | 6 | 4 (3 x 3 x 3 x 3 = 81) | 81 | 28.3 | 28 | 34 |
 | **total** | | | | | | **1,278** | | | |
 
 What each family does, in one line (from the manifest):
@@ -67,19 +67,19 @@ The fit pipeline (`backend/app/pipeline`) is: question -> event class -> shortli
 
 1. **Classify**: the question (or market) maps to one of the event classes (Gemini when a key is present, a keyword rules provider otherwise).
 2. **Shortlist**: only families whose event classes and data requirements match are considered.
-3. **Replay**: for each shortlisted family, `replay_grid` runs every preset over recent real ticks of that market and the underlying, filling at the touch plus fees. Each preset gets P&L net of fees, max drawdown, turnover, and `hedge_var_reduction` (how much the hedge cut the variance of the user's P&L).
+3. **Replay**: for each shortlisted family, `replay_grid` runs every preset over recent price history of that market and the underlying (or a recorded replay file when offline, labelled as such), filling at the touch plus fees. Each preset gets P&L net of fees, max drawdown, turnover, and `hedge_var_reduction` (how much the hedge cut the variance of the user's P&L).
 4. **Pick**: hedge families score on `hedge_var_reduction`; opportunity families score on net P&L per unit of drawdown. Highest score wins; ties go to fewer orders, then rule order. The runner-up presets are returned as alternatives.
 5. **Explain**: the rationale cites the measured replay numbers. If the engine cannot score (no compiled module, too few ticks), the pick is by rules, flagged `scored: false`, and labelled as unscored rather than presented as measured.
 
-Replay is what makes tuning cheap: scoring the whole library once (1,278 presets over 20,000 synthetic ticks) took 1.73 s on one thread (BENCH.md). Replay results are in-sample estimates on recent history, not out-of-sample proof, and the UI labels them that way.
+Replay is what makes tuning cheap: scoring the whole library once (1,278 presets over 20,000 synthetic ticks) took 1.68 s on one thread (BENCH.md). Replay results are in-sample estimates on recent history, not out-of-sample proof. The pipeline page shows the tick source (real price history or replay ticks) and the score, but it has no separate in-sample label.
 
 ## Latency
 
-Batch mean per `on_tick` is 28.4 to 34.7 ns across all 16 families on 1,000,000 synthetic ticks; the worst 64-block p99.9 is 69 ns per call and the worst per-call p99.9 (which includes two clock reads) is 167 ns. Machine: Apple M5, Apple clang version 17.0.0 (clang-1700.3.19.1), `-O3`. Full tables, method and caveats are in `engine/hedgecore/BENCH.md`. This is the cost of the decision itself, not network or Python overhead around it.
+`on_tick` batch mean is 27.1 to 34.6 ns across all 16 families on 1,000,000 synthetic ticks. That includes `on_tick`'s own latency stamp (two `steady_clock` reads, about 15 ns); the decision logic alone (`step()`) averages 4.2 to 22.9 ns. The worst 64-block p99.9 is 83 ns per call and the worst per-call p99.9 (four clock reads per call) is 458 ns. Only each family's default preset is timed. Machine: Apple M5, Apple clang version 17.0.0 (clang-1700.3.19.1), `-O3`. Full tables, method and caveats are in `engine/hedgecore/BENCH.md`. This is the cost of the decision itself, not network or Python overhead around it.
 
 ## Design rules
 
-These are enforced by tests, not just convention (spec section 8):
+Spec section 8 rules. Test-enforced: no heap allocation (`NoAlloc`), NaN handling, and per-block and per-family behavior. The rest are design rules followed in the code structure, not checked by a test:
 
 - **No heap allocation on the hot path.** `on_tick` and `on_fill` never allocate. `NoAlloc.OnTickAndOnFillNeverAllocate` overrides `operator new` in the test binary with a counter and drives every family through thousands of ticks, including its order path, asserting zero allocations.
 - **No virtual calls.** Blocks are plain structs with `noexcept` methods and are header-only, so the compiler inlines them. Families are held in one `std::variant` (`AnyAlgo`) and dispatched with `std::visit`: static dispatch, no vtables.
