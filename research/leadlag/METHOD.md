@@ -77,4 +77,4 @@ An event with no significant move in one series is **kept** (usable for xcorr an
 
 ## Amendments
 
-(none yet)
+1. **Net-displacement condition in the first-move rule (section 4).** Found by a synthetic unit test (a one-minute spike that reverts) **before any real price series was fetched**: the reverse leg of a spike looked "persistent" because its 3-minute base sat inside the spike. The rule now also requires the level at `t` to differ from the level at `t - 2w` (6 minutes back) in the same direction by at least half of `|D_t|`. No other parameter changed. The code constant is `persist_frac = 0.5` for both persistence checks.
