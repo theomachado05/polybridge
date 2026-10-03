@@ -104,3 +104,52 @@ def test_stale_option_prices_note_and_no_accession(monkeypatch):
     assert d["filings"][0]["accession"] is None
     c = make(StubClient(market=rf.FakeMarket({"AAA": 100.0}, end="2026-09-25")), monkeypatch)
     assert c.get("/equities/AAA").json()["implied_move"] is None
+
+
+# --- bounded Massive calls (I3/V1) -----------------------------------------------------------------
+
+class SlowClient(StubClient):
+    """Every Massive call stalls (like a hung upstream); the routes must give up within the bound."""
+
+    def get(self, path, params=None):
+        import time
+        time.sleep(0.3)
+        return super().get(path, params)
+
+    def get_all(self, path, params=None, max_pages=500):
+        import time
+        time.sleep(0.3)
+        return super().get_all(path, params, max_pages)
+
+
+def test_slow_massive_degrades_within_bound(monkeypatch):
+    import time
+    from app import chain
+    monkeypatch.setattr(chain, "CALL_TIMEOUT_S", 0.2)
+    with make(SlowClient(market=rf.FakeMarket({"AAA": 100.0})), monkeypatch) as c:  # one loop, like uvicorn
+        t0 = time.monotonic()
+        eqr = c.get("/equities/AAA")
+        hr = c.get("/hedges/AAA")
+        pr = c.get("/portfolio")
+        assert time.monotonic() - t0 < 3.0  # each route answers at the bound, not when the stalled calls finish
+    assert eqr.status_code == 200 and eqr.json()["implied_move"] is None
+    assert "options data unavailable" in eqr.json()["notes"]
+    assert hr.status_code == 200 and hr.json()["notes"] == ["options data unavailable"]
+    assert pr.status_code == 200 and all("options data unavailable" in h["notes"] for h in pr.json()["holdings"])
+
+
+def test_api_massive_client_is_bounded(monkeypatch, tmp_path):
+    from app import chain
+    monkeypatch.setattr(chain, "load_api_key", lambda interactive=False: "k")
+    monkeypatch.setattr(chain, "CACHE_DIR", tmp_path)
+    cl = chain.make_client()
+    assert cl._max_attempts == 2 and isinstance(cl.session, chain._BoundedSession)
+    seen = {}
+
+    def fake_get(self, url, **kw):  # requests.Session.get, after the cap
+        seen.update(kw)
+        raise RuntimeError("stop")
+    monkeypatch.setattr(chain.requests.Session, "get", fake_get)
+    with pytest.raises(RuntimeError):
+        cl.session.get("http://x", timeout=60)
+    assert seen["timeout"] <= 6

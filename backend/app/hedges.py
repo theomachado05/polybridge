@@ -1,7 +1,6 @@
 """Hedge menu priced from today's option chain (5 strategies, 3-6m expiry, 5% OTM; ATM for the long call)."""
 from __future__ import annotations
 
-import asyncio
 from typing import Literal
 
 import pandas as pd
@@ -9,6 +8,7 @@ from fastapi import APIRouter, HTTPException, Request
 from polybridge_research.costs import half_spread
 from pydantic import BaseModel
 
+from . import chain
 from .equities import get_client, get_snapshot
 
 FEE_PER_SHARE_LEG = 0.0035
@@ -128,7 +128,9 @@ async def hedges(ticker: str, request: Request, shares: float = 100, label: Lite
     if snap is None:
         return HedgeMenu(ticker=ticker, options=[], notes=[note or "no listed options"])
     try:
-        opts = await asyncio.to_thread(build_options, snap, shares, client, label)
+        opts = await chain.bounded(build_options, snap, shares, client, label)
+    except TimeoutError:
+        return HedgeMenu(ticker=ticker, options=[], notes=["options data unavailable"])
     except Exception as e:
         return HedgeMenu(ticker=ticker, options=[], notes=[f"pricing unavailable: {type(e).__name__}"])
     return HedgeMenu(ticker=ticker, spot=snap["spot"], expiry=snap["expiry"], options=opts, notes=list(snap.get("notes", [])))

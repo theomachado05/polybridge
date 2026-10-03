@@ -1,7 +1,6 @@
 """Any-stock lookup: 8-K filings with verdict badges, live implied move, related prediction markets."""
 from __future__ import annotations
 
-import asyncio
 import json
 import math
 from pathlib import Path
@@ -146,7 +145,7 @@ async def get_snapshot(request: Request, client, ticker: str) -> tuple[dict | No
     today = today_of(request)
     session = str(chain.calendar().before(today).date())
     value, _ = await _cache(request, "snap", SNAP_TTL).get_or_set(
-        (ticker, session), lambda: asyncio.to_thread(chain.snapshot, client, ticker, today))
+        (ticker, session), lambda: chain.bounded(chain.snapshot, client, ticker, today))
     return value
 
 
@@ -173,8 +172,8 @@ async def equity(ticker: str, request: Request) -> EquityCard:
         except Exception:
             notes.append("options data unavailable")
         try:
-            book = await asyncio.to_thread(_book_sync)
-            filings = await asyncio.to_thread(fetch_filings, client, ticker, today, book)
+            book = await chain.bounded(_book_sync)
+            filings = await chain.bounded(fetch_filings, client, ticker, today, book)
             if not filings:
                 notes.append("no 8-K filings in the last 180 days")
         except Exception:

@@ -1,10 +1,13 @@
 """Shared live-chain snapshot: spot, 3-6m expiry, strikes and today's marks for one ticker (sync; call via a thread)."""
 from __future__ import annotations
 
+import asyncio
 import os
+import time
 from pathlib import Path
 
 import pandas as pd
+import requests
 from polybridge_research.calendar import TradingCalendar
 from polybridge_research.config import EXPIRY_BUCKETS, StudyConfig
 from polybridge_research.massive import MassiveClient, MissingApiKey, load_api_key
@@ -12,6 +15,27 @@ from polybridge_research.pricing import _contract, fetch_chain, locate_spot, opt
 
 CACHE_DIR = Path(os.environ.get("MASSIVE_CACHE_DIR", Path(__file__).resolve().parent.parent / ".massive_cache"))
 _CAL: TradingCalendar | None = None
+HTTP_TIMEOUT_S = 6.0  # per Massive HTTP request made by the API (the research client defaults to 60 s)
+MAX_ATTEMPTS = 2      # the research client defaults to 10 with backoff; the API must answer quickly
+CALL_TIMEOUT_S = 8.0  # bound on each threaded Massive call; on timeout the routes degrade gracefully
+
+
+class _BoundedSession(requests.Session):
+    """requests.Session whose GET timeout is capped, so a stalled Massive call cannot hang a request."""
+
+    def get(self, url, **kw):
+        t = kw.get("timeout")
+        kw["timeout"] = HTTP_TIMEOUT_S if t is None else min(float(t), HTTP_TIMEOUT_S)
+        return super().get(url, **kw)
+
+
+def _short_sleep(s: float) -> None:
+    time.sleep(min(float(s), 1.0))  # never honour a long Retry-After inside an API request
+
+
+async def bounded(fn, *args):
+    """Run a blocking Massive call in a thread, giving up after CALL_TIMEOUT_S (raises TimeoutError)."""
+    return await asyncio.wait_for(asyncio.to_thread(fn, *args), CALL_TIMEOUT_S)
 
 
 def calendar() -> TradingCalendar:
@@ -27,7 +51,8 @@ def make_client():
         key = load_api_key(interactive=False)
     except MissingApiKey:
         return None
-    return MassiveClient(key, cache_dir=CACHE_DIR)
+    return MassiveClient(key, cache_dir=CACHE_DIR, session=_BoundedSession(), sleep=_short_sleep,
+                         max_attempts=MAX_ATTEMPTS)
 
 
 def snapshot(client, ticker: str, today=None, cfg: StudyConfig | None = None) -> tuple[dict | None, str | None]:

@@ -10,6 +10,7 @@ from pathlib import Path
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
+from . import chain
 from . import equities as eq
 from .mapping import MapRequest, map_event
 from .markets import Market, search_all
@@ -136,8 +137,8 @@ async def _holding(request: Request, h: dict, proposals: list[Proposal], bridges
         except Exception:
             notes.append("options data unavailable")
         try:
-            book = await asyncio.to_thread(eq._book_sync)
-            filings = await asyncio.to_thread(eq.fetch_filings, client, ticker, eq.today_of(request), book)
+            book = await chain.bounded(eq._book_sync)
+            filings = await chain.bounded(eq.fetch_filings, client, ticker, eq.today_of(request), book)
         except Exception:
             notes.append("filings unavailable")
     markets: list[Market] = []
