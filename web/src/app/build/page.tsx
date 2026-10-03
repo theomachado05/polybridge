@@ -45,7 +45,7 @@ function Build() {
 
   const markets = search.data?.markets ?? (asTicker || picked ? equity.data?.markets : undefined) ?? [];
   const item = map.data?.items.find((i) => i.ticker === ticker);
-  const direction: Direction = item?.direction === "up_on_yes" ? "up_on_yes" : "down_on_yes";
+  const direction: Direction | null = item ? (item.direction === "up_on_yes" ? "up_on_yes" : "down_on_yes") : null;
 
   const reset = (q: string) => { setQuery(q); setMarket(null); setPicked(null); setFilingIdx(null); setStrategy(null); };
 

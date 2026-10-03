@@ -17,6 +17,10 @@ export interface Proposal {
   shares_held: number;
   target_coverage: number;
   status: ProposalStatus;
+  basis?: "filing_tags" | "market_event";
+  label?: string | null;
+  market?: { source: string; id: string; token_id?: string | null } | null;
+  direction?: Direction | null;
   created_at: string;
   decided_at: string | null;
   bridge_started_at?: string | null;
@@ -139,6 +143,11 @@ export interface BridgeSummary {
   ticks: number;
   orders: number;
   hedge: number;
+  shares_held: number;
+  target_coverage: number;
+  coverage: number;
+  basis?: "filing_tags" | "market_event";
+  label?: string | null;
   reasons: Record<string, number>;
   latency_ns: { p50: number | null; p99: number | null };
 }
@@ -180,14 +189,16 @@ export const getVerdict = (tag: string) => request<TagVerdict>(`/verdicts/${enco
 export const mapEvent = (body: { question?: string; source?: string; market_id?: string }) => post<MapOut>("/map", body);
 export const getHedges = (ticker: string, shares: number, label: VerdictLabel) =>
   request<HedgeMenu>(`/hedges/${encodeURIComponent(ticker)}?shares=${shares}&label=${label}`);
-export const createProposal = (body: { ticker: string; tags: string[]; shares_held: number; target_coverage: number }) =>
-  post<Proposal>("/proposals", body);
+export type ProposalBody =
+  | { ticker: string; tags: string[]; shares_held: number; target_coverage: number }
+  | { ticker: string; market: { source: string; id: string; token_id?: string | null }; direction: Direction; shares_held: number; target_coverage: number };
+export const createProposal = (body: ProposalBody) => post<Proposal>("/proposals", body);
 export const startBridge = (body: {
   proposal_id: string;
   source: "live" | "replay";
-  market: { source: string; id: string; token_id?: string | null };
+  market?: { source: string; id: string; token_id?: string | null };
   gap_per_share: number;
-  direction: Direction;
+  direction?: Direction;
 }) => post<{ bridge_id: string }>("/bridges", body);
 export const getBridge = (id: string) => request<BridgeSummary>(`/bridges/${id}`);
 export const getPortfolio = () => request<PortfolioOut>("/portfolio");
