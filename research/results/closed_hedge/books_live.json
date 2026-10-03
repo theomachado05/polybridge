@@ -1,0 +1,3984 @@
+{
+ "summary": {
+  "hs_pp": 0.050000000000000044,
+  "n": 21,
+  "fallback": false,
+  "fetched_utc": "2026-10-03T16:52:46+00:00",
+  "n_markets": 100,
+  "requests": {
+   "gamma": 1,
+   "clob": 100
+  }
+ },
+ "books": [
+  {
+   "slug": "will-adanech-abiebie-be-the-next-prime-minister-of-ethiopia",
+   "question": "Will Adanech Abiebie be the next Prime Minister of Ethiopia?",
+   "volumeNum": 83460060.365002,
+   "token": "27146956652877944551877724690365745048289675287536243265951843487691050802191",
+   "half_spread_pp": null,
+   "bids": [],
+   "asks": [
+    {
+     "price": "0.02",
+     "size": "921.75"
+    },
+    {
+     "price": "0.009",
+     "size": "168.81"
+    },
+    {
+     "price": "0.006",
+     "size": "2496.1"
+    },
+    {
+     "price": "0.005",
+     "size": "710.22"
+    },
+    {
+     "price": "0.004",
+     "size": "1753.32"
+    }
+   ]
+  },
+  {
+   "slug": "will-the-us-invade-iran-before-2027",
+   "question": "Will the U.S. invade Iran before 2027?",
+   "volumeNum": 71269203.59154603,
+   "token": "55115078421062885512539156303747803058407616201213034911037320915726138659123",
+   "half_spread_pp": 0.5000000000000004,
+   "bids": [
+    {
+     "price": "0.12",
+     "size": "69635.98"
+    },
+    {
+     "price": "0.13",
+     "size": "185683.53"
+    },
+    {
+     "price": "0.14",
+     "size": "1075170.55"
+    },
+    {
+     "price": "0.15",
+     "size": "601324.66"
+    },
+    {
+     "price": "0.16",
+     "size": "34064.61"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.21",
+     "size": "6303.14"
+    },
+    {
+     "price": "0.2",
+     "size": "5125.54"
+    },
+    {
+     "price": "0.19",
+     "size": "50992.01"
+    },
+    {
+     "price": "0.18",
+     "size": "125636.44"
+    },
+    {
+     "price": "0.17",
+     "size": "415994.7"
+    }
+   ]
+  },
+  {
+   "slug": "will-jesus-christ-return-before-2027",
+   "question": "Will Jesus Christ return before 2027?",
+   "volumeNum": 66308674.46928389,
+   "token": "69324317355037271422943965141382095011871956039434394956830818206664869608517",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.009",
+     "size": "7661.19"
+    },
+    {
+     "price": "0.01",
+     "size": "16316.71"
+    },
+    {
+     "price": "0.011",
+     "size": "12109.05"
+    },
+    {
+     "price": "0.012",
+     "size": "11405.72"
+    },
+    {
+     "price": "0.013",
+     "size": "5302.63"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.018",
+     "size": "6165"
+    },
+    {
+     "price": "0.017",
+     "size": "4265.57"
+    },
+    {
+     "price": "0.016",
+     "size": "6347.52"
+    },
+    {
+     "price": "0.015",
+     "size": "29483.37"
+    },
+    {
+     "price": "0.014",
+     "size": "8543.32"
+    }
+   ]
+  },
+  {
+   "slug": "will-gedion-timothewos-be-the-next-prime-minister-of-ethiopia",
+   "question": "Will Gedion Timothewos be the next Prime Minister of Ethiopia?",
+   "volumeNum": 55938233.411122985,
+   "token": "26485245961222313575373928818655498088613748810606082451526412785977121014592",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "10857.55"
+    },
+    {
+     "price": "0.002",
+     "size": "33.78"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.02",
+     "size": "492.86"
+    },
+    {
+     "price": "0.019",
+     "size": "1000"
+    },
+    {
+     "price": "0.014",
+     "size": "681.37"
+    },
+    {
+     "price": "0.013",
+     "size": "296.99"
+    },
+    {
+     "price": "0.012",
+     "size": "16.23"
+    }
+   ]
+  },
+  {
+   "slug": "will-lebron-james-win-the-2028-us-presidential-election",
+   "question": "Will LeBron James win the 2028 US Presidential Election?",
+   "volumeNum": 54887195.76410802,
+   "token": "39223330966352513418907732239455948906399882924787587183466504819170775983376",
+   "half_spread_pp": null,
+   "bids": [],
+   "asks": [
+    {
+     "price": "0.005",
+     "size": "254728.72"
+    },
+    {
+     "price": "0.004",
+     "size": "173566.84"
+    },
+    {
+     "price": "0.003",
+     "size": "149266.68"
+    },
+    {
+     "price": "0.002",
+     "size": "114371.67"
+    },
+    {
+     "price": "0.001",
+     "size": "1435983.54"
+    }
+   ]
+  },
+  {
+   "slug": "will-oprah-winfrey-win-the-2028-democratic-presidential-nomination",
+   "question": "Will Oprah Winfrey win the 2028 Democratic presidential nomination?",
+   "volumeNum": 54432526.59432898,
+   "token": "2213957649161627793381994368131485505647723208738124952452819345058597751695",
+   "half_spread_pp": null,
+   "bids": [],
+   "asks": [
+    {
+     "price": "0.005",
+     "size": "17026.01"
+    },
+    {
+     "price": "0.004",
+     "size": "24910.19"
+    },
+    {
+     "price": "0.003",
+     "size": "65982.99"
+    },
+    {
+     "price": "0.002",
+     "size": "107.1"
+    },
+    {
+     "price": "0.001",
+     "size": "203224.49"
+    }
+   ]
+  },
+  {
+   "slug": "will-bernie-sanders-win-the-2028-democratic-presidential-nomination-879",
+   "question": "Will Bernie Sanders win the 2028 Democratic presidential nomination?",
+   "volumeNum": 52819235.43514201,
+   "token": "113510300123120868861281132282742729065975487298059944817273881893086209196585",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "172958.75"
+    },
+    {
+     "price": "0.002",
+     "size": "65955.72"
+    },
+    {
+     "price": "0.003",
+     "size": "23665.05"
+    },
+    {
+     "price": "0.004",
+     "size": "4010"
+    },
+    {
+     "price": "0.006",
+     "size": "16690.82"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.019",
+     "size": "1785"
+    },
+    {
+     "price": "0.01",
+     "size": "1038.04"
+    },
+    {
+     "price": "0.009",
+     "size": "318.34"
+    },
+    {
+     "price": "0.008",
+     "size": "44209.82"
+    },
+    {
+     "price": "0.007",
+     "size": "91.55"
+    }
+   ]
+  },
+  {
+   "slug": "will-chelsea-clinton-win-the-2028-democratic-presidential-nomination",
+   "question": "Will Chelsea Clinton win the 2028 Democratic presidential nomination?",
+   "volumeNum": 50608223.74538399,
+   "token": "46211769122513729244602558513001215391004042100934296321661285791281233261657",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.002",
+     "size": "28310"
+    },
+    {
+     "price": "0.003",
+     "size": "13302.52"
+    },
+    {
+     "price": "0.004",
+     "size": "17324.74"
+    },
+    {
+     "price": "0.005",
+     "size": "3016.46"
+    },
+    {
+     "price": "0.006",
+     "size": "874.77"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.012",
+     "size": "3818.84"
+    },
+    {
+     "price": "0.011",
+     "size": "4022"
+    },
+    {
+     "price": "0.01",
+     "size": "307245.51"
+    },
+    {
+     "price": "0.009",
+     "size": "3816"
+    },
+    {
+     "price": "0.008",
+     "size": "176.9"
+    }
+   ]
+  },
+  {
+   "slug": "will-andrew-yang-win-the-2028-democratic-presidential-nomination",
+   "question": "Will Andrew Yang win the 2028 Democratic presidential nomination?",
+   "volumeNum": 48909349.14060403,
+   "token": "102504892414163237174864879683522880588750452841477290216845150938663289742135",
+   "half_spread_pp": null,
+   "bids": [],
+   "asks": [
+    {
+     "price": "0.005",
+     "size": "256"
+    },
+    {
+     "price": "0.004",
+     "size": "131726.06"
+    },
+    {
+     "price": "0.003",
+     "size": "113120.5"
+    },
+    {
+     "price": "0.002",
+     "size": "232830.83"
+    },
+    {
+     "price": "0.001",
+     "size": "427099.91"
+    }
+   ]
+  },
+  {
+   "slug": "will-tim-walz-win-the-2028-us-presidential-election",
+   "question": "Will Tim Walz win the 2028 US Presidential Election?",
+   "volumeNum": 44837834.645102985,
+   "token": "2638997461401140008448476093092229850740161649668999975101243681118238509713",
+   "half_spread_pp": null,
+   "bids": [],
+   "asks": [
+    {
+     "price": "0.005",
+     "size": "323234.16"
+    },
+    {
+     "price": "0.004",
+     "size": "326753.4"
+    },
+    {
+     "price": "0.003",
+     "size": "71629.75"
+    },
+    {
+     "price": "0.002",
+     "size": "353066.88"
+    },
+    {
+     "price": "0.001",
+     "size": "978072.59"
+    }
+   ]
+  },
+  {
+   "slug": "will-person-a-win-the-2028-democratic-presidential-nomination",
+   "question": "Will Hunter Biden win the 2028 Democratic presidential nomination?",
+   "volumeNum": 44551509.918218054,
+   "token": "11343337042526652606304508556838778144915122118685013460142819817079620240439",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "376620.95"
+    },
+    {
+     "price": "0.002",
+     "size": "41576.16"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.007",
+     "size": "385786.32"
+    },
+    {
+     "price": "0.006",
+     "size": "66029.83"
+    },
+    {
+     "price": "0.005",
+     "size": "28329.96"
+    },
+    {
+     "price": "0.004",
+     "size": "13242.36"
+    },
+    {
+     "price": "0.003",
+     "size": "910.62"
+    }
+   ]
+  },
+  {
+   "slug": "will-byron-donalds-win-the-2028-republican-presidential-nomination",
+   "question": "Will Byron Donalds win the 2028 Republican presidential nomination?",
+   "volumeNum": 44429635.10907002,
+   "token": "311624663652221737215322113380496984764966764039692273354641152455298576851",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "68794.02"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.006",
+     "size": "31.7"
+    },
+    {
+     "price": "0.005",
+     "size": "105"
+    },
+    {
+     "price": "0.004",
+     "size": "22255"
+    },
+    {
+     "price": "0.003",
+     "size": "85145.67"
+    },
+    {
+     "price": "0.002",
+     "size": "48317.02"
+    }
+   ]
+  },
+  {
+   "slug": "will-hillary-clinton-win-the-2028-democratic-presidential-nomination",
+   "question": "Will Hillary Clinton win the 2028 Democratic presidential nomination?",
+   "volumeNum": 44179320.86227303,
+   "token": "6349038249650226718426900942104344803413105653564595362433352811865798195800",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "107763.71"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.006",
+     "size": "10000"
+    },
+    {
+     "price": "0.005",
+     "size": "1725.55"
+    },
+    {
+     "price": "0.004",
+     "size": "49558.64"
+    },
+    {
+     "price": "0.003",
+     "size": "10548.87"
+    },
+    {
+     "price": "0.002",
+     "size": "80864.12"
+    }
+   ]
+  },
+  {
+   "slug": "will-lebron-james-win-the-2028-democratic-presidential-nomination",
+   "question": "Will LeBron James win the 2028 Democratic presidential nomination?",
+   "volumeNum": 44159354.81742701,
+   "token": "100561779829530520068956424581003844045516012444425572625523659025114550346085",
+   "half_spread_pp": null,
+   "bids": [],
+   "asks": [
+    {
+     "price": "0.005",
+     "size": "45378.95"
+    },
+    {
+     "price": "0.004",
+     "size": "53655.1"
+    },
+    {
+     "price": "0.003",
+     "size": "54659.47"
+    },
+    {
+     "price": "0.002",
+     "size": "108.9"
+    },
+    {
+     "price": "0.001",
+     "size": "86359.22"
+    }
+   ]
+  },
+  {
+   "slug": "will-mike-pence-win-the-2028-republican-presidential-nomination",
+   "question": "Will Mike Pence win the 2028 Republican presidential nomination?",
+   "volumeNum": 43716152.87043101,
+   "token": "110467341601356058460373968989438018821471776813704553223329002744055822742107",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "236344.32"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.006",
+     "size": "51035.03"
+    },
+    {
+     "price": "0.005",
+     "size": "66677.39"
+    },
+    {
+     "price": "0.004",
+     "size": "180143.26"
+    },
+    {
+     "price": "0.003",
+     "size": "101234.25"
+    },
+    {
+     "price": "0.002",
+     "size": "896445.7"
+    }
+   ]
+  },
+  {
+   "slug": "will-tim-walz-win-the-2028-democratic-presidential-nomination-475",
+   "question": "Will Tim Walz win the 2028 Democratic presidential nomination?",
+   "volumeNum": 43522376.503428005,
+   "token": "104464678880204778606895232389511543522030897731392516718349574106843434770446",
+   "half_spread_pp": null,
+   "bids": [],
+   "asks": [
+    {
+     "price": "0.005",
+     "size": "105893.07"
+    },
+    {
+     "price": "0.004",
+     "size": "79474.88"
+    },
+    {
+     "price": "0.003",
+     "size": "23631.8"
+    },
+    {
+     "price": "0.002",
+     "size": "739115.86"
+    },
+    {
+     "price": "0.001",
+     "size": "762375.26"
+    }
+   ]
+  },
+  {
+   "slug": "will-george-clooney-win-the-2028-democratic-presidential-nomination",
+   "question": "Will George Clooney win the 2028 Democratic presidential nomination?",
+   "volumeNum": 43456722.613374956,
+   "token": "48218088132821386640274752564592889805082274744128282833036735027928992155024",
+   "half_spread_pp": null,
+   "bids": [],
+   "asks": [
+    {
+     "price": "0.005",
+     "size": "6141.2"
+    },
+    {
+     "price": "0.004",
+     "size": "165117.83"
+    },
+    {
+     "price": "0.003",
+     "size": "1051.1"
+    },
+    {
+     "price": "0.002",
+     "size": "160.87"
+    },
+    {
+     "price": "0.001",
+     "size": "465132.16"
+    }
+   ]
+  },
+  {
+   "slug": "will-china-invade-taiwan-before-2027",
+   "question": "Will China invade Taiwan by end of 2026?",
+   "volumeNum": 43282728.02058487,
+   "token": "94559586571241563470235664821564670251180951772614764383113614156422396181162",
+   "half_spread_pp": 0.050000000000000044,
+   "bids": [
+    {
+     "price": "0.02",
+     "size": "163014.02"
+    },
+    {
+     "price": "0.021",
+     "size": "34261.56"
+    },
+    {
+     "price": "0.022",
+     "size": "3129.75"
+    },
+    {
+     "price": "0.023",
+     "size": "36263.06"
+    },
+    {
+     "price": "0.024",
+     "size": "34375.54"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.029",
+     "size": "29378.5"
+    },
+    {
+     "price": "0.028",
+     "size": "11765.17"
+    },
+    {
+     "price": "0.027",
+     "size": "30404.14"
+    },
+    {
+     "price": "0.026",
+     "size": "10999.22"
+    },
+    {
+     "price": "0.025",
+     "size": "34434"
+    }
+   ]
+  },
+  {
+   "slug": "will-kim-kardashian-win-the-2028-democratic-presidential-nomination",
+   "question": "Will Kim Kardashian win the 2028 Democratic presidential nomination?",
+   "volumeNum": 42922733.80817101,
+   "token": "55087250670040717711131370018408221134109122974378698780636020561523521220754",
+   "half_spread_pp": null,
+   "bids": [],
+   "asks": [
+    {
+     "price": "0.005",
+     "size": "196087.17"
+    },
+    {
+     "price": "0.004",
+     "size": "134329.28"
+    },
+    {
+     "price": "0.003",
+     "size": "177373.44"
+    },
+    {
+     "price": "0.002",
+     "size": "452250.1"
+    },
+    {
+     "price": "0.001",
+     "size": "501271.41"
+    }
+   ]
+  },
+  {
+   "slug": "will-phil-murphy-win-the-2028-democratic-presidential-nomination-611",
+   "question": "Will Phil Murphy win the 2028 Democratic presidential nomination?",
+   "volumeNum": 42897531.12936499,
+   "token": "81633484456710374417231462107666791993850637546563366185897100962157481970040",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "139664.19"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.006",
+     "size": "229048.8"
+    },
+    {
+     "price": "0.005",
+     "size": "128629.24"
+    },
+    {
+     "price": "0.004",
+     "size": "380136.83"
+    },
+    {
+     "price": "0.003",
+     "size": "308774.46"
+    },
+    {
+     "price": "0.002",
+     "size": "303834.13"
+    }
+   ]
+  },
+  {
+   "slug": "will-beto-orourke-win-the-2028-democratic-presidential-nomination",
+   "question": "Will Beto O\u2019Rourke win the 2028 Democratic presidential nomination?",
+   "volumeNum": 42816224.40664805,
+   "token": "37126434962149084556522721025504254258386171468763869879755961635390358765833",
+   "half_spread_pp": null,
+   "bids": [],
+   "asks": [
+    {
+     "price": "0.005",
+     "size": "22795.28"
+    },
+    {
+     "price": "0.004",
+     "size": "122637.04"
+    },
+    {
+     "price": "0.003",
+     "size": "157180.89"
+    },
+    {
+     "price": "0.002",
+     "size": "107.1"
+    },
+    {
+     "price": "0.001",
+     "size": "939844.23"
+    }
+   ]
+  },
+  {
+   "slug": "will-shimelis-abdisa-be-the-next-prime-minister-of-ethiopia",
+   "question": "Will Shimelis Abdisa be the next Prime Minister of Ethiopia?",
+   "volumeNum": 41582547.35253099,
+   "token": "4489049127093187435445530909063903861654656526363504166478270583011546818111",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "5500"
+    },
+    {
+     "price": "0.002",
+     "size": "9906.92"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.023",
+     "size": "466.54"
+    },
+    {
+     "price": "0.022",
+     "size": "20"
+    },
+    {
+     "price": "0.009",
+     "size": "100"
+    },
+    {
+     "price": "0.005",
+     "size": "1019.11"
+    },
+    {
+     "price": "0.004",
+     "size": "881.1"
+    }
+   ]
+  },
+  {
+   "slug": "will-mrbeast-win-the-2028-democratic-presidential-nomination",
+   "question": "Will MrBeast win the 2028 Democratic presidential nomination?",
+   "volumeNum": 41012596.981763,
+   "token": "51035537065442638321333063915918274102446051033989435618245745345113522914516",
+   "half_spread_pp": null,
+   "bids": [],
+   "asks": [
+    {
+     "price": "0.005",
+     "size": "182"
+    },
+    {
+     "price": "0.004",
+     "size": "438"
+    },
+    {
+     "price": "0.003",
+     "size": "256685.69"
+    },
+    {
+     "price": "0.002",
+     "size": "122057.84"
+    },
+    {
+     "price": "0.001",
+     "size": "243760.18"
+    }
+   ]
+  },
+  {
+   "slug": "will-kim-kardashian-win-the-2028-us-presidential-election",
+   "question": "Will Kim Kardashian win the 2028 US Presidential Election?",
+   "volumeNum": 40324265.743616,
+   "token": "24863363384036117015867671383779186335047493791693657275104567365292353535818",
+   "half_spread_pp": null,
+   "bids": [],
+   "asks": [
+    {
+     "price": "0.005",
+     "size": "163554.22"
+    },
+    {
+     "price": "0.004",
+     "size": "123862.53"
+    },
+    {
+     "price": "0.003",
+     "size": "390583.58"
+    },
+    {
+     "price": "0.002",
+     "size": "211294"
+    },
+    {
+     "price": "0.001",
+     "size": "894821.57"
+    }
+   ]
+  },
+  {
+   "slug": "will-the-us-confirm-that-aliens-exist-before-2027-789-924-249",
+   "question": "Will the US confirm that aliens exist before 2027?",
+   "volumeNum": 40244222.66980301,
+   "token": "107505882767731489358349912513945399560393482969656700824895970500493757150417",
+   "half_spread_pp": 0.04999999999999987,
+   "bids": [
+    {
+     "price": "0.025",
+     "size": "12267.09"
+    },
+    {
+     "price": "0.026",
+     "size": "8161.39"
+    },
+    {
+     "price": "0.027",
+     "size": "49662.72"
+    },
+    {
+     "price": "0.028",
+     "size": "71094.29"
+    },
+    {
+     "price": "0.029",
+     "size": "3885.25"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.034",
+     "size": "21613.74"
+    },
+    {
+     "price": "0.033",
+     "size": "23226.65"
+    },
+    {
+     "price": "0.032",
+     "size": "22247.93"
+    },
+    {
+     "price": "0.031",
+     "size": "19094.61"
+    },
+    {
+     "price": "0.03",
+     "size": "21867.93"
+    }
+   ]
+  },
+  {
+   "slug": "will-zohran-mamdani-win-the-2028-democratic-presidential-nomination-445",
+   "question": "Will Zohran Mamdani win the 2028 Democratic presidential nomination?",
+   "volumeNum": 38956346.28521003,
+   "token": "19323997520040734631220675039559156784534982703459512097490198935565229528445",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "547576.18"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.006",
+     "size": "10534"
+    },
+    {
+     "price": "0.005",
+     "size": "700"
+    },
+    {
+     "price": "0.004",
+     "size": "34202.8"
+    },
+    {
+     "price": "0.003",
+     "size": "65854.14"
+    },
+    {
+     "price": "0.002",
+     "size": "83536.27"
+    }
+   ]
+  },
+  {
+   "slug": "will-liz-cheney-win-the-2028-democratic-presidential-nomination-551",
+   "question": "Will Liz Cheney win the 2028 Democratic presidential nomination?",
+   "volumeNum": 38545695.242622025,
+   "token": "41340056280794024415573839406074658402877379128871144681466050648033201160259",
+   "half_spread_pp": null,
+   "bids": [],
+   "asks": [
+    {
+     "price": "0.005",
+     "size": "7131.35"
+    },
+    {
+     "price": "0.004",
+     "size": "5898.55"
+    },
+    {
+     "price": "0.003",
+     "size": "9102.73"
+    },
+    {
+     "price": "0.002",
+     "size": "51145.13"
+    },
+    {
+     "price": "0.001",
+     "size": "462708.86"
+    }
+   ]
+  },
+  {
+   "slug": "will-john-thune-win-the-2028-republican-presidential-nomination",
+   "question": "Will John Thune win the 2028 Republican presidential nomination?",
+   "volumeNum": 38218933.36550201,
+   "token": "70663522560386702809794077554934323058266367604787739541440326847712418734032",
+   "half_spread_pp": null,
+   "bids": [],
+   "asks": [
+    {
+     "price": "0.005",
+     "size": "3703.35"
+    },
+    {
+     "price": "0.004",
+     "size": "4100.09"
+    },
+    {
+     "price": "0.003",
+     "size": "10777.87"
+    },
+    {
+     "price": "0.002",
+     "size": "8100.1"
+    },
+    {
+     "price": "0.001",
+     "size": "1452054.32"
+    }
+   ]
+  },
+  {
+   "slug": "will-vivek-ramaswamy-win-the-2028-us-presidential-election",
+   "question": "Will Vivek Ramaswamy win the 2028 US Presidential Election?",
+   "volumeNum": 38009628.959189974,
+   "token": "48067717079255656974334181122173546721823870434119599450595298250019538972254",
+   "half_spread_pp": null,
+   "bids": [],
+   "asks": [
+    {
+     "price": "0.005",
+     "size": "112953.48"
+    },
+    {
+     "price": "0.004",
+     "size": "89268.35"
+    },
+    {
+     "price": "0.003",
+     "size": "102485.96"
+    },
+    {
+     "price": "0.002",
+     "size": "302323.71"
+    },
+    {
+     "price": "0.001",
+     "size": "77624.76"
+    }
+   ]
+  },
+  {
+   "slug": "will-kristi-noem-win-the-2028-republican-presidential-nomination",
+   "question": "Will Kristi Noem win the 2028 Republican presidential nomination?",
+   "volumeNum": 37661544.161098994,
+   "token": "46777072088650922464797852907503479539785178123001199763117403684202580813104",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "979437.06"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.006",
+     "size": "56355"
+    },
+    {
+     "price": "0.005",
+     "size": "23742"
+    },
+    {
+     "price": "0.004",
+     "size": "169796.51"
+    },
+    {
+     "price": "0.003",
+     "size": "799178.04"
+    },
+    {
+     "price": "0.002",
+     "size": "658162.27"
+    }
+   ]
+  },
+  {
+   "slug": "will-jasmine-crockett-win-the-2028-democratic-presidential-nomination",
+   "question": "Will Jasmine Crockett win the 2028 Democratic presidential nomination?",
+   "volumeNum": 36474100.105114,
+   "token": "22103094389913052942362639589409218272323168761614999702665821259175535456835",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "100608.45"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.006",
+     "size": "639761.74"
+    },
+    {
+     "price": "0.005",
+     "size": "8706.27"
+    },
+    {
+     "price": "0.004",
+     "size": "144257.17"
+    },
+    {
+     "price": "0.003",
+     "size": "141552.11"
+    },
+    {
+     "price": "0.002",
+     "size": "6959.57"
+    }
+   ]
+  },
+  {
+   "slug": "will-gina-raimondo-win-the-2028-democratic-presidential-nomination-676",
+   "question": "Will Gina Raimondo win the 2028 Democratic presidential nomination?",
+   "volumeNum": 35779524.74599902,
+   "token": "35165603539035270209469650915267170915291414186795231160733227083640059691764",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "511104.31"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.007",
+     "size": "208"
+    },
+    {
+     "price": "0.006",
+     "size": "23"
+    },
+    {
+     "price": "0.004",
+     "size": "4946.79"
+    },
+    {
+     "price": "0.003",
+     "size": "32332.42"
+    },
+    {
+     "price": "0.002",
+     "size": "122880.81"
+    }
+   ]
+  },
+  {
+   "slug": "will-sarah-huckabee-sanders-win-the-2028-republican-presidential-nomination",
+   "question": "Will Sarah Huckabee Sanders win the 2028 Republican presidential nomination?",
+   "volumeNum": 35773149.85397501,
+   "token": "35019878675696902444730611385908114488958639217305639231975258218416576501435",
+   "half_spread_pp": null,
+   "bids": [],
+   "asks": [
+    {
+     "price": "0.005",
+     "size": "62.59"
+    },
+    {
+     "price": "0.004",
+     "size": "100.1"
+    },
+    {
+     "price": "0.003",
+     "size": "100.1"
+    },
+    {
+     "price": "0.002",
+     "size": "27066.37"
+    },
+    {
+     "price": "0.001",
+     "size": "409668.32"
+    }
+   ]
+  },
+  {
+   "slug": "will-trump-acquire-greenland-before-2027",
+   "question": "Will Trump acquire Greenland before 2027?",
+   "volumeNum": 35606047.6463341,
+   "token": "5161623255678193352839985156330393796378434470119114669671615782853260939535",
+   "half_spread_pp": 0.04999999999999987,
+   "bids": [
+    {
+     "price": "0.021",
+     "size": "7448.33"
+    },
+    {
+     "price": "0.022",
+     "size": "6934.73"
+    },
+    {
+     "price": "0.023",
+     "size": "4010"
+    },
+    {
+     "price": "0.024",
+     "size": "1060.84"
+    },
+    {
+     "price": "0.025",
+     "size": "883.84"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.031",
+     "size": "500"
+    },
+    {
+     "price": "0.03",
+     "size": "12384.82"
+    },
+    {
+     "price": "0.029",
+     "size": "2292.67"
+    },
+    {
+     "price": "0.027",
+     "size": "15164.43"
+    },
+    {
+     "price": "0.026",
+     "size": "1564.29"
+    }
+   ]
+  },
+  {
+   "slug": "will-tulsi-gabbard-win-the-2028-us-presidential-election",
+   "question": "Will Tulsi Gabbard win the 2028 US Presidential Election?",
+   "volumeNum": 35400598.48825902,
+   "token": "97633418272282627828834872960145259034624388719803091466146359304286851612172",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "56679.41"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.006",
+     "size": "20909.88"
+    },
+    {
+     "price": "0.005",
+     "size": "26406"
+    },
+    {
+     "price": "0.004",
+     "size": "406507.76"
+    },
+    {
+     "price": "0.003",
+     "size": "85967.66"
+    },
+    {
+     "price": "0.002",
+     "size": "698868.38"
+    }
+   ]
+  },
+  {
+   "slug": "will-greg-abbott-win-the-2028-us-presidential-election",
+   "question": "Will Greg Abbott win the 2028 US Presidential Election?",
+   "volumeNum": 35389204.98888202,
+   "token": "58585097107933138034126275600204468509993701936571284309823871593297754181479",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "53325.26"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.009",
+     "size": "713917.22"
+    },
+    {
+     "price": "0.008",
+     "size": "22071.87"
+    },
+    {
+     "price": "0.004",
+     "size": "5"
+    },
+    {
+     "price": "0.003",
+     "size": "31795.73"
+    },
+    {
+     "price": "0.002",
+     "size": "30180.35"
+    }
+   ]
+  },
+  {
+   "slug": "will-barack-obama-win-the-2028-democratic-presidential-nomination-265",
+   "question": "Will Barack Obama win the 2028 Democratic presidential nomination?",
+   "volumeNum": 34177283.53086001,
+   "token": "88927218779847397120407909832537568114340511586397698395193736044476021744522",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "111562.49"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.006",
+     "size": "16348.97"
+    },
+    {
+     "price": "0.005",
+     "size": "5511.25"
+    },
+    {
+     "price": "0.004",
+     "size": "4397.44"
+    },
+    {
+     "price": "0.003",
+     "size": "55032.58"
+    },
+    {
+     "price": "0.002",
+     "size": "197447.74"
+    }
+   ]
+  },
+  {
+   "slug": "will-stephen-smith-win-the-2028-us-presidential-election",
+   "question": "Will Stephen Smith win the 2028 US Presidential Election?",
+   "volumeNum": 33559299.48349401,
+   "token": "105367778020161609482094090847463497982204321259381518614669619753184648647559",
+   "half_spread_pp": null,
+   "bids": [],
+   "asks": [
+    {
+     "price": "0.005",
+     "size": "43410.67"
+    },
+    {
+     "price": "0.004",
+     "size": "11575"
+    },
+    {
+     "price": "0.003",
+     "size": "116712.73"
+    },
+    {
+     "price": "0.002",
+     "size": "158568.79"
+    },
+    {
+     "price": "0.001",
+     "size": "339033.34"
+    }
+   ]
+  },
+  {
+   "slug": "will-tom-brady-win-the-2028-republican-presidential-nomination",
+   "question": "Will Tom Brady win the 2028 Republican presidential nomination?",
+   "volumeNum": 32984548.751229014,
+   "token": "45742939946094874824687417208711661205131461760422331277735745393193805349457",
+   "half_spread_pp": null,
+   "bids": [],
+   "asks": [
+    {
+     "price": "0.005",
+     "size": "110.1"
+    },
+    {
+     "price": "0.004",
+     "size": "10969.43"
+    },
+    {
+     "price": "0.003",
+     "size": "34988.06"
+    },
+    {
+     "price": "0.002",
+     "size": "17676.74"
+    },
+    {
+     "price": "0.001",
+     "size": "175520.04"
+    }
+   ]
+  },
+  {
+   "slug": "will-richard-grenell-be-the-leader-of-venezuela-end-of-2026",
+   "question": "Will Richard Grenell be the leader of Venezuela end of 2026?",
+   "volumeNum": 32790733.048844993,
+   "token": "63041927234014862550752749844577619438319946530923167906649363118591050055991",
+   "half_spread_pp": null,
+   "bids": [],
+   "asks": [
+    {
+     "price": "0.01",
+     "size": "20.84"
+    },
+    {
+     "price": "0.005",
+     "size": "500"
+    },
+    {
+     "price": "0.003",
+     "size": "500"
+    },
+    {
+     "price": "0.002",
+     "size": "34809.9"
+    },
+    {
+     "price": "0.001",
+     "size": "73442.96"
+    }
+   ]
+  },
+  {
+   "slug": "will-raphael-warnock-win-the-2028-democratic-presidential-nomination-914",
+   "question": "Will Raphael Warnock win the 2028 Democratic presidential nomination?",
+   "volumeNum": 32546868.674501017,
+   "token": "52310257194926233099477326083312959938983447523839326865869372741334281264830",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "268333.81"
+    },
+    {
+     "price": "0.002",
+     "size": "25908"
+    },
+    {
+     "price": "0.003",
+     "size": "35005.52"
+    },
+    {
+     "price": "0.004",
+     "size": "104775.62"
+    },
+    {
+     "price": "0.005",
+     "size": "9005.6"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.011",
+     "size": "2000.99"
+    },
+    {
+     "price": "0.01",
+     "size": "15.63"
+    },
+    {
+     "price": "0.008",
+     "size": "53740.73"
+    },
+    {
+     "price": "0.007",
+     "size": "838.4"
+    },
+    {
+     "price": "0.006",
+     "size": "1000709.43"
+    }
+   ]
+  },
+  {
+   "slug": "will-belete-molla-be-the-next-prime-minister-of-ethiopia",
+   "question": "Will Belete Molla be the next Prime Minister of Ethiopia?",
+   "volumeNum": 32292281.311426997,
+   "token": "85367286745806857961178482075931972831841231758328346969840810630055458089640",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.002",
+     "size": "29.57"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.02",
+     "size": "376.9"
+    },
+    {
+     "price": "0.019",
+     "size": "1000"
+    },
+    {
+     "price": "0.009",
+     "size": "1015.19"
+    },
+    {
+     "price": "0.008",
+     "size": "3544.43"
+    },
+    {
+     "price": "0.007",
+     "size": "19.44"
+    }
+   ]
+  },
+  {
+   "slug": "will-roy-cooper-win-the-2028-democratic-presidential-nomination-286",
+   "question": "Will Roy Cooper win the 2028 Democratic presidential nomination?",
+   "volumeNum": 31727266.714226022,
+   "token": "30732552320006664177902085971957467957450485111214036633872573588757974348601",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "288043.78"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.006",
+     "size": "17392.89"
+    },
+    {
+     "price": "0.005",
+     "size": "27354.71"
+    },
+    {
+     "price": "0.004",
+     "size": "47696.48"
+    },
+    {
+     "price": "0.003",
+     "size": "20809.65"
+    },
+    {
+     "price": "0.002",
+     "size": "39565.26"
+    }
+   ]
+  },
+  {
+   "slug": "will-elon-musk-win-the-2028-republican-presidential-nomination",
+   "question": "Will Elon Musk win the 2028 Republican presidential nomination?",
+   "volumeNum": 31392144.864576004,
+   "token": "97933607699985149274021900377397416175605196663149372937380275158258659161873",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "158242.86"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.01",
+     "size": "468222.46"
+    },
+    {
+     "price": "0.009",
+     "size": "2719.96"
+    },
+    {
+     "price": "0.008",
+     "size": "21171.72"
+    },
+    {
+     "price": "0.007",
+     "size": "7142.85"
+    },
+    {
+     "price": "0.002",
+     "size": "485793.37"
+    }
+   ]
+  },
+  {
+   "slug": "will-nikki-haley-win-the-2028-us-presidential-election",
+   "question": "Will Nikki Haley win the 2028 US Presidential Election?",
+   "volumeNum": 30302054.047046993,
+   "token": "14253956839582698877884742930225331487593177635330318923853046874994118249367",
+   "half_spread_pp": null,
+   "bids": [],
+   "asks": [
+    {
+     "price": "0.005",
+     "size": "10000"
+    },
+    {
+     "price": "0.004",
+     "size": "749.97"
+    },
+    {
+     "price": "0.003",
+     "size": "550"
+    },
+    {
+     "price": "0.002",
+     "size": "30143.35"
+    },
+    {
+     "price": "0.001",
+     "size": "1532926.08"
+    }
+   ]
+  },
+  {
+   "slug": "will-berhanu-nega-be-the-next-prime-minister-of-ethiopia",
+   "question": "Will Berhanu Nega be the next Prime Minister of Ethiopia?",
+   "volumeNum": 29707646.329099998,
+   "token": "9700525976462326306802795530553376348116310383328382626789994562350229436531",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "138.17"
+    },
+    {
+     "price": "0.002",
+     "size": "30.01"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.023",
+     "size": "10"
+    },
+    {
+     "price": "0.018",
+     "size": "300"
+    },
+    {
+     "price": "0.01",
+     "size": "4095"
+    },
+    {
+     "price": "0.005",
+     "size": "1308.22"
+    },
+    {
+     "price": "0.004",
+     "size": "20"
+    }
+   ]
+  },
+  {
+   "slug": "will-demeke-mekonnen-be-the-next-prime-minister-of-ethiopia",
+   "question": "Will Demeke Mekonnen be the next Prime Minister of Ethiopia?",
+   "volumeNum": 29330600.537182003,
+   "token": "2782564244692790193407832532237218722544517902619602647018377360625351910716",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.002",
+     "size": "12470.31"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.027",
+     "size": "1019"
+    },
+    {
+     "price": "0.026",
+     "size": "30"
+    },
+    {
+     "price": "0.024",
+     "size": "20.03"
+    },
+    {
+     "price": "0.023",
+     "size": "39.57"
+    },
+    {
+     "price": "0.021",
+     "size": "20"
+    }
+   ]
+  },
+  {
+   "slug": "will-katie-britt-win-the-2028-republican-presidential-nomination",
+   "question": "Will Katie Britt win the 2028 Republican presidential nomination?",
+   "volumeNum": 28971264.83837401,
+   "token": "42282542821681724515855150589432262778581936160356547088323204270366545065655",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "53054.01"
+    },
+    {
+     "price": "0.002",
+     "size": "7113"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.008",
+     "size": "47257.91"
+    },
+    {
+     "price": "0.006",
+     "size": "2851.01"
+    },
+    {
+     "price": "0.005",
+     "size": "4240"
+    },
+    {
+     "price": "0.004",
+     "size": "6879.05"
+    },
+    {
+     "price": "0.003",
+     "size": "48503.99"
+    }
+   ]
+  },
+  {
+   "slug": "will-kim-kardashian-win-the-2028-republican-presidential-nomination",
+   "question": "Will Kim Kardashian win the 2028 Republican presidential nomination?",
+   "volumeNum": 28571812.555341017,
+   "token": "10651968542740640896482407431367624536081358925965856338872110525887291512129",
+   "half_spread_pp": null,
+   "bids": [],
+   "asks": [
+    {
+     "price": "0.005",
+     "size": "119.1"
+    },
+    {
+     "price": "0.004",
+     "size": "88389.29"
+    },
+    {
+     "price": "0.003",
+     "size": "1288.79"
+    },
+    {
+     "price": "0.002",
+     "size": "226142.84"
+    },
+    {
+     "price": "0.001",
+     "size": "7015.37"
+    }
+   ]
+  },
+  {
+   "slug": "will-glenn-youngkin-win-the-2028-us-presidential-election",
+   "question": "Will Glenn Youngkin win the 2028 US Presidential Election?",
+   "volumeNum": 28265117.19364301,
+   "token": "631059815958854406224163480574507434200946764542129005247984171366597476420",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "450620.24"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.006",
+     "size": "33010"
+    },
+    {
+     "price": "0.005",
+     "size": "3000"
+    },
+    {
+     "price": "0.004",
+     "size": "40879.59"
+    },
+    {
+     "price": "0.003",
+     "size": "92500.07"
+    },
+    {
+     "price": "0.002",
+     "size": "109837.49"
+    }
+   ]
+  },
+  {
+   "slug": "will-elise-stefanik-win-the-2028-republican-presidential-nomination",
+   "question": "Will Elise Stefanik win the 2028 Republican presidential nomination?",
+   "volumeNum": 28178064.666554,
+   "token": "46762065358788748743762617584400316865170283087328708370205000691002445395596",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "412374.67"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.006",
+     "size": "24905.18"
+    },
+    {
+     "price": "0.005",
+     "size": "26636.2"
+    },
+    {
+     "price": "0.004",
+     "size": "232.13"
+    },
+    {
+     "price": "0.003",
+     "size": "378.01"
+    },
+    {
+     "price": "0.002",
+     "size": "175708.47"
+    }
+   ]
+  },
+  {
+   "slug": "will-gavin-newsom-win-the-2028-democratic-presidential-nomination-568",
+   "question": "Will Gavin Newsom win the 2028 Democratic presidential nomination?",
+   "volumeNum": 27838974.702137984,
+   "token": "54533043819946592547517511176940999955633860128497669742211153063842200957669",
+   "half_spread_pp": 0.050000000000000044,
+   "bids": [
+    {
+     "price": "0.152",
+     "size": "4074.09"
+    },
+    {
+     "price": "0.156",
+     "size": "169.78"
+    },
+    {
+     "price": "0.158",
+     "size": "201.62"
+    },
+    {
+     "price": "0.159",
+     "size": "7137"
+    },
+    {
+     "price": "0.16",
+     "size": "1934.68"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.168",
+     "size": "220"
+    },
+    {
+     "price": "0.164",
+     "size": "50"
+    },
+    {
+     "price": "0.163",
+     "size": "2132.76"
+    },
+    {
+     "price": "0.162",
+     "size": "44.74"
+    },
+    {
+     "price": "0.161",
+     "size": "3297.41"
+    }
+   ]
+  },
+  {
+   "slug": "will-jared-polis-win-the-2028-democratic-presidential-nomination-837",
+   "question": "Will Jared Polis win the 2028 Democratic presidential nomination?",
+   "volumeNum": 27487268.128758006,
+   "token": "42119164854283656238382173699154739480090965550328051492328192273011556335098",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "156391.77"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.006",
+     "size": "4700.9"
+    },
+    {
+     "price": "0.005",
+     "size": "6606.55"
+    },
+    {
+     "price": "0.004",
+     "size": "9104"
+    },
+    {
+     "price": "0.003",
+     "size": "27057.81"
+    },
+    {
+     "price": "0.002",
+     "size": "146774.81"
+    }
+   ]
+  },
+  {
+   "slug": "will-elon-musk-win-the-2028-us-presidential-election",
+   "question": "Will Elon Musk win the 2028 US Presidential Election?",
+   "volumeNum": 27217507.084821012,
+   "token": "26641906520532802078452346454133721131611596169940893262820937050881742190686",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "516841.98"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.007",
+     "size": "139789.36"
+    },
+    {
+     "price": "0.006",
+     "size": "5555"
+    },
+    {
+     "price": "0.004",
+     "size": "5"
+    },
+    {
+     "price": "0.003",
+     "size": "6"
+    },
+    {
+     "price": "0.002",
+     "size": "915069.69"
+    }
+   ]
+  },
+  {
+   "slug": "will-the-iranian-regime-fall-by-the-end-of-2026",
+   "question": "Will the Iranian regime fall before 2027?",
+   "volumeNum": 26661388.158820987,
+   "token": "10991849228756847439673778874175365458450913336396982752046655649803657501964",
+   "half_spread_pp": 0.5000000000000004,
+   "bids": [
+    {
+     "price": "0.02",
+     "size": "97840.53"
+    },
+    {
+     "price": "0.03",
+     "size": "240189.09"
+    },
+    {
+     "price": "0.04",
+     "size": "259187.73"
+    },
+    {
+     "price": "0.05",
+     "size": "227230.27"
+    },
+    {
+     "price": "0.06",
+     "size": "141988.95"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.11",
+     "size": "29350.72"
+    },
+    {
+     "price": "0.1",
+     "size": "4588.22"
+    },
+    {
+     "price": "0.09",
+     "size": "89951.71"
+    },
+    {
+     "price": "0.08",
+     "size": "59957.44"
+    },
+    {
+     "price": "0.07",
+     "size": "307624.62"
+    }
+   ]
+  },
+  {
+   "slug": "will-michelle-obama-win-the-2028-democratic-presidential-nomination-777",
+   "question": "Will Michelle Obama win the 2028 Democratic presidential nomination?",
+   "volumeNum": 26331454.76758899,
+   "token": "83723134981785004242996949681785273460678873813693556756054904164484296299719",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "883623.4"
+    },
+    {
+     "price": "0.002",
+     "size": "76133.84"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.008",
+     "size": "500"
+    },
+    {
+     "price": "0.007",
+     "size": "800"
+    },
+    {
+     "price": "0.005",
+     "size": "813"
+    },
+    {
+     "price": "0.004",
+     "size": "10788.64"
+    },
+    {
+     "price": "0.003",
+     "size": "64176.95"
+    }
+   ]
+  },
+  {
+   "slug": "will-corey-booker-win-the-2028-democratic-presidential-nomination-125",
+   "question": "Will Cory Booker win the 2028 Democratic presidential nomination?",
+   "volumeNum": 26322943.877636008,
+   "token": "50887272939612765629559172143901565817521391945540156085421963433918821328137",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.002",
+     "size": "135895.3"
+    },
+    {
+     "price": "0.003",
+     "size": "89358.75"
+    },
+    {
+     "price": "0.004",
+     "size": "182500"
+    },
+    {
+     "price": "0.005",
+     "size": "134619.03"
+    },
+    {
+     "price": "0.006",
+     "size": "21101.26"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.011",
+     "size": "18"
+    },
+    {
+     "price": "0.01",
+     "size": "50229.5"
+    },
+    {
+     "price": "0.009",
+     "size": "1204450.31"
+    },
+    {
+     "price": "0.008",
+     "size": "89809.55"
+    },
+    {
+     "price": "0.007",
+     "size": "1714.48"
+    }
+   ]
+  },
+  {
+   "slug": "will-frank-donovan-be-the-leader-of-venezuela-end-of-2026",
+   "question": "Will Frank Donovan be the leader of Venezuela end of 2026?",
+   "volumeNum": 25890107.054587994,
+   "token": "102488069217181040733050347118082609606893446345922306325497036296077206149582",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "69524.69"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.012",
+     "size": "297.41"
+    },
+    {
+     "price": "0.01",
+     "size": "10.42"
+    },
+    {
+     "price": "0.005",
+     "size": "500"
+    },
+    {
+     "price": "0.004",
+     "size": "505"
+    },
+    {
+     "price": "0.002",
+     "size": "180757.92"
+    }
+   ]
+  },
+  {
+   "slug": "will-shakhtar-donetsk-win-the-2026-27-uefa-champions-league-championship-20260701202025578",
+   "question": "Will Shakhtar Donetsk win the 2026-27 UEFA Champions League Championship?",
+   "volumeNum": 25683118.827999998,
+   "token": "33339798372916037220786136133406478491116150628220441951753426683441228279665",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "1910963.41"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.02",
+     "size": "1000"
+    },
+    {
+     "price": "0.01",
+     "size": "1900"
+    },
+    {
+     "price": "0.009",
+     "size": "96.42"
+    },
+    {
+     "price": "0.003",
+     "size": "142"
+    },
+    {
+     "price": "0.002",
+     "size": "311978.97"
+    }
+   ]
+  },
+  {
+   "slug": "will-john-fetterman-win-the-2028-democratic-presidential-nomination-941",
+   "question": "Will John Fetterman win the 2028 Democratic presidential nomination?",
+   "volumeNum": 25664979.084834002,
+   "token": "71289010523270989807437428651002770360280908813019627976988032260868574107425",
+   "half_spread_pp": null,
+   "bids": [],
+   "asks": [
+    {
+     "price": "0.005",
+     "size": "57358.2"
+    },
+    {
+     "price": "0.004",
+     "size": "46351.18"
+    },
+    {
+     "price": "0.003",
+     "size": "12599.71"
+    },
+    {
+     "price": "0.002",
+     "size": "525107"
+    },
+    {
+     "price": "0.001",
+     "size": "1044618.71"
+    }
+   ]
+  },
+  {
+   "slug": "will-jon-stewart-win-the-2028-democratic-presidential-nomination-518",
+   "question": "Will Jon Stewart win the 2028 Democratic presidential nomination?",
+   "volumeNum": 24806195.935096998,
+   "token": "58343456405874365460518182619380252930558598368174305791768670198253267891911",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.007",
+     "size": "250"
+    },
+    {
+     "price": "0.008",
+     "size": "4287.5"
+    },
+    {
+     "price": "0.009",
+     "size": "6227.12"
+    },
+    {
+     "price": "0.01",
+     "size": "100"
+    },
+    {
+     "price": "0.011",
+     "size": "479.34"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.018",
+     "size": "10497.79"
+    },
+    {
+     "price": "0.017",
+     "size": "9999.41"
+    },
+    {
+     "price": "0.016",
+     "size": "30000"
+    },
+    {
+     "price": "0.015",
+     "size": "7935.03"
+    },
+    {
+     "price": "0.014",
+     "size": "6896.18"
+    }
+   ]
+  },
+  {
+   "slug": "clarity-act-signed-into-law-in-2026",
+   "question": "Clarity Act (H.R.3633) signed into law in 2026?",
+   "volumeNum": 23436783.44342504,
+   "token": "35198549486569600595408965368290795524428922595732253580266052028158040373233",
+   "half_spread_pp": 0.0499999999999997,
+   "bids": [
+    {
+     "price": "0.046",
+     "size": "25873.48"
+    },
+    {
+     "price": "0.047",
+     "size": "10821.07"
+    },
+    {
+     "price": "0.048",
+     "size": "14692.01"
+    },
+    {
+     "price": "0.049",
+     "size": "30935.18"
+    },
+    {
+     "price": "0.05",
+     "size": "139.68"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.056",
+     "size": "1164.86"
+    },
+    {
+     "price": "0.055",
+     "size": "6200"
+    },
+    {
+     "price": "0.053",
+     "size": "2016.18"
+    },
+    {
+     "price": "0.052",
+     "size": "39737.68"
+    },
+    {
+     "price": "0.051",
+     "size": "39.99"
+    }
+   ]
+  },
+  {
+   "slug": "putin-out-before-2027-346",
+   "question": "Putin out as President of Russia by December 31, 2026?",
+   "volumeNum": 23292966.144225,
+   "token": "350977769852917329387037893294763093471844346281449484439085576212613048126",
+   "half_spread_pp": 0.04999999999999987,
+   "bids": [
+    {
+     "price": "0.02",
+     "size": "113532.7"
+    },
+    {
+     "price": "0.021",
+     "size": "19702.01"
+    },
+    {
+     "price": "0.022",
+     "size": "18005"
+    },
+    {
+     "price": "0.024",
+     "size": "1569.02"
+    },
+    {
+     "price": "0.025",
+     "size": "1921.5"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.03",
+     "size": "14431.38"
+    },
+    {
+     "price": "0.029",
+     "size": "1282.29"
+    },
+    {
+     "price": "0.028",
+     "size": "4531.9"
+    },
+    {
+     "price": "0.027",
+     "size": "28152.19"
+    },
+    {
+     "price": "0.026",
+     "size": "17433.19"
+    }
+   ]
+  },
+  {
+   "slug": "will-mark-cuban-win-the-2028-democratic-presidential-nomination-329",
+   "question": "Will Mark Cuban win the 2028 Democratic presidential nomination?",
+   "volumeNum": 23208147.139177013,
+   "token": "58378309871183461257693288827678410871907006920578755035402846056315798427503",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "154527"
+    },
+    {
+     "price": "0.002",
+     "size": "13404.68"
+    },
+    {
+     "price": "0.003",
+     "size": "52728.36"
+    },
+    {
+     "price": "0.005",
+     "size": "182"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.011",
+     "size": "6"
+    },
+    {
+     "price": "0.01",
+     "size": "1324901.86"
+    },
+    {
+     "price": "0.009",
+     "size": "41266"
+    },
+    {
+     "price": "0.008",
+     "size": "43403.13"
+    },
+    {
+     "price": "0.007",
+     "size": "42975.35"
+    }
+   ]
+  },
+  {
+   "slug": "will-stephen-a-smith-win-the-2028-democratic-presidential-nomination-914",
+   "question": "Will Stephen A. Smith win the 2028 Democratic presidential nomination?",
+   "volumeNum": 23099924.225689005,
+   "token": "60590045489347122735554346200880179420435533609307820342798544098823516727807",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "642759.63"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.006",
+     "size": "37568.87"
+    },
+    {
+     "price": "0.005",
+     "size": "19410.41"
+    },
+    {
+     "price": "0.004",
+     "size": "40531.06"
+    },
+    {
+     "price": "0.003",
+     "size": "94056.79"
+    },
+    {
+     "price": "0.002",
+     "size": "645853.92"
+    }
+   ]
+  },
+  {
+   "slug": "will-steve-bannon-win-the-2028-republican-presidential-nomination",
+   "question": "Will Steve Bannon win the 2028 Republican presidential nomination?",
+   "volumeNum": 22997727.453025002,
+   "token": "76572162491038773682779378100661251853152133818805423848523216103658476280587",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "369055.87"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.006",
+     "size": "6456.14"
+    },
+    {
+     "price": "0.005",
+     "size": "36915.33"
+    },
+    {
+     "price": "0.004",
+     "size": "103705.29"
+    },
+    {
+     "price": "0.003",
+     "size": "106495.79"
+    },
+    {
+     "price": "0.002",
+     "size": "21482.44"
+    }
+   ]
+  },
+  {
+   "slug": "will-zohran-mamdani-win-the-2028-us-presidential-election",
+   "question": "Will Zohran Mamdani win the 2028 US Presidential Election?",
+   "volumeNum": 22424222.408912998,
+   "token": "94621929236241392639802280031607240386237812521756048982107414565863464212526",
+   "half_spread_pp": null,
+   "bids": [],
+   "asks": [
+    {
+     "price": "0.005",
+     "size": "174039.73"
+    },
+    {
+     "price": "0.004",
+     "size": "48215.42"
+    },
+    {
+     "price": "0.003",
+     "size": "90277.88"
+    },
+    {
+     "price": "0.002",
+     "size": "53745.44"
+    },
+    {
+     "price": "0.001",
+     "size": "650262.69"
+    }
+   ]
+  },
+  {
+   "slug": "will-greg-abbott-win-the-2028-republican-presidential-nomination",
+   "question": "Will Greg Abbott win the 2028 Republican presidential nomination?",
+   "volumeNum": 21383077.337206,
+   "token": "51109358167525503124101840618196204295486048568333812245607026343682053354150",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "242222"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.007",
+     "size": "20006"
+    },
+    {
+     "price": "0.006",
+     "size": "625.68"
+    },
+    {
+     "price": "0.004",
+     "size": "61.85"
+    },
+    {
+     "price": "0.003",
+     "size": "150428.7"
+    },
+    {
+     "price": "0.002",
+     "size": "220773.3"
+    }
+   ]
+  },
+  {
+   "slug": "will-matt-gaetz-win-the-2028-republican-presidential-nomination",
+   "question": "Will Matt Gaetz win the 2028 Republican presidential nomination?",
+   "volumeNum": 20443722.885418,
+   "token": "21684611233679565633387313395955873024927822291738934804105644401703825367322",
+   "half_spread_pp": null,
+   "bids": [],
+   "asks": [
+    {
+     "price": "0.005",
+     "size": "3328.36"
+    },
+    {
+     "price": "0.004",
+     "size": "106.1"
+    },
+    {
+     "price": "0.003",
+     "size": "5655.07"
+    },
+    {
+     "price": "0.002",
+     "size": "99019.37"
+    },
+    {
+     "price": "0.001",
+     "size": "537074.47"
+    }
+   ]
+  },
+  {
+   "slug": "will-josh-hawley-win-the-2028-republican-presidential-nomination",
+   "question": "Will Josh Hawley win the 2028 Republican presidential nomination?",
+   "volumeNum": 20411044.21667899,
+   "token": "16959950591508656523048029588253513417107455151269158025695062757254216051157",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "2516.45"
+    },
+    {
+     "price": "0.002",
+     "size": "599996.46"
+    },
+    {
+     "price": "0.003",
+     "size": "199411.7"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.008",
+     "size": "1010"
+    },
+    {
+     "price": "0.007",
+     "size": "13280.69"
+    },
+    {
+     "price": "0.006",
+     "size": "4840"
+    },
+    {
+     "price": "0.005",
+     "size": "14723.33"
+    },
+    {
+     "price": "0.004",
+     "size": "87198.74"
+    }
+   ]
+  },
+  {
+   "slug": "will-rand-paul-win-the-2028-republican-presidential-nomination",
+   "question": "Will Rand Paul win the 2028 Republican presidential nomination?",
+   "volumeNum": 19739311.147636,
+   "token": "56369772478534954338683665819559528414197495274302917800610633957542171787417",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "583315.33"
+    },
+    {
+     "price": "0.002",
+     "size": "266447.4"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.008",
+     "size": "50000"
+    },
+    {
+     "price": "0.007",
+     "size": "50506"
+    },
+    {
+     "price": "0.005",
+     "size": "7613.82"
+    },
+    {
+     "price": "0.004",
+     "size": "20403.08"
+    },
+    {
+     "price": "0.003",
+     "size": "27376.09"
+    }
+   ]
+  },
+  {
+   "slug": "will-ted-cruz-win-the-2028-republican-presidential-nomination",
+   "question": "Will Ted Cruz win the 2028 Republican presidential nomination?",
+   "volumeNum": 19625749.718937997,
+   "token": "75602319799101799832214450648958470414659751617273540482126444460192042893239",
+   "half_spread_pp": 0.14999999999999997,
+   "bids": [
+    {
+     "price": "0.019",
+     "size": "37485.1"
+    },
+    {
+     "price": "0.02",
+     "size": "15655.11"
+    },
+    {
+     "price": "0.021",
+     "size": "2385.7"
+    },
+    {
+     "price": "0.022",
+     "size": "524.27"
+    },
+    {
+     "price": "0.023",
+     "size": "4.63"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.03",
+     "size": "150"
+    },
+    {
+     "price": "0.029",
+     "size": "42349.87"
+    },
+    {
+     "price": "0.028",
+     "size": "15046.9"
+    },
+    {
+     "price": "0.027",
+     "size": "352.26"
+    },
+    {
+     "price": "0.026",
+     "size": "55.11"
+    }
+   ]
+  },
+  {
+   "slug": "will-andy-beshear-win-the-2028-us-presidential-election",
+   "question": "Will Andy Beshear win the 2028 US Presidential Election?",
+   "volumeNum": 19383805.766916,
+   "token": "50507496430692162923857760920722624157737138256097150616293040054748564876552",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.011",
+     "size": "19455.84"
+    },
+    {
+     "price": "0.012",
+     "size": "175"
+    },
+    {
+     "price": "0.013",
+     "size": "22029.45"
+    },
+    {
+     "price": "0.014",
+     "size": "3291.29"
+    },
+    {
+     "price": "0.015",
+     "size": "280"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.026",
+     "size": "10"
+    },
+    {
+     "price": "0.025",
+     "size": "29019.82"
+    },
+    {
+     "price": "0.024",
+     "size": "25981.41"
+    },
+    {
+     "price": "0.022",
+     "size": "865.05"
+    },
+    {
+     "price": "0.02",
+     "size": "1715.55"
+    }
+   ]
+  },
+  {
+   "slug": "will-michelle-obama-win-the-2028-us-presidential-election",
+   "question": "Will Michelle Obama win the 2028 US Presidential Election?",
+   "volumeNum": 19353948.64016,
+   "token": "88521269813605705303364598280494261510300497312149869577251450871617962933121",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "926225.02"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.006",
+     "size": "23276"
+    },
+    {
+     "price": "0.005",
+     "size": "1261"
+    },
+    {
+     "price": "0.004",
+     "size": "11"
+    },
+    {
+     "price": "0.003",
+     "size": "2409.84"
+    },
+    {
+     "price": "0.002",
+     "size": "120057.46"
+    }
+   ]
+  },
+  {
+   "slug": "will-erika-kirk-win-the-2028-republican-presidential-nomination",
+   "question": "Will Erika Kirk win the 2028 Republican presidential nomination?",
+   "volumeNum": 19040593.183151998,
+   "token": "36725157385158152303355940271421346899386884953712631735038848833359115722560",
+   "half_spread_pp": null,
+   "bids": [],
+   "asks": [
+    {
+     "price": "0.005",
+     "size": "13625.46"
+    },
+    {
+     "price": "0.004",
+     "size": "14663.61"
+    },
+    {
+     "price": "0.003",
+     "size": "28207.72"
+    },
+    {
+     "price": "0.002",
+     "size": "216971.03"
+    },
+    {
+     "price": "0.001",
+     "size": "100466.72"
+    }
+   ]
+  },
+  {
+   "slug": "will-eric-trump-win-the-2028-us-presidential-election",
+   "question": "Will Eric Trump win the 2028 US Presidential Election?",
+   "volumeNum": 18853300.270761,
+   "token": "67028631656597977031363620447645908995417871899828777750494099295092202422178",
+   "half_spread_pp": null,
+   "bids": [],
+   "asks": [
+    {
+     "price": "0.005",
+     "size": "337637.89"
+    },
+    {
+     "price": "0.004",
+     "size": "81059.01"
+    },
+    {
+     "price": "0.003",
+     "size": "41830.82"
+    },
+    {
+     "price": "0.002",
+     "size": "117464.86"
+    },
+    {
+     "price": "0.001",
+     "size": "511063.48"
+    }
+   ]
+  },
+  {
+   "slug": "will-gavin-newsom-win-the-2028-us-presidential-election",
+   "question": "Will Gavin Newsom win the 2028 US Presidential Election?",
+   "volumeNum": 18504452.170505002,
+   "token": "98250445447699368679516529207365255018790721464590833209064266254238063117329",
+   "half_spread_pp": 0.050000000000000044,
+   "bids": [
+    {
+     "price": "0.071",
+     "size": "1722.81"
+    },
+    {
+     "price": "0.074",
+     "size": "800"
+    },
+    {
+     "price": "0.076",
+     "size": "411.62"
+    },
+    {
+     "price": "0.077",
+     "size": "4567.68"
+    },
+    {
+     "price": "0.078",
+     "size": "3096.12"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.086",
+     "size": "1537.62"
+    },
+    {
+     "price": "0.083",
+     "size": "1149.99"
+    },
+    {
+     "price": "0.081",
+     "size": "1000"
+    },
+    {
+     "price": "0.08",
+     "size": "4545.19"
+    },
+    {
+     "price": "0.079",
+     "size": "3731.15"
+    }
+   ]
+  },
+  {
+   "slug": "hantavirus-pandemic-in-2026",
+   "question": "Hantavirus pandemic in 2026?",
+   "volumeNum": 18477608.224118035,
+   "token": "51508280778202349361616850684455231843716212176724253736363122559269229712002",
+   "half_spread_pp": 0.09999999999999992,
+   "bids": [
+    {
+     "price": "0.02",
+     "size": "2697.9"
+    },
+    {
+     "price": "0.021",
+     "size": "5857.37"
+    },
+    {
+     "price": "0.022",
+     "size": "3175.48"
+    },
+    {
+     "price": "0.023",
+     "size": "804.95"
+    },
+    {
+     "price": "0.024",
+     "size": "31026.23"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.03",
+     "size": "29529.04"
+    },
+    {
+     "price": "0.029",
+     "size": "50977"
+    },
+    {
+     "price": "0.028",
+     "size": "1641.04"
+    },
+    {
+     "price": "0.027",
+     "size": "5815"
+    },
+    {
+     "price": "0.026",
+     "size": "1898.7"
+    }
+   ]
+  },
+  {
+   "slug": "will-wes-moore-win-the-2028-democratic-presidential-nomination-714",
+   "question": "Will Wes Moore win the 2028 Democratic presidential nomination?",
+   "volumeNum": 18438298.025505,
+   "token": "90227223115596293448966158151606153337847900483048338623540402385929720677904",
+   "half_spread_pp": 0.050000000000000044,
+   "bids": [
+    {
+     "price": "0.016",
+     "size": "50224.63"
+    },
+    {
+     "price": "0.017",
+     "size": "10856.29"
+    },
+    {
+     "price": "0.018",
+     "size": "2241.41"
+    },
+    {
+     "price": "0.019",
+     "size": "151.6"
+    },
+    {
+     "price": "0.02",
+     "size": "4596.75"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.029",
+     "size": "4000"
+    },
+    {
+     "price": "0.025",
+     "size": "10000"
+    },
+    {
+     "price": "0.024",
+     "size": "1707.57"
+    },
+    {
+     "price": "0.022",
+     "size": "5001.51"
+    },
+    {
+     "price": "0.021",
+     "size": "16455.53"
+    }
+   ]
+  },
+  {
+   "slug": "will-brian-kemp-win-the-2028-republican-presidential-nomination",
+   "question": "Will Brian Kemp win the 2028 Republican presidential nomination?",
+   "volumeNum": 17938297.046062995,
+   "token": "109121432238307135312607668741094299588249627783575654034498708660414246884093",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "422537.63"
+    },
+    {
+     "price": "0.002",
+     "size": "100000"
+    },
+    {
+     "price": "0.003",
+     "size": "107993.03"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.008",
+     "size": "22010"
+    },
+    {
+     "price": "0.007",
+     "size": "15225.74"
+    },
+    {
+     "price": "0.006",
+     "size": "7368"
+    },
+    {
+     "price": "0.005",
+     "size": "7719.54"
+    },
+    {
+     "price": "0.004",
+     "size": "27944.93"
+    }
+   ]
+  },
+  {
+   "slug": "will-mark-kelly-win-the-2028-democratic-presidential-nomination-479",
+   "question": "Will Mark Kelly win the 2028 Democratic presidential nomination?",
+   "volumeNum": 17674950.782110993,
+   "token": "92325249719485031139867422012514654102580961954747753469470405147070256604118",
+   "half_spread_pp": 0.09999999999999992,
+   "bids": [
+    {
+     "price": "0.02",
+     "size": "127.22"
+    },
+    {
+     "price": "0.022",
+     "size": "6327.85"
+    },
+    {
+     "price": "0.023",
+     "size": "179.88"
+    },
+    {
+     "price": "0.024",
+     "size": "8834"
+    },
+    {
+     "price": "0.025",
+     "size": "937.96"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.031",
+     "size": "206.6"
+    },
+    {
+     "price": "0.03",
+     "size": "61905.33"
+    },
+    {
+     "price": "0.029",
+     "size": "24573.88"
+    },
+    {
+     "price": "0.028",
+     "size": "16855.33"
+    },
+    {
+     "price": "0.027",
+     "size": "7109.09"
+    }
+   ]
+  },
+  {
+   "slug": "will-chris-murphy-win-the-2028-democratic-presidential-nomination",
+   "question": "Will Chris Murphy win the 2028 Democratic presidential nomination?",
+   "volumeNum": 17410898.083075996,
+   "token": "8815924480259634499011776432080696931704057619336093802050596292915996723758",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "112946.47"
+    },
+    {
+     "price": "0.002",
+     "size": "35010"
+    },
+    {
+     "price": "0.003",
+     "size": "21555"
+    },
+    {
+     "price": "0.004",
+     "size": "33708.18"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.009",
+     "size": "1384839.02"
+    },
+    {
+     "price": "0.008",
+     "size": "104644.78"
+    },
+    {
+     "price": "0.007",
+     "size": "12649.51"
+    },
+    {
+     "price": "0.006",
+     "size": "18128.8"
+    },
+    {
+     "price": "0.005",
+     "size": "9351.1"
+    }
+   ]
+  },
+  {
+   "slug": "will-robert-f-kennedy-jr-win-the-2028-republican-presidential-nomination",
+   "question": "Will Robert F. Kennedy Jr. win the 2028 Republican presidential nomination?",
+   "volumeNum": 16848489.139013,
+   "token": "85795532452312461688342921814235563171225750416821603832877839950165564679042",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "74208.79"
+    },
+    {
+     "price": "0.002",
+     "size": "110243.32"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.007",
+     "size": "4536.99"
+    },
+    {
+     "price": "0.006",
+     "size": "1086"
+    },
+    {
+     "price": "0.005",
+     "size": "1026"
+    },
+    {
+     "price": "0.004",
+     "size": "17528.32"
+    },
+    {
+     "price": "0.003",
+     "size": "56767.44"
+    }
+   ]
+  },
+  {
+   "slug": "will-jd-vance-win-the-2028-us-presidential-election",
+   "question": "Will JD Vance win the 2028 US Presidential Election?",
+   "volumeNum": 16534451.538185993,
+   "token": "16040015440196279900485035793550429453516625694844857319147506590755961451627",
+   "half_spread_pp": 0.050000000000000044,
+   "bids": [
+    {
+     "price": "0.201",
+     "size": "43370.05"
+    },
+    {
+     "price": "0.202",
+     "size": "10304.99"
+    },
+    {
+     "price": "0.203",
+     "size": "5200"
+    },
+    {
+     "price": "0.205",
+     "size": "11467.49"
+    },
+    {
+     "price": "0.206",
+     "size": "11091.76"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.212",
+     "size": "50"
+    },
+    {
+     "price": "0.211",
+     "size": "17052.36"
+    },
+    {
+     "price": "0.21",
+     "size": "4339.4"
+    },
+    {
+     "price": "0.208",
+     "size": "5423.19"
+    },
+    {
+     "price": "0.207",
+     "size": "6755.38"
+    }
+   ]
+  },
+  {
+   "slug": "will-vivek-ramaswamy-win-the-2028-republican-presidential-nomination",
+   "question": "Will Vivek Ramaswamy win the 2028 Republican presidential nomination?",
+   "volumeNum": 16111216.136814984,
+   "token": "7847177314809025001842027337093046201021185723933452855314998541165696902642",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "153337.64"
+    },
+    {
+     "price": "0.002",
+     "size": "9995.12"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.011",
+     "size": "4331"
+    },
+    {
+     "price": "0.01",
+     "size": "20000"
+    },
+    {
+     "price": "0.009",
+     "size": "250"
+    },
+    {
+     "price": "0.004",
+     "size": "7102.93"
+    },
+    {
+     "price": "0.003",
+     "size": "39821.21"
+    }
+   ]
+  },
+  {
+   "slug": "will-renan-santos-win-the-2026-brazilian-presidential-election",
+   "question": "Will Renan Santos win the 2026 Brazilian presidential election?",
+   "volumeNum": 16079737.799303994,
+   "token": "93998891488819623915454849994768171534113749478841216025646247933473925258016",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "274875.53"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.006",
+     "size": "6665"
+    },
+    {
+     "price": "0.005",
+     "size": "27216.38"
+    },
+    {
+     "price": "0.004",
+     "size": "106659.59"
+    },
+    {
+     "price": "0.003",
+     "size": "2174"
+    },
+    {
+     "price": "0.002",
+     "size": "453146.68"
+    }
+   ]
+  },
+  {
+   "slug": "will-jb-pritzker-win-the-2028-democratic-presidential-nomination-288",
+   "question": "Will J.B. Pritzker win the 2028 Democratic presidential nomination?",
+   "volumeNum": 15770344.744000979,
+   "token": "103988345069738240821107916249290759786442703283901164377120414690701074137717",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.008",
+     "size": "10444.97"
+    },
+    {
+     "price": "0.009",
+     "size": "153261"
+    },
+    {
+     "price": "0.01",
+     "size": "21373"
+    },
+    {
+     "price": "0.011",
+     "size": "14764.11"
+    },
+    {
+     "price": "0.012",
+     "size": "1831.06"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.017",
+     "size": "8379.69"
+    },
+    {
+     "price": "0.016",
+     "size": "22310.69"
+    },
+    {
+     "price": "0.015",
+     "size": "14216.41"
+    },
+    {
+     "price": "0.014",
+     "size": "14984.55"
+    },
+    {
+     "price": "0.013",
+     "size": "37.99"
+    }
+   ]
+  },
+  {
+   "slug": "will-jd-vance-win-the-2028-republican-presidential-nomination",
+   "question": "Will J.D. Vance win the 2028 Republican presidential nomination?",
+   "volumeNum": 15749217.516595,
+   "token": "40081275558852222228080198821361202017557872256707631666334039001378518619916",
+   "half_spread_pp": 0.050000000000000044,
+   "bids": [
+    {
+     "price": "0.492",
+     "size": "9053"
+    },
+    {
+     "price": "0.495",
+     "size": "220"
+    },
+    {
+     "price": "0.5",
+     "size": "3771.84"
+    },
+    {
+     "price": "0.501",
+     "size": "14066.66"
+    },
+    {
+     "price": "0.502",
+     "size": "3055.55"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.507",
+     "size": "786.82"
+    },
+    {
+     "price": "0.506",
+     "size": "300"
+    },
+    {
+     "price": "0.505",
+     "size": "13268.94"
+    },
+    {
+     "price": "0.504",
+     "size": "505.76"
+    },
+    {
+     "price": "0.503",
+     "size": "13935.96"
+    }
+   ]
+  },
+  {
+   "slug": "will-ron-desantis-win-the-2028-republican-presidential-nomination",
+   "question": "Will Ron DeSantis win the 2028 Republican presidential nomination?",
+   "volumeNum": 15609199.423306998,
+   "token": "12127975650736113116407758794754973741525044713193258995588171654429754588610",
+   "half_spread_pp": 0.050000000000000044,
+   "bids": [
+    {
+     "price": "0.023",
+     "size": "23127.64"
+    },
+    {
+     "price": "0.024",
+     "size": "2716"
+    },
+    {
+     "price": "0.025",
+     "size": "6108.29"
+    },
+    {
+     "price": "0.026",
+     "size": "6442.52"
+    },
+    {
+     "price": "0.027",
+     "size": "2286.18"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.032",
+     "size": "278"
+    },
+    {
+     "price": "0.031",
+     "size": "1595.48"
+    },
+    {
+     "price": "0.03",
+     "size": "50677.71"
+    },
+    {
+     "price": "0.029",
+     "size": "2497.74"
+    },
+    {
+     "price": "0.028",
+     "size": "72401.22"
+    }
+   ]
+  },
+  {
+   "slug": "will-gretchen-whitmer-win-the-2028-us-presidential-election",
+   "question": "Will Gretchen Whitmer win the 2028 US Presidential Election?",
+   "volumeNum": 15604071.582020996,
+   "token": "4999047257294547885970323631312419427544062131054733229841947946130772277335",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "522832.86"
+    },
+    {
+     "price": "0.002",
+     "size": "181984.3"
+    },
+    {
+     "price": "0.003",
+     "size": "27754.16"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.008",
+     "size": "19967.07"
+    },
+    {
+     "price": "0.007",
+     "size": "805"
+    },
+    {
+     "price": "0.006",
+     "size": "7780.97"
+    },
+    {
+     "price": "0.005",
+     "size": "30691.48"
+    },
+    {
+     "price": "0.004",
+     "size": "54846.38"
+    }
+   ]
+  },
+  {
+   "slug": "will-alexandria-ocasio-cortez-win-the-2028-democratic-presidential-nomination-653",
+   "question": "Will Alexandria Ocasio-Cortez win the 2028 Democratic presidential nomination?",
+   "volumeNum": 15398494.986401,
+   "token": "107064985435494333113391038470401719113272800530429703182710416066774068907304",
+   "half_spread_pp": 0.050000000000000044,
+   "bids": [
+    {
+     "price": "0.163",
+     "size": "30"
+    },
+    {
+     "price": "0.164",
+     "size": "5020"
+    },
+    {
+     "price": "0.165",
+     "size": "1600"
+    },
+    {
+     "price": "0.166",
+     "size": "15581.4"
+    },
+    {
+     "price": "0.167",
+     "size": "2551.64"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.175",
+     "size": "270"
+    },
+    {
+     "price": "0.174",
+     "size": "598"
+    },
+    {
+     "price": "0.17",
+     "size": "364.46"
+    },
+    {
+     "price": "0.169",
+     "size": "222.34"
+    },
+    {
+     "price": "0.168",
+     "size": "1106.02"
+    }
+   ]
+  },
+  {
+   "slug": "will-tarcisio-de-frietas-win-the-2026-brazilian-presidential-election",
+   "question": "Will Tarcisio de Freitas win the 2026 Brazilian presidential election?",
+   "volumeNum": 14647663.143296,
+   "token": "52634616068523389389514492087655237014427439869589807217055529923225131895030",
+   "half_spread_pp": null,
+   "bids": [],
+   "asks": [
+    {
+     "price": "0.005",
+     "size": "5552"
+    },
+    {
+     "price": "0.004",
+     "size": "15846.88"
+    },
+    {
+     "price": "0.003",
+     "size": "15077.52"
+    },
+    {
+     "price": "0.002",
+     "size": "6530.61"
+    },
+    {
+     "price": "0.001",
+     "size": "1159685.69"
+    }
+   ]
+  },
+  {
+   "slug": "will-rahm-emanuel-win-the-2028-democratic-presidential-nomination-299",
+   "question": "Will Rahm Emanuel win the 2028 Democratic presidential nomination?",
+   "volumeNum": 14590963.791611996,
+   "token": "10521981432803570450946212503203364998108630328528216082760514453664705157397",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.014",
+     "size": "111.78"
+    },
+    {
+     "price": "0.015",
+     "size": "33000"
+    },
+    {
+     "price": "0.016",
+     "size": "2850.4"
+    },
+    {
+     "price": "0.018",
+     "size": "36.03"
+    },
+    {
+     "price": "0.019",
+     "size": "4609.52"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.025",
+     "size": "23000"
+    },
+    {
+     "price": "0.024",
+     "size": "36.85"
+    },
+    {
+     "price": "0.022",
+     "size": "198.72"
+    },
+    {
+     "price": "0.021",
+     "size": "26779.49"
+    },
+    {
+     "price": "0.02",
+     "size": "25544.3"
+    }
+   ]
+  },
+  {
+   "slug": "xi-jinping-out-before-2027",
+   "question": "Xi Jinping out before 2027?",
+   "volumeNum": 14336093.39421498,
+   "token": "32338220190071351435772801779725302244575775216413325951443816017994629993401",
+   "half_spread_pp": 0.04999999999999987,
+   "bids": [
+    {
+     "price": "0.021",
+     "size": "38571.04"
+    },
+    {
+     "price": "0.022",
+     "size": "23921.09"
+    },
+    {
+     "price": "0.023",
+     "size": "14538.73"
+    },
+    {
+     "price": "0.024",
+     "size": "8828"
+    },
+    {
+     "price": "0.025",
+     "size": "13705.9"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.03",
+     "size": "13904.63"
+    },
+    {
+     "price": "0.029",
+     "size": "23858.86"
+    },
+    {
+     "price": "0.028",
+     "size": "15223.57"
+    },
+    {
+     "price": "0.027",
+     "size": "4078.24"
+    },
+    {
+     "price": "0.026",
+     "size": "10989.13"
+    }
+   ]
+  },
+  {
+   "slug": "will-luiz-incio-lula-da-silva-win-the-2026-brazilian-presidential-election",
+   "question": "Will Luiz In\u00e1cio Lula da Silva win the 2026 Brazilian presidential election?",
+   "volumeNum": 14289257.388665,
+   "token": "30630994248667897740988010928640156931882346081873066002335460180076741328029",
+   "half_spread_pp": 0.5000000000000004,
+   "bids": [
+    {
+     "price": "0.37",
+     "size": "79577.85"
+    },
+    {
+     "price": "0.38",
+     "size": "69365.98"
+    },
+    {
+     "price": "0.39",
+     "size": "73764.56"
+    },
+    {
+     "price": "0.4",
+     "size": "32270.22"
+    },
+    {
+     "price": "0.41",
+     "size": "35466.76"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.46",
+     "size": "51253.27"
+    },
+    {
+     "price": "0.45",
+     "size": "574020.09"
+    },
+    {
+     "price": "0.44",
+     "size": "49358.44"
+    },
+    {
+     "price": "0.43",
+     "size": "26290.56"
+    },
+    {
+     "price": "0.42",
+     "size": "91800.37"
+    }
+   ]
+  },
+  {
+   "slug": "will-tucker-carlson-win-the-2028-us-presidential-election",
+   "question": "Will Tucker Carlson win the 2028 US Presidential Election?",
+   "volumeNum": 14285000.795767996,
+   "token": "45015916581148592087728250896178171120552786117190685135618507471166113474733",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.013",
+     "size": "249"
+    },
+    {
+     "price": "0.014",
+     "size": "24199.79"
+    },
+    {
+     "price": "0.015",
+     "size": "5768.83"
+    },
+    {
+     "price": "0.016",
+     "size": "1464.5"
+    },
+    {
+     "price": "0.017",
+     "size": "20480.25"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.022",
+     "size": "2500"
+    },
+    {
+     "price": "0.021",
+     "size": "5254.94"
+    },
+    {
+     "price": "0.02",
+     "size": "5242.76"
+    },
+    {
+     "price": "0.019",
+     "size": "7060.57"
+    },
+    {
+     "price": "0.018",
+     "size": "12544.64"
+    }
+   ]
+  },
+  {
+   "slug": "will-tulsi-gabbard-win-the-2028-republican-presidential-nomination",
+   "question": "Will Tulsi Gabbard win the 2028 Republican presidential nomination?",
+   "volumeNum": 14086458.221294004,
+   "token": "111796631871113641071635832853519973638674140424258605036492112910151603434351",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "658528.4"
+    },
+    {
+     "price": "0.002",
+     "size": "32086.5"
+    },
+    {
+     "price": "0.003",
+     "size": "85649.21"
+    },
+    {
+     "price": "0.004",
+     "size": "23042.96"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.009",
+     "size": "2706.08"
+    },
+    {
+     "price": "0.008",
+     "size": "5195.42"
+    },
+    {
+     "price": "0.007",
+     "size": "5470.02"
+    },
+    {
+     "price": "0.006",
+     "size": "5287.09"
+    },
+    {
+     "price": "0.005",
+     "size": "31000.35"
+    }
+   ]
+  },
+  {
+   "slug": "strait-of-hormuz-traffic-returns-to-normal-by-december-31",
+   "question": "Strait of Hormuz traffic returns to normal by December 31?",
+   "volumeNum": 13927151.874796,
+   "token": "83783489454659420807679723574840032660002326710045123865554753994450797728825",
+   "half_spread_pp": 0.49999999999999906,
+   "bids": [
+    {
+     "price": "0.16",
+     "size": "19099.12"
+    },
+    {
+     "price": "0.17",
+     "size": "578218.4"
+    },
+    {
+     "price": "0.18",
+     "size": "109300.96"
+    },
+    {
+     "price": "0.19",
+     "size": "120008.69"
+    },
+    {
+     "price": "0.2",
+     "size": "31747.75"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.25",
+     "size": "6174.88"
+    },
+    {
+     "price": "0.24",
+     "size": "9713.17"
+    },
+    {
+     "price": "0.23",
+     "size": "21298.61"
+    },
+    {
+     "price": "0.22",
+     "size": "48661.86"
+    },
+    {
+     "price": "0.21",
+     "size": "42257.56"
+    }
+   ]
+  },
+  {
+   "slug": "will-donald-trump-jr-win-the-2028-us-presidential-election",
+   "question": "Will Donald Trump Jr. win the 2028 US Presidential Election?",
+   "volumeNum": 13893999.485798,
+   "token": "77660944053451874285291959901958937238149180369572698706675030657716494119346",
+   "half_spread_pp": null,
+   "bids": [
+    {
+     "price": "0.001",
+     "size": "542643.18"
+    },
+    {
+     "price": "0.002",
+     "size": "1004428"
+    },
+    {
+     "price": "0.003",
+     "size": "477777"
+    },
+    {
+     "price": "0.004",
+     "size": "38056.72"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.009",
+     "size": "11577"
+    },
+    {
+     "price": "0.008",
+     "size": "9186.97"
+    },
+    {
+     "price": "0.007",
+     "size": "8179.64"
+    },
+    {
+     "price": "0.006",
+     "size": "10095.01"
+    },
+    {
+     "price": "0.005",
+     "size": "51930.26"
+    }
+   ]
+  },
+  {
+   "slug": "will-flvio-bolsonaro-win-the-2026-brazilian-presidential-election",
+   "question": "Will Fl\u00e1vio Bolsonaro win the 2026 Brazilian presidential election?",
+   "volumeNum": 13839061.883399006,
+   "token": "109876868437950584369987384406356259939519193117253465815665152916226511121427",
+   "half_spread_pp": 0.050000000000000044,
+   "bids": [
+    {
+     "price": "0.566",
+     "size": "250"
+    },
+    {
+     "price": "0.567",
+     "size": "3065"
+    },
+    {
+     "price": "0.568",
+     "size": "293.73"
+    },
+    {
+     "price": "0.569",
+     "size": "239.22"
+    },
+    {
+     "price": "0.57",
+     "size": "3319.26"
+    }
+   ],
+   "asks": [
+    {
+     "price": "0.578",
+     "size": "220"
+    },
+    {
+     "price": "0.577",
+     "size": "815.9"
+    },
+    {
+     "price": "0.576",
+     "size": "305.36"
+    },
+    {
+     "price": "0.572",
+     "size": "864.09"
+    },
+    {
+     "price": "0.571",
+     "size": "2970.62"
+    }
+   ]
+  }
+ ]
+}

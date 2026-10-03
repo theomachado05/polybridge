@@ -7,7 +7,7 @@ name = "polybridge-research"
 version = "0.1.0"
 description = "PolyBridge research: implied-move parity on 8-K events (GatorQuant Hacks 2026)"
 requires-python = ">=3.10"
-dependencies = ["pandas>=2.2", "numpy>=2.0", "requests>=2.31", "matplotlib>=3.8"]
+dependencies = ["pandas>=2.2", "numpy>=2.0", "requests>=2.31", "matplotlib>=3.8", "pyyaml>=6.0"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "nbformat>=5.9"]
@@ -17,4 +17,4 @@ include = ["polybridge_research*"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
-testpaths = ["tests"]
+testpaths = ["tests", "leadlag/tests", "leadlag_closed/tests", "leadlag_replication/tests", "arb/tests", "gap_model/tests", "open_options/tests", "closed_hedge/tests"]

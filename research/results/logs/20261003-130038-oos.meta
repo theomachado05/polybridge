@@ -1,0 +1,10 @@
+run: export_oos.py (single out-of-sample run, HYPOTHESIS.md §4; after tag method-freeze)
+start: 2026-10-03T13:00:38-04:00
+git: 344de99c82a49cc4e1a80a4f8c96a6a2b3f61b46 on v4/core
+python: Python 3.12.7
+window: 2026-01-01 -> 2026-08-31; LAST_SESSION 2026-10-02; timing conservative
+cache files before: 21674
+exit: 0
+end: 2026-10-03T13:02:20-04:00
+duration_s: 102
+cache files after: 28270

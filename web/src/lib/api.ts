@@ -1,4 +1,5 @@
 // Mirrors docs/contracts.md (HTTP API). Change both together, by PR.
+import type { ClosedLabels, ClosedModeSummary, ClosureView, GapView, HedgeASummary, SessionView, StagedOrder } from "./closed.ts";
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export type Family = "hedge" | "opportunity";
@@ -21,6 +22,12 @@ export interface Proposal {
   label?: string | null;
   market?: { source: string; id: string; token_id?: string | null } | null;
   direction?: Direction | null;
+  algo?: AlgoChoice | null;
+  /** Opportunity proposals: the approved risk caps (open option structures; premium / max loss at risk, USD). */
+  max_contracts?: number | null;
+  max_notional?: number | null;
+  /** Hedge A opt-in (closed-market mode): a simulated PM-leg estimate while equities are closed. Off by default. */
+  closed_pm_hedge?: boolean;
   created_at: string;
   decided_at: string | null;
   bridge_started_at?: string | null;
@@ -63,6 +70,9 @@ export interface Market {
   end_date: string | null;
   url: string | null;
   token_id: string | null;
+  /** The backend's recording of this market (replay file name), when it has one. A resolved market with a recording
+   *  is still listed in Build: its replay runs offline (and, with option columns, the Opportunity division). */
+  recorded?: string | null;
 }
 export interface SearchOut { markets: Market[]; stale: boolean; note?: string | null }
 export interface HistoryPoint { t: number; p: number }
@@ -150,6 +160,69 @@ export interface BridgeSummary {
   label?: string | null;
   reasons: Record<string, number>;
   latency_ns: { p50: number | null; p99: number | null };
+  /** "algo": hedgecore.Algo runs `algo` (the fit); "legacy": the Engine default spec (no fit sent). */
+  engine?: "algo" | "legacy";
+  algo?: (AlgoChoice & { params?: Record<string, number> | null }) | null;
+  /** Algo bridges: the approved coverage cap, sells it held, and what equity price the algo can see. */
+  coverage_cap?: number | null;
+  cap_holds?: number;
+  equity_price?: "live_quote" | "recorded" | "none" | null;
+  equity_source?: string | null;
+  /** "opportunity": an options bridge (Opportunity-division family, simulated option fills). */
+  division?: Family;
+  option_position?: number;
+  option_structure?: { kind: string; expiry?: string; strikes?: number[]; side?: string; legs?: { sign: number; ticker: string }[] } | null;
+  risk_used?: number;
+  max_contracts?: number | null;
+  max_notional?: number | null;
+  option_data?: "live_chain" | "recorded" | "none";
+  pm_vs_options?: PmVsOptions | null;
+  options_detail?: { supported?: boolean; available?: boolean; reason?: string | null; underlying_used?: string; strike_used?: number; expiry?: string; k_lo?: number; k_hi?: number; notes?: string[] } | null;
+  fills_label?: string;
+  /** "replay_sandbox": a replay bridge's orders go to an isolated in-memory sim, never the account. */
+  account_scope?: "replay_sandbox" | "account";
+  broker?: string | null;
+  broker_hedge?: number;
+  broker_filled?: number;
+  /** The market the bridge was started on. */
+  market?: { source: string; id: string; token_id?: string | null } | null;
+  /** Replay bridges (when the backend reports them): the recorded file and the market it belongs to. */
+  replay_file?: string | null;
+  /** From the file's .meta.json sidecar; null when the file has no sidecar (its market is unknown). Set too when a
+   *  live bridge fell back to a replay. */
+  replay_market?: { source?: string | null; id?: string | null; token_id?: string | null } | null;
+  /** Closed-market mode (backend app/closed/bridge_mode.py): the session at the bridge's latest tick (recorded time on
+   *  a replay), the PM move since the last close, the expected open gap (evidence-gated), staged hedge B, hedge A. */
+  session?: SessionView | null;
+  closure?: ClosureView | null;
+  expected_gap?: GapView | null;
+  closed_mode?: ClosedModeSummary | null;
+  hedge_a?: HedgeASummary | null;
+}
+
+/** One tick's PM YES mid vs the options-implied P(YES) (raw orientation). The option number is an estimate. */
+export interface PmVsOptions {
+  pm_mid: number | null;
+  opt_implied_prob: number | null;
+  gap: number | null;
+  opt_mid?: number | null;
+  opt_iv?: number | null;
+  opt_delta?: number | null;
+  eightk_score?: number | null;
+  label?: string;
+}
+
+/** The hedgecore algo a bridge runs (contracts.md): a catalog family plus one preset, or explicit params. */
+export interface AlgoChoice {
+  family: string;
+  preset_index?: number | null;
+  params?: Record<string, number> | null;
+  source?: "ai_fit" | "user";
+  /** Server-set on the stored proposal: the params that will run after the approved target_coverage capped the
+   *  hedge-size params, the cap, and the params it lowered ({name: original}). */
+  resolved_params?: Record<string, number> | null;
+  coverage_cap?: number | null;
+  capped?: Record<string, number> | null;
 }
 
 export interface HedgeStatus { status: "none" | "proposed" | "approved" | "bridging" | "rejected"; proposal_id: string | null; bridge_id: string | null }
@@ -190,8 +263,9 @@ export const mapEvent = (body: { question?: string; source?: string; market_id?:
 export const getHedges = (ticker: string, shares: number, label: VerdictLabel) =>
   request<HedgeMenu>(`/hedges/${encodeURIComponent(ticker)}?shares=${shares}&label=${label}`);
 export type ProposalBody =
-  | { ticker: string; tags: string[]; shares_held: number; target_coverage: number }
-  | { ticker: string; market: { source: string; id: string; token_id?: string | null }; direction: Direction; shares_held: number; target_coverage: number };
+  | { ticker: string; tags: string[]; shares_held: number; target_coverage: number; algo?: AlgoChoice }
+  | { ticker: string; market: { source: string; id: string; token_id?: string | null }; direction: Direction; shares_held: number; target_coverage: number; algo?: AlgoChoice; closed_pm_hedge?: boolean }
+  | { ticker: string; market: { source: string; id: string; token_id?: string | null }; division: "opportunity"; algo: AlgoChoice; direction?: Direction; max_contracts?: number; max_notional?: number };
 export const createProposal = (body: ProposalBody) => post<Proposal>("/proposals", body);
 export const startBridge = (body: {
   proposal_id: string;
@@ -199,7 +273,247 @@ export const startBridge = (body: {
   market?: { source: string; id: string; token_id?: string | null };
   gap_per_share: number;
   direction?: Direction;
+  /** The fitted algo (must equal the proposal's approved algo when it has one). Omitted: the Engine default spec. */
+  family?: string;
+  preset_index?: number;
+  params?: Record<string, number>;
 }) => post<{ bridge_id: string }>("/bridges", body);
 export const getBridge = (id: string) => request<BridgeSummary>(`/bridges/${id}`);
 export const getPortfolio = () => request<PortfolioOut>("/portfolio");
 export const listVerdicts = () => request<TagVerdict[]>("/verdicts");
+
+// ---- v4 endpoints (spec §4 fit, §5 broker, §3.4/§9 library). Shapes are parsed defensively in the UI
+// because the backend streams land in parallel; every caller has a labelled demo fallback.
+
+export type EventClass =
+  | "macro_fed" | "elections" | "tariffs_trade" | "geopolitics_energy" | "housing" | "fig"
+  | "tech_regulation" | "crypto" | "corporate_8k" | "company_specific" | "unsupported";
+
+export interface FitBody {
+  market?: { source: string; id: string };
+  question?: string;
+  ticker: string;
+  direction?: Direction;
+  shares_held?: number;
+  /** Fit this division instead of the default (hedge when shares are held, else opportunity). */
+  division?: Family;
+  end_date?: string;
+}
+/** Replay stats the backend copies into each alternative (tune.STAT_KEYS); only finite values are present. */
+export interface FitStats {
+  n_ticks?: number; n_orders?: number; pnl?: number; fees?: number; max_dd?: number;
+  /** Plain hedge variance reduction: any static short of a fraction h earns 1 - (1 - h)^2 of it, so never ranked. */
+  hedge_var_reduction?: number;
+  /** Variance cut beyond a static short of the same average size: what the PM signal adds (the hedge ranking score). */
+  hedge_var_reduction_vs_static?: number;
+  /** Mean short as a fraction of shares_held over the replay. */
+  avg_hedge_ratio?: number;
+  turnover?: number; p50_ns?: number; p99_ns?: number;
+}
+export interface FitAlternative { family: string; preset_index?: number; params?: Record<string, number>; score?: number | null; division?: string; stats?: FitStats }
+/** What FitOut.score ranks by: the hedge score is the variance cut beyond a static hedge, never the raw cut. */
+export type ScoreBasis = "hedge_var_reduction_vs_static" | "net_pnl_per_drawdown";
+export interface FitOut {
+  event_class: EventClass | string;
+  division: Family | string;
+  family: string | null;
+  preset_index: number | null;
+  params: Record<string, number>;
+  score: number | null;
+  alternatives: FitAlternative[];
+  rationale: string;
+  llm: "gemini" | "rules" | string;
+  ticks_source: "live_history" | "replay" | "none" | string;
+  n_ticks: number;
+  /** What `score` measures (null or absent: unscored, or an older backend whose hedge score was the raw cut). */
+  no_static_benchmark?: boolean;
+  score_basis?: ScoreBasis | null;
+  score_note?: string | null;
+  /** Hedge fits only (null otherwise): raw variance reduction, reported but never ranked. */
+  score_raw?: number | null;
+  /** Hedge fits only: equals `score`, the variance cut beyond a static hedge of the same average size. */
+  score_vs_static?: number | null;
+  /** Hedge fits only: mean short as a fraction of shares held over the replay. */
+  avg_hedge_ratio?: number | null;
+}
+export const postFit = (body: FitBody) => post<FitOut>("/pipeline/fit", body);
+
+export interface CatalogParam { name: string; min?: number; max?: number; grid?: number[] }
+export interface CatalogBlock { name: string; kind?: string; ui_kind?: string }
+export interface CatalogFamily {
+  id: string;
+  division?: string;
+  /** A family listed in more than one division (e.g. poly_kalshi_spread: hedge and opportunity). */
+  divisions?: string[];
+  event_classes?: string[];
+  instruments?: string[];
+  blocks?: (string | CatalogBlock)[];
+  params?: CatalogParam[] | Record<string, number[] | { min?: number; max?: number; grid?: number[] }>;
+  preset_count?: number;
+  idea?: string;
+  description?: string;
+  latency?: { p50_ns?: number | null; p99_ns?: number | null } | null;
+  p50_ns?: number | null;
+  p99_ns?: number | null;
+}
+export interface LibraryOut {
+  families?: CatalogFamily[];
+  total_presets?: number;
+  preset_total?: number;
+  total?: number;
+  source?: string;
+}
+export const getLibrary = () => request<LibraryOut | CatalogFamily[]>("/library");
+
+// Field names checked against origin/v4/broker (backend/app/broker/models.py) and origin/v4/ai-pipeline.
+export interface AccountOut {
+  broker?: string;          // "sim" | "webull-paper"
+  cash: number;
+  equity: number;
+  buying_power: number;
+  currency: string;
+  simulated?: boolean;
+  starting_cash?: number | null;
+  realized_pnl?: number | null;
+  fees_paid?: number | null;
+  note?: string | null;
+}
+export interface BrokerPosition {
+  symbol: string;
+  asset?: string;
+  qty: number;
+  avg_px?: number | null;
+  avg_price?: number | null;
+  market_px?: number | null;
+  mark_px?: number | null;
+  market_value?: number | null;
+  unrealized_pnl?: number | null;
+  broker?: string;
+}
+export interface BrokerOrder {
+  id: string;
+  symbol: string;
+  asset?: string;
+  side: "buy" | "sell";
+  qty: number;
+  type?: string;
+  status?: string;
+  fill_px?: number | null;
+  filled_px?: number | null;
+  avg_fill_px?: number | null;
+  limit_px?: number | null;
+  fee?: number | null;
+  tag?: string | null;
+  created_at?: string | null;
+  filled_at?: string | null;
+  broker?: string;
+  price_source?: string | null;
+  reject_reason?: string | null;
+  note?: string | null;
+}
+export const getAccount = () => request<AccountOut>("/account");
+const unwrap = <T,>(key: string) => (x: unknown): T[] =>
+  Array.isArray(x) ? (x as T[]) : x && typeof x === "object" && Array.isArray((x as Record<string, unknown>)[key]) ? ((x as Record<string, T[]>)[key]) : [];
+export const getPositions = () => request<unknown>("/positions").then(unwrap<BrokerPosition>("positions"));
+export const getOrders = (status?: string) =>
+  request<unknown>(`/orders${status ? `?status=${encodeURIComponent(status)}` : ""}`).then(unwrap<BrokerOrder>("orders"));
+
+// ---- options data layer (backend/app/options/router.py). Every number here is labelled: options-implied values are
+// risk-neutral estimates from listed prices, never measured probabilities.
+
+export interface OptionsMatch {
+  underlying: string; strike: number; expiry: string; direction: "above" | "below"; scale: number; level: number;
+  label: string; fallback: [string, number] | null; approx: boolean; date_source: string; notes: string[];
+}
+export interface OptionsEstimate {
+  prob: number | null; lo: number | null; hi: number | null; method: string | null; k_lo: number | null; k_hi: number | null;
+  expiry: string | null; expiry_gap_days: number | null; expiry_gap_ok: boolean; delta: number | null; iv: number | null;
+  structure_mid?: number | null; notes: string[];
+}
+export interface OptionsImpliedOut {
+  label: string;
+  market: { source: string | null; id: string | null; question: string | null; end_date: string | null; yes_price: number | null; origin: string | null };
+  supported: boolean;
+  available: boolean;
+  reason?: string | null;
+  match?: OptionsMatch;
+  underlying_used?: string;
+  strike_used?: number;
+  approx?: boolean;
+  notes?: string[];
+  estimate?: OptionsEstimate;
+  pm_yes_price?: number | null;
+  pm_minus_option?: number | null;
+  spot?: number | null;
+  freshness?: Record<string, unknown>;
+}
+export interface OptionRow {
+  ticker: string; bid: number | null; ask: number | null; mid: number | null; mark_source: string | null;
+  iv: number | null; delta: number | null; open_interest: number | null; volume: number | null; updated_ns: number | null;
+}
+export interface OptionsChainOut {
+  ticker: string;
+  label: string;
+  window: { expiry_from: string; expiry_to: string; strike_min: number | null; strike_max: number | null };
+  available: boolean;
+  reason: string | null;
+  spot?: number | null;
+  n_contracts?: number;
+  expiries: { expiry: string; strikes: { strike: number; call: OptionRow | null; put: OptionRow | null }[] }[];
+  freshness?: Record<string, unknown>;
+}
+export interface OptionsEightKOut {
+  ticker: string;
+  as_of?: string;
+  score: number | null;
+  coverage: "in_sample" | "live" | null;
+  available: boolean;
+  source: string;
+  label: string;
+  [k: string]: unknown;
+}
+const qs = (o: Record<string, string | number | undefined | null>) =>
+  Object.entries(o).filter(([, v]) => v != null && v !== "").map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`).join("&");
+export const getOptionsImplied = (p: { market_source?: string; market_id?: string; question?: string; end_date?: string }) =>
+  request<OptionsImpliedOut>(`/options/implied?${qs(p)}`);
+export const getOptionsChain = (p: { ticker: string; expiry_from?: string; expiry_to?: string; strike_min?: number; strike_max?: number }) =>
+  request<OptionsChainOut>(`/options/chain?${qs(p)}`);
+export const getOptionsEightK = (ticker: string, as_of?: string) =>
+  request<OptionsEightKOut>(`/options/eightk?${qs({ ticker, as_of })}`);
+
+// ---- closed-market mode (backend app/closed/router.py, staged.py, opportunity_routes.py). The evidence gate is the
+// backend's: a gap is "validated" only for a market whose own out-of-sample record passes; the UI never upgrades it.
+
+export const getSession = (at?: string) => request<SessionView>(`/session${at ? `?at=${encodeURIComponent(at)}` : ""}`);
+export interface ExpectedGapOut {
+  market_source: string; market_id: string; ticker: string;
+  session: SessionView; closure: ClosureView & Record<string, unknown>;
+  /** The gap service's names (expected_gap_bp, band_bp, n_closures, label) plus validated / status / evidence. */
+  expected_gap: Record<string, unknown>;
+  evidence: { validated: boolean; status: string; market: string | null; evidence: string };
+  move_source: "what_if" | "history_seed" | "tracker";
+}
+export const getExpectedGap = (p: { market_source: string; market_id: string; ticker?: string; direction?: Direction; token_id?: string | null }) =>
+  request<ExpectedGapOut>(`/closed/expected-gap?${qs({ ...p, token_id: p.token_id ?? undefined })}`);
+export interface ClosedEvidenceOut extends ClosedLabels {
+  rule?: string; validated_markets: string[];
+  market?: { validated: boolean; status: string; market: string | null; evidence: string };
+}
+export const getClosedEvidence = (p: { market_source?: string; market_id?: string; token_id?: string | null } = {}) =>
+  request<ClosedEvidenceOut>(`/closed/evidence${Object.keys(p).length ? `?${qs({ ...p, token_id: p.token_id ?? undefined })}` : ""}`);
+export interface StagedListOut { orders: StagedOrder[]; broker: { name: string | null; extended_hours: boolean }; note: string }
+export const listStaged = (p: { bridge_id?: string; proposal_id?: string } = {}) =>
+  request<StagedListOut>(`/staged${Object.keys(p).length ? `?${qs(p)}` : ""}`);
+/** Explicit user action only: approves one staged plan (hedge B) at the quantity the user saw. An unapproved plan
+ *  resizes with the gap; if it changed since it was rendered the backend refuses (409 PLAN_CHANGED). */
+export const approveStaged = (id: string, qtySeen: number) =>
+  post<StagedOrder>(`/staged/${encodeURIComponent(id)}/approve`, { qty: qtySeen });
+export const cancelStaged = (id: string) => request<StagedOrder>(`/staged/${encodeURIComponent(id)}`, { method: "DELETE" });
+export interface ClosedOpportunityOut {
+  label: string;
+  research: { id: string; status: string; verdict?: string | null; supports_claim: boolean };
+  supported: boolean;
+  display: "research_supported" | "estimate" | "hidden";
+  snapshots: unknown[];
+}
+export const getClosedOpportunity = () => request<ClosedOpportunityOut>("/closed/opportunity");

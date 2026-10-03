@@ -1,0 +1,7 @@
+{
+ "source": "polymarket",
+ "id": "4620900",
+ "token_id": "834988939366537589681339435844742816680296103724655311351481456389958777625",
+ "question": "Another Fed rate hike in 2026?",
+ "provenance": "gamma-api.polymarket.com/markets/4620900 (clobTokenIds[0]); recorded 2026-10-03 with scripts/history_with_equity.py"
+}

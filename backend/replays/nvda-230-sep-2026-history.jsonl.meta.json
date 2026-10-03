@@ -1,0 +1,69 @@
+{
+ "source": "polymarket",
+ "id": "3961215",
+ "token_id": "19137250086147356524889435600121720329083521006343492236589155785492743914975",
+ "question": "Will NVIDIA (NVDA) close above $230 end of September?",
+ "end_date": "2026-09-30T20:00:00Z",
+ "equity": "NVDA",
+ "rows": 353,
+ "span": [
+  "2026-09-16T04:00:15Z",
+  "2026-09-30T20:00:20Z"
+ ],
+ "provenance": "gamma-api.polymarket.com/markets/3961215 (clobTokenIds[0]); CLOB prices-history (hourly mid); Massive hourly bars (NVDA, option legs); recorded 2026-10-03 with scripts/history_with_equity.py --options",
+ "options": {
+  "underlying": "NVDA",
+  "strike": 230.0,
+  "direction": "above",
+  "kind": "call_spread",
+  "expiry": "2026-09-30",
+  "expiry_gap_days": 0,
+  "k_lo": 227.5,
+  "k_hi": 232.5,
+  "width": 5.0,
+  "legs": [
+   {
+    "sign": 1,
+    "ticker": "O:NVDA260930C00227500",
+    "strike": 227.5,
+    "kind": "call"
+   },
+   {
+    "sign": -1,
+    "ticker": "O:NVDA260930C00232500",
+    "strike": 232.5,
+    "kind": "call"
+   }
+  ],
+  "listing": "Massive /v3/reference/options/contracts as of 2026-09-16 (point in time)",
+  "match": {
+   "underlying": "NVDA",
+   "strike": 230.0,
+   "expiry": "2026-09-30",
+   "direction": "above",
+   "scale": 1.0,
+   "level": 230.0,
+   "label": "Nvidia",
+   "fallback": null,
+   "approx": false,
+   "date_source": "question",
+   "notes": []
+  },
+  "as_of": "2026-09-16",
+  "settlement": {
+   "underlying_close": 228.38,
+   "source": "Massive /v1/open-close (official close)",
+   "rows": 1,
+   "rule": "each leg at intrinsic value from the underlying's official close on the expiry date"
+  },
+  "n_with_options": 66,
+  "n_with_iv": 66,
+  "n_unsynced_legs": 0,
+  "n_off_session": 277,
+  "leg_bars": {
+   "O:NVDA260930C00227500": 77,
+   "O:NVDA260930C00232500": 79
+  },
+  "counts_over_rows": 353
+ }
+}

@@ -28,6 +28,9 @@ class Market(BaseModel):
     end_date: str | None = None
     url: str | None = None
     token_id: str | None = None
+    # The name of the backend's recording of this market (replay index + sidecar), else None. A resolved market with a
+    # recording is still worth listing: its replay (and, with option columns, the Opportunity division) runs offline.
+    recorded: str | None = None
 
 
 class SearchOut(BaseModel):
@@ -37,7 +40,56 @@ class SearchOut(BaseModel):
 
 
 DATA = Path(__file__).parent / "data"
+REPLAYS = Path(__file__).resolve().parents[1] / "replays"
 OFFLINE_NOTE = "offline: cached market list"
+
+
+def recorded_file(source: str, mid: str, token_id: str | None = None, data_dir: Path = DATA,
+                  replays: Path = REPLAYS) -> str | None:
+    """The file name of the replay index's recording of this market when the file exists and its sidecar names this
+    market, else None."""
+    try:
+        index = json.loads((data_dir / "replay_index.json").read_text())
+    except (OSError, ValueError):
+        return None
+    name = index.get(f"{source}:{mid}") or (index.get(f"token:{token_id}") if token_id else None)
+    if not name or "/" in name or ".." in name or not (replays / name).is_file():
+        return None
+    try:
+        meta = json.loads((replays / f"{name}.meta.json").read_text())
+    except (OSError, ValueError):
+        return None
+    ok = meta.get("source") == source and (str(meta.get("id")) == str(mid) or (token_id and meta.get("token_id") == token_id))
+    return name if ok else None
+
+
+def annotate_recorded(markets: list[Market], data_dir: Path = DATA, replays: Path = REPLAYS) -> list[Market]:
+    for m in markets:
+        if m.recorded is None:
+            m.recorded = recorded_file(m.source, m.id, m.token_id, data_dir, replays)
+    return markets
+
+
+def _recordings(data_dir: Path = DATA, replays: Path = REPLAYS) -> list[Market]:
+    """Markets the replay index points at, from their sidecars (question, end date, token id)."""
+    try:
+        index = json.loads((data_dir / "replay_index.json").read_text())
+    except (OSError, ValueError):
+        return []
+    out: dict[tuple[str, str], Market] = {}
+    for key, name in index.items():
+        src, _, mid = str(key).partition(":")
+        if src not in ("polymarket", "kalshi") or not mid or (src, mid) in out:
+            continue
+        try:
+            meta = json.loads((replays / f"{name}.meta.json").read_text())
+        except (OSError, ValueError, TypeError):
+            continue
+        if not meta.get("question") or str(meta.get("id")) != mid:
+            continue
+        out[(src, mid)] = Market(source=src, id=mid, question=str(meta["question"]), end_date=meta.get("end_date"),
+                                 token_id=meta.get("token_id"), recorded=name)
+    return list(out.values())
 
 
 def offline_search(q: str, data_dir: Path = DATA) -> list[Market]:
@@ -68,7 +120,10 @@ def offline_search(q: str, data_dir: Path = DATA) -> list[Market]:
             continue
         if all(w in question.lower() for w in words):
             found[(src, mid)] = Market(source=src, id=mid, question=question)
-    return sorted(found.values(), key=lambda m: m.volume_24h, reverse=True)
+    for mk in _recordings(data_dir):
+        if (mk.source, mk.id) not in found and all(w in mk.question.lower() for w in words):
+            found[(mk.source, mk.id)] = mk
+    return annotate_recorded(sorted(found.values(), key=lambda m: m.volume_24h, reverse=True), data_dir)
 
 
 class HistoryPoint(BaseModel):
@@ -205,7 +260,7 @@ async def markets_search(q: str, request: Request) -> SearchOut:
         if offline:
             return SearchOut(markets=offline, stale=True, note=OFFLINE_NOTE)
         raise HTTPException(502, "Both market sources are unavailable and nothing is cached.")
-    return SearchOut(markets=markets, stale=stale)
+    return SearchOut(markets=annotate_recorded([m.model_copy() for m in markets]), stale=stale)
 
 
 @router.get("/markets/{source}/{id}/history", response_model=list[HistoryPoint])

@@ -1,0 +1,7 @@
+{
+ "source": "polymarket",
+ "id": "4713962",
+ "token_id": "89545122959011212920997741675079804936499221450180070282016623810377956112511",
+ "question": "Russia military action against an EU country by December 31, 2026?",
+ "provenance": "gamma-api.polymarket.com/markets/4713962 (clobTokenIds[0]); recorded 2026-10-03 with scripts/history_with_equity.py"
+}

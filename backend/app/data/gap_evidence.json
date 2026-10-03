@@ -1,0 +1,277 @@
+{
+ "generated_at": "2026-10-03T17:21:31+00:00",
+ "generator": "backend/scripts/build_gap_evidence.py",
+ "rule": "validated = the market's own out-of-sample record passes R2's pre-set rule (research/gap_model/METHOD.md): sign accuracy > 50% with binomial p < 0.05 and slope of realized on predicted gap > 0 with permutation p < 0.05. Every other market's expected gap is an unvalidated estimate.",
+ "sources": {
+  "r2": "research/results/gap_model/tests.json",
+  "r1": "research/results/closed_hedge/results.json",
+  "r3": "research/results/open_options/stats.json",
+  "replication": "research/results/leadlag_replication/tests.json"
+ },
+ "r2_pooled": {
+  "verdict": "Accurate out of sample",
+  "panel_b_verdict": "Not accurate out of sample",
+  "panel_b_sign_rate": 0.5022779043280182,
+  "panel_b_slope": -0.22953105784897448
+ },
+ "markets": {
+  "will-donald-trump-win-the-2024-us-presidential-election": {
+   "label": "election",
+   "panel": "leadlag_closed (panel A, 380 unselected closures)",
+   "verdict": "Not accurate out of sample",
+   "validated": false,
+   "n_test": 96,
+   "sign_k": 44,
+   "sign_n": 84,
+   "sign_rate": 0.5238095238095238,
+   "sign_p": 0.7436441861052041,
+   "slope": 0.159047971498104,
+   "slope_hc3_t": 0.10706774581160694,
+   "slope_p_perm": 0.9406059394060594,
+   "token_id": "21742633143463906290569050155826241533067272736897614950488156847949938836455",
+   "question": "Trump wins the 2024 US presidential election"
+  },
+  "us-recession-in-2025": {
+   "label": "recession",
+   "panel": "leadlag_closed (panel A, 380 unselected closures)",
+   "verdict": "Accurate out of sample",
+   "validated": true,
+   "n_test": 231,
+   "sign_k": 97,
+   "sign_n": 151,
+   "sign_rate": 0.6423841059602649,
+   "sign_p": 0.0005846387710440845,
+   "slope": 1.2837384918352703,
+   "slope_hc3_t": 2.776331080181246,
+   "slope_p_perm": 0.00019998000199980003,
+   "token_id": "104173557214744537570424345347209544585775842950109756851652855913015295701992",
+   "question": "US recession in 2025",
+   "polymarket_id": "516710"
+  },
+  "israel-x-hamas-ceasefire-before-july-2025": {
+   "label": "israel-x-hamas-ceasefire-before-july-2025",
+   "panel": "leadlag_replication (panel B, 10 rule-selected markets)",
+   "verdict": "Not accurate out of sample",
+   "validated": false,
+   "n_test": 69,
+   "sign_k": 32,
+   "sign_n": 68,
+   "sign_rate": 0.47058823529411764,
+   "sign_p": 0.7163007601543369,
+   "slope": -0.6051075889860233,
+   "slope_hc3_t": -1.1641108402817482,
+   "slope_p_perm": 0.4654534546545345,
+   "token_id": "72188521528281725530941480263471548998870917094570869557644274272141820605818",
+   "question": "Israel x Hamas ceasefire before July?"
+  },
+  "israel-x-hamas-ceasefire-in-2024": {
+   "label": "israel-x-hamas-ceasefire-in-2024",
+   "panel": "leadlag_replication (panel B, 10 rule-selected markets)",
+   "verdict": "Not accurate out of sample",
+   "validated": false,
+   "n_test": 101,
+   "sign_k": 41,
+   "sign_n": 92,
+   "sign_rate": 0.44565217391304346,
+   "sign_p": 0.3481412903192065,
+   "slope": 0.11333147700246397,
+   "slope_hc3_t": 0.20691444929895106,
+   "slope_p_perm": 0.8067193280671933,
+   "token_id": "62176861686421375641008326482266482846235719710412165030881860547339969332278",
+   "question": "Israel x Hamas ceasefire in 2024?"
+  },
+  "russia-x-ukraine-ceasefire-in-2025": {
+   "label": "russia-x-ukraine-ceasefire-in-2025",
+   "panel": "leadlag_replication (panel B, 10 rule-selected markets)",
+   "verdict": "Not accurate out of sample",
+   "validated": false,
+   "n_test": 251,
+   "sign_k": 97,
+   "sign_n": 205,
+   "sign_rate": 0.47317073170731705,
+   "sign_p": 0.48500031468220856,
+   "slope": -4.537997690002934,
+   "slope_hc3_t": -1.59416910720612,
+   "slope_p_perm": 0.008799120087991202,
+   "token_id": "15974786252393396629980467963784550802583781222733347534844974829144359265969",
+   "question": "Russia x Ukraine ceasefire in 2025?"
+  },
+  "us-government-shutdown-before-2025": {
+   "label": "us-government-shutdown-before-2025",
+   "panel": "leadlag_replication (panel B, 10 rule-selected markets)",
+   "verdict": "Not accurate out of sample",
+   "validated": false,
+   "n_test": 79,
+   "sign_k": 36,
+   "sign_n": 59,
+   "sign_rate": 0.6101694915254238,
+   "sign_p": 0.11747735024505848,
+   "slope": -0.5958467741292531,
+   "slope_hc3_t": -2.0272621606152357,
+   "slope_p_perm": 0.0458954104589541,
+   "token_id": "25788984364015292223605977307142748201985724991469784186655292374059222006895",
+   "question": "Will there be a US Government shutdown?"
+  },
+  "us-x-venezuela-military-engagement-by-december-31-391-819-722-945-174-285-817-971-353-859-836-598-255-382-192-983": {
+   "label": "us-x-venezuela-military-engagement-by-december-31-391-819-722-945-174-285-817-971-353-859-836-598-255-382-192-983",
+   "panel": "leadlag_replication (panel B, 10 rule-selected markets)",
+   "verdict": "Not accurate out of sample",
+   "validated": false,
+   "n_test": 81,
+   "sign_k": 40,
+   "sign_n": 78,
+   "sign_rate": 0.5128205128205128,
+   "sign_p": 0.9099464518745243,
+   "slope": -2.393969866559008,
+   "slope_hc3_t": -2.64460462542176,
+   "slope_p_perm": 0.022097790220977902,
+   "token_id": "58194798786674267467235696472878300864943462064955274098210719743062794563955",
+   "question": "US x Venezuela military engagement by December 31?"
+  },
+  "will-a-nuclear-weapon-detonate-in-2024": {
+   "label": "will-a-nuclear-weapon-detonate-in-2024",
+   "panel": "leadlag_replication (panel B, 10 rule-selected markets)",
+   "verdict": "Not accurate out of sample",
+   "validated": false,
+   "n_test": 126,
+   "sign_k": 50,
+   "sign_n": 99,
+   "sign_rate": 0.5050505050505051,
+   "sign_p": 1.0,
+   "slope": 0.05327345083102385,
+   "slope_hc3_t": 0.29649483343462685,
+   "slope_p_perm": 0.8024197580241976,
+   "token_id": "39507026378610635127679995284600413015003619057436481380216352505046956765480",
+   "question": "Will a nuclear weapon detonate in 2024?"
+  },
+  "will-china-invade-taiwan-before-2027": {
+   "label": "will-china-invade-taiwan-before-2027",
+   "panel": "leadlag_replication (panel B, 10 rule-selected markets)",
+   "verdict": "Not accurate out of sample",
+   "validated": false,
+   "n_test": 110,
+   "sign_k": 26,
+   "sign_n": 45,
+   "sign_rate": 0.5777777777777777,
+   "sign_p": 0.3712980344710104,
+   "slope": 0.2295543660722862,
+   "slope_hc3_t": 0.08409899177316546,
+   "slope_p_perm": 0.9282071792820717,
+   "token_id": "94559586571241563470235664821564670251180951772614764383113614156422396181162",
+   "question": "Will China invade Taiwan by end of 2026?"
+  },
+  "will-china-invade-taiwan-in-2024": {
+   "label": "will-china-invade-taiwan-in-2024",
+   "panel": "leadlag_replication (panel B, 10 rule-selected markets)",
+   "verdict": "Not accurate out of sample",
+   "validated": false,
+   "n_test": 175,
+   "sign_k": 60,
+   "sign_n": 114,
+   "sign_rate": 0.5263157894736842,
+   "sign_p": 0.63976936864295,
+   "slope": 0.4471907023516628,
+   "slope_hc3_t": 0.9831740730580348,
+   "slope_p_perm": 0.3702629737026297,
+   "token_id": "104989418141902977318382721004248958955338712045027072570110453217161182408132",
+   "question": "Will China invade Taiwan in 2024?"
+  },
+  "will-israel-invade-syria-in-2024": {
+   "label": "will-israel-invade-syria-in-2024",
+   "panel": "leadlag_replication (panel B, 10 rule-selected markets)",
+   "verdict": "Not accurate out of sample",
+   "validated": false,
+   "n_test": 69,
+   "sign_k": 26,
+   "sign_n": 60,
+   "sign_rate": 0.43333333333333335,
+   "sign_p": 0.36629400670329104,
+   "slope": -0.23814064023930354,
+   "slope_hc3_t": -0.1988018642071829,
+   "slope_p_perm": 0.43855614438556145,
+   "token_id": "78224102968377054781517098798255693327792151609889102854503491888040635713907",
+   "question": "Will Israel invade Syria in 2024?"
+  },
+  "will-the-supreme-court-rule-in-favor-of-trumps-tariffs": {
+   "label": "will-the-supreme-court-rule-in-favor-of-trumps-tariffs",
+   "panel": "leadlag_replication (panel B, 10 rule-selected markets)",
+   "verdict": "Not accurate out of sample",
+   "validated": false,
+   "n_test": 83,
+   "sign_k": 33,
+   "sign_n": 58,
+   "sign_rate": 0.5689655172413793,
+   "sign_p": 0.3581433018061379,
+   "slope": 0.6311741876397148,
+   "slope_hc3_t": 0.42520570628870513,
+   "slope_p_perm": 0.6104389561043896,
+   "token_id": "105826416199005342591038391498217708749113687972802625260881736773834354050519",
+   "question": "Supreme Court rules in favor of Trump's tariffs?"
+  }
+ },
+ "hedge_a": {
+  "verdict": "no evidence",
+  "n": 346,
+  "vr0": 0.04757713655252571,
+  "vr0_ci": [
+   -0.00804761710291845,
+   0.10011182273991326
+  ],
+  "vrs": 0.0046754586336128275,
+  "vrs_ci": [
+   -0.024575943683789583,
+   0.03268852458087568
+  ],
+  "replication_verdict": "increases variance",
+  "replication_vr0": -0.037931857879792696,
+  "replication_vr0_ci": [
+   -0.08186939582688409,
+   -0.009092853243185631
+  ]
+ },
+ "hedge_b": {
+  "verdict": "reduces the loss variance",
+  "n": 346,
+  "vr0": 0.11418149069379191,
+  "vr0_ci": [
+   0.05103980670541856,
+   0.18144875118153092
+  ],
+  "vrs": 0.06817244951816377,
+  "vrs_ci": [
+   0.00503076552979085,
+   0.13543971000590294
+  ],
+  "window": "09:30 to 10:00 ET",
+  "pre_market_variant": {
+   "verdict": "partial",
+   "vr0": 0.13210056811802162,
+   "vr0_ci": [
+    0.03335797423830426,
+    0.255436258540017
+   ]
+  }
+ },
+ "opportunity": {
+  "verdict": "NULL",
+  "n": 1535,
+  "closures": 44,
+  "catchup": 0.4410882872532038,
+  "catchup_ci": [
+   0.3260173444140659,
+   0.5688276729455658
+  ],
+  "net_gap_pt": 0.790587203905174,
+  "net_gap_ci_pt": [
+   -1.2097330782337867,
+   2.7822634150731287
+  ]
+ },
+ "overnight_gap_replication": {
+  "verdict": "does not replicate",
+  "slope_bp_per_pp": 0.626972278125735,
+  "p_perm": 0.12618738126187382,
+  "n": 1211,
+  "n_markets": 10
+ }
+}

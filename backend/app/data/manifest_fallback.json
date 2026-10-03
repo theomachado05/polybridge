@@ -1,0 +1,935 @@
+{
+ "version": "fallback-1",
+ "note": "Hand-written from spec section 3.2 for when neither the compiled hedgecore module nor engine/hedgecore/manifest.json is available. Not compiled: no latency numbers, no replay scores.",
+ "event_classes": [
+  "macro_fed",
+  "elections",
+  "tariffs_trade",
+  "geopolitics_energy",
+  "housing",
+  "fig",
+  "tech_regulation",
+  "crypto",
+  "corporate_8k",
+  "company_specific",
+  "unsupported"
+ ],
+ "divisions": [
+  "hedge",
+  "opportunity"
+ ],
+ "instruments": [
+  "equity",
+  "pred_yes",
+  "pred_no",
+  "option"
+ ],
+ "families": [
+  {
+   "id": "equity_delta_bridge",
+   "division": "hedge",
+   "event_classes": [
+    "all"
+   ],
+   "instruments": [
+    "equity"
+   ],
+   "blocks": [
+    "PMid",
+    "DeltaDp",
+    "Staleness",
+    "DeltaBridge",
+    "NoTradeBand",
+    "FeeGate",
+    "PositionCap"
+   ],
+   "params": [
+    {
+     "name": "coverage",
+     "min": 0.25,
+     "max": 1.0,
+     "grid": [
+      0.25,
+      0.5,
+      0.75,
+      1.0
+     ]
+    },
+    {
+     "name": "no_trade_band_shares",
+     "min": 0,
+     "max": 200,
+     "grid": [
+      0,
+      50,
+      200
+     ]
+    },
+    {
+     "name": "fee_gate_mult",
+     "min": 1.0,
+     "max": 2.0,
+     "grid": [
+      1.0,
+      2.0
+     ]
+    }
+   ],
+   "preset_count": 24,
+   "idea": "DeltaBridge on the adverse probability, fee-gated (today's engine, generalized)"
+  },
+  {
+   "id": "stress_lead_hedge",
+   "division": "hedge",
+   "event_classes": [
+    "macro_fed",
+    "geopolitics_energy",
+    "fig"
+   ],
+   "instruments": [
+    "equity"
+   ],
+   "blocks": [
+    "PMid",
+    "DeltaDp",
+    "EwmaVol",
+    "Sigma",
+    "DeltaBridge",
+    "PassiveAggressive",
+    "DrawdownKill"
+   ],
+   "params": [
+    {
+     "name": "stress_z",
+     "min": 1.5,
+     "max": 3.0,
+     "grid": [
+      1.5,
+      2.0,
+      3.0
+     ]
+    },
+    {
+     "name": "vol_halflife_ticks",
+     "min": 20,
+     "max": 240,
+     "grid": [
+      20,
+      60,
+      240
+     ]
+    },
+    {
+     "name": "coverage",
+     "min": 0.25,
+     "max": 1.0,
+     "grid": [
+      0.25,
+      0.5,
+      0.75,
+      1.0
+     ]
+    },
+    {
+     "name": "urgency",
+     "min": 0.0,
+     "max": 1.0,
+     "grid": [
+      0.0,
+      0.5,
+      1.0
+     ]
+    }
+   ],
+   "preset_count": 108,
+   "idea": "Hedge faster when the probability move is large versus EwmaVol (stress regime); passive otherwise"
+  },
+  {
+   "id": "book_imbalance_hedge",
+   "division": "hedge",
+   "event_classes": [
+    "all"
+   ],
+   "instruments": [
+    "equity"
+   ],
+   "blocks": [
+    "BookImbalance",
+    "Microprice",
+    "Depth",
+    "Spread",
+    "DeltaBridge",
+    "Cooldown"
+   ],
+   "params": [
+    {
+     "name": "imbalance_threshold",
+     "min": 0.2,
+     "max": 0.5,
+     "grid": [
+      0.2,
+      0.35,
+      0.5
+     ]
+    },
+    {
+     "name": "depth_levels",
+     "min": 1,
+     "max": 5,
+     "grid": [
+      1,
+      3,
+      5
+     ]
+    },
+    {
+     "name": "coverage",
+     "min": 0.25,
+     "max": 1.0,
+     "grid": [
+      0.25,
+      0.5,
+      0.75,
+      1.0
+     ]
+    }
+   ],
+   "preset_count": 36,
+   "idea": "Pre-hedge when the prediction-market book imbalance leads the mid"
+  },
+  {
+   "id": "poly_kalshi_spread",
+   "division": [
+    "hedge",
+    "opportunity"
+   ],
+   "event_classes": [
+    "all"
+   ],
+   "instruments": [
+    "pred_yes",
+    "pred_no"
+   ],
+   "blocks": [
+    "CrossVenueGap",
+    "Spread",
+    "FeeGate",
+    "VenueRouter",
+    "GapFlipKill",
+    "PositionCap"
+   ],
+   "params": [
+    {
+     "name": "min_gap",
+     "min": 0.01,
+     "max": 0.05,
+     "grid": [
+      0.01,
+      0.02,
+      0.03,
+      0.05
+     ]
+    },
+    {
+     "name": "max_contracts",
+     "min": 100,
+     "max": 1000,
+     "grid": [
+      100,
+      500,
+      1000
+     ]
+    },
+    {
+     "name": "cooldown_s",
+     "min": 5,
+     "max": 120,
+     "grid": [
+      5,
+      30,
+      120
+     ]
+    }
+   ],
+   "preset_count": 36,
+   "idea": "Trade the Polymarket-Kalshi gap net of fees",
+   "requires": [
+    "both_venues"
+   ]
+  },
+  {
+   "id": "no_bid_seller",
+   "division": "opportunity",
+   "event_classes": [
+    "all"
+   ],
+   "instruments": [
+    "pred_no"
+   ],
+   "blocks": [
+    "ImpliedProb",
+    "MeanRevertZ",
+    "Spread",
+    "KellyCapped",
+    "PassiveAggressive",
+    "DailyLossCap"
+   ],
+   "params": [
+    {
+     "name": "edge_min",
+     "min": 0.02,
+     "max": 0.06,
+     "grid": [
+      0.02,
+      0.04,
+      0.06
+     ]
+    },
+    {
+     "name": "kelly_fraction",
+     "min": 0.1,
+     "max": 0.5,
+     "grid": [
+      0.1,
+      0.25,
+      0.5
+     ]
+    },
+    {
+     "name": "max_contracts",
+     "min": 100,
+     "max": 500,
+     "grid": [
+      100,
+      500
+     ]
+    }
+   ],
+   "preset_count": 18,
+   "idea": "Sell into rich NO bids when the implied probability is overstated versus fair"
+  },
+  {
+   "id": "housing_rates",
+   "division": "hedge",
+   "event_classes": [
+    "housing"
+   ],
+   "instruments": [
+    "equity"
+   ],
+   "blocks": [
+    "PMid",
+    "DeltaDp",
+    "LinearExposure",
+    "NoTradeBand",
+    "FeeGate",
+    "NotionalCap"
+   ],
+   "params": [
+    {
+     "name": "beta",
+     "min": 0.5,
+     "max": 1.5,
+     "grid": [
+      0.5,
+      1.0,
+      1.5
+     ]
+    },
+    {
+     "name": "coverage",
+     "min": 0.25,
+     "max": 1.0,
+     "grid": [
+      0.25,
+      0.5,
+      0.75,
+      1.0
+     ]
+    },
+    {
+     "name": "no_trade_band_shares",
+     "min": 0,
+     "max": 200,
+     "grid": [
+      0,
+      50,
+      200
+     ]
+    }
+   ],
+   "preset_count": 36,
+   "idea": "Mortgage-rate and home-price questions to rate-sensitive equities",
+   "proxies": [
+    "ITB",
+    "XHB",
+    "VNQ"
+   ]
+  },
+  {
+   "id": "fig_stress",
+   "division": "hedge",
+   "event_classes": [
+    "fig"
+   ],
+   "instruments": [
+    "equity"
+   ],
+   "blocks": [
+    "PMid",
+    "DeltaDp",
+    "EwmaVol",
+    "ConvexExposure",
+    "Sigma",
+    "DrawdownKill"
+   ],
+   "params": [
+    {
+     "name": "convexity",
+     "min": 1.0,
+     "max": 2.0,
+     "grid": [
+      1.0,
+      1.5,
+      2.0
+     ]
+    },
+    {
+     "name": "stress_z",
+     "min": 1.5,
+     "max": 2.5,
+     "grid": [
+      1.5,
+      2.5
+     ]
+    },
+    {
+     "name": "coverage",
+     "min": 0.25,
+     "max": 1.0,
+     "grid": [
+      0.25,
+      0.5,
+      0.75,
+      1.0
+     ]
+    }
+   ],
+   "preset_count": 24,
+   "idea": "Bank-stress, Fed and regulation questions to FIG names",
+   "proxies": [
+    "KRE",
+    "XLF",
+    "KBE"
+   ]
+  },
+  {
+   "id": "macro_fed_hedge",
+   "division": "hedge",
+   "event_classes": [
+    "macro_fed"
+   ],
+   "instruments": [
+    "equity"
+   ],
+   "blocks": [
+    "PMid",
+    "DeltaDp",
+    "Session",
+    "DeltaBridge",
+    "NoTradeBand",
+    "FeeGate",
+    "PositionCap"
+   ],
+   "params": [
+    {
+     "name": "beta",
+     "min": 0.5,
+     "max": 1.5,
+     "grid": [
+      0.5,
+      1.0,
+      1.5
+     ]
+    },
+    {
+     "name": "coverage",
+     "min": 0.25,
+     "max": 1.0,
+     "grid": [
+      0.25,
+      0.5,
+      0.75,
+      1.0
+     ]
+    },
+    {
+     "name": "no_trade_band_shares",
+     "min": 0,
+     "max": 200,
+     "grid": [
+      0,
+      50,
+      200
+     ]
+    }
+   ],
+   "preset_count": 36,
+   "idea": "Fed, CPI and recession odds to an index hedge",
+   "proxies": [
+    "SPY",
+    "IWM",
+    "TLT"
+   ]
+  },
+  {
+   "id": "election_hedge",
+   "division": "hedge",
+   "event_classes": [
+    "elections"
+   ],
+   "instruments": [
+    "equity"
+   ],
+   "blocks": [
+    "PMid",
+    "EventWindow",
+    "LinearExposure",
+    "Slicer",
+    "NotionalCap"
+   ],
+   "params": [
+    {
+     "name": "tilt",
+     "min": 0.25,
+     "max": 1.0,
+     "grid": [
+      0.25,
+      0.5,
+      1.0
+     ]
+    },
+    {
+     "name": "coverage",
+     "min": 0.25,
+     "max": 1.0,
+     "grid": [
+      0.25,
+      0.5,
+      0.75,
+      1.0
+     ]
+    },
+    {
+     "name": "slice_shares",
+     "min": 100,
+     "max": 500,
+     "grid": [
+      100,
+      500
+     ]
+    }
+   ],
+   "preset_count": 24,
+   "idea": "Election odds to sector tilts",
+   "proxies": [
+    "XLE",
+    "XLF",
+    "XLV",
+    "ITA"
+   ]
+  },
+  {
+   "id": "tariff_trade_hedge",
+   "division": "hedge",
+   "event_classes": [
+    "tariffs_trade"
+   ],
+   "instruments": [
+    "equity"
+   ],
+   "blocks": [
+    "PMid",
+    "DeltaDp",
+    "LinearExposure",
+    "NoTradeBand",
+    "FeeGate"
+   ],
+   "params": [
+    {
+     "name": "beta",
+     "min": 0.5,
+     "max": 1.5,
+     "grid": [
+      0.5,
+      1.0,
+      1.5
+     ]
+    },
+    {
+     "name": "coverage",
+     "min": 0.25,
+     "max": 1.0,
+     "grid": [
+      0.25,
+      0.5,
+      0.75,
+      1.0
+     ]
+    },
+    {
+     "name": "no_trade_band_shares",
+     "min": 0,
+     "max": 200,
+     "grid": [
+      0,
+      50,
+      200
+     ]
+    }
+   ],
+   "preset_count": 36,
+   "idea": "Tariff odds to trade-exposed equities",
+   "proxies": [
+    "XRT",
+    "EEM",
+    "FXI"
+   ]
+  },
+  {
+   "id": "energy_geo_hedge",
+   "division": "hedge",
+   "event_classes": [
+    "geopolitics_energy"
+   ],
+   "instruments": [
+    "equity"
+   ],
+   "blocks": [
+    "PMid",
+    "DeltaDp",
+    "EwmaVol",
+    "ConvexExposure",
+    "PassiveAggressive",
+    "DrawdownKill"
+   ],
+   "params": [
+    {
+     "name": "convexity",
+     "min": 1.0,
+     "max": 2.0,
+     "grid": [
+      1.0,
+      1.5,
+      2.0
+     ]
+    },
+    {
+     "name": "coverage",
+     "min": 0.25,
+     "max": 1.0,
+     "grid": [
+      0.25,
+      0.5,
+      0.75,
+      1.0
+     ]
+    },
+    {
+     "name": "urgency",
+     "min": 0.0,
+     "max": 1.0,
+     "grid": [
+      0.0,
+      1.0
+     ]
+    }
+   ],
+   "preset_count": 24,
+   "idea": "Conflict and OPEC odds to energy",
+   "proxies": [
+    "XLE",
+    "USO"
+   ]
+  },
+  {
+   "id": "crypto_reg_hedge",
+   "division": "hedge",
+   "event_classes": [
+    "crypto"
+   ],
+   "instruments": [
+    "equity"
+   ],
+   "blocks": [
+    "PMid",
+    "DeltaDp",
+    "EwmaVol",
+    "VolTarget",
+    "NoTradeBand",
+    "DailyLossCap"
+   ],
+   "params": [
+    {
+     "name": "vol_target",
+     "min": 0.2,
+     "max": 0.6,
+     "grid": [
+      0.2,
+      0.4,
+      0.6
+     ]
+    },
+    {
+     "name": "coverage",
+     "min": 0.25,
+     "max": 1.0,
+     "grid": [
+      0.25,
+      0.5,
+      0.75,
+      1.0
+     ]
+    },
+    {
+     "name": "no_trade_band_shares",
+     "min": 0,
+     "max": 200,
+     "grid": [
+      0,
+      50,
+      200
+     ]
+    }
+   ],
+   "preset_count": 36,
+   "idea": "Crypto regulation and ETF odds to crypto equities",
+   "proxies": [
+    "COIN",
+    "MSTR"
+   ]
+  },
+  {
+   "id": "tech_reg_hedge",
+   "division": "hedge",
+   "event_classes": [
+    "tech_regulation"
+   ],
+   "instruments": [
+    "equity"
+   ],
+   "blocks": [
+    "PMid",
+    "DeltaDp",
+    "LinearExposure",
+    "NoTradeBand",
+    "FeeGate",
+    "PositionCap"
+   ],
+   "params": [
+    {
+     "name": "beta",
+     "min": 0.5,
+     "max": 1.5,
+     "grid": [
+      0.5,
+      1.0,
+      1.5
+     ]
+    },
+    {
+     "name": "coverage",
+     "min": 0.25,
+     "max": 1.0,
+     "grid": [
+      0.25,
+      0.5,
+      0.75,
+      1.0
+     ]
+    },
+    {
+     "name": "no_trade_band_shares",
+     "min": 0,
+     "max": 200,
+     "grid": [
+      0,
+      50,
+      200
+     ]
+    }
+   ],
+   "preset_count": 36,
+   "idea": "Antitrust and AI-regulation odds to the named companies",
+   "proxies": [
+    "QQQ",
+    "GOOGL",
+    "META",
+    "AAPL",
+    "MSFT",
+    "NVDA"
+   ]
+  },
+  {
+   "id": "binary_vs_spread_arb",
+   "division": "opportunity",
+   "event_classes": [
+    "all"
+   ],
+   "instruments": [
+    "option",
+    "pred_yes"
+   ],
+   "blocks": [
+    "OptionImpliedProb",
+    "PMvsOptionGap",
+    "Spread",
+    "FeeGate",
+    "FixedNotional",
+    "GapFlipKill"
+   ],
+   "params": [
+    {
+     "name": "min_gap",
+     "min": 0.03,
+     "max": 0.08,
+     "grid": [
+      0.03,
+      0.05,
+      0.08
+     ]
+    },
+    {
+     "name": "notional_usd",
+     "min": 5000,
+     "max": 20000,
+     "grid": [
+      5000,
+      20000
+     ]
+    },
+    {
+     "name": "max_spread",
+     "min": 0.05,
+     "max": 0.1,
+     "grid": [
+      0.05,
+      0.1
+     ]
+    }
+   ],
+   "preset_count": 12,
+   "idea": "Prediction-market probability versus the option-implied probability of the same threshold",
+   "requires": [
+    "listed_options"
+   ]
+  },
+  {
+   "id": "vol_vs_pm_move",
+   "division": "opportunity",
+   "event_classes": [
+    "all"
+   ],
+   "instruments": [
+    "option"
+   ],
+   "blocks": [
+    "DeltaDp",
+    "EwmaVol",
+    "PMvsOptionGap",
+    "Sigma",
+    "FixedNotional",
+    "DrawdownKill"
+   ],
+   "params": [
+    {
+     "name": "move_z",
+     "min": 1.5,
+     "max": 3.0,
+     "grid": [
+      1.5,
+      2.0,
+      3.0
+     ]
+    },
+    {
+     "name": "iv_lag_ticks",
+     "min": 5,
+     "max": 20,
+     "grid": [
+      5,
+      20
+     ]
+    },
+    {
+     "name": "notional_usd",
+     "min": 5000,
+     "max": 20000,
+     "grid": [
+      5000,
+      20000
+     ]
+    }
+   ],
+   "preset_count": 12,
+   "idea": "Prediction-market repricing without an implied-volatility move: buy or sell vol",
+   "requires": [
+    "listed_options"
+   ]
+  },
+  {
+   "id": "eightk_opportunity",
+   "division": "opportunity",
+   "event_classes": [
+    "corporate_8k"
+   ],
+   "instruments": [
+    "option"
+   ],
+   "blocks": [
+    "EightKScore",
+    "PMid",
+    "Spread",
+    "KellyCapped",
+    "IcebergCap",
+    "DailyLossCap"
+   ],
+   "params": [
+    {
+     "name": "score_min",
+     "min": 0.3,
+     "max": 0.7,
+     "grid": [
+      0.3,
+      0.5,
+      0.7
+     ]
+    },
+    {
+     "name": "kelly_fraction",
+     "min": 0.1,
+     "max": 0.25,
+     "grid": [
+      0.1,
+      0.25
+     ]
+    },
+    {
+     "name": "max_contracts",
+     "min": 5,
+     "max": 20,
+     "grid": [
+      5,
+      20
+     ]
+    }
+   ],
+   "preset_count": 12,
+   "idea": "8-K tag plus prediction-market signal to an option trade (cash-secured put or put spread)",
+   "requires": [
+    "listed_options"
+   ]
+  }
+ ],
+ "total_presets": 510
+}

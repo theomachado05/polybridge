@@ -17,6 +17,7 @@ MAX_LINES = 500  # bound on SSE lines read
 def client(tmp_path, monkeypatch):
     f = tmp_path / "fed.jsonl"
     f.write_text("".join(json.dumps({"ts_ns": 1_000_000_000 * (i + 1), "p": p}) + "\n" for i, p in enumerate(PS)))
+    f.with_name("fed.jsonl.meta.json").write_text(json.dumps({"source": "polymarket", "id": "2589813"}))
     monkeypatch.setenv("POLYBRIDGE_REPLAY_PATH", str(f))
     monkeypatch.setenv("POLYBRIDGE_REPLAY_SPEED", "0")  # no sleeping between ticks
     with TestClient(create_app()) as c:
@@ -63,5 +64,5 @@ def test_market_event_propose_approve_bridge_stream(client):
     assert s["ticks"] == 30 and s["orders"] >= 1 and s["status"] == "finished"
     assert sum(s["reasons"].values()) == 30
 
-    again = client.post("/bridges", json=body)
-    assert again.status_code == 200 and again.json()["bridge_id"] == bid
+    again = client.post("/bridges", json=body)  # the bridge finished: a re-POST starts a fresh run, never the old one
+    assert again.status_code == 201 and again.json()["bridge_id"] != bid

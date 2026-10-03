@@ -92,6 +92,17 @@ def test_seeded_portfolio_shows_fed_exposure_offline(monkeypatch):
     assert d["stale"] is True and d["total_includes_fuzzy"] is False
 
 
+def test_seeded_portfolio_pins_the_demo_market_offline(monkeypatch):
+    """The demo holding: TLT is pinned to "Another Fed rate hike in 2026?" (the default demo market, which has its own
+    replay), mapped TLT down_on_yes 2.5%. Resolved from the bundled market list when both market sources are down."""
+    c = make(StubClient(market=rf.FakeMarket({"TLT": 80.0})), monkeypatch, http_fail=True)
+    d = c.get("/portfolio").json()
+    tlt = next(h for h in d["holdings"] if h["ticker"] == "TLT")
+    assert tlt["shares"] == 1000
+    ex = tlt["exposure"]
+    assert ex["market"]["id"] == "4620900" and ex["direction"] == "down_on_yes" and ex["impact_pct"] == 2.5
+
+
 def test_total_flags_fuzzy_mappings(tmp_path, monkeypatch):
     lib = {"items": {"polymarket:Apple": {"question": "Apple q", "mappings": [
         {"ticker": "AAPL", "direction": "down_on_yes", "impact_pct": 2.0, "rationale": "r"}]}}}

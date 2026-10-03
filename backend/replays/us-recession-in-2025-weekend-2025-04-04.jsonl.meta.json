@@ -1,0 +1,44 @@
+{
+ "source": "polymarket",
+ "id": "516710",
+ "token_id": "104173557214744537570424345347209544585775842950109756851652855913015295701992",
+ "question": "US recession in 2025?",
+ "end_date": null,
+ "equity": "SPY",
+ "rows": 799,
+ "span": [
+  "2025-04-04T19:30:05Z",
+  "2025-04-07T14:00:05Z"
+ ],
+ "provenance": "gamma-api.polymarket.com/markets/516710 (clobTokenIds[0]); CLOB prices-history startTs/endTs at 5-minute fidelity (YES mid); Massive 5-minute SPY bars (extended hours included), each joined only once it had ended; recorded 2026-10-03 with scripts/history_with_equity.py --start/--end",
+ "window": {
+  "start": "2025-04-04T19:30:00Z",
+  "end": "2025-04-07T14:01:00Z",
+  "fidelity_min": 5,
+  "bar_minutes": 5
+ },
+ "weekend": {
+  "rule": "largest adverse (equity-bearish) oriented PM move over a weekend closure of a market whose expected-gap model is validated out of sample (gap_evidence.json); research/results/leadlag_closed/closures_all.csv; ties to the most recent (scripts/record_weekend.py)",
+  "closure": "2025-04-04",
+  "open_day": "2025-04-07",
+  "sign": -1,
+  "research_pm_close_pct": 55.50000000000001,
+  "research_pm_open_pct": 63.5,
+  "research_dpm_pp": 7.999999999999993,
+  "research_gap_bp": -322.65084075173144,
+  "research_ret30_bp": 132.87270794578808,
+  "news": true,
+  "event": "Weekend tariff turmoil, Sunday take-medicine remarks",
+  "n_adverse_weekends": 9,
+  "validated_oos": {
+   "verdict": "Accurate out of sample",
+   "sign_k": 97,
+   "sign_n": 151,
+   "sign_rate": 0.6423841059602649,
+   "slope": 1.2837384918352703,
+   "slope_p_perm": 0.00019998000199980003
+  },
+  "gap_rate_bp_per_pp": 10.732000656751016,
+  "gap_rate_n": 231
+ }
+}

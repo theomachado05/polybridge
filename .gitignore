@@ -18,6 +18,8 @@ next-env.d.ts
 .vercel
 
 # api
+backend/.sim_account.json
+backend/.closed_opportunity.json
 __pycache__/
 *.pyc
 .venv/
@@ -42,3 +44,9 @@ research/.venv/
 *.egg-info/
 engine/hedgecore/build/
 .ipynb_checkpoints/
+
+# precompute logs: the summary log is committed, raw caches are not
+backend/data_logs/raw/
+backend/data_logs/*.cache
+backend/data_logs/*.jsonl
+.claude/worktrees/
