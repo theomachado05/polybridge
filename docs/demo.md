@@ -45,7 +45,7 @@ Close the demo on the Bridge or Library screen. About 90 seconds; the replay is 
 Two things to know before you say "and here is the account":
 
 - A replay bridge trades in a **replay sandbox** by default, so the Portfolio's "Recent fills" and positions stay empty after this demo. The Bridge screen's trade log is where its fills show. Orders reach the account (`GET /account`, `/positions`, `/orders`) only from a live bridge, or a replay started with `replay_to_account` (that is what `make e2e` does, to prove the broker path).
-- Replay fills are priced at today's market from Massive, not at the replayed time; with no network they use the recorded replay price instead. The trade log says which.
+- Replay fills are priced at today's market from Massive, not at the replayed time; with no network or no Massive key they use the recorded replay price instead. The trade log says which.
 
 ### Optional: voice
 
@@ -62,7 +62,7 @@ If `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` is set and the tunnel is up (see `docs/voic
 
 - [ ] `cd backend && uv sync --locked --group engine` (builds hedgecore); `uv run python -c "import hedgecore"` works.
 - [ ] `cd web && pnpm install`.
-- [ ] `.env` in the repo root has `MASSIVE_API_KEY` (replay fills need a price; see fallbacks). `GEMINI_API_KEY` is optional.
+- [ ] `.env` in the repo root has `MASSIVE_API_KEY` (live equity quotes for fills and the Portfolio exposure; see fallbacks). `GEMINI_API_KEY` is optional.
 - [ ] Ports 8000 and 3000 free: `lsof -i :8000 -i :3000`.
 - [ ] Smoke test: `make e2e-api` (about 75 s, uses a throwaway simulated account, stops what it starts). It must print `RESULT   : PASS`.
 - [ ] `make dev`; `curl localhost:8000/health` returns ok; open http://localhost:3000.
@@ -77,8 +77,8 @@ If `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` is set and the tunnel is up (see `docs/voic
 | **Wi-Fi off** (no network at all) | Market search uses the bundled list ("offline: cached market list"); `/map` is precomputed; the fit tunes on the recorded replay file (tag "replay ticks" instead of "real price history"); the bridge replays fine and the decisions, gates and reasons all work. Orders fill in the sandbox at the **recorded price** from the replay file (each fill is marked "recorded price"), so the hedge builds as usual. `make e2e` checks this with `--offline` (26/26 pass). | Prefer a phone hotspot. If offline, say the fills are priced from the recorded replay, not a live quote. |
 | **No Gemini key** | Rules-based classifier and a template rationale; the tag says "RULES-BASED FIT". The family and preset come from the same deterministic replay tuning. | Say "keyword rules today; Gemini refines the classification and the wording when a key is set". |
 | **No Webull key** | The account is the simulator. The Connect screen shows the Webull card as a saved preference only, and the account tag reads "Simulated account". | Say "simulated account; Webull paper takes over when its keys are set". Never imply a real broker. |
-| **No Massive key** | No live equity quote; replay fills are refused as above. The fit still runs on recorded bars. | Put the key in `.env` before the talk. |
-| **Polymarket slow or down** | Search falls back to the bundled list; the fit uses the replay file; the bridge replay is unaffected. | As Wi-Fi off, but fills still work if Massive is reachable. |
+| **No Massive key** | No live equity quote; replay fills use the recorded price from the replay (each fill is marked "recorded price"), and the Portfolio exposure is empty (no spot price). The fit still runs on recorded bars. | Put the key in `.env` before the talk. |
+| **Polymarket slow or down** | Search falls back to the bundled list; the fit uses the replay file; the bridge replay is unaffected. | As Wi-Fi off; fills use a Massive quote if Massive is reachable, else the recorded price. |
 | **Backend down** | The UI says "No engine bridge on the backend ... runs the prototype's simulator" and runs a labelled demo bridge. | Say it is the prototype simulator; restart the backend. |
 | **Replay file missing** | The bridge falls back to the live Polymarket book. | Check `ls replays backend/replays`; `make dev` points at `backend/replays/fed-hike-25bps-oct-2026-history.jsonl`. |
 | **Chrome or the screenshots hang** | The e2e script always kills Chrome on a deadline (the page's SSE connection never lets it exit by itself). | Re-run `make e2e`; screenshots land in `web/e2e/screens/`. |

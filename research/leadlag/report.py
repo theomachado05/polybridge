@@ -348,7 +348,7 @@ def write_summary(results: list[EventResult], failed: list[tuple[Event, str]], t
     eq_ext = sum(1 for r in eq_first if _session(r.primary.eq_move.time) == "ext")
     L.append(f"Anchor check (descriptive): of the {len(pm_first)} PM-first events, {_pre(pm_first, 'pm')} have the first PM move before the event anchor "
              f"(so it cannot be a reaction to the event); of the {len(eq_first)} equity-first events, {_pre(eq_first, 'eq')} have the first equity move "
-             f"before the anchor and {eq_ext} {"falls" if eq_ext == 1 else "fall"} in extended hours. A move before the anchor is not information about the event, so the lead count "
+             f"before the anchor and {eq_ext} {'falls' if eq_ext == 1 else 'fall'} in extended hours. A move before the anchor is not information about the event, so the lead count "
              f"for those events says little about who reacts first to news. Equity moves in extended hours, or right at the 16:00 ET close or the "
              f"04:00/20:00 ET session seams, can reflect thin trading or the session boundary rather than the event.\n")
     L.append("## Events where equities moved first (kept, as required)\n")

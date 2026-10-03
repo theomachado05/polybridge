@@ -25,7 +25,7 @@ make dev                        # backend :8000 (offline replay) + web :3000, Ct
 # open http://localhost:3000  (not 127.0.0.1: the backend's CORS allows localhost only)
 ```
 
-`make dev` replays a month of real Polymarket history for the Fed October 2026 market at 36000x (about 72 seconds), so the click path does not depend on Polymarket being reachable (replay fills still need a Massive price; see the fallbacks in [docs/demo.md](docs/demo.md#4-fallbacks-what-each-failure-looks-like-and-what-to-say)). `make dev-live` starts bridges on the live Polymarket book instead. `REPLAY=replays/<file>.jsonl make dev` plays another recording ([replays/README.md](replays/README.md)).
+`make dev` replays a month of real Polymarket history for the Fed October 2026 market at 36000x (about 72 seconds), so the click path does not depend on Polymarket being reachable (replay fills use a Massive quote when one is available, else the recorded price from the replay; see the fallbacks in [docs/demo.md](docs/demo.md#4-fallbacks-what-each-failure-looks-like-and-what-to-say)). `make dev-live` starts bridges on the live Polymarket book instead. `REPLAY=replays/<file>.jsonl make dev` plays another recording ([replays/README.md](replays/README.md)).
 
 | Command | What it does |
 |---|---|

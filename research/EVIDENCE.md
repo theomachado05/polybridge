@@ -85,7 +85,7 @@ Contents: 1 8-K study, 2 lead-lag in market hours, 3 closed-market study, 4 opti
   - `replay_grid`: all 1,278 presets over 20,000 ticks in 1.68 s, 1.521e+07 preset-ticks per second, one thread.
 - **Supports.** A decision costs well under a microsecond, about four orders of magnitude below the 1 ms scale of a network round trip (`BENCH.md` summary). Scoring the whole library once is cheap enough to tune per market.
 - **Does not support.** An end-to-end latency claim, any profitability claim, or "faster than competitors". It measures `on_tick` only.
-- **Caveats.** Synthetic tape; `poly_kalshi_spread` emitted 8 orders and `eightk_opportunity` 1, so those mostly time the no-trade path; not network, JSON or Python overhead; one machine, one run, one thread; only default presets are timed. The bridge screen's per-tick latency (`docs/demo.md` section 5) is a different, end-to-end-in-process measurement; do not mix the two.
+- **Caveats.** Synthetic tape; `poly_kalshi_spread` emitted 8 orders and `eightk_opportunity` 1, so those mostly time the no-trade path; not network, JSON or Python overhead; one machine, one run, one thread; only default presets are timed. The bridge screen's per-tick latency (`docs/demo.md` section 5) is the same `step()` stamp (decision logic only, `AlgoBase::on_tick` in `algos/common.hpp`), not an end-to-end measurement; it reads higher because the bridge decides one tick at a time inside Python, with cold caches, and the clock tick is about 42 ns, not because it times more code.
 
 ## 6. AI fit replay scores (IN-SAMPLE replay, not a forecast)
 
