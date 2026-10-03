@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "polybridge-research"
+version = "0.1.0"
+description = "PolyBridge research: implied-move parity on 8-K events (GatorQuant Hacks 2026)"
+requires-python = ">=3.10"
+dependencies = ["pandas>=2.2", "numpy>=2.0", "requests>=2.31", "matplotlib>=3.8"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+include = ["polybridge_research*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

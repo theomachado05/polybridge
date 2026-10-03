@@ -6,11 +6,12 @@ Hedge equity positions using live prediction-market prices (Polymarket + Kalshi)
 
 | Folder | Stack | Role |
 |---|---|---|
-| `engine/` | C++20 | Hot path: feeds → algos → paper fills (ZeroMQ out) |
-| `api/` | Python 3.12 · FastAPI | Control plane: markets, AI impact, hedge ranking, portfolio |
+| `engine/` | C++20 · pybind11 | hedgecore: the hedge algorithm that runs user-approved hedges |
+| `backend/` | Python 3.12 · FastAPI | Control plane: markets, AI impact, hedge ranking, portfolio |
 | `web/` | Next.js · TypeScript | UI: Build · Bridge · Library · Portfolio |
 
 ## Workflow
-- Branch from `main` as `feat/<area>-<thing>`; open a PR to merge.
-- Copy `.env.example` → `.env` and fill your keys. Never commit `.env`.
-- The engine ↔ api ZeroMQ contract (spec §6) is frozen at v1; change it only via a PR that edits the spec.
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md): two lanes (Research, Product), shared files change only by PR, and `make test` runs every lane's tests.
+
+Pre-registration: [research/HYPOTHESIS.md](research/HYPOTHESIS.md) and [research/HYPOTHESIS_TAGS.md](research/HYPOTHESIS_TAGS.md).
