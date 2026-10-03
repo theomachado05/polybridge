@@ -9,7 +9,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 option(HEDGECORE_BUILD_TESTS "Build GoogleTest suite" ON)
 option(HEDGECORE_BUILD_PYTHON "Build the pybind11 module" OFF)
 
-add_library(hedgecore_lib STATIC src/engine.cpp)
+add_library(hedgecore_lib STATIC src/engine.cpp src/replay.cpp)
 target_include_directories(hedgecore_lib PUBLIC include)
 target_compile_options(hedgecore_lib PRIVATE -Wall -Wextra -Wpedantic)
 
