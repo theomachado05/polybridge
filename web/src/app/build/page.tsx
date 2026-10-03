@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { getEquity, getLibrary, getOptionsImplied, mapEvent, searchMarkets, type FitOut, type Holding, type MapOut } from "@/lib/api";
 import { DEFAULT_OPP_CAPS, opportunityFit } from "@/lib/realBridge";
-import { EQ, INSTRUMENTS, QUESTIONS, REAL_INSTRUMENTS, demoImpacts, isOpenMarket, questionFromMarket, topImpact, type EquityPick, type Impact, type Question } from "@/lib/demo";
+import { EQ, INSTRUMENTS, QUESTIONS, REAL_INSTRUMENTS, demoFirst, demoImpacts, isDemoMarket, isOpenMarket, questionFromMarket, topImpact, type EquityPick, type Impact, type Question } from "@/lib/demo";
 import { fmtPct, prettyId } from "@/lib/fmt";
 import { fitScoreView, IN_SAMPLE_NOTE } from "@/lib/pipeline";
 import { useAsync } from "@/lib/hooks";
@@ -103,7 +103,8 @@ export default function Build() {
 
   // ---- step 1 rows
   const ql = query.trim().toLowerCase();
-  const realBase = useMemo(() => portfolioQuestions(holdings), [holdings]);
+  // Held-market rows, the demo market (the one `make dev` replays) first so it is one click away.
+  const realBase = useMemo(() => demoFirst(portfolioQuestions(holdings)), [holdings]);
   const searchRows = useMemo(() => (search.data?.markets ?? []).filter((m) => isOpenMarket(m)).map((m) => {
     const known = realBase.find((x) => x.id === `${m.source}:${m.id}`);
     return known ?? questionFromMarket(m);
@@ -215,6 +216,7 @@ export default function Build() {
                       <div style={{ fontSize: 12, color: "#5A627A", marginTop: 3 }}>
                         {x.venues.join(" + ")}{x.touches.length ? " · moves " + x.touches.slice(0, 3).join(", ") : ""}{held ? " · you hold " + held : ""}{" "}
                         {x.real ? <Tag tone="live" title="From GET /markets/search or your portfolio's markets">live market</Tag> : <DemoTag what="sample" />}
+                        {x.real && isDemoMarket(x) && <>{" "}<Tag tone="replay" title="The demo market: make dev replays this market's own recorded Polymarket history (time-compressed) on the bridge">demo market</Tag></>}
                       </div>
                     </div>
                     <div style={{ textAlign: "right", flex: "none" }}>

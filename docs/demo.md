@@ -25,20 +25,20 @@ Feedback on the pre-registration design, data access, or a pilot hedge book. Clo
 
 ## 2. Live demo: 90-second click path
 
-Servers up (section 4). Open http://localhost:3000 (not 127.0.0.1). The default replay is a month of real Polymarket history for the Fed October 2026 hike market, played at 36000x (about 72 seconds). Everything below was walked through by `make e2e` (the screenshots are in `web/e2e/screens/`).
+Servers up (section 4). Open http://localhost:3000 (not 127.0.0.1). The default replay is about 17 days of real Polymarket history (401 hourly points, 2026-09-16 to 2026-10-03) for **"Another Fed rate hike in 2026?"**, hedging **TLT**, played at 21600x (about 67 seconds). We demo this market because on it the fit's prediction-market signal measurably beats a static hedge in-sample (score +0.257, `backend/app/data/fits.json`); on the Fed October 25 bps market we used before, the fit scores no better than a static hedge (-0.011 on its replay) and the bridge places one order. Everything below was walked through by `make e2e` (the screenshots are in `web/e2e/screens/`).
 
 | Time | Screen | Click | Say |
 |---|---|---|---|
 | 0:00 | **Landing** | "Build a bridge" | "You hold a stock. A prediction market is putting a live probability on an event that moves it. PolyBridge reads that probability and hedges the stock, only after you approve." |
-| 0:05 | **Build chat** | Type `fed october`, pick "the Fed increase interest rates by 25 bps after the October 2026 meeting" | "This is the live Polymarket market, 18 cents YES, about 450 thousand dollars traded today. The search hits Polymarket and Kalshi; with no network it falls back to a bundled list and says so." |
-| 0:15 | Build chat | Pick **IWM** (400 shares held) | "Which stock does it move? This mapping is an AI estimate, labelled as one: a hike hits small caps, about 3 percent. It is an estimate, not a measurement." |
-| 0:22 | Build chat | Pick "a dynamic short hedge" | "The engine hedges by shorting shares in proportion to the adverse probability. Behind the scenes the AI is already fitting an algorithm." The **AI fit card** appears: event class, family and preset, score, rationale, alternatives. "It classified the event as Macro Fed and tuned the preset on the market's own price history. Read the family, preset and score off the card; they come from a fresh fit and can differ from run to run. The score is what the market signal adds beyond a plain fixed hedge of the same average size, measured on the same history it then replays: in-sample, not a forecast. If it is near zero or negative, say so: that means the signal added little on this history, which is an honest result." |
+| 0:05 | **Build chat** | Click the first row, "Another Fed rate hike in 2026?" (tagged **demo market**, top of the held-market list; or type `fed rate hike 2026` and pick it) | "This is the live Polymarket market: read the YES price and volume off the row (about 72 cents YES on 2026-10-03). The search hits Polymarket and Kalshi; with no network it falls back to a bundled list and says so." |
+| 0:15 | Build chat | Pick **TLT** (1,000 shares held) | "Which stock does it move? This mapping is an AI estimate, labelled as one: a hike pushes long yields up and bond prices down, about 2.5 percent on TLT. It is an estimate, not a measurement." Note: the chat names XHB as the biggest mover (-3.0 percent); pick TLT because it is the stock you hold (it lists first). |
+| 0:22 | Build chat | Pick "a dynamic short hedge" | "The engine hedges by shorting shares in proportion to the adverse probability. Behind the scenes the AI is already fitting an algorithm." The **AI fit card** appears: event class, family and preset, score, rationale, alternatives. Expect Macro Fed, equity_delta_bridge preset #75, score 0.257 (a fresh fit on live history; it can move if the history has). "On this market the signal adds 25.7 percent over a static hedge, in-sample: the hedged position's variance is about a quarter lower than with a fixed short of the same average size. That is measured on the same history it then replays, it is the best of many presets, and we chose this market for the demo because it scores near the top: 4th of 122. Across 122 markets it adds more than 10 percent on 14 and nothing on 36, which score at or below zero; the median is half a percent. So it is not a forecast, and it is not typical." |
 | 0:35 | Build chat, **Connect** | "Connect brokerage", then "Run the AI pipeline" | "Orders go to the simulated account. Webull paper takes over when its keys are set; real money is out of scope." Point at the account tag: "Simulated account". |
-| 0:42 | **AI pipeline** | Wait for "Approve the IWM bridge?" | "Six steps: classify, shortlist from the library, load real price history, tune presets on replay, explain, ready. Nothing runs until I approve." |
+| 0:42 | **AI pipeline** | Wait for "Approve the TLT bridge?" | "Six steps: classify, shortlist from the library, load real price history, tune presets on replay, explain, ready. Nothing runs until I approve." |
 | 0:52 | AI pipeline | "Approve and open the bridge" | "This is the approval gate. The proposal is pinned to this exact algorithm and capped at the coverage I approved; the backend refuses to run anything else." |
-| 0:55 | **Bridge live** | Watch ~25 s | "A compiled C++ algorithm is reading the replayed ticks. REPLAY badge: this is the recorded month, not live. The gates show why it acts or waits: most ticks are 'inside band' holds and only a handful are rebalances. Each trade says why, in plain words, and what it was filled at. Coverage climbs toward my cap, never past it." |
+| 0:55 | **Bridge live** | Watch ~25 s (the first fill lands within a few seconds) | "A compiled C++ algorithm is reading the replayed ticks. REPLAY badge: this is the recorded history, not live. The gates show why it acts or waits: most ticks are 'below sigma' or 'inside band' holds and only a handful are rebalances (4 orders over the whole replay in our run). Each trade says why, in plain words, and what it was filled at. Coverage climbs toward my cap, never past it." |
 | 1:20 | **Library** | Nav "Library" | "1,278 presets across 16 families. The AI only picks from what is compiled. The running preset is marked." |
-| 1:28 | **Portfolio** | Nav "Portfolio" | "Holdings, exposure by event, hedge status 'bridged'." |
+| 1:28 | **Portfolio** | Nav "Portfolio" | "Holdings, exposure by event (TLT against this market), hedge status 'bridged'." |
 
 Close the demo on the Bridge or Library screen. About 90 seconds; the replay is still finishing, which is fine.
 
@@ -49,11 +49,16 @@ Two things to know before you say "and here is the account":
 
 ### Optional: voice
 
-If `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` is set and the tunnel is up (see `docs/voice-agent.md`), say "protect my IWM against a Fed hike". Approval and starting a bridge need an explicit "yes" from you.
+If `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` is set and the tunnel is up (see `docs/voice-agent.md`), say "protect my TLT against another Fed rate hike" (the replay file only plays for the market it records, so a bridge on another market is refused with a 422). Approval and starting a bridge need an explicit "yes" from you.
 
 ### Other recorded markets
 
-`REPLAY=replays/<file> make dev` (path from the repo root) plays a different recording (the replay file is global, so pick the matching market in Build; a replay bridge for any other market is refused with a 422 when the file's `.meta.json` sidecar names a different market). See `replays/README.md`. Two fresh high-volume ones:
+`REPLAY=<path from the repo root> make dev` plays a different recording (the replay file is global, so pick the matching market in Build; a replay bridge for any other market is refused with a 422 when the file's `.meta.json` sidecar names a different market). See `backend/replays/README.md` and `replays/README.md`.
+
+- Russia military action against an EU country by end of 2026: `REPLAY=backend/replays/russia-eu-military-2026-history.jsonl SPEED=18000 make dev`, type `Russia military action EU`, pick **ITA** (not a held stock, so the bridge sizes 500 shares; up on YES, 3 percent, AI estimate), "geopolitics_energy" class. The strongest in-sample fit of the 122 (energy_geo_hedge #54, +0.508, best of 122, from the precompute at 1,000 shares; the score depends on share count, so say the number the fit card shows and quote +0.508 only if the card matches) and a much busier bridge (31 orders with no coverage cap in our run). History: p trades between 6.5c and 28.5c over 347 hourly points (about 69 s); the 48.5c first point is the market's opening print, not a traded swing.
+- The previous default, the Fed October 2026 25 bps hike: `REPLAY=backend/replays/fed-hike-25bps-oct-2026-history.jsonl SPEED=36000 make dev`, type `fed october`, pick **IWM** (400 shares held). Its fit scores no better than a static hedge (-0.011) and the bridge places about one order; use it to show an honest null.
+
+Two fresh high-volume ones in `replays/` (`REPLAY=replays/<file> make dev`):
 
 - Indiana data-center moratorium by end of 2027 (about 1.9 million dollars traded in 24 h): pick **VRT**, "tech_regulation" class. History: p moves 14.5c to 53.5c.
 - US x Iran ceasefire through October 31: pick **XLE** (down on YES, 4 percent, AI estimate), "geopolitics_energy" class. History: p moves 36.5c to 70.5c.
@@ -80,7 +85,7 @@ If `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` is set and the tunnel is up (see `docs/voic
 | **No Massive key** | No live equity quote; replay fills use the recorded price from the replay (each fill is marked "recorded price"), and the Portfolio exposure is empty (no spot price). The fit still runs on recorded bars. | Put the key in `.env` before the talk. |
 | **Polymarket slow or down** | Search falls back to the bundled list; the fit uses the replay file; the bridge replay is unaffected. | As Wi-Fi off; fills use a Massive quote if Massive is reachable, else the recorded price. |
 | **Backend down** | The UI says "No engine bridge on the backend ... runs the prototype's simulator" and runs a labelled demo bridge. | Say it is the prototype simulator; restart the backend. |
-| **Replay file missing** | The bridge falls back to the live Polymarket book. | Check `ls replays backend/replays`; `make dev` points at `backend/replays/fed-hike-25bps-oct-2026-history.jsonl`. |
+| **Replay file missing** | The bridge falls back to the live Polymarket book. | Check `ls replays backend/replays`; `make dev` points at `backend/replays/another-fed-hike-2026-history.jsonl`. |
 | **Chrome or the screenshots hang** | The e2e script always kills Chrome on a deadline (the page's SSE connection never lets it exit by itself). | Re-run `make e2e`; screenshots land in `web/e2e/screens/`. |
 
 ## 5. Claims we make, and do not make
@@ -97,6 +102,7 @@ Do not make these:
 
 - Not "prediction markets lead equities": market-hours lead-lag is mixed to negative and the closed-market study is mixed. The signal is the probability, not a head start.
 - Not "the fit predicts returns": the preset score is the hedge variance reduction beyond a static hedge of the same size, on the same history it is tuned on (in-sample), and the best of many presets.
+- Not "the demo market shows the signal works": "Another Fed rate hike in 2026?" was chosen for the demo because its fit scores near the top (+0.257, 4th of 122), in-sample and the best of many presets. Say it is a good case, not a typical one.
 - Not "the fit shows the signal works": over the 133 precomputed markets the median score is 0.0053, 36 of 122 scored fits are at or below zero (all negative), and only 53 are above 0.01 (`backend/app/data/fits.json`, our tally of the entries). Do not quote the raw variance reduction (median 0.339) as the hedge's edge: most of it is hedge size (median average hedge ratio 0.18).
 - Not "the arbitrage scan found money": 5 resolved gaps, 0 executable.
 - Not "AI estimates are measurements": the stock mapping is a precomputed estimate.

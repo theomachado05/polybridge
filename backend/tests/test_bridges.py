@@ -200,10 +200,29 @@ def test_check_replay_market(tmp_path):
 
 
 def test_committed_replays_carry_sidecars():
-    """Every recording in backend/replays/ says which market it records (the fed recordings: polymarket 2589813)."""
+    """Every recording in backend/replays/ says which market it records, with its YES token id."""
+    expected = {"fed-hike-25bps-oct-2026": "2589813", "another-fed-hike-2026": "4620900",
+                "russia-eu-military-2026": "4713962"}
     files = sorted(bridges.REPLAYS_DIR.glob("*.jsonl"))
     assert files
     for f in files:
         meta = bridges.replay_meta(f)
         assert meta is not None, f.name
-        assert meta["source"] == "polymarket" and meta["id"] == "2589813"
+        want = next((mid for prefix, mid in expected.items() if f.name.startswith(prefix)), None)
+        assert want is not None, f"{f.name}: add it to this test with the market id its sidecar names"
+        assert meta["source"] == "polymarket" and meta["id"] == want and meta["token_id"], f.name
+
+
+def test_demo_replays_are_indexed_for_their_market():
+    """The default demo replay and the Russia/ITA alternative are found for their own market (the fit's offline
+    fallback and a live bridge's fallback), and never for another market."""
+    from app.models import MarketRef
+    from app.pipeline.ticks import replay_points
+    pts, name = replay_points("polymarket", "4620900")
+    assert name == "another-fed-hike-2026-history.jsonl" and len(pts) >= 400
+    pts, name = replay_points("polymarket", "4713962")
+    assert name == "russia-eu-military-2026-history.jsonl" and len(pts) >= 340
+    assert bridges._meta_matches(bridges.replay_meta(bridges.REPLAYS_DIR / "another-fed-hike-2026-history.jsonl"),
+                                 MarketRef(source="polymarket", id="4620900"))
+    assert not bridges._meta_matches(bridges.replay_meta(bridges.REPLAYS_DIR / "another-fed-hike-2026-history.jsonl"),
+                                     MarketRef(source="polymarket", id="2589813"))

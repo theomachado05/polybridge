@@ -150,6 +150,16 @@ export const REAL_INSTRUMENTS = (spot: number | null): Instrument[] => [
   },
 ];
 
+/** The default demo market (`make dev` replays its recording, backend/replays/another-fed-hike-2026-history.jsonl):
+ *  "Another Fed rate hike in 2026?" hedging TLT, where the fit's prediction-market signal beats a static hedge
+ *  in-sample. Build lists it first among the held-market rows so the demo is one click away; search is unchanged. */
+export const DEMO_MARKET = { source: "polymarket", id: "4620900", ticker: "TLT" } as const;
+export const isDemoMarket = (q: Pick<Question, "id">): boolean => q.id === `${DEMO_MARKET.source}:${DEMO_MARKET.id}`;
+/** The same rows with the demo market moved to the front (the others keep their order). */
+export function demoFirst<T extends Pick<Question, "id">>(rows: readonly T[]): T[] {
+  return [...rows].sort((a, b) => Number(isDemoMarket(b)) - Number(isDemoMarket(a)));
+}
+
 /** False for a market that has ended or is effectively settled (YES at ≤1¢ or ≥99¢): no hedge is worth proposing on
  *  it, so step 1 never lists it as a live market. An unknown end date or price keeps the market. */
 export function isOpenMarket(m: Pick<Market, "end_date" | "yes_price">, now: number = Date.now()): boolean {

@@ -28,18 +28,18 @@ Time check: about 540 spoken words including the stage directions' quoted text, 
 
 ## 2. Demo cues (90 s)
 
-Same click path and times as `docs/demo.md` section 2 (servers up, http://localhost:3000, default replay is the recorded Fed October 2026 hike market). Read live values (price, volume, preset, score) off the screen rather than from notes: they change, and these notes do not carry them.
+Same click path and times as `docs/demo.md` section 2 (servers up, http://localhost:3000, default replay is the recorded "Another Fed rate hike in 2026?" market, hedging TLT, about 67 s). Read live values (price, volume, preset, score) off the screen rather than from notes: they change. The one number these notes carry is the precomputed fit for this market (+0.257, `backend/app/data/fits.json`), so you can say it if the card agrees.
 
 | Time | Screen | Click | Say (only supported claims) |
 |---|---|---|---|
 | 0:00 | Landing | "Build a bridge" | "You hold a stock. A prediction market puts a live probability on an event that moves it. PolyBridge reads it and hedges the stock, only after you approve." |
-| 0:05 | Build chat | Type `fed october`, pick the Fed 25 bps market | "Live Polymarket market. Search covers Polymarket and Kalshi; offline it falls back to a bundled list and says so." |
-| 0:15 | Build chat | Pick **IWM** (400 shares held) | "This stock mapping is an AI estimate, labelled as one. It is not a measurement." |
-| 0:22 | Build chat | Pick "a dynamic short hedge" | "The AI is fitting an algorithm now." On the **AI fit card**: "event class, family, preset, score, rationale, alternatives. The score is how much extra variance the hedge removes beyond a fixed hedge of the same average size, so it is what the signal adds. It is measured on the same history it then replays: in-sample, not a forecast. If it reads near zero or negative, the signal added little here, and that is a real result. [EVIDENCE.md section 6]" |
+| 0:05 | Build chat | Click the first row, "Another Fed rate hike in 2026?" (tagged "demo market"; or type `fed rate hike 2026`) | "Live Polymarket market. Search covers Polymarket and Kalshi; offline it falls back to a bundled list and says so." |
+| 0:15 | Build chat | Pick **TLT** (1,000 shares held) | "A hike pushes bond prices down. This stock mapping is an AI estimate, labelled as one. It is not a measurement." Note: the chat names XHB as the biggest mover (-3.0 percent); pick TLT because it is the stock you hold (it lists first). |
+| 0:22 | Build chat | Pick "a dynamic short hedge" | "The AI is fitting an algorithm now." On the **AI fit card** (expect equity_delta_bridge #75, score 0.257): "On this market the signal adds 25.7 percent over a static hedge in-sample: the hedge leaves about a quarter less variance than a fixed short of the same average size. It is measured on the same history it then replays, it is the best of many presets, and we picked this market because it scores near the top, 4th of 122. Across 122 markets it adds more than 10 percent on 14 and nothing on 36; the median is half a percent. So it is a good case, not a typical one, and not a forecast. [`backend/app/data/fits.json`; EVIDENCE.md section 6]" If the card reads differently, say what it reads. |
 | 0:35 | Connect | "Connect brokerage", then "Run the AI pipeline" | "Orders go to the simulated account; Webull paper takes over when its keys are set. Real money is out of scope." Point at the "Simulated account" tag. |
-| 0:42 | AI pipeline | Wait for "Approve the IWM bridge?" | "Classify, shortlist from the library, load real price history, tune presets on replay, explain, ready. Nothing runs until I approve." |
+| 0:42 | AI pipeline | Wait for "Approve the TLT bridge?" | "Classify, shortlist from the library, load real price history, tune presets on replay, explain, ready. Nothing runs until I approve." |
 | 0:52 | AI pipeline | "Approve and open the bridge" | "The proposal is pinned to this exact algorithm and capped at the coverage I approved; the backend refuses to run anything else." |
-| 0:55 | Bridge live | Watch ~25 s | "A compiled C++ algorithm reads the replayed ticks. REPLAY badge: recorded, not live. Gates show why it acts or waits; each trade says why. Coverage climbs toward my cap, never past it." |
+| 0:55 | Bridge live | Watch ~25 s (first fill within seconds) | "A compiled C++ algorithm reads the replayed ticks. REPLAY badge: recorded, not live. Gates show why it acts or waits; most ticks are holds and a handful are rebalances; each trade says why. Coverage climbs toward my cap, never past it." |
 | 1:20 | Library | Nav "Library" | "1,278 presets across 16 families. The AI only picks from what is compiled. The running preset is marked." |
 | 1:28 | Portfolio | Nav "Portfolio" | "Holdings, exposure by event, hedge status." (A replay bridge trades in a sandbox, so Recent fills stays empty here by design; the Bridge trade log shows the fills. Do not claim account fills.) |
 
@@ -62,6 +62,7 @@ Close on the Bridge or Library screen. Replay fills are priced at today's market
 | 5 verified gaps, 0 executable; each on a print of 5 to 100 shares | `research/results/arb/SUMMARY.md` |
 | 16 families, 1,278 presets | `docs/library.md`, `engine/hedgecore/manifest.json` |
 | `on_tick` batch mean 27.1 to 34.6 ns (synthetic tape, includes its own stamp) | `engine/hedgecore/BENCH.md` |
+| Demo market "Another Fed rate hike in 2026?" -> TLT: equity_delta_bridge #75, score_vs_static +0.257 over 401 hourly ticks (raw 0.748 at average hedge ratio 0.42); 4th of 122; same pick and score when refitted offline on `backend/replays/another-fed-hike-2026-history.jsonl` | `backend/app/data/fits.json` (`polymarket:4620900`), `backend/data_logs/precompute_fits.log`, `backend/replays/README.md` |
 | AI fit scores are in-sample replays; 133 markets, 122 scored, 11 unsupported (no fit) | `backend/app/data/fits.json`, `backend/data_logs/precompute_fits.log` |
 | Fit ranking score = variance cut beyond a static hedge of the same average size (what the signal adds); raw variance reduction rewards any static short and is not ranked | `engine/hedgecore/include/hedgecore/replay.hpp`, `docs/library.md`, `research/EVIDENCE.md` section 6 |
 | Fit score distribution over the 122: median 0.0053; 86 above 0 and 36 at or below 0 (all negative); 53 above 0.01, 31 above 0.05, 14 above 0.1, 7 above 0.2; max 0.508, min -0.0596 | `backend/app/data/fits.json` `summary.score_vs_static`, our tally of the entries (`research/EVIDENCE.md` section 6) |
@@ -73,7 +74,8 @@ Close on the Bridge or Library screen. Replay fills are priced at today's market
 ## 5. Do not say
 
 - "Prediction markets lead equities" or "a head start". Market-hours lead-lag found none; the closed-market study is mixed and shows co-movement.
-- "The AI fit predicts returns", "the signal works on 86 markets", or any headline fit score. Scores are in-sample, best-of-many-presets replays; the median is 0.0053 and only 14 of 122 are above 0.1 (EVIDENCE.md section 6).
+- "The signal works" on the strength of the demo market. It was picked because its fit scores near the top (4th of 122); say "on this market, in-sample", and give the 14-of-122 and 36-of-122 counts with it.
+- "The AI fit predicts returns", "the signal works on 86 markets", or any headline fit score other than the demo market's, stated as in-sample. Scores are in-sample, best-of-many-presets replays; the median is 0.0053 and only 14 of 122 are above 0.1 (EVIDENCE.md section 6).
 - The raw variance reduction (median 0.339) as the hedge's edge. Any static short earns it; the ranking score is what the signal adds beyond that.
 - "The scan found arbitrage" or "free money". 5 verified, 0 executable.
 - "The 8-K signal works", or any out-of-sample claim before the run. In-sample is null.

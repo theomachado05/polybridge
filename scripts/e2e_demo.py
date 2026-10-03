@@ -41,14 +41,22 @@ ROOT = Path(__file__).resolve().parent.parent
 BACKEND = ROOT / "backend"
 WEB = ROOT / "web"
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-DEFAULT_REPLAY = BACKEND / "replays" / "fed-hike-25bps-oct-2026-history.jsonl"
+DEFAULT_REPLAY = BACKEND / "replays" / "another-fed-hike-2026-history.jsonl"
 SCREEN_DIR = WEB / "e2e" / "screens"
 
-# The default target: the Fed October 2026 hike market (token id is in market_universe.json and the replay README).
-MARKET_ID = "2589813"
-QUESTION = "Will the Fed increase interest rates by 25 bps after the October 2026 meeting?"
-TICKER = "IWM"
-SHARES = 400.0
+# The default target: "Another Fed rate hike in 2026?" hedging TLT, the demo market where the prediction-market signal
+# measurably beats a static hedge in-sample (fits.json: score_vs_static +0.257 over 401 hourly ticks). YES token id and
+# provenance: backend/replays/another-fed-hike-2026-history.jsonl.meta.json. The Fed October 2026 market (2589813, IWM,
+# fed-hike-25bps-oct-2026-history.jsonl, query "fed october") remains an alternative: pass --query/--market-id/
+# --market-text/--ticker/--replay/--speed 36000.
+MARKET_ID = "4620900"
+QUESTION = "Another Fed rate hike in 2026?"
+QUERY = "fed rate hike 2026"
+MARKET_TEXT = "Another Fed rate hike in 2026"  # what the UI walk clicks in the Build search results
+TICKER = "TLT"
+SHARES = 1000.0  # the precompute's shares_held, so the fit matches fits.json
+# 401 hourly points (about 400 h) at 21600x = 6 ticks per second, about 67 s for the whole replay.
+SPEED = "21600"
 COVERAGE = 0.5
 DIRECTION = "down_on_yes"
 
@@ -252,7 +260,7 @@ def run_flow(base: str, args) -> dict:
     algo = {"family": fit["family"], "preset_index": fit["preset_index"], "source": "ai_fit"}
     s, prop = call(base, "POST", "/proposals", {
         "ticker": args.ticker, "market": {"source": "polymarket", "id": mk["id"], "token_id": mk.get("token_id")},
-        "direction": direction, "shares_held": args.shares, "target_coverage": COVERAGE, "algo": algo})
+        "direction": direction, "shares_held": args.shares, "target_coverage": args.coverage, "algo": algo})
     check("proposal created pending with the fit pinned", s == 201 and prop["status"] == "proposed"
           and (prop.get("algo") or {}).get("family") == fit["family"], f"{s} {prop if s != 201 else prop['id']}")
     if s != 201:
@@ -328,7 +336,7 @@ def run_flow(base: str, args) -> dict:
           f"ran {sa.get('family')} #{sa.get('preset_index')} source={sa.get('source')} engine={summ.get('engine')}")
     check("summary engine is the algo, not the legacy Engine", summ.get("engine") == "algo")
     check("hedge never exceeds the approved coverage cap",
-          summ.get("coverage", 0) <= COVERAGE + 1e-9 and summ.get("broker_coverage", 0) <= COVERAGE + 1e-9,
+          summ.get("coverage", 0) <= args.coverage + 1e-9 and summ.get("broker_coverage", 0) <= args.coverage + 1e-9,
           f"coverage={summ.get('coverage'):.3f} broker_coverage={summ.get('broker_coverage'):.3f} cap={summ.get('coverage_cap')} cap_holds={summ.get('cap_holds')}")
     say(f"     ticks={summ['ticks']} orders={summ['orders']} broker_filled={summ['broker_filled']} rejects={summ['broker_rejects']} "
         f"errors={summ['broker_errors']} hedge={summ['hedge']:.1f} sh coverage={summ['coverage']:.2%} equity_price={summ['equity_price']} "
@@ -373,7 +381,7 @@ SCREENS = [("landing", "/"), ("build", "/build"), ("connect", "/connect"), ("pip
            ("bridge", None), ("portfolio", "/portfolio"), ("library", "/library"), ("profile", "/profile")]
 
 
-def ui_walk(web: str, base: str) -> list[str]:
+def ui_walk(web: str, base: str, args) -> list[str]:
     """Click through the real UI (web/e2e/ui_walk.mjs, Chrome DevTools protocol) and save a screenshot per screen.
     Returns the files written. Its checks are folded into this run's results."""
     node = shutil.which("node")
@@ -381,10 +389,11 @@ def ui_walk(web: str, base: str) -> list[str]:
         check("UI walk can run (node + Chrome)", False, "node or Chrome missing; falling back to direct-URL screenshots")
         return []
     p = subprocess.Popen([node, str(WEB / "e2e" / "ui_walk.mjs"), "--web", web, "--api", base, "--out", str(SCREEN_DIR),
-                          "--chrome", CHROME], cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, start_new_session=True)
+                          "--chrome", CHROME, "--query", args.query, "--market", args.market_text, "--ticker", args.ticker,
+                          "--fill-deadline-s", str(args.fill_deadline)], cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, start_new_session=True)
     children.append(p)
     files: list[str] = []
-    timer_end = time.time() + 300
+    timer_end = time.time() + 300 + args.fill_deadline
     try:
         for line in p.stdout:  # type: ignore[union-attr]
             line = line.strip()
@@ -428,19 +437,19 @@ def direct_shot(web: str, i: int, name: str, path: str, wait_ms: int, prof: Path
             pass
 
 
-def screenshots(web: str, base: str, bridge_id: str | None, wait_ms: int) -> None:
+def screenshots(web: str, base: str, bridge_id: str | None, args) -> None:
     say("\n== 10. UI walk + screenshots of the 8 screens -> web/e2e/screens/")
     SCREEN_DIR.mkdir(parents=True, exist_ok=True)
     for old in SCREEN_DIR.glob("*.png"):
         old.unlink()
-    ui_walk(web, base)
+    ui_walk(web, base, args)
     missing = [(i, n, p) for i, (n, p) in enumerate(SCREENS, 1) if not any(SCREEN_DIR.glob(f"{i:02d}-{n}.png"))]
     if missing and Path(CHROME).exists():
         say(f"     UI walk did not produce {[n for _, n, _ in missing]}; capturing those by direct URL (no wizard state)")
         prof = Path(tempfile.mkdtemp(prefix="pb-chrome-"))
         try:
             for i, n, p in missing:
-                direct_shot(web, i, n, p or (f"/bridge/{bridge_id}" if bridge_id else "/bridge"), wait_ms, prof)
+                direct_shot(web, i, n, p or (f"/bridge/{bridge_id}" if bridge_id else "/bridge"), args.screen_wait_ms, prof)
         finally:
             subprocess.run(["pkill", "-f", f"--user-data-dir={prof}"], capture_output=True)
             shutil.rmtree(prof, ignore_errors=True)
@@ -461,14 +470,20 @@ def main() -> int:
     ap.add_argument("--stream-timeout", type=float, default=120.0)
     ap.add_argument("--finish-timeout", type=float, default=150.0, help="how long to wait for the replay to finish")
     ap.add_argument("--replay", default=str(DEFAULT_REPLAY), help="replay JSONL (POLYBRIDGE_REPLAY_PATH)")
-    ap.add_argument("--speed", default="36000", help="POLYBRIDGE_REPLAY_SPEED (36000 = a month of hourly history in ~72 s)")
+    ap.add_argument("--speed", default=SPEED, help="POLYBRIDGE_REPLAY_SPEED (default 21600: the 401-point default replay in ~67 s; "
+                                                   "36000 plays the month-long Fed October replay in ~72 s)")
     ap.add_argument("--env-file", help="dotenv file for MASSIVE_API_KEY (default: ./.env or the main checkout's)")
-    ap.add_argument("--query", default="fed october", help="market search text; the search must list --market-id")
+    ap.add_argument("--query", default=QUERY, help="market search text; the search must list --market-id")
+    ap.add_argument("--market-text", default=MARKET_TEXT, help="text of the market row the UI walk clicks in Build")
+    ap.add_argument("--fill-deadline", type=float, default=90.0,
+                    help="UI walk: seconds to wait on the Bridge screen for the first broker fill or the replay's end")
     ap.add_argument("--offline", action="store_true",
                     help="simulate Wi-Fi off: the backend's outbound traffic goes to a dead proxy and no env file is loaded")
     ap.add_argument("--market-id", default=MARKET_ID)
     ap.add_argument("--ticker", default=TICKER)
     ap.add_argument("--shares", type=float, default=SHARES)
+    ap.add_argument("--coverage", type=float, default=COVERAGE,
+                    help="approved target_coverage (the cap on the fitted algo's coverage; the UI sends Max hedge, 100%% by default)")
     ap.add_argument("--screen-wait-ms", type=int, default=9000, help="how long Chrome lets each page render")
     args = ap.parse_args()
 
@@ -525,7 +540,7 @@ def main() -> int:
 
         out = run_flow(base, args)
         if need_web:
-            screenshots(web, base, out.get("bridge_id"), args.screen_wait_ms)
+            screenshots(web, base, out.get("bridge_id"), args)
     except Abort as e:
         check("flow completed", False, str(e))
     except KeyboardInterrupt:
@@ -546,7 +561,7 @@ def main() -> int:
         say(f"fit      : {f.get('event_class')} -> {f.get('family')} #{f.get('preset_index')} (score {f.get('score') and round(f['score'], 3)}, llm={f.get('llm')}, {f.get('ticks_source')})")
         if sm:
             say(f"bridge   : {out['bridge_id']} engine={sm.get('engine')} ran {(sm.get('algo') or {}).get('family')} "
-                f"ticks={sm.get('ticks')} orders={sm.get('orders')} filled={sm.get('broker_filled')} coverage={sm.get('coverage', 0):.1%} (cap {COVERAGE:.0%})")
+                f"ticks={sm.get('ticks')} orders={sm.get('orders')} filled={sm.get('broker_filled')} coverage={sm.get('coverage', 0):.1%} (cap {args.coverage:.0%})")
         a = out.get("account")
         if isinstance(a, dict):
             say(f"account  : {a.get('broker')} cash=${a['cash']:,.2f} equity=${a['equity']:,.2f}")

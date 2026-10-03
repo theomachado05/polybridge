@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 // Drives the real UI in headless Chrome over the DevTools protocol (no dependencies: Node's global WebSocket + fetch).
-// Click path: Landing -> Build chat (search a market, pick IWM, pick the hedge) -> Connect -> AI pipeline -> approve ->
+// Click path: Landing -> Build chat (search a market, pick the ticker, pick the hedge) -> Connect -> AI pipeline -> approve ->
 // Bridge live (replay) -> Library -> Portfolio -> Profile, saving a screenshot of each of the 8 screens, and checking
-// that what the UI shows is what the backend runs.
+// that what the UI shows is what the backend runs. On the Bridge screen it waits for the bridge's first broker fill (or
+// the end of the replay) up to --fill-deadline-s, instead of sampling after a fixed delay.
 //
-//   node web/e2e/ui_walk.mjs --web http://localhost:3000 --api http://localhost:8000 --out web/e2e/screens
+//   node web/e2e/ui_walk.mjs --web http://localhost:3000 --api http://localhost:8000 --out web/e2e/screens \
+//     [--query "fed rate hike 2026" --market "Another Fed rate hike in 2026" --ticker TLT --fill-deadline-s 90]
 //
 // Prints one JSON line per check (`{"check":..., "ok":..., "detail":...}`) and `{"shots":[...]}` at the end; exit 1 if
 // any check fails. Chrome is always killed, even if the page's SSE connection never lets it exit by itself.
@@ -19,10 +21,11 @@ const API = arg("api", "http://localhost:8000");
 const OUT = arg("out", "web/e2e/screens");
 const CHROME = arg("chrome", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome");
 const PORT = Number(arg("cdp-port", "9333"));
-const QUERY = arg("query", "fed october");
-const MARKET_TEXT = arg("market", "increase interest rates by 25 bps");
-const TICKER = arg("ticker", "IWM");
-const WATCH_S = Number(arg("bridge-watch-s", "14"));
+const QUERY = arg("query", "fed rate hike 2026");
+const MARKET_TEXT = arg("market", "Another Fed rate hike in 2026");
+const TICKER = arg("ticker", "TLT");
+const MIN_WATCH_S = Number(arg("bridge-watch-s", "6")); // at least this long on the Bridge screen, so the chart has moved
+const FILL_DEADLINE_S = Number(arg("fill-deadline-s", "90")); // then until the first broker fill or the replay ends
 
 const results = [];
 const shots = [];
@@ -35,7 +38,7 @@ const chrome = spawn(CHROME, ["--headless=new", "--disable-gpu", "--no-first-run
   `--remote-debugging-port=${PORT}`, "--window-size=1440,1000", "about:blank"], { stdio: "ignore", detached: true });
 const killChrome = () => { try { process.kill(-chrome.pid, "SIGKILL"); } catch {} try { rmSync(profile, { recursive: true, force: true }); } catch {} };
 process.on("exit", killChrome);
-const hardStop = setTimeout(() => { console.log(JSON.stringify({ check: "ui walk finished within its time limit", ok: false, detail: "hard stop" })); killChrome(); process.exit(1); }, 240_000);
+const hardStop = setTimeout(() => { console.log(JSON.stringify({ check: "ui walk finished within its time limit", ok: false, detail: "hard stop" })); killChrome(); process.exit(1); }, 240_000 + FILL_DEADLINE_S * 1000);
 
 async function connect() {
   for (let i = 0; i < 60; i++) {
@@ -104,7 +107,7 @@ try {
   await ev(`document.querySelector('input[aria-label=Composer]').focus()`);
   await send("Input.insertText", { text: QUERY });
   await waitFor(has("button.pb-row", MARKET_TEXT), `search lists "${MARKET_TEXT}"`, 45_000);
-  check("UI: live market search lists the Fed hike market", true);
+  check("UI: live market search lists the target market", true, MARKET_TEXT);
   await click("button.pb-row", MARKET_TEXT);
   await waitFor(has("button.pb-row", TICKER), `mapping lists ${TICKER}`, 30_000);
   check("UI: /map lists the mapped tickers, labelled as an AI estimate", await ev(`document.body.innerText.toLowerCase().includes('estimate')`), "");
@@ -136,10 +139,24 @@ try {
   await waitFor(`location.pathname.startsWith('/bridge') && /Bridge [0-9a-f]{8,}/.test(document.body.innerText)`, "opens the Bridge screen on a backend bridge", 60_000);
   const bridgeId = await ev("(/Bridge ([0-9a-f]{8,})/.exec(document.body.innerText) || [])[1]");
   check("UI: approve opened a backend bridge", /^[0-9a-f]{8,}$/.test(bridgeId), bridgeId);
-  await sleep(WATCH_S * 1000); // let the replay run: ticks, decisions, fills
+  // Let the replay run until the broker has filled an order (or the replay is over), with a deadline: a fixed early
+  // sample can land before the algo's first order on a quiet stretch of history.
+  const t0 = Date.now();
+  let sum = null;
+  while (Date.now() - t0 < FILL_DEADLINE_S * 1000) {
+    try { sum = await (await fetch(`${API}/bridges/${bridgeId}`)).json(); } catch {}
+    const done = sum && (sum.broker_filled > 0 || (sum.status && sum.status !== "running"));
+    if (done && Date.now() - t0 >= MIN_WATCH_S * 1000) break;
+    await sleep(500);
+  }
+  const waited = ((Date.now() - t0) / 1000).toFixed(1);
+  check("UI bridge reached a broker fill or the replay's end within the deadline",
+    !!sum && (sum.broker_filled > 0 || sum.status !== "running"),
+    `after ${waited}s (deadline ${FILL_DEADLINE_S}s): status=${sum?.status} ticks=${sum?.ticks} broker_filled=${sum?.broker_filled}`);
   await waitFor(`/Ticks received/.test(document.body.innerText)`, "bridge screen renders ticks", 30_000);
+  await sleep(1000); // let the stream's latest fill reach the screen
   await shot(5, "bridge");
-  const sum = await (await fetch(`${API}/bridges/${bridgeId}`)).json();
+  sum = await (await fetch(`${API}/bridges/${bridgeId}`)).json();
   check("UI bridge runs hedgecore.Algo (engine=algo)", sum.engine === "algo", `engine=${sum.engine}`);
   check("UI bridge runs the fit the pipeline screen showed", fam && pretty(sum.algo?.family) === pretty(fam), `UI said "${fam}", backend runs ${sum.algo?.family} #${sum.algo?.preset_index} (source ${sum.algo?.source})`);
   check("UI bridge is a replay, labelled as one", sum.source === "replay" && (await ev(`/REPLAY/i.test(document.body.innerText)`)), `source=${sum.source}`);
@@ -152,7 +169,7 @@ try {
   check("UI: library shows the compiled catalog", await ev(`/1,2\\d\\d/.test(document.body.innerText)`), "");
   await shot(7, "library");
   await click("a", "Portfolio");
-  await waitFor(`/IWM/.test(document.body.innerText)`, "portfolio lists IWM", 45_000);
+  await waitFor(`document.body.innerText.includes(${JSON.stringify(TICKER)})`, `portfolio lists ${TICKER}`, 45_000);
   await sleep(1500);
   await shot(6, "portfolio");
   await click("a", "JD");

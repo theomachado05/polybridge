@@ -1,4 +1,5 @@
 {"holdings": [
+  {"ticker": "TLT", "shares": 1000, "event_market": {"source": "polymarket", "id": "4620900", "query": "fed rate hike 2026"}},
   {"ticker": "ABNB", "shares": 1200},
   {"ticker": "MAR", "shares": 300},
   {"ticker": "JPM", "shares": 200},

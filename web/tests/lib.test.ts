@@ -5,7 +5,7 @@ import { fmtK, fmtMoney, fmtNs, fmtPct, prettyId, sparkPath } from "../src/lib/f
 import { initSim, seeded, simCover, simPnl, stepSim } from "../src/lib/sim.ts";
 import { blockUi, parseLibrary, shortlist } from "../src/lib/library.ts";
 import { demoSteps, fitSteps, type PipeContext } from "../src/lib/pipeline.ts";
-import { INSTRUMENTS, QUESTIONS, demoImpacts, questionFromMarket } from "../src/lib/demo.ts";
+import { DEMO_MARKET, INSTRUMENTS, QUESTIONS, demoFirst, demoImpacts, isDemoMarket, questionFromMarket } from "../src/lib/demo.ts";
 import { getAccount, getLibrary, getOrders, getPositions, postFit, type FitOut } from "../src/lib/api.ts";
 
 describe("fmt", () => {
@@ -183,5 +183,15 @@ describe("api client (mocked HTTP)", () => {
   it("reports an unreachable backend without throwing a raw TypeError", async () => {
     globalThis.fetch = (async () => { throw new TypeError("fetch failed"); }) as typeof fetch;
     await assert.rejects(getAccount(), /Cannot reach the backend/);
+  });
+});
+
+describe("demo market", () => {
+  it("is moved to the front of the held-market rows, the others keep their order", () => {
+    const rows = [{ id: "polymarket:2589813" }, { id: "kalshi:X" }, { id: `polymarket:${DEMO_MARKET.id}` }, { id: "polymarket:1" }];
+    assert.deepEqual(demoFirst(rows).map((r) => r.id), [`polymarket:${DEMO_MARKET.id}`, "polymarket:2589813", "kalshi:X", "polymarket:1"]);
+    assert.deepEqual(demoFirst([{ id: "a" }, { id: "b" }]).map((r) => r.id), ["a", "b"]);
+    assert.equal(isDemoMarket({ id: "kalshi:4620900" }), false);
+    assert.equal(DEMO_MARKET.ticker, "TLT");
   });
 });
