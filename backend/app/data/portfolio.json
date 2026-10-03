@@ -4,5 +4,6 @@
   {"ticker": "JPM", "shares": 200},
   {"ticker": "META", "shares": 150},
   {"ticker": "NVDA", "shares": 100},
-  {"ticker": "XOM", "shares": 250}
+  {"ticker": "XOM", "shares": 250},
+  {"ticker": "IWM", "shares": 400, "event_market": {"source": "polymarket", "id": "2589813", "query": "Fed October 2026"}}
 ]}

@@ -13,7 +13,7 @@ from pydantic import BaseModel
 from . import chain
 from . import equities as eq
 from .mapping import MapRequest, map_event
-from .markets import Market, search_all
+from .markets import Market, offline_search, search_all
 from .models import Proposal
 
 PORTFOLIO_PATH = Path(__file__).parent / "data" / "portfolio.json"
@@ -56,6 +56,7 @@ class PortfolioOut(BaseModel):
     holdings: list[Holding]
     total_value: float | None = None
     total_exposure: float | None = None
+    total_includes_fuzzy: bool = False  # the exposure total includes fuzzy-matched (not exact) AI mappings
     stale: bool = False
 
 
@@ -79,7 +80,14 @@ def remaining_exposure(shares: float, spot: float | None, impact_pct: float | No
 def load_holdings() -> list[dict]:
     try:
         rows = json.loads(PORTFOLIO_PATH.read_text()).get("holdings", [])
-        return [{"ticker": str(r["ticker"]).upper(), "shares": float(r["shares"])} for r in rows]
+        out = []
+        for r in rows:
+            h = {"ticker": str(r["ticker"]).upper(), "shares": float(r["shares"])}
+            ev = r.get("event_market")  # optional pinned market: {"source", "id", "query"}
+            if isinstance(ev, dict) and ev.get("source") and ev.get("id"):
+                h["event_market"] = {"source": str(ev["source"]), "id": str(ev["id"]), "query": str(ev.get("query") or "")}
+            out.append(h)
+        return out
     except (OSError, ValueError, KeyError, TypeError):
         return []
 
@@ -119,6 +127,23 @@ def find_exposure(ticker: str, shares: float, spot: float | None, markets: list[
     return None
 
 
+async def _pinned_market(request: Request, ev: dict) -> tuple[Market | None, bool]:
+    """Resolve a holding's pinned event market: live search by its query, else the bundled market list (stale)."""
+    want = (ev["source"], ev["id"])
+    q = ev.get("query") or ""
+    if q:
+        try:
+            http = eq._http(request)
+            res, st = await eq._cache(request, "search", 60).get_or_set(q.lower(), lambda: search_all(http, q))
+            m = next((m for m in res if (m.source, m.id) == want), None)
+            if m is not None:
+                return m, bool(st)
+        except Exception:
+            pass
+    m = next((m for m in offline_search(q) if (m.source, m.id) == want), None) if q else None
+    return m, m is not None
+
+
 async def _holding(request: Request, h: dict, proposals: list[Proposal], bridges: dict) -> tuple[Holding, bool]:
     ticker, shares = h["ticker"], h["shares"]
     name = eq.NAMES.get(ticker)
@@ -151,6 +176,11 @@ async def _holding(request: Request, h: dict, proposals: list[Proposal], bridges
     except Exception:
         notes.append("prediction-market search unavailable")
     markets.sort(key=lambda m: m.volume_24h, reverse=True)
+    if h.get("event_market"):  # the pinned market goes first so its mapping decides the exposure
+        pinned, st = await _pinned_market(request, h["event_market"])
+        if pinned is not None:
+            markets = [pinned] + [m for m in markets if (m.source, m.id) != (pinned.source, pinned.id)]
+            stale = stale or st
     exposure = find_exposure(ticker, shares, spot, markets)
     return Holding(ticker=ticker, name=name, shares=shares, spot=spot, value=spot * shares if spot is not None and math.isfinite(spot) else None,
                    markets=markets[:TOP_MARKETS], filings=filings[:3], exposure=exposure,
@@ -175,5 +205,6 @@ async def portfolio(request: Request) -> PortfolioOut:
             stale = stale or r[1]
     vals = [x.value for x in holdings if x.value is not None]
     exps = [x.exposure.remaining_usd for x in holdings if x.exposure]
+    fuzzy = any(x.exposure and x.exposure.match_type == "fuzzy" for x in holdings)
     return PortfolioOut(holdings=holdings, total_value=sum(vals) if vals else None,
-                        total_exposure=sum(exps) if exps else None, stale=stale)
+                        total_exposure=sum(exps) if exps else None, total_includes_fuzzy=fuzzy, stale=stale)

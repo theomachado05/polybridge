@@ -176,7 +176,7 @@ export interface Holding {
   hedge: HedgeStatus;
   notes: string[];
 }
-export interface PortfolioOut { holdings: Holding[]; total_value: number | null; total_exposure: number | null; stale: boolean }
+export interface PortfolioOut { holdings: Holding[]; total_value: number | null; total_exposure: number | null; total_includes_fuzzy?: boolean; stale: boolean }
 
 export const getHealth = () => request<{ status: string }>("/health");
 export const listProposals = () => request<Proposal[]>("/proposals");

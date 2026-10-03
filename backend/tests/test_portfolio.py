@@ -76,3 +76,27 @@ def test_exposure_up_on_yes(tmp_path, monkeypatch):
     c = make(StubClient(market=rf.FakeMarket({"AAPL": 100.0})), monkeypatch)
     h = c.get("/portfolio").json()["holdings"][0]
     assert h["exposure"]["remaining_usd"] == pytest.approx(8.0, rel=5e-3) and h["exposure"]["direction"] == "up_on_yes"
+
+
+def test_seeded_portfolio_shows_fed_exposure_offline(monkeypatch):
+    """The shipped portfolio.json + ai_map.json: IWM is pinned to the Fed October 25 bps hike market, which maps
+    IWM down_on_yes 3%. With both market sources down, the bundled market list still resolves it."""
+    c = make(StubClient(market=rf.FakeMarket({"IWM": 200.0})), monkeypatch, http_fail=True)
+    d = c.get("/portfolio").json()
+    iwm = next(h for h in d["holdings"] if h["ticker"] == "IWM")
+    assert iwm["shares"] == 400
+    ex = iwm["exposure"]
+    assert ex["market"]["id"] == "2589813" and ex["direction"] == "down_on_yes" and ex["impact_pct"] == 3.0
+    assert ex["match_type"] == "exact"
+    assert ex["remaining_usd"] == pytest.approx(400 * 200 * 0.03 * (1 - 0.175), rel=5e-3)
+    assert d["stale"] is True and d["total_includes_fuzzy"] is False
+
+
+def test_total_flags_fuzzy_mappings(tmp_path, monkeypatch):
+    lib = {"items": {"polymarket:Apple": {"question": "Apple q", "mappings": [
+        {"ticker": "AAPL", "direction": "down_on_yes", "impact_pct": 2.0, "rationale": "r"}]}}}
+    setup(tmp_path, monkeypatch, [{"ticker": "AAPL", "shares": 10}], lib)
+    real = portfolio.map_event
+    monkeypatch.setattr(portfolio, "map_event", lambda req: {**real(req), "match_type": "fuzzy"})
+    d = make(StubClient(market=rf.FakeMarket({"AAPL": 100.0})), monkeypatch).get("/portfolio").json()
+    assert d["total_includes_fuzzy"] is True
