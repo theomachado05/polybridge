@@ -18,14 +18,20 @@ in-sample H1/H2 tests were null (research/results/in_sample/*_verdict.txt).
 
 Sources, in order: filings passed in by the caller; the bundled ``app/data/eightk_filings.json`` (in-sample
 2024-01-01..2025-12-31, written by ``build_eightk_file`` from the research's Massive disclosures); live Massive
-disclosures for recent dates via ``fetch_recent`` (never inside the frozen out-of-sample window
-2026-01-01..2026-08-31; that guard is enforced here).
+disclosures for recent dates, loaded into a process-wide store by ``await refresh_eightk()`` (never inside the
+frozen out-of-sample window 2026-01-01..2026-08-31; that guard is enforced here).
+
+"No filing" vs "no data": ``eightk_score`` returns 0.0 only when the data covering ``as_of`` was loaded and holds
+no qualifying filing. When nothing covers ``as_of`` (a live date before ``refresh_eightk`` ran, no key, a Massive
+outage, or a date inside the frozen OOS window) it returns NaN, the MarketTick default, which the C++ EightK
+signal reads as "no signal". ``eightk_coverage(as_of)`` names the source ("in_sample" | "live" | None).
 """
 from __future__ import annotations
 
 import datetime as dt
 import json
 import math
+import time
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -97,7 +103,7 @@ def latest_filing(ticker: str, filings: Iterable[dict], as_of: Any = None,
     a = _date(as_of) or dt.date.today()
     best: tuple[dt.date, dict] | None = None
     for f in filings or ():
-        if _norm(f.get("ticker")) != tk:
+        if not isinstance(f, dict) or _norm(f.get("ticker")) != tk:
             continue
         d = _date(f.get("filing_date"))
         fam = f.get("family") or family_of(f.get("tags") or ())
@@ -122,24 +128,91 @@ def score_filing(filing: dict | None, as_of: Any = None, window_days: int = WIND
     return max(-1.0, min(1.0, s)) if math.isfinite(s) else 0.0
 
 
+# Live filings loaded by refresh_eightk(): {"filings": [...], "from": date, "to": date, "window_days": int, "at": ts}
+_LIVE: dict[str, Any] = {}
+LIVE_TTL_S = 3600.0
+
+
+def _in_sample_covers(a: dt.date) -> bool:
+    return dt.date.fromisoformat(IN_SAMPLE[0]) <= a <= dt.date.fromisoformat(IN_SAMPLE[1])
+
+
+def _live_covers(a: dt.date, window_days: int) -> bool:
+    if not _LIVE:
+        return False
+    need_from = max(a - dt.timedelta(days=window_days), OOS_END + dt.timedelta(days=1))
+    return _LIVE["from"] <= need_from and _LIVE["to"] >= a
+
+
+def eightk_coverage(as_of: Any = None, window_days: int = WINDOW_DAYS) -> str | None:
+    """Which loaded data covers ``as_of``: "in_sample", "live", or None (score would be NaN)."""
+    a = _date(as_of) or dt.date.today()
+    if _in_sample_covers(a):
+        return "in_sample"
+    if a > OOS_END and _live_covers(a, window_days):
+        return "live"
+    return None
+
+
+def _rows_for(as_of: dt.date) -> list[dict]:
+    rows = list(load_filings())
+    if as_of > OOS_END and _LIVE:
+        rows += _LIVE["filings"]
+    return rows
+
+
 def eightk_score(ticker: str, as_of: Any = None, window_days: int = WINDOW_DAYS,
                  filings: Iterable[dict] | None = None) -> float:
-    """[-1, 1]; 0 when no qualifying filing (see module docstring for the mapping). Never raises."""
+    """[-1, 1]; 0.0 when the data covering ``as_of`` holds no qualifying filing; NaN when no loaded data covers
+    ``as_of`` (see module docstring). With ``filings`` given, that list is the whole truth (0.0 if none). Never
+    raises."""
     try:
-        rows = list(filings) if filings is not None else load_filings()
-        return score_filing(latest_filing(ticker, rows, as_of, window_days), as_of, window_days)
+        a = _date(as_of) or dt.date.today()
+        if filings is not None:
+            rows = list(filings)
+        elif eightk_coverage(a, window_days) is None:
+            return math.nan
+        else:
+            rows = _rows_for(a)
+        return score_filing(latest_filing(ticker, rows, a, window_days), a, window_days)
     except Exception:
-        return 0.0
+        return math.nan
 
 
 def eightk_detail(ticker: str, as_of: Any = None, window_days: int = WINDOW_DAYS,
                   filings: Iterable[dict] | None = None) -> dict:
-    rows = list(filings) if filings is not None else load_filings()
-    f = latest_filing(ticker, rows, as_of, window_days)
-    return {"ticker": _norm(ticker), "as_of": (_date(as_of) or dt.date.today()).isoformat(),
-            "window_days": window_days, "score": score_filing(f, as_of, window_days),
+    a = _date(as_of) or dt.date.today()
+    cov = "caller" if filings is not None else eightk_coverage(a, window_days)
+    rows = list(filings) if filings is not None else _rows_for(a)
+    f = latest_filing(ticker, rows, a, window_days) if cov else None
+    score = score_filing(f, a, window_days) if cov else None
+    return {"ticker": _norm(ticker), "as_of": a.isoformat(), "window_days": window_days, "score": score,
+            "coverage": cov,
             "filing": None if f is None else {k: (sorted(v) if isinstance(v, (set, frozenset, list)) else v)
                                               for k, v in f.items()}}
+
+
+async def refresh_eightk(as_of: Any = None, window_days: int = WINDOW_DAYS, client=None) -> str | None:
+    """Load live 8-K filings for the ``window_days`` before ``as_of`` (default today) into the shared store that
+    ``eightk_score`` reads (bounded, TTL ``LIVE_TTL_S``; never inside the OOS window). Returns the coverage for
+    ``as_of`` afterwards. No key or an outage leaves the store as it was: never raises."""
+    a = _date(as_of) or dt.date.today()
+    if a <= OOS_END:
+        return eightk_coverage(a, window_days)
+    if _live_covers(a, window_days) and time.time() - _LIVE.get("at", 0.0) < LIVE_TTL_S:
+        return "live"
+    try:
+        from ..chain import bounded, make_client
+        client = client if client is not None else make_client()
+        if client is None:
+            return eightk_coverage(a, window_days)
+        live = await bounded(fetch_recent, client, a, window_days)
+    except Exception:
+        return eightk_coverage(a, window_days)
+    _LIVE.clear()
+    _LIVE.update(filings=list(live), to=a, window_days=window_days, at=time.time(),
+                 **{"from": max(a - dt.timedelta(days=window_days), OOS_END + dt.timedelta(days=1))})
+    return eightk_coverage(a, window_days)
 
 
 # ---------------------------------------------------------------- data (Massive disclosures)

@@ -11,7 +11,6 @@ is a 200 with ``available: false`` and a reason, never a 500.
 """
 from __future__ import annotations
 
-import asyncio
 import datetime as dt
 import json
 import math
@@ -22,10 +21,9 @@ from typing import Any
 import httpx
 from fastapi import APIRouter, HTTPException, Request
 
-from ..cache import TTLCache
-from ..chain import bounded, make_client
+from ..chain import make_client
 from . import chain as ch
-from .eightk import OOS_END, eightk_detail, fetch_recent, load_filings
+from .eightk import OOS_END, eightk_detail, refresh_eightk
 from .enrich import refresh, structure_mid
 from .implied import implied_for_threshold, jsonable
 from .match import match_question, why_no_match
@@ -38,7 +36,6 @@ KALSHI_MARKET = "https://api.elections.kalshi.com/trade-api/v2/markets/{id}"
 TIMEOUT = httpx.Timeout(5.0)
 LABEL = "options-implied risk-neutral estimate (not a measured probability)"
 _TICKER = re.compile(r"^(I:)?[A-Z][A-Z.]{0,7}$")
-_RECENT_8K = TTLCache(3600.0)
 
 
 def _num(x: Any) -> float | None:
@@ -73,6 +70,16 @@ def _universe(source: str, mid: str, data_dir: Path = DATA) -> dict:
     return next((m for m in uni if m.get("source") == source and str(m.get("id")) == str(mid)), {})
 
 
+def kalshi_question(m: dict) -> str | None:
+    """Kalshi threshold markets carry the level in the subtitle ("Nvidia price on Dec 31, 2026?" + "$250 or
+    above"): join title and yes_sub_title (or subtitle) unless the title already contains it."""
+    title = str(m.get("title") or "").strip()
+    sub = str(m.get("yes_sub_title") or m.get("subtitle") or "").strip()
+    if sub and sub.lower() not in title.lower():
+        return f"{title} {sub}".strip()
+    return title or None
+
+
 async def resolve_market(http: httpx.AsyncClient, source: str, mid: str) -> dict:
     """{question, end_date, yes_price, origin}; origin "universe" | "live" | None when nothing was found."""
     out: dict[str, Any] = {"question": None, "end_date": None, "yes_price": None, "origin": None}
@@ -94,7 +101,7 @@ async def resolve_market(http: httpx.AsyncClient, source: str, mid: str) -> dict
             m = (r.json() or {}).get("market") or {}
             bid, ask = _num(m.get("yes_bid_dollars")), _num(m.get("yes_ask_dollars"))
             px = (bid + ask) / 2 if bid is not None and ask is not None else _num(m.get("last_price_dollars"))
-            out.update(question=m.get("title") or out["question"],
+            out.update(question=kalshi_question(m) or out["question"],
                        end_date=m.get("close_time") or m.get("expiration_time") or out["end_date"],
                        yes_price=px if px is not None else out["yes_price"], origin="live")
     except Exception:
@@ -148,8 +155,10 @@ async def options_implied(request: Request, market_source: str | None = None, ma
                                              m.direction == "above")
     prob = res.get("prob")
     yes = market.get("yes_price")
-    ok = isinstance(prob, float) and math.isfinite(prob)
+    ok = isinstance(prob, float) and math.isfinite(prob) and bool(res.get("expiry_gap_ok"))
     notes = list(m.notes) + ([f"proxy {und} used (approximate scaling)"] if und != m.underlying else [])
+    if chain.truncated:
+        notes.append("chain truncated at the page limit; expiries or strikes may be missing")
     return {**base, "supported": True, "available": ok,
             "reason": None if ok else "; ".join(res.get("notes") or ["no usable option prices"]),
             "underlying_used": und, "strike_used": k, "approx": approx, "notes": notes,
@@ -209,16 +218,13 @@ async def options_eightk(ticker: str, as_of: str | None = None, window_days: int
         a = dt.date.fromisoformat(as_of) if as_of else dt.date.today()
     except ValueError:
         raise HTTPException(422, "as_of must be YYYY-MM-DD.")
-    filings, source = list(load_filings()), "bundled in-sample filings (2024-2025)"
-    if a > OOS_END:  # recent dates: add live filings (never inside the frozen OOS window)
+    if a > OOS_END:  # recent dates: load live filings into the shared store (never inside the frozen OOS window)
         client = make_client()
         if client is not None:
-            try:
-                live, _ = await _RECENT_8K.get_or_set((a.isoformat(), window_days),
-                                                      lambda: bounded(fetch_recent, client, a, window_days))
-                filings += live
-                source += " + live Massive disclosures"
-            except (Exception, asyncio.TimeoutError):
-                source += " (live disclosures unavailable)"
-    return {**eightk_detail(tk, a, window_days, filings), "source": source,
+            await refresh_eightk(a, window_days, client=client)
+    d = eightk_detail(tk, a, window_days)
+    source = {"in_sample": "bundled in-sample filings (2024-2025)",
+              "live": "live Massive disclosures (from 2026-09-01; the OOS window is never read)"}.get(
+        d["coverage"], "no 8-K data covers this date (no key, Massive unavailable, or the frozen OOS window)")
+    return {**d, "available": d["coverage"] is not None, "source": source,
             "label": "8-K tag-direction prior (H1 hedge -> negative, H2 opportunity -> positive); not a measured edge"}

@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 from app.cache import TTLCache
 from app.main import create_app
 from app.options import chain as ch
+from app.options import eightk as ek
 from app.options import router as rt
 
 TARGET = dt.date.today() + dt.timedelta(days=60)
@@ -61,7 +62,8 @@ def make(monkeypatch):
     def _make(massive=None, http_handler=None):
         monkeypatch.setattr(ch, "_CACHE", TTLCache(60))
         monkeypatch.setattr(ch, "_LAST", {})
-        monkeypatch.setattr(rt, "_RECENT_8K", TTLCache(3600))
+        monkeypatch.setattr(ch, "_FOR", {})
+        monkeypatch.setattr(ek, "_LIVE", {})
         monkeypatch.setattr(rt, "make_client", lambda: massive)
         app = create_app()
         handler = http_handler or (lambda req: httpx.Response(404, json={}))
@@ -196,9 +198,7 @@ def test_chain_route_validation(make):
 
 
 def test_eightk_route_bundled_and_live(make, monkeypatch):
-    from app.options import eightk as ek
     monkeypatch.setattr(ek, "_FILE_CACHE", [{"ticker": "XYZ", "filing_date": "2025-06-20", "tags": ["material_litigation"]}])
-    monkeypatch.setattr(rt, "load_filings", ek.load_filings)
     c = make(None)
     j = c.get("/options/eightk", params={"ticker": "xyz", "as_of": "2025-06-30"}).json()
     assert j["score"] == pytest.approx(-(1 - 10 / 30)) and j["filing"]["family"] == "hedge"
@@ -212,6 +212,55 @@ def test_eightk_route_bundled_and_live(make, monkeypatch):
             return []
     c = make(Live())
     j = c.get("/options/eightk", params={"ticker": "XYZ", "as_of": "2026-10-03"}).json()
-    assert j["score"] == pytest.approx(1 - 3 / 30) and "live Massive" in j["source"]
+    assert j["score"] == pytest.approx(1 - 3 / 30) and "live Massive" in j["source"] and j["coverage"] == "live"
+    j = make(None).get("/options/eightk", params={"ticker": "XYZ", "as_of": "2026-05-01"}).json()   # OOS window
+    assert j["available"] is False and j["score"] is None and j["coverage"] is None
     assert c.get("/options/eightk", params={"ticker": "XYZ", "window_days": 0}).status_code == 422
     assert c.get("/options/eightk", params={"ticker": "XYZ", "as_of": "x"}).status_code == 422
+
+
+def test_implied_kalshi_threshold_in_subtitle(make):
+    """Realistic Kalshi payload: the level lives in yes_sub_title, close_time is UTC (Dec 31 11:59 PM ET)."""
+    exp = dt.date(TARGET.year, TARGET.month, TARGET.day)
+    title = f"Nvidia price on {exp.strftime('%b')} {exp.day}?"
+    close = dt.datetime.combine(exp + dt.timedelta(days=1), dt.time(4, 59)).isoformat() + "Z"
+
+    def handler(req):
+        return httpx.Response(200, json={"market": {"ticker": "KXNVDA-X", "title": title,
+                                                    "yes_sub_title": "$150 or above", "subtitle": "",
+                                                    "close_time": close, "yes_bid_dollars": "0.50",
+                                                    "yes_ask_dollars": "0.54"}})
+    c = make(FakeMassive({"NVDA": NVDA_ROWS}), handler)
+    j = c.get("/options/implied", params={"market_source": "kalshi", "market_id": "KXNVDA-X"}).json()
+    assert j["market"]["question"] == f"{title} $150 or above"
+    assert j["supported"] and j["available"] and j["match"]["strike"] == 150.0
+    assert j["match"]["expiry"] == exp.isoformat() and j["estimate"]["expiry_gap_days"] == 0
+
+
+def test_kalshi_range_subtitle_is_refused(make):
+    def handler(req):
+        return httpx.Response(200, json={"market": {"title": f"Nvidia price on {TARGET.isoformat()}?",
+                                                    "yes_sub_title": "$140 to $149.99"}})
+    c = make(FakeMassive({"NVDA": NVDA_ROWS}), handler)
+    j = c.get("/options/implied", params={"market_source": "kalshi", "market_id": "R"}).json()
+    assert j["supported"] is False and "range" in j["reason"]
+
+
+def test_implied_unavailable_when_nearest_expiry_is_a_different_date(make):
+    far = TARGET + dt.timedelta(days=40)
+    rows = [crow("call", 145.0, 8.0, expiry=far), crow("call", 155.0, 3.0, expiry=far)]
+    c = make(FakeMassive({"NVDA": rows}))
+    j = c.get("/options/implied", params={"question": q_nvda()}).json()
+    assert j["supported"] and j["available"] is False
+    assert j["estimate"]["expiry_gap_ok"] is False and "different date" in j["reason"]
+
+
+def test_truncated_chain_is_labelled(make):
+    class Paging(FakeMassive):
+        def get(self, url, params=None, timeout=None):
+            r = super().get(url.split("?")[0] if "next" not in url else "x/NVDA", params, timeout)
+            r.p["next_url"] = "https://api.massive.com/next"
+            return r
+    c = make(Paging({"NVDA": NVDA_ROWS}))
+    j = c.get("/options/chain", params={"ticker": "NVDA"}).json()
+    assert j["freshness"]["truncated"] is True

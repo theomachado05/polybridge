@@ -6,9 +6,17 @@ a date (in the text, or the market's resolution date). The question is read as t
 (a terminal digital), which is what a call spread prices.
 
 Refused (returns None, never a guess):
-- path questions (hit / reach / touch / dip to / all-time high): a touch probability is not a terminal one;
-- ranges ("between"), percent moves, market caps, rates, macro prints, crypto, anything without a level or date;
+- path questions (hit / reach / touch / dip to / all-time high, and movement verbs such as "fall below",
+  "drop below", "rise above", "climb above"): a touch probability is not a terminal one;
+- ranges ("between", "$240 to $249.99"), percent moves, market caps, rates, macro prints, crypto, anything without a level or date;
 - more than one candidate underlying, or none.
+
+Dates: a date without a year takes the year from the market's resolution date, read in America/New_York (a
+Kalshi close_time of 2027-01-01T04:59Z is Dec 31 2026 11:59 PM ET): the latest year whose month/day falls on or
+before the resolution date plus ``YEAR_SLACK_DAYS``.
+
+Kalshi threshold markets put the level in the subtitle ("Nvidia price on Dec 31, 2026?" + "$250 or above"): the
+router joins title and yes_sub_title, and a trailing "or above" / "or below" counts as the comparator.
 
 Index proxies: S&P 500 -> I:SPX index options (K unscaled; fallback SPY with K/10, approximate);
 Nasdaq-100 -> I:NDX; Russell 2000 -> I:RUT (fallback IWM, K/10, approximate); Dow Jones -> DIA with K/100
@@ -22,6 +30,13 @@ import json
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
+
+try:
+    from zoneinfo import ZoneInfo
+    _NY: dt.tzinfo = ZoneInfo("America/New_York")
+except Exception:  # no tz database: fixed EST (off by an hour in summer, irrelevant for picking a calendar day)
+    _NY = dt.timezone(dt.timedelta(hours=-5))
+YEAR_SLACK_DAYS = 3
 
 DATA = Path(__file__).resolve().parent.parent / "data"
 
@@ -42,7 +57,13 @@ INDEXES: list[tuple[str, str, float, tuple[str, float] | None, str]] = [
 REFUSE = [
     (r"\b(hit|hits|reach|reaches|reached|touch|touches|dip|dips|drop to|fall to|falls to|rise to|rises to|"
      r"all[- ]time high|ath|at any (point|time)|intraday)\b", "path question (touch probability, not terminal)"),
-    (r"\bbetween\b", "range question"),
+    (r"\b(fall|falls|fell|falling|drop|drops|dropped|dropping|sink|sinks|sank|sinking|plunge|plunges|plunged|"
+     r"crash|crashes|crashed|tumble|tumbles|slide|slides|slip|slips|rise|rises|rose|rising|climb|climbs|climbed|"
+     r"climbing|jump|jumps|jumped|surge|surges|surged|soar|soars|soared|rally|rallies|spike|spikes|break|breaks|"
+     r"broke|cross|crosses|crossed|go|goes|went|move|moves|moved)\s+(above|below|over|under|past|through|beneath)\b",
+     "path question (movement verb: touch probability, not terminal)"),
+    (r"\bbetween\b|\$?\d[\d,]*(?:\.\d+)?k?\s+(?:to|and)\s+\$?\d|\$\d[\d,]*(?:\.\d+)?\s*[-\u2013]\s*\$?\d",
+     "range question"),
     (r"%|\bpercent\b|\bbps\b|\bbasis points\b", "percent / rate question"),
     (r"market cap|\bmarket value\b|\bfdv\b|\bvaluation\b|\btrillion\b|\bbillion\b", "market-cap question"),
     (r"\b(bitcoin|btc|ethereum|eth|solana|sol|xrp|dogecoin|doge|crypto)\b", "crypto has no listed equity options here"),
@@ -135,6 +156,10 @@ def _underlyings(question: str) -> list[tuple[str, float, tuple[str, float] | No
     return list(found.values())
 
 
+_POST_ABOVE = r"\s+or\s+(?:above|more|higher|greater)\b"
+_POST_BELOW = r"\s+or\s+(?:below|less|lower|fewer)\b"
+
+
 def _level(question: str) -> tuple[str, float] | None:
     low = question.lower()
     hits = []
@@ -146,18 +171,31 @@ def _level(question: str) -> tuple[str, float] | None:
             v = float(m.group(1).replace(",", "")) * (1000.0 if m.group(2) else 1.0)
             if v > 0:
                 hits.append((direction, v))
+    # Kalshi subtitle style: "$250 or above", "6,000 or below" (the money sign is required: "2026 or above" is not a
+    # level).
+    for direction, post in (("above", _POST_ABOVE), ("below", _POST_BELOW)):
+        for m in re.finditer(r"\$\s*(\d[\d,]*(?:\.\d+)?)\s*(k\b)?" + post, low):
+            v = float(m.group(1).replace(",", "")) * (1000.0 if m.group(2) else 1.0)
+            if v > 0:
+                hits.append((direction, v))
     uniq = set(hits)
     return hits[0] if len(uniq) == 1 else None
 
 
+def _safe_date(y: int, month: int, day: int) -> dt.date:
+    return dt.date(y, month, min(day, calendar.monthrange(y, month)[1]))
+
+
 def _year_for(month: int, day: int, resolution: dt.date | None, as_of: dt.date) -> int:
+    """Year for a month/day written without one: with a resolution date, the latest year whose month/day is on or
+    before resolution + YEAR_SLACK_DAYS (a market resolving Jan 1 or Jan 2 still means *this* Dec 31); otherwise
+    the next occurrence on or after ``as_of``."""
     if resolution is not None:
-        return resolution.year
+        cap = resolution + dt.timedelta(days=YEAR_SLACK_DAYS)
+        y = cap.year
+        return y if _safe_date(y, month, day) <= cap else y - 1
     y = as_of.year
-    try:
-        return y if dt.date(y, month, day) >= as_of else y + 1
-    except ValueError:
-        return y
+    return y if _safe_date(y, month, day) >= as_of else y + 1
 
 
 def _date(question: str, resolution: dt.date | None, as_of: dt.date) -> dt.date | None:
@@ -171,7 +209,7 @@ def _date(question: str, resolution: dt.date | None, as_of: dt.date) -> dt.date 
     m = re.search(r"\bend of " + _MON + r"\b(?:,?\s*(20\d\d))?", low)
     if m:
         mon = MONTHS[m.group(1)[:4] if m.group(1).startswith("sept") else m.group(1)[:3]]
-        y = int(m.group(2)) if m.group(2) else _year_for(mon, 28, resolution, as_of)
+        y = int(m.group(2)) if m.group(2) else _year_for(mon, 31, resolution, as_of)
         return dt.date(y, mon, calendar.monthrange(y, mon)[1])
     m = re.search(r"\b" + _MON + r"\.?\s+(\d{1,2})(?:st|nd|rd|th)?\b(?:,?\s*(20\d\d))?", low)
     if m:
@@ -184,7 +222,7 @@ def _date(question: str, resolution: dt.date | None, as_of: dt.date) -> dt.date 
             return None
     m = re.search(r"\b(?:end of|by the end of|year[- ]end)\s*(?:the\s+)?(?:year\s*)?(20\d\d)?\b", low)
     if m and ("year" in m.group(0) or m.group(1)):
-        y = int(m.group(1)) if m.group(1) else (resolution.year if resolution else as_of.year)
+        y = int(m.group(1)) if m.group(1) else (_year_for(12, 31, resolution, as_of) if resolution else as_of.year)
         return dt.date(y, 12, 31)
     m = re.search(r"\b(?:in|by|for|end of|finish|finishes|close|closes|end|ends)\s+(20\d\d)\b", low)
     if m:
@@ -193,10 +231,17 @@ def _date(question: str, resolution: dt.date | None, as_of: dt.date) -> dt.date 
 
 
 def _to_date(x) -> dt.date | None:
+    """Calendar date in New York. Timestamps with a zone (Kalshi close_time, Gamma endDate: UTC) are converted
+    first; naive timestamps and bare dates are taken as written."""
     if x is None or x == "":
         return None
+    if isinstance(x, str) and len(x.strip()) > 10:
+        try:
+            x = dt.datetime.fromisoformat(x.strip().replace("Z", "+00:00"))
+        except ValueError:
+            pass
     if isinstance(x, dt.datetime):
-        return x.date()
+        return (x.astimezone(_NY) if x.tzinfo is not None else x).date()
     if isinstance(x, dt.date):
         return x
     try:

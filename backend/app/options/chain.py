@@ -27,7 +27,10 @@ MAX_PAGES = 8
 NAN = math.nan
 
 _CACHE = TTLCache(CHAIN_TTL_S)
-_LAST: dict[str, "Chain"] = {}  # most recent snapshot per underlying, for the network-free enrich() path
+_LAST: dict[str, "Chain"] = {}  # most recent snapshot per underlying (the /options/chain view; not for enrich)
+# Snapshot fetched *for* one (underlying, K, resolution date) query. enrich() reads this, so two markets on the same
+# underlying (different strikes or dates) never read each other's strike band / expiry window.
+_FOR: dict[tuple[str, float, str], "Chain"] = {}
 
 
 class NoClient(RuntimeError):
@@ -74,6 +77,7 @@ class Chain:
     spot: float = NAN                      # Massive underlying_asset.price when the plan provides it
     timeframe: str | None = None           # Massive's label, e.g. "DELAYED" / "REAL-TIME"
     source: str = "massive_snapshot"
+    truncated: bool = False                # True when Massive had more pages than MAX_PAGES (chain incomplete)
 
     def expiries(self) -> list[str]:
         return sorted({q.expiry for q in self.quotes})
@@ -187,7 +191,9 @@ def fetch_chain_sync(underlying: str, params: dict, client=None) -> Chain:
     client = client if client is not None else make_client()
     if client is None:
         raise NoClient("MASSIVE_API_KEY is not set")
-    ch = parse_snapshot(underlying, fetch_pages(client, underlying, params))
+    pages = fetch_pages(client, underlying, params)
+    ch = parse_snapshot(underlying, pages)
+    ch.truncated = bool(pages and (pages[-1] or {}).get("next_url"))
     _LAST[underlying.upper()] = ch
     return ch
 
@@ -215,6 +221,29 @@ def remember(chain: Chain) -> None:
     _LAST[chain.underlying.upper()] = chain
 
 
+def _qkey(underlying: str, K: Any, expiry: Any) -> tuple[str, float, str] | None:
+    k = _f(K)
+    if isinstance(expiry, dt.datetime):
+        expiry = expiry.date()
+    e = _iso(expiry) if isinstance(expiry, (dt.date, str)) else None
+    if not underlying or not math.isfinite(k) or not e:
+        return None
+    return underlying.strip().upper(), round(k, 4), e
+
+
+def remember_for(underlying: str, K: Any, expiry: Any, chain: Chain) -> None:
+    """Store the snapshot fetched for this (underlying, K, resolution date) query (see ``chain_for``)."""
+    key = _qkey(underlying, K, expiry)
+    if key is not None:
+        _FOR[key] = chain
+
+
+def chain_for(underlying: str, K: Any, expiry: Any) -> Chain | None:
+    """The snapshot ``enrich.refresh`` fetched for exactly this query, or None (no network)."""
+    key = _qkey(underlying, K, expiry)
+    return _FOR.get(key) if key is not None else None
+
+
 def staleness(chain: Chain, cache_stale: bool, now: float | None = None) -> dict:
     """Honest freshness labels for a response."""
     now = time.time() if now is None else now
@@ -231,4 +260,4 @@ def staleness(chain: Chain, cache_stale: bool, now: float | None = None) -> dict
         label = "prior_session"
     return {"source": chain.source, "timeframe": chain.timeframe, "fetched_at": chain.fetched_at,
             "data_age_s": None if age is None else round(age, 1), "cache_stale": cache_stale, "staleness": label,
-            "mark_sources": srcs, "has_quotes": "quote" in srcs}
+            "mark_sources": srcs, "has_quotes": "quote" in srcs, "truncated": bool(chain.truncated)}

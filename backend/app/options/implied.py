@@ -27,6 +27,8 @@ from typing import Any, Mapping
 NAN = math.nan
 RISK_FREE = 0.04   # same constant as the research StudyConfig.risk_free
 ARB_TOL = 0.02     # a spread probability this far outside [0, 1] is an inconsistent chain, not a probability
+GAP_MIN_DAYS = 7   # an expiry this close to the resolution date is always acceptable ...
+GAP_FRAC = 0.2     # ... and so is one within 20% of the horizon (Dec 31 vs the Dec 18 monthly, 3 months out)
 _N = NormalDist()
 
 
@@ -69,6 +71,15 @@ def year_frac(expiry: Any, as_of: Any = None) -> float:
 
 def discount_factor(r: float, T: float) -> float:
     return math.exp(-r * T) if _fin(r) and _fin(T) else NAN
+
+
+def max_expiry_gap_days(target: Any, as_of: Any = None) -> int:
+    """Largest |listed expiry - resolution date| (days) that still prices the same question:
+    max(GAP_MIN_DAYS, GAP_FRAC * days to resolution). Beyond it the estimate is for a different date and callers
+    must not use it (enrich leaves the tick fields NaN; the route says unavailable)."""
+    t, a = _date(target), _date(as_of) or dt.date.today()
+    horizon = (t - a).days if t else 0
+    return int(max(GAP_MIN_DAYS, math.floor(GAP_FRAC * max(horizon, 0))))
 
 
 def nearest_expiry(expiries: list[str], target: Any, as_of: Any = None) -> str | None:
@@ -239,7 +250,8 @@ def implied_for_threshold(chain, K: float, target: Any, *, above: bool = True, r
     if exp is None:
         res = implied_prob_above({}, K, NAN, r)
         res["notes"] = ["no listed expiry near the resolution date"]
-        res.update(expiry=None, expiry_gap_days=None, direction="above" if above else "below")
+        res.update(expiry=None, expiry_gap_days=None, expiry_gap_max_days=max_expiry_gap_days(target, as_of_d),
+                   expiry_gap_ok=False, direction="above" if above else "below")
         return res
     T = year_frac(exp, as_of_d)
     res = implied_prob_above(chain.slice(exp), K, T, r)
@@ -247,9 +259,14 @@ def implied_for_threshold(chain, K: float, target: Any, *, above: bool = True, r
         res = flip(res)
     t = _date(target)
     gap = (_date(exp) - t).days if t else None
-    res.update(expiry=exp, expiry_gap_days=gap, direction="above" if above else "below")
-    if gap is not None and abs(gap) > 7:
+    limit = max_expiry_gap_days(t, as_of_d)
+    ok = gap is not None and abs(gap) <= limit
+    res.update(expiry=exp, expiry_gap_days=gap, expiry_gap_max_days=limit, expiry_gap_ok=ok,
+               direction="above" if above else "below")
+    if gap is not None and abs(gap) > GAP_MIN_DAYS:
         res["notes"].append(f"nearest listed expiry is {gap:+d} days from the resolution date")
+    if not ok:
+        res["notes"].append(f"expiry gap exceeds {limit} days: the estimate prices a different date; not used")
     return res
 
 

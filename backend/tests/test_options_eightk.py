@@ -1,6 +1,8 @@
 """8-K score mapping and the OOS guard (app/options/eightk.py). Offline."""
+import asyncio
 import datetime as dt
 import json
+import math
 
 import pytest
 
@@ -111,4 +113,41 @@ def test_bundled_file_is_in_sample_only():
     some = rows[-1]
     s = ek.eightk_score(some["ticker"], as_of=some["filing_date"])
     assert s == (1.0 if some["family"] == "opportunity" else -1.0) or abs(s) == 1.0
-    assert ek.eightk_score(some["ticker"], as_of=dt.date(2030, 1, 1)) == 0.0
+    # 2030: nothing loaded covers that date -> NaN ("no data"), not 0.0 ("no filing")
+    assert math.isnan(ek.eightk_score(some["ticker"], as_of=dt.date(2030, 1, 1)))
+
+
+@pytest.fixture
+def no_live(monkeypatch):
+    monkeypatch.setattr(ek, "_LIVE", {})
+
+
+def test_no_data_is_nan_and_no_filing_is_zero(no_live):
+    # in-sample date with no qualifying filing for this ticker -> 0.0 (data loaded, nothing found)
+    assert ek.eightk_coverage("2025-06-30") == "in_sample"
+    assert ek.eightk_score("NO_SUCH_TICKER", "2025-06-30") == 0.0
+    # a live date before refresh_eightk ran, or a date inside the frozen OOS window -> NaN (no data)
+    assert ek.eightk_coverage("2026-10-03") is None and math.isnan(ek.eightk_score("XYZ", "2026-10-03"))
+    assert ek.eightk_coverage("2026-05-01") is None and math.isnan(ek.eightk_score("XYZ", "2026-05-01"))
+    d = ek.eightk_detail("XYZ", "2026-10-03")
+    assert d["coverage"] is None and d["score"] is None
+
+
+def test_refresh_eightk_loads_live_store_used_by_score(no_live):
+    c = FakeClient()
+    assert asyncio.run(ek.refresh_eightk("2026-10-03", client=c)) == "live"
+    assert ek.eightk_score("XYZ", "2026-10-03") == pytest.approx(1 - 5 / 30)   # workforce_reduction on 09-28
+    assert ek.eightk_score("ABC", "2026-10-03") == 0.0                          # loaded, no filing
+    assert ek.eightk_detail("XYZ", "2026-10-03")["coverage"] == "live"
+    n = len(c.calls)
+    assert asyncio.run(ek.refresh_eightk("2026-10-03", client=c)) == "live" and len(c.calls) == n   # TTL hit
+    assert math.isnan(ek.eightk_score("XYZ", "2026-10-05"))   # a later date is not covered until refreshed
+
+
+def test_refresh_eightk_never_raises_and_never_reads_oos(no_live):
+    class Boom:
+        def get_all(self, *a):
+            raise TimeoutError
+    assert asyncio.run(ek.refresh_eightk("2026-10-03", client=Boom())) is None
+    assert math.isnan(ek.eightk_score("XYZ", "2026-10-03"))
+    assert asyncio.run(ek.refresh_eightk("2026-05-01", client=Boom())) is None    # OOS date: no call at all

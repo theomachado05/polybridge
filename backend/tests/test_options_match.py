@@ -24,6 +24,19 @@ AS_OF = "2026-10-03"
     ("Will AAPL be above 300?", "2026-11-20T21:00:00Z", ("AAPL", 300.0, "2026-11-20", "above")),
     # a month/day with no year takes the resolution date's year
     ("Will Google close above $250 on Jan 15?", "2027-01-16T00:00:00Z", ("GOOGL", 250.0, "2027-01-15", "above")),
+    # UTC resolution just after midnight Jan 1 is Dec 31 in New York: the year is this one, not next
+    ("S&P 500 above 7000 by end of year?", "2027-01-01T04:59:00Z", ("I:SPX", 7000.0, "2026-12-31", "above")),
+    ("Will NVDA close above $250 on Dec 31?", "2027-01-01T04:59:00Z", ("NVDA", 250.0, "2026-12-31", "above")),
+    ("Will NVDA close above $250 at the end of December?", "2027-01-01T04:59:00Z",
+     ("NVDA", 250.0, "2026-12-31", "above")),
+    # a market that resolves a couple of days after the question's date still means this year (slack)
+    ("Will NVDA close above $250 on Dec 31?", "2027-01-02T17:00:00Z", ("NVDA", 250.0, "2026-12-31", "above")),
+    ("Will NVDA close above $250 on Dec 31?", "2027-01-01", ("NVDA", 250.0, "2026-12-31", "above")),
+    # ... and a later resolution still picks the year whose Dec 31 is just before it
+    ("Will NVDA close above $250 on Dec 31?", "2027-12-31T21:00:00Z", ("NVDA", 250.0, "2027-12-31", "above")),
+    # Kalshi style: title + yes_sub_title, the comparator after the level
+    ("Nvidia price on Dec 31, 2026? $250 or above", "2027-01-01T04:59:00Z", ("NVDA", 250.0, "2026-12-31", "above")),
+    ("S&P 500 on Dec 31, 2026? $6,000 or below", None, ("I:SPX", 6000.0, "2026-12-31", "below")),
 ])
 def test_supported_questions(question, res, expected):
     m = match_question(question, res, as_of=AS_OF)
@@ -52,6 +65,14 @@ def test_date_source_is_reported():
     ("Will NVDA reach $300 in 2026?", "path"),
     ("Will Tesla dip to $200 by Dec 31?", "path"),
     ("Will Apple hit an all-time high in 2026?", "path"),
+    ("Will Tesla fall below $200 by December 31?", "path"),
+    ("Will NVDA drop below $120 by Dec 31?", "path"),
+    ("Will Apple rise above $300 by Dec 31?", "path"),
+    ("Will Microsoft climb above $600 by end of year?", "path"),
+    ("Will TSLA sink below $150 on Dec 31?", "path"),
+    ("Will NVDA go above $250 by Dec 31?", "path"),
+    ("Nvidia price on Dec 31, 2026? $240 to $249.99", "range"),
+    ("Will NVDA close at $240-$250 on Dec 31?", "range"),
     ("Will the price of Bitcoin be above $74,000 on October 3?", "crypto"),
     ("Will Nvidia market cap be above $5 trillion on Dec 31?", "market-cap"),
     ("Will NVDA close between 150 and 160 on Dec 31?", "range"),
