@@ -27,7 +27,7 @@ class Params:
     n_perm: int = 10_000
     seed: int = 20261003
     alpha: float = 0.05
-    pm_pad_before_min: int = 120
+    pm_pad_before_min: int = 300
     pm_pad_after_min: int = 30
 
 

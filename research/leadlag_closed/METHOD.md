@@ -68,7 +68,7 @@ Applied to the **news events** (primary) and, separately, to the **placebo closu
 
 ## 7. Data
 
-- PM: CLOB `prices-history?market=<Yes token>&startTs&endTs&fidelity=1`, one request per closure covering `[close - 2 h, open + 30 min]`. Cached on disk.
+- PM: CLOB `prices-history?market=<Yes token>&startTs&endTs&fidelity=1`, one request per closure covering `[nominal close - 5 h, open + 30 min]` (see Amendment 1). Cached on disk.
 - Equity: Massive minute bars (SPY and QQQ), adjusted, extended hours included, fetched in calendar-month chunks. Cached on disk by the existing client.
 - No 8-K disclosure data is fetched and no option data. The study uses prices only. Equity bars and PM prices for 2025 and 2024 only; nothing dated 2026 is requested.
 - Key handling: `MASSIVE_API_KEY` is read from the environment or `.env` and is never printed or written. A missing key logs a message and exits with status 2.
@@ -86,4 +86,4 @@ Applied to the **news events** (primary) and, separately, to the **placebo closu
 
 ## Amendments
 
-(none yet)
+1. **PM request window (section 7), before any event-window price was fetched.** The window start was written as close minus 2 h. On early-close days (13:00 ET) that would miss the PM quote at the close, so the code pads from the nominal 16:00 close by 5 h instead. This only changes how many CLOB points are downloaded; every measure still uses the last point at or before the exact instant within 30 minutes (section 3).
