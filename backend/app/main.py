@@ -25,7 +25,7 @@ async def _validation_error(_: Request, exc: RequestValidationError) -> JSONResp
 def create_app() -> FastAPI:
     app = FastAPI(title="PolyBridge backend", version="0.1.0")
     app.state.store = ProposalStore()
-    app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:3000"], allow_methods=["*"], allow_headers=["*"])
+    app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"], allow_methods=["*"], allow_headers=["*"])
     app.add_exception_handler(RequestValidationError, _validation_error)
     app.include_router(router)
     app.include_router(verdicts_router)
