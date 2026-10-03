@@ -94,4 +94,5 @@ The headline answer ("how many genuine gaps survive costs") is the count of **ga
 
 ## Amendments
 
-(none yet)
+1. **Before any scan data was fetched (only feasibility probes of the endpoints had been run):** the `w_over_sigma` coarseness flag in section 3 is replaced by `width_sens = |p_mid(narrow) - p_mid(wide)|`, with `coarse` set when `width_sens > 0.05`. Reason: `w_over_sigma` needs an extra volatility estimate (extra quotes) while the narrow-vs-wide disagreement measures the same smoothing error directly from data already fetched.
+2. **Same time:** Kalshi fee rounding is applied to the order size where a size is known and to 100 contracts otherwise, as stated in section 5; the code computes the per-share figure as `total / C`.
