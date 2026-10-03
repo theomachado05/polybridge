@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getBridge, getEquity } from "@/lib/api";
 import { INSTRUMENTS } from "@/lib/demo";
@@ -24,6 +25,13 @@ export function BridgeScreen({ routeBridgeId }: { routeBridgeId?: string }) {
   const active = list.find((b) => b.id === activeId) ?? null;
   const demos = list.filter((b): b is DemoEntry => b.kind === "demo");
   const total = demos.reduce((a, b) => a + simPnl(b.sim), 0);
+
+  // `/bridge?demo=1` seeds the three demo bridges (the prototype's startScreen tweak, for stage demos).
+  const { seedDemo } = s;
+  const empty = list.length === 0;
+  useEffect(() => {
+    if (empty && new URLSearchParams(window.location.search).get("demo") === "1") seedDemo();
+  }, [empty, seedDemo]);
 
   if (!list.length) {
     return (
@@ -52,6 +60,7 @@ export function BridgeScreen({ routeBridgeId }: { routeBridgeId?: string }) {
         <span className="pb-mono" style={{ fontSize: 11, letterSpacing: ".08em", color: "#5A627A", paddingRight: 8, whiteSpace: "nowrap" }}>
           {list.length} {list.length === 1 ? "BRIDGE" : "BRIDGES"}{demos.length > 0 && <> · <span style={{ color: upColor(total) }}>{fmtMoney(total, true)}</span> TODAY{demos.length < list.length ? " (DEMO)" : ""}</>}
         </span>
+        {active?.kind === "demo" && <DemoTag what="demo chain" title="The prototype's simulated bridge: simulated prices and the design's sample algo chain." />}
         {list.map((b) => {
           const on = b.id === activeId;
           const ticker = b.kind === "demo" ? b.eq.t : b.eq?.t ?? "Bridge";
@@ -110,7 +119,7 @@ function DemoBridge({ entry, account }: { entry: DemoEntry; account: string }) {
         pxDelta={`${up ? "+" : "−"}${Math.abs(pxD).toFixed(2)} (${up ? "+" : "−"}${Math.abs((pxD / sim.base) * 100).toFixed(2)}%)`}
         driftLabel="Priced-in drift from market" drift={fmtPct(priced, 2)}
       />
-      <AlgoDock label="04 · 6 OF 1,284 ALGOS" algos={algos} tag={<DemoTag what="demo chain" />} />
+      <AlgoDock label="04 · 6 OF 1,284 ALGOS" algos={algos} />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,340px),1fr))", gap: 16, alignItems: "stretch" }}>
         <PortfolioPanel
           tag={demo}
@@ -188,7 +197,7 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
         volLabel="Ticks received" volValue={st.prices.length.toLocaleString("en-US")}
         orb={st.status === "running" ? "connecting" : "breathing"} nodeLabel={`02 · ${fam ? fam.toUpperCase() : "HEDGECORE ENGINE"}`}
         nodeLines={<>p50 {fmtNs(p50)} · p99 {fmtNs(p99)}<br />{move ? <>Expected move on YES <span style={{ color: move < 0 ? "#E0485A" : "#22A06B", fontWeight: 600 }}>{fmtPct(move)}</span></> : `${st.decisions} decisions`}</>}
-        instShort="Dynamic short hedge" exchange="US" ticker={ticker ?? "—"} name={card.data?.name ?? entry.eq?.name ?? ""}
+        instShort="Dynamic short hedge" exchange="US" ticker={ticker ?? "—"} name={[card.data?.name, entry.eq?.name].find((n) => n && n !== ticker) ?? ""}
         equityTag={<Tag tone="neutral" title="Equity price is the last quote from GET /equities; it is not streamed on the bridge">last quote</Tag>}
         px={spot ? spot.toFixed(2) : "—"} pxColor="#5A627A" pxDelta={spot ? "Not streamed on this bridge" : "No quote available"} pxSpark={[]}
         driftLabel="Priced-in drift since start (mapping estimate)" drift={priced == null ? "n/a" : fmtPct(priced, 2)}

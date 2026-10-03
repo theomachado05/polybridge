@@ -86,13 +86,13 @@ async function startRealBridge(q: Question, eq: EquityPick, settings: Settings):
   if (!m) throw new Error("this market is from the demo set, not the live search");
   if (!eq.direction) throw new Error(`${eq.t} is not in this market's mapping, so the adverse outcome is unknown`);
   let spot = eq.px;
-  if (!spot) spot = (await getEquity(eq.t)).implied_move?.spot ?? null;
-  if (!spot || !eq.move) throw new Error(`no spot price or impact estimate for ${eq.t}`);
+  if (!spot) spot = await getEquity(eq.t).then((c) => c.implied_move?.spot ?? null, () => null);
   const cap = Math.min(1, (parseInt(settings.maxHedge, 10) || 100) / 100);
   const market = { source: m.source, id: m.id, token_id: m.token_id };
   const prop = await createProposal({ ticker: eq.t, market, direction: eq.direction, shares_held: eq.held || 500, target_coverage: Math.min(0.5, cap) });
   const ok = prop.status === "approved" ? prop : await approveProposal(prop.id);
-  const gap = (spot * Math.abs(eq.move)) / 100;
+  // $/share per unit of probability; 0 (no spot or no impact estimate) turns the engine's fee gate off (contracts.md).
+  const gap = spot && eq.move ? (spot * Math.abs(eq.move)) / 100 : 0;
   const sources: ("replay" | "live")[] = m.token_id ? ["replay", "live"] : ["replay"];
   let last: unknown = null;
   for (const source of sources) {

@@ -11,6 +11,8 @@ export interface PipeContext {
   ticker: string; held: number;
   move: number; rev: number | null; brand: number | null; why: string;
   shortlisted?: string[];   // family ids from GET /library for the fitted class
+  real?: boolean;           // a live market with a real mapping: never show the prototype's invented lots/comps
+  heldReal?: number;        // shares actually held (real path)
 }
 
 const scoreLabel = (division: string) => (division === "opportunity" ? "net P&L per unit risk" : "hedge variance reduction");
@@ -39,13 +41,15 @@ export function fitSteps(fit: FitOut, c: PipeContext): PipeStep[] {
 }
 
 export function demoSteps(c: PipeContext): PipeStep[] {
+  const held = c.heldReal ? `${c.heldReal.toLocaleString("en-US")} sh held` : `no position — sized to a ${c.held.toLocaleString("en-US")} sh notional`;
   return [
     { key: "classify", name: "Parsing question", orb: "searching", text: `Resolution: ${c.question.replace("Will ", "").replace("?", "")} — sources: ${c.venues.join(" + ")}. Current YES ${c.yes}¢, 24h vol ${c.vol}.` },
-    { key: "shortlist", name: "Mapping exposure", orb: "connecting", text: `${c.ticker}: ${c.held.toLocaleString("en-US")} sh across 3 lots (2 long-term). Fee schedule and account type loaded.` },
-    { key: "history", name: "Estimating impact", orb: "working", text: `Revenue ${c.rev == null ? "n/a" : fmtPct(c.rev)}, brand ${c.brand == null ? "n/a" : fmtPct(c.brand)} → expected move on YES ${fmtPct(c.move)} (confidence 0.71). ${c.why}` },
-    { key: "tune", name: "Searching algo library", orb: "searching", text: "1,284 algorithms scored on σ regime, venue latency, fee drag and tax fit. 61 pass; 6 compose." },
-    { key: "explain", name: "Composing the chain", orb: "composing", text: "Sigma Gate → Book-Imbalance Reader → Delta-Bridge v3 → Vol-Adaptive Slicer / Meridian TWAP → Tax-Lot Optimizer → Fee-Aware Router." },
-    { key: "ready", name: "Backtesting on comps", orb: "listening", text: `NYC LL18 and Barcelona 2028 ban: this chain would have captured 71% of ${c.ticker}'s event drawdown at 0.09% cost.` },
+    { key: "shortlist", name: "Mapping exposure", orb: "connecting", text: c.real ? `${c.ticker}: ${held}. Fee schedule and account type loaded.` : `${c.ticker}: ${c.held.toLocaleString("en-US")} sh across 3 lots (2 long-term). Fee schedule and account type loaded.` },
+    { key: "history", name: "Estimating impact", orb: "working", text: c.real
+      ? (c.move ? `Precomputed AI mapping: expected move on YES ${fmtPct(c.move)}. ${c.why}` : `No impact estimate for ${c.ticker} on this market; the engine hedges on probability alone (fee gate off).`)
+      : `Revenue ${c.rev == null ? "n/a" : fmtPct(c.rev)}, brand ${c.brand == null ? "n/a" : fmtPct(c.brand)} → expected move on YES ${fmtPct(c.move)} (confidence 0.71). ${c.why}` },
+    { key: "tune", name: "Searching algo library", orb: "searching", text: c.real ? "Algo fit endpoint unavailable, so no presets were scored; the engine's default delta-bridge runs." : "1,284 algorithms scored on σ regime, venue latency, fee drag and tax fit. 61 pass; 6 compose." },
+    { key: "explain", name: "Composing the chain", orb: "composing", text: c.real ? "Staleness → Sigma gate → No-trade band → Fee gate → Delta-bridge sizer → Position cap (hedgecore Engine)." : "Sigma Gate → Book-Imbalance Reader → Delta-Bridge v3 → Vol-Adaptive Slicer / Meridian TWAP → Tax-Lot Optimizer → Fee-Aware Router." },
+    { key: "ready", name: c.real ? "Ready to bridge" : "Backtesting on comps", orb: "listening", text: c.real ? `Next: a proposal for ${c.ticker}, approved, then the engine runs on the market's live feed (or a replay).` : `NYC LL18 and Barcelona 2028 ban: this chain would have captured 71% of ${c.ticker}'s event drawdown at 0.09% cost.` },
   ];
 }
-

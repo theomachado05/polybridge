@@ -17,11 +17,13 @@ export function Nav() {
   const on = (p: string) => path === p || path.startsWith(p + "/");
   const build = on("/build") || on("/connect") || on("/pipeline");
   const step = !s.question ? 1 : !s.equity ? 2 : 3;
-  const n = s.bridges.length, anyLive = s.bridges.some((b) => b.kind === "live");
+  // A backend bridge opened by URL (/bridge/<id>) counts even before it is in the store.
+  const routeBridge = path.startsWith("/bridge/") && !s.bridges.some((b) => b.kind === "live" && path.endsWith("/" + b.bridgeId)) ? 1 : 0;
+  const n = s.bridges.length + routeBridge, anyLive = routeBridge > 0 || s.bridges.some((b) => b.kind === "live");
   const live = on("/bridge") || (on("/portfolio") && n > 0);
   const lib = s.library.status === "ok" && s.library.data ? `${s.library.data.total.toLocaleString("en-US")} presets` : `${DEMO_ALGO_COUNT.toLocaleString("en-US")} algorithms`;
   const dot = live ? "#4ADE80" : on("/pipeline") ? "#FBBF24" : "#9A7BFF";
-  const label = live ? `${anyLive ? "Live" : "Demo"} · ${n} ${n === 1 ? "bridge" : "bridges"}`
+  const label = live ? `${anyLive ? "Running" : "Demo"} · ${n} ${n === 1 ? "bridge" : "bridges"}`
     : on("/library") ? lib
     : on("/profile") ? `${s.settings.conns.length} connection${s.settings.conns.length === 1 ? "" : "s"}`
     : on("/pipeline") ? "Composing bridge"

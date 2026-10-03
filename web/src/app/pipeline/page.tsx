@@ -55,7 +55,7 @@ export default function Pipeline() {
 
   const ctx: PipeContext = {
     question: q.q, venues: q.venues, yes: q.yes, vol: q.vol, ticker: e.t, held: e.held || 500,
-    move: e.move, rev: e.rev, brand: e.brand, why: e.why,
+    move: e.move, rev: e.rev, brand: e.brand, why: e.why, real: !!q.real, heldReal: e.held,
     shortlisted: fitOk && s.library.data ? shortlist(s.library.data, String(fit!.data!.event_class)).map((r) => r.id) : undefined,
   };
   const steps = mode === "fit" ? fitSteps(fit!.data!, ctx) : demoSteps(ctx);
