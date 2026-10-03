@@ -110,7 +110,7 @@ ReplayStats replay_algo(AnyAlgo& algo, const Position& pos, std::span<const Mark
       const double opp = touch_price(pending.instrument, pending.side, pending.venue, t, fm);
       const bool through = num(opp) && (pending.side > 0 ? opp <= pending.limit_px : opp >= pending.limit_px);
       if (through) fill(pending.instrument, pending.side, pending.qty, pending.limit_px, pending.venue);
-      else ++st.n_rejected;
+      else { ++st.n_rejected; on_reject(algo, pending.instrument); }
     }
 
     const std::int64_t t0 = mono_ns();
@@ -123,6 +123,7 @@ ReplayStats replay_algo(AnyAlgo& algo, const Position& pos, std::span<const Mark
       const bool ok_qty = num(in.qty) && in.qty > 0 && (in.side == 1 || in.side == -1);
       if (!ok_qty || !num(px)) {
         ++st.n_rejected;
+        on_reject(algo, in.instrument);
       } else if (!num(in.limit_px) || (in.side > 0 ? px <= in.limit_px : px >= in.limit_px)) {
         fill(in.instrument, in.side, in.qty, px, in.venue);  // marketable (or a limit that is already through)
       } else {

@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 #include <cmath>
+#include <string_view>
+#include <variant>
 #include <vector>
 #include "hedgecore/replay.hpp"
 #include "tick_helpers.hpp"
@@ -137,4 +139,62 @@ TEST(Replay, MissingPricesRejectInsteadOfFillingAtZero) {
 
 TEST(Replay, UnknownFamilyThrows) {
   EXPECT_THROW(replay_grid("nope", Position{}, std::vector<MarketTick>{}), std::invalid_argument);
+}
+
+TEST(Replay, PassiveSlicedHedgeConvergesWhenTheMarketTradesThrough) {
+  // stress_lead_hedge in calm: target 150 in 100-share passive children joining the ask. The stock rises 0.05 a
+  // tick, so each resting sell is traded through on the next tick. Both children fill (fee gate on, default impact).
+  std::vector<MarketTick> ticks;
+  for (int i = 0; i < 12; ++i) ticks.push_back(pm((i + 1) * kSec, 0.20, 0.005, 100.0 + 0.05 * i, 0.01));
+  Position pos;
+  pos.shares_held = 1000;
+  const ReplayStats s = replay("stress_lead_hedge", find_family("stress_lead_hedge")->spec.defaults(), pos, ticks);
+  EXPECT_EQ(s.n_fills, 2u);
+  EXPECT_EQ(s.n_rejected, 0u);
+}
+
+TEST(Replay, ExpiredPassiveOrderIsRequotedEveryTick) {
+  // Flat stock: a resting sell at the ask never trades through. The algo re-quotes each tick instead of going quiet.
+  std::vector<MarketTick> ticks;
+  for (int i = 0; i < 10; ++i) ticks.push_back(pm((i + 1) * kSec, 0.20));
+  Position pos;
+  pos.shares_held = 1000;
+  const ReplayStats s = replay("stress_lead_hedge", find_family("stress_lead_hedge")->spec.defaults(), pos, ticks);
+  EXPECT_EQ(s.n_orders, 10u);
+  EXPECT_EQ(s.n_fills, 0u);
+  EXPECT_EQ(s.n_rejected, 10u);
+}
+
+bool is_working(AnyAlgo& a) {
+  return std::visit(
+      [](auto& x) {
+        if constexpr (requires { x.core.working; }) return x.core.working;
+        else return false;
+      },
+      a);
+}
+
+TEST(Replay, NoHedgeFamilyStallsBelowFeesMidRebalance) {
+  // Every hedge family at default params on a constant-probability path with immediate fills: while an approved
+  // rebalance is unfinished, nothing may hold below_fees, and every approved rebalance completes. (A target that
+  // grows for another reason, e.g. crypto_reg_hedge's volatility rescale, is a new increment and may be fee-gated.)
+  for (const auto& f : catalog().families) {
+    if (std::string_view(f.division) != "hedge") continue;
+    Position pos;
+    pos.shares_held = 1000;
+    AnyAlgo a = make_algo(f.id, f.spec.defaults(), pos);
+    int orders = 0;
+    for (int k = 0; k < 40; ++k) {
+      MarketTick t = with_book(pm((k + 1) * kSec, 0.60), 3000, 3000);
+      const bool working = is_working(a);
+      const Intent i = on_tick(a, t, t.ts_ns);
+      if (working) EXPECT_NE(i.reason, code(Rc::BelowFees)) << f.id << " tick " << k;
+      if (i.action == Action::Order) {
+        ++orders;
+        on_fill(a, Instrument::Equity, i.side * i.qty, i.side > 0 ? t.under_ask : t.under_bid);
+      }
+    }
+    EXPECT_GT(orders, 0) << f.id;
+    EXPECT_FALSE(is_working(a)) << f.id << " left a rebalance unfinished";
+  }
 }

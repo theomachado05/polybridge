@@ -100,6 +100,10 @@ struct PolyKalshiSpread : AlgoBase<PolyKalshiSpread> {
     core.fill(i, q, px, 1.0);
     if (core.led.at(Instrument::PredYes) == 0 && core.led.at(Instrument::PredNo) == 0) kill.disarm();
   }
+  // An entry that never filled leaves the algo flat: the gap-flip stop armed for it no longer applies.
+  void on_reject(Instrument) noexcept {
+    if (core.led.at(Instrument::PredYes) == 0 && core.led.at(Instrument::PredNo) == 0) kill.disarm();
+  }
 };
 
 // ---- no_bid_seller ------------------------------------------------------------------------------------------------

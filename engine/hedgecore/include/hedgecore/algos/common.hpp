@@ -4,6 +4,7 @@
 // Nothing here allocates or makes a virtual call on the tick path.
 #include <cmath>
 #include <cstdint>
+#include <limits>
 #include <string_view>
 #include "hedgecore/blocks/execution.hpp"
 #include "hedgecore/blocks/gates.hpp"
@@ -96,8 +97,8 @@ struct Ledger {
 };
 
 // ---------------------------------------------------------------------------------------------------------------
-// HedgeCore: staleness -> session -> [family signal + target] -> drawdown kill -> position cap -> no-trade band ->
-// fee gate -> wash-sale guard -> cooldown -> slicer -> passive/aggressive. The hedge is a short equity position of
+// HedgeCore: staleness -> session -> [family signal + target] -> position cap -> drawdown kill (shrink only) ->
+// no-trade band -> fee gate (new increments only) -> wash-sale guard -> cooldown -> slicer -> passive/aggressive. The hedge is a short equity position of
 // `hedge` shares (Position::equity == -hedge) protecting Position::shares_held long shares.
 // ---------------------------------------------------------------------------------------------------------------
 struct HedgeCore {
@@ -105,7 +106,10 @@ struct HedgeCore {
   double shares = 0;       // N
   double hedge = 0;        // current short hedge in shares (>= 0 normally)
   double impact = 0.03;    // expected fractional move of the stock if the adverse event resolves; 0 disables FeeGate
-  double p_last_order = 0; // adverse probability at the last emitted order (Engine semantics)
+  double p_last_order = 0; // adverse probability at the last fee-gate approval
+  bool working = false;    // an approved rebalance toward work_target is not finished yet
+  double work_target = 0;
+  static constexpr double kDoneShares = 1e-6;
   FeeModel fees{};
   blocks::Staleness stale{2 * kNsPerSec};
   blocks::Session session{};
@@ -146,40 +150,83 @@ struct HedgeCore {
     if (!stale.pass(g)) { out = hold(Rc::Stale); return false; }
     if (!session.pass(g)) { out = hold(Rc::OutOfSession); return false; }
     last_ts = t.ts_ns;
-    if (seed_qty != 0 && num(under_ref(t))) { lots.apply_fill(seed_qty, under_ref(t), t.ts_ns); seed_qty = 0; }
+    if (seed_qty != 0 && num(under_ref(t))) {  // the pre-existing hedge counts for drawdown from its first mark
+      lots.apply_fill(seed_qty, under_ref(t), t.ts_ns);
+      ledger.fill(Instrument::Equity, seed_qty, under_ref(t), 1.0);
+      seed_qty = 0;
+    }
     return true;
   }
 
+  // Fee gate for a fresh increment of q shares: benefit is priced on the probability move since the last approval.
+  Rc fee_check(const MarketTick& t, double u, double q, double p_adv) const noexcept {
+    if (impact <= 0) return Rc::None;
+    if (!num(u)) return Rc::FeeUnknown;
+    double hs = half_spread(t.under_bid, t.under_ask);
+    if (!num(hs)) hs = fees.equity_half_spread;
+    const double cost = q * (fees.equity_per_share + hs);
+    const double benefit = q * u * impact * std::abs(p_adv - p_last_order);
+    return fee_gate.check(benefit, cost);
+  }
+
   // Step 2: the family's target (short shares) for adverse probability p_adv.
+  //
+  // Working rebalance: once the band and fee gate approve a move to `work_target`, the rest of that move is already
+  // paid for. Later slices, re-quotes of a passive order that did not fill, and re-sends after a reject finish it
+  // without being judged again (the fee gate prices only the probability move since the approval, which is ~0 by
+  // then). Only an increment beyond the approved target, or a reversal, goes back through band and fee gate. A
+  // shrinking target narrows the approved move and never needs a new approval.
   Intent decide(const MarketTick& t, std::int64_t now, double p_adv, double target, double urgency, double signal,
                 Rc why = Rc::Rebalance) noexcept {
     if (!num(target) || !num(p_adv)) return hold(Rc::SignalMissing, signal);
     const double u = under_ref(t);
-    if (dd.update(num(u) ? ledger.cash + ledger.at(Instrument::Equity) * u : kNaN)) return hold(Rc::DrawdownKill, signal);
     bool capped = false;
     target = cap.clamp(target < 0 ? 0.0 : target, capped);
-    const double delta = target - hedge;
-    if (!band.pass(delta)) return hold(Rc::InsideBand, signal);
-    if (impact > 0) {
-      if (!num(u)) return hold(Rc::FeeUnknown, signal);
-      double hs = half_spread(t.under_bid, t.under_ask);
-      if (!num(hs)) hs = fees.equity_half_spread;
-      const double q = std::abs(delta);
-      const double cost = q * (fees.equity_per_share + hs);
-      const double benefit = q * u * impact * std::abs(p_adv - p_last_order);
-      const Rc fr = fee_gate.check(benefit, cost);
-      if (fr != Rc::None) return hold(fr, signal);
+    if (dd.update(num(u) ? ledger.cash + ledger.at(Instrument::Equity) * u : kNaN)) {
+      // Killed: the hedge leg may only shrink (toward 0); it never grows again. Risk-reducing, so no fee gate.
+      working = false;
+      if (!(target < hedge) || !band.pass(target - hedge)) return hold(Rc::DrawdownKill, signal);
+      return send(t, now, target - hedge, urgency, signal, Rc::DrawdownKill, capped);
     }
+    double delta = target - hedge;
+    double rem = working ? work_target - hedge : 0.0;
+    if (working && (std::abs(rem) < kDoneShares || sgn(rem) != sgn(delta))) { working = false; rem = 0.0; }
+    if (working && !band.pass(delta)) { working = false; return hold(Rc::InsideBand, signal); }  // close enough
+    if (working) {
+      const double extra = std::abs(delta) - std::abs(rem);
+      if (extra > 0) {  // the target moved further: the increment needs its own approval
+        if (band.pass(extra) && fee_check(t, u, extra, p_adv) == Rc::None) p_last_order = p_adv;
+        else { target = work_target; delta = rem; capped = false; }
+      }
+      work_target = target;
+    } else {
+      if (!band.pass(delta)) return hold(Rc::InsideBand, signal);
+      const Rc fr = fee_check(t, u, std::abs(delta), p_adv);
+      if (fr != Rc::None) return hold(fr, signal);
+      working = true;
+      work_target = target;
+      p_last_order = p_adv;
+    }
+    return send(t, now, delta, urgency, signal, why, capped);
+  }
+
+  Intent send(const MarketTick& t, std::int64_t now, double delta, double urgency, double signal, Rc why,
+              bool capped) noexcept {
     const int side = delta > 0 ? -1 : +1;  // sell to add to the short hedge
     if (side < 0 && !wash.allows(-1, t.ts_ns)) return hold(Rc::WashSale, signal);
     if (!cooldown.pass(blocks::GateIn{t, now})) return hold(Rc::Cooldown, signal);
     bool sliced = false;
     const double qty = std::abs(slicer.clip(delta, sliced));
     const double limit = pa.limit(side, t.under_bid, t.under_ask, urgency);
-    p_last_order = p_adv;
     cooldown.on_order(now);
     const Rc r = capped ? Rc::PositionCapped : (sliced ? Rc::Sliced : why);
     return order(Instrument::Equity, side, qty, limit, r, signal);
+  }
+
+  // The venue rejected the order or a passive limit expired unfilled: nothing traded, so the cooldown it started is
+  // void. The working rebalance stays approved and is re-sent on the next tick.
+  void on_reject(Instrument i) noexcept {
+    if (i == Instrument::Equity) cooldown.last_ns = std::numeric_limits<std::int64_t>::min();
   }
 
   void on_fill(Instrument i, double signed_qty, double px) noexcept {
@@ -187,6 +234,7 @@ struct HedgeCore {
     if (!num(signed_qty) || !num(px)) { ledger.bad = true; return; }
     ledger.fill(i, signed_qty, px, 1.0);
     hedge -= signed_qty;
+    if (working && std::abs(work_target - hedge) < kDoneShares) working = false;
     wash.record(lots.apply_fill(signed_qty, px, last_ts), last_ts);
   }
 };

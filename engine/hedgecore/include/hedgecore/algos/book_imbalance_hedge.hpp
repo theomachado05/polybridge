@@ -58,6 +58,7 @@ struct BookImbalanceHedge : AlgoBase<BookImbalanceHedge> {
     return core.decide(t, now, p, sizer.target(p), std::abs(ib), ib, leads ? Rc::Aggressive : Rc::Rebalance);
   }
   void on_fill(Instrument i, double q, double px) noexcept { core.on_fill(i, q, px); }
+  void on_reject(Instrument i) noexcept { core.on_reject(i); }
 };
 
 }  // namespace hedgecore::algos

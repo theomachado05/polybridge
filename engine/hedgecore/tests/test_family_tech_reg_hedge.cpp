@@ -32,3 +32,34 @@ TEST(TechRegHedge, FeeRatio) {
 }
 
 TEST(TechRegHedge, Safety) { expect_nan_and_stale_safety<F>(params<F>(), held(1000)); }
+
+TEST(TechRegHedge, SlicedRebalanceConvergesWithDefaultImpact) {
+  // Default impact 0.03 keeps the fee gate on. Target round(0.5 * 1000 * 0.6) = 300 in 200-share children: the
+  // second child finishes the already-approved move instead of holding below_fees.
+  F a(params<F>({{"child_max", 200}}), held(1000));
+  ASSERT_GT(F::spec().defaults().v[static_cast<std::size_t>(F::spec().index_of("impact"))], 0.0);
+  double hedge = 0;
+  std::int64_t ts = kSec;
+  int orders = 0;
+  for (int k = 0; k < 10; ++k, ts += kSec) {
+    const Intent i = a.on_tick(pm(ts, 0.60), ts);
+    EXPECT_NE(i.reason, rc(Rc::BelowFees)) << "tick " << k;
+    if (is_order(i)) { ++orders; a.on_fill(Instrument::Equity, i.side * i.qty, 100.0); hedge -= i.side * i.qty; }
+  }
+  const double target = a.core.work_target;
+  EXPECT_DOUBLE_EQ(hedge, target);
+  EXPECT_GE(target, 250.0);
+  EXPECT_EQ(orders, 2);
+  EXPECT_EQ(a.on_tick(pm(ts, 0.60), ts).reason, rc(Rc::InsideBand));
+}
+
+TEST(TechRegHedge, IncrementBeyondApprovedTargetIsFeeGated) {
+  // Mid-rebalance a tiny extra move (below the fee gate on its own) does not extend the approved target.
+  F a(params<F>({{"coverage", 1.0}, {"child_max", 200}, {"band_shares", 10}, {"impact", 0.005}}), held(1000));
+  ASSERT_TRUE(is_order(a.on_tick(pm(kSec, 0.50), kSec)));  // approve 500, send 200
+  a.on_fill(Instrument::Equity, -200, 100);
+  const Intent i = a.on_tick(pm(2 * kSec, 0.51), 2 * kSec);  // target 510: extra 10 shares on dp 0.01 fails fees
+  ASSERT_TRUE(is_order(i));
+  EXPECT_DOUBLE_EQ(a.core.work_target, 500.0);
+  EXPECT_DOUBLE_EQ(i.qty, 200.0);
+}

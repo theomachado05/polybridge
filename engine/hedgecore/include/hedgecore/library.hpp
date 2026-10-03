@@ -98,6 +98,14 @@ inline Intent on_tick(AnyAlgo& a, const MarketTick& t, std::int64_t now_ns) noex
 inline void on_fill(AnyAlgo& a, Instrument i, double signed_qty, double px) noexcept {
   std::visit([&](auto& f) noexcept { f.on_fill(i, signed_qty, px); }, a);
 }
+// The order was rejected or a passive limit expired unfilled. Families that keep order state react; others ignore it.
+inline void on_reject(AnyAlgo& a, Instrument i) noexcept {
+  std::visit(
+      [&](auto& f) noexcept {
+        if constexpr (requires { f.on_reject(i); }) f.on_reject(i);
+      },
+      a);
+}
 inline const char* algo_id(const AnyAlgo& a) noexcept {
   return std::visit([](const auto& f) noexcept { return std::decay_t<decltype(f)>::id; }, a);
 }

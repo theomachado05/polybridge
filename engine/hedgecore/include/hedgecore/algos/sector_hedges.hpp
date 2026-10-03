@@ -46,6 +46,7 @@ struct HousingRates : AlgoBase<HousingRates> {
     return core.decide(t, now, p, sizer.target(p), 0.0, p);
   }
   void on_fill(Instrument i, double q, double px) noexcept { core.on_fill(i, q, px); }
+  void on_reject(Instrument i) noexcept { core.on_reject(i); }
 };
 
 // ---- fig_stress ---------------------------------------------------------------------------------------------------
@@ -86,6 +87,7 @@ struct FigStress : AlgoBase<FigStress> {
     return core.decide(t, now, p, sizer.target(p), 0.0, p);
   }
   void on_fill(Instrument i, double q, double px) noexcept { core.on_fill(i, q, px); }
+  void on_reject(Instrument i) noexcept { core.on_reject(i); }
 };
 
 // ---- macro_fed_hedge ----------------------------------------------------------------------------------------------
@@ -131,6 +133,7 @@ struct MacroFedHedge : AlgoBase<MacroFedHedge> {
     return core.decide(t, now, p, target, 0.0, num(m) ? m : p);
   }
   void on_fill(Instrument i, double q, double px) noexcept { core.on_fill(i, q, px); }
+  void on_reject(Instrument i) noexcept { core.on_reject(i); }
 };
 
 // ---- election_hedge -----------------------------------------------------------------------------------------------
@@ -171,6 +174,7 @@ struct ElectionHedge : AlgoBase<ElectionHedge> {
     return core.decide(t, now, p, sizer.target(p), 0.0, p);
   }
   void on_fill(Instrument i, double q, double px) noexcept { core.on_fill(i, q, px); }
+  void on_reject(Instrument i) noexcept { core.on_reject(i); }
 };
 
 // ---- tariff_trade_hedge -------------------------------------------------------------------------------------------
@@ -216,6 +220,7 @@ struct TariffTradeHedge : AlgoBase<TariffTradeHedge> {
     return core.decide(t, now, p, target, 0.0, num(zz) ? zz : p);
   }
   void on_fill(Instrument i, double q, double px) noexcept { core.on_fill(i, q, px); }
+  void on_reject(Instrument i) noexcept { core.on_reject(i); }
 };
 
 // ---- energy_geo_hedge ---------------------------------------------------------------------------------------------
@@ -261,6 +266,7 @@ struct EnergyGeoHedge : AlgoBase<EnergyGeoHedge> {
     return core.decide(t, now, p, sizer.target(p), urg, num(dp) ? dp : p, jump ? Rc::Aggressive : Rc::Passive);
   }
   void on_fill(Instrument i, double q, double px) noexcept { core.on_fill(i, q, px); }
+  void on_reject(Instrument i) noexcept { core.on_reject(i); }
 };
 
 // ---- crypto_reg_hedge ---------------------------------------------------------------------------------------------
@@ -303,6 +309,7 @@ struct CryptoRegHedge : AlgoBase<CryptoRegHedge> {
     return core.decide(t, now, p, sizer.target(p), 0.0, scale);
   }
   void on_fill(Instrument i, double q, double px) noexcept { core.on_fill(i, q, px); }
+  void on_reject(Instrument i) noexcept { core.on_reject(i); }
 };
 
 // ---- tech_reg_hedge -----------------------------------------------------------------------------------------------
@@ -342,6 +349,7 @@ struct TechRegHedge : AlgoBase<TechRegHedge> {
     return core.decide(t, now, p, sizer.target(p), 0.0, p);
   }
   void on_fill(Instrument i, double q, double px) noexcept { core.on_fill(i, q, px); }
+  void on_reject(Instrument i) noexcept { core.on_reject(i); }
 };
 
 #undef HEDGECORE_HEDGE_CTOR_CORE

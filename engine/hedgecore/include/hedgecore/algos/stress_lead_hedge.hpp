@@ -62,6 +62,7 @@ struct StressLeadHedge : AlgoBase<StressLeadHedge> {
     return core.decide(t, now, p, sizer.target(p), stress, stress, urgent ? Rc::Aggressive : Rc::Passive);
   }
   void on_fill(Instrument i, double q, double px) noexcept { core.on_fill(i, q, px); }
+  void on_reject(Instrument i) noexcept { core.on_reject(i); }
 };
 
 }  // namespace hedgecore::algos

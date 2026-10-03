@@ -48,6 +48,7 @@ struct EquityDeltaBridge : AlgoBase<EquityDeltaBridge> {
     return core.decide(t, now, p, sizer.target(p), 0.0, p);
   }
   void on_fill(Instrument i, double q, double px) noexcept { core.on_fill(i, q, px); }
+  void on_reject(Instrument i) noexcept { core.on_reject(i); }
 };
 
 }  // namespace hedgecore::algos

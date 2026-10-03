@@ -32,3 +32,14 @@ TEST(StressLeadHedge, BandAndSafety) {
   EXPECT_EQ(a.on_tick(pm(2 * kSec, 0.25), 2 * kSec).reason, rc(Rc::InsideBand));  // 188 - 150 < 50
   expect_nan_and_stale_safety<F>(params<F>(), held(1000));
 }
+
+TEST(StressLeadHedge, UnfilledPassiveOrderIsRequotedNotFeeGated) {
+  F a(params<F>(), held(1000));  // default impact 0.03: fee gate on
+  const Intent first = a.on_tick(pm(kSec, 0.20), kSec);
+  ASSERT_TRUE(is_order(first));
+  a.on_reject(Instrument::Equity);  // the passive limit expired unfilled
+  const Intent again = a.on_tick(pm(2 * kSec, 0.20, 0.005, 100.5), 2 * kSec);
+  ASSERT_TRUE(is_order(again)) << reason_name(again.reason);
+  EXPECT_DOUBLE_EQ(again.qty, 100.0);
+  EXPECT_DOUBLE_EQ(again.limit_px, 100.51);  // re-joins the new ask
+}

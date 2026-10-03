@@ -6,6 +6,8 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <string_view>
+#include <utility>
 #include <vector>
 
 #include "hedgecore/engine.hpp"
@@ -100,6 +102,24 @@ bool flip_from(const std::string& direction) {
   if (direction == "down_on_yes") return false;
   if (direction == "up_on_yes") return true;
   throw py::value_error("direction must be 'down_on_yes' or 'up_on_yes'");
+}
+
+// The YES/NO flip is defined only for the hedge division: those families trade equity alone, so flipping the tick
+// changes which outcome counts as adverse and nothing else. Prediction-market and option families name real
+// contracts in their intents (pred_yes / pred_no) and compare against option-implied fields, so flipping their
+// input would make them trade the wrong leg; for them direction must stay 'down_on_yes'.
+bool flip_for(const FamilyInfo& f, const std::string& direction) {
+  const bool flip = flip_from(direction);
+  if (flip && std::string_view(f.division) != "hedge")
+    throw py::value_error(std::string("direction='up_on_yes' applies only to hedge-division families; '") + f.id +
+                          "' is division '" + f.division + "' (its intents name the real YES/NO contract)");
+  return flip;
+}
+
+// Under the flip the position's YES and NO holdings swap too, so replay marks them on the flipped book.
+Position oriented(Position p, bool flip) noexcept {
+  if (flip) std::swap(p.pred_yes, p.pred_no);
+  return p;
 }
 
 struct Field {
@@ -296,24 +316,25 @@ py::dict catalog_dict() {
 struct PyAlgo {
   const FamilyInfo* info;
   Params params;
-  AnyAlgo algo;
   bool flip;
+  AnyAlgo algo;
   PyAlgo(const std::string& family, const py::dict& p, const py::dict& pos, const std::string& direction)
       : info(&family_or_throw(family)),
         params(params_from(*info, p)),
-        algo(make_algo(family, params, position_from(pos))),
-        flip(flip_from(direction)) {}
+        flip(flip_for(*info, direction)),
+        algo(make_algo(family, params, oriented(position_from(pos), flip))) {}
   py::dict tick(const py::dict& t, std::optional<std::int64_t> now_ns) {
     MarketTick mt = tick_from(t);
     if (flip) mt = flip_yes_no(mt);
     return intent_dict(on_tick(algo, mt, now_ns.value_or(mt.ts_ns)));
   }
   void fill(const std::string& inst, double qty, double px) { on_fill(algo, instrument_from(inst), qty, px); }
+  void reject(const std::string& inst) { on_reject(algo, instrument_from(inst)); }
 };
 
-std::vector<MarketTick> prepared_ticks(const py::dict& ticks, const std::string& direction) {
+std::vector<MarketTick> prepared_ticks(const py::dict& ticks, bool flip) {
   std::vector<MarketTick> v = ticks_from(ticks);
-  if (flip_from(direction))
+  if (flip)
     for (auto& t : v) t = flip_yes_no(t);
   return v;
 }
@@ -377,6 +398,8 @@ PYBIND11_MODULE(hedgecore, m) {
            "tick: dict of MarketTick fields (absent or None = NaN). now_ns defaults to the tick's ts_ns.")
       .def("on_fill", &PyAlgo::fill, py::arg("instrument"), py::arg("qty"), py::arg("px"),
            "qty is signed: + bought, - sold")
+      .def("on_reject", &PyAlgo::reject, py::arg("instrument"),
+           "the last order on this instrument was rejected or expired unfilled (nothing traded)")
       .def_property_readonly("family", [](const PyAlgo& a) { return std::string(a.info->id); })
       .def_property_readonly("params", [](const PyAlgo& a) { return params_dict(*a.info, a.params); });
 
@@ -386,8 +409,9 @@ PYBIND11_MODULE(hedgecore, m) {
          std::optional<py::dict> fees, const std::string& direction) {
         const FamilyInfo& f = family_or_throw(family);
         const Params p = params_from(f, params);
-        const Position pos = position_from(position);
-        const std::vector<MarketTick> v = prepared_ticks(ticks, direction);
+        const bool flip = flip_for(f, direction);
+        const Position pos = oriented(position_from(position), flip);
+        const std::vector<MarketTick> v = prepared_ticks(ticks, flip);
         const FeeModel fm = fees_from(fees);
         ReplayStats s;
         {
@@ -406,8 +430,9 @@ PYBIND11_MODULE(hedgecore, m) {
       [](const std::string& family, const py::dict& position, const py::dict& ticks, std::optional<py::dict> fees,
          const std::string& direction) {
         const FamilyInfo& f = family_or_throw(family);
-        const Position pos = position_from(position);
-        const std::vector<MarketTick> v = prepared_ticks(ticks, direction);
+        const bool flip = flip_for(f, direction);
+        const Position pos = oriented(position_from(position), flip);
+        const std::vector<MarketTick> v = prepared_ticks(ticks, flip);
         const FeeModel fm = fees_from(fees);
         std::vector<ReplayStats> res;
         {
