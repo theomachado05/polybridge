@@ -109,3 +109,8 @@ def test_replay_market_id_is_sanitized(client, monkeypatch):
     bad = _body(pid)
     bad["market"]["id"] = "../../etc/passwd"
     assert client.post("/bridges", json=bad).status_code == 422
+
+
+def test_invalid_direction_422(client):
+    pid = _approved(client)
+    assert client.post("/bridges", json=_body(pid, direction="sideways")).status_code == 422

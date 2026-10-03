@@ -19,7 +19,7 @@ export default function PortfolioPage() {
           <Glass className="flex flex-wrap gap-6 text-sm">
             <span>Total value <strong>{money(d.total_value)}</strong></span>
             <span>Remaining event exposure <strong>{money(d.total_exposure)}</strong></span>
-            <span className="text-xs text-slate-500">Exposure = shares × spot × impact% × (1 − market yes price), from AI estimates (precomputed).</span>
+            <span className="text-xs text-slate-500">Exposure = shares × spot × impact% × (1 − yes price) when YES lowers the stock, × yes price when YES raises it, from AI estimates (precomputed).</span>
           </Glass>
         )}
         {d && d.holdings.length === 0 && <p className="text-sm text-slate-500">No holdings configured.</p>}

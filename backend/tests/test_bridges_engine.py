@@ -77,3 +77,23 @@ def test_live_failure_without_replay_stops(client):
     assert [k for k, _ in ev] == ["error", "status"]
     assert ev[-1][1] == {"status": "stopped", "reason": "source_failed"}
     assert client.get(f"/bridges/{bid}").json()["status"] == "stopped"
+
+
+def test_up_on_yes_hedges_the_no_outcome(client):
+    pid = _approved(client)
+    bid = client.post("/bridges", json=_body(pid, gap_per_share=1.0, direction="up_on_yes")).json()["bridge_id"]
+    ev = _events(client, bid)
+    ticks = [d["p"] for k, d in ev if k == "tick"]
+    assert ticks[0] == 0.20  # tick events keep the market's raw p
+    decisions = [d for k, d in ev if k == "decision"]
+    assert decisions[0]["order_qty"] == pytest.approx(480.0)  # 0.5*1200*(1-0.20)
+    assert client.get(f"/bridges/{bid}").json()["direction"] == "up_on_yes"
+    later = [i for i, d in enumerate(decisions) if d["action"] == "order" and i > 0]
+    assert any(ticks[i] < ticks[i - 1] for i in later) or any(d["target_hedge"] > 480 for d in decisions)
+
+
+def test_default_direction_unchanged(client):
+    pid = _approved(client)
+    bid = client.post("/bridges", json=_body(pid, gap_per_share=1.0)).json()["bridge_id"]
+    _events(client, bid)
+    assert client.get(f"/bridges/{bid}").json()["direction"] == "down_on_yes"

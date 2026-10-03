@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { getEquity, getHedges, getVerdict, mapEvent, searchMarkets, type Market, type VerdictLabel } from "@/lib/api";
+import { getEquity, getHedges, listVerdicts, mapEvent, searchMarkets, type Direction, type Market, type VerdictLabel } from "@/lib/api";
 import { useAsync } from "@/lib/hooks";
 import { EquityPanel } from "@/components/EquityPanel";
 import { HedgeMenu } from "@/components/HedgeMenu";
@@ -14,7 +14,9 @@ import { StepCards } from "@/components/StepCards";
 import { VerdictCard } from "@/components/VerdictCard";
 import { ErrorText, Glass, Loading, Nav, StaleBadge } from "@/components/ui";
 
-const isTicker = (q: string) => /^[A-Za-z]{1,5}(\.[A-Za-z])?$/.test(q);
+const isTicker = (q: string) => /^[A-Z]{1,5}(\.[A-Z])?$/.test(q);
+const looksLikeTicker = (q: string) => /^[A-Za-z]{1,5}(\.[A-Za-z])?$/.test(q);
+const norm = (x: string) => x.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 
 function Build() {
   const sp = useSearchParams();
@@ -26,23 +28,24 @@ function Build() {
   const [strategy, setStrategy] = useState<string | null>(null);
   const [shares, setShares] = useState(Number(sp.get("shares")) || 100);
 
-  const asTicker = query && isTicker(query) ? query.toUpperCase() : null;
+  const asTicker = query && (isTicker(query) || query === pre) ? query.toUpperCase() : null;
   const ticker = picked ?? asTicker;
 
   const search = useAsync(query && !asTicker ? `s:${query}` : null, () => searchMarkets(query!));
-  const typedVerdict = useAsync(query && !asTicker ? `v:${query}` : null, () => getVerdict(query!));
+  const verdicts = useAsync(query && !asTicker ? "verdicts" : null, listVerdicts);
+  const typedVerdict = query && verdicts.data ? verdicts.data.find((v) => norm(v.tag) === norm(query) && v.kind !== "none") ?? null : null;
   const equity = useAsync(ticker ? `e:${ticker}` : null, () => getEquity(ticker!));
   const map = useAsync(market ? `m:${market.source}:${market.id}` : null, () => mapEvent({ question: market!.question, source: market!.source, market_id: market!.id }));
 
   const filing = equity.data && filingIdx != null ? equity.data.filings[filingIdx] ?? null : null;
-  const verdict = filing?.verdict ?? typedVerdict.data ?? equity.data?.filings[0]?.verdict ?? null;
-  const tags = filing?.tags ?? (typedVerdict.data ? [typedVerdict.data.tag] : equity.data?.filings[0]?.tags ?? null);
+  const verdict = filing?.verdict ?? typedVerdict ?? equity.data?.filings[0]?.verdict ?? null;
+  const tags = filing?.tags ?? (typedVerdict ? [typedVerdict.tag] : equity.data?.filings[0]?.tags ?? null);
   const label: VerdictLabel = verdict?.label ?? "no_edge";
   const hedges = useAsync(ticker && shares > 0 ? `h:${ticker}:${shares}:${label}` : null, () => getHedges(ticker!, shares, label));
 
   const markets = search.data?.markets ?? (asTicker || picked ? equity.data?.markets : undefined) ?? [];
   const item = map.data?.items.find((i) => i.ticker === ticker);
-  const gap = hedges.data?.spot && item?.impact_pct ? (hedges.data.spot * Math.abs(item.impact_pct)) / 100 : 0;
+  const direction: Direction = item?.direction === "up_on_yes" ? "up_on_yes" : "down_on_yes";
 
   const reset = (q: string) => { setQuery(q); setMarket(null); setPicked(null); setFilingIdx(null); setStrategy(null); };
 
@@ -65,7 +68,12 @@ function Build() {
             {search.data && markets.length === 0 && <p className="text-sm text-slate-500">No open markets found for that search.</p>}
             {equity.loading && asTicker && <Loading what="related markets" />}
             {markets.slice(0, 8).map((m) => <MarketCard key={`${m.source}:${m.id}`} market={m} selected={market?.id === m.id} onSelect={() => setMarket(m)} />)}
-            {typedVerdict.data && <VerdictCard v={typedVerdict.data} />}
+            {verdicts.loading && <Loading what="filing-type verdicts" />}
+            {verdicts.error && <ErrorText>Verdict lookup failed: {verdicts.error}</ErrorText>}
+            {typedVerdict && <VerdictCard v={typedVerdict} />}
+            {query && !asTicker && looksLikeTicker(query) && (
+              <button className="text-sm text-indigo-700 hover:underline" onClick={() => { setPicked(query.toUpperCase()); setFilingIdx(null); }}>Look up {query.toUpperCase()} as a ticker</button>
+            )}
             {market && <MappingList map={map} selected={picked} onPick={(t) => { setPicked(t); setFilingIdx(null); setStrategy(null); }} />}
           </Glass>
           <Glass className="space-y-3">
@@ -80,7 +88,7 @@ function Build() {
             <h2 className="font-semibold">Hedge</h2>
             {!ticker && <p className="text-sm text-slate-500">Pick a stock first.</p>}
             {ticker && <HedgeMenu menu={hedges} selected={strategy} onPick={setStrategy} />}
-            {ticker && <div className="border-t border-white/70 pt-3"><ProposePanel key={`${ticker}:${market?.id ?? ""}`} ticker={ticker} tags={tags} shares={shares} onShares={setShares} market={market} gap={gap} strategy={strategy} /></div>}
+            {ticker && <div className="border-t border-white/70 pt-3"><ProposePanel key={`${ticker}:${market?.id ?? ""}`} ticker={ticker} tags={tags} shares={shares} onShares={setShares} market={market} spot={hedges.data?.spot ?? equity.data?.implied_move?.spot ?? null} mappedImpact={item?.impact_pct ?? null} direction={direction} strategy={strategy} /></div>}
           </Glass>
         </div>
       </main>

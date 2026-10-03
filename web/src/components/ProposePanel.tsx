@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { approveProposal, createProposal, startBridge, type Market, type Proposal } from "@/lib/api";
+import { approveProposal, createProposal, startBridge, type Direction, type Market, type Proposal } from "@/lib/api";
 import { Badge, Btn, ErrorText } from "./ui";
 
 const REPLAY_MARKET = { source: "polymarket", id: "fed-hike-25bps-oct-2026" };
 
-export function ProposePanel({ ticker, tags, shares, onShares, market, gap, strategy }: {
+export function ProposePanel({ ticker, tags, shares, onShares, market, spot, mappedImpact, direction, strategy }: {
   ticker: string; tags: string[] | null; shares: number; onShares: (n: number) => void;
-  market: Market | null; gap: number; strategy: string | null;
+  market: Market | null; spot: number | null; mappedImpact: number | null; direction: Direction; strategy: string | null;
 }) {
   const router = useRouter();
   const [coverage, setCoverage] = useState(0.5);
@@ -22,6 +22,9 @@ export function ProposePanel({ ticker, tags, shares, onShares, market, gap, stra
     setBusy(true); setErr(null);
     try { await fn(); } catch (e) { setErr(e instanceof Error ? e.message : String(e)); } finally { setBusy(false); }
   };
+  const [manualImpact, setManualImpact] = useState("");
+  const impact = mappedImpact ?? (Number(manualImpact) > 0 ? Number(manualImpact) : null);
+  const gap = spot && impact ? (spot * Math.abs(impact)) / 100 : 0;
   const live = source === "live" && market?.token_id;
 
   return (
@@ -50,12 +53,18 @@ export function ProposePanel({ ticker, tags, shares, onShares, market, gap, stra
                 <option value="live" disabled={!market?.token_id}>Live (Polymarket midpoint)</option>
                 <option value="replay">Replay (recorded Fed hike market)</option>
               </select>
-              <Btn disabled={busy} onClick={() => run(async () => {
-                const r = await startBridge({ proposal_id: prop.id, source, gap_per_share: gap,
+              {mappedImpact == null && (
+                <label className="text-sm">Impact % <input type="number" min={0} step={0.1} value={manualImpact} onChange={(e) => setManualImpact(e.target.value)} className="ml-1 w-20 rounded-lg border border-white/80 bg-white/80 px-2 py-1" /></label>
+              )}
+              <Btn disabled={busy || gap <= 0} onClick={() => run(async () => {
+                const r = await startBridge({ proposal_id: prop.id, source, gap_per_share: gap, direction,
                   market: live && market ? { source: market.source, id: market.id, token_id: market.token_id } : REPLAY_MARKET });
                 router.push(`/bridge/${r.bridge_id}`);
               })}>Start bridge</Btn>
             </div>
+          )}
+          {prop.status === "approved" && prop.family === "hedge" && gap <= 0 && (
+            <p className="text-xs text-amber-700">No impact estimate for {ticker}: pick a mapped market or enter the event&apos;s impact % (and make sure the stock has a spot price).</p>
           )}
         </div>
       )}

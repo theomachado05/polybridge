@@ -48,13 +48,16 @@ class BridgeIn(BaseModel):
     source: Literal["live", "replay"]
     market: MarketRef
     gap_per_share: float = Field(default=0.0, ge=0, allow_inf_nan=False)
+    direction: Literal["down_on_yes", "up_on_yes"] = "down_on_yes"  # which outcome hurts a long holder
 
 
 class Bridge:
-    def __init__(self, proposal: Proposal, source: str, market: MarketRef, gap: float) -> None:
+    def __init__(self, proposal: Proposal, source: str, market: MarketRef, gap: float,
+                 direction: str = "down_on_yes") -> None:
         self.id = uuid.uuid4().hex[:12]
         self.proposal_id, self.requested_source, self.market, self.gap = proposal.id, source, market, gap
         self.proposal = proposal
+        self.direction = direction
         self.effective_source = source
         self.status = "running"
         self.started_at = dt.datetime.now(dt.UTC)
@@ -81,7 +84,7 @@ class Bridge:
         lat = sorted(self.latencies)
         q = lambda f: lat[min(len(lat) - 1, int(f * len(lat)))] if lat else None
         return {"bridge_id": self.id, "proposal_id": self.proposal_id, "ticker": self.proposal.ticker,
-                "status": self.status, "source": self.effective_source, "requested_source": self.requested_source,
+                "status": self.status, "direction": self.direction, "source": self.effective_source, "requested_source": self.requested_source,
                 "started_at": self.started_at.isoformat(), "ticks": self.ticks, "orders": self.orders,
                 "hedge": self.hedge, "reasons": dict(self.reasons),
                 "latency_ns": {"p50": q(0.5), "p99": q(0.99)}}
@@ -117,7 +120,8 @@ async def _run_source(bridge: Bridge, engine, hc, source) -> None:
     async for ts_ns, p in source:
         bridge.ticks += 1
         await bridge.emit("tick", {"ts_ns": ts_ns, "p": p})
-        d = engine.on_tick(ts_ns=ts_ns, p=p, now_ns=time.time_ns())
+        d = engine.on_tick(ts_ns=ts_ns, p=p if bridge.direction == "down_on_yes" else 1.0 - p,
+                           now_ns=time.time_ns())
         bridge.reasons[d.reason] += 1
         bridge.latencies.append(d.latency_ns)
         await bridge.emit("decision", {"action": d.action, "reason": d.reason, "order_qty": d.order_qty,
@@ -196,7 +200,7 @@ async def start_bridge(body: BridgeIn, request: Request, response: Response) -> 
         source = factory(body.market.token_id) if factory else LiveSource(body.market.token_id)
 
     # No await between the registry check above and this insert: exactly one bridge per proposal.
-    bridge = Bridge(prop, body.source, body.market, body.gap_per_share)
+    bridge = Bridge(prop, body.source, body.market, body.gap_per_share, body.direction)
     reg[prop.id] = bridge
     store.mark_bridge_started(prop.id)
     bridge.task = asyncio.create_task(_run(bridge, request.app, hc, source, fallback))

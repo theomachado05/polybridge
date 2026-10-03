@@ -58,12 +58,21 @@ class PortfolioOut(BaseModel):
     stale: bool = False
 
 
-def remaining_exposure(shares: float, spot: float | None, impact_pct: float | None, p: float | None) -> float | None:
-    """N x spot x impact_pct/100 x (1 - p); None when an input is missing or not finite."""
+def remaining_exposure(shares: float, spot: float | None, impact_pct: float | None, p: float | None,
+                       direction: str | None = "down_on_yes") -> float | None:
+    """N x spot x |impact|/100 x (1 - p) for down_on_yes, x p for up_on_yes (controller ruling: the share of
+    the move the market has not priced in). None when an input is missing, not finite or the direction unknown."""
     vals = (shares, spot, impact_pct, p)
     if any(v is None or not math.isfinite(v) for v in vals) or shares <= 0 or spot <= 0:
         return None
-    return shares * spot * abs(impact_pct) / 100 * (1 - min(max(p, 0.0), 1.0))
+    pc = min(max(p, 0.0), 1.0)
+    if direction == "down_on_yes":
+        adverse = 1 - pc
+    elif direction == "up_on_yes":
+        adverse = pc
+    else:
+        return None
+    return shares * spot * abs(impact_pct) / 100 * adverse
 
 
 def load_holdings() -> list[dict]:
@@ -100,7 +109,7 @@ def find_exposure(ticker: str, shares: float, spot: float | None, markets: list[
             impact = float(item.get("impact_pct"))
         except (TypeError, ValueError):
             continue
-        rem = remaining_exposure(shares, spot, impact, m.yes_price)
+        rem = remaining_exposure(shares, spot, impact, m.yes_price, item.get("direction"))
         if rem is None:
             continue
         return Exposure(market=m, direction=str(item.get("direction", "")), impact_pct=impact,
@@ -121,7 +130,7 @@ async def _holding(request: Request, h: dict, proposals: list[Proposal], bridges
     else:
         try:
             snap, _ = await eq.get_snapshot(request, client, ticker)
-            spot = snap["spot"] if snap else None
+            spot = snap["spot"] if snap and math.isfinite(snap["spot"]) else None
             if snap is None:
                 notes.append("no listed options")
         except Exception:
@@ -142,7 +151,7 @@ async def _holding(request: Request, h: dict, proposals: list[Proposal], bridges
         notes.append("prediction-market search unavailable")
     markets.sort(key=lambda m: m.volume_24h, reverse=True)
     exposure = find_exposure(ticker, shares, spot, markets)
-    return Holding(ticker=ticker, name=name, shares=shares, spot=spot, value=None if spot is None else spot * shares,
+    return Holding(ticker=ticker, name=name, shares=shares, spot=spot, value=spot * shares if spot is not None and math.isfinite(spot) else None,
                    markets=markets[:TOP_MARKETS], filings=filings[:3], exposure=exposure,
                    hedge=hedge_status(ticker, proposals, bridges), notes=notes), stale
 

@@ -10,6 +10,9 @@ from .test_equities import StubClient, make
 def test_remaining_exposure_math_and_empty_cases():
     assert portfolio.remaining_exposure(10, 100, 2, 0.4) == pytest.approx(12.0)
     assert portfolio.remaining_exposure(10, 100, -2, 1.0) == 0.0
+    assert portfolio.remaining_exposure(10, 100, 2, 0.4, "up_on_yes") == pytest.approx(8.0)
+    assert portfolio.remaining_exposure(10, 100, 2, 0.4, "sideways") is None
+    assert portfolio.remaining_exposure(10, 100, 2, 0.4, None) is None
     assert portfolio.remaining_exposure(10, None, 2, 0.4) is None
     assert portfolio.remaining_exposure(10, 100, 2, None) is None
     assert portfolio.remaining_exposure(0, 100, 2, 0.4) is None
@@ -41,12 +44,12 @@ def test_exposure_when_mapping_exists(tmp_path, monkeypatch):
 def test_no_mapping_and_hedge_status(tmp_path, monkeypatch):
     setup(tmp_path, monkeypatch, [{"ticker": "AAPL", "shares": 10}])
     c = make(StubClient(market=rf.FakeMarket({"AAPL": 100.0})), monkeypatch)
-    p = c.post("/proposals", json={"ticker": "AAPL", "tags": ["Results of Operations"], "shares_held": 10})
-    if p.status_code == 201:
-        pid = p.json()["id"]
-        assert c.get("/portfolio").json()["holdings"][0]["hedge"] == {"status": "proposed", "proposal_id": pid, "bridge_id": None}
-        c.post(f"/proposals/{pid}/approve")
-        assert c.get("/portfolio").json()["holdings"][0]["hedge"]["status"] == "approved"
+    p = c.post("/proposals", json={"ticker": "AAPL", "tags": ["material_litigation"], "shares_held": 10})
+    assert p.status_code == 201
+    pid = p.json()["id"]
+    assert c.get("/portfolio").json()["holdings"][0]["hedge"] == {"status": "proposed", "proposal_id": pid, "bridge_id": None}
+    c.post(f"/proposals/{pid}/approve")
+    assert c.get("/portfolio").json()["holdings"][0]["hedge"]["status"] == "approved"
     d = c.get("/portfolio").json()
     assert d["holdings"][0]["exposure"] is None and d["total_exposure"] is None
 
@@ -64,3 +67,12 @@ def test_empty_portfolio(tmp_path, monkeypatch):
     setup(tmp_path, monkeypatch, [])
     d = make(None, monkeypatch).get("/portfolio").json()
     assert d["holdings"] == [] and d["total_value"] is None
+
+
+def test_exposure_up_on_yes(tmp_path, monkeypatch):
+    lib = {"items": {"polymarket:Apple": {"question": "Apple q", "mappings": [
+        {"ticker": "AAPL", "direction": "up_on_yes", "impact_pct": 2.0, "rationale": "r"}]}}}
+    setup(tmp_path, monkeypatch, [{"ticker": "AAPL", "shares": 10}], lib)
+    c = make(StubClient(market=rf.FakeMarket({"AAPL": 100.0})), monkeypatch)
+    h = c.get("/portfolio").json()["holdings"][0]
+    assert h["exposure"]["remaining_usd"] == pytest.approx(8.0, rel=5e-3) and h["exposure"]["direction"] == "up_on_yes"

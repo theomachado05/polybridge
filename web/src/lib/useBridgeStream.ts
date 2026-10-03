@@ -73,6 +73,13 @@ export function useBridgeStream(id: string, initialSource: string | null): Strea
       });
       es.onerror = () => {
         if (done) return;
+        void fetch(`${API_URL}/bridges/${id}`).then((r) => {
+          if (r.status === 404) {
+            done = true; clearTimeout(timer); es?.close();
+            dispatch({ k: "error", message: "Bridge not found (404); check the id." });
+            dispatch({ k: "status", status: "stopped" });
+          }
+        }, () => {});
         dispatch({ k: "drop" });
         if (es && es.readyState === EventSource.CLOSED) { timer = setTimeout(connect, 2000); }  // the browser retries CONNECTING itself
       };

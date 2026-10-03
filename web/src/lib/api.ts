@@ -127,12 +127,14 @@ export interface HedgeOption {
 }
 export interface HedgeMenu { ticker: string; spot: number | null; expiry: string | null; options: HedgeOption[]; notes: string[] }
 
+export type Direction = "down_on_yes" | "up_on_yes";
 export interface BridgeSummary {
   bridge_id: string;
   proposal_id: string;
   ticker: string;
   status: string;
   source: "live" | "replay";
+  direction?: Direction;
   requested_source: string;
   ticks: number;
   orders: number;
@@ -185,6 +187,8 @@ export const startBridge = (body: {
   source: "live" | "replay";
   market: { source: string; id: string; token_id?: string | null };
   gap_per_share: number;
+  direction: Direction;
 }) => post<{ bridge_id: string }>("/bridges", body);
 export const getBridge = (id: string) => request<BridgeSummary>(`/bridges/${id}`);
 export const getPortfolio = () => request<PortfolioOut>("/portfolio");
+export const listVerdicts = () => request<TagVerdict[]>("/verdicts");
