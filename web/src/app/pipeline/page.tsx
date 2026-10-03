@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { shortlist } from "@/lib/library";
 import { demoSteps, fitSteps, type PipeContext } from "@/lib/pipeline";
 import { algoRunLabel, brokerLabel, defaultPick, feeGateOff, runnableFit, useStore } from "@/lib/store";
+import { REPLAY_SANDBOX_SENTENCE } from "@/lib/realBridge";
 import { DemoTag, OrbDisc, Tag } from "@/components/pb";
 
 const STEP_MS = 1400;
@@ -44,6 +45,8 @@ export default function Pipeline() {
   const { guards } = s.settings;
   const autoOpen = !real || (guards.auto && !(gateOff && guards.edge));
   const acct = brokerLabel(s.account);
+  // A ticker outside the market's mapping: no hedge fit, and startRealBridge refuses (adverse outcome unknown).
+  const noDir = real && !e.direction;
   // What approving starts: openBridge sends the runnable AI fit (hedge family + preset) when the fit answered, else
   // the engine runs its default delta-bridge spec. Same rule as the store, so the copy matches what runs.
   const runs = algoRunLabel(runnableFit(fitOk ? fit!.data : null));
@@ -74,7 +77,8 @@ export default function Pipeline() {
     question: q.q, venues: q.venues, yes: q.yes, vol: q.vol, ticker: e.t, held: e.held || 500,
     move: e.move, rev: e.rev, brand: e.brand, why: e.why, real: !!q.real, heldReal: e.held,
     libraryTotal: s.library.status === "ok" && s.library.data ? s.library.data.total : undefined,
-    shortlisted: fitOk && s.library.data ? shortlist(s.library.data, String(fit!.data!.event_class)).map((r) => r.id) : undefined,
+    shortlisted: fitOk && s.library.data ? shortlist(s.library.data, String(fit!.data!.event_class), fit!.data!.division ? String(fit!.data!.division) : null).map((r) => r.id) : undefined,
+    noDirection: !!fit?.noDirection,
   };
   const steps = mode === "fit" ? fitSteps(fit!.data!, ctx) : demoSteps(ctx);
   const cur = steps[Math.min(step, steps.length - 1)];
@@ -96,7 +100,8 @@ export default function Pipeline() {
             </Tag>
           </>
         )}
-        {mode === "demo" && <DemoTag what="scripted demo steps" title={`POST /pipeline/fit ${fit?.error ? "failed: " + fit.error : "did not answer in time"}; showing the prototype's scripted pipeline.`} />}
+        {mode === "demo" && fit?.noDirection && <Tag tone="neutral" title={fit.error ?? undefined}>no hedge fit · direction unknown</Tag>}
+        {mode === "demo" && !fit?.noDirection && <DemoTag what="scripted demo steps" title={`POST /pipeline/fit ${fit?.error ? "failed: " + fit.error : "did not answer in time"}; showing the prototype's scripted pipeline.`} />}
       </div>
       <div className="pb-glass" style={{ width: "100%", marginTop: 22, padding: "10px 12px", display: "flex", flexDirection: "column", gap: 4 }}>
         {steps.map((st, i) => {
@@ -113,13 +118,20 @@ export default function Pipeline() {
       </div>
       {done && real && (
         <div className="pb-glass" style={{ width: "100%", marginTop: 16, padding: "16px 18px", fontSize: 13.5, lineHeight: 1.55, color: "#3C4458", display: "flex", flexDirection: "column", gap: 8 }}>
+          {noDir ? (
+            <div style={{ color: "#8A5A00" }}>
+              {e.t} is not in this market&rsquo;s mapping, so the outcome that hurts it is unknown. The engine will not start a bridge it cannot orient; opening it shows the prototype&rsquo;s simulator, with no orders sent anywhere.
+            </div>
+          ) : (
           <div>
             Approving creates a hedge proposal for {(e.held || 500).toLocaleString("en-US")} {e.t} shares{e.held ? "" : " (notional)"} on this market and starts a bridge that runs {runs.sentence}.
             {acct.tone === "demo"
               ? <> Once it runs, the engine places its orders without asking again; this backend has no account endpoint, so they are simulated fills inside the engine <Tag tone="sim" title="GET /account is unavailable">no broker</Tag>.</>
               : <> Once it runs, the engine places its orders with <Tag tone={acct.tone} title="GET /account">{acct.name}</Tag> without asking again.</>}
+            {" "}{REPLAY_SANDBOX_SENTENCE}
           </div>
-          {gateOff && (
+          )}
+          {gateOff && !noDir && (
             <div style={{ color: "#8A5A00" }}>
               Fee gate off: there is no {e.px ? "impact estimate" : "quote"} for {e.t}, so the engine cannot price an order against its fees and will trade on probability alone.
               {guards.edge && " Your “act only when edge beats fees” guardrail is on, so this needs your explicit approval."}
@@ -130,7 +142,7 @@ export default function Pipeline() {
         </div>
       )}
       <button type="button" onClick={() => (done ? void goBridge() : setStep(6))} className={`pb-btn ${done ? "pb-btn-primary" : "pb-btn-secondary"}`} style={{ height: 50, padding: "0 24px", marginTop: 22, transition: "all .3s ease", color: done ? "#fff" : "#3C4458" }}>
-        {opening ? "Opening the bridge…" : !done ? (real ? "Skip to approval" : "Skip to the bridge") : real ? (gateOff ? "Approve without the fee gate" : "Approve and open the bridge") : "Open the demo bridge"} <span className="pb-arrow">→</span>
+        {opening ? "Opening the bridge…" : !done ? (real ? "Skip to approval" : "Skip to the bridge") : real ? (noDir ? "Open the simulator bridge" : gateOff ? "Approve without the fee gate" : "Approve and open the bridge") : "Open the demo bridge"} <span className="pb-arrow">→</span>
       </button>
     </main>
   );

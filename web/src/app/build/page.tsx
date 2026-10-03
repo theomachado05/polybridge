@@ -4,8 +4,9 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { getEquity, getLibrary, getOptionsImplied, mapEvent, searchMarkets, type FitOut, type Holding, type MapOut } from "@/lib/api";
 import { DEFAULT_OPP_CAPS, opportunityFit } from "@/lib/realBridge";
-import { EQ, INSTRUMENTS, QUESTIONS, REAL_INSTRUMENTS, demoImpacts, questionFromMarket, type EquityPick, type Impact, type Question } from "@/lib/demo";
+import { EQ, INSTRUMENTS, QUESTIONS, REAL_INSTRUMENTS, demoImpacts, isOpenMarket, questionFromMarket, topImpact, type EquityPick, type Impact, type Question } from "@/lib/demo";
 import { fmtPct, prettyId } from "@/lib/fmt";
+import { hedgeScoreText, IN_SAMPLE_NOTE } from "@/lib/pipeline";
 import { useAsync } from "@/lib/hooks";
 import { OPP_REPLAY_NOTE, libraryIdea, optionFamilyIdea } from "@/lib/opportunity";
 import { useStore } from "@/lib/store";
@@ -44,12 +45,14 @@ function User({ text, onClick }: { text: string; onClick: () => void }) {
 
 const signedImpact = (pct: number | null, direction: string) => (pct == null ? 0 : (direction === "up_on_yes" ? 1 : -1) * Math.abs(pct));
 
-/** Real markets that touch the user's real holdings (GET /portfolio), held-first rows for step 1. */
+/** Real markets that touch the user's real holdings (GET /portfolio), held-first rows for step 1. Ended or
+ *  effectively settled markets are left out. */
 function portfolioQuestions(holdings: Holding[]): Question[] {
   const byId = new Map<string, Question>();
   for (const h of holdings) {
     const ms = [...(h.exposure ? [h.exposure.market] : []), ...h.markets];
     for (const m of ms) {
+      if (!isOpenMarket(m)) continue;
       const q = byId.get(`${m.source}:${m.id}`) ?? questionFromMarket(m);
       if (!q.touches.includes(h.ticker)) q.touches = [...q.touches, h.ticker];
       byId.set(q.id, q);
@@ -101,7 +104,7 @@ export default function Build() {
   // ---- step 1 rows
   const ql = query.trim().toLowerCase();
   const realBase = useMemo(() => portfolioQuestions(holdings), [holdings]);
-  const searchRows = useMemo(() => (search.data?.markets ?? []).map((m) => {
+  const searchRows = useMemo(() => (search.data?.markets ?? []).filter((m) => isOpenMarket(m)).map((m) => {
     const known = realBase.find((x) => x.id === `${m.source}:${m.id}`);
     return known ?? questionFromMarket(m);
   }), [search.data, realBase]);
@@ -160,7 +163,7 @@ export default function Build() {
   const toStep3 = () => { if (e) s.setInst(null); };
 
   // ---- copy
-  const top = impacts[0];
+  const top = q ? topImpact(impacts, (t) => heldOf(q, t) > 0) : undefined;
   const heldQ = q ? q.touches.find((t) => heldOf(q, t) > 0) ?? impacts.find((i) => heldOf(q, i.t) > 0)?.t : null;
   const ai1 = `What are you worried about? I’m watching markets on Polymarket and Kalshi — pick one below, or describe it.`;
   const ai2 = !q ? "" : `That market is at ${q.yes}¢ YES on ${q.venues.join(" and ")}, with ${q.vol} traded in the last 24 hours. ` + (top && top.move
@@ -409,22 +412,23 @@ function FitCard({ fit }: { fit: ReturnType<typeof useStore>["fit"] }) {
   if (!fit) return null;
   const box = { marginTop: 16, padding: "14px 16px", borderRadius: 18, background: "rgba(255,255,255,.7)", border: "1px solid rgba(255,255,255,.9)", fontFamily: "var(--sans)" };
   if (fit.status === "loading") return <div style={{ ...box, display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "#3C4458" }}><Orb state="working" size={20} />Fitting an algo to this event on its price history…</div>;
+  if (fit.noDirection) return <div style={{ ...box, fontSize: 12.5, color: "#5A627A", display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}><Tag tone="neutral" title={fit.error ?? undefined}>direction unknown</Tag>No hedge fit: {fit.error}.</div>;
   if (fit.status === "error" || !fit.data) return <div style={{ ...box, fontSize: 12.5, color: "#5A627A" }}>AI fit unavailable ({fit.error}). The pipeline will run the prototype’s scripted steps. <DemoTag /></div>;
   const f = fit.data;
-  const score = f.score == null ? "n/a" : f.division === "opportunity" ? f.score.toFixed(3) : `${(f.score * 100).toFixed(1)}% var. reduction`;
+  const score = hedgeScoreText(f.score, String(f.division));
   return (
     <div style={box}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
         <span className="pb-label">AI FIT · {prettyId(String(f.event_class)).toUpperCase()}</span>
         <span style={{ display: "inline-flex", gap: 6 }}>
           <Tag tone="ai" title={f.llm === "gemini" ? "Classified and explained by Gemini" : "Keyword rules (no LLM key)"}>{f.llm === "gemini" ? "AI estimate" : "rules"}</Tag>
-          <Tag tone={f.ticks_source === "live_history" ? "measured" : f.ticks_source === "replay" ? "replay" : "neutral"}>{f.ticks_source === "live_history" ? `${f.n_ticks} ticks history` : f.ticks_source === "replay" ? "replay ticks" : "no history"}</Tag>
+          <Tag tone={f.ticks_source === "live_history" || f.ticks_source === "replay" ? "replay" : "neutral"} title={f.ticks_source === "none" ? undefined : IN_SAMPLE_NOTE}>{f.ticks_source === "live_history" ? `${f.n_ticks} ticks history` : f.ticks_source === "replay" ? "replay ticks" : "no history"}</Tag>
         </span>
       </div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
         <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-.015em" }}>{f.family ? prettyId(f.family) : "No family fits"}</span>
         {f.preset_index != null && <span className="pb-mono" style={{ fontSize: 12, color: "#5A627A" }}>preset #{f.preset_index}</span>}
-        <span className="pb-mono" style={{ fontSize: 12, color: "#15804F" }}>{score}</span>
+        <span className="pb-mono" style={{ fontSize: 12, color: "#15804F" }} title={f.score == null ? undefined : IN_SAMPLE_NOTE}>{score}</span>
       </div>
       {f.rationale && <div className="pb-pretty" style={{ fontSize: 13, color: "#3C4458", lineHeight: 1.5, marginTop: 6 }}>{f.rationale}</div>}
       {f.alternatives?.length > 0 && <div style={{ fontSize: 12, color: "#5A627A", marginTop: 6 }}>Alternatives: {f.alternatives.slice(0, 3).map((a) => prettyId(a.family)).join(" · ")}</div>}

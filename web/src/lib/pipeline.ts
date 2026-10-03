@@ -14,11 +14,18 @@ export interface PipeContext {
   real?: boolean;           // a live market with a real mapping: never show the prototype's invented lots/comps
   heldReal?: number;        // shares actually held (real path)
   libraryTotal?: number;    // preset count GET /library reports (no number is shown without it)
+  noDirection?: boolean;    // live market, ticker outside its mapping: no hedge was fitted (adverse outcome unknown)
 }
 
 const scoreLabel = (division: string) => (division === "opportunity" ? "net P&L per unit risk" : "hedge variance reduction");
 const fmtScore = (s: number | null, division: string) =>
   s == null || !Number.isFinite(s) ? "n/a" : division === "opportunity" ? s.toFixed(3) : `${(s * 100).toFixed(1)}%`;
+/** Fit scores are tuned and scored on the same history a replay bridge then plays back: in-sample, not a forecast. */
+export const IN_SAMPLE_NOTE = "Scored on the same history the bridge replays (in-sample); not a forecast or out-of-sample result.";
+/** The fit score as the Build card shows it, labelled in-sample (spec §8: estimate vs measured). */
+export const hedgeScoreText = (s: number | null, division: string) =>
+  s == null || !Number.isFinite(s) ? "n/a"
+  : division === "opportunity" ? `${s.toFixed(3)} in-sample` : `${(s * 100).toFixed(1)}% var. reduction (in-sample replay)`;
 const fmtParams = (p: Record<string, number> | undefined) =>
   p && Object.keys(p).length ? Object.entries(p).map(([k, v]) => `${k}=${Number.isInteger(v) ? v : +v.toFixed(4)}`).join(", ") : "defaults";
 
@@ -35,7 +42,7 @@ export function fitSteps(fit: FitOut, c: PipeContext): PipeStep[] {
     { key: "classify", name: "Classifying the event", orb: "searching", text: `${c.question.replace(/\?$/, "")} → ${cls} (${fit.llm === "gemini" ? "Gemini" : "keyword rules"}). Division: ${fit.division}.` },
     { key: "shortlist", name: "Shortlisting algo families", orb: "connecting", text: short.length ? `${short.length} ${short.length === 1 ? "family covers" : "families cover"} ${cls}: ${short.slice(0, 5).map(prettyId).join(", ")}${short.length > 5 ? "…" : ""}.` : `No compiled family covers ${cls}.` },
     { key: "history", name: "Loading price history", orb: "working", text: history },
-    { key: "tune", name: "Tuning presets on replay", orb: "searching", text: fit.family ? `${fam} preset #${fit.preset_index ?? 0} · ${scoreLabel(String(fit.division))} ${fmtScore(fit.score, String(fit.division))} · ${fmtParams(fit.params)}.${alts.length ? ` Runners-up: ${alts.slice(0, 3).map((a) => `${prettyId(a.family)} ${fmtScore(a.score ?? null, String(fit.division))}`).join(", ")}.` : ""}` : "Nothing to tune." },
+    { key: "tune", name: "Tuning presets on replay", orb: "searching", text: fit.family ? `${fam} preset #${fit.preset_index ?? 0} · ${scoreLabel(String(fit.division))} ${fmtScore(fit.score, String(fit.division))}${fit.score == null ? "" : " (in-sample: scored on the history it replays, not a forecast)"} · ${fmtParams(fit.params)}.${alts.length ? ` Runners-up: ${alts.slice(0, 3).map((a) => `${prettyId(a.family)} ${fmtScore(a.score ?? null, String(fit.division))}`).join(", ")}.` : ""}` : "Nothing to tune." },
     { key: "explain", name: "Explaining the fit", orb: "composing", text: fit.rationale || "No rationale returned." },
     { key: "ready", name: "Ready for your approval", orb: "listening", text: `AI fit for ${c.ticker}: ${fam}${fit.family ? (fit.division === "hedge" && fit.preset_index != null ? ` preset #${fit.preset_index}. It is sent with the proposal: once you approve, the bridge runs exactly this family and preset` : ` (${fit.division} family: not run on a hedge bridge, which uses the engine's default delta-bridge spec)`) : ""}. Next: you approve a proposal, then the engine starts.` },
   ];
@@ -49,8 +56,8 @@ export function demoSteps(c: PipeContext): PipeStep[] {
     { key: "history", name: "Estimating impact", orb: "working", text: c.real
       ? (c.move ? `Precomputed AI mapping: expected move on YES ${fmtPct(c.move)}. ${c.why}` : `No impact estimate for ${c.ticker} on this market; the engine hedges on probability alone (fee gate off).`)
       : `Revenue ${c.rev == null ? "n/a" : fmtPct(c.rev)}, brand ${c.brand == null ? "n/a" : fmtPct(c.brand)} → expected move on YES ${fmtPct(c.move)} (confidence 0.71). ${c.why}` },
-    { key: "tune", name: "Searching algo library", orb: "searching", text: c.real ? "Algo fit endpoint unavailable, so no presets were scored; the engine's default delta-bridge runs." : `${c.libraryTotal ? `The library holds ${c.libraryTotal.toLocaleString("en-US")} presets. ` : ""}Scripted demo scoring on σ regime, venue latency, fee drag and tax fit: 61 pass; 6 sample algos compose.` },
+    { key: "tune", name: "Searching algo library", orb: "searching", text: c.real ? (c.noDirection ? `No hedge fit: ${c.ticker} is not in this market's mapping, so the outcome that hurts it is unknown and no presets were scored.` : "Algo fit endpoint unavailable, so no presets were scored; the engine's default delta-bridge runs.") : `${c.libraryTotal ? `The library holds ${c.libraryTotal.toLocaleString("en-US")} presets. ` : ""}Scripted demo scoring on σ regime, venue latency, fee drag and tax fit: 61 pass; 6 sample algos compose.` },
     { key: "explain", name: "Composing the chain", orb: "composing", text: c.real ? "Staleness → Sigma gate → No-trade band → Fee gate → Delta-bridge sizer → Position cap (hedgecore Engine)." : "Sigma Gate → Book-Imbalance Reader → Delta-Bridge v3 → Vol-Adaptive Slicer / Meridian TWAP → Tax-Lot Optimizer → Fee-Aware Router." },
-    { key: "ready", name: c.real ? "Ready for your approval" : "Backtesting on comps", orb: "listening", text: c.real ? `Next: you approve a proposal for ${c.ticker}; then the engine's default delta-bridge spec runs on the market's live feed (or a replay).` : `NYC LL18 and Barcelona 2028 ban: this chain would have captured 71% of ${c.ticker}'s event drawdown at 0.09% cost.` },
+    { key: "ready", name: c.real ? "Ready for your approval" : "Backtesting on comps", orb: "listening", text: c.real ? (c.noDirection ? `The engine cannot orient a hedge for ${c.ticker} on this market, so it does not start an engine bridge; opening it shows the prototype's simulator.` : `Next: you approve a proposal for ${c.ticker}; then the engine's default delta-bridge spec runs on the market's live feed (or a replay).`) : `NYC LL18 and Barcelona 2028 ban: this chain would have captured 71% of ${c.ticker}'s event drawdown at 0.09% cost.` },
   ];
 }

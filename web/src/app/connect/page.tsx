@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { BROKERS } from "@/lib/demo";
 import { fmtMoney } from "@/lib/fmt";
 import { brokerLabel, defaultPick, useStore } from "@/lib/store";
+import { REPLAY_SANDBOX_SENTENCE } from "@/lib/realBridge";
 import { ChipGroup, DemoTag, Glass, Label, LogoTile, Orb, Tag } from "@/components/pb";
 
 export default function Connect() {
@@ -66,6 +67,7 @@ export default function Connect() {
           {account.status === "ok" && account.data && <span className="pb-mono">cash {fmtMoney(account.data.cash)} · buying power {fmtMoney(account.data.buying_power)}</span>}
           {account.status === "error" && <DemoTag what="no account endpoint" />}
           {acct.tone === "sim" && settings.broker === "webull" && <span>Webull paper takes over when its API keys are set; real money is out of scope.</span>}
+          <span style={{ flexBasis: "100%" }}>{REPLAY_SANDBOX_SENTENCE.replace("its orders fill", "the engine's orders fill")}</span>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,240px),1fr))", gap: 16, marginTop: 22 }}>
           <ChipGroup label="Account type" options={["Taxable", "IRA"] as const} value={settings.account} onChange={(v) => s.updateSettings({ account: v })} />

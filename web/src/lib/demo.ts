@@ -149,3 +149,17 @@ export const REAL_INSTRUMENTS = (spot: number | null): Instrument[] => [
     rec: false, short: "Dynamic short hedge", phrase: "a dynamic short hedge",
   },
 ];
+
+/** False for a market that has ended or is effectively settled (YES at ≤1¢ or ≥99¢): no hedge is worth proposing on
+ *  it, so step 1 never lists it as a live market. An unknown end date or price keeps the market. */
+export function isOpenMarket(m: Pick<Market, "end_date" | "yes_price">, now: number = Date.now()): boolean {
+  const end = m.end_date ? Date.parse(m.end_date) : NaN;
+  if (Number.isFinite(end) && end < now) return false;
+  if (m.yes_price != null && (m.yes_price <= 0.01 || m.yes_price >= 0.99)) return false;
+  return true;
+}
+
+/** The impact the AI names first: the largest move, a held ticker winning ties. */
+export function topImpact<T extends Pick<Impact, "t" | "move">>(impacts: readonly T[], held: (t: string) => boolean = () => false): T | undefined {
+  return [...impacts].sort((a, b) => Math.abs(b.move) - Math.abs(a.move) || Number(held(b.t)) - Number(held(a.t)))[0];
+}

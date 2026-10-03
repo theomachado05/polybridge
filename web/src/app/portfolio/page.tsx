@@ -9,6 +9,7 @@ import { simCover, simPnl } from "@/lib/sim";
 import { brokerLabel, useStore, type BridgeEntry } from "@/lib/store";
 import { DemoTag, Glass, Label, Tag, upColor } from "@/components/pb";
 import { SandboxFillsPanel } from "@/components/SandboxFills";
+import { engineBridgeFor } from "@/lib/portfolioView";
 
 type DemoEntry = Extract<BridgeEntry, { kind: "demo" }>;
 interface Row {
@@ -40,7 +41,7 @@ export default function Portfolio() {
         return {
           t: h.ticker, name: h.name ?? h.ticker, shares: h.shares, px: h.spot, real: true,
           verdict: v ? `8-K ${v.tag}: ${v.label.replace("_", " ")} (${v.kind})` : null,
-          demo: demoFor(h.ticker), engineBridge: h.hedge.status === "bridging" ? h.hedge.bridge_id : null,
+          demo: demoFor(h.ticker), engineBridge: engineBridgeFor(h, s.bridges),
           touching: h.markets.length,
         };
       })
@@ -65,8 +66,9 @@ export default function Portfolio() {
   const orderFees = (orders.data ?? []).reduce((a, o) => a + (o.fee ?? 0), 0);
   // Real path: account fees/fills only, and coverage from the real exposure figures. Sample path: all simulated.
   const exposures = (realHoldings ?? []).filter((h) => h.exposure);
+  const isBridged = (h: Holding) => h.hedge.status === "bridging" || engineBridgeFor(h, s.bridges) != null;
   const realCover = exposures.length
-    ? Math.round((exposures.filter((h) => h.hedge.status === "bridging").length / exposures.length) * 100) : 0;
+    ? Math.round((exposures.filter(isBridged).length / exposures.length) * 100) : 0;
   const stats: [string, string, boolean][] = realHoldings
     ? [["Exposures bridged", exposures.length ? `${realCover}%` : "—", false], ["Fees (account)", `$${orderFees.toFixed(2)}`, false], ["Fills (account)", String(filled.length), false]]
     : [["Event exposure covered", `${demoCover}%`, true], ["Fees today", `$${(demoFees + orderFees).toFixed(2)}`, true], ["Fills today", String(demoFills + filled.length), true]];
@@ -206,7 +208,7 @@ export default function Portfolio() {
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6, fontSize: 11, color: "#5A627A" }}>
                     <Tag tone="ai" title={h.exposure!.label}>AI estimate</Tag>
-                    {h.exposure!.impact_pct.toFixed(1)}% impact on {h.exposure!.direction === "up_on_yes" ? "NO" : "YES"} · {h.hedge.status === "bridging" ? "bridged" : "not hedged"}
+                    {h.exposure!.impact_pct.toFixed(1)}% impact on {h.exposure!.direction === "up_on_yes" ? "NO" : "YES"} · {isBridged(h) ? "bridged" : "not hedged"}
                   </div>
                 </div>
               ))}

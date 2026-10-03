@@ -42,6 +42,8 @@ export interface LibRow {
   id: string;            // family id
   name: string;
   division: string;
+  /** Every division the family runs in (the catalog's `divisions`, else its single `division`). */
+  divisions: string[];
   role: string;
   eventClasses: string[];
   instruments: string[];
@@ -73,7 +75,8 @@ export function parseLibrary(raw: LibraryOut | CatalogFamily[] | null | undefine
       code: "PB-" + String(i + 1).padStart(4, "0"),
       id: f.id,
       name: prettyId(f.id),
-      division: f.division ?? "hedge",
+      division: f.division ?? f.divisions?.[0] ?? "hedge",
+      divisions: f.divisions?.length ? f.divisions : [f.division ?? "hedge"],
       role: f.idea ?? f.description ?? (f.event_classes?.length ? `Event classes: ${f.event_classes.map(prettyId).join(", ")}.` : ""),
       eventClasses: f.event_classes ?? [],
       instruments: f.instruments ?? [],
@@ -87,6 +90,10 @@ export function parseLibrary(raw: LibraryOut | CatalogFamily[] | null | undefine
   return { rows, total, source: Array.isArray(raw) ? null : raw.source ?? null };
 }
 
-/** Families whose event classes include `cls` (the pipeline's shortlist step, recomputed client-side). */
-export const shortlist = (lib: Library | null, cls: string) => (lib ? lib.rows.filter((r) => r.eventClasses.includes(cls) || r.eventClasses.includes("all")) : []);
+/** Families whose event classes include `cls` (the pipeline's shortlist step, recomputed client-side). With
+ *  `division`, only families in that division: the backend shortlists within the chosen division, so the step must
+ *  count the same set its rationale does. */
+export const shortlist = (lib: Library | null, cls: string, division?: string | null) => (lib
+  ? lib.rows.filter((r) => (r.eventClasses.includes(cls) || r.eventClasses.includes("all")) && (!division || r.divisions.includes(division)))
+  : []);
 

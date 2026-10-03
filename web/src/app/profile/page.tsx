@@ -24,7 +24,7 @@ export default function Profile() {
     const on = st.conns.includes(id), conns = on ? st.conns.filter((x) => x !== id) : [...st.conns, id];
     s.updateSettings({ conns, broker: on ? conns[0] ?? null : st.broker ?? id });
   };
-  const status = st.conns.length ? `${st.conns.length} CONNECTION${st.conns.length === 1 ? "" : "S"}` : "PAPER TRADING";
+  const status = st.conns.length ? `${st.conns.length} CONNECTION${st.conns.length === 1 ? "" : "S"}` : acct.name.toUpperCase();
 
   return (
     <main className="pb-page" style={{ maxWidth: 1040, paddingTop: 18, paddingBottom: 60, display: "flex", flexDirection: "column", gap: 16 }}>

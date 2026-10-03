@@ -178,6 +178,11 @@ export interface BridgeSummary {
   broker?: string | null;
   broker_hedge?: number;
   broker_filled?: number;
+  /** The market the bridge was started on. */
+  market?: { source: string; id: string; token_id?: string | null } | null;
+  /** Replay bridges (when the backend reports them): the recorded file and the market it belongs to. */
+  replay_file?: string | null;
+  replay_market?: { source?: string | null; id?: string | null } | null;
 }
 
 /** One tick's PM YES mid vs the options-implied P(YES) (raw orientation). The option number is an estimate. */
@@ -300,6 +305,8 @@ export interface CatalogBlock { name: string; kind?: string; ui_kind?: string }
 export interface CatalogFamily {
   id: string;
   division?: string;
+  /** A family listed in more than one division (e.g. poly_kalshi_spread: hedge and opportunity). */
+  divisions?: string[];
   event_classes?: string[];
   instruments?: string[];
   blocks?: (string | CatalogBlock)[];

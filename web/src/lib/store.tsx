@@ -8,7 +8,7 @@ import { getAccount, getLibrary, getPortfolio, postFit, type AccountOut, type Fi
 import { EQ, QUESTIONS, demoImpacts, type EquityPick, type Question } from "./demo";
 import { parseLibrary, type Library } from "./library";
 import { initSim, stepSim, type Sim } from "./sim";
-import { opportunityFit, runnableFit, startOpportunityBridge, startRealBridge, type AppliedFit, type Settings } from "./realBridge.ts";
+import { fitDirection, opportunityFit, runnableFit, startOpportunityBridge, startRealBridge, type AppliedFit, type Settings } from "./realBridge.ts";
 
 export { algoRunLabel, feeGateOff, gapPerShare, runnableFit } from "./realBridge.ts";
 
@@ -29,7 +29,12 @@ export type BridgeEntry =
     };
 
 export interface Remote<T> { status: "loading" | "ok" | "error"; data: T | null; error: string | null }
-export interface FitState extends Remote<FitOut> { key: string }
+export interface FitState extends Remote<FitOut> {
+  key: string;
+  /** Set when no hedge fit was requested because the adverse outcome is unknown (a ticker outside the market's
+   *  mapping): the card says so instead of showing a score tuned against a guessed side. */
+  noDirection?: boolean;
+}
 
 const LOADING = { status: "loading", data: null, error: null } as const;
 const DEFAULT_SETTINGS: Settings = {
@@ -120,10 +125,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       (raw) => { if (!alive) return; const lib = parseLibrary(raw); setLibrary(lib ? { status: "ok", data: lib, error: null } : { status: "error", data: null, error: "empty catalog" }); },
       (e) => alive && setLibrary({ status: "error", data: null, error: errMsg(e) }),
     );
-    getAccount().then((a) => alive && setAccount({ status: "ok", data: a, error: null }), (e) => alive && setAccount({ status: "error", data: null, error: errMsg(e) }));
-    getPortfolio().then((p) => alive && setPortfolio({ status: "ok", data: p, error: null }), (e) => alive && setPortfolio({ status: "error", data: null, error: errMsg(e) }));
     return () => { alive = false; clearTimeout(thinkTimer.current); };
   }, []);
+
+  // GET /portfolio and GET /account change as bridges open (hedge status, cash), so they are re-read on every
+  // Portfolio visit and right after a bridge starts, not only at load. A failed refresh keeps the last good data.
+  const refreshAccount = useCallback(() => {
+    getAccount().then((a) => setAccount({ status: "ok", data: a, error: null }), (e) => setAccount((s) => (s.data ? s : { status: "error", data: null, error: errMsg(e) })));
+    getPortfolio().then((p) => setPortfolio({ status: "ok", data: p, error: null }), (e) => setPortfolio((s) => (s.data ? s : { status: "error", data: null, error: errMsg(e) })));
+  }, []);
+  const onPortfolio = pathname.startsWith("/portfolio");
+  const firstLoad = useRef(true);
+  useEffect(() => {
+    if (firstLoad.current || onPortfolio) refreshAccount();
+    firstLoad.current = false;
+  }, [onPortfolio, refreshAccount]);
 
   // One interval steps every demo bridge while the Bridge or Portfolio screen is open (prototype tickLive).
   const hasDemo = bridges.some((b) => b.kind === "demo");
@@ -184,6 +200,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setBridges((bs) => (bs.some((b) => b.id === entry.id) ? bs : [...bs, entry]));
         setActiveId(entry.id);
         setBridgeNote(null);
+        refreshAccount();
         return entry.id;
       } catch (e) {
         setBridgeNote(`No engine bridge on the backend (${errMsg(e)}). This bridge runs the prototype's simulator.`);
@@ -194,7 +211,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     })();
     opening.current.set(key, run);
     return run;
-  }, [bridges, settings, fit, addDemoBridge]);
+  }, [bridges, settings, fit, addDemoBridge, refreshAccount]);
 
   const runFit = useCallback((q: Question, eq: EquityPick) => {
     const key = `${q.id}|${eq.t}`;
@@ -210,9 +227,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         (e) => { if (oppKey.current !== key) return; oppKey.current = null; setOppFit({ key, status: "error", data: null, error: errMsg(e) }); },
       );
     }
+    // A hedge fit is tuned on the series oriented to the outcome that hurts the stock. With no mapping for this
+    // ticker that outcome is unknown, so no hedge fit is requested (the opportunity fit above needs no direction).
+    const direction = fitDirection(q, eq);
+    if (!direction) {
+      setFit({ key, status: "error", data: null, noDirection: true,
+        error: `${eq.t} is not in this market's mapping, so the outcome that hurts it is unknown; no hedge was fitted` });
+      return;
+    }
     postFit({
       market: q.real ? { source: q.real.source, id: q.real.id } : undefined,
-      question: q.q, ticker: eq.t, direction: eq.direction ?? (eq.move < 0 ? "down_on_yes" : "up_on_yes"), shares_held: eq.held || 500,
+      question: q.q, ticker: eq.t, direction, shares_held: eq.held || 500,
     }).then(
       (data) => { if (fitKey.current === key) setFit({ key, status: "ok", data, error: null }); },
       (e) => {
@@ -234,8 +259,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setBridges((bs) => (bs.some((b) => b.id === entry.id) ? bs : [...bs, entry]));
     setActiveId(entry.id);
     setBridgeNote(null);
+    refreshAccount();
     return entry.id;
-  }, [bridges, oppFit]);
+  }, [bridges, oppFit, refreshAccount]);
 
   const value = useMemo<Store>(() => ({
     question, equity, inst, query, thinking, setQuestion, setEquity, patchEquity, setInst, setQuery,

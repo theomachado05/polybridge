@@ -8,6 +8,7 @@ import { fmtK, fmtMoney, fmtNs, fmtPct, prettyId } from "@/lib/fmt";
 import { useAsync } from "@/lib/hooks";
 import { simCover, simPnl } from "@/lib/sim";
 import { algoRunLabel, brokerLabel, useStore, type BridgeEntry } from "@/lib/store";
+import { fillScopeLabel, liveVenue, priceSubtitle } from "@/lib/realBridge";
 import { quantile, useBridgeStream } from "@/lib/useBridgeStream";
 import { Btn, DemoTag, Glass, Label, Orb, Tag, upColor } from "@/components/pb";
 import { AlgoDock, PortfolioPanel, TopRow, TradesPanel, type DockAlgo, type TradeCard } from "./parts";
@@ -158,10 +159,15 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
   const direction = summary.data?.direction ?? entry.eq?.direction ?? "down_on_yes";
   const shares = summary.data?.shares_held ?? entry.eq?.held ?? 0;
   const acct = brokerLabel(s.account);
+  const scope = fillScopeLabel(summary.data?.account_scope, acct);
+  const mkt = entry.q?.real ?? summary.data?.market ?? null;
+  const venue = liveVenue(mkt?.source);
+  const pSub = priceSubtitle(source, mkt?.source,
+    { file: summary.data?.replay_file, market_id: summary.data?.replay_market?.id, market_source: summary.data?.replay_market?.source }, mkt?.id);
 
   const sourceTag = source === "replay"
     ? <Tag tone="replay" title="Ticks come from a recorded file of real market history, not the live market">replay</Tag>
-    : source === "live" ? <Tag tone="live" title="Polymarket midpoint, streamed now">live</Tag>
+    : source === "live" ? <Tag tone="live" title={`${venue} midpoint, streamed now`}>live</Tag>
     : <Tag tone="neutral">{st.status}</Tag>;
   const p = st.lastP, p0 = st.prices[0] ?? null;
   const spot = card.data?.implied_move?.spot ?? entry.eq?.px ?? null;
@@ -231,10 +237,11 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
       {summary.error && <div role="alert" style={{ fontSize: 13, color: "#C8323F" }}>Could not load bridge {id}: {summary.error}</div>}
       {st.status === "reconnecting" && <div role="alert" style={{ fontSize: 13, color: "#8A5A00" }}>Connection to the backend dropped; reconnecting…</div>}
       {st.error && <div style={{ fontSize: 13, color: "#5A627A" }}>Engine message: {st.error}</div>}
+      {pSub.mismatch && <div role="alert" style={{ fontSize: 13, color: "#8A5A00" }}>This replay was recorded on another market ({summary.data?.replay_market?.id}), not the question shown here; its prices and trades are a playback of that recording.</div>}
       <TopRow
         question={question} venues={entry.q?.venues ?? ["Polymarket"]} marketTag={<span style={{ display: "inline-flex", gap: 6 }}>{sourceTag}<Tag tone="neutral">{direction === "down_on_yes" ? "hedging the YES outcome" : "hedging the NO outcome"}</Tag></span>}
         pBig={p == null ? "—" : `${Math.round(p * 100)}¢`} pSpark={st.prices.slice(-60)}
-        pSub={`YES ${source === "replay" ? "from the replay file" : "Polymarket midpoint"} · Kalshi not streamed on this bridge`}
+        pSub={pSub.sub}
         volLabel="Ticks received" volValue={st.prices.length.toLocaleString("en-US")}
         orb={st.status === "running" ? "connecting" : "breathing"} nodeLabel={algoRunLabel(running).node}
         nodeLines={<>p50 {fmtNs(p50)} · p99 {fmtNs(p99)}<br />{move ? <>Expected move on YES <span style={{ color: move < 0 ? "#E0485A" : "#22A06B", fontWeight: 600 }}>{fmtPct(move)}</span></> : `${st.decisions} decisions`}</>}
@@ -246,12 +253,12 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
       <AlgoDock label={running ? "04 · ENGINE GATES · AI FIT" : "04 · ENGINE GATES · DEFAULT SPEC"} algos={algos} tag={<span style={{ display: "inline-flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>{gateTag}{fitTag}{holdTag}{sourceTag}</span>} />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,340px),1fr))", gap: 16, alignItems: "stretch" }}>
         <PortfolioPanel
-          tag={<Tag tone={acct.tone} title="Account that receives the engine's orders (GET /account)">{acct.name}</Tag>}
+          tag={<Tag tone={scope.tone} title={scope.title}>{scope.name}</Tag>}
           big={`${st.hedge.toLocaleString("en-US")} sh`} bigColor="#0F1626" bigNote={st.brokerHedge != null ? "engine's intended hedge" : "hedge short now (engine)"}
           left={[`Long ${ticker ?? ""}`, `${shares.toLocaleString("en-US")} sh`, spot ? fmtMoney(shares * spot) : "value n/a"]}
           right={["Engine orders", String(orders.length ? st.log.filter((l) => l.action === "order").length : summary.data?.orders ?? 0), `${st.decisions} decisions`]}
           ratio={coverage} ratioLabel={`Coverage (target ${Math.round((summary.data?.target_coverage ?? 0.5) * 100)}%)`}
-          footL={st.brokerHedge != null ? `Broker filled ${st.brokerHedge.toLocaleString("en-US")} sh short · ${st.fills} fills` : `Status ${st.status}`} footR={`p50 ${fmtNs(p50)} · p99 ${fmtNs(p99)}`}
+          footL={st.brokerHedge != null ? `${scope.filledVerb} ${st.brokerHedge.toLocaleString("en-US")} sh short · ${st.fills} fills` : `Status ${st.status}`} footR={`p50 ${fmtNs(p50)} · p99 ${fmtNs(p99)}`}
         />
         <TradesPanel trades={trades} tag={sourceTag} empty={st.decisions ? `No orders yet — the gates are holding (${st.decisions} decisions).` : "Waiting for the first tick…"} />
       </div>

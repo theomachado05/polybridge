@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { defaultPick, useStore } from "@/lib/store";
+import { brokerLabel, defaultPick, useStore } from "@/lib/store";
 
 const tabStyle = (on: boolean) => ({
   padding: "8px 16px", borderRadius: 999, cursor: "pointer",
@@ -28,7 +28,7 @@ export function Nav() {
     : on("/pipeline") ? "Composing bridge"
     : on("/build") ? `Step ${step} of 3`
     : on("/connect") ? "Connect brokerage"
-    : "Paper trading";
+    : brokerLabel(s.account).name;
 
   const goBridge = () => {
     if (!s.bridges.length) {

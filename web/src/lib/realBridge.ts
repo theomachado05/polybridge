@@ -1,7 +1,7 @@
 // Opening a live bridge on the backend: proposal → approval → POST /bridges (market-event path, contracts.md).
 // Pure (API injected) so it is unit-tested offline. Callers must only invoke it on an explicit user action.
 import * as http from "./api.ts";
-import type { FitOut, Proposal } from "./api";
+import type { Direction, FitOut, Proposal } from "./api";
 import type { EquityPick, Question } from "./demo";
 import { prettyId } from "./fmt.ts";
 
@@ -46,8 +46,19 @@ export function algoRunLabel(fit: AppliedFit | null): { node: string; sentence: 
 const sameAlgo = (p: Proposal, want: AppliedFit | null) =>
   want ? p.algo?.family === want.family && (p.algo?.preset_index ?? null) === want.preset_index : !p.algo;
 
+const sameNum = (a: number | null | undefined, b: number) => typeof a === "number" && Math.abs(a - b) < 1e-9;
+
+/** The direction a hedge fit may be oriented with, or null when it is unknown. On a live market only the mapping
+ *  says which outcome hurts the stock; guessing from a zero move would tune the hedge against an arbitrary side.
+ *  Demo markets keep the prototype's sign-of-move rule. */
+export function fitDirection(q: Pick<Question, "real">, eq: Pick<EquityPick, "direction" | "move">): Direction | null {
+  if (eq.direction) return eq.direction;
+  if (q.real) return null;
+  return eq.move < 0 ? "down_on_yes" : "up_on_yes";
+}
+
 /** Proposal → approval → engine bridge on the real backend (market-event path, contracts.md).
- *  Reuses an earlier proposal for the same ticker, market and direction instead of creating one per run: an
+ *  Reuses an earlier proposal for the same ticker, market, direction, algo, coverage and shares instead of creating one per run: an
  *  approved one (POST /bridges is idempotent per proposal, so this re-attaches to its bridge, or finally starts
  *  the bridge if an earlier attempt failed after approval), else a pending one, which is approved here. */
 export async function startRealBridge(q: Question, eq: EquityPick, maxHedge: string, api: BridgeApi = defaultApi,
@@ -63,10 +74,13 @@ export async function startRealBridge(q: Question, eq: EquityPick, maxHedge: str
   // sell beyond it (contracts.md), so the approved proposal bounds what is hedged. Without a fit the default Engine
   // hedges target_coverage itself: half the position, never above Max hedge.
   const coverage = fit ? cap : Math.min(0.5, cap);
+  const sharesHeld = eq.held || 500;
   const market = { source: m.source, id: m.id, token_id: m.token_id };
+  // Reuse only a proposal approved for exactly these terms: the bridge runs what was approved, so an older approval
+  // at another coverage or position size would hedge more (or less) than the screen says.
   const mine = (await listProposals().catch(() => [] as Proposal[]))
     .filter((p) => p.ticker === eq.t && p.family === "hedge" && sameMarket(p, m) && (p.direction ?? "down_on_yes") === eq.direction
-      && sameAlgo(p, fit) && (!fit || p.target_coverage === coverage));
+      && sameAlgo(p, fit) && sameNum(p.target_coverage, coverage) && sameNum(p.shares_held, sharesHeld));
   const approved = mine.find((p) => p.status === "approved");
   const pending = mine.find((p) => p.status === "proposed");
   let ok: Proposal;
@@ -74,7 +88,7 @@ export async function startRealBridge(q: Question, eq: EquityPick, maxHedge: str
   else if (pending) ok = await approveProposal(pending.id);
   else {
     const algo = fit ? { algo: { family: fit.family, preset_index: fit.preset_index ?? undefined, source: "ai_fit" as const } } : {};
-    const prop = await createProposal({ ticker: eq.t, market, direction: eq.direction, shares_held: eq.held || 500, target_coverage: coverage, ...algo });
+    const prop = await createProposal({ ticker: eq.t, market, direction: eq.direction, shares_held: sharesHeld, target_coverage: coverage, ...algo });
     ok = prop.status === "approved" ? prop : await approveProposal(prop.id);
   }
   const gap = gapPerShare(spot, eq.move);
@@ -135,4 +149,34 @@ export async function startOpportunityBridge(q: Question, ticker: string, fit: A
   }
   const why = last instanceof Error ? last.message : "the backend refused to start a bridge";
   throw new Error(`${why}; proposal ${ok.id} stays approved and is reused on the next try`);
+}
+
+// ---------------------------------------------------------------- where a bridge's orders fill, in words
+
+/** Every web bridge tries a recorded replay first, and the backend fills replay bridges in an isolated sandbox. */
+export const REPLAY_SANDBOX_SENTENCE = "On a recorded replay (the default here) its orders fill in an isolated replay sandbox, not this account.";
+
+/** The Bridge screen's position-panel label: the replay sandbox when the backend says the bridge is sandboxed
+ *  (summary.account_scope), else the GET /account broker. */
+export function fillScopeLabel(scope: string | null | undefined, acct: { name: string; tone: "sim" | "paper" | "demo" }):
+  { sandbox: boolean; name: string; tone: "replay" | "sim" | "paper" | "demo"; title: string; filledVerb: string } {
+  return scope === "replay_sandbox"
+    ? { sandbox: true, name: "replay sandbox · not your account", tone: "replay", title: "Replay bridges fill in an isolated sandbox (sim-replay), never your account", filledVerb: "Sandbox filled" }
+    : { sandbox: false, name: acct.name, tone: acct.tone, title: "Account that receives the engine's orders (GET /account)", filledVerb: "Broker filled" };
+}
+
+/** The venue a live bridge streams: the market's own (Kalshi markets stream Kalshi; contracts.md, ticks.py). */
+export const liveVenue = (source: string | null | undefined) => (source === "kalshi" ? "Kalshi" : "Polymarket");
+
+/** The Bridge screen's probability subtitle. On a replay it names the recorded file when the backend reports it,
+ *  and warns when that recording belongs to another market than the one on screen. */
+export function priceSubtitle(source: string | null | undefined, marketSource: string | null | undefined,
+  replay?: { file?: string | null; market_id?: string | null; market_source?: string | null } | null, marketId?: string | null):
+  { sub: string; mismatch: boolean } {
+  if (source === "replay") {
+    const mismatch = !!(replay?.market_id && marketId && (replay.market_id !== marketId || (replay.market_source && marketSource && replay.market_source !== marketSource)));
+    return { sub: `YES from replay ${replay?.file ?? "file"} · recorded history, not the live market`, mismatch };
+  }
+  const venue = liveVenue(marketSource);
+  return { sub: `YES ${venue} midpoint${venue === "Kalshi" ? "" : " · Kalshi not streamed on this bridge"}`, mismatch: false };
 }

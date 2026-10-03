@@ -115,7 +115,7 @@ describe("pipeline steps", () => {
     assert.match(steps[0].text, /Macro Fed \(keyword rules\)\. Division: hedge\./);
     assert.match(steps[1].text, /2 families cover Macro Fed: Macro Fed Hedge, Equity Delta Bridge\./);
     assert.match(steps[2].text, /^1,440 ticks of real Kalshi price history/);
-    assert.match(steps[3].text, /Macro Fed Hedge preset #14 · hedge variance reduction 41\.2% · c=0\.5, k=2\. Runners-up: Equity Delta Bridge 30\.0%\./);
+    assert.match(steps[3].text, /Macro Fed Hedge preset #14 · hedge variance reduction 41\.2% \(in-sample: scored on the history it replays, not a forecast\) · c=0\.5, k=2\. Runners-up: Equity Delta Bridge 30\.0%\./);
     assert.equal(steps[4].text, "Fed odds lead bank stocks.");
   });
   it("labels replay and missing history honestly", () => {
