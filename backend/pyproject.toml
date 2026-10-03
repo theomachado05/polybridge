@@ -2,7 +2,13 @@
 name = "polybridge-backend"
 version = "0.1.0"
 requires-python = ">=3.12"
-dependencies = ["fastapi>=0.115", "uvicorn[standard]>=0.30", "pydantic>=2.7", "polybridge-research"]
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "pydantic>=2.7",
+    "polybridge-research",
+    "httpx>=0.28.1",
+]
 
 [dependency-groups]
 dev = ["pytest>=8", "httpx>=0.27"]

@@ -1,0 +1,7 @@
+tag,n_events,strategy,horizon,difference,ci_lo,ci_hi,p_value,q_value,exploratory
+leaning_tag,15,protective_put,21,0.02,0.005,0.035,0.001,0.01,True
+leaning_tag,15,protective_put,42,0.03,0.010,0.050,0.002,0.02,True
+leaning_tag,15,protective_put,exp,-0.01,-0.04,0.02,0.5,0.6,True
+leaning_tag,15,cash_secured_put,21,0.001,-0.02,0.02,0.7,0.8,True
+flat_tag,12,protective_put,21,0.02,-0.01,0.05,0.2,0.3,True
+flat_tag,12,cash_secured_put,42,-0.02,-0.05,0.01,0.3,0.4,True
