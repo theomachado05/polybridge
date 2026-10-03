@@ -1,7 +1,9 @@
 """Step 2: families from the manifest whose event classes include the class, split by division.
 
-Within a division, families that name the class explicitly come before wildcard ("all") families, and
-families whose requirements are known to be unmet (no listed options, no second venue) go last.
+Within a division, families that name the class explicitly come before generic families (wildcard "all", or the
+full list of classes as the compiled catalog spells it); among the specific ones the narrowest (fewest event classes)
+comes first, so the family built for this class leads. Families whose requirements are known to be unmet (no listed
+options, no second venue) go last.
 """
 from __future__ import annotations
 
@@ -15,7 +17,9 @@ GENERIC_PREFERENCE = ["equity_delta_bridge", "book_imbalance_hedge", "no_bid_sel
 def _rank(family: dict, event_class: str, available: set[str] | None) -> tuple:
     unmet = [r for r in (family.get("requires") or []) if available is not None and r not in available]
     pref = GENERIC_PREFERENCE.index(family["id"]) if family["id"] in GENERIC_PREFERENCE else len(GENERIC_PREFERENCE)
-    return (bool(unmet), not is_specific(family, event_class), pref, family["id"])
+    specific = is_specific(family, event_class)
+    breadth = len(family.get("event_classes") or []) if specific else 0
+    return (bool(unmet), not specific, breadth, pref, family["id"])
 
 
 def shortlist(manifest: dict, event_class: str, available: set[str] | None = None) -> dict[str, list[dict]]:

@@ -56,15 +56,59 @@ def _params(raw: Any) -> list[dict]:
     return out
 
 
+def _block_names(blocks: Any) -> set[str]:
+    """Block names from either ['Name', ...] (fallback manifest) or [{kind, name}, ...] (compiled catalog)."""
+    out = set()
+    for b in blocks or []:
+        name = b.get("name") if isinstance(b, dict) else b
+        if name:
+            out.add(str(name))
+    return out
+
+
+def derive_requires(family: dict) -> list[str]:
+    """Data a family cannot run without, derived from what the compiled catalog declares (its blocks and
+    instruments) when the manifest does not list ``requires`` itself:
+
+    - a ``CrossVenueGap`` signal needs the other venue's price      -> 'both_venues'
+    - any ``option:*`` instrument needs a listed option chain        -> 'listed_options'
+    """
+    req = []
+    if "CrossVenueGap" in _block_names(family.get("blocks")):
+        req.append("both_venues")
+    if any(str(i).lower().startswith("option") for i in family.get("instruments") or []):
+        req.append("listed_options")
+    return req
+
+
+def derive_proxies(instruments: list) -> list[str]:
+    """Tradable proxy tickers named by the catalog ('etf:SPY', 'equity:COIN'); placeholders like 'etf:sector'
+    or 'equity:megacap_tech' are not tickers and are skipped."""
+    out = []
+    for i in instruments or []:
+        kind, _, sym = str(i).partition(":")
+        if kind in ("etf", "equity") and sym and sym.isupper() and sym.isalpha() and sym not in out:
+            out.append(sym)
+    return out
+
+
 def normalize_manifest(raw: Any) -> dict:
     """Coerce whatever catalog()/manifest.json returns into the shape the pipeline uses.
 
-    families: list of {id, divisions, division, event_classes, instruments, blocks, params, preset_count, ...}.
+    families: list of {id, divisions, division, event_classes, instruments, blocks, params, preset_count, requires,
+    generic, proxies, ...}.
+
+    The compiled catalog is authoritative but terser than the hand-written fallback: it spells a family that applies
+    to every class as the full list of classes (not 'all') and has no ``requires`` / ``proxies``. So:
+    ``generic`` is True when the family's classes are a wildcard or cover every supported class; ``requires`` and
+    ``proxies`` are derived from blocks and instruments when absent (``derive_requires``, ``derive_proxies``).
     """
     raw = raw if isinstance(raw, dict) else {}
     fams_raw = raw.get("families") or []
     if isinstance(fams_raw, dict):
         fams_raw = [{"id": k, **v} for k, v in fams_raw.items()]
+    classes = [str(c) for c in (raw.get("event_classes") or EVENT_CLASSES)]
+    supported = {c for c in classes if c != "unsupported"}
     families = []
     for f in fams_raw:
         if not isinstance(f, dict) or not f.get("id"):
@@ -76,12 +120,20 @@ def normalize_manifest(raw: Any) -> dict:
         count = f.get("preset_count")
         if count is None:
             count = math.prod(len(p["grid"]) for p in params) if params else 0
-        families.append({**f, "id": str(f["id"]), "divisions": divs, "division": divs[0], "event_classes": ecs,
-                         "instruments": list(f.get("instruments") or []), "blocks": list(f.get("blocks") or []),
-                         "params": params, "preset_count": int(count)})
-    classes = raw.get("event_classes") or EVENT_CLASSES
+        instruments = list(f.get("instruments") or [])
+        generic = bool(set(ecs) & WILDCARDS) or (bool(supported) and supported <= set(ecs))
+        fam = {**f, "id": str(f["id"]), "divisions": divs, "division": divs[0], "event_classes": ecs,
+               "instruments": instruments, "blocks": list(f.get("blocks") or []),
+               "params": params, "preset_count": int(count), "generic": generic}
+        if f.get("requires") is None:
+            fam["requires"] = derive_requires(fam)
+        if f.get("proxies") is None:
+            proxies = derive_proxies(instruments)
+            if proxies:
+                fam["proxies"] = proxies
+        families.append(fam)
     total = raw.get("total_presets", raw.get("preset_count", raw.get("total")))
-    return {**raw, "event_classes": [str(c) for c in classes], "families": families,
+    return {**raw, "event_classes": classes, "families": families,
             "total_presets": int(total) if total is not None else sum(f["preset_count"] for f in families)}
 
 
@@ -93,8 +145,9 @@ def family_matches(family: dict, event_class: str) -> bool:
 
 
 def is_specific(family: dict, event_class: str) -> bool:
-    """True when the family names this class explicitly (not only through a wildcard)."""
-    return event_class in (family.get("event_classes") or [])
+    """True when the family names this class explicitly and is not a generic family (one that covers every class,
+    whether spelled 'all' or as the full list, as the compiled catalog does)."""
+    return event_class in (family.get("event_classes") or []) and not family.get("generic", False)
 
 
 def preset_grid(family: dict) -> list[dict[str, float]]:
@@ -107,10 +160,11 @@ def preset_grid(family: dict) -> list[dict[str, float]]:
 
 
 def default_preset(family: dict) -> tuple[int, dict[str, float]]:
-    """The family's declared default preset, else the middle grid value of every parameter.
+    """The family's declared default preset; else, per parameter, its declared ``default`` when that value is on
+    the grid (the compiled catalog declares one for every parameter), else the middle grid value.
 
-    The index assumes row-major ordering (last parameter fastest); a manifest may override with
-    ``default_preset`` (int index) when the compiled library orders presets differently.
+    The index uses the compiled library's ordering: mixed radix, last parameter fastest (``ParamSpec::preset``),
+    the same as itertools.product. A manifest may override with ``default_preset`` (int index).
     """
     params = family.get("params") or []
     declared = family.get("default_preset")
@@ -122,7 +176,10 @@ def default_preset(family: dict) -> tuple[int, dict[str, float]]:
         g = p["grid"]
         if not g:
             continue
+        d = p.get("default")
         i = (len(g) - 1) // 2
+        if isinstance(d, (int, float)) and float(d) in g:
+            i = g.index(float(d))
         idx = idx * len(g) + i
         chosen[p["name"]] = g[i]
     return idx, chosen
