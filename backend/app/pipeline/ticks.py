@@ -440,6 +440,11 @@ async def build_ticks(market: dict | None, ticker: str, *, http: httpx.AsyncClie
             if bars:
                 notes.append(f"recorded equity bars for {ticker.upper()}")
     ticks = assemble(points, bars, venue=venue, quotes=quotes)
+    if ts_source == "live_history" and not offline and http is not None:  # verified twin -> p_other_venue
+        from ..twins.overlay import overlay_other_venue
+        note = await overlay_other_venue(ticks, points, source=source, market_id=mid, token_id=token_id, http=http)
+        if note:
+            notes.append(note)
     has_under = bool(np.isfinite(ticks["under_px"]).any())
     if not has_under:
         notes.append(f"no {ticker.upper() if ticker else 'equity'} prices aligned to the history")
