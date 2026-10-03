@@ -23,10 +23,20 @@ def num(x):
         return 0.0
 
 
+def _get(c, url, params):
+    try:
+        r = c.get(url, params=params)
+        r.raise_for_status()
+        return r.json()
+    except httpx.HTTPError as e:
+        print(f"warning: skipping failing request {url} {params}: {e}")
+        return [] if url == GAMMA else None
+
+
 def polymarket(c):
     for off in (0, 100, 200):
         p = dict(active="true", closed="false", limit=100, offset=off, order="volume24hr", ascending="false")
-        for m in c.get(GAMMA, params=p).json():
+        for m in _get(c, GAMMA, p):
             prices = json.loads(m.get("outcomePrices") or "[]")
             yield dict(source="polymarket", id=str(m["id"]), question=m["question"],
                        yes_price=num(prices[0]) if prices else None,
@@ -36,7 +46,7 @@ def polymarket(c):
 def kalshi(c):
     for cat in CATS:
         p = dict(status="open", limit=60, with_nested_markets="true", category=cat)
-        for e in c.get(KALSHI, params=p).json().get("events", []):
+        for e in (_get(c, KALSHI, p) or {}).get("events", []):
             if e.get("markets"):
                 m = e["markets"][0]  # first market per event
                 yield dict(source="kalshi", id=m["ticker"], question=m.get("title") or e["title"],

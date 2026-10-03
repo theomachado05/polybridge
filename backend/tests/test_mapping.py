@@ -25,7 +25,6 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setattr(mapping, "MAP_PATH", p)
     monkeypatch.setattr(mapping, "_cache", None)
     yield TestClient(create_app())
-    monkeypatch.setattr(mapping, "_cache", None)
 
 
 def test_exact(client):
@@ -35,8 +34,50 @@ def test_exact(client):
 
 
 def test_fuzzy(client):
-    r = client.post("/map", json={"question": "Indiana data center moratorium enacted in 2027?"}).json()
-    assert r["source"] == "precomputed" and r["matched_question"].startswith("Will Indiana")
+    r = client.post("/map", json={"question": "Indiana enact data center moratorium 2027?"}).json()
+    assert r["source"] == "precomputed" and r["match_type"] == "fuzzy" and r["score"] >= 0.5
+    assert r["matched_question"].startswith("Will Indiana")
+
+
+def _lib(tmp_path, monkeypatch, items):
+    p = tmp_path / "l.json"
+    p.write_text(json.dumps({"items": items}))
+    monkeypatch.setattr(mapping, "MAP_PATH", p)
+    monkeypatch.setattr(mapping, "_cache", None)
+    return TestClient(create_app())
+
+
+@pytest.mark.parametrize("q", ["fed", "bitcoin"])
+def test_short_queries_none(client, q):
+    assert client.post("/map", json={"question": q}).json()["source"] == "none"
+
+
+def test_opposite_direction_none(tmp_path, monkeypatch):
+    c = _lib(tmp_path, monkeypatch, {"k:1": {"question": "Will the Fed increase rates in December?", "mappings": []}})
+    assert c.post("/map", json={"question": "Will the Fed cut rates in December?"}).json()["source"] == "none"
+
+
+def test_tie_none_with_candidates(tmp_path, monkeypatch):
+    c = _lib(tmp_path, monkeypatch, {
+        "k:1": {"question": "Fed cut rates December 2026 meeting again", "mappings": []},
+        "k:2": {"question": "Fed cut rates December 2026 meeting soon", "mappings": []}})
+    r = c.post("/map", json={"question": "Will Fed cut rates December 2026 meeting"}).json()
+    assert r["source"] == "none" and len(r["candidates"]) == 2 and r["items"] == []
+
+
+def test_just_under_threshold(tmp_path, monkeypatch):
+    c = _lib(tmp_path, monkeypatch, {"k:1": {"question": "alpha beta gamma delta epsilon zeta", "mappings": []}})
+    # shared 3, union 7 -> 0.43
+    assert c.post("/map", json={"question": "alpha beta gamma eta"}).json()["source"] == "none"
+
+
+def test_id_without_exact_or_question(client):
+    assert client.post("/map", json={"source": "kalshi", "market_id": "nope"}).json()["source"] == "none"
+
+
+def test_non_dict_items_skipped(tmp_path, monkeypatch):
+    c = _lib(tmp_path, monkeypatch, {"k:1": "junk", "k:2": None})
+    assert c.post("/map", json={"question": "anything goes here today"}).json()["source"] == "none"
 
 
 def test_no_match(client):
@@ -57,10 +98,8 @@ def test_422(client):
 
 def test_missing_file(tmp_path, monkeypatch):
     monkeypatch.setattr(mapping, "MAP_PATH", tmp_path / "nope.json")
-    monkeypatch.setattr(mapping, "_cache", None)
     r = TestClient(create_app()).post("/map", json={"question": "anything at all"})
     assert r.status_code == 200 and r.json()["source"] == "none" and "missing" in r.json()["note"]
-    monkeypatch.setattr(mapping, "_cache", None)
 
 
 def test_shipped_library_loads():
