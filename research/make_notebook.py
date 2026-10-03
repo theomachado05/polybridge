@@ -15,7 +15,12 @@ Pre-registration: [HYPOTHESIS.md](HYPOTHESIS.md) (19:38 ET, 2 Oct 2026) and [HYP
 Two confirmatory hypotheses, each on the top-100 US stocks, judged against a placebo of ordinary days:
 
 - **H1 (hedge):** after a litigation, investigation, cybersecurity or impairment 8-K the stock keeps moving by more than the options priced, so the protective put beats the placebo's.
-- **H2 (opportunity):** after a restructuring or workforce-reduction 8-K the stock moves by less than the options priced, so the cash-secured put beats the placebo's.
+- **H2 (opportunity):** after a restructuring plan, workforce reduction, facility closure or business-line exit 8-K the stock moves by less than the options priced, so the cash-secured put beats the placebo's.
+
+**Pass rule (decided before results).** A hypothesis passes only if the 97.5% CI of the P&L edge (events minus ordinary days) is entirely above 0 at 2 or more of 21, 42 and expiry,
+and the price-gap ratio points the predicted way (H1 above ordinary days, H2 below) at those horizons. Otherwise it is a null result.
+
+If a pairing fails, PolyBridge reports "no edge for this event and stock — try another", and that is a valid result.
 
 **How to run.** Only `MASSIVE_API_KEY` is required (environment variable or a `.env` file). Optionally set
 `SEC_USER_AGENT="Name email"` to use EDGAR acceptance times. Edit `START, END` in the next cell and rerun all cells.
@@ -159,8 +164,9 @@ for fam in FAMILIES:
         t["ratio_ok"] = t["horizon"].isin(chk["horizons_ratio_ok"])
         show(t.set_index("horizon"), f"{fam} ({chk['strategy']}): events minus placebo at the headline horizons")
     verdict = "PASS" if chk["passed"] else "NULL"
-    display(Markdown(f"**{fam.upper()}: {verdict}**  (pass_check: P&L CI excludes 0 and ratio sign as predicted at 2 or more of "
-                     f"{', '.join(map(str, HEADS))})"))
+    display(Markdown(f"**{fam.upper()}: {verdict}**. PASS rule: the 97.5% CI of the P&L edge (events minus ordinary days) is entirely above 0, "
+                     "and the price-gap ratio points the predicted way (H1 above ordinary days, H2 below), "
+                     "at 2 or more of 21, 42 and expiry."))
 '''
 
 C7 = '''\
@@ -200,7 +206,7 @@ for fam in FAMILIES:
     r = of_family(study["results"], fam)
     r = r[r["horizon"] == 21] if len(r) else r
     if len(r):
-        grid = r.groupby(["bucket", "entry", "otm"])[strat].agg(n="count", mean_edge="mean")
+        grid = r.groupby(["bucket", "entry", "otm"])[strat].agg(n="count", mean_pnl="mean")
         show(grid, f"[{fam}] {strat}: mean P&L at h=21 by bucket x entry x OTM (the starter's grid; entry 'pre' is a pricing statement, not a trade)")
     else:
         print(f"[{fam}] no events in this window")
@@ -209,6 +215,7 @@ print("Variants in this sensitivity grid (one tag):", count_variants(cfg))
 
 C9 = '''\
 cost_summ = []
+QUOTES_OK = True
 for fam in FAMILIES:
     strat = STRATEGY_FOR_FAMILY[Family(fam)]
     res_f = of_family(study["results"], fam)
@@ -217,7 +224,15 @@ for fam in FAMILIES:
         if res_f.empty or not priced_f:
             print(f"[{fam}] h={h}: no events in this window")
             continue
-        ct = cost_table(res_f, priced_f, strat, h, cfg, client=client)
+        ct = None
+        if QUOTES_OK:
+            try:
+                ct = cost_table(res_f, priced_f, strat, h, cfg, client=client)
+            except Exception:
+                QUOTES_OK = False
+                print("Options quotes unavailable on this key; spread cost not computed (haircut costs shown).")
+        if ct is None:
+            ct = cost_table(res_f, priced_f, strat, h, cfg, client=None)
         if ct.empty:
             print(f"[{fam}] h={h}: no events in this window")
             continue
