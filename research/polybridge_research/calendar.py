@@ -16,22 +16,32 @@ class NYSEHolidays(AbstractHolidayCalendar):
         USLaborDay, USThanksgivingDay,
         Holiday("Christmas Day", month=12, day=25, observance=nearest_workday),
         Holiday("National day of mourning, President Carter", year=2025, month=1, day=9),
+        Holiday("National day of mourning, President Bush", year=2018, month=12, day=5),
     ]
 
 
 class TradingCalendar:
-    def __init__(self, start: str = "2021-06-01", end: str = "2027-12-31"):
+    def __init__(self, start: str = "2015-01-01", end: str = "2030-12-31"):
         hol = NYSEHolidays().holidays(pd.Timestamp(start) - pd.Timedelta(days=7), pd.Timestamp(end) + pd.Timedelta(days=7))
         self.sessions = pd.bdate_range(start, end, freq=CustomBusinessDay(holidays=hol))
 
     def on_or_after(self, day) -> pd.Timestamp:
-        return self.sessions[self.sessions.searchsorted(pd.Timestamp(day), side="left")]
+        i = self.sessions.searchsorted(pd.Timestamp(day), side="left")
+        if i >= len(self.sessions):
+            raise ValueError(f"{day} is after the last calendar session {self.sessions[-1].date()}")
+        return self.sessions[i]
 
     def before(self, day) -> pd.Timestamp:
-        return self.sessions[self.sessions.searchsorted(pd.Timestamp(day), side="left") - 1]
+        i = self.sessions.searchsorted(pd.Timestamp(day), side="left") - 1
+        if i < 0:
+            raise ValueError(f"{day} is on or before the first calendar session {self.sessions[0].date()}")
+        return self.sessions[i]
 
     def after(self, day) -> pd.Timestamp:
-        return self.sessions[self.sessions.searchsorted(pd.Timestamp(day), side="right")]
+        i = self.sessions.searchsorted(pd.Timestamp(day), side="right")
+        if i >= len(self.sessions):
+            raise ValueError(f"{day} is on or after the last calendar session {self.sessions[-1].date()}")
+        return self.sessions[i]
 
     def between(self, a, b) -> int:
         """Sessions strictly after `a` up to and including `b`."""

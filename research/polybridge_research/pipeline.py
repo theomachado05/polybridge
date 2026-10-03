@@ -32,7 +32,8 @@ def run_family_study(client, cal, cfg, start: str, end: str, last_session: pd.Ti
     pl_events, pl_priced, pl_frames, checks = [], [], [], {}
     for fam in sorted(set(events["family"])) if not events.empty else []:
         fam_ev = events[events.family == fam]
-        pl = sample_placebo(fam_ev, cfg.n_placebo, start, end, cal, cfg.placebo_gap_days, seed=placebo_seed)
+        pl = sample_placebo(fam_ev, cfg.n_placebo, start, end, cal, cfg.placebo_gap_days, seed=placebo_seed,
+                           last_session=last_session)
         p_priced, _ = price_events(client, pl, cal, cfg, max_workers=max_workers, label=f"placebo {fam}")
         p_res = evaluate(p_priced, cal, cfg, last_session)
         pl_events.append(pl)

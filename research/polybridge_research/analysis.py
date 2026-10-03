@@ -59,9 +59,10 @@ def difference_board(res_a, res_b, cfg: StudyConfig, level: float = 0.95, column
 
 
 def sample_placebo(events: pd.DataFrame, n: int, start: str, end: str, cal: TradingCalendar, gap_days: int,
-                   seed: int = 7) -> pd.DataFrame:
+                   seed: int = 7, last_session=None) -> pd.DataFrame:
     rng = np.random.default_rng(seed)
-    sessions = cal.sessions[(cal.sessions >= pd.Timestamp(start)) & (cal.sessions <= pd.Timestamp(end))]
+    stop = pd.Timestamp(end) if last_session is None else min(pd.Timestamp(end), pd.Timestamp(last_session))
+    sessions = cal.sessions[(cal.sessions >= pd.Timestamp(start)) & (cal.sessions <= stop)]
     cols = ["ticker", "filing_date", "t_0", "t_pre"] + (["family"] if "family" in events else [])
     if events.empty or len(sessions) == 0:
         return pd.DataFrame(columns=cols)

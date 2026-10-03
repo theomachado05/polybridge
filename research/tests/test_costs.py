@@ -42,6 +42,7 @@ def test_half_spread_and_timestamp_bound():
     assert math.isclose(half_spread(c, "O:X", T("2024-06-04")), 0.05)
     ts = c.quote_params[-1]["timestamp.lte"]
     assert ts == int(pd.Timestamp("2024-06-04 16:00", tz="America/New_York").value)
+    assert c.quote_params[-1]["timestamp.gte"] == int(pd.Timestamp("2024-06-04 09:30", tz="America/New_York").value)
 
 
 def test_cost_table_haircut_and_spread():

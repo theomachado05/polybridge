@@ -11,9 +11,11 @@ LEGS_FOR_STRATEGY = {"long_call": ["C_K"], "covered_call": ["C_U{otm}"], "protec
 
 
 def half_spread(client, opt_ticker: str, day: pd.Timestamp) -> float | None:
-    bound = int(pd.Timestamp(pd.Timestamp(day).strftime("%Y-%m-%d") + " 16:00", tz="America/New_York").value)
-    rows = client.get(f"/v3/quotes/{opt_ticker}", {"timestamp.lte": bound, "order": "desc", "sort": "timestamp",
-                                                   "limit": 1}).get("results") or []
+    d = pd.Timestamp(day).strftime("%Y-%m-%d")
+    lower = int(pd.Timestamp(d + " 09:30", tz="America/New_York").value)   # same session only: no stale prior-day quote
+    bound = int(pd.Timestamp(d + " 16:00", tz="America/New_York").value)
+    rows = client.get(f"/v3/quotes/{opt_ticker}", {"timestamp.gte": lower, "timestamp.lte": bound, "order": "desc",
+                                                   "sort": "timestamp", "limit": 1}).get("results") or []
     if not rows:
         return None
     bid, ask = float(rows[0].get("bid_price") or 0), float(rows[0].get("ask_price") or 0)

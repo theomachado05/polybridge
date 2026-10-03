@@ -105,3 +105,10 @@ def test_pass_check_on_empty_frames_does_not_raise():
         assert out["passed"] is False and out["horizons_pnl_ok"] == [] and out["horizons_ratio_ok"] == []
         assert list(out["pnl"].columns) == list(out["ratio"].columns) == [
             "strategy", "horizon", "n_a", "n_b", "mean_a", "mean_b", "difference", "ci_lo", "ci_hi", "p_value"]
+
+
+def test_sample_placebo_clips_to_last_session():
+    ev = pd.DataFrame({"ticker": ["AAPL"], "filing_date": [T("2024-03-01")], "family": ["hedge"]})
+    pl = sample_placebo(ev, 60, "2024-01-01", "2024-12-31", CAL, gap_days=30, seed=1, last_session=T("2024-06-28"))
+    assert len(pl) == 60 and (pl.filing_date <= T("2024-06-28")).all()
+    assert pl.filing_date.max() > T("2024-04-30")

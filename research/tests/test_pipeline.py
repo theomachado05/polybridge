@@ -32,3 +32,9 @@ def test_end_to_end_on_fake_market(tmp_path):
 def test_empty_window(tmp_path):
     out = run_family_study(_client(), CAL, CFG, "2022-01-01", "2022-03-31", T("2026-09-30"), cache_dir=tmp_path)
     assert out["events"].empty and out["results"].empty and out["checks"] == {}
+
+
+def test_pipeline_clips_placebo_days_to_last_session(tmp_path):
+    out = run_family_study(_client(), CAL, CFG, "2024-01-01", "2024-12-31", T("2024-06-28"),
+                           cache_dir=tmp_path, max_workers=2)
+    assert (out["placebo_events"].filing_date <= T("2024-06-28")).all()
