@@ -1,0 +1,7 @@
+.pb-voice { position: fixed; right: clamp(16px, 3vw, 28px); bottom: clamp(16px, 3vw, 28px); z-index: 50; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+.pb-voice-pill { display: inline-flex; align-items: center; gap: 10px; height: 48px; padding: 0 20px 0 12px; border-radius: 999px; background: rgba(255,255,255,.62); color: var(--ink); font: 600 14px var(--sans); cursor: pointer; transition: transform .2s ease, box-shadow .2s ease; }
+.pb-voice-pill:hover { transform: translateY(-1px); }
+.pb-voice-pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.pb-voice[data-phase="listening"] .pb-voice-pill { box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 0 0 2px var(--accent-tint), 0 12px 36px rgba(59,108,246,.28); }
+.pb-voice[data-phase="error"] .pb-voice-pill { color: var(--down-text); }
+@media (prefers-reduced-motion: reduce) { .pb-voice-pill { transition: none; } }
