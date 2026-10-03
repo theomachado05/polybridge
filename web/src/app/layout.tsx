@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import { Geist, Geist_Mono, Newsreader } from "next/font/google";
 import { Nav } from "@/components/Nav";
+import { VoiceButton } from "@/components/voice/VoiceButton";
 import { StoreProvider } from "@/lib/store";
 import "./globals.css";
 
@@ -13,8 +14,6 @@ export const metadata: Metadata = {
   title: "PolyBridge",
   description: "Prediction-market signals in, fee- and tax-aware equity hedges out.",
 };
-
-const ELEVENLABS_AGENT_ID = process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
@@ -33,12 +32,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </StoreProvider>
         </div>
         <Script src="/thinking-orbs.js" strategy="afterInteractive" />
-        {ELEVENLABS_AGENT_ID ? (
-          <>
-            <elevenlabs-convai agent-id={ELEVENLABS_AGENT_ID} />
-            <Script src="https://unpkg.com/@elevenlabs/convai-widget-embed" strategy="afterInteractive" />
-          </>
-        ) : null}
+        <VoiceButton />
       </body>
     </html>
   );
