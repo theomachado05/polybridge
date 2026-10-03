@@ -5,4 +5,5 @@ Public entry points for other streams (bridges, tick builder, pipeline):
 - ``enrich.refresh(underlying, K, expiry)`` (async, fetch + cache) then ``enrich.enrich(tick, underlying, K, expiry)``
 - ``implied.implied_for_threshold(chain, K, target, above=True)``
 - ``eightk.eightk_score(ticker, as_of=None)``
+- ``fills.structure_quote(fills.structure_legs(chain, "call_spread", expiry, k_lo, k_hi))`` for option fills
 """
