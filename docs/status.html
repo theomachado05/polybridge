@@ -2,22 +2,25 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: one reading column. Status tiles, the story so far, the system that now exists, decisions, review catches, then the next-steps board. */
+/* Layout: one reading column. Status tiles, the story, the logged runs, the results charts, what it means, then the board to the freeze and the deadline. */
 :root {
-  --bg: #F2F3FA; --surface: #FFFFFF; --ink: #151A30; --muted: #5C6385; --line: #C9CEE3;
+  --bg: #F2F3FA; --surface: #FFFFFF; --ink: #151A30; --muted: #5C6385; --line: #C9CEE3; --grid: #E4E6F0;
   --hot: #5856E8; --hot-soft: #ECECFE; --score: #1C8F5A; --score-soft: #E5F5EC;
   --warm: #D9694F; --warm-soft: #FDEEEA; --bad: #CC3F3F; --bad-soft: #FBEAEA;
+  --s1: #5856E8; --s2: #D9694F; --base: #8A90AE;
   --display: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --bg: #0E1120; --surface: #171B2E; --ink: #E6E8F5; --muted: #9AA1C2; --line: #343B5C;
+  --bg: #0E1120; --surface: #171B2E; --ink: #E6E8F5; --muted: #9AA1C2; --line: #343B5C; --grid: #262B45;
   --hot: #9190FF; --hot-soft: #22254A; --score: #46C487; --score-soft: #173527;
-  --warm: #F09A84; --warm-soft: #3A2626; --bad: #F07272; --bad-soft: #3A1E22; color-scheme: dark } }
+  --warm: #F09A84; --warm-soft: #3A2626; --bad: #F07272; --bad-soft: #3A1E22;
+  --s1: #7C7BF2; --s2: #D9735A; --base: #8188A8; color-scheme: dark } }
 :root[data-theme="dark"] {
-  --bg: #0E1120; --surface: #171B2E; --ink: #E6E8F5; --muted: #9AA1C2; --line: #343B5C;
+  --bg: #0E1120; --surface: #171B2E; --ink: #E6E8F5; --muted: #9AA1C2; --line: #343B5C; --grid: #262B45;
   --hot: #9190FF; --hot-soft: #22254A; --score: #46C487; --score-soft: #173527;
-  --warm: #F09A84; --warm-soft: #3A2626; --bad: #F07272; --bad-soft: #3A1E22; color-scheme: dark }
+  --warm: #F09A84; --warm-soft: #3A2626; --bad: #F07272; --bad-soft: #3A1E22;
+  --s1: #7C7BF2; --s2: #D9735A; --base: #8188A8; color-scheme: dark }
 
 body { background: var(--bg); color: var(--ink); font-family: var(--display); font-size: 15px; line-height: 1.55; }
 .wrap { max-width: 1180px; margin: 0 auto; padding-inline: 20px; padding-block: 40px 72px; display: grid; gap: 48px; }
@@ -26,295 +29,312 @@ header { display: grid; gap: 14px; }
 h1 { font-size: clamp(28px, 4vw, 42px); line-height: 1.1; margin: 0; letter-spacing: -.02em; text-wrap: balance; }
 h2 { font-size: 22px; margin: 0; letter-spacing: -.01em; text-wrap: balance; }
 h3 { font-size: 16px; margin: 0; }
-p { margin: 0; max-width: 72ch; }
+p { margin: 0; max-width: 74ch; }
 .lede { color: var(--muted); font-size: 17px; }
 section { display: grid; gap: 16px; min-width: 0; }
+code { font-family: var(--mono); font-size: .88em; }
 
 .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .tile { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; display: grid; gap: 2px; }
-.tile b { font-size: 30px; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.tile b { font-size: 28px; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
 .tile span { color: var(--muted); font-size: 13px; }
 .tile.ok b { color: var(--score); }
+.tile.next { border-color: var(--hot); background: var(--hot-soft); }
+.tile.next b { color: var(--hot); }
 
-.story { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; position: relative; }
+.story { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); position: relative; }
 .story::before { content: ""; position: absolute; left: 12px; right: 12px; top: 11px; height: 3px; background: var(--ink); border-radius: 2px; }
 .chap { position: relative; padding: 30px 14px 0 0; display: grid; gap: 6px; align-content: start; }
 .chap::before { content: ""; position: absolute; left: 4px; top: 4px; width: 17px; height: 17px; border-radius: 50%; background: var(--ink); border: 3px solid var(--bg); }
+.chap.now::before { background: var(--hot); }
 .chap .when { font-family: var(--mono); font-size: 12px; color: var(--muted); }
 .chap ul { margin: 0; padding-left: 18px; font-size: 14px; display: grid; gap: 4px; }
-.chap code { font-size: 12px; }
-
-figure { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 18px; display: grid; gap: 12px; min-width: 0; }
-.scroll { overflow-x: auto; }
-figure svg { display: block; width: 100%; height: auto; min-width: 900px; }
-figcaption { color: var(--muted); font-size: 14px; max-width: 95ch; }
-.box { fill: var(--surface); stroke: var(--line); stroke-width: 1.2; }
-.zs { fill: var(--score-soft); stroke: var(--score); stroke-width: 1.6; }
-.zd { fill: var(--hot-soft); stroke: var(--hot); stroke-width: 1.6; }
-.zw { fill: var(--warm-soft); stroke: var(--warm); stroke-width: 1.4; }
-.ln { fill: none; stroke: var(--muted); stroke-width: 1.4; }
-.lnb { fill: none; stroke: var(--bad); stroke-width: 1.6; stroke-dasharray: 6 4; }
-.ah { fill: var(--muted); }
-.t { fill: var(--ink); font-family: var(--display); font-size: 12.5px; }
-.tb { fill: var(--ink); font-family: var(--display); font-size: 14px; font-weight: 600; }
-.ts { fill: var(--muted); font-family: var(--display); font-size: 11.5px; }
-.tm { fill: var(--muted); font-family: var(--mono); font-size: 10.5px; letter-spacing: .04em; }
-.tms { fill: var(--score); font-family: var(--mono); font-size: 10.5px; letter-spacing: .04em; }
-.tmd { fill: var(--hot); font-family: var(--mono); font-size: 10.5px; letter-spacing: .04em; }
-.tmb { fill: var(--bad); font-family: var(--mono); font-size: 10.5px; letter-spacing: .04em; }
-.mid { text-anchor: middle; } .end { text-anchor: end; }
 
 .tbl { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
 table { border-collapse: collapse; width: 100%; min-width: 760px; font-size: 14px; }
 th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--line); }
 th { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 500; background: var(--bg); }
 tr:last-child td { border-bottom: 0; }
-td.k { font-family: var(--mono); font-size: 12.5px; white-space: nowrap; color: var(--muted); }
+td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .pill { font-family: var(--mono); font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); white-space: nowrap; }
-.pill.bad { border-color: var(--bad); color: var(--bad); background: var(--bad-soft); }
-.pill.imp { border-color: var(--warm); color: var(--warm); background: var(--warm-soft); }
 .pill.ok { border-color: var(--score); color: var(--score); background: var(--score-soft); }
+.pill.null { border-color: var(--muted); color: var(--muted); }
+.pill.wait { border-color: var(--hot); color: var(--hot); background: var(--hot-soft); }
 
-.board { display: grid; grid-template-columns: 140px repeat(4, minmax(170px, 1fr)); min-width: 900px; }
+figure { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 18px; display: grid; gap: 12px; min-width: 0; }
+.charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.panel { display: grid; gap: 6px; min-width: 0; }
+.panel h3 { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.panel svg { width: 100%; height: auto; display: block; overflow: visible; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; gap: 6px; align-items: center; }
+.legend i { width: 18px; height: 0; border-top: 2px solid var(--muted); display: inline-block; }
+.legend i.dash { border-top-style: dashed; }
+figcaption { color: var(--muted); font-size: 14px; max-width: 95ch; }
+.ax { fill: var(--muted); font-family: var(--mono); font-size: 10.5px; }
+.lbl { fill: var(--ink); font-family: var(--display); font-size: 11.5px; font-weight: 600; }
+.gridl { stroke: var(--grid); stroke-width: 1; }
+.zero { stroke: var(--muted); stroke-width: 1.2; }
+.tip { position: fixed; pointer-events: none; background: var(--ink); color: var(--surface); font-size: 12.5px; padding: 6px 9px; border-radius: 8px; max-width: 260px; line-height: 1.35; z-index: 10; }
+
+.cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.card ul { margin: 0; padding-left: 18px; display: grid; gap: 5px; font-size: 14px; }
+.card.hot { border-color: var(--hot); background: var(--hot-soft); }
+
+.board { display: grid; grid-template-columns: 130px repeat(4, minmax(170px, 1fr)); min-width: 900px; }
 .board > div { padding: 10px 12px; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); font-size: 13px; }
 .board .hd { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); background: var(--bg); }
 .board .nm { font-weight: 600; background: var(--bg); }
 .board .now { background: var(--hot-soft); }
 .board .gate { background: var(--bad-soft); }
 .board ul { margin: 0; padding-left: 16px; display: grid; gap: 3px; }
-
-.plan { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; counter-reset: t; }
-.task { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 4px 10px; counter-increment: t; }
-.task::before { content: counter(t); grid-row: span 2; width: 26px; height: 26px; border-radius: 50%; background: var(--hot); color: var(--surface); font-weight: 600; font-size: 13px; display: grid; place-items: center; }
-.task b { font-size: 14.5px; }
-.task span { color: var(--muted); font-size: 13.5px; }
-.task.gate { border-color: var(--bad); }
-.task.gate::before { background: var(--bad); }
-.cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; display: grid; gap: 8px; align-content: start; min-width: 0; }
-.card ul { margin: 0; padding-left: 18px; display: grid; gap: 5px; font-size: 14px; }
-.card.hot { border-color: var(--hot); background: var(--hot-soft); }
-code { font-family: var(--mono); font-size: .88em; }
-@media (max-width: 820px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } .story, .plan, .cols { grid-template-columns: minmax(0, 1fr); } .story::before { display: none; } }
+@media (max-width: 860px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } .story, .charts, .cols { grid-template-columns: minmax(0, 1fr); } .story::before { display: none; } }
 </style>
 
 <div class="wrap">
   <header>
-    <div class="eyebrow">PolyBridge · status at Fri 21:24 ET · Devpost due Sun 10:00 ET (about 36 hours)</div>
-    <h1>Foundations merged. Research is next.</h1>
-    <p class="lede">In one evening we went from an idea to a pre-registered hypothesis and a tested codebase that two people can build on in parallel. This page covers what we decided, what exists in the repo now, what the reviews caught, and exactly what happens next.</p>
+    <div class="eyebrow">PolyBridge · status at Sat 00:15 ET · method freeze Sat 1:00 PM · Devpost due Sun 10:00 AM</div>
+    <h1>The study ran. Both hypotheses are null in-sample.</h1>
+    <p class="lede">The research pipeline is built, reviewed, and has run on real 2024–2025 data. Neither pre-registered hypothesis passes, and that is reported as is. Every run is logged in the repo. Next: the freeze at 1 PM, one out-of-sample run, the quant note, and the demo.</p>
   </header>
 
   <div class="tiles">
-    <div class="tile"><b>26</b><span>commits on main</span></div>
-    <div class="tile ok"><b>62</b><span>tests passing (36 + 10 + 13 + 3)</span></div>
-    <div class="tile ok"><b>4 / 4</b><span>CI jobs green</span></div>
-    <div class="tile"><b>14 / 46</b><span>journey steps done</span></div>
+    <div class="tile"><b>115</b><span>tests passing (89 research, 10 backend, 16 engine)</span></div>
+    <div class="tile"><b>NULL · NULL</b><span>in-sample verdicts, H1 hedge · H2 opportunity</span></div>
+    <div class="tile ok"><b>4 / 4</b><span>runs logged; clean-start reproduction passed in 331 s</span></div>
+    <div class="tile next"><b>1:00 PM</b><span>Saturday: method freeze, then OOS once</span></div>
   </div>
 
   <section>
-    <h2>1 · What we did, in four chapters</h2>
+    <h2>1 · How we got here</h2>
     <div class="story">
-      <div class="chap">
-        <h3>The idea and the design</h3>
-        <div class="when">18:24 → 18:46</div>
-        <ul>
-          <li>PolyBridge: prediction-market prices as a hedging signal for equities</li>
-          <li>Prediction–Price Parity: the stock already prices the event at p</li>
-          <li>Researched C++ in HFT and locked C++20</li>
-          <li>Repo, spec v1 and v2, system map</li>
-        </ul>
-      </div>
-      <div class="chap">
-        <h3>Fitting the rubric</h3>
-        <div class="when">18:46 → 19:33</div>
-        <ul>
-          <li>Read the track and Massive briefs and the starter notebook</li>
-          <li>Pivot: research evidence is scored, the live demo is not</li>
-          <li>Direction A: one entry scored on both rubrics</li>
-          <li>Win plan and journey map published</li>
-        </ul>
-      </div>
-      <div class="chap">
-        <h3>Pre-registration</h3>
-        <div class="when">19:38 → 20:17</div>
-        <ul>
-          <li><code>HYPOTHESIS.md</code>: two-sided parity (H1 hedge, H2 opportunity)</li>
-          <li><code>HYPOTHESIS_TAGS.md</code>: 7 + 4 tags, from the taxonomy only</li>
-          <li>Both committed <b>before any event data</b></li>
-          <li>Spec v3 (Python backend, C++20 hedgecore) and the foundations plan</li>
-        </ul>
-      </div>
-      <div class="chap">
-        <h3>Foundations built</h3>
-        <div class="when">20:24 → 21:24</div>
-        <ul>
-          <li>10 tasks, each implemented by a fresh agent and then reviewed</li>
-          <li>The final review caught 15 issues; all fixed with tests</li>
-          <li>CI green on all four lanes</li>
-          <li>PR #1 merged to main</li>
-        </ul>
-      </div>
+      <div class="chap"><h3>Idea and design</h3><div class="when">Fri 18:24</div><ul><li>PolyBridge and Prediction–Price Parity</li><li>C++20 locked</li></ul></div>
+      <div class="chap"><h3>Fit the rubric</h3><div class="when">Fri 18:46</div><ul><li>Research is scored, demo is not</li><li>Massive-first entry</li></ul></div>
+      <div class="chap"><h3>Pre-registration</h3><div class="when">Fri 19:38</div><ul><li>Two-sided hypothesis</li><li>11 tags, before any data</li></ul></div>
+      <div class="chap"><h3>Foundations</h3><div class="when">Fri 21:24</div><ul><li>PR #1 merged</li><li>Approval gate, hedgecore, CI</li></ul></div>
+      <div class="chap now"><h3>Research pipeline</h3><div class="when">Fri 23:55</div><ul><li>12 tasks, all reviewed</li><li>In-sample run, logged</li></ul></div>
     </div>
   </section>
 
   <section>
-    <h2>2 · What exists in the repo now</h2>
+    <h2>2 · What ran, with the record</h2>
+    <p>Every run writes a log and a metadata file to <code>research/results/logs/</code>, committed to the repo: command, git commit, start and end time, duration, cache size, exit code and verdicts. No keys or raw API data.</p>
+    <div class="tbl"><table>
+      <thead><tr><th>Run</th><th>When (ET)</th><th>What it proves</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>Pipeline check (starter, CFO tag)</td><td class="num">Fri 23:00</td><td>The key reaches every endpoint; not a hypothesis tag</td><td><span class="pill ok">passed</span></td></tr>
+        <tr><td>In-sample study, first run</td><td class="num">Fri 23:28</td><td>60 events (36 H1, 24 H2), 120 ordinary days per family, ~8,500 requests</td><td><span class="pill null">NULL · NULL</span></td></tr>
+        <tr><td>In-sample export, logged re-run</td><td class="num">Fri 23:53</td><td>Same code at c0fcfd8: every earlier results file byte-identical; adds expiry and paired costs; 87 s</td><td><span class="pill null">NULL · NULL</span></td></tr>
+        <tr><td>Clean-start notebook run (judges' path)</td><td class="num">Fri 23:55</td><td id="ck-what">Fresh copy, fresh install, empty cache, only the Massive key: ran end to end in 331 s, 8,535 requests</td><td id="ck-result"><span class="pill ok">passed</span> <span class="pill null">NULL · NULL</span></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>3 · The results</h2>
     <figure>
-      <div class="scroll">
-      <svg viewBox="0 0 1100 450" role="img" aria-label="Repo map. The scored research package on the left; the backend imports its schema; the web app talks to the backend over HTTP; the backend uses hedgecore only for approved hedges, through an optional dependency group; research never imports hedgecore. A shared contracts document sits in the middle. CI runs all four lanes.">
-        <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs>
-
-        <rect class="zs" x="20" y="30" width="330" height="320" rx="16"/>
-        <text class="tb" x="38" y="56">research/</text><text class="tms end" x="334" y="56">SCORED · PY 3.10+</text>
-        <text class="t" x="38" y="86">schema.py</text><text class="ts" x="140" y="86">families, the 11 tags, Event</text>
-        <text class="t" x="38" y="112">massive.py</text><text class="ts" x="140" y="112">key loading that never hangs, cache</text>
-        <text class="t" x="38" y="138">strategies.py</text><text class="ts" x="140" y="138">5 strategies, P&amp;L per $1 of spot</text>
-        <text class="t" x="38" y="164">parity.py</text><text class="ts" x="140" y="164">implied vs realized move</text>
-        <text class="t" x="38" y="190">stats.py</text><text class="ts" x="140" y="190">bootstrap, BH q-values, deflated Sharpe</text>
-        <line class="ln" x1="38" y1="208" x2="334" y2="208"/>
-        <text class="t" x="38" y="232">HYPOTHESIS.md</text><text class="ts" x="160" y="232">committed 19:38, before data</text>
-        <text class="t" x="38" y="258">HYPOTHESIS_TAGS.md</text><text class="ts" x="182" y="258">committed 20:08</text>
-        <text class="t" x="38" y="284">starter/</text><text class="ts" x="140" y="284">Massive kit, as shipped</text>
-        <text class="tms" x="38" y="330">36 TESTS · A TEST KEEPS TAGS = PRE-REGISTRATION</text>
-
-        <rect class="box" x="400" y="150" width="190" height="110" rx="14"/>
-        <text class="tb mid" x="495" y="178">docs/contracts.md</text>
-        <text class="ts mid" x="495" y="200">families · Event · parity</text>
-        <text class="ts mid" x="495" y="218">HTTP API · HedgeSpec</text>
-        <text class="tm mid" x="495" y="244">CHANGE BY PR ONLY</text>
-
-        <rect class="box" x="640" y="30" width="210" height="150" rx="14"/>
-        <text class="tb" x="656" y="56">backend/ · FastAPI</text>
-        <text class="ts" x="656" y="82">POST /classify</text>
-        <text class="ts" x="656" y="102">POST /proposals</text>
-        <text class="ts" x="656" y="122">approve once: 404 / 409</text>
-        <text class="ts" x="656" y="142">rejects inf, blank tickers</text>
-        <text class="tm" x="656" y="166">10 TESTS · UV --LOCKED</text>
-
-        <rect class="box" x="880" y="30" width="200" height="150" rx="14"/>
-        <text class="tb" x="896" y="56">web/ · Next.js 16</text>
-        <text class="ts" x="896" y="82">typed API client</text>
-        <text class="ts" x="896" y="102">approval queue</text>
-        <text class="ts" x="896" y="122">button locks in flight</text>
-        <text class="tm" x="896" y="166">LINT + BUILD</text>
-
-        <rect class="zd" x="640" y="220" width="210" height="130" rx="14"/>
-        <text class="tb" x="656" y="246">engine/hedgecore</text><text class="tmd end" x="836" y="246">C++20</text>
-        <text class="ts" x="656" y="270">std::variant gates, sizing, band, cap</text>
-        <text class="ts" x="656" y="290">bad input → Hold, never an order</text>
-        <text class="ts" x="656" y="310">pybind11 module</text>
-        <text class="tm" x="656" y="336">13 C++ + 3 PY TESTS</text>
-
-        <line class="ln" x1="638" y1="90" x2="352" y2="90" marker-end="url(#a)"/><text class="tm mid" x="495" y="82">IMPORTS SCHEMA</text>
-        <line class="ln" x1="878" y1="105" x2="852" y2="105" marker-end="url(#a)"/><text class="tm mid" x="865" y="196">HTTP</text>
-        <line class="ln" x1="745" y1="182" x2="745" y2="218" marker-end="url(#a)"/><text class="tm" x="753" y="205">APPROVED ONLY</text>
-        <line class="lnb" x1="352" y1="305" x2="638" y2="305"/><text class="tmb mid" x="495" y="296">NEVER IMPORTS (SCORED PATH)</text>
-
-        <rect class="box" x="20" y="380" width="1060" height="50" rx="12"/>
-        <text class="tb" x="38" y="410">GitHub Actions on every PR</text>
-        <text class="ts" x="250" y="410">research on Python 3.10 · backend with --locked · engine: ctest + binding tests · web: lint + build</text>
-        <text class="tms end" x="1064" y="410">ALL GREEN</text>
-      </svg>
-      </div>
-      <figcaption>Green is what judges score. The red dashed line is a rule, not a link: nothing in research/ may import hedgecore or call an LLM, so judges need only the Massive key. The backend reaches hedgecore only for an approved proposal, through an optional install group.</figcaption>
+      <div class="charts" id="edge-charts"></div>
+      <figcaption>Edge = average P&amp;L of the strategy after the filing minus the same trade on ordinary days for the same stocks, per $1 of stock. Whiskers are the pre-registered 97.5% intervals. A pass needs the whole whisker above zero at two of the three horizons. Every whisker crosses zero, so both are null. Both point the predicted way; the samples (36 and 24 events) are too small to rule out luck.</figcaption>
     </figure>
-  </section>
-
-  <section>
-    <h2>3 · Decisions that are now locked</h2>
+    <figure>
+      <div class="charts" id="decay-charts"></div>
+      <div class="legend"><span><i></i>after the filing (shaded: 95% interval)</span><span><i class="dash"></i>ordinary days</span><span>1.0 = the options priced the move exactly</span></div>
+      <figcaption>The price gap: how far the stock really moved, divided by the move the options priced the day before. For litigation-type filings the gap peaks at 1.36 after 42 trading days (the market underpriced the move by about a third), against 1.15 on ordinary days. That is the PolyBridge signal, but its interval overlaps ordinary days, so it is a direction, not a finding.</figcaption>
+    </figure>
     <div class="tbl"><table>
-      <thead><tr><th>Decision</th><th>What we chose</th><th>Why</th></tr></thead>
-      <tbody>
-        <tr><td class="k">Direction</td><td>Massive-first research, told as PolyBridge</td><td>One entry is scored on the main-track rubric and the Massive rubric.</td></tr>
-        <tr><td class="k">Framework</td><td>Prediction–Price Parity, options edition: ratio = realized ÷ priced move</td><td>It ties prediction markets and option chains into one idea; that's the innovation score.</td></tr>
-        <tr><td class="k">Hypothesis</td><td>Two-sided. H1: protective put after litigation, investigations, cyber, impairments. H2: cash-secured put after restructurings.</td><td>Both sides of the price signal, each with a stated counterparty.</td></tr>
-        <tr><td class="k">Pass rule</td><td>97.5% CI beats the placebo at 2 of 21 / 42 / expiry, and the ratio moves the predicted way</td><td>Decided before results; a null result is reported, not hidden.</td></tr>
-        <tr><td class="k">Signal buckets</td><td>An exploratory atlas over all 119 tags, every variant counted</td><td>Your "massive buckets" idea, without it reading as data mining.</td></tr>
-        <tr><td class="k">Stack</td><td>Python everywhere; C++20 only for hedgecore, which runs after the user approves</td><td>Speed where it matters; a person in the loop for every hedge.</td></tr>
-      </tbody>
+      <thead><tr><th>Family</th><th>Horizon</th><th>Events / ordinary days</th><th>Edge</th><th>97.5% interval</th><th>Price gap vs ordinary</th><th>Net edge after costs (1× · 2×)</th></tr></thead>
+      <tbody id="results-table"></tbody>
     </table></div>
   </section>
 
   <section>
-    <h2>4 · What the reviews caught before anyone built on it</h2>
-    <div class="tbl"><table>
-      <thead><tr><th>Severity</th><th>Problem</th><th>Fix, with a test</th></tr></thead>
-      <tbody>
-        <tr><td><span class="pill bad">Critical</span></td><td>A NaN fill made hedgecore send an order with a NaN size</td><td>Bad fills latch an invalid state; finite checks before any order</td></tr>
-        <tr><td><span class="pill imp">Important</span></td><td>An invalid hedge spec (NaN or negative) could also produce an order</td><td>The spec is validated once; an invalid spec always holds</td></tr>
-        <tr><td><span class="pill imp">Important</span></td><td>A tick dated in the future passed the staleness check</td><td>Future ticks are stale; age math can't overflow</td></tr>
-        <tr><td><span class="pill imp">Important</span></td><td>One NaN p-value wiped out every BH q-value in the atlas</td><td>BH runs over finite p-values only</td></tr>
-        <tr><td><span class="pill imp">Important</span></td><td>The backend accepted infinite share counts and blank tickers</td><td>Rejected with 422; BRK/B and BRK.B normalize to one ticker</td></tr>
-        <tr><td><span class="pill imp">Important</span></td><td><code>web/.env.example</code> was silently gitignored</td><td>Un-ignored and committed</td></tr>
-        <tr><td><span class="pill imp">Important</span></td><td>A lane R dependency change could break lane P's lockfile without warning</td><td><code>uv sync --locked</code> in CI and a rule in CONTRIBUTING.md</td></tr>
-      </tbody>
-    </table></div>
-  </section>
-
-  <section>
-    <h2>5 · Next steps</h2>
-    <p>Plan #2 is the research pipeline, run the same way as the foundations: a fresh agent per task and a review after each. It produces the scored notebook. The out-of-sample run stays locked until the method freeze.</p>
-    <div class="plan">
-      <div class="task"><b>Pipeline check on the CFO example</b><span>Run the starter as-is. CFO appointments aren't one of our tags, so it tests the plumbing without showing us H1 or H2 results.</span></div>
-      <div class="task"><b>Event tables for H1 and H2</b><span>Massive disclosures for the 11 tags, one event per filer per date, cross-family filings dropped and counted.</span></div>
-      <div class="task"><b>EDGAR after-hours fix</b><span>Filings accepted after 16:00 ET move to the next session, so there's no lookahead.</span></div>
-      <div class="task"><b>Pricing</b><span>The chain as of the pre-event session, spot from put-call parity, strikes, and each leg's daily bars.</span></div>
-      <div class="task"><b>Results table and parity ratio</b><span>Every strategy × expiry × OTM × entry × horizon, with the realized ÷ priced ratio.</span></div>
-      <div class="task"><b>Placebo, scoreboard, decay, pass check</b><span>Ordinary days for the same names; the HYPOTHESIS.md §4 rule evaluated mechanically.</span></div>
-      <div class="task"><b>Exploratory atlas</b><span>All 119 tags, BH q-values, a variant log for the deflated Sharpe. Labeled exploratory everywhere.</span></div>
-      <div class="task"><b>The notebook</b><span>Start and end dates as inputs, a clean-kernel run with only the Massive key, the sealed-window hook for judges.</span></div>
-      <div class="task gate"><b>Gate: method freeze, then out-of-sample once</b><span>Saturday evening. After the freeze nothing changes; OOS is reported whatever it shows.</span></div>
+    <h2>4 · What it means</h2>
+    <div class="cols">
+      <div class="card">
+        <h3>For the judges</h3>
+        <ul>
+          <li>The hypothesis was fixed before any data; the result is reported as it came out. Massive's brief: "a well-argued null result with a clear decay curve beats a lucky backtest."</li>
+          <li>No lookahead: every filing is treated as public after the close.</li>
+          <li>Every contact with 2026 prices is disclosed in the pre-registration's change log.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>For the product</h3>
+        <ul>
+          <li>This is your feature in action: for these event and stock pairs, PolyBridge says "no edge, try another".</li>
+          <li>The price-gap curve is what PolyBridge watches live; the hedge side shows the right direction.</li>
+          <li>The C++ engine only acts on pairs that pass, and only sends orders that beat fees.</li>
+        </ul>
+      </div>
     </div>
+  </section>
 
+  <section>
+    <h2>5 · From now to Sunday 10 AM</h2>
     <div class="tbl"><div class="board">
-      <div class="hd">Lane</div><div class="hd">Fri night (now)</div><div class="hd">Sat 8 AM – 1 PM</div><div class="hd">Sat 1 – 7 PM</div><div class="hd">Sat night → Sun 10 AM</div>
+      <div class="hd">Lane</div><div class="hd">Now → Sat 1 PM</div><div class="hd">Sat 1 PM freeze</div><div class="hd">Sat 1 PM → night</div><div class="hd">Sun → 10 AM</div>
 
-      <div class="nm">R · Research (Claude + you)</div>
-      <div class="now"><ul><li>Write plan #2</li><li>Pipeline check</li><li>Event tables, EDGAR fix</li></ul></div>
-      <div><ul><li>Pricing, results table</li><li>In-sample scoreboard, placebo, decay</li></ul></div>
-      <div><ul><li>Atlas, sensitivity, deflated Sharpe</li><li>Predicted-fragility list</li><li><b>Method freeze</b></li></ul></div>
-      <div><ul><li>OOS once</li><li>Quant note, 5 pages</li><li>Clean-kernel test</li></ul></div>
+      <div class="nm">Research</div>
+      <div class="now"><ul><li>Run logs committed ✓</li><li>PR #2 open ✓</li><li>Quant note skeleton</li></ul></div>
+      <div class="gate"><ul><li><b>Freeze</b>: tag the commit, pin the run date</li><li>Run OOS once, log it</li></ul></div>
+      <div><ul><li>Quant note: results, risk, capacity, limits</li><li>2-page Massive cut</li></ul></div>
+      <div><ul><li>PDF ≤ 5 pages</li><li>Repo public</li></ul></div>
 
-      <div class="nm">P · Product (your partner)</div>
-      <div class="now"><ul><li>Read contracts.md</li><li>Build flow on static data</li></ul></div>
-      <div><ul><li>Event → stock → hedge → Approve</li></ul></div>
-      <div><ul><li>Bridge screen on hedgecore</li><li>Show research results</li></ul></div>
-      <div><ul><li>Demo recording as fallback</li><li>Pitch rehearsal</li></ul></div>
+      <div class="nm">Product (us)</div>
+      <div class="now"><ul><li>Plan #3: demo</li><li>Build flow on real verdicts</li></ul></div>
+      <div><ul><li>1 PM Massive workshop</li></ul></div>
+      <div><ul><li>Bridge screen on hedgecore</li><li>Fee-aware orders</li><li>Recorded fallback</li></ul></div>
+      <div><ul><li>Pitch: 3 min findings, 90 s demo</li></ul></div>
 
-      <div class="nm">Webull + overlay</div>
-      <div><ul><li>Waiting for the key</li></ul></div>
-      <div class="gate"><ul><li>Noon: no key → cited public data</li></ul></div>
-      <div><ul><li>Overlay backtest: Sharpe, max DD, equity curve</li><li>2 PM Webull workshop</li></ul></div>
-      <div><ul><li>Locked period once</li><li>Numbers match the note</li></ul></div>
+      <div class="nm">Webull</div>
+      <div><ul><li>Key in progress</li></ul></div>
+      <div><ul><li>2 PM Webull workshop</li></ul></div>
+      <div><ul><li>Overlay backtest: Sharpe, max DD, equity curve</li><li>No key by then: cited public data</li></ul></div>
+      <div><ul><li>Numbers match the note</li></ul></div>
 
       <div class="nm">Gates</div>
-      <div><ul><li>Plan #2 approved</li></ul></div>
-      <div><ul><li>Questions ready for Massive</li></ul></div>
-      <div class="gate"><ul><li>1 PM Massive workshop</li><li>5 PM check-in, book a slot</li></ul></div>
-      <div class="gate"><ul><li><b>Devpost by 10:00</b></li><li>Present 1 – 3 PM</li></ul></div>
+      <div><ul><li>Clean-start run passed ✓</li><li>Merge PR #2</li></ul></div>
+      <div class="gate"><ul><li>Nothing changes after 1 PM</li></ul></div>
+      <div><ul><li>5 PM check-in, book a slot</li></ul></div>
+      <div class="gate"><ul><li><b>Devpost by 10:00</b></li><li>Present 1–3 PM</li></ul></div>
     </div></div>
   </section>
 
   <section>
     <div class="cols">
       <div class="card hot">
-        <h3>What I need from you</h3>
+        <h3>Waiting on you</h3>
         <ul>
-          <li><b>Who takes lane P.</b> I'll write them a one-page starter brief from contracts.md.</li>
-          <li><b>The Webull key</b> when it arrives.</li>
-          <li>The plan #2 review when I post it.</li>
+          <li>The Webull key, into <code>.env</code> (not chat).</li>
+          <li>Review and merge PR #2: github.com/theomachado05/polybridge/pull/2</li>
+          <li>Be at the 1 PM freeze: say "freeze".</li>
         </ul>
       </div>
       <div class="card">
-        <h3>Where everything lives</h3>
+        <h3>Where the record lives</h3>
         <ul>
-          <li>Repo: github.com/theomachado05/polybridge</li>
-          <li>Rules: <code>CONTRIBUTING.md</code> · Contracts: <code>docs/contracts.md</code></li>
-          <li>Pre-registration: <code>research/HYPOTHESIS*.md</code></li>
-          <li>Plans: <code>docs/superpowers/plans/</code> · Maps: <code>docs/*.html</code></li>
+          <li>Pre-registration and change log: <code>research/HYPOTHESIS*.md</code></li>
+          <li>Results: <code>research/results/in_sample/SUMMARY.md</code></li>
+          <li>Run log: <code>research/results/RUN_LOG.md</code> + <code>logs/</code></li>
+          <li>Notebook judges run: <code>research/polybridge_8k.ipynb</code></li>
         </ul>
       </div>
     </div>
   </section>
 </div>
+
+<div class="tip" id="tip" hidden></div>
+
+<script>
+const H = ["21", "42", "exp"];
+const EDGE = {
+  hedge: { name: "H1 hedge · protective put", color: "var(--s1)", n: [[32,106],[30,104],[28,95]],
+           m: [0.0007, 0.0049, 0.0333], lo: [-0.0270, -0.0451, -0.0301], hi: [0.0291, 0.0577, 0.1012],
+           ratio: [0.019, 0.209, 0.121], net: [[0.0011,0.0015],[0.0052,0.0055],[0.0336,0.0338]] },
+  opportunity: { name: "H2 opportunity · cash-secured put", color: "var(--s2)", n: [[24,113],[24,111],[23,99]],
+           m: [0.0009, 0.0021, 0.0092], lo: [-0.0068, -0.0090, -0.0036], hi: [0.0089, 0.0136, 0.0234],
+           ratio: [-0.171, -0.095, 0.185], net: [[0.0011,0.0014],[0.0024,0.0027],[0.0095,0.0097]] },
+};
+const DH = ["1","2","3","5","10","21","42","63","exp"];
+const DECAY = {
+  hedge: { ev: [0.68,0.91,1.15,1.22,1.04,1.11,1.36,1.19,1.18], lo: [0.45,0.64,0.79,0.85,0.78,0.87,1.03,0.87,0.88],
+           hi: [1.02,1.21,1.57,1.62,1.33,1.37,1.68,1.54,1.49], pl: [0.99,0.92,0.99,1.01,1.05,1.09,1.15,1.01,1.06],
+           n: [34,33,33,32,32,32,30,28,31] },
+  opportunity: { ev: [1.03,0.99,1.08,0.87,0.99,0.77,0.91,1.11,1.06], lo: [0.62,0.64,0.75,0.62,0.60,0.45,0.66,0.75,0.76],
+           hi: [1.52,1.39,1.46,1.16,1.44,1.13,1.20,1.49,1.38], pl: [0.86,0.95,0.92,1.01,0.94,0.94,1.01,0.92,0.88],
+           n: [24,24,24,24,24,24,24,24,23] },
+};
+const NS = "http://www.w3.org/2000/svg";
+const tip = document.getElementById("tip");
+const pct = v => (v >= 0 ? "+" : "") + (v * 100).toFixed(2) + "%";
+function el(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+function hover(target, text) {
+  const show = ev => { tip.textContent = text; tip.hidden = false; tip.style.left = (ev.clientX + 14) + "px"; tip.style.top = (ev.clientY + 14) + "px"; };
+  target.addEventListener("mousemove", show); target.addEventListener("mouseenter", show);
+  target.addEventListener("mouseleave", () => { tip.hidden = true; });
+  target.setAttribute("tabindex", "0");
+  target.addEventListener("focus", () => { tip.textContent = text; tip.hidden = false; const r = target.getBoundingClientRect(); tip.style.left = r.right + "px"; tip.style.top = r.top + "px"; });
+  target.addEventListener("blur", () => { tip.hidden = true; });
+}
+function panel(host, title, color) {
+  const d = document.createElement("div"); d.className = "panel";
+  d.innerHTML = `<h3><span class="swatch" style="background:${color}"></span>${title}</h3>`;
+  host.appendChild(d); return d;
+}
+
+// Edge charts: one shared y-scale so the two families compare honestly.
+(function () {
+  const host = document.getElementById("edge-charts");
+  const W = 440, Hh = 260, L = 56, R = 16, T = 18, B = 34, lo = -0.06, hi = 0.11;
+  const y = v => T + (hi - v) / (hi - lo) * (Hh - T - B);
+  const x = i => L + (i + 0.5) * (W - L - R) / 3;
+  for (const key of ["hedge", "opportunity"]) {
+    const f = EDGE[key];
+    const svg = el("svg", { viewBox: `0 0 ${W} ${Hh}`, role: "img", "aria-label": `${f.name}: edge by horizon with 97.5% intervals; every interval crosses zero` }, panel(host, f.name, f.color));
+    for (const t of [-0.05, 0, 0.05, 0.10]) {
+      el("line", { x1: L, x2: W - R, y1: y(t), y2: y(t), class: t === 0 ? "zero" : "gridl" }, svg);
+      const lab = el("text", { x: L - 8, y: y(t) + 3.5, "text-anchor": "end", class: "ax" }, svg); lab.textContent = (t * 100).toFixed(0) + "%";
+    }
+    H.forEach((h, i) => {
+      const xl = el("text", { x: x(i), y: Hh - 12, "text-anchor": "middle", class: "ax" }, svg); xl.textContent = h === "exp" ? "expiry" : h + " days";
+      const g = el("g", {}, svg);
+      el("line", { x1: x(i), x2: x(i), y1: y(f.lo[i]), y2: y(f.hi[i]), stroke: f.color, "stroke-width": 2, "stroke-linecap": "round" }, g);
+      for (const v of [f.lo[i], f.hi[i]]) el("line", { x1: x(i) - 7, x2: x(i) + 7, y1: y(v), y2: y(v), stroke: f.color, "stroke-width": 2, "stroke-linecap": "round" }, g);
+      el("circle", { cx: x(i), cy: y(f.m[i]), r: 5.5, fill: f.color, stroke: "var(--surface)", "stroke-width": 2 }, g);
+      const v = el("text", { x: x(i) + 11, y: y(f.m[i]) + 4, class: "lbl" }, g); v.textContent = pct(f.m[i]);
+      el("rect", { x: x(i) - 28, y: T, width: 56, height: Hh - T - B, fill: "transparent" }, g);
+      hover(g, `${f.name}, ${h === "exp" ? "expiry" : h + " trading days"}: edge ${pct(f.m[i])}, 97.5% interval ${pct(f.lo[i])} to ${pct(f.hi[i])} (${f.n[i][0]} events vs ${f.n[i][1]} ordinary days). Crosses zero: not a pass.`);
+    });
+  }
+})();
+
+// Price-gap decay charts.
+(function () {
+  const host = document.getElementById("decay-charts");
+  const W = 440, Hh = 250, L = 44, R = 16, T = 14, B = 32, lo = 0.4, hi = 1.8;
+  const y = v => T + (hi - v) / (hi - lo) * (Hh - T - B);
+  const x = i => L + i * (W - L - R) / (DH.length - 1);
+  for (const key of ["hedge", "opportunity"]) {
+    const f = DECAY[key], color = EDGE[key].color;
+    const svg = el("svg", { viewBox: `0 0 ${W} ${Hh}`, role: "img", "aria-label": `${EDGE[key].name}: price gap by horizon, events versus ordinary days` }, panel(host, EDGE[key].name, color));
+    for (const t of [0.5, 1.0, 1.5]) {
+      el("line", { x1: L, x2: W - R, y1: y(t), y2: y(t), class: t === 1 ? "zero" : "gridl" }, svg);
+      const lab = el("text", { x: L - 8, y: y(t) + 3.5, "text-anchor": "end", class: "ax" }, svg); lab.textContent = t.toFixed(1);
+    }
+    DH.forEach((h, i) => { const t = el("text", { x: x(i), y: Hh - 12, "text-anchor": "middle", class: "ax" }, svg); t.textContent = h; });
+    const band = DH.map((_, i) => `${x(i)},${y(f.hi[i])}`).concat(DH.map((_, i) => `${x(DH.length - 1 - i)},${y(f.lo[DH.length - 1 - i])}`));
+    el("polygon", { points: band.join(" "), fill: color, "fill-opacity": 0.13, stroke: "none" }, svg);
+    el("polyline", { points: DH.map((_, i) => `${x(i)},${y(f.pl[i])}`).join(" "), fill: "none", stroke: "var(--base)", "stroke-width": 2, "stroke-dasharray": "5 4" }, svg);
+    el("polyline", { points: DH.map((_, i) => `${x(i)},${y(f.ev[i])}`).join(" "), fill: "none", stroke: color, "stroke-width": 2 }, svg);
+    DH.forEach((h, i) => {
+      const g = el("g", {}, svg);
+      el("circle", { cx: x(i), cy: y(f.ev[i]), r: 4, fill: color, stroke: "var(--surface)", "stroke-width": 2 }, g);
+      el("rect", { x: x(i) - 18, y: T, width: 36, height: Hh - T - B, fill: "transparent" }, g);
+      hover(g, `${h === "exp" ? "Expiry" : h + " trading days"}: price gap ${f.ev[i].toFixed(2)} after the filing (95% interval ${f.lo[i].toFixed(2)}–${f.hi[i].toFixed(2)}, ${f.n[i]} events) vs ${f.pl[i].toFixed(2)} on ordinary days.`);
+    });
+    const peak = key === "hedge" ? 6 : 5;
+    const t = el("text", { x: x(peak), y: y(f.ev[peak]) + (key === "hedge" ? -10 : 18), "text-anchor": "middle", class: "lbl" }, svg);
+    t.textContent = f.ev[peak].toFixed(2);
+  }
+})();
+
+// Table view of the same numbers.
+(function () {
+  const tb = document.getElementById("results-table");
+  for (const key of ["hedge", "opportunity"]) {
+    const f = EDGE[key];
+    H.forEach((h, i) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${i === 0 ? f.name : ""}</td><td class="num">${h === "exp" ? "expiry" : h}</td><td class="num">${f.n[i][0]} / ${f.n[i][1]}</td>
+        <td class="num">${pct(f.m[i])}</td><td class="num">${pct(f.lo[i])} to ${pct(f.hi[i])}</td>
+        <td class="num">${(f.ratio[i] >= 0 ? "+" : "") + f.ratio[i].toFixed(2)}</td><td class="num">${pct(f.net[i][0])} · ${pct(f.net[i][1])}</td>`;
+      tb.appendChild(tr);
+    });
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="7"><span class="pill null">${f.name}: NULL</span> no horizon has its whole interval above zero</td>`;
+    tb.appendChild(tr);
+  }
+})();
+</script>
