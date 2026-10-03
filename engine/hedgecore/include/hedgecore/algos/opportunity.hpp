@@ -120,15 +120,18 @@ struct NoBidSeller : AlgoBase<NoBidSeller> {
   static constexpr const char* instruments[] = {"pred_no"};
   static constexpr BlockRef blocks[] = {
       {"signals", "PMid"},          {"signals", "MeanRevertZ"},   {"signals", "OptionImpliedProb"},
-      {"gates", "Staleness"},       {"sizers", "KellyCapped"},    {"execution", "IcebergCap"},
-      {"routing", "VenueRouter"}};
-  enum P { kEdge, kKellyCap, kFairSrc, kIceberg, kBankroll };
+      {"gates", "Staleness"},       {"sizers", "KellyCapped"},    {"risk", "NotionalCap"},
+      {"risk", "DailyLossCap"},     {"execution", "IcebergCap"},  {"routing", "VenueRouter"}};
+  enum P { kEdge, kKellyCap, kFairSrc, kIceberg, kBankroll, kMaxNotional, kDailyLoss };
   static constexpr ParamSpec kSpec{
       param("edge", 0, 1, 0.02, {0.01, 0.02, 0.04}, "all-in NO bid minus fair NO needed to sell"),
       param("kelly_cap", 0, 1, 0.1, {0.05, 0.1, 0.25}, "cap on the Kelly fraction of bankroll"),
       param("fair_source", 0, 2, 0, {0.0, 1.0, 2.0}, "fair YES from 0 other venue, 1 EWMA of mid, 2 options"),
       param("iceberg_frac", 0, 1, 0.5, {0.25, 0.5, 1.0}, "max fraction of displayed size per order"),
-      param("bankroll", 1, 1e9, 10000, {10000.0}, "$ at risk for Kelly sizing")};
+      param("bankroll", 1, 1e9, 10000, {10000.0}, "$ at risk for Kelly sizing"),
+      param("max_notional", 0, 1e9, 5000, {5000.0}, "cap on short NO $ notional at the sale price (0 = off)"),
+      param("daily_loss", 0, 1e9, 1000, {1000.0},
+            "stop new sales after losing this many $ (marked at the YES mid) since the UTC day began (0 = off)")};
   static ParamSpec spec() noexcept { return kSpec; }
 
   OppCore core;
@@ -136,12 +139,16 @@ struct NoBidSeller : AlgoBase<NoBidSeller> {
   blocks::KellyCapped kelly;
   blocks::IcebergCap iceberg;
   blocks::VenueRouter router{};
+  blocks::NotionalCap notional;
+  blocks::DailyLossCap daily;
   double edge;
   int src;
 
   NoBidSeller(const Params& p, const Position& pos) noexcept
-      : core(pos, kSpec.valid(p)), kelly{p.v[kKellyCap], p.v[kBankroll]}, iceberg{p.v[kIceberg]}, edge(p.v[kEdge]),
-        src(static_cast<int>(p.v[kFairSrc])) {}
+      : core(pos, kSpec.valid(p)), kelly{p.v[kKellyCap], p.v[kBankroll]}, iceberg{p.v[kIceberg]},
+        notional{p.v[kMaxNotional]}, edge(p.v[kEdge]), src(static_cast<int>(p.v[kFairSrc])) {
+    daily.max_loss = p.v[kDailyLoss];
+  }
 
   Intent step(const MarketTick& t, std::int64_t now) noexcept {
     Intent out;
@@ -154,22 +161,30 @@ struct NoBidSeller : AlgoBase<NoBidSeller> {
     if (!prob(fair)) return hold(src == 1 ? Rc::Warmup : Rc::SignalMissing);
     const double fair_no = 1.0 - fair;
     const double short_no = -core.led.at(Instrument::PredNo);
-    if (short_no > 0) {
+    const double ymid = blocks::PMid::read(t);
+    const bool day_stop =
+        daily.update(t.ts_ns, num(ymid) ? core.led.cash + core.led.at(Instrument::PredNo) * (1.0 - ymid) : kNaN);
+    if (short_no > 0) {  // buying back is always allowed, also after the daily stop
       const blocks::Route rb = router.route(+1, Instrument::PredNo, t);
       if (num(rb.all_in) && fair_no - rb.all_in >= edge)
         return order(Instrument::PredNo, +1, short_no, kNaN, Rc::Exit, fair_no - rb.all_in, rb.venue);
     }
+    if (day_stop) return hold(Rc::DailyLossCap);
     const blocks::Route rs = router.route(-1, Instrument::PredNo, t);
     if (rs.reason == Rc::NoRoute) return hold(Rc::NoRoute);
     const double rich = rs.all_in - fair_no;
     if (!(rich >= edge)) return hold(Rc::NoSignal, rich);
-    const double target = kelly.target(fair, 1.0 - rs.px);  // selling NO at b == buying YES at 1 - b
+    bool ncap = false;  // selling NO at b == buying YES at 1 - b
+    const double target = notional.clamp(kelly.target(fair, 1.0 - rs.px), rs.px, 1.0, ncap);
+    if (!num(target)) return hold(Rc::NotionalUnknown, rich);
     const double delta = target - short_no;
+    if (!(delta >= 1) && ncap) return hold(Rc::NotionalCapped, rich);
     if (!(delta >= 1)) return hold(Rc::ZeroTarget, rich);
     bool capped = false;
     const double qty = iceberg.clip(delta, t.asks[0].qty, capped);  // YES asks are the NO bids
     if (qty < 1) return hold(Rc::IcebergCapped, rich);
-    return order(Instrument::PredNo, -1, qty, kNaN, capped ? Rc::IcebergCapped : rs.reason, rich, rs.venue);
+    const Rc why = capped ? Rc::IcebergCapped : (ncap ? Rc::NotionalCapped : rs.reason);
+    return order(Instrument::PredNo, -1, qty, kNaN, why, rich, rs.venue);
   }
   void on_fill(Instrument i, double q, double px) noexcept {
     if (i == Instrument::PredNo) core.fill(i, q, px, 1.0);

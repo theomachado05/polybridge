@@ -60,3 +60,34 @@ TEST(NoBidSeller, NotRichEnoughAndFairSources) {
   EXPECT_TRUE(is_order(d.on_tick(t, kSec)));
   expect_nan_and_stale_safety<F>(params<F>(), Position{});
 }
+
+TEST(NoBidSeller, NotionalCapLimitsTheShortNo) {
+  // Kelly wants 1736 NO at 0.64 ($1,111); a $640 cap allows floor(640 / 0.64) = 1000.
+  F a(params<F>({{"max_notional", 640}}), Position{});
+  const Intent i = a.on_tick(nb_tick(kSec, 0.64, 0.66, 0.40), kSec);
+  ASSERT_TRUE(is_order(i));
+  EXPECT_DOUBLE_EQ(i.qty, 1000.0);
+  EXPECT_EQ(i.reason, rc(Rc::NotionalCapped));
+  a.on_fill(Instrument::PredNo, -1000, 0.64);
+  EXPECT_EQ(a.on_tick(nb_tick(2 * kSec, 0.64, 0.66, 0.40), 2 * kSec).reason, rc(Rc::NotionalCapped));
+}
+
+TEST(NoBidSeller, DailyLossCapStopsNewSalesButAllowsExit) {
+  F a(params<F>({{"daily_loss", 100}}), Position{});
+  ASSERT_TRUE(is_order(a.on_tick(nb_tick(kSec, 0.64, 0.66, 0.40), kSec)));  // day starts flat: equity 0
+  a.on_fill(Instrument::PredNo, -1000, 0.64);                                // cash +640
+  // YES mid falls to 0.20 -> NO marks at 0.80: equity 640 - 800 = -160, a $160 loss > $100. NO is still rich
+  // against the other venue (fair NO 0.70 < bid 0.79), but no new sale is allowed.
+  MarketTick t = nb_tick(2 * kSec, 0.79, 0.81, 0.30);
+  t.yes_bid = 0.19;
+  t.yes_ask = 0.21;
+  EXPECT_EQ(a.on_tick(t, 2 * kSec).reason, rc(Rc::DailyLossCap));
+  // Buying back when NO is cheap against fair still goes through.
+  MarketTick c = nb_tick(3 * kSec, 0.75, 0.77, 0.10);
+  c.yes_bid = 0.19;
+  c.yes_ask = 0.21;
+  const Intent x = a.on_tick(c, 3 * kSec);  // fair NO 0.90 - ask 0.77 >= edge
+  ASSERT_TRUE(is_order(x));
+  EXPECT_EQ(x.side, +1);
+  EXPECT_EQ(x.reason, rc(Rc::Exit));
+}
