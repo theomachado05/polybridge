@@ -1,5 +1,6 @@
 import pandas as pd
 
+from polybridge_research.analysis import verdict
 from polybridge_research.calendar import TradingCalendar
 from polybridge_research.config import StudyConfig
 from polybridge_research.pipeline import run_family_study
@@ -39,3 +40,10 @@ def test_pipeline_clips_placebo_days_to_last_session(tmp_path):
     out = run_family_study(_client(), CAL, CFG, "2024-01-01", "2024-12-31", T("2024-06-28"),
                            cache_dir=tmp_path, max_workers=2)
     assert (out["placebo_events"].filing_date <= T("2024-06-28")).all()
+
+
+def test_short_window_reports_insufficient_not_null(tmp_path):
+    out = run_family_study(_client(), CAL, CFG, "2024-02-01", "2024-03-15", T("2026-09-30"), cache_dir=tmp_path, max_workers=2)
+    assert len(out["events"]) < 10
+    for fam in ("hedge", "opportunity"):
+        assert verdict(out["checks"].get(fam)) == "INSUFFICIENT"

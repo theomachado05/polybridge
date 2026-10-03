@@ -49,7 +49,7 @@ PolyBridge has two divisions on one signal stack (prediction-market price, delta
 |---|---|---|
 | Replication on 10 new markets (method `7a780b5`) | does not replicate | +0.63 bp per pp, HC3 t +1.20, permutation p = 0.126 |
 | AI fit walk-forward on 122 markets (`e2f1600`) | fails | median test vs_static -0.0040; 19 above 0, 72 below; Wilcoxon p = 1.000 |
-| 8-K out of sample, 2026-01 to 2026-08 (`344de99`) | H1 NULL (3 events, untestable); H2 NULL, sign opposite to in-sample | H2 edge -0.0215 [-0.0759, +0.0203] at 21 sessions, -0.0138 [-0.0729, +0.0260] at 42 |
+| 8-K out of sample, 2026-01 to 2026-08 (`344de99`) | H1 INSUFFICIENT (3 events; the INSUFFICIENT label rule, see HYPOTHESIS.md change log); H2 NULL, sign opposite to in-sample | H2 edge -0.0215 [-0.0759, +0.0203] at 21 sessions, -0.0138 [-0.0729, +0.0260] at 42 |
 | R1 closed-market hedge (`c9fc174`) | A: no evidence (increases variance on the replication panel); B at 09:30: passes, fragile | A VR0 +4.76% [-0.80, +10.01]; replication VR0 -3.79% [-8.19, -0.91]; B as above |
 | R2 expected-gap model (`fe7c181`) | passes on the panel via the recession market only; fails on the replication panel | as above |
 | R3 options at the open (`297727a`) | NULL | net residual +0.79 pt [-1.21, +2.78]; slope 0.44 [0.33, 0.57] |

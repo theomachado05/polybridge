@@ -2,7 +2,7 @@
 
 Hedge equity positions using live prediction-market prices (Polymarket + Kalshi) as the signal. A human approves every hedge; a compiled C++ algo library runs it on a paper or simulated account.
 
-**Start here:** [v4 design spec](docs/superpowers/specs/2026-10-03-polybridge-v4-design.md) · [HTTP contracts](docs/contracts.md) · [90-second demo script](docs/demo.md) · [voice agent](docs/voice-agent.md)
+**Start here:** [research/README.md](research/README.md) (the scored research) · [v4 design spec](docs/superpowers/specs/2026-10-03-polybridge-v4-design.md) · [HTTP contracts](docs/contracts.md) · [90-second demo script](docs/demo.md) · [voice agent](docs/voice-agent.md)
 
 | Folder | Stack | Role |
 |---|---|---|
@@ -65,7 +65,7 @@ Replay vs live, AI estimate vs measured, simulated vs Webull paper, case study v
 > - **Expected gap, US-recession market (R2):** walk-forward in time, sign right in 64.2% of 151 closures, slope +1.28; pooled 141 of 235 (60.0%, p = 0.003), slope +1.25, permutation p < 0.001. Scope: one market; election market 52.4% (p = 0.744); fails on the 10-market replication panel (50.2% of 878, slope -0.23); already-seen panel.
 > - **Staged equity hedge at 09:30 (R1 hedge B):** post-open variance cut +11.42% [+5.10, +18.14] vs no hedge, +6.82% [+0.50, +13.54] vs a same-size static hedge. Scope: fragile (partial under block bootstrap; -0.78% vs static after dropping 5 closures), timing not direction, does not touch the gap, already-seen 380-closure panel.
 > - **380-closure relation (exploratory):** the PM move during US equity closures lined up with the next SPY gap (+7.52 bp per pp, permutation p = 0.001) and did not replicate on 10 rule-selected new markets (+0.63, p = 0.126). Same-window co-movement; not compared with futures.
-> - **Six pre-registered tests run today:** replication: does not replicate (method `7a780b5`); AI fit walk-forward: fails, median -0.0040, 19 above 0 / 72 below, Wilcoxon p = 1.000 (`e2f1600`); 8-K out of sample: H1 NULL (3 events, untestable), H2 NULL with sign opposite to in-sample (`344de99`); R1: hedge A no evidence and increases variance on the replication panel, hedge B passes but fragile (`c9fc174`); R2: passes on the panel via the recession market only, fails on the replication panel (`fe7c181`); R3: NULL after costs (`297727a`).
+> - **Six pre-registered tests run today:** replication: does not replicate (method `7a780b5`); AI fit walk-forward: fails, median -0.0040, 19 above 0 / 72 below, Wilcoxon p = 1.000 (`e2f1600`); 8-K out of sample: H1 INSUFFICIENT (3 events; the INSUFFICIENT label rule, see HYPOTHESIS.md change log), H2 NULL with sign opposite to in-sample (`344de99`); R1: hedge A no evidence and increases variance on the replication panel, hedge B passes but fragile (`c9fc174`); R2: passes on the panel via the recession market only, fails on the replication panel (`fe7c181`); R3: NULL after costs (`297727a`).
 > - **What didn't work:** 8-K parity NULL in-sample for both hypotheses; market-hours lead-lag PM first 9, equity first 9, simultaneous 2 (sign test p = 1.0); options arbitrage 5 verified, 0 executable; AI fit scores are in-sample replays only.
 > - **Product implications:** closed-market mode defaults to staged equity orders (hedge B); the PM-contract hedge (A) is opt-in and labelled an estimate; options-at-open is research-only; the AI fit is configuration, not edge.
 
