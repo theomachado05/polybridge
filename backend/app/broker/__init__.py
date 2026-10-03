@@ -50,7 +50,7 @@ def build_broker(app: Any | None = None) -> Broker:
     except ValueError:
         cash = START_CASH
     if _env("BROKER").lower() == "webull":
-        key, secret = _env("WEBULL_APP_KEY"), _env("WEBULL_APP_SECRET")
+        key, secret = _env("WEBULL_APP_KEY") or _env("WEBULL_API_KEY"), _env("WEBULL_APP_SECRET")  # either key name
         if key and secret:
             try:
                 client = WebullClient(key, secret, _env("WEBULL_BASE_URL") or SANDBOX_HOST,
