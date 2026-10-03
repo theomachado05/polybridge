@@ -243,7 +243,7 @@ def _moment(r: np.ndarray, k: int) -> float:
 
 def pair_bootstrap(by_pair: dict[str, list[float]], n_boot: int, seed: int) -> tuple[float, float, float]:
     """Mean P&L per trade and its 95% interval, resampling pairs (trades of one pair are not independent)."""
-    keys = [k for k, v in by_pair.items() if v]
+    keys = sorted(k for k, v in by_pair.items() if v)      # sorted: the interval must not depend on trade order
     allv = [x for k in keys for x in by_pair[k]]
     if not allv:
         return (float("nan"),) * 3
