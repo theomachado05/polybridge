@@ -213,7 +213,7 @@ def run_flow(base: str, args) -> dict:
         raise Abort("backend not healthy")
 
     say("\n== 2. search market (Polymarket + Kalshi, falls back to the bundled list offline)")
-    s, b = call(base, "GET", "/markets/search?q=" + urllib.request.quote("fed october"), timeout=45)
+    s, b = call(base, "GET", "/markets/search?q=" + urllib.request.quote(args.query), timeout=45)
     mk = None
     if s == 200:
         mk = next((m for m in b["markets"] if m["source"] == "polymarket" and m["id"] == args.market_id), None)
@@ -358,39 +358,80 @@ SCREENS = [("landing", "/"), ("build", "/build"), ("connect", "/connect"), ("pip
            ("bridge", None), ("portfolio", "/portfolio"), ("library", "/library"), ("profile", "/profile")]
 
 
-def screenshots(web: str, bridge_id: str | None, wait_ms: int) -> None:
-    say("\n== 10. headless Chrome screenshots of the 8 screens -> web/e2e/screens/")
-    if not Path(CHROME).exists():
-        check("Chrome installed", False, CHROME)
-        return
-    SCREEN_DIR.mkdir(parents=True, exist_ok=True)
-    prof = Path(tempfile.mkdtemp(prefix="pb-chrome-"))
+def ui_walk(web: str, base: str) -> list[str]:
+    """Click through the real UI (web/e2e/ui_walk.mjs, Chrome DevTools protocol) and save a screenshot per screen.
+    Returns the files written. Its checks are folded into this run's results."""
+    node = shutil.which("node")
+    if not node or not Path(CHROME).exists():
+        check("UI walk can run (node + Chrome)", False, "node or Chrome missing; falling back to direct-URL screenshots")
+        return []
+    p = subprocess.Popen([node, str(WEB / "e2e" / "ui_walk.mjs"), "--web", web, "--api", base, "--out", str(SCREEN_DIR),
+                          "--chrome", CHROME], cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, start_new_session=True)
+    children.append(p)
+    files: list[str] = []
+    timer_end = time.time() + 300
     try:
-        for i, (name, path) in enumerate(SCREENS, 1):
-            if path is None:
-                path = f"/bridge/{bridge_id}" if bridge_id else "/bridge"
-            wait_for(web + path, name, 120)  # first hit compiles the route in `next dev`; do it before Chrome's clock runs
-            dest = SCREEN_DIR / f"{i:02d}-{name}.png"
-            dest.unlink(missing_ok=True)
-            cmd = [CHROME, "--headless=new", "--disable-gpu", "--no-first-run", "--hide-scrollbars",
-                   f"--user-data-dir={prof}", "--window-size=1440,1000", f"--virtual-time-budget={wait_ms}",
-                   f"--screenshot={dest}", f"--timeout={wait_ms}", web + path]
-            # SSE keeps the page's network open forever, so Chrome is always killed by the deadline, never trusted to exit.
-            p = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
-            end = time.time() + wait_ms / 1000 + 15
-            while p.poll() is None and time.time() < end and not (dest.exists() and dest.stat().st_size > 0):
-                time.sleep(0.3)
-            time.sleep(0.5)
-            if p.poll() is None:
-                try:
-                    os.killpg(p.pid, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass
-            ok = dest.exists() and dest.stat().st_size > 5000
-            check(f"screenshot {dest.name}", ok, f"{path} ({dest.stat().st_size // 1024} KB)" if dest.exists() else path)
+        for line in p.stdout:  # type: ignore[union-attr]
+            line = line.strip()
+            if not line.startswith("{"):
+                continue
+            try:
+                d = json.loads(line)
+            except ValueError:
+                continue
+            if "check" in d:
+                check(d["check"], d["ok"], d.get("detail", ""))
+            elif "shots" in d:
+                files = d["shots"]
+            if time.time() > timer_end:
+                break
     finally:
-        subprocess.run(["pkill", "-f", f"--user-data-dir={prof}"], capture_output=True)
-        shutil.rmtree(prof, ignore_errors=True)
+        if p.poll() is None:
+            try:
+                os.killpg(p.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+    return files
+
+
+def direct_shot(web: str, i: int, name: str, path: str, wait_ms: int, prof: Path) -> None:
+    """Fallback: open one URL cold (no wizard state) and screenshot it; Chrome is killed on a deadline (SSE never idles)."""
+    wait_for(web + path, name, 120)  # the first hit compiles the route in `next dev`
+    dest = SCREEN_DIR / f"{i:02d}-{name}.png"
+    dest.unlink(missing_ok=True)
+    cmd = [CHROME, "--headless=new", "--disable-gpu", "--no-first-run", "--hide-scrollbars", f"--user-data-dir={prof}",
+           "--window-size=1440,1000", f"--virtual-time-budget={wait_ms}", f"--screenshot={dest}", f"--timeout={wait_ms}", web + path]
+    p = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+    end = time.time() + wait_ms / 1000 + 15
+    while p.poll() is None and time.time() < end and not (dest.exists() and dest.stat().st_size > 0):
+        time.sleep(0.3)
+    time.sleep(0.5)
+    if p.poll() is None:
+        try:
+            os.killpg(p.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+
+
+def screenshots(web: str, base: str, bridge_id: str | None, wait_ms: int) -> None:
+    say("\n== 10. UI walk + screenshots of the 8 screens -> web/e2e/screens/")
+    SCREEN_DIR.mkdir(parents=True, exist_ok=True)
+    for old in SCREEN_DIR.glob("*.png"):
+        old.unlink()
+    ui_walk(web, base)
+    missing = [(i, n, p) for i, (n, p) in enumerate(SCREENS, 1) if not any(SCREEN_DIR.glob(f"{i:02d}-{n}.png"))]
+    if missing and Path(CHROME).exists():
+        say(f"     UI walk did not produce {[n for _, n, _ in missing]}; capturing those by direct URL (no wizard state)")
+        prof = Path(tempfile.mkdtemp(prefix="pb-chrome-"))
+        try:
+            for i, n, p in missing:
+                direct_shot(web, i, n, p or (f"/bridge/{bridge_id}" if bridge_id else "/bridge"), wait_ms, prof)
+        finally:
+            subprocess.run(["pkill", "-f", f"--user-data-dir={prof}"], capture_output=True)
+            shutil.rmtree(prof, ignore_errors=True)
+    for i, (n, _) in enumerate(SCREENS, 1):
+        f = next(iter(SCREEN_DIR.glob(f"{i:02d}-{n}.png")), None)
+        check(f"screenshot {i:02d}-{n}.png", bool(f) and f.stat().st_size > 5000, f"{f.stat().st_size // 1024} KB" if f else "missing")
 
 
 # ------------------------------------------------------------------ main
@@ -407,6 +448,7 @@ def main() -> int:
     ap.add_argument("--replay", default=str(DEFAULT_REPLAY), help="replay JSONL (POLYBRIDGE_REPLAY_PATH)")
     ap.add_argument("--speed", default="36000", help="POLYBRIDGE_REPLAY_SPEED (36000 = a month of hourly history in ~72 s)")
     ap.add_argument("--env-file", help="dotenv file for MASSIVE_API_KEY (default: ./.env or the main checkout's)")
+    ap.add_argument("--query", default="fed october", help="market search text; the search must list --market-id")
     ap.add_argument("--market-id", default=MARKET_ID)
     ap.add_argument("--ticker", default=TICKER)
     ap.add_argument("--shares", type=float, default=SHARES)
@@ -461,7 +503,7 @@ def main() -> int:
 
         out = run_flow(base, args)
         if need_web:
-            screenshots(web, out.get("bridge_id"), args.screen_wait_ms)
+            screenshots(web, base, out.get("bridge_id"), args.screen_wait_ms)
     except Abort as e:
         check("flow completed", False, str(e))
     except KeyboardInterrupt:
