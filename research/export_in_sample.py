@@ -15,7 +15,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from polybridge_research.analysis import decay_table, difference_board, scoreboard
+from polybridge_research.analysis import decay_table, difference_board, robustness_table, scoreboard, verdict
 from polybridge_research.atlas import count_variants
 from polybridge_research.calendar import TradingCalendar
 from polybridge_research.config import StudyConfig
@@ -78,7 +78,8 @@ for fam, chk in study["checks"].items():
     t["pnl_ok"] = t["horizon"].isin(chk["horizons_pnl_ok"])
     t["ratio_ok"] = t["horizon"].isin(chk["horizons_ratio_ok"])
     t.to_csv(OUT / f"{fam}_pass_check.csv", index=False)
-    (OUT / f"{fam}_verdict.txt").write_text("PASS\n" if chk["passed"] else "NULL\n")
+    (OUT / f"{fam}_verdict.txt").write_text(f"{verdict(chk)}\n")
+    robustness_table(ev_r, pl_r, fam, cfg).to_csv(OUT / f"{fam}_robustness.csv", index=False)
     de, dp = decay_table(ev_r, cfg), decay_table(pl_r, cfg)
     de.to_csv(OUT / f"{fam}_decay_events.csv")
     dp.to_csv(OUT / f"{fam}_decay_placebo.csv")
@@ -143,6 +144,6 @@ for fam, chk in study["checks"].items():
     fig.tight_layout()
     fig.savefig(OUT / f"{fam}_decay.png", dpi=120)
     plt.close(fig)
-    log(f"[{fam}] verdict {'PASS' if chk['passed'] else 'NULL'}")
+    log(f"[{fam}] verdict {verdict(chk)}")
 
 log("export complete")

@@ -1,7 +1,8 @@
 import numpy as np
 import pandas as pd
 
-from polybridge_research.analysis import decay_table, difference_board, pass_check, sample_placebo, scoreboard
+from polybridge_research.analysis import (cluster_difference_board, decay_table, difference_board, pass_check,
+                                         robustness_table, sample_placebo, scoreboard, verdict, with_put_leg)
 from polybridge_research.calendar import TradingCalendar
 from polybridge_research.config import StudyConfig
 from polybridge_research.strategies import STRATEGIES
@@ -112,3 +113,42 @@ def test_sample_placebo_clips_to_last_session():
     pl = sample_placebo(ev, 60, "2024-01-01", "2024-12-31", CAL, gap_days=30, seed=1, last_session=T("2024-06-28"))
     assert len(pl) == 60 and (pl.filing_date <= T("2024-06-28")).all()
     assert pl.filing_date.max() > T("2024-04-30")
+
+
+def test_put_leg_is_protective_put_minus_stock():
+    res = _res(10, 0.02, 0, 1.0, 15)
+    out = with_put_leg(res)
+    assert np.allclose(out["put_leg"], res["protective_put"] - res["stock"])
+    assert "put_leg" in with_put_leg(res.iloc[0:0]).columns
+
+
+def test_cluster_bootstrap_is_wider_when_rows_share_a_company_shock():
+    rng = np.random.default_rng(16)
+    a = _res(70, 0, 0, 1.0, 17)
+    shock = {f"T{i}": rng.normal(0, 0.05) for i in range(7)}
+    a["protective_put"] = a["protective_put"] + a["ticker"].map(shock)
+    b = _res(140, 0, 0, 1.0, 18)
+    iid = difference_board(a, b, CFG, level=0.95, strategies=["protective_put"])
+    clu = cluster_difference_board(a, b, CFG, "protective_put", level=0.95)
+    w = lambda d: (d.loc[d.horizon == 21, "ci_hi"] - d.loc[d.horizon == 21, "ci_lo"]).iloc[0]
+    assert w(clu) > 1.5 * w(iid)
+    assert iid.loc[iid.horizon == 21, "difference"].iloc[0] == clu.loc[clu.horizon == 21, "difference"].iloc[0]
+
+
+def test_robustness_table_adds_put_leg_only_for_hedge():
+    ev, pl = _res(40, 0.01, 0.01, 1.0, 19), _res(100, 0, 0, 1.0, 20)
+    h = robustness_table(ev, pl, "hedge", CFG)
+    o = robustness_table(ev, pl, "opportunity", CFG)
+    assert set(h.check) == {"pre-registered (iid)", "company-clustered", "put leg only (iid)", "put leg only, company-clustered"}
+    assert set(o.check) == {"pre-registered (iid)", "company-clustered"}
+    assert set(h.horizon) == {21, 42, "exp"}
+    assert robustness_table(ev.iloc[0:0], pl, "hedge", CFG).edge.isna().all()
+
+
+def test_verdict_separates_null_from_insufficient():
+    full, few = _res(80, 0, 0, 1.0, 21), _res(3, 0, 0, 1.0, 22)
+    placebo = _res(200, 0, 0, 1.0, 23)
+    assert verdict(pass_check(full, placebo, "hedge", CFG)) == "NULL"
+    assert verdict(pass_check(few, placebo, "hedge", CFG)) == "INSUFFICIENT"
+    assert verdict(None) == "INSUFFICIENT"
+    assert verdict(pass_check(_res(80, 0.03, 0, 1.4, 1), _res(200, 0, 0, 1.0, 2), "hedge", CFG)) == "PASS"

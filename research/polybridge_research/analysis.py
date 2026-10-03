@@ -93,6 +93,67 @@ def decay_table(res: pd.DataFrame, cfg: StudyConfig, entry: str = "pre") -> pd.D
         columns=["n", "mean_ratio", "ci_lo", "ci_hi", "median_ratio", "share_above_1"])
 
 
+def with_put_leg(res: pd.DataFrame) -> pd.DataFrame:
+    """Add `put_leg`: the protective put minus the stock, i.e. the bought put's own P&L per $1 of spot."""
+    return res.assign(put_leg=res["protective_put"] - res["stock"]) if len(res) else res.assign(put_leg=pd.Series(dtype=float))
+
+
+def _cluster_means(x: np.ndarray, groups: np.ndarray, rng, n_boot: int) -> np.ndarray:
+    keys, inv = np.unique(groups, return_inverse=True)
+    sums = np.bincount(inv, weights=x, minlength=len(keys))
+    counts = np.bincount(inv, minlength=len(keys)).astype(float)
+    draw = rng.integers(len(keys), size=(n_boot, len(keys)))
+    return sums[draw].sum(1) / counts[draw].sum(1)
+
+
+def cluster_difference_board(res_a, res_b, cfg: StudyConfig, column: str, level: float = 0.95, entry=None,
+                             cluster: str = "ticker", seed: int = 1, n_boot: int = 4000) -> pd.DataFrame:
+    """Events minus placebo with a bootstrap that resamples whole clusters (companies), not single rows."""
+    e = entry or cfg.entry
+    a = slice_results(res_a, cfg.baseline_bucket, e, cfg.otm_pct)
+    b = slice_results(res_b, cfg.baseline_bucket, e, cfg.otm_pct)
+    tail = (1 - level) / 2 * 100
+    rng, rows = np.random.default_rng(seed), []
+    for h in _horizons(cfg, set(a.horizon) & set(b.horizon)):
+        da = a.loc[a.horizon == h, [column, cluster]].dropna()
+        db = b.loc[b.horizon == h, [column, cluster]].dropna()
+        row = {"strategy": column, "horizon": h, "n_a": len(da), "n_b": len(db)}
+        if len(da) >= 5 and len(db) >= 5 and da[cluster].nunique() >= 2 and db[cluster].nunique() >= 2:
+            d = (_cluster_means(da[column].to_numpy(float), da[cluster].to_numpy(), rng, n_boot)
+                 - _cluster_means(db[column].to_numpy(float), db[cluster].to_numpy(), rng, n_boot))
+            p = 2 * min((d <= 0).mean(), (d >= 0).mean())
+            row.update(mean_a=da[column].mean(), mean_b=db[column].mean(), difference=da[column].mean() - db[column].mean(),
+                       ci_lo=np.percentile(d, tail), ci_hi=np.percentile(d, 100 - tail), p_value=max(p, 1 / n_boot))
+        rows.append(row)
+    return pd.DataFrame(rows, columns=DIFF_COLUMNS)
+
+
+def robustness_table(events_res, placebo_res, family: str, cfg: StudyConfig) -> pd.DataFrame:
+    """Checks reported next to the pass rule, never instead of it: company-clustered intervals, and for H1 the put's own edge."""
+    strategy = STRATEGY_FOR_FAMILY[Family(family)]
+    ev, pl = with_put_leg(events_res), with_put_leg(placebo_res)
+    level, heads = cfg.confirmatory_level, list(cfg.headline_horizons)
+    boards = [("pre-registered (iid)", difference_board(ev, pl, cfg, level=level, strategies=[strategy])),
+              ("company-clustered", cluster_difference_board(ev, pl, cfg, strategy, level=level))]
+    if family == Family.HEDGE.value:
+        boards += [("put leg only (iid)", difference_board(ev, pl, cfg, level=level, column="put_leg")),
+                   ("put leg only, company-clustered", cluster_difference_board(ev, pl, cfg, "put_leg", level=level))]
+    out = [b[b.horizon.isin(heads)].assign(check=name) for name, b in boards]
+    t = pd.concat(out, ignore_index=True) if out else pd.DataFrame(columns=[*DIFF_COLUMNS, "check"])
+    return t.rename(columns={"strategy": "measure", "n_a": "n_events", "n_b": "n_placebo", "difference": "edge"})[
+        ["check", "measure", "horizon", "n_events", "n_placebo", "edge", "ci_lo", "ci_hi"]]
+
+
+def verdict(chk: dict | None) -> str:
+    """PASS, NULL, or INSUFFICIENT when fewer than 2 headline horizons have the 5+ events and placebo days a CI needs."""
+    if chk is None:
+        return "INSUFFICIENT"
+    if chk["passed"]:
+        return "PASS"
+    testable = chk["pnl"]["ci_lo"].notna().sum() if len(chk["pnl"]) else 0
+    return "NULL" if testable >= 2 else "INSUFFICIENT"
+
+
 def pass_check(events_res, placebo_res, family: str, cfg: StudyConfig) -> dict:
     strategy = STRATEGY_FOR_FAMILY[Family(family)]
     heads = list(cfg.headline_horizons)
