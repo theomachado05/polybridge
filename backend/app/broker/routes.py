@@ -1,0 +1,67 @@
+"""HTTP surface for the active broker. A broker failure is a clean 4xx/502, never a 500."""
+from __future__ import annotations
+
+from typing import Literal
+
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel, Field
+
+from . import get_broker
+from .models import Account, BrokerError, Order, OrderRequest, Position
+from .sim import SimBroker
+
+router = APIRouter()
+
+
+class ResetIn(BaseModel):
+    starting_cash: float | None = Field(default=None, gt=0, allow_inf_nan=False)
+
+
+async def _call(coro):
+    try:
+        return await coro
+    except BrokerError as e:
+        raise HTTPException(e.status_code, e.message)
+
+
+@router.get("/account", response_model=Account)
+async def get_account(request: Request) -> Account:
+    return await _call(get_broker(request.app).account())
+
+
+@router.get("/positions", response_model=list[Position])
+async def get_positions(request: Request, refresh: bool = False) -> list[Position]:
+    b = get_broker(request.app)
+    if refresh and isinstance(b, SimBroker):
+        await b.refresh_marks()
+    return await _call(b.positions())
+
+
+@router.get("/orders", response_model=list[Order])
+async def get_orders(request: Request, status: Literal["filled", "open", "cancelled", "rejected"] | None = None) -> list[Order]:
+    return await _call(get_broker(request.app).orders(status))
+
+
+@router.post("/orders", response_model=Order, status_code=201)
+async def post_order(body: OrderRequest, request: Request) -> Order:
+    order = await _call(get_broker(request.app).place_order(body))
+    if order.status == "rejected":
+        raise HTTPException(422, order.reject_reason or "order rejected")
+    return order
+
+
+@router.delete("/orders/{order_id}", response_model=Order)
+async def delete_order(order_id: str, request: Request) -> Order:
+    return await _call(get_broker(request.app).cancel(order_id))
+
+
+@router.post("/account/reset", response_model=Account)
+async def reset_account(request: Request, body: ResetIn | None = None) -> Account:
+    b = get_broker(request.app)
+    sim = b if isinstance(b, SimBroker) else getattr(b, "sim", None)
+    if sim is None:
+        raise HTTPException(409, "Only the simulated account can be reset.")
+    if b is not sim:
+        raise HTTPException(409, "Webull paper is the active broker; reset its paper account in the Webull app. "
+                                 "Use the simulator only by unsetting BROKER=webull.")
+    return await sim.reset(body.starting_cash if body else None)

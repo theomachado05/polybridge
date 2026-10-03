@@ -18,6 +18,7 @@ next-env.d.ts
 .vercel
 
 # api
+backend/.sim_account.json
 __pycache__/
 *.pyc
 .venv/
