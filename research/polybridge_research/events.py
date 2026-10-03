@@ -21,6 +21,28 @@ def fetch_disclosures(client, tag: str, start: str, end: str) -> pd.DataFrame:
 
 
 def _in_universe(raw: pd.DataFrame, universe) -> pd.DataFrame:
+    raw = raw.copy()
+
+    # Handle missing tickers column: fall back to ticker column if it exists
+    if "tickers" not in raw.columns:
+        if "ticker" not in raw.columns:
+            # No tickers or ticker: return empty DataFrame with same columns plus ticker
+            return pd.DataFrame(columns=list(raw.columns) + ["ticker"])
+        # Use singular ticker as a single-ticker list
+        raw["tickers"] = raw["ticker"].apply(lambda x: [x] if pd.notna(x) and x else [])
+        raw = raw.drop("ticker", axis=1)
+
+    # Filter out rows with missing/empty tickers before exploding
+    def has_valid_tickers(x):
+        return isinstance(x, list) and len(x) > 0
+
+    raw = raw[raw["tickers"].apply(has_valid_tickers)]
+
+    if raw.empty:
+        # Return empty DataFrame with expected columns including ticker
+        cols = [c for c in raw.columns if c != "tickers"] + ["ticker"]
+        return pd.DataFrame(columns=cols)
+
     ex = raw.explode("tickers").rename(columns={"tickers": "ticker"})
     ex["ticker"] = ex["ticker"].map(normalize_ticker)
     return ex[ex["ticker"].isin(set(universe))]
