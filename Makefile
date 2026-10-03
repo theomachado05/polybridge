@@ -1,4 +1,4 @@
-.PHONY: setup-research test-research setup-backend test-backend build-engine test-engine test-engine-py setup-web test-web test
+.PHONY: setup-research test-research setup-backend test-backend build-engine test-engine test-engine-py setup-web test-web test dev dev-live e2e e2e-api
 
 setup-research:
 	cd research && uv venv .venv && uv pip install --python .venv -e ".[dev]"
@@ -29,3 +29,32 @@ test-engine-py:
 	cd backend && uv sync --locked --group engine && uv run pytest ../engine/hedgecore/tests -q
 
 test: test-research test-backend test-engine test-engine-py test-web
+
+# --- run the demo -----------------------------------------------------------------------------------------------
+# `make dev`: backend (engine group, offline replay of a month of real Polymarket history at 36000x) on :8000 and the
+# web dev server on :3000. Keys come from ./.env when it exists (MASSIVE_API_KEY, GEMINI_API_KEY, BROKER, WEBULL_*);
+# any missing key degrades gracefully. Open http://localhost:3000 (not 127.0.0.1). Ctrl-C stops both.
+ENVFILE := $(if $(wildcard .env),--env-file ../.env,)
+REPLAY ?= backend/replays/fed-hike-25bps-oct-2026-history.jsonl  # relative to the repo root
+SPEED ?= 36000
+
+dev:
+	@trap 'kill 0' INT TERM EXIT; \
+	(cd backend && POLYBRIDGE_REPLAY_PATH=$(abspath $(REPLAY)) POLYBRIDGE_REPLAY_SPEED=$(SPEED) uv run --group engine $(ENVFILE) uvicorn app.main:app --port 8000) & \
+	(cd web && pnpm dev) & \
+	wait
+
+# Same, without a replay file: bridges start on the live Polymarket book (needs network; falls back per bridge).
+dev-live:
+	@trap 'kill 0' INT TERM EXIT; \
+	(cd backend && uv run --group engine $(ENVFILE) uvicorn app.main:app --port 8000) & \
+	(cd web && pnpm dev) & \
+	wait
+
+# End-to-end: starts both servers, drives search -> map -> fit -> propose -> approve -> bridge -> SSE -> account over
+# HTTP, clicks the real UI in headless Chrome and screenshots the 8 screens into web/e2e/screens/, then stops everything.
+e2e:
+	python3 scripts/e2e_demo.py
+
+e2e-api:
+	python3 scripts/e2e_demo.py --no-screens

@@ -282,7 +282,7 @@ def run_flow(base: str, args) -> dict:
     check("a different algo than the approved one is refused (409)", s == 409, f"{s}")
 
     say(f"\n== 7. SSE /bridges/{bid}/stream (>= {args.events} events)")
-    events, closed = read_sse(base, bid, args.events, args.stream_timeout, need_fill=True)
+    events, closed = read_sse(base, bid, args.events, args.stream_timeout, need_fill=not args.offline)
     kinds: dict[str, int] = {}
     for k, _ in events:
         kinds[k] = kinds.get(k, 0) + 1
@@ -294,8 +294,15 @@ def run_flow(base: str, args) -> dict:
           f"{len(decisions)} decisions")
     check("every decision names the fitted family", bool(decisions) and all(d.get("family") == fit["family"] for d in decisions),
           f"families={sorted({d.get('family') for d in decisions})}")
-    check("at least one order was filled by the broker", any(f.get("status") == "filled" for f in fills),
-          f"fills={[(f.get('status'), f.get('side'), f.get('qty'), f.get('fill_px')) for f in fills[:4]]}")
+    if args.offline:
+        # Known limitation (see docs/demo.md): a replay bridge prices fills at today's market from Massive, so with no
+        # network and no key the sim has no price and refuses every order. Assert that, so a fix shows up as a change.
+        check("offline: orders are refused for want of a price (documented limitation)",
+              bool(fills) and all(f.get("status") == "rejected" and "no_price" in str(f.get("reject_reason")) for f in fills),
+              f"{len(fills)} fills, statuses={sorted({f.get('status') for f in fills})}, reason={fills[0].get('reject_reason') if fills else None}")
+    else:
+        check("at least one order was filled by the broker", any(f.get("status") == "filled" for f in fills),
+              f"fills={[(f.get('status'), f.get('side'), f.get('qty'), f.get('fill_px')) for f in fills[:4]]}")
     if fills:
         out["first_fill"] = fills[0]
 
@@ -331,14 +338,15 @@ def run_flow(base: str, args) -> dict:
     mine = [o for o in orders if o.get("tag") == bid] if isinstance(orders, list) else []
     filled = [o for o in mine if o.get("status") == "filled"]
     check("orders reached the broker (tagged with the bridge id)", len(mine) >= 1, f"{len(mine)} orders for {bid}")
-    check("broker order count matches the bridge summary", len(filled) == summ["broker_filled"],
-          f"filled in /orders={len(filled)} vs summary.broker_filled={summ['broker_filled']}")
-    short = next((p for p in pos if p.get("symbol") == args.ticker), None) if isinstance(pos, list) else None
-    net = -sum(o["qty"] for o in filled if o["side"] == "sell") + sum(o["qty"] for o in filled if o["side"] == "buy")
-    check(f"{args.ticker} position is the net short the orders built", short is not None and abs(short["qty"] - net) < 1e-6 and net < 0,
-          f"position qty={short and short['qty']} vs net filled {net}")
-    check("broker hedge in the summary equals the position", short is not None and abs(-short["qty"] - summ["broker_hedge"]) < 1e-6,
-          f"short={short and -short['qty']} vs broker_hedge={summ['broker_hedge']}")
+    if not args.offline:
+        check("broker order count matches the bridge summary", len(filled) == summ["broker_filled"],
+              f"filled in /orders={len(filled)} vs summary.broker_filled={summ['broker_filled']}")
+        short = next((p for p in pos if p.get("symbol") == args.ticker), None) if isinstance(pos, list) else None
+        net = -sum(o["qty"] for o in filled if o["side"] == "sell") + sum(o["qty"] for o in filled if o["side"] == "buy")
+        check(f"{args.ticker} position is the net short the orders built", short is not None and abs(short["qty"] - net) < 1e-6 and net < 0,
+              f"position qty={short and short['qty']} vs net filled {net}")
+        check("broker hedge in the summary equals the position", short is not None and abs(-short["qty"] - summ["broker_hedge"]) < 1e-6,
+              f"short={short and -short['qty']} vs broker_hedge={summ['broker_hedge']}")
     out.update(account=acct, positions=pos, orders=mine)
     if isinstance(acct, dict):
         say(f"     account: broker={acct.get('broker')} cash=${acct['cash']:,.2f} equity=${acct['equity']:,.2f} "
@@ -449,6 +457,8 @@ def main() -> int:
     ap.add_argument("--speed", default="36000", help="POLYBRIDGE_REPLAY_SPEED (36000 = a month of hourly history in ~72 s)")
     ap.add_argument("--env-file", help="dotenv file for MASSIVE_API_KEY (default: ./.env or the main checkout's)")
     ap.add_argument("--query", default="fed october", help="market search text; the search must list --market-id")
+    ap.add_argument("--offline", action="store_true",
+                    help="simulate Wi-Fi off: the backend's outbound traffic goes to a dead proxy and no env file is loaded")
     ap.add_argument("--market-id", default=MARKET_ID)
     ap.add_argument("--ticker", default=TICKER)
     ap.add_argument("--shares", type=float, default=SHARES)
@@ -465,7 +475,7 @@ def main() -> int:
         say(f"PolyBridge e2e demo  backend={base}  web={web}  replay={Path(args.replay).name} x{args.speed}")
         if not shutil.which("uv"):
             raise Abort("uv is not installed (https://docs.astral.sh/uv/)")
-        env_file = find_env_file(args.env_file)
+        env_file = None if args.offline else find_env_file(args.env_file)
         say(f"MASSIVE_API_KEY source: {'env file (' + env_file.name + ')' if env_file else 'none found: live equity quotes degrade to recorded bars'}")
         need_web = not args.no_screens
         busy = [(n, p) for n, p in [("backend", args.backend_port)] + ([("web", args.web_port)] if need_web else []) if port_busy(p)]
@@ -477,6 +487,11 @@ def main() -> int:
                    "BROKER": "sim", "SIM_ACCOUNT_PATH": str(work / "sim_account.json"), "PYTHONUNBUFFERED": "1"}
             for k in ("WEBULL_APP_KEY", "WEBULL_APP_SECRET"):
                 env.pop(k, None)
+            if args.offline:  # httpx honours these: every call to Polymarket, Kalshi, Massive, Gemini is refused at once
+                env.update(HTTPS_PROXY="http://127.0.0.1:9", HTTP_PROXY="http://127.0.0.1:9", ALL_PROXY="http://127.0.0.1:9",
+                           NO_PROXY="localhost,127.0.0.1")
+                for k in ("MASSIVE_API_KEY", "GEMINI_API_KEY"):
+                    env.pop(k, None)
             cmd = ["uv", "run", "--group", "engine"] + (["--env-file", str(env_file)] if env_file else []) + \
                   ["uvicorn", "app.main:app", "--port", str(args.backend_port)]
             say("\nstarting backend ...")
