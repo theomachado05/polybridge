@@ -1,0 +1,224 @@
+"""Opportunity-division data routes.
+
+- ``GET /options/implied?market_source=&market_id=`` (optional ``question=`` / ``end_date=`` overrides): the
+  options-implied probability of the prediction market's YES, next to the market's own price.
+- ``GET /options/chain?ticker=``: the listed chain snapshot (optional expiry / strike window).
+- ``GET /options/eightk?ticker=``: the 8-K score and the filing behind it.
+
+Every response says where the numbers come from (``freshness.source``, ``timeframe``, ``data_age_s``,
+``staleness``, ``mark_sources``) and is labelled an estimate. No key, an unsupported question or a Massive outage
+is a 200 with ``available: false`` and a reason, never a 500.
+"""
+from __future__ import annotations
+
+import asyncio
+import datetime as dt
+import json
+import math
+import re
+from pathlib import Path
+from typing import Any
+
+import httpx
+from fastapi import APIRouter, HTTPException, Request
+
+from ..cache import TTLCache
+from ..chain import bounded, make_client
+from . import chain as ch
+from .eightk import OOS_END, eightk_detail, fetch_recent, load_filings
+from .enrich import refresh, structure_mid
+from .implied import implied_for_threshold, jsonable
+from .match import match_question, why_no_match
+
+router = APIRouter(prefix="/options", tags=["options"])
+
+DATA = Path(__file__).resolve().parent.parent / "data"
+GAMMA_MARKET = "https://gamma-api.polymarket.com/markets/{id}"
+KALSHI_MARKET = "https://api.elections.kalshi.com/trade-api/v2/markets/{id}"
+TIMEOUT = httpx.Timeout(5.0)
+LABEL = "options-implied risk-neutral estimate (not a measured probability)"
+_TICKER = re.compile(r"^(I:)?[A-Z][A-Z.]{0,7}$")
+_RECENT_8K = TTLCache(3600.0)
+
+
+def _num(x: Any) -> float | None:
+    try:
+        v = float(x)
+    except (TypeError, ValueError):
+        return None
+    return v if math.isfinite(v) else None
+
+
+def _jlist(x: Any) -> list:
+    if isinstance(x, list):
+        return x
+    try:
+        v = json.loads(x) if isinstance(x, str) else []
+        return v if isinstance(v, list) else []
+    except ValueError:
+        return []
+
+
+def _http(request: Request) -> httpx.AsyncClient:
+    if not hasattr(request.app.state, "http"):
+        request.app.state.http = httpx.AsyncClient(timeout=TIMEOUT)
+    return request.app.state.http
+
+
+def _universe(source: str, mid: str, data_dir: Path = DATA) -> dict:
+    try:
+        uni = json.loads((data_dir / "market_universe.json").read_text()).get("markets", [])
+    except (OSError, ValueError):
+        return {}
+    return next((m for m in uni if m.get("source") == source and str(m.get("id")) == str(mid)), {})
+
+
+async def resolve_market(http: httpx.AsyncClient, source: str, mid: str) -> dict:
+    """{question, end_date, yes_price, origin}; origin "universe" | "live" | None when nothing was found."""
+    out: dict[str, Any] = {"question": None, "end_date": None, "yes_price": None, "origin": None}
+    entry = _universe(source, mid)
+    if entry:
+        out.update(question=entry.get("question"), end_date=entry.get("end_date"),
+                   yes_price=_num(entry.get("yes_price")), origin="universe")
+    try:
+        if source == "polymarket":
+            r = await http.get(GAMMA_MARKET.format(id=mid), timeout=TIMEOUT)
+            r.raise_for_status()
+            m = r.json() or {}
+            prices = _jlist(m.get("outcomePrices"))
+            out.update(question=m.get("question") or out["question"], end_date=m.get("endDate") or out["end_date"],
+                       yes_price=_num(prices[0]) if prices else out["yes_price"], origin="live")
+        elif source == "kalshi":
+            r = await http.get(KALSHI_MARKET.format(id=mid), timeout=TIMEOUT)
+            r.raise_for_status()
+            m = (r.json() or {}).get("market") or {}
+            bid, ask = _num(m.get("yes_bid_dollars")), _num(m.get("yes_ask_dollars"))
+            px = (bid + ask) / 2 if bid is not None and ask is not None else _num(m.get("last_price_dollars"))
+            out.update(question=m.get("title") or out["question"],
+                       end_date=m.get("expiration_time") or m.get("close_time") or out["end_date"],
+                       yes_price=px if px is not None else out["yes_price"], origin="live")
+    except Exception:
+        pass  # the universe entry (if any) stands; the response says where it came from
+    return out
+
+
+@router.get("/implied")
+async def options_implied(request: Request, market_source: str | None = None, market_id: str | None = None,
+                          question: str | None = None, end_date: str | None = None) -> dict:
+    if not question and not (market_source and market_id):
+        raise HTTPException(422, "Give market_source and market_id, or question.")
+    if market_source is not None and market_source not in ("polymarket", "kalshi"):
+        raise HTTPException(422, "market_source must be polymarket or kalshi.")
+    market: dict[str, Any] = {"source": market_source, "id": market_id, "question": question,
+                              "end_date": end_date, "yes_price": None, "origin": "request" if question else None}
+    if market_source and market_id:
+        found = await resolve_market(_http(request), market_source, market_id)
+        market.update(question=question or found["question"], end_date=end_date or found["end_date"],
+                      yes_price=found["yes_price"], origin="request" if question else found["origin"])
+    base = {"label": LABEL, "market": market}
+    q = market["question"]
+    if not q:
+        return {**base, "supported": False, "available": False, "reason": "market not found (no question text)"}
+    today = dt.date.today()
+    m = match_question(q, market["end_date"], as_of=today)
+    if m is None:
+        return {**base, "supported": False, "available": False,
+                "reason": f"unsupported question: {why_no_match(q, market['end_date'], as_of=today)}"}
+    base["match"] = m.to_dict()
+    client = make_client()
+    if client is None:
+        return {**base, "supported": True, "available": False, "reason": "MASSIVE_API_KEY not set"}
+    attempts = [(m.underlying, m.strike, m.approx)]
+    if m.fallback:
+        attempts.append((m.fallback[0], round(m.level * m.fallback[1], 6), True))
+    got, used = None, None
+    for und, k, approx in attempts:
+        got = await refresh(und, k, m.expiry, as_of=today, client=client)
+        if got is not None:
+            used = (und, k, approx)
+            break
+    if got is None:
+        return {**base, "supported": True, "available": False,
+                "reason": "no listed options near the threshold and date, or Massive is unavailable"}
+    chain, stale = got
+    und, k, approx = used
+    res = implied_for_threshold(chain, k, m.expiry, above=m.direction == "above", as_of=today)
+    if res.get("expiry"):
+        res["structure_mid"] = structure_mid(chain.slice(res["expiry"]), res.get("k_lo"), res.get("k_hi"),
+                                             m.direction == "above")
+    prob = res.get("prob")
+    yes = market.get("yes_price")
+    ok = isinstance(prob, float) and math.isfinite(prob)
+    notes = list(m.notes) + ([f"proxy {und} used (approximate scaling)"] if und != m.underlying else [])
+    return {**base, "supported": True, "available": ok,
+            "reason": None if ok else "; ".join(res.get("notes") or ["no usable option prices"]),
+            "underlying_used": und, "strike_used": k, "approx": approx, "notes": notes,
+            "estimate": jsonable(res),
+            "pm_yes_price": yes,
+            "pm_minus_option": (yes - prob) if ok and yes is not None else None,
+            "spot": None if math.isnan(chain.spot) else chain.spot,
+            "freshness": ch.staleness(chain, stale)}
+
+
+def _row(q: ch.OptionQuote | None) -> dict | None:
+    if q is None:
+        return None
+    return ch._clean({"ticker": q.ticker, "bid": q.bid, "ask": q.ask, "mid": q.mid, "mark_source": q.mark_source,
+                      "iv": q.iv, "delta": q.delta, "open_interest": q.open_interest, "volume": q.volume,
+                      "updated_ns": q.updated_ns})
+
+
+@router.get("/chain")
+async def options_chain(ticker: str, expiry_from: str | None = None, expiry_to: str | None = None,
+                        strike_min: float | None = None, strike_max: float | None = None) -> dict:
+    tk = ticker.strip().upper()
+    if not _TICKER.match(tk):
+        raise HTTPException(422, "ticker must look like NVDA, BRK.B or I:SPX.")
+    today = dt.date.today()
+    try:
+        ef = dt.date.fromisoformat(expiry_from) if expiry_from else today
+        et = dt.date.fromisoformat(expiry_to) if expiry_to else today + dt.timedelta(days=30)
+    except ValueError:
+        raise HTTPException(422, "expiry_from / expiry_to must be YYYY-MM-DD.")
+    if et < ef:
+        raise HTTPException(422, "expiry_to is before expiry_from.")
+    base = {"ticker": tk, "label": "Massive option chain snapshot", "window": {
+        "expiry_from": ef.isoformat(), "expiry_to": et.isoformat(), "strike_min": strike_min, "strike_max": strike_max}}
+    client = make_client()
+    if client is None:
+        return {**base, "available": False, "reason": "MASSIVE_API_KEY not set", "expiries": []}
+    try:
+        chain, stale = await ch.get_chain(tk, expiry_from=ef, expiry_to=et, strike_min=strike_min,
+                                          strike_max=strike_max, client=client)
+    except Exception as e:
+        return {**base, "available": False, "reason": f"Massive unavailable ({type(e).__name__})", "expiries": []}
+    ch.remember(chain)
+    exps = [{"expiry": e, "strikes": [{"strike": k, "call": _row(legs.get("call")), "put": _row(legs.get("put"))}
+                                      for k, legs in chain.slice(e).items()]} for e in chain.expiries()]
+    return {**base, "available": bool(chain.quotes), "reason": None if chain.quotes else "no listed contracts in window",
+            "spot": None if math.isnan(chain.spot) else chain.spot, "n_contracts": len(chain.quotes),
+            "expiries": exps, "freshness": ch.staleness(chain, stale)}
+
+
+@router.get("/eightk")
+async def options_eightk(ticker: str, as_of: str | None = None, window_days: int = 30) -> dict:
+    tk = ticker.strip().upper()
+    if not _TICKER.match(tk) or not 1 <= window_days <= 365:
+        raise HTTPException(422, "ticker must look like NVDA; window_days in 1..365.")
+    try:
+        a = dt.date.fromisoformat(as_of) if as_of else dt.date.today()
+    except ValueError:
+        raise HTTPException(422, "as_of must be YYYY-MM-DD.")
+    filings, source = list(load_filings()), "bundled in-sample filings (2024-2025)"
+    if a > OOS_END:  # recent dates: add live filings (never inside the frozen OOS window)
+        client = make_client()
+        if client is not None:
+            try:
+                live, _ = await _RECENT_8K.get_or_set((a.isoformat(), window_days),
+                                                      lambda: bounded(fetch_recent, client, a, window_days))
+                filings += live
+                source += " + live Massive disclosures"
+            except (Exception, asyncio.TimeoutError):
+                source += " (live disclosures unavailable)"
+    return {**eightk_detail(tk, a, window_days, filings), "source": source,
+            "label": "8-K tag-direction prior (H1 hedge -> negative, H2 opportunity -> positive); not a measured edge"}
