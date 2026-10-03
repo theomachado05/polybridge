@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored browser script (MIT thinking-orbs port from the design handoff).
+    "public/**",
   ]),
 ]);
 

@@ -203,3 +203,111 @@ export const startBridge = (body: {
 export const getBridge = (id: string) => request<BridgeSummary>(`/bridges/${id}`);
 export const getPortfolio = () => request<PortfolioOut>("/portfolio");
 export const listVerdicts = () => request<TagVerdict[]>("/verdicts");
+
+// ---- v4 endpoints (spec §4 fit, §5 broker, §3.4/§9 library). Shapes are parsed defensively in the UI
+// because the backend streams land in parallel; every caller has a labelled demo fallback.
+
+export type EventClass =
+  | "macro_fed" | "elections" | "tariffs_trade" | "geopolitics_energy" | "housing" | "fig"
+  | "tech_regulation" | "crypto" | "corporate_8k" | "company_specific" | "unsupported";
+
+export interface FitBody {
+  market?: { source: string; id: string };
+  question?: string;
+  ticker: string;
+  direction?: Direction;
+  shares_held?: number;
+}
+export interface FitAlternative { family: string; preset_index?: number; params?: Record<string, number>; score?: number | null; division?: string }
+export interface FitOut {
+  event_class: EventClass | string;
+  division: Family | string;
+  family: string | null;
+  preset_index: number | null;
+  params: Record<string, number>;
+  score: number | null;
+  alternatives: FitAlternative[];
+  rationale: string;
+  llm: "gemini" | "rules" | string;
+  ticks_source: "live_history" | "replay" | "none" | string;
+  n_ticks: number;
+}
+export const postFit = (body: FitBody) => post<FitOut>("/pipeline/fit", body);
+
+export interface CatalogParam { name: string; min?: number; max?: number; grid?: number[] }
+export interface CatalogBlock { name: string; kind?: string; ui_kind?: string }
+export interface CatalogFamily {
+  id: string;
+  division?: string;
+  event_classes?: string[];
+  instruments?: string[];
+  blocks?: (string | CatalogBlock)[];
+  params?: CatalogParam[] | Record<string, number[] | { min?: number; max?: number; grid?: number[] }>;
+  preset_count?: number;
+  idea?: string;
+  description?: string;
+  latency?: { p50_ns?: number | null; p99_ns?: number | null } | null;
+  p50_ns?: number | null;
+  p99_ns?: number | null;
+}
+export interface LibraryOut {
+  families?: CatalogFamily[];
+  total_presets?: number;
+  preset_total?: number;
+  total?: number;
+  source?: string;
+}
+export const getLibrary = () => request<LibraryOut | CatalogFamily[]>("/library");
+
+// Field names checked against origin/v4/broker (backend/app/broker/models.py) and origin/v4/ai-pipeline.
+export interface AccountOut {
+  broker?: string;          // "sim" | "webull-paper"
+  cash: number;
+  equity: number;
+  buying_power: number;
+  currency: string;
+  simulated?: boolean;
+  starting_cash?: number | null;
+  realized_pnl?: number | null;
+  fees_paid?: number | null;
+  note?: string | null;
+}
+export interface BrokerPosition {
+  symbol: string;
+  asset?: string;
+  qty: number;
+  avg_px?: number | null;
+  avg_price?: number | null;
+  market_px?: number | null;
+  mark_px?: number | null;
+  market_value?: number | null;
+  unrealized_pnl?: number | null;
+  broker?: string;
+}
+export interface BrokerOrder {
+  id: string;
+  symbol: string;
+  asset?: string;
+  side: "buy" | "sell";
+  qty: number;
+  type?: string;
+  status?: string;
+  fill_px?: number | null;
+  filled_px?: number | null;
+  avg_fill_px?: number | null;
+  limit_px?: number | null;
+  fee?: number | null;
+  tag?: string | null;
+  created_at?: string | null;
+  filled_at?: string | null;
+  broker?: string;
+  price_source?: string | null;
+  reject_reason?: string | null;
+  note?: string | null;
+}
+export const getAccount = () => request<AccountOut>("/account");
+const unwrap = <T,>(key: string) => (x: unknown): T[] =>
+  Array.isArray(x) ? (x as T[]) : x && typeof x === "object" && Array.isArray((x as Record<string, unknown>)[key]) ? ((x as Record<string, T[]>)[key]) : [];
+export const getPositions = () => request<unknown>("/positions").then(unwrap<BrokerPosition>("positions"));
+export const getOrders = (status?: string) =>
+  request<unknown>(`/orders${status ? `?status=${encodeURIComponent(status)}` : ""}`).then(unwrap<BrokerOrder>("orders"));
