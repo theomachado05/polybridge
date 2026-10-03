@@ -93,4 +93,4 @@ The slope `beta` and its CI are reported alongside as the plain-language answer 
 
 ## Amendments
 
-(none)
+1. **2026-10-03, before any PM price or option quote was fetched** (only the Polymarket and Kalshi market listings had been downloaded). Kalshi is dropped from the run. The Kalshi listing pages show each 16:00 ET event created at about 05:00 UTC the day before its settlement date (for example `KXNASDAQ100U-26AUG27...` created 2026-08-26T05:00Z), so no Kalshi 16:00 market is listed before the close that starts a weekend or holiday closure, and every Kalshi pair fails eligibility rule 1 by construction. Downloading a year of Kalshi listings (about 2 MB per 1,000 markets, several hundred thousand markets) only to drop them all is not worth the disk; the runner is invoked with `--skip-kalshi` and the report says so. Nothing else changes.
