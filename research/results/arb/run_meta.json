@@ -1,0 +1,48 @@
+{
+ "now_utc": "2026-10-03T09:11:43.139558+00:00",
+ "start": "2026-08-15",
+ "end": "2026-10-12",
+ "half_spread": 0.05,
+ "half_spread_n": 154,
+ "scope": {
+  "pm_events": 1457,
+  "pm_markets_seen": 9814,
+  "pm_excluded_out_of_scope_type": 5612,
+  "pm_excluded_not_above_threshold": 1066,
+  "pm_in_scope": 3136,
+  "kalshi_KXINXU_settled_markets": 14611,
+  "kalshi_excluded_not_1600_close": 97071,
+  "kalshi_KXINXU_open_markets": 420,
+  "kalshi_KXNASDAQ100U_settled_markets": 95460,
+  "kalshi_KXNASDAQ100U_open_markets": 2800,
+  "kalshi_INXU_settled_markets": 0,
+  "kalshi_INXU_open_markets": 0,
+  "kalshi_NASDAQ100U_settled_markets": 0,
+  "kalshi_NASDAQ100U_open_markets": 0,
+  "kalshi_KXINXAB_settled_markets": 0,
+  "kalshi_KXINXAB_open_markets": 0,
+  "kalshi_INXAB_settled_markets": 0,
+  "kalshi_INXAB_open_markets": 0,
+  "kalshi_hist_selected": 544,
+  "kalshi_live_candidates": 460,
+  "pm_live_markets": 200,
+  "pm_live_no_two_sided_book": 44,
+  "kalshi_live_no_two_sided_book": 111,
+  "pm_resolved_or_ended": 2936,
+  "kalshi_no_bid_ask_candle": 16,
+  "verify_candidates": 224,
+  "verify_markets": 218,
+  "verified_poly": 5
+ },
+ "seconds": 51.5019850730896,
+ "http": {
+  "gamma-api.polymarket.com": 1,
+  "api.elections.kalshi.com": 130,
+  "clob.polymarket.com": 200
+ },
+ "massive_requests": {
+  "api.massive.com": 1097
+ },
+ "failures": [],
+ "n_failures": 0
+}
