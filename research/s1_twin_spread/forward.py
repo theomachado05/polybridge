@@ -103,7 +103,7 @@ def top_edge(pm: dict, k: dict, d: str, m: dict, c: float, carry_rate: float) ->
     return 1.0 - cost * (1.0 + carry_rate)
 
 
-def snapshots(rows: list[dict], metas: list[dict]) -> dict[str, list[tuple[float, dict, dict]]]:
+def snapshots(rows: list[dict], metas: list[dict], max_skew: float = MAX_PAIR_SKEW_S) -> dict[str, list[tuple[float, dict, dict]]]:
     """Per pair, the time-ordered (t, Polymarket book, Kalshi book) snapshots whose two books are close in time."""
     by: dict[str, list[dict]] = {}
     for r in rows:
@@ -118,18 +118,19 @@ def snapshots(rows: list[dict], metas: list[dict]) -> dict[str, list[tuple[float
             if not len(kt):
                 break
             j = int(np.argmin(np.abs(kt - r["t"])))
-            if abs(kt[j] - r["t"]) <= MAX_PAIR_SKEW_S:
+            if abs(kt[j] - r["t"]) <= max_skew:
                 snaps.append((max(r["t"], kk[j]["t"]), r, kk[j]))
         out[m["ticker"]] = snaps
     return out
 
 
-def adjacent(prev_t: float, t: float) -> bool:
-    """Consecutive snapshots of the 15 s cadence (a missed cycle breaks the run of two)."""
-    return 0 < t - prev_t <= 25.0
+def adjacent(prev_t: float, t: float, max_gap: float = 25.0) -> bool:
+    """Consecutive snapshots of the recording cadence (a missed cycle breaks the run of two). 25 s fits the 15 s cadence."""
+    return 0 < t - prev_t <= max_gap
 
 
-def paper_test(snaps: list, m: dict, theta: float, exit_on: bool, c: float, r: float, max_size: float) -> tuple[list[dict], dict]:
+def paper_test(snaps: list, m: dict, theta: float, exit_on: bool, c: float, r: float, max_size: float,
+               max_gap: float = 25.0) -> tuple[list[dict], dict]:
     """One pair: entries and exits on the recorded books, plus what was fillable with no size cap."""
     deadline = m["deadline_ts"]
     trades, pos = [], None
@@ -154,7 +155,7 @@ def paper_test(snaps: list, m: dict, theta: float, exit_on: bool, c: float, r: f
                         cap.update(max_fillable_qty=w["qty"], max_fillable_dollars=dollars,
                                    max_fillable_edge_dollars=w["qty"] - cost * (1 + carry),
                                    depth_share_at_max=w["qty"] / depth if depth else float("nan"))
-        two = prev is not None and adjacent(prev["t"], t)
+        two = prev is not None and adjacent(prev["t"], t, max_gap)
         exit_ok = False
         if pos is None:
             best = max("AB", key=lambda d: edges[d] if edges[d] == edges[d] else -9)

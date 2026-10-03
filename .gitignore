@@ -57,3 +57,4 @@ research/forward/recorder.log
 research/forward/recorder.pid
 research/forward/heartbeat_*.json
 research/s1_twin_spread/.cache/
+research/s3_three_way/.cache/
