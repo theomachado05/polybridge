@@ -41,7 +41,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from polybridge_research.analysis import decay_table, difference_board, pass_check, sample_placebo, scoreboard
+from polybridge_research.analysis import (decay_table, difference_board, pass_check, robustness_table, sample_placebo,
+                                         scoreboard, verdict)
 from polybridge_research.atlas import count_variants, run_atlas
 from polybridge_research.calendar import TradingCalendar
 from polybridge_research.config import StudyConfig
@@ -162,10 +163,20 @@ for fam in FAMILIES:
         t["pnl_ok"] = t["horizon"].isin(chk["horizons_pnl_ok"])
         t["ratio_ok"] = t["horizon"].isin(chk["horizons_ratio_ok"])
         show(t.set_index("horizon"), f"{fam} ({chk['strategy']}): events minus placebo at the headline horizons")
-    verdict = "PASS" if chk["passed"] else "NULL"
-    display(Markdown(f"**{fam.upper()}: {verdict}**. PASS rule: the 97.5% CI of the P&L edge (events minus ordinary days) is entirely above 0, "
+    display(Markdown(f"**{fam.upper()}: {verdict(chk)}**. INSUFFICIENT means fewer than 2 headline horizons had the 5 events a CI needs. PASS rule: the 97.5% CI of the P&L edge (events minus ordinary days) is entirely above 0, "
                      "and the price-gap ratio points the predicted way (H1 above ordinary days, H2 below), "
                      "at 2 or more of 21, 42 and expiry."))
+'''
+
+C6R = '''\
+for fam in FAMILIES:
+    chk = study["checks"].get(fam)
+    if chk is None:
+        continue
+    rob = robustness_table(of_family(study["results"], fam), of_family(study["placebo_results"], fam), fam, cfg)
+    show(rob.set_index(["check", "horizon"]),
+         f"[{fam}] robustness, 97.5% CIs (reported next to the pass rule, never instead of it): company-clustered bootstrap"
+         + ("; put leg only = protective put minus stock, the put's own edge" if fam == "hedge" else ""))
 '''
 
 C7 = '''\
@@ -277,7 +288,9 @@ if RUN_OOS:
             columns={"n_a": "n_events", "n_b": "n_placebo", "difference": "edge_oos"})
         print(f"{fam}: OOS n per headline horizon (events / placebo), edge of {chk['strategy']} and verdict")
         display(heads.set_index("horizon"))
-        print(f"{fam}: OOS verdict {'PASS' if chk['passed'] else 'NULL'}")
+        print(f"{fam}: OOS verdict {verdict(chk)}")
+        display(robustness_table(of_family(oos["results"], fam), of_family(oos["placebo_results"], fam), fam, cfg)
+                .set_index(["check", "horizon"]))
         saved = IN_SAMPLE / f"{fam}_pass_check.csv"
         if saved.exists():
             ins = pd.read_csv(saved)[["horizon", "pnl_difference"]].rename(columns={"pnl_difference": "edge_in_sample"})
@@ -304,6 +317,9 @@ the study, placebo, pass check, decay, sensitivity and costs all follow the wind
 
 C12 = '''\
 print(f"This run covered {START} -> {END}. Events: {len(study['events'])}; priced (event, bucket) pairs: {len(study['priced'])}.")
+for fam in FAMILIES:
+    print(f"{fam}: {verdict(study['checks'].get(fam))}")
+print("Our forecast for this window, committed before the method freeze: research/FORECAST.md")
 '''
 
 C13 = """\
@@ -317,7 +333,7 @@ C13 = """\
 - **No earnings flag.** Events that share their window with an earnings release are not separated.
 - **Filing lag and time of day.** `filing_date` has no time of day. **Every filing is treated as public after the close** (the next session is `t_0`): conservative, no lookahead, and slightly late for pre-market filings. EDGAR acceptance times are not used in the confirmatory path (the conservative rule is frozen; EDGAR's fixed 16:00 cutoff also mishandles 13:00 early closes).
 - **Pre-event reference under conservative timing.** `t_pre` is the filing day itself, which may already contain intraday news for filings made during market hours.
-- **Bootstrap.** The intervals are iid bootstraps: they ignore same-ticker clustering and overlapping windows, so they are likely too narrow.
+- **Bootstrap.** The pass rule uses the pre-registered iid bootstrap. The robustness cell also resamples whole companies, which allows for same-company clustering; neither interval accounts for overlapping holding windows across companies.
 - **Multi-ticker filings** keep the first in-universe ticker.
 - **Run date and cache.** The client caches bar responses for unexpired contracts, so a cache built on one run date must not be treated as complete on a later date. Pin `LAST_SESSION` at the freeze and run the out-of-sample window once.
 - **Strike availability.** When no strike sits at the requested OTM distance, the nearest listed one is used.
@@ -326,7 +342,7 @@ C13 = """\
 
 
 def build(path: Path | None = None) -> None:
-    nb = new_notebook(cells=[md(C1), code(C2), code(C3), code(C4), code(C5), code(C6), code(C7), code(C8), code(C9),
+    nb = new_notebook(cells=[md(C1), code(C2), code(C3), code(C4), code(C5), code(C6), code(C6R), code(C7), code(C8), code(C9),
                              code(C10), code(C11), md(C12M), code(C12), md(C13)])
     nb.metadata["kernelspec"] = {"display_name": "Python 3", "language": "python", "name": "python3"}
     for i, cell in enumerate(nb.cells):
