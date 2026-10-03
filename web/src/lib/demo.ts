@@ -138,3 +138,15 @@ export function questionFromMarket(m: Market): Question {
     real: m,
   };
 }
+
+/** Live markets: the engine runs exactly one hedge (a short-shares delta bridge). No invented strikes, costs or
+ *  tax claims; options and contracts stay on the demo path until a broker leg exists for them. */
+export const REAL_INSTRUMENTS = (spot: number | null): Instrument[] => [
+  {
+    id: "shares", kind: "DYNAMIC HEDGE", name: "Short shares · re-sized by the engine as the probability moves",
+    cover: "Scales with Δp", cost: spot ? `last quote $${spot.toFixed(2)}` : "quote unavailable",
+    tax: "No tax-lot or wash-sale logic on live bridges yet",
+    fit: "The hedge the engine runs today: a short position sized to the adverse-outcome probability.",
+    rec: false, short: "Dynamic short hedge", phrase: "a dynamic short hedge",
+  },
+];

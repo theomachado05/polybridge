@@ -15,9 +15,14 @@ export default function Connect() {
   const canRun = !!settings.broker;
   const pick = (id: string) => s.updateSettings({ broker: id, conns: settings.conns.includes(id) ? settings.conns : [...settings.conns, id] });
   const position = eq.held ? `${eq.held.toLocaleString("en-US")} sh${s.question?.real ? "" : " in 3 lots (2 long-term)"}` : "no position — hedge will size to a 500 sh notional";
-  const status = settings.broker
-    ? `Connected · ${eq.t}: ${position} · commission ${settings.broker === "ibkr" ? "$0.0035/sh" : "$0"} · borrow 0.3%`
-    : "Choose where your shares live.";
+  // Only the broker GET /account reports is "connected"; every other card is a saved preference.
+  const chosen = BROKERS.find((b) => b.id === settings.broker) ?? null;
+  const connected = !!chosen && chosen.id === "webull" && acct.tone === "paper";
+  const status = !chosen
+    ? "Choose where your shares live."
+    : connected
+      ? `Connected · Webull paper · ${eq.t}: ${position}`
+      : `${chosen.name} saved as a preference only (no live connection) · orders route to ${acct.tone === "demo" ? "no account yet" : "the " + acct.name.toLowerCase()} · ${eq.t}: ${position}`;
 
   const run = () => {
     if (!canRun) return;
@@ -35,7 +40,7 @@ export default function Connect() {
       <Glass style={{ padding: "28px 30px", borderRadius: 30, background: "rgba(255,255,255,.58)" }}>
         <Label rule>ONE LAST THING</Label>
         <h2 className="pb-serif" style={{ margin: "10px 0 0", fontSize: 38, letterSpacing: "-.015em", fontWeight: 400, lineHeight: 1.1 }}>Where does {eq.t} live?</h2>
-        <p style={{ margin: "8px 0 0", fontSize: 14, color: "#3C4458", lineHeight: 1.5 }}>PolyBridge needs your position, lot ages and fee schedule so every fill is sized to what you actually pay.</p>
+        <p style={{ margin: "8px 0 0", fontSize: 14, color: "#3C4458", lineHeight: 1.5 }}>PolyBridge sizes every order to your position; the account named below is the one that receives them.</p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 10, marginTop: 22 }}>
           {BROKERS.map((b) => {
             const sel = settings.broker === b.id;
@@ -53,6 +58,7 @@ export default function Connect() {
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 16, padding: "14px 16px", borderRadius: 18, background: "rgba(255,255,255,.7)", border: "1px solid rgba(255,255,255,.9)", fontSize: 13 }}>
           <Orb state={settings.broker ? "breathing" : "searching"} size={24} />
           <span style={{ color: "#3C4458" }}>{status}</span>
+          {chosen && !connected && <span style={{ marginLeft: "auto", flex: "none" }}><DemoTag what="preference only" title="Only the simulator and Webull paper exist; GET /account names the one that takes orders." /></span>}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10, padding: "0 4px", fontSize: 12, color: "#5A627A", flexWrap: "wrap" }}>
           <span>Orders route to</span>

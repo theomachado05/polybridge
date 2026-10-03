@@ -19,7 +19,7 @@ export function BridgeScreen({ routeBridgeId }: { routeBridgeId?: string }) {
   const router = useRouter();
   const s = useStore();
   const virtual: LiveEntry | null = routeBridgeId && !s.bridges.some((b) => b.kind === "live" && b.bridgeId === routeBridgeId)
-    ? { id: `live:${routeBridgeId}`, kind: "live", bridgeId: routeBridgeId, q: null, eq: null, inst: "shares", family: null } : null;
+    ? { id: `live:${routeBridgeId}`, kind: "live", bridgeId: routeBridgeId, q: null, eq: null, inst: "shares", fit: null, gap: null } : null;
   const list = virtual ? [...s.bridges, virtual] : s.bridges;
   const activeId = routeBridgeId ? `live:${routeBridgeId}` : s.activeId && list.some((b) => b.id === s.activeId) ? s.activeId : list[0]?.id ?? null;
   const active = list.find((b) => b.id === activeId) ?? null;
@@ -182,7 +182,14 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
     algo: "Delta-Bridge Sizer",
     reason: `YES at ${l.p == null ? "n/a" : Math.round(l.p * 100) + "¢"}; engine ${l.reason.replace("_", " ")}: target hedge ${l.target} sh, was ${l.current} sh. Decided in ${fmtNs(l.ns)}.${spot ? " Fill price is the last quote, not a broker fill." : ""}`,
   }));
-  const fam = entry.family ? prettyId(entry.family) : null;
+  // POST /bridges takes no family or preset: the engine runs its default delta-bridge spec. The AI fit is shown
+  // beside it, labelled as not applied.
+  const fitTag = entry.fit
+    ? <Tag tone="ai" title={`POST /pipeline/fit picked ${prettyId(entry.fit.family)}${entry.fit.preset_index != null ? " preset #" + entry.fit.preset_index : ""}. The bridge API does not take a preset yet, so the engine runs its default spec.`}>AI fit: {prettyId(entry.fit.family)} (not applied yet)</Tag>
+    : null;
+  const gateTag = entry.gap === 0
+    ? <Tag tone="sim" title="Started with gap_per_share = 0 because there was no quote or impact estimate; the engine's fee gate is off (docs/contracts.md).">fee gate off (no quote/impact)</Tag>
+    : null;
   const question = entry.q?.q ?? summary.data?.label ?? `Bridge ${id}`;
 
   return (
@@ -195,14 +202,14 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
         pBig={p == null ? "—" : `${Math.round(p * 100)}¢`} pSpark={st.prices.slice(-60)}
         pSub={`YES ${source === "replay" ? "from the replay file" : "Polymarket midpoint"} · Kalshi not streamed on this bridge`}
         volLabel="Ticks received" volValue={st.prices.length.toLocaleString("en-US")}
-        orb={st.status === "running" ? "connecting" : "breathing"} nodeLabel={`02 · ${fam ? fam.toUpperCase() : "HEDGECORE ENGINE"}`}
+        orb={st.status === "running" ? "connecting" : "breathing"} nodeLabel="02 · ENGINE · DEFAULT DELTA-BRIDGE SPEC"
         nodeLines={<>p50 {fmtNs(p50)} · p99 {fmtNs(p99)}<br />{move ? <>Expected move on YES <span style={{ color: move < 0 ? "#E0485A" : "#22A06B", fontWeight: 600 }}>{fmtPct(move)}</span></> : `${st.decisions} decisions`}</>}
         instShort="Dynamic short hedge" exchange="US" ticker={ticker ?? "—"} name={[card.data?.name, entry.eq?.name].find((n) => n && n !== ticker) ?? ""}
         equityTag={<Tag tone="neutral" title="Equity price is the last quote from GET /equities; it is not streamed on the bridge">last quote</Tag>}
         px={spot ? spot.toFixed(2) : "—"} pxColor="#5A627A" pxDelta={spot ? "Not streamed on this bridge" : "No quote available"} pxSpark={[]}
         driftLabel="Priced-in drift since start (mapping estimate)" drift={priced == null ? "n/a" : fmtPct(priced, 2)}
       />
-      <AlgoDock label={`04 · ENGINE GATES${fam ? " · " + fam.toUpperCase() : ""}`} algos={algos} tag={sourceTag} />
+      <AlgoDock label="04 · ENGINE GATES · DEFAULT SPEC" algos={algos} tag={<span style={{ display: "inline-flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>{gateTag}{fitTag}{sourceTag}</span>} />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,340px),1fr))", gap: 16, alignItems: "stretch" }}>
         <PortfolioPanel
           tag={<Tag tone={acct.tone} title="Account that receives the engine's orders (GET /account)">{acct.name}</Tag>}

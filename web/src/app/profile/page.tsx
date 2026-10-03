@@ -10,9 +10,9 @@ const MARKETS = [
   { name: "Kalshi", sub: "REST · read-only", logo: LOGO("kalshi.com") },
 ];
 const GUARDS: { key: keyof Settings["guards"]; name: string; sub: string }[] = [
-  { key: "edge", name: "Act only when edge beats fees + borrow", sub: "Edge-vs-Cost Gate stays armed on every bridge" },
-  { key: "wash", name: "Respect wash-sale windows", sub: "Wash-Sale Sentinel blocks disallowed losses" },
-  { key: "auto", name: "Auto-execute without confirmation", sub: "Otherwise each fill waits for your tap" },
+  { key: "edge", name: "Act only when edge beats fees", sub: "A live bridge that would start with its fee gate off (no quote or impact estimate) waits for your explicit approval" },
+  { key: "wash", name: "Respect wash-sale windows", sub: "Preference only: no wash-sale block runs on live bridges yet" },
+  { key: "auto", name: "Auto-approve bridges", sub: "Otherwise each bridge waits for your approval. Once approved, the engine places its orders without asking again" },
 ];
 const row = { display: "flex", alignItems: "center", gap: 14, padding: "12px 0", borderBottom: "1px solid rgba(15,22,38,.07)" } as const;
 
@@ -57,6 +57,7 @@ export default function Profile() {
           <div style={{ display: "flex", flexDirection: "column", marginTop: 6 }}>
             {BROKERS.map((b) => {
               const on = st.conns.includes(b.id);
+              const live = b.id === "webull" && acct.tone === "paper";
               return (
                 <div key={b.id} style={row}>
                   <LogoTile logo={b.logo} />
@@ -64,7 +65,7 @@ export default function Profile() {
                     <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: "-.01em" }}>{b.name}</div>
                     <div style={{ fontSize: 11.5, color: "#5A627A", marginTop: 1 }}>{b.sub}</div>
                   </div>
-                  <button type="button" onClick={() => toggleConn(b.id)} style={{ padding: "7px 14px", borderRadius: 999, fontSize: 12.5, fontWeight: 600, cursor: "pointer", background: on ? "rgba(34,160,107,.12)" : "#0F1626", color: on ? "#15804F" : "#fff", border: `1px solid ${on ? "rgba(34,160,107,.25)" : "#0F1626"}` }}>{on ? "Connected" : "Connect"}</button>
+                  <button type="button" onClick={() => toggleConn(b.id)} style={{ padding: "7px 14px", borderRadius: 999, fontSize: 12.5, fontWeight: 600, cursor: "pointer", background: on ? "rgba(34,160,107,.12)" : "#0F1626", color: on ? "#15804F" : "#fff", border: `1px solid ${on ? "rgba(34,160,107,.25)" : "#0F1626"}` }}>{live ? "Connected" : on ? "Saved" : "Save"}</button>
                 </div>
               );
             })}

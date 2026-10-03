@@ -27,8 +27,10 @@ export default function Portfolio() {
   const positions = useAsync("positions", getPositions);
   const acct = brokerLabel(s.account);
   const demos = s.bridges.filter((b): b is DemoEntry => b.kind === "demo");
-  const demoFor = (t: string) => demos.find((b) => b.eq.t === t) ?? null;
   const realHoldings: Holding[] | null = s.portfolio.status === "ok" && s.portfolio.data ? s.portfolio.data.holdings : null;
+  // Demo bridges attach only to the sample (EQ) holdings. On the real path they never touch real rows or totals:
+  // they are listed separately, labelled, and their simulated P&L, fees and fills stay out of the real figures.
+  const demoFor = (t: string) => (realHoldings ? null : demos.find((b) => b.eq.t === t) ?? null);
 
   const rows: Row[] = realHoldings
     ? realHoldings.map((h) => {
@@ -51,12 +53,20 @@ export default function Portfolio() {
     return { ...r, livePx: px, value, day: r.demo ? simPnl(r.demo.sim) : null };
   });
   const summed = priced.reduce((a, r) => a + (r.value ?? 0), 0);
-  const totalValue = realHoldings && s.portfolio.data?.total_value != null && !demos.length ? s.portfolio.data.total_value : summed;
-  const total = demos.reduce((a, b) => a + simPnl(b.sim), 0);
-  const fees = demos.reduce((a, b) => a + b.sim.fees, 0) + (orders.data ?? []).reduce((a, o) => a + (o.fee ?? 0), 0);
+  const totalValue = realHoldings && s.portfolio.data?.total_value != null ? s.portfolio.data.total_value : summed;
+  const demoPnl = demos.reduce((a, b) => a + simPnl(b.sim), 0);
+  const demoFees = demos.reduce((a, b) => a + b.sim.fees, 0);
+  const demoFills = demos.reduce((a, b) => a + b.sim.tradeCount, 0);
+  const demoCover = demos.length ? Math.round(demos.reduce((a, b) => a + b.sim.hedge / b.sim.shares, 0) / demos.length * 100) : 0;
   const filled = (orders.data ?? []).filter((o) => !o.status || /fill/i.test(o.status));
-  const fillsCount = demos.reduce((a, b) => a + b.sim.tradeCount, 0) + filled.length;
-  const avgCover = demos.length ? Math.round(demos.reduce((a, b) => a + b.sim.hedge / b.sim.shares, 0) / demos.length * 100) : 0;
+  const orderFees = (orders.data ?? []).reduce((a, o) => a + (o.fee ?? 0), 0);
+  // Real path: account fees/fills only, and coverage from the real exposure figures. Sample path: all simulated.
+  const exposures = (realHoldings ?? []).filter((h) => h.exposure);
+  const realCover = exposures.length
+    ? Math.round((exposures.filter((h) => h.hedge.status === "bridging").length / exposures.length) * 100) : 0;
+  const stats: [string, string, boolean][] = realHoldings
+    ? [["Exposures bridged", exposures.length ? `${realCover}%` : "—", false], ["Fees (account)", `$${orderFees.toFixed(2)}`, false], ["Fills (account)", String(filled.length), false]]
+    : [["Event exposure covered", `${demoCover}%`, true], ["Fees today", `$${(demoFees + orderFees).toFixed(2)}`, true], ["Fills today", String(demoFills + filled.length), true]];
 
   const fills: Fill[] = [
     ...filled.map((o) => {
@@ -82,14 +92,15 @@ export default function Portfolio() {
           </div>
           <h2 className="pb-h2">{fmtMoney(totalValue)}</h2>
           <div className="pb-lede">
-            Total equity value · <span style={{ fontWeight: 600, color: upColor(total) }}>{fmtMoney(total, true)}</span> net today across {demos.length} demo {demos.length === 1 ? "bridge" : "bridges"}
+            Total equity value{realHoldings && s.portfolio.data?.total_value == null ? " (priced holdings only)" : ""}
+            {(!realHoldings || demos.length > 0) && <> · <span style={{ fontWeight: 600, color: upColor(demoPnl) }}>{fmtMoney(demoPnl, true)}</span> simulated across {demos.length} demo {demos.length === 1 ? "bridge" : "bridges"}{realHoldings ? " (not in the total)" : ""}</>}
             {s.account.status === "ok" && s.account.data && <> · cash {fmtMoney(s.account.data.cash)}</>}
           </div>
         </div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          {[["Event exposure covered", `${avgCover}%`], ["Fees today", `$${fees.toFixed(2)}`], ["Fills today", String(fillsCount)]].map(([k, v]) => (
+          {stats.map(([k, v, sim]) => (
             <div key={k} className="pb-sub" style={{ padding: "12px 16px", minWidth: 140 }}>
-              <div style={{ fontSize: 11, color: "#5A627A" }}>{k}</div>
+              <div style={{ fontSize: 11, color: "#5A627A", display: "flex", gap: 6, alignItems: "center" }}>{k}{sim && <DemoTag what="sim" />}</div>
               <div className="pb-tab" style={{ fontSize: 18, fontWeight: 600, letterSpacing: "-.02em", marginTop: 2 }}>{v}</div>
             </div>
           ))}
@@ -129,6 +140,32 @@ export default function Portfolio() {
                   </div>
                 );
               })}
+              {realHoldings && demos.length > 0 && (
+                <>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", padding: "16px 0 6px", fontSize: 11, color: "#5A627A" }}>
+                    DEMO BRIDGES <DemoTag what="simulated" title="Prototype simulator positions; not your holdings and not in the totals above." />
+                  </div>
+                  {demos.map((b) => {
+                    const pn = simPnl(b.sim);
+                    return (
+                      <div key={b.id} style={{ display: "grid", gridTemplateColumns: cols, gap: 14, alignItems: "center", padding: "11px 0", borderBottom: "1px solid rgba(15,22,38,.07)", opacity: 0.85 }}>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: "-.02em" }}>{b.eq.t} <span style={{ fontSize: 11, fontWeight: 500, color: "#5A627A" }}>sim</span></div>
+                          <div className="pb-ellipsis" style={{ fontSize: 12, color: "#5A627A" }}>{b.q.ev}</div>
+                        </div>
+                        <span style={num}>{b.sim.shares.toLocaleString("en-US")}</span>
+                        <span style={num}>${b.sim.px.toFixed(2)}</span>
+                        <span style={num}>{fmtMoney(b.sim.shares * b.sim.px)}</span>
+                        <span style={{ ...num, color: upColor(pn) }}>{fmtMoney(pn, true)}</span>
+                        <div style={{ minWidth: 0 }}>
+                          <button type="button" onClick={() => { s.setActive(b.id); router.push("/bridge"); }} style={{ display: "inline-block", padding: "4px 10px", borderRadius: 999, fontSize: 11.5, fontWeight: 600, cursor: "pointer", border: 0, background: "rgba(15,22,38,.06)", color: "#3C4458" }}>Demo bridge</button>
+                          <div className="pb-ellipsis" style={{ fontSize: 11, color: "#5A627A", marginTop: 4 }}>{simCover(b.sim)}% covered (simulated)</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
             </div>
           </div>
           {positions.data && (
@@ -148,7 +185,7 @@ export default function Portfolio() {
                 return (
                   <div key={x.id} role="button" tabIndex={0} onClick={() => { s.setActive(x.id); router.push("/bridge"); }} style={{ cursor: "pointer" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", gap: 12, fontSize: 13 }}>
-                      <span className="pb-ellipsis" style={{ minWidth: 0 }}><span style={{ fontWeight: 600 }}>{x.eq.t}</span> <span style={{ color: "#5A627A" }}>· {x.q.ev}</span></span>
+                      <span className="pb-ellipsis" style={{ minWidth: 0 }}><span style={{ fontWeight: 600 }}>{x.eq.t}</span> <span style={{ color: "#5A627A" }}>· {x.q.ev}</span>{realHoldings && <> <DemoTag what="sim" /></>}</span>
                       <span className="pb-mono" style={{ fontSize: 12, flex: "none", color: upColor(pn) }}>{fmtMoney(pn, true)}</span>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6 }}>

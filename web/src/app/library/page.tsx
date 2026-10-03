@@ -19,7 +19,7 @@ function UsePill({ n, label }: { n: number; label?: string }) {
   );
 }
 
-function RealRow({ r, inUse }: { r: LibRow; inUse: number }) {
+function RealRow({ r, fitted }: { r: LibRow; fitted: boolean }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="pb-row-soft" style={{ borderRadius: 20, transition: "background .2s ease" }}>
@@ -38,7 +38,7 @@ function RealRow({ r, inUse }: { r: LibRow; inUse: number }) {
           <div className="pb-mono" style={{ fontSize: 12, marginTop: 3, lineHeight: 1.4 }}>{r.params.length ? r.params.map((p) => p.name).join(" · ") : "—"}</div>
         </div>
         <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
-          <UsePill n={inUse} />
+          {fitted ? <span title="Picked by POST /pipeline/fit for your last pick; bridges do not take a preset yet"><Tag tone="ai">AI fit · not applied yet</Tag></span> : <UsePill n={0} />}
           <span className="pb-mono" style={{ fontSize: 11, color: "#5A627A" }}>{r.presets.toLocaleString("en-US")} presets</span>
         </div>
       </div>
@@ -73,9 +73,9 @@ export default function Library() {
   const s = useStore();
   const [fam, setFam] = useState<(typeof FAMS)[number]>("All");
   const lib = s.library.status === "ok" ? s.library.data : null;
-  const used = new Map<string, number>();
-  for (const b of s.bridges) if (b.kind === "live" && b.family) used.set(b.family, (used.get(b.family) ?? 0) + 1);
-  if (s.fit?.data?.family && !used.has(s.fit.data.family)) used.set(s.fit.data.family, 0);
+  // Live bridges run the engine's default spec (POST /bridges takes no preset), so no family is counted as in use.
+  // The latest AI fit is marked separately, as a pick that is not applied yet.
+  const fitted = s.fit?.status === "ok" ? s.fit.data?.family ?? null : null;
   const demoBridges = s.bridges.filter((b) => b.kind === "demo").length;
   const rows = lib ? lib.rows.filter((r) => fam === "All" || r.uiFamilies.includes(fam)) : [];
   const demoRows = ALGOS.filter((a) => fam === "All" || a.fam === fam);
@@ -100,7 +100,7 @@ export default function Library() {
         </div>
       </div>
       <Glass style={{ padding: 8 }}>
-        {lib && rows.map((r) => <RealRow key={r.id} r={r} inUse={used.get(r.id) ?? 0} />)}
+        {lib && rows.map((r) => <RealRow key={r.id} r={r} fitted={r.id === fitted} />)}
         {lib && rows.length === 0 && <div style={{ padding: "18px", fontSize: 13, color: "#5A627A" }}>No family in the catalog uses a {fam} block yet.</div>}
         {!lib && demoRows.map((a) => {
           const n = IN_CHAIN.has(a.name) ? demoBridges : 0;

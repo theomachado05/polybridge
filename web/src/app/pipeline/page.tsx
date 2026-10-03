@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { shortlist } from "@/lib/library";
 import { demoSteps, fitSteps, type PipeContext } from "@/lib/pipeline";
-import { defaultPick, useStore } from "@/lib/store";
+import { brokerLabel, defaultPick, feeGateOff, useStore } from "@/lib/store";
 import { DemoTag, OrbDisc, Tag } from "@/components/pb";
 
 const STEP_MS = 1400;
@@ -16,7 +16,8 @@ export default function Pipeline() {
   const [{ q, eq: e }] = useState(() => (s.question && s.equity ? { q: s.question, eq: s.equity } : defaultPick()));
   const inst = s.inst ?? "shares";
   const [step, setStep] = useState(0);
-  const [timedOut, setTimedOut] = useState(false);
+  // Once the fit misses its deadline this run stays on the scripted steps, even if the fit lands later.
+  const [forcedDemo, setForcedDemo] = useState(false);
   const [opening, setOpening] = useState(false);
   const openingRef = useRef(false);
   const { runFit } = s;
@@ -24,13 +25,23 @@ export default function Pipeline() {
   const fit = s.fit && s.fit.key === `${q.id}|${e.t}` ? s.fit : null;
   const fitOk = fit?.status === "ok" && !!fit.data;
   const settled = fit != null && fit.status !== "loading";
-  const mode: "fit" | "demo" | "pending" = fitOk ? "fit" : settled || timedOut ? "demo" : "pending";
+  const mode: "fit" | "demo" | "pending" = forcedDemo ? "demo" : fitOk ? "fit" : settled ? "demo" : "pending";
+  const fitOkRef = useRef(fitOk);
+  useEffect(() => { fitOkRef.current = fitOk; });
 
   useEffect(() => {
     runFit(q, e);
-    const t = setTimeout(() => setTimedOut(true), FIT_WAIT_MS);
+    const t = setTimeout(() => { if (!fitOkRef.current) setForcedDemo(true); }, FIT_WAIT_MS);
     return () => clearTimeout(t);
   }, [runFit, q, e]);
+
+  // Approving starts the engine, which sends orders to the account. That needs a click, unless the user turned
+  // on auto-approve in Profile; a bridge that would run with its fee gate off always waits when the edge guard is on.
+  const real = !!q.real;
+  const gateOff = feeGateOff(q, e);
+  const { guards } = s.settings;
+  const autoOpen = !real || (guards.auto && !(gateOff && guards.edge));
+  const acct = brokerLabel(s.account);
 
   const goBridge = async () => {
     if (openingRef.current) return;
@@ -45,13 +56,14 @@ export default function Pipeline() {
   const done = step >= 6;
   useEffect(() => {
     if (done) {
+      if (!autoOpen) return;
       const t = setTimeout(() => void goRef.current(), STEP_MS);
       return () => clearTimeout(t);
     }
     if (mode === "pending") return;
     const t = setTimeout(() => setStep((n) => Math.min(6, n + 1)), STEP_MS);
     return () => clearTimeout(t);
-  }, [step, done, mode]);
+  }, [step, done, mode, autoOpen]);
 
   const ctx: PipeContext = {
     question: q.q, venues: q.venues, yes: q.yes, vol: q.vol, ticker: e.t, held: e.held || 500,
@@ -65,9 +77,9 @@ export default function Pipeline() {
   return (
     <main className="pb-page" style={{ maxWidth: 820, paddingTop: 30, paddingBottom: 80, display: "flex", flexDirection: "column", alignItems: "center" }}>
       <OrbDisc state={orb} disc={220} orb={170} />
-      <div className="pb-label" style={{ marginTop: 26 }}>{done ? "BRIDGE READY" : `STEP ${Math.min(step + 1, 6)} OF 6`}</div>
+      <div className="pb-label" style={{ marginTop: 26 }}>{done ? (real && !autoOpen ? "WAITING FOR YOUR APPROVAL" : "BRIDGE READY") : `STEP ${Math.min(step + 1, 6)} OF 6`}</div>
       <h2 className="pb-serif pb-balance" style={{ margin: "10px 0 0", fontSize: 40, letterSpacing: "-.015em", fontWeight: 400, textAlign: "center" }}>
-        {done ? `${e.t} is bridged to the market` : mode === "pending" ? "Fitting an algo to the event…" : cur.name + "…"}
+        {done ? (real && !autoOpen ? `Approve the ${e.t} bridge?` : real ? `Opening the ${e.t} bridge` : `${e.t} is bridged to the market`) : mode === "pending" ? "Fitting an algo to the event…" : cur.name + "…"}
       </h2>
       <div style={{ marginTop: 10, minHeight: 20, display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center" }}>
         {mode === "fit" && fit?.data && (
@@ -93,8 +105,24 @@ export default function Pipeline() {
           );
         })}
       </div>
-      <button type="button" onClick={() => void goBridge()} className={`pb-btn ${done ? "pb-btn-primary" : "pb-btn-secondary"}`} style={{ height: 50, padding: "0 24px", marginTop: 22, transition: "all .3s ease", color: done ? "#fff" : "#3C4458" }}>
-        {opening ? "Opening the bridge…" : done ? "Open the live bridge" : "Skip to the bridge"} <span className="pb-arrow">→</span>
+      {done && real && (
+        <div className="pb-glass" style={{ width: "100%", marginTop: 16, padding: "16px 18px", fontSize: 13.5, lineHeight: 1.55, color: "#3C4458", display: "flex", flexDirection: "column", gap: 8 }}>
+          <div>
+            Approving creates a hedge proposal for {(e.held || 500).toLocaleString("en-US")} {e.t} shares{e.held ? "" : " (notional)"} on this market and starts the engine&apos;s default delta-bridge spec.
+            Once it runs, the engine places its orders with <Tag tone={acct.tone} title="GET /account">{acct.name}</Tag> without asking again.
+          </div>
+          {gateOff && (
+            <div style={{ color: "#8A5A00" }}>
+              Fee gate off: there is no {e.px ? "impact estimate" : "quote"} for {e.t}, so the engine cannot price an order against its fees and will trade on probability alone.
+              {guards.edge && " Your “act only when edge beats fees” guardrail is on, so this needs your explicit approval."}
+            </div>
+          )}
+          {guards.auto && !autoOpen && <div style={{ fontSize: 12, color: "#5A627A" }}>Auto-approve is on, but it does not apply while the fee gate is off.</div>}
+          {autoOpen && <div style={{ fontSize: 12, color: "#5A627A" }}>Auto-approve is on (Profile), so the bridge opens by itself.</div>}
+        </div>
+      )}
+      <button type="button" onClick={() => (done ? void goBridge() : setStep(6))} className={`pb-btn ${done ? "pb-btn-primary" : "pb-btn-secondary"}`} style={{ height: 50, padding: "0 24px", marginTop: 22, transition: "all .3s ease", color: done ? "#fff" : "#3C4458" }}>
+        {opening ? "Opening the bridge…" : !done ? (real ? "Skip to approval" : "Skip to the bridge") : real ? (gateOff ? "Approve without the fee gate" : "Approve and open the bridge") : "Open the demo bridge"} <span className="pb-arrow">→</span>
       </button>
     </main>
   );

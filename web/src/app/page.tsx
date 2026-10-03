@@ -6,9 +6,9 @@ import { LOGO } from "@/lib/demo";
 import { useStore } from "@/lib/store";
 
 const CARDS = [
-  { k: "01 · REVERSE THE BRIDGE", t: "The contract is the signal, not the trade", p: "Polymarket and Kalshi order books move seconds before equities react. We read book, volume and σ — and act in the stock." },
-  { k: "02 · AI-COMPOSED ALGOS", t: "1,284 algorithms, chained per event", p: "An impact model sizes the move; a gate, a book reader, a slicer and a router are composed to fit it — and re-tuned every tick." },
-  { k: "03 · YOUR FEES, YOUR TAXES", t: "Acts only when it beats the cost", p: "Every fill is checked against commissions, borrow, lot age and wash-sale rules for your account — then explained in plain words." },
+  { k: "01 · REVERSE THE BRIDGE", t: "The contract is the signal, not the trade", p: "Polymarket and Kalshi put a live probability on the event itself. We read that probability and its σ — and act in the stock you hold. (Our lead-lag case studies do not show the markets moving first; the signal is the probability, not a head start.)" },
+  { k: "02 · AI-COMPOSED ALGOS", t: "1,284 algorithms, chained per event", p: "An impact model sizes the move; the AI picks a compiled family of gates, readers and sizers for the event and tunes its preset on replayed history." },
+  { k: "03 · YOUR FEES, YOUR TAXES", t: "Acts only when it beats the cost", p: "A fee gate holds any order whose expected benefit does not cover its cost, and every decision is explained in plain words. Tax-lot and wash-sale blocks are in the library, not yet on live bridges." },
 ];
 
 export default function Landing() {
@@ -31,11 +31,11 @@ export default function Landing() {
         </div>
         <h1 className="pb-serif pb-balance" style={{ margin: 0, fontSize: "clamp(44px,6vw,80px)", lineHeight: 1.02, letterSpacing: "-.02em", fontWeight: 400, maxWidth: 920 }}>Hedge the headline before it hits your stock.</h1>
         <p className="pb-pretty" style={{ margin: 0, maxWidth: 640, fontSize: 18, lineHeight: 1.5, color: "#3C4458" }}>
-          Prediction markets already price the event. PolyBridge reads that signal, estimates what it does to the equities you hold, and composes a hedge from {count} {presets != null ? "compiled algorithm presets" : "proprietary algorithms"} — fee- and tax-aware, acting only when it must.
+          Prediction markets already price the event. PolyBridge reads that signal, estimates what it does to the equities you hold, and composes a hedge from {count} {presets != null ? "compiled algorithm presets" : "proprietary algorithms"} — fee-aware, acting only when it must.
         </p>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center", marginTop: 6 }}>
           <Btn href="/build" arrow>Build a bridge</Btn>
-          <Btn kind="secondary" onClick={() => { seedDemo(); router.push("/bridge"); }}>Watch a live bridge</Btn>
+          <Btn kind="secondary" onClick={() => { seedDemo(); router.push("/bridge"); }}>Watch a demo bridge</Btn>
         </div>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,280px),1fr))", gap: 16, marginTop: 70 }}>

@@ -5,8 +5,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import {
-  approveProposal, createProposal, getAccount, getEquity, getLibrary, getPortfolio, postFit, startBridge,
-  type AccountOut, type FitOut, type PortfolioOut,
+  approveProposal, createProposal, getAccount, getEquity, getLibrary, getPortfolio, listProposals, postFit, startBridge,
+  type AccountOut, type FitOut, type PortfolioOut, type Proposal,
 } from "./api";
 import { EQ, QUESTIONS, demoImpacts, type EquityPick, type Question } from "./demo";
 import { parseLibrary, type Library } from "./library";
@@ -18,7 +18,15 @@ export interface Settings {
 }
 export type BridgeEntry =
   | { id: string; kind: "demo"; q: Question; eq: EquityPick; inst: string; sim: Sim }
-  | { id: string; kind: "live"; bridgeId: string; q: Question | null; eq: EquityPick | null; inst: string; family: string | null };
+  | {
+      id: string; kind: "live"; bridgeId: string; q: Question | null; eq: EquityPick | null; inst: string;
+      /** The AI fit for this exact pick. Shown as "not applied yet": POST /bridges takes no family or preset,
+       *  so the engine always runs its default delta-bridge spec. */
+      fit: AppliedFit | null;
+      /** $/share per unit of probability sent to the engine; 0 means its fee gate is off. null: unknown (re-attached). */
+      gap: number | null;
+    };
+export interface AppliedFit { family: string; preset_index: number | null }
 
 export interface Remote<T> { status: "loading" | "ok" | "error"; data: T | null; error: string | null }
 export interface FitState extends Remote<FitOut> { key: string }
@@ -62,6 +70,7 @@ interface Store {
   setActive: (id: string) => void;
   addDemoBridge: (q: Question, eq: EquityPick, inst: string) => string;
   seedDemo: () => void;
+  /** Explicit user action only (a click, or the pipeline when settings.guards.auto is on): approves a proposal. */
   openBridge: (q: Question, eq: EquityPick, inst: string) => Promise<string>;
   fit: FitState | null;
   runFit: (q: Question, eq: EquityPick) => void;
@@ -80,8 +89,20 @@ export function useStore(): Store {
 
 const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
-/** Proposal → approval → engine bridge on the real backend (market-event path, contracts.md). */
-async function startRealBridge(q: Question, eq: EquityPick, settings: Settings): Promise<string> {
+/** $/share per unit of probability for the engine's fee gate; 0 (no spot or no impact estimate) turns the gate off. */
+export const gapPerShare = (spot: number | null | undefined, move: number | null | undefined) =>
+  spot && move ? (spot * Math.abs(move)) / 100 : 0;
+
+/** True when a live bridge for this pick would start with the engine's fee gate off (contracts.md). */
+export const feeGateOff = (q: Question, eq: EquityPick) => !!q.real && gapPerShare(eq.px, eq.move) === 0;
+
+const sameMarket = (p: Proposal, m: NonNullable<Question["real"]>) => p.market?.source === m.source && p.market?.id === m.id;
+
+/** Proposal → approval → engine bridge on the real backend (market-event path, contracts.md).
+ *  Reuses an earlier proposal for the same ticker, market and direction instead of creating one per run: an
+ *  approved one (POST /bridges is idempotent per proposal, so this re-attaches to its bridge, or finally starts
+ *  the bridge if an earlier attempt failed after approval), else a pending one, which is approved here. */
+async function startRealBridge(q: Question, eq: EquityPick, settings: Settings): Promise<{ bridgeId: string; gap: number }> {
   const m = q.real;
   if (!m) throw new Error("this market is from the demo set, not the live search");
   if (!eq.direction) throw new Error(`${eq.t} is not in this market's mapping, so the adverse outcome is unknown`);
@@ -89,17 +110,23 @@ async function startRealBridge(q: Question, eq: EquityPick, settings: Settings):
   if (!spot) spot = await getEquity(eq.t).then((c) => c.implied_move?.spot ?? null, () => null);
   const cap = Math.min(1, (parseInt(settings.maxHedge, 10) || 100) / 100);
   const market = { source: m.source, id: m.id, token_id: m.token_id };
-  const prop = await createProposal({ ticker: eq.t, market, direction: eq.direction, shares_held: eq.held || 500, target_coverage: Math.min(0.5, cap) });
-  const ok = prop.status === "approved" ? prop : await approveProposal(prop.id);
-  // $/share per unit of probability; 0 (no spot or no impact estimate) turns the engine's fee gate off (contracts.md).
-  const gap = spot && eq.move ? (spot * Math.abs(eq.move)) / 100 : 0;
+  const mine = (await listProposals().catch(() => [] as Proposal[]))
+    .filter((p) => p.ticker === eq.t && p.family === "hedge" && sameMarket(p, m) && (p.direction ?? "down_on_yes") === eq.direction);
+  const approved = mine.find((p) => p.status === "approved");
+  const pending = mine.find((p) => p.status === "proposed");
+  const ok = approved
+    ?? (pending ? await approveProposal(pending.id) : null)
+    ?? await createProposal({ ticker: eq.t, market, direction: eq.direction, shares_held: eq.held || 500, target_coverage: Math.min(0.5, cap) })
+      .then((prop) => (prop.status === "approved" ? prop : approveProposal(prop.id)));
+  const gap = gapPerShare(spot, eq.move);
   const sources: ("replay" | "live")[] = m.token_id ? ["replay", "live"] : ["replay"];
   let last: unknown = null;
   for (const source of sources) {
-    try { return (await startBridge({ proposal_id: ok.id, source, gap_per_share: gap, direction: eq.direction, market })).bridge_id; }
+    try { return { bridgeId: (await startBridge({ proposal_id: ok.id, source, gap_per_share: gap, direction: eq.direction, market })).bridge_id, gap }; }
     catch (e) { last = e; }
   }
-  throw last instanceof Error ? last : new Error("the backend refused to start a bridge");
+  const why = last instanceof Error ? last.message : "the backend refused to start a bridge";
+  throw new Error(`${why}; proposal ${ok.id} stays approved and is reused on the next try`);
 }
 
 export function StoreProvider({ children }: { children: ReactNode }) {
@@ -118,6 +145,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [portfolio, setPortfolio] = useState<Remote<PortfolioOut>>(LOADING);
   const thinkTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const fitKey = useRef<string | null>(null);
+  const opening = useRef<Map<string, Promise<string>>>(new Map());
   const pathname = usePathname();
 
   useEffect(() => {
@@ -170,19 +198,33 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setBridgeNote(null);
   }, []);
 
-  const openBridge = useCallback(async (q: Question, eq: EquityPick, instId: string) => {
-    try {
-      const bridgeId = await startRealBridge(q, eq, settings);
-      const entry: BridgeEntry = { id: `live:${bridgeId}`, kind: "live", bridgeId, q, eq, inst: instId, family: fit?.data?.family ?? null };
-      setBridges((bs) => (bs.some((b) => b.id === entry.id) ? bs : [...bs, entry]));
-      setActiveId(entry.id);
-      setBridgeNote(null);
-      return entry.id;
-    } catch (e) {
-      setBridgeNote(`No engine bridge on the backend (${errMsg(e)}). This bridge runs the prototype's simulator.`);
-      return addDemoBridge(q, eq, instId);
-    }
-  }, [settings, fit, addDemoBridge]);
+  const openBridge = useCallback((q: Question, eq: EquityPick, instId: string): Promise<string> => {
+    const key = `${q.id}|${eq.t}`;
+    // Reuse a live bridge already open for this market and ticker.
+    const existing = bridges.find((b) => b.kind === "live" && b.q?.id === q.id && b.eq?.t === eq.t);
+    if (existing) { setActiveId(existing.id); setBridgeNote(null); return Promise.resolve(existing.id); }
+    const inflight = opening.current.get(key);
+    if (inflight) return inflight;
+    const run = (async () => {
+      try {
+        if (q.real && instId !== "shares") throw new Error("the engine runs only the dynamic short-shares hedge; option and contract hedges are demo-only");
+        const { bridgeId, gap } = await startRealBridge(q, eq, settings);
+        const f = fit && fit.key === key && fit.status === "ok" && fit.data?.family ? { family: fit.data.family, preset_index: fit.data.preset_index ?? null } : null;
+        const entry: BridgeEntry = { id: `live:${bridgeId}`, kind: "live", bridgeId, q, eq, inst: instId, fit: f, gap };
+        setBridges((bs) => (bs.some((b) => b.id === entry.id) ? bs : [...bs, entry]));
+        setActiveId(entry.id);
+        setBridgeNote(null);
+        return entry.id;
+      } catch (e) {
+        setBridgeNote(`No engine bridge on the backend (${errMsg(e)}). This bridge runs the prototype's simulator.`);
+        return addDemoBridge(q, eq, instId);
+      } finally {
+        opening.current.delete(key);
+      }
+    })();
+    opening.current.set(key, run);
+    return run;
+  }, [bridges, settings, fit, addDemoBridge]);
 
   const runFit = useCallback((q: Question, eq: EquityPick) => {
     const key = `${q.id}|${eq.t}`;
@@ -194,7 +236,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       question: q.q, ticker: eq.t, direction: eq.direction ?? (eq.move < 0 ? "down_on_yes" : "up_on_yes"), shares_held: eq.held || 500,
     }).then(
       (data) => { if (fitKey.current === key) setFit({ key, status: "ok", data, error: null }); },
-      (e) => { if (fitKey.current === key) setFit({ key, status: "error", data: null, error: errMsg(e) }); },
+      (e) => {
+        if (fitKey.current !== key) return;
+        fitKey.current = null; // let a later visit retry this pick
+        setFit({ key, status: "error", data: null, error: errMsg(e) });
+      },
     );
   }, []);
 

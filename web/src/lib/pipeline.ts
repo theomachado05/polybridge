@@ -36,7 +36,7 @@ export function fitSteps(fit: FitOut, c: PipeContext): PipeStep[] {
     { key: "history", name: "Loading price history", orb: "working", text: history },
     { key: "tune", name: "Tuning presets on replay", orb: "searching", text: fit.family ? `${fam} preset #${fit.preset_index ?? 0} · ${scoreLabel(String(fit.division))} ${fmtScore(fit.score, String(fit.division))} · ${fmtParams(fit.params)}.${alts.length ? ` Runners-up: ${alts.slice(0, 3).map((a) => `${prettyId(a.family)} ${fmtScore(a.score ?? null, String(fit.division))}`).join(", ")}.` : ""}` : "Nothing to tune." },
     { key: "explain", name: "Explaining the fit", orb: "composing", text: fit.rationale || "No rationale returned." },
-    { key: "ready", name: "Bridge ready", orb: "listening", text: `${c.ticker} → ${fam}. Next: a proposal you approve, then the engine runs it on the bridge.` },
+    { key: "ready", name: "Ready for your approval", orb: "listening", text: `AI fit for ${c.ticker}: ${fam}${fit.family ? " (not applied yet: bridges run the engine's default delta-bridge spec until they accept a preset)" : ""}. Next: you approve a proposal, then the engine starts.` },
   ];
 }
 
@@ -50,6 +50,6 @@ export function demoSteps(c: PipeContext): PipeStep[] {
       : `Revenue ${c.rev == null ? "n/a" : fmtPct(c.rev)}, brand ${c.brand == null ? "n/a" : fmtPct(c.brand)} → expected move on YES ${fmtPct(c.move)} (confidence 0.71). ${c.why}` },
     { key: "tune", name: "Searching algo library", orb: "searching", text: c.real ? "Algo fit endpoint unavailable, so no presets were scored; the engine's default delta-bridge runs." : "1,284 algorithms scored on σ regime, venue latency, fee drag and tax fit. 61 pass; 6 compose." },
     { key: "explain", name: "Composing the chain", orb: "composing", text: c.real ? "Staleness → Sigma gate → No-trade band → Fee gate → Delta-bridge sizer → Position cap (hedgecore Engine)." : "Sigma Gate → Book-Imbalance Reader → Delta-Bridge v3 → Vol-Adaptive Slicer / Meridian TWAP → Tax-Lot Optimizer → Fee-Aware Router." },
-    { key: "ready", name: c.real ? "Ready to bridge" : "Backtesting on comps", orb: "listening", text: c.real ? `Next: a proposal for ${c.ticker}, approved, then the engine runs on the market's live feed (or a replay).` : `NYC LL18 and Barcelona 2028 ban: this chain would have captured 71% of ${c.ticker}'s event drawdown at 0.09% cost.` },
+    { key: "ready", name: c.real ? "Ready for your approval" : "Backtesting on comps", orb: "listening", text: c.real ? `Next: you approve a proposal for ${c.ticker}; then the engine's default delta-bridge spec runs on the market's live feed (or a replay).` : `NYC LL18 and Barcelona 2028 ban: this chain would have captured 71% of ${c.ticker}'s event drawdown at 0.09% cost.` },
   ];
 }

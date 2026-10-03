@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { getEquity, mapEvent, searchMarkets, type Holding, type MapOut } from "@/lib/api";
-import { EQ, INSTRUMENTS, QUESTIONS, demoImpacts, questionFromMarket, type EquityPick, type Impact, type Question } from "@/lib/demo";
+import { EQ, INSTRUMENTS, QUESTIONS, REAL_INSTRUMENTS, demoImpacts, questionFromMarket, type EquityPick, type Impact, type Question } from "@/lib/demo";
 import { fmtPct, prettyId } from "@/lib/fmt";
 import { useAsync } from "@/lib/hooks";
 import { useStore } from "@/lib/store";
@@ -121,7 +121,9 @@ export default function Build() {
   };
 
   // ---- step 3 rows
-  const instruments = e ? INSTRUMENTS(e.px ?? EQ[e.t]?.px ?? 100, settings.account) : [];
+  // Real markets: only the hedge the engine actually runs, priced from a real quote or not at all.
+  // Sample markets: the prototype's menu (sample prices from the demo equity table), labelled as such.
+  const instruments = !e ? [] : real ? REAL_INSTRUMENTS(e.px) : INSTRUMENTS(e.px ?? EQ[e.t]?.px ?? 100, settings.account);
   const chosen = instruments.find((i) => i.id === inst) ?? null;
   const ilist = q && e && !inst && ql ? instruments.filter((i) => (i.name + " " + i.kind + " " + i.phrase).toLowerCase().includes(ql)) : instruments;
 
@@ -157,7 +159,9 @@ export default function Build() {
     ? (real ? `You hold ${e.held.toLocaleString("en-US")} shares of ${e.t}. ` : `You hold ${e.held.toLocaleString("en-US")} shares of ${e.t} across three lots, two of them long-term. `)
     : `You don’t hold ${e.t} yet, so I’ll size the hedge to a 500-share notional. `)
     + (e.move ? `${real ? "The mapping" : "Delta-Bridge"} expects ${fmtPct(e.move)} on YES${e.why ? ": " + e.why : "."} How should I hedge it?` : `I don’t have an impact estimate for ${e.t} on this market, so the engine can’t size from it yet. How should I hedge it?`);
-  const ai4 = chosen ? `${chosen.fit} Next I’ll connect your brokerage, then compose the chain from the algo library and tune it to your fees and ${settings.rate} tax rate.` : "";
+  const ai4 = !chosen ? "" : real
+    ? `${chosen.fit} Next I’ll check where orders go, then fit an algo family to this event on its price history. You approve before anything trades.`
+    : `${chosen.fit} Next I’ll connect your brokerage, then compose the chain from the algo library and tune it to your fees and ${settings.rate} tax rate.`;
   const thinkingText = !q ? "Reading the order books…" : !e ? `Mapping exposure across ${real ? (map.data?.items.length ?? "the") : 23} equities…` : !inst ? `Pricing hedges for your ${settings.account} account…` : "Checking fees and lot ages…";
   const busy = thinking || (step === 2 && real && map.loading);
 
@@ -257,6 +261,11 @@ export default function Build() {
             <User text={`Protect ${e.t}.`} onClick={toStep2} />
             {!(busy && !inst) && (
               <Ai orb="composing" text={ai3}>
+                {step === 3 && !inst && !busy && (
+                  <div style={{ marginTop: 8, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", fontSize: 12, color: "#5A627A" }}>
+                    {real ? "Option and contract hedges are demo-only for now; pick a sample market to see them on the simulator." : <DemoTag what="sample hedge menu" title="Strikes, costs and tax notes are the prototype's illustrative numbers, not quotes." />}
+                  </div>
+                )}
                 {step === 3 && !inst && !busy && (
                   <div className="pb-glass" style={optsBox}>
                     {ilist.map((i) => (
