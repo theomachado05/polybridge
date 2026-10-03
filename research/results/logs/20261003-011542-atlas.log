@@ -1,0 +1,206 @@
+[      0s] window 2024-01-01 -> 2025-12-31; last completed session 2026-10-02
+[      0s] 119 tags
+atlas placebo: 300 events -> 276 priced (event, bucket) pairs; 24 drops
+[      4s] placebo done
+[      4s] [1/119] abs_distribution_failure: n_events=0
+[      5s] [2/119] abs_structural_change: n_events=0
+accounting_error_correction: 1 events -> 1 priced (event, bucket) pairs; 0 drops
+[      7s] [3/119] accounting_error_correction: n_events=1
+acquisition_agreement: 15 events -> 14 priced (event, bucket) pairs; 1 drops
+[     12s] [4/119] acquisition_agreement: n_events=14
+acquisition_completion: 15 events -> 14 priced (event, bucket) pairs; 1 drops
+[     16s] [5/119] acquisition_completion: n_events=14
+acquisition_consideration_shares: 15 events -> 13 priced (event, bucket) pairs; 2 drops
+[     21s] [6/119] acquisition_consideration_shares: n_events=13
+activist_investor_campaign: 2 events -> 2 priced (event, bucket) pairs; 0 drops
+[     22s] [7/119] activist_investor_campaign: n_events=2
+annual_earnings: 11 events -> 11 priced (event, bucket) pairs; 0 drops
+[     25s] [8/119] annual_earnings: n_events=11
+annual_meeting_results: 15 events -> 14 priced (event, bucket) pairs; 1 drops
+[     30s] [9/119] annual_meeting_results: n_events=14
+asset_impairment: 12 events -> 12 priced (event, bucket) pairs; 0 drops
+[     33s] [10/119] asset_impairment: n_events=12
+asset_purchase_or_sale: 1 events -> 1 priced (event, bucket) pairs; 0 drops
+[     34s] [11/119] asset_purchase_or_sale: n_events=1
+[     34s] [12/119] audit_opinion_withdrawal: n_events=0
+[     34s] [13/119] auditor_disagreement: n_events=0
+[     35s] [14/119] auditor_dismissal: n_events=0
+[     35s] [15/119] auditor_resignation: n_events=0
+[     35s] [16/119] bankruptcy_emergence: n_events=0
+benefit_plan_blackout: 4 events -> 3 priced (event, bucket) pairs; 1 drops
+[     36s] [17/119] benefit_plan_blackout: n_events=3
+business_line_exit: 11 events -> 11 priced (event, bucket) pairs; 0 drops
+[     38s] [18/119] business_line_exit: n_events=11
+business_update: 15 events -> 14 priced (event, bucket) pairs; 1 drops
+[     42s] [19/119] business_update: n_events=14
+bylaw_amendment: 15 events -> 15 priced (event, bucket) pairs; 0 drops
+[     46s] [20/119] bylaw_amendment: n_events=15
+capital_allocation_update: 8 events -> 5 priced (event, bucket) pairs; 3 drops
+[     48s] [21/119] capital_allocation_update: n_events=5
+ceo_appointment: 15 events -> 13 priced (event, bucket) pairs; 2 drops
+[     51s] [22/119] ceo_appointment: n_events=13
+ceo_departure: 15 events -> 14 priced (event, bucket) pairs; 1 drops
+[     54s] [23/119] ceo_departure: n_events=14
+cfo_appointment: 15 events -> 13 priced (event, bucket) pairs; 2 drops
+[     59s] [24/119] cfo_appointment: n_events=13
+cfo_departure: 15 events -> 15 priced (event, bucket) pairs; 0 drops
+[     62s] [25/119] cfo_departure: n_events=15
+charter_amendment: 15 events -> 14 priced (event, bucket) pairs; 1 drops
+[     66s] [26/119] charter_amendment: n_events=14
+[     66s] [27/119] class_action_filing: n_events=0
+clinical_trial_results: 1 events -> 1 priced (event, bucket) pairs; 0 drops
+[     67s] [28/119] clinical_trial_results: n_events=1
+[     67s] [29/119] code_of_ethics_change: n_events=0
+control_acquisition: 2 events -> 2 priced (event, bucket) pairs; 0 drops
+[     70s] [30/119] control_acquisition: n_events=2
+control_disposition: 6 events -> 6 priced (event, bucket) pairs; 0 drops
+[     72s] [31/119] control_disposition: n_events=6
+[     73s] [32/119] covenant_violation: n_events=0
+credit_facility: 15 events -> 15 priced (event, bucket) pairs; 0 drops
+[     77s] [33/119] credit_facility: n_events=15
+credit_facility_draw: 3 events -> 3 priced (event, bucket) pairs; 0 drops
+[     80s] [34/119] credit_facility_draw: n_events=3
+[     80s] [35/119] credit_rating_change: n_events=0
+cybersecurity_incident: 4 events -> 4 priced (event, bucket) pairs; 0 drops
+[     82s] [36/119] cybersecurity_incident: n_events=4
+[     82s] [37/119] deal_breach_default: n_events=0
+deal_termination: 15 events -> 15 priced (event, bucket) pairs; 0 drops
+[     85s] [38/119] deal_termination: n_events=15
+deal_withdrawal: 1 events -> 1 priced (event, bucket) pairs; 0 drops
+[     86s] [39/119] deal_withdrawal: n_events=1
+[     87s] [40/119] debt_acceleration: n_events=0
+debt_issuance: 15 events -> 14 priced (event, bucket) pairs; 1 drops
+[     92s] [41/119] debt_issuance: n_events=14
+debt_retirement: 15 events -> 13 priced (event, bucket) pairs; 2 drops
+[     95s] [42/119] debt_retirement: n_events=13
+[     96s] [43/119] delisting_determination: n_events=0
+director_appointment: 15 events -> 13 priced (event, bucket) pairs; 2 drops
+[    101s] [44/119] director_appointment: n_events=13
+director_departure: 15 events -> 13 priced (event, bucket) pairs; 2 drops
+[    106s] [45/119] director_departure: n_events=13
+[    106s] [46/119] director_nomination: n_events=0
+divestiture_agreement: 11 events -> 11 priced (event, bucket) pairs; 0 drops
+[    108s] [47/119] divestiture_agreement: n_events=11
+divestiture_completion: 4 events -> 2 priced (event, bucket) pairs; 2 drops
+[    109s] [48/119] divestiture_completion: n_events=2
+dividend_declaration: 15 events -> 15 priced (event, bucket) pairs; 0 drops
+[    114s] [49/119] dividend_declaration: n_events=15
+dividend_policy_change: 7 events -> 7 priced (event, bucket) pairs; 0 drops
+[    116s] [50/119] dividend_policy_change: n_events=7
+equity_compensation_grant: 15 events -> 12 priced (event, bucket) pairs; 3 drops
+[    121s] [51/119] equity_compensation_grant: n_events=12
+[    121s] [52/119] esg_sustainability_commitment: n_events=0
+executive_compensation_change: 15 events -> 14 priced (event, bucket) pairs; 1 drops
+[    127s] [53/119] executive_compensation_change: n_events=14
+executive_officer_appointment: 15 events -> 12 priced (event, bucket) pairs; 3 drops
+[    131s] [54/119] executive_officer_appointment: n_events=12
+executive_officer_departure: 15 events -> 14 priced (event, bucket) pairs; 1 drops
+[    135s] [55/119] executive_officer_departure: n_events=14
+facility_closure: 4 events -> 4 priced (event, bucket) pairs; 0 drops
+[    137s] [56/119] facility_closure: n_events=4
+financial_restatement: 1 events -> 1 priced (event, bucket) pairs; 0 drops
+[    138s] [57/119] financial_restatement: n_events=1
+fiscal_year_change: 1 events -> 1 priced (event, bucket) pairs; 0 drops
+[    139s] [58/119] fiscal_year_change: n_events=1
+[    140s] [59/119] going_concern: n_events=0
+[    140s] [60/119] going_private_transaction: n_events=0
+goodwill_impairment: 3 events -> 3 priced (event, bucket) pairs; 0 drops
+[    141s] [61/119] goodwill_impairment: n_events=3
+guarantee_or_letter_of_credit: 15 events -> 13 priced (event, bucket) pairs; 2 drops
+[    145s] [62/119] guarantee_or_letter_of_credit: n_events=13
+guidance_issuance_or_update: 15 events -> 12 priced (event, bucket) pairs; 3 drops
+[    148s] [63/119] guidance_issuance_or_update: n_events=12
+[    148s] [64/119] guidance_withdrawal: n_events=0
+[    149s] [65/119] internal_control_weakness: n_events=0
+investment_impairment: 2 events -> 2 priced (event, bucket) pairs; 0 drops
+[    150s] [66/119] investment_impairment: n_events=2
+investor_presentation: 15 events -> 15 priced (event, bucket) pairs; 0 drops
+[    154s] [67/119] investor_presentation: n_events=15
+[    154s] [68/119] involuntary_bankruptcy: n_events=0
+joint_venture_agreement: 6 events -> 6 priced (event, bucket) pairs; 0 drops
+[    156s] [69/119] joint_venture_agreement: n_events=6
+[    157s] [70/119] lease_agreement: n_events=0
+licensing_agreement: 2 events -> 2 priced (event, bucket) pairs; 0 drops
+[    158s] [71/119] licensing_agreement: n_events=2
+[    159s] [72/119] listing_compliance_regained: n_events=0
+[    159s] [73/119] listing_deficiency_notice: n_events=0
+listing_transfer: 3 events -> 2 priced (event, bucket) pairs; 1 drops
+[    161s] [74/119] listing_transfer: n_events=2
+material_charge_or_gain: 15 events -> 15 priced (event, bucket) pairs; 0 drops
+[    165s] [75/119] material_charge_or_gain: n_events=15
+material_litigation: 11 events -> 11 priced (event, bucket) pairs; 0 drops
+[    168s] [76/119] material_litigation: n_events=11
+merger_agreement: 15 events -> 14 priced (event, bucket) pairs; 1 drops
+[    171s] [77/119] merger_agreement: n_events=14
+merger_completion: 9 events -> 9 priced (event, bucket) pairs; 0 drops
+[    173s] [78/119] merger_completion: n_events=9
+[    173s] [79/119] mine_closure: n_events=0
+mine_safety_violation: 1 events -> 0 priced (event, bucket) pairs; 1 drops
+[    174s] [80/119] mine_safety_violation: n_events=0
+[    175s] [81/119] natural_disaster_impact: n_events=0
+[    176s] [82/119] nav_per_share: n_events=0
+new_auditor_engagement: 3 events -> 3 priced (event, bucket) pairs; 0 drops
+[    177s] [83/119] new_auditor_engagement: n_events=3
+[    177s] [84/119] off_balance_sheet_arrangement: n_events=0
+partnership_or_collaboration: 3 events -> 3 priced (event, bucket) pairs; 0 drops
+[    179s] [85/119] partnership_or_collaboration: n_events=3
+[    179s] [86/119] patent_milestone: n_events=0
+[    180s] [87/119] payment_default: n_events=0
+[    180s] [88/119] pipe_transaction: n_events=0
+preferred_stock_modification: 15 events -> 13 priced (event, bucket) pairs; 2 drops
+[    183s] [89/119] preferred_stock_modification: n_events=13
+preliminary_results: 15 events -> 13 priced (event, bucket) pairs; 2 drops
+[    186s] [90/119] preliminary_results: n_events=13
+private_placement: 4 events -> 4 priced (event, bucket) pairs; 0 drops
+[    189s] [91/119] private_placement: n_events=4
+product_or_service_launch: 3 events -> 2 priced (event, bucket) pairs; 1 drops
+[    190s] [92/119] product_or_service_launch: n_events=2
+public_offering: 15 events -> 15 priced (event, bucket) pairs; 0 drops
+[    194s] [93/119] public_offering: n_events=15
+quarterly_earnings: 15 events -> 15 priced (event, bucket) pairs; 0 drops
+[    198s] [94/119] quarterly_earnings: n_events=15
+[    198s] [95/119] rating_downgrade_trigger: n_events=0
+[    199s] [96/119] receivership_appointment: n_events=0
+regulatory_decision: 6 events -> 5 priced (event, bucket) pairs; 1 drops
+[    201s] [97/119] regulatory_decision: n_events=5
+regulatory_investigation: 11 events -> 11 priced (event, bucket) pairs; 0 drops
+[    203s] [98/119] regulatory_investigation: n_events=11
+restructuring_plan: 14 events -> 14 priced (event, bucket) pairs; 0 drops
+[    204s] [99/119] restructuring_plan: n_events=14
+[    204s] [100/119] reverse_merger: n_events=0
+[    204s] [101/119] rights_offering: n_events=0
+settlement_agreement: 15 events -> 13 priced (event, bucket) pairs; 2 drops
+[    208s] [102/119] settlement_agreement: n_events=13
+share_repurchase_program: 15 events -> 13 priced (event, bucket) pairs; 2 drops
+[    211s] [103/119] share_repurchase_program: n_events=13
+[    212s] [104/119] shareholder_meeting_notice: n_events=0
+shareholder_proposal_outcome: 15 events -> 15 priced (event, bucket) pairs; 0 drops
+[    215s] [105/119] shareholder_proposal_outcome: n_events=15
+[    215s] [106/119] shareholder_rights_plan: n_events=0
+significant_contract_award: 3 events -> 3 priced (event, bucket) pairs; 0 drops
+[    217s] [107/119] significant_contract_award: n_events=3
+special_meeting_results: 5 events -> 5 priced (event, bucket) pairs; 0 drops
+[    219s] [108/119] special_meeting_results: n_events=5
+spinoff_completion: 10 events -> 4 priced (event, bucket) pairs; 6 drops
+[    221s] [109/119] spinoff_completion: n_events=4
+stock_split: 11 events -> 11 priced (event, bucket) pairs; 0 drops
+[    224s] [110/119] stock_split: n_events=11
+strategic_initiative: 15 events -> 14 priced (event, bucket) pairs; 1 drops
+[    227s] [111/119] strategic_initiative: n_events=14
+supply_or_distribution_agreement: 2 events -> 2 priced (event, bucket) pairs; 0 drops
+[    229s] [112/119] supply_or_distribution_agreement: n_events=2
+tender_offer: 13 events -> 12 priced (event, bucket) pairs; 1 drops
+[    231s] [113/119] tender_offer: n_events=12
+trading_plan_10b5_1: 10 events -> 10 priced (event, bucket) pairs; 0 drops
+[    234s] [114/119] trading_plan_10b5_1: n_events=10
+underwriting_agreement: 15 events -> 13 priced (event, bucket) pairs; 2 drops
+[    240s] [115/119] underwriting_agreement: n_events=13
+voluntary_bankruptcy: 2 events -> 2 priced (event, bucket) pairs; 0 drops
+[    242s] [116/119] voluntary_bankruptcy: n_events=2
+voluntary_delisting: 1 events -> 1 priced (event, bucket) pairs; 0 drops
+[    242s] [117/119] voluntary_delisting: n_events=1
+warrant_or_conversion: 2 events -> 2 priced (event, bucket) pairs; 0 drops
+[    243s] [118/119] warrant_or_conversion: n_events=2
+workforce_reduction: 11 events -> 11 priced (event, bucket) pairs; 0 drops
+[    244s] [119/119] workforce_reduction: n_events=11
+[    244s] done: 1785 rows, 119 tags

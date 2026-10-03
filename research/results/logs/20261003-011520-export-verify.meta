@@ -1,0 +1,7 @@
+run: export_in_sample.py (verify bug fix e26fad1 changes no in-sample result)
+start: 2026-10-03T01:15:20-04:00
+git: e26fad18c52fc6080d57e225d798f50d0ed42c46
+exit: 0
+end: 2026-10-03T01:15:31-04:00
+duration_s: 11
+changed result files vs HEAD: 0

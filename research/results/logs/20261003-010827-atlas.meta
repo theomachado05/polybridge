@@ -1,0 +1,8 @@
+run: export_atlas.py (EXPLORATORY, HYPOTHESIS §5)
+start: 2026-10-03T01:08:27-04:00
+git: ffaa79a2e7293f5853dbde2513e5c0223b12fbb8 on p/demo
+cache files before:     8709
+exit: 1
+end: 2026-10-03T01:09:03-04:00
+duration_s: 35
+cache files after:    12891

@@ -1,0 +1,8 @@
+run: export_atlas.py (EXPLORATORY, HYPOTHESIS §5) — attempt 2 after bug fix e26fad1
+start: 2026-10-03T01:15:42-04:00
+git: e26fad18c52fc6080d57e225d798f50d0ed42c46
+cache files before:    12891
+exit: 0
+end: 2026-10-03T01:19:47-04:00
+duration_s: 244
+cache files after:    21674
