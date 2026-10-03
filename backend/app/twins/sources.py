@@ -15,6 +15,13 @@ from typing import Any, Awaitable, Callable
 import httpx
 
 GAMMA_MARKETS = "https://gamma-api.polymarket.com/markets"
+GAMMA_SEARCH = "https://gamma-api.polymarket.com/public-search"
+# Topics Kalshi lists heavily and a hedger cares about (the live search finds markets outside the volume top list).
+SEARCH_TERMS = ("fed rate decision", "fed funds rate", "cpi inflation", "recession", "unemployment rate", "jobs report",
+                "gdp", "bitcoin price", "ethereum price", "solana price", "s&p 500", "nasdaq", "gold price",
+                "oil price", "senate control", "house control", "balance of power", "government shutdown",
+                "tariff", "supreme court", "debt ceiling", "treasury yield", "mortgage rate", "gas prices",
+                "ipo", "trump approval", "president 2028", "nobel", "hurricane", "ai model")
 KALSHI_EVENTS = "https://api.elections.kalshi.com/trade-api/v2/events"
 SKIP_CATEGORIES = frozenset({"Sports", "Entertainment", "Mentions"})
 DATA = Path(__file__).resolve().parents[1] / "data"
@@ -85,7 +92,7 @@ def universe_ids(data_dir: Path = DATA) -> list[str]:
 
 
 async def fetch_polymarket(http: httpx.AsyncClient, ids: list[str] | None = None, top_n: int = 2000,
-                           page: int = 500, log: Callable[[str], None] = lambda s: None) -> list[dict]:
+                           page: int = 100, search_terms: tuple[str, ...] = SEARCH_TERMS, log: Callable[[str], None] = lambda s: None) -> list[dict]:
     """Slim gamma markets: first the given ``ids`` (batched), then the top ``top_n`` active ones by 24 h volume."""
     out: dict[str, dict] = {}
     ids = ids or []
@@ -116,7 +123,22 @@ async def fetch_polymarket(http: httpx.AsyncClient, ids: list[str] | None = None
                 got += 1
         if len(rows) < page:
             break
-    log(f"polymarket: {len(out)} markets ({len(ids)} from the bundled universe, {got} from the live top list)")
+    found = 0
+    for term in search_terms:
+        try:
+            j = await _get_json(http, GAMMA_SEARCH, {"q": term, "limit_per_type": 25})
+        except Exception as e:
+            log(f"polymarket search {term!r} failed ({type(e).__name__})")
+            continue
+        for ev in (j or {}).get("events") or []:
+            for m in ev.get("markets") or []:
+                m = {**m, "events": m.get("events") or [ev]}
+                s = slim_polymarket(m)
+                if s and s["id"] not in out:
+                    out[s["id"]] = s
+                    found += 1
+    log(f"polymarket: {len(out)} markets ({len(ids)} bundled-universe ids, {got} top-by-volume, {found} new from "
+        f"{len(search_terms)} live searches)")
     return list(out.values())
 
 

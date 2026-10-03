@@ -27,7 +27,7 @@ under up down above below more less higher lower""".split())
 # direction vocabulary -> class. Multi-word phrases are replaced before tokenising.
 UP_WORDS = ("at or above", "or above", "or more", "or higher", "at least", "greater than or equal", "above", "over",
             "exceed", "exceeds", "more than", "greater than", "higher than", "increase", "increases", "raise",
-            "raises", "hike", "hikes", "rise", "rises", "rises above", "surpass", "surpasses", "top", "tops")
+            "raises", "hike", "hikes", "rise", "rises", "rises above", "surpass", "surpasses")
 DOWN_WORDS = ("at or below", "or below", "or less", "or lower", "at most", "less than or equal", "below", "under",
               "less than", "fewer than", "lower than", "decrease", "decreases", "cut", "cuts", "drop", "drops",
               "fall", "falls", "decline", "declines")
@@ -73,7 +73,7 @@ SENTENCE_STARTERS = frozenset({"will", "who", "what", "which", "how", "does", "d
 _SYN = {"democratic": "dem", "democrat": "dem", "democrats": "dem", "republican": "rep", "republicans": "rep",
         "gop": "rep", "u.s.": "us", "u.s": "us", "usa": "us", "america": "us", "american": "us", "u.s.a.": "us",
         "rates": "rate", "elections": "election", "senators": "senate", "midterms": "midterm", "bps": "bp",
-        "federal": "fed", "reserve": "reserve"}
+        "federal": "fed", "reserve": "reserve", "presidency": "president", "presidential": "president"}
 
 _DATE_FULL = re.compile(
     r"\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|"
@@ -107,7 +107,9 @@ class Claim:
     negated: bool = False
     sources: frozenset[str] = frozenset()
     price_like: bool = False
+    clock: frozenset[str] = frozenset()   # snapshot times (ET, HH:MM) named in the resolution text
     rules_tokens: frozenset[str] = frozenset()
+    cond_entities: frozenset[str] = frozenset()  # proper nouns in the opening of the resolution text (the condition)
 
 
 def _num(x) -> float | None:
@@ -199,6 +201,15 @@ def extract_numbers(text: str) -> tuple[set[tuple[float, str]], set[int]]:
     return nums, years
 
 
+def stem(w: str) -> str:
+    """Crude stemmer, enough to equate announce/announces/announced/announcement and plurals."""
+    for suf in ("ement", "ment", "ing", "ed", "es", "s"):
+        if len(w) > len(suf) + 3 and w.endswith(suf) and not (suf == "s" and w.endswith("ss")):
+            w = w[: -len(suf)]
+            break
+    return w[:-1] if len(w) > 4 and w.endswith("e") else w
+
+
 def _tokens(text: str) -> set[str]:
     t = text.lower().replace("’", "'")
     t = re.sub(r"\bu\.s\.a?\.?", "us", t)
@@ -209,9 +220,7 @@ def _tokens(text: str) -> set[str]:
         w = _SYN.get(w, w)
         if len(w) < 2 or w in STOPWORDS or w in MONTHS:
             continue
-        if w.endswith("s") and len(w) > 4 and not w.endswith("ss"):
-            w = w[:-1]
-        out.add(w)
+        out.add(stem(w))
     return out
 
 
@@ -228,10 +237,33 @@ def _entities(question: str) -> set[str]:
             continue
         if lw in MONTHS or lw in STOPWORDS:
             continue
-        lw = _SYN.get(lw, lw)
-        if lw.endswith("s") and len(lw) > 4 and not lw.endswith("ss"):
-            lw = lw[:-1]
-        out.add(lw)
+        out.add(stem(_SYN.get(lw, lw)))
+    return out
+
+
+_GENERIC_CAPS = frozenset({"this", "market", "yes", "no", "otherwise", "if", "for", "the", "et", "est", "edt", "us",
+                           "utc", "pm", "am", "resolution", "contract", "issuance", "each", "any", "an", "a", "in",
+                           "on", "at", "by", "after", "before", "only", "note", "tie", "ties"})
+
+
+def _cond_entities(text: str) -> set[str]:
+    """Proper nouns and tickers in the condition sentence(s) of a resolution text, minus boilerplate capitals."""
+    # First sentence only; "U.S." must not split into "U" and "S".
+    text = re.sub(r"\bU\.S\.A?\.?", "US", text)
+    m = re.search(r"(?<=[a-z0-9\"”)])\.\s+(?=[A-Z])|\n", text)
+    words = re.findall(r"[A-Za-z][A-Za-z0-9&\-']*|\S", text[: m.start()] if m else text)
+    out = set()
+    for i, w in enumerate(words):
+        if not w[0].isalpha() or not (w[0].isupper() or w.isupper()) or i == 0:
+            continue
+        lw = w.lower().replace("'s", "")
+        if lw in _GENERIC_CAPS or lw in STOPWORDS or lw in MONTHS or len(lw) < 3:
+            continue
+        run = ((i > 0 and words[i - 1][:1].isupper() and words[i - 1].lower() not in _GENERIC_CAPS)
+               or (i + 1 < len(words) and words[i + 1][:1].isupper() and words[i + 1].lower() not in _GENERIC_CAPS))
+        if run and not w.isupper():  # a multi-word proper name ("Initial Public Offering") is not judged word by word
+            continue
+        out.add(stem(_SYN.get(lw, lw)))
     return out
 
 
@@ -262,6 +294,22 @@ def _direction(question: str, strike_type: str | None = None) -> tuple[set[str],
     return dirs, inclusive
 
 
+_CLOCK = re.compile(r"\b(\d{1,2})(?::(\d{2}))?\s*([ap])\.?m\.?\s*\(?(?:et|est|edt|eastern)\b", re.I)
+
+
+def clock_times(text: str) -> set[str]:
+    """Snapshot times written in ET ("12:00 PM ET" -> "12:00") as HH:MM. The end-of-day deadline phrase
+    ("11:59 PM ET") is a deadline, not a snapshot, and is left out."""
+    out = set()
+    for m in _CLOCK.finditer(text):
+        h, mi = int(m.group(1)) % 12, int(m.group(2) or 0)
+        if m.group(3).lower() == "p":
+            h += 12
+        if h < 24 and mi < 60 and (h, mi) != (23, 59):
+            out.add(f"{h:02d}:{mi:02d}")
+    return out
+
+
 def _sources(text: str) -> set[str]:
     return {k for k, p in SOURCE_PATTERNS.items() if p.search(text)}
 
@@ -273,9 +321,14 @@ def _build(venue: str, id_: str, question: str, rules: str, deadline: date | Non
     nums, years = extract_numbers(rest)
     nums |= extra_numbers or set()
     dirs, inclusive = _direction(question, strike_type)
-    q_tokens = _tokens(rest)
+    # comparison symbols are content ("Cut >25bps" is not "Cut 25bps"): spell them so they survive tokenising
+    spelled = re.sub(r"[≥]|>=", " gte ", rest)
+    spelled = re.sub(r"[≤]|<=", " lte ", spelled)
+    spelled = re.sub(r">", " gt ", spelled)
+    spelled = re.sub(r"<", " lt ", spelled)
+    q_tokens = _tokens(spelled)
     # direction/negation vocabulary is compared separately, not as content
-    dir_vocab = {w for ws in (UP_WORDS, DOWN_WORDS, FLAT_WORDS, INCLUSIVE) for p in ws for w in p.split()}
+    dir_vocab = {stem(w) for ws in (UP_WORDS, DOWN_WORDS, FLAT_WORDS, INCLUSIVE) for p in ws for w in p.split()}
     q_tokens = {t for t in q_tokens if t not in dir_vocab and t not in NEG_WORDS} | {str(y) for y in years}
     neg = bool(set(re.findall(r"[a-z]+", question.lower())) & NEG_WORDS) and "flat" not in dirs
     if "flat" in dirs:  # "no change" is the direction, not a negation of one
@@ -286,8 +339,9 @@ def _build(venue: str, id_: str, question: str, rules: str, deadline: date | Non
     return Claim(venue=venue, id=id_, question=question.strip(), rules=rules, deadline=deadline, ref=ref,
                  tokens=frozenset(q_tokens), entities=frozenset(ents), numbers=frozenset(nums),
                  years=frozenset(years), dates=frozenset(dates), periods=frozenset(periods),
-                 directions=frozenset(dirs), inclusive=inclusive, negated=neg, sources=frozenset(_sources(rules)),
-                 price_like=price_like, rules_tokens=frozenset(r_tokens))
+                 directions=frozenset(dirs), inclusive=inclusive, negated=neg, sources=frozenset(_sources(rules)), clock=frozenset(clock_times(rules)),
+                 price_like=price_like, rules_tokens=frozenset(r_tokens),
+                 cond_entities=frozenset(e for e in _cond_entities(rules[:350]) if e not in dir_vocab))
 
 
 def from_polymarket(m: dict) -> Claim | None:

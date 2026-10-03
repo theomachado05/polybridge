@@ -23,7 +23,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
-from .claims import Claim, days_between
+from .claims import Claim, days_between, stem
 
 MAX_DEADLINE_GAP_CANDIDATE = 7      # days: wider than this is never even ambiguous
 MAX_DEADLINE_GAP_VERIFIED = 1       # spec: same deadline within 1 day
@@ -31,6 +31,32 @@ MIN_CANDIDATE_SCORE = 0.40
 MIN_VERIFY_SCORE = 0.50
 TOP_K = 5
 MAX_DF = 3000                       # tokens more common than this are not used to propose candidates
+
+
+# Words that carry no resolution meaning, and groups of words that mean the same thing for resolution purposes.
+# Anything else that one question says and the other neither says nor has in its resolution text is a different
+# predicate (nominated vs confirmed, win vs be on the ballot, acquire vs buy) and blocks verification.
+NEUTRAL = frozenset(stem(w) for w in ("when", "become", "next", "about", "another", "new", "again", "still", "also",
+                                      "ever", "yet", "case", "market", "question", "official", "officially",
+                                      "interest"))
+EQUIVALENT = [frozenset(stem(w) for w in g) for g in (
+    ("out", "depart", "departure", "leave", "resign", "resignation", "exit"),
+    ("accept", "hear", "grant"),
+    ("win", "nominee", "nomination", "won"),
+    ("best", "top"),
+)]
+
+
+def uncovered(a: Claim, b: Claim) -> list[str]:
+    """Content words of ``a`` that ``b`` neither shares, nor lists in its resolution text, nor has an equivalent of."""
+    miss = []
+    for t in sorted(a.tokens - b.tokens):
+        if t.isdigit() or t in NEUTRAL or t in b.rules_tokens:
+            continue
+        if any(t in g and g & b.tokens for g in EQUIVALENT):
+            continue
+        miss.append(t)
+    return miss
 
 
 @dataclass
@@ -94,6 +120,22 @@ def verify(poly: Claim, kal: Claim, score: float) -> Verdict:
         "entities agree" if not (miss_p or miss_k) else
         f"polymarket-only {miss_p or '-'}, kalshi-only {miss_k or '-'}", "hard")
 
+    # criteria: proper nouns in each side's resolution CONDITION (the opening of its rules) must appear on the other
+    # side ("if Ebola becomes a pandemic" is not "if the WHO declares any disease a pandemic")
+    cp = sorted(e for e in poly.cond_entities if e not in kal.tokens and e not in kal.rules_tokens)
+    ck = sorted(e for e in kal.cond_entities if e not in poly.tokens and e not in poly.rules_tokens)
+    add("criteria", not cp and not ck,
+        "resolution conditions name the same things" if not (cp or ck) else
+        f"polymarket condition names {cp or '-'}, kalshi condition names {ck or '-'}, absent from the other side",
+        "soft")
+
+    # predicate: what is being asked about the subject (nominated vs confirmed, win vs on the ballot, ...)
+    up, uk = uncovered(poly, kal), uncovered(kal, poly)
+    add("predicate", not up and not uk,
+        "wording agrees" if not (up or uk) else
+        f"polymarket-only words {up or '-'} / kalshi-only words {uk or '-'} not found in the other's resolution text",
+        "soft")
+
     # threshold
     if poly.numbers and kal.numbers:
         same = poly.numbers == kal.numbers
@@ -111,7 +153,7 @@ def verify(poly: Claim, kal: Claim, score: float) -> Verdict:
               and all(any(days_between(d, e) <= MAX_DEADLINE_GAP_VERIFIED for e in poly.dates) for d in kal.dates))
         add("period", ok, f"{_fmt_dates(poly.dates)} vs {_fmt_dates(kal.dates)}", "hard")
     elif poly.periods or kal.periods or poly.dates or kal.dates:
-        add("period", False, "a date/month is written in one question only", "soft")
+        add("period", True, "a date is written in one question only (the deadline check covers it)")
     else:
         add("period", True, "no explicit date in either question")
 
@@ -150,6 +192,10 @@ def verify(poly: Claim, kal: Claim, score: float) -> Verdict:
     else:
         add("source", True, f"shared source {sorted(common)}" if common else "neither text names a source")
 
+    if poly.clock and kal.clock and poly.clock.isdisjoint(kal.clock):
+        add("snapshot_time", False, f"snapshot times differ: polymarket {sorted(poly.clock)} vs kalshi "
+                                    f"{sorted(kal.clock)} ET", "soft")
+
     r_union = poly.rules_tokens | kal.rules_tokens
     r_sim = len(poly.rules_tokens & kal.rules_tokens) / len(r_union) if r_union else 0.0
     checks.append(Check("rules_overlap", True, "ok", f"resolution-text word overlap {r_sim:.2f}"))
@@ -163,7 +209,9 @@ def verify(poly: Claim, kal: Claim, score: float) -> Verdict:
 
 
 def _reason(c: Check) -> str:
-    return "direction_inverted" if "direction_inverted" in c.detail else c.name
+    if "direction_inverted" in c.detail:
+        return "direction_inverted"
+    return "wording_differs" if c.name == "predicate" else c.name
 
 
 def _fmt_nums(nums) -> str:

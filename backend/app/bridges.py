@@ -33,6 +33,7 @@ from .models import AlgoChoice, MarketRef, Proposal
 from .pipeline.engine_adapter import AlgoChoiceError, cap_coverage, normalize_manifest, resolve_algo
 from .pipeline.ticks import orient_to_adverse, recorded_bars
 from .store import NotFound, ProposalStore
+from .twins import twin_of
 from .ticks import TICK_FIELDS, LiveSource, ReplaySource, SourceError, Tick, as_tick
 
 router = APIRouter()
@@ -100,6 +101,7 @@ class Bridge:
         self.fills: list[dict] = []
         self.broker_filled = self.broker_rejects = self.broker_errors = 0
         self.algo = algo  # {family, preset_index, params, source, coverage_cap, capped} or None (legacy Engine)
+        self.twin: dict | None = None  # the other-venue market feeding p_other_venue, and where it came from
         self.choice: AlgoChoice | None = None  # what the algo was chosen as (idempotent re-POSTs are compared to it)
         # The bridge's open broker order: {order_id, instrument, side, qty, applied (filled qty already fed back)}.
         self.resting: dict | None = None
@@ -155,7 +157,7 @@ class Bridge:
                 "shares_held": self.proposal.shares_held, "target_coverage": self.proposal.target_coverage,
                 "coverage": self.hedge / self.proposal.shares_held if self.proposal.shares_held else 0.0,
                 "basis": self.proposal.basis, "label": self.proposal.label,
-                "market": self.market.model_dump(),
+                "market": self.market.model_dump(), "twin": self.twin,
                 "latency_ns": {"p50": q(0.5), "p99": q(0.99)}}
 
 
@@ -685,6 +687,14 @@ def _twin(twin: MarketRef | None, primary: str) -> tuple[str, str] | None:
     return "kalshi", twin.id
 
 
+def _mapped_twin(market: MarketRef) -> tuple[str, str] | None:
+    """The verified twin of the primary market from the twin map (app/data/kalshi_twins.json), as _twin() returns it."""
+    t = twin_of(market.source, market.id, market.token_id)
+    if t is None:
+        return None
+    return (t.source, t.token_id) if t.source == "polymarket" and t.token_id else (t.source, t.id)
+
+
 def _registry(request: Request) -> dict[str, Bridge]:
     if not hasattr(request.app.state, "bridges"):
         request.app.state.bridges = {}
@@ -732,6 +742,11 @@ async def start_bridge(body: BridgeIn, request: Request, response: Response) -> 
     else:
         primary, mid = _live_primary(market)
         twin = _twin(body.twin, primary)
+        origin = "request" if twin else None
+        if twin is None and body.twin is None:  # no twin given: use the verified twin map
+            twin = _mapped_twin(market)
+            origin = "twin_map" if twin else None
+        bridge.twin = {"source": twin[0], "id": twin[1], "origin": origin} if twin else None
         factory = getattr(request.app.state, "live_source_factory", None) or LiveSource
         # Only the algo reads under_px; a legacy bridge never polls the equity quote (Massive rate limits).
         source = factory(mid, primary=primary, twin=twin,
