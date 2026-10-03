@@ -44,6 +44,19 @@ def et_dt(d: date, hh: int, mm: int) -> datetime:
     return datetime(d.year, d.month, d.day, hh, mm, tzinfo=ET)
 
 
+def utc_iso(dt: datetime) -> str:
+    """True UTC wall-clock string for an aware datetime (never relabel a local wall-clock as Z)."""
+    return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def snapshot_meta(m: dict, snap_label: str, snap_dt: datetime, exp: str | None) -> dict:
+    """Row metadata for one market at one snapshot. snap_epoch is the exact instant the verifier windows around."""
+    return dict(venue=m["venue"], market_id=m["id"], event=m["event"], question=m["question"], underlying=m["underlying"],
+                series=m.get("series"), kind=m["kind"], res_date=m["res_date"].isoformat(), snapshot=snap_label,
+                snap_utc=utc_iso(snap_dt), snap_epoch=snap_dt.timestamp(), expiry=exp,
+                expiry_gap_days=(date.fromisoformat(exp) - m["res_date"]).days if exp else None, outcome=m.get("outcome"))
+
+
 def _parse_iso(s: str) -> datetime:
     return datetime.fromisoformat(s.replace("Z", "+00:00")).astimezone(UTC)
 
@@ -158,10 +171,7 @@ class Scan:
 
     def _row(self, m: dict, snap_label: str, snap_dt: datetime, pm: dict, live: bool) -> dict:
         exp, chain, clean, exp_close = self._option_context(m)
-        meta = dict(venue=m["venue"], market_id=m["id"], event=m["event"], question=m["question"], underlying=m["underlying"],
-                    series=m.get("series"), kind=m["kind"], res_date=m["res_date"].isoformat(), snapshot=snap_label,
-                    snap_utc=snap_dt.strftime("%Y-%m-%dT%H:%M:%SZ"), expiry=exp,
-                    expiry_gap_days=(date.fromisoformat(exp) - m["res_date"]).days if exp else None, outcome=m.get("outcome"))
+        meta = snapshot_meta(m, snap_label, snap_dt, exp)
         get_quote = lambda tk: self.opts.quote(tk, snap_dt) if self.opts else None  # noqa: E731
         return score_row(pm=pm, strike=m["strike"], chain=chain, get_quote=get_quote, snap_ts=snap_dt.timestamp(),
                          expiry_close_ts=exp_close, clean=clean, live=live, fee=m["fee"], meta=meta)
@@ -285,7 +295,7 @@ class Scan:
         for r in cand:
             m = byid.get(r["market_id"], {})
             tr = trades.get(m.get("cid"), [])
-            snap_ts = datetime.fromisoformat(r["snap_utc"].replace("Z", "+00:00")).timestamp()
+            snap_ts = float(r["snap_epoch"])
             need = vf.needed_price(r["trade"], r["p_lo"], r["p_hi"], r["width"], m["fee"])
             r.update(verify_price_needed=need, verify_trades_in_market=len(tr), **vf.verify_row(tr, snap_ts, r["trade"], need))
             if r["verified"]:

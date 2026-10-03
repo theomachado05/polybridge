@@ -21,6 +21,24 @@ KALSHI = "https://api.elections.kalshi.com/trade-api/v2"
 RETRY = {429, 500, 502, 503, 504}
 
 
+# Index options settle by root: SPXW / NDXP are the PM-settled weeklies/dailies, SPX / NDX are the AM-settled monthlies.
+# METHOD.md section 1 uses PM-settled legs only, so other roots on the same underlying are dropped.
+PM_SETTLED_ROOT = {"SPX": "O:SPXW", "NDX": "O:NDXP"}
+
+
+def contract_map(und: str, rows: list[dict]) -> dict[float, str]:
+    root = PM_SETTLED_ROOT.get(und)
+    out: dict[float, str] = {}
+    for r in rows:
+        if r.get("shares_per_contract", 100) != 100:
+            continue
+        tk = r["ticker"]
+        if root and not (tk.startswith(root) and tk[len(root):len(root) + 1].isdigit()):
+            continue
+        out[float(r["strike_price"])] = tk
+    return out
+
+
 class CountingSession(requests.Session):
     def __init__(self):
         super().__init__()
@@ -206,7 +224,7 @@ class OptionSource:
                 rows.extend(payload.get("results") or [])
                 nxt = payload.get("next_url")
                 payload = self._safe(nxt, {}) if nxt else None
-            self._contracts[key] = {float(r["strike_price"]): r["ticker"] for r in rows if r.get("shares_per_contract", 100) == 100}
+            self._contracts[key] = contract_map(und, rows)
         return self._contracts[key]
 
     def nearest_expiry(self, und: str, on_or_after: date, max_days: int = 10) -> tuple[str, dict[float, str]] | None:

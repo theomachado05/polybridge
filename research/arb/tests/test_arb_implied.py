@@ -113,7 +113,8 @@ def _lab(**kw):
 
 def test_classify_ladder():
     assert _lab() == "none"
-    assert _lab(pm_mid=0.56) == "gap_mid" or _lab(pm_mid=0.56) == "gap_beyond_bounds"
+    assert _lab(pm_mid=0.55) == "gap_mid"                        # |gap| 0.05 from the narrow mid, still inside [p_lo, p_hi]
+    assert _lab(pm_mid=0.56) == "gap_beyond_bounds"              # outside the bound strip
     assert _lab(pm_mid=0.57, p_mid_narrow=0.5) == "gap_beyond_bounds"
     assert _lab(pm_mid=0.7, edge=0.02, edge_wide_same_trade=-0.01) == "gap_net"
     assert _lab(pm_mid=0.7, edge=0.02, edge_wide_same_trade=0.01) == "gap_robust"
