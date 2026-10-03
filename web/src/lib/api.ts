@@ -182,7 +182,9 @@ export interface BridgeSummary {
   market?: { source: string; id: string; token_id?: string | null } | null;
   /** Replay bridges (when the backend reports them): the recorded file and the market it belongs to. */
   replay_file?: string | null;
-  replay_market?: { source?: string | null; id?: string | null } | null;
+  /** From the file's .meta.json sidecar; null when the file has no sidecar (its market is unknown). Set too when a
+   *  live bridge fell back to a replay. */
+  replay_market?: { source?: string | null; id?: string | null; token_id?: string | null } | null;
 }
 
 /** One tick's PM YES mid vs the options-implied P(YES) (raw orientation). The option number is an estimate. */
@@ -284,7 +286,20 @@ export interface FitBody {
   division?: Family;
   end_date?: string;
 }
-export interface FitAlternative { family: string; preset_index?: number; params?: Record<string, number>; score?: number | null; division?: string }
+/** Replay stats the backend copies into each alternative (tune.STAT_KEYS); only finite values are present. */
+export interface FitStats {
+  n_ticks?: number; n_orders?: number; pnl?: number; fees?: number; max_dd?: number;
+  /** Plain hedge variance reduction: any static short of a fraction h earns 1 - (1 - h)^2 of it, so never ranked. */
+  hedge_var_reduction?: number;
+  /** Variance cut beyond a static short of the same average size: what the PM signal adds (the hedge ranking score). */
+  hedge_var_reduction_vs_static?: number;
+  /** Mean short as a fraction of shares_held over the replay. */
+  avg_hedge_ratio?: number;
+  turnover?: number; p50_ns?: number; p99_ns?: number;
+}
+export interface FitAlternative { family: string; preset_index?: number; params?: Record<string, number>; score?: number | null; division?: string; stats?: FitStats }
+/** What FitOut.score ranks by: the hedge score is the variance cut beyond a static hedge, never the raw cut. */
+export type ScoreBasis = "hedge_var_reduction_vs_static" | "net_pnl_per_drawdown";
 export interface FitOut {
   event_class: EventClass | string;
   division: Family | string;
@@ -297,6 +312,15 @@ export interface FitOut {
   llm: "gemini" | "rules" | string;
   ticks_source: "live_history" | "replay" | "none" | string;
   n_ticks: number;
+  /** What `score` measures (null or absent: unscored, or an older backend whose hedge score was the raw cut). */
+  score_basis?: ScoreBasis | null;
+  score_note?: string | null;
+  /** Hedge fits only (null otherwise): raw variance reduction, reported but never ranked. */
+  score_raw?: number | null;
+  /** Hedge fits only: equals `score`, the variance cut beyond a static hedge of the same average size. */
+  score_vs_static?: number | null;
+  /** Hedge fits only: mean short as a fraction of shares held over the replay. */
+  avg_hedge_ratio?: number | null;
 }
 export const postFit = (body: FitBody) => post<FitOut>("/pipeline/fit", body);
 

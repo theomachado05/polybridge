@@ -8,7 +8,7 @@ import { fmtK, fmtMoney, fmtNs, fmtPct, prettyId } from "@/lib/fmt";
 import { useAsync } from "@/lib/hooks";
 import { simCover, simPnl } from "@/lib/sim";
 import { algoRunLabel, brokerLabel, useStore, type BridgeEntry } from "@/lib/store";
-import { fillScopeLabel, liveVenue, priceSubtitle } from "@/lib/realBridge";
+import { fillScopeLabel, liveVenue, priceSubtitle, replayInfo, replayNotice } from "@/lib/realBridge";
 import { quantile, useBridgeStream } from "@/lib/useBridgeStream";
 import { Btn, DemoTag, Glass, Label, Orb, Tag, upColor } from "@/components/pb";
 import { AlgoDock, PortfolioPanel, TopRow, TradesPanel, type DockAlgo, type TradeCard } from "./parts";
@@ -151,8 +151,12 @@ const GATES: { reason: string; name: string }[] = [
 function LiveBridge({ entry }: { entry: LiveEntry }) {
   const s = useStore();
   const id = entry.bridgeId;
-  const summary = useAsync(`b:${id}`, () => getBridge(id));
-  const st = useBridgeStream(id, summary.data?.source ?? null);
+  const first = useAsync(`b:${id}`, () => getBridge(id));
+  const st = useBridgeStream(id, first.data?.source ?? null);
+  // A live bridge that fell back to a replay mid-run: refetch the summary once so replay_file / replay_market are known.
+  const fellBack = st.source === "replay" && first.data != null && first.data.source !== "replay";
+  const refetched = useAsync(fellBack ? `b:${id}:replay` : null, () => getBridge(id));
+  const summary = refetched.data ? refetched : first;
   const ticker = summary.data?.ticker ?? entry.eq?.t ?? null;
   const card = useAsync(ticker ? `e:${ticker}` : null, () => getEquity(ticker!));
   const source = st.source ?? summary.data?.source ?? null;
@@ -162,8 +166,11 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
   const scope = fillScopeLabel(summary.data?.account_scope, acct);
   const mkt = entry.q?.real ?? summary.data?.market ?? null;
   const venue = liveVenue(mkt?.source);
-  const pSub = priceSubtitle(source, mkt?.source,
-    { file: summary.data?.replay_file, market_id: summary.data?.replay_market?.id, market_source: summary.data?.replay_market?.source }, mkt?.id);
+  // The market on screen, with its YES token id from the summary when the entry's market lacks it (sidecars may name either).
+  const shown = mkt ? { source: mkt.source, id: mkt.id, token_id: mkt.token_id ?? summary.data?.market?.token_id ?? null } : null;
+  const replay = replayInfo(summary.data);
+  const pSub = priceSubtitle(source, shown?.source, replay, shown?.id, shown?.token_id);
+  const notice = replayNotice(source, summary.data?.requested_source, replay, shown);
 
   const sourceTag = source === "replay"
     ? <Tag tone="replay" title="Ticks come from a recorded file of real market history, not the live market">replay</Tag>
@@ -220,6 +227,9 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
     ? <Tag tone="sim" title="Started with gap_per_share = 0 because there was no quote or impact estimate; the engine's fee gate is off (docs/contracts.md).">fee gate off (no quote/impact)</Tag>
     : null;
   const question = entry.q?.q ?? summary.data?.label ?? `Bridge ${id}`;
+  const replayAlert = notice && (notice.tone === "warn"
+    ? <div role="alert" style={{ fontSize: 13, color: "#8A5A00" }}>{notice.text}</div>
+    : <div role="status" style={{ fontSize: 13, color: "#5A627A" }}>{notice.text}</div>);
 
   if (summary.data?.division === "opportunity" || (!summary.data && entry.mode === "opportunity")) {
     return (
@@ -227,6 +237,7 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
         {summary.error && <div role="alert" style={{ fontSize: 13, color: "#C8323F" }}>Could not load bridge {id}: {summary.error}</div>}
         {st.status === "reconnecting" && <div role="alert" style={{ fontSize: 13, color: "#8A5A00" }}>Connection to the backend dropped; reconnecting…</div>}
         {st.error && <div style={{ fontSize: 13, color: "#5A627A" }}>Engine message: {st.error}</div>}
+        {replayAlert}
         <OpportunityBridge id={id} summary={summary.data ?? null} st={st} question={question} sourceTag={sourceTag} />
       </>
     );
@@ -237,7 +248,7 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
       {summary.error && <div role="alert" style={{ fontSize: 13, color: "#C8323F" }}>Could not load bridge {id}: {summary.error}</div>}
       {st.status === "reconnecting" && <div role="alert" style={{ fontSize: 13, color: "#8A5A00" }}>Connection to the backend dropped; reconnecting…</div>}
       {st.error && <div style={{ fontSize: 13, color: "#5A627A" }}>Engine message: {st.error}</div>}
-      {pSub.mismatch && <div role="alert" style={{ fontSize: 13, color: "#8A5A00" }}>This replay was recorded on another market ({summary.data?.replay_market?.id}), not the question shown here; its prices and trades are a playback of that recording.</div>}
+      {replayAlert}
       <TopRow
         question={question} venues={entry.q?.venues ?? ["Polymarket"]} marketTag={<span style={{ display: "inline-flex", gap: 6 }}>{sourceTag}<Tag tone="neutral">{direction === "down_on_yes" ? "hedging the YES outcome" : "hedging the NO outcome"}</Tag></span>}
         pBig={p == null ? "—" : `${Math.round(p * 100)}¢`} pSpark={st.prices.slice(-60)}

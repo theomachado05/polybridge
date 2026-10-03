@@ -168,15 +168,62 @@ export function fillScopeLabel(scope: string | null | undefined, acct: { name: s
 /** The venue a live bridge streams: the market's own (Kalshi markets stream Kalshi; contracts.md, ticks.py). */
 export const liveVenue = (source: string | null | undefined) => (source === "kalshi" ? "Kalshi" : "Polymarket");
 
+/** What a replay bridge's summary says about its file: the file name and the market its .meta.json sidecar records.
+ *  `known: false` means the backend reported replay_market as null (no sidecar: the file's market is unknown);
+ *  undefined means an older backend that does not report it. */
+export interface ReplayInfo {
+  file?: string | null; market_id?: string | null; market_source?: string | null; market_token_id?: string | null; known?: boolean;
+}
+
+/** ReplayInfo from a bridge summary's replay_file / replay_market (null replay_market: no sidecar). */
+export function replayInfo(summary: { replay_file?: string | null; replay_market?: { source?: string | null; id?: string | null; token_id?: string | null } | null } | null | undefined): ReplayInfo | null {
+  if (!summary) return null;
+  const m = summary.replay_market;
+  return {
+    file: summary.replay_file ?? null, market_id: m?.id ?? null, market_source: m?.source ?? null, market_token_id: m?.token_id ?? null,
+    known: "replay_market" in summary ? m != null : undefined,
+  };
+}
+
+/** True when the recording names a different market than the one on screen. Same rule as the backend's sidecar check:
+ *  the same venue, and the same market id or the same (YES) token id. Unknown on either side: no mismatch claimed. */
+export function replayMismatch(replay: ReplayInfo | null | undefined, marketSource?: string | null, marketId?: string | null, marketTokenId?: string | null): boolean {
+  const rec = [replay?.market_id, replay?.market_token_id].filter((x): x is string => !!x);
+  const ours = [marketId, marketTokenId].filter((x): x is string => !!x);
+  if (!rec.length || !ours.length) return false;
+  if (replay?.market_source && marketSource && replay.market_source !== marketSource) return true;
+  return !rec.some((k) => ours.includes(k));
+}
+
 /** The Bridge screen's probability subtitle. On a replay it names the recorded file when the backend reports it,
- *  and warns when that recording belongs to another market than the one on screen. */
+ *  and flags when that recording belongs to another market than the one on screen. */
 export function priceSubtitle(source: string | null | undefined, marketSource: string | null | undefined,
-  replay?: { file?: string | null; market_id?: string | null; market_source?: string | null } | null, marketId?: string | null):
+  replay?: ReplayInfo | null, marketId?: string | null, marketTokenId?: string | null):
   { sub: string; mismatch: boolean } {
   if (source === "replay") {
-    const mismatch = !!(replay?.market_id && marketId && (replay.market_id !== marketId || (replay.market_source && marketSource && replay.market_source !== marketSource)));
-    return { sub: `YES from replay ${replay?.file ?? "file"} · recorded history, not the live market`, mismatch };
+    return { sub: `YES from replay ${replay?.file ?? "file"} · recorded history, not the live market`, mismatch: replayMismatch(replay, marketSource, marketId, marketTokenId) };
   }
   const venue = liveVenue(marketSource);
   return { sub: `YES ${venue} midpoint${venue === "Kalshi" ? "" : " · Kalshi not streamed on this bridge"}`, mismatch: false };
+}
+
+/** The alert the Bridge screen shows about a replay's recording, if any: "warn" when the recording names another market
+ *  (the backend refuses that at start, so this is defensive), "info" when it has no sidecar (market unknown) or when a
+ *  live bridge fell back to a recording. Null on a live bridge or a recording of this market. */
+export function replayNotice(source: string | null | undefined, requestedSource: string | null | undefined, replay: ReplayInfo | null | undefined,
+  market?: { source?: string | null; id?: string | null; token_id?: string | null } | null): { tone: "warn" | "info"; text: string } | null {
+  if (source !== "replay") return null;
+  const file = replay?.file ? `the recording ${replay.file}` : "a recording";
+  const fellBack = requestedSource === "live" ? `The live feed was unavailable, so this bridge fell back to ${file}. ` : "";
+  if (replayMismatch(replay, market?.source, market?.id, market?.token_id)) {
+    const rec = `${replay?.market_source ? replay.market_source + ":" : ""}${replay?.market_id ?? replay?.market_token_id}`;
+    return { tone: "warn", text: `${fellBack}This replay${replay?.file ? ` (${replay.file})` : ""} was recorded on another market (${rec}), not the question shown here; its prices and trades are a playback of that recording.` };
+  }
+  if (replay?.known === false) {
+    return { tone: "info", text: `${fellBack}${replay.file ?? "This replay file"} has no .meta.json sidecar, so the backend cannot confirm which market it records; it plays only because the request (or the file's own name) points at this market.` };
+  }
+  if (!fellBack) return null;
+  const rec = replay?.known && (replay.market_id || replay.market_token_id)
+    ? `It records this market (${replay.market_source ? replay.market_source + ":" : ""}${replay.market_id ?? replay.market_token_id}).` : "";
+  return { tone: "info", text: (fellBack + rec).trim() };
 }

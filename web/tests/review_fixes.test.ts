@@ -68,7 +68,7 @@ describe("hedge fit direction", () => {
 });
 
 describe("honest labels", () => {
-  it("the fit score is labelled in-sample on the card and in the tune step", () => {
+  it("the fit score is labelled in-sample on the card and in the tune step (legacy raw score, no score_basis)", () => {
     assert.equal(hedgeScoreText(0.85, "hedge"), "85.0% var. reduction (in-sample replay)");
     assert.equal(hedgeScoreText(0.1234, "opportunity"), "0.123 in-sample");
     assert.equal(hedgeScoreText(null, "hedge"), "n/a");

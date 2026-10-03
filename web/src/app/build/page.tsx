@@ -6,7 +6,7 @@ import { getEquity, getLibrary, getOptionsImplied, mapEvent, searchMarkets, type
 import { DEFAULT_OPP_CAPS, opportunityFit } from "@/lib/realBridge";
 import { EQ, INSTRUMENTS, QUESTIONS, REAL_INSTRUMENTS, demoImpacts, isOpenMarket, questionFromMarket, topImpact, type EquityPick, type Impact, type Question } from "@/lib/demo";
 import { fmtPct, prettyId } from "@/lib/fmt";
-import { hedgeScoreText, IN_SAMPLE_NOTE } from "@/lib/pipeline";
+import { fitScoreView, IN_SAMPLE_NOTE } from "@/lib/pipeline";
 import { useAsync } from "@/lib/hooks";
 import { OPP_REPLAY_NOTE, libraryIdea, optionFamilyIdea } from "@/lib/opportunity";
 import { useStore } from "@/lib/store";
@@ -415,7 +415,7 @@ function FitCard({ fit }: { fit: ReturnType<typeof useStore>["fit"] }) {
   if (fit.noDirection) return <div style={{ ...box, fontSize: 12.5, color: "#5A627A", display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}><Tag tone="neutral" title={fit.error ?? undefined}>direction unknown</Tag>No hedge fit: {fit.error}.</div>;
   if (fit.status === "error" || !fit.data) return <div style={{ ...box, fontSize: 12.5, color: "#5A627A" }}>AI fit unavailable ({fit.error}). The pipeline will run the prototype’s scripted steps. <DemoTag /></div>;
   const f = fit.data;
-  const score = hedgeScoreText(f.score, String(f.division));
+  const sv = fitScoreView(f);
   return (
     <div style={box}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
@@ -428,8 +428,10 @@ function FitCard({ fit }: { fit: ReturnType<typeof useStore>["fit"] }) {
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
         <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-.015em" }}>{f.family ? prettyId(f.family) : "No family fits"}</span>
         {f.preset_index != null && <span className="pb-mono" style={{ fontSize: 12, color: "#5A627A" }}>preset #{f.preset_index}</span>}
-        <span className="pb-mono" style={{ fontSize: 12, color: "#15804F" }} title={f.score == null ? undefined : IN_SAMPLE_NOTE}>{score}</span>
       </div>
+      {/* The headline is what the PM signal adds over a static hedge of the same size: green only when it adds something. */}
+      <div className="pb-mono" style={{ fontSize: 12, marginTop: 4, color: sv.tone === "positive" ? "#15804F" : "#5A627A" }} title={f.score == null ? undefined : sv.title}>{sv.headline}</div>
+      {sv.secondary && <div className="pb-mono" style={{ fontSize: 11.5, marginTop: 2, color: "#5A627A" }} title={sv.title}>{sv.secondary}</div>}
       {f.rationale && <div className="pb-pretty" style={{ fontSize: 13, color: "#3C4458", lineHeight: 1.5, marginTop: 6 }}>{f.rationale}</div>}
       {f.alternatives?.length > 0 && <div style={{ fontSize: 12, color: "#5A627A", marginTop: 6 }}>Alternatives: {f.alternatives.slice(0, 3).map((a) => prettyId(a.family)).join(" · ")}</div>}
     </div>

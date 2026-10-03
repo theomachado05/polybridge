@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { shortlist } from "@/lib/library";
-import { demoSteps, fitSteps, type PipeContext } from "@/lib/pipeline";
+import { demoSteps, fitScoreView, fitSteps, type PipeContext } from "@/lib/pipeline";
 import { algoRunLabel, brokerLabel, defaultPick, feeGateOff, runnableFit, useStore } from "@/lib/store";
 import { REPLAY_SANDBOX_SENTENCE } from "@/lib/realBridge";
 import { DemoTag, OrbDisc, Tag } from "@/components/pb";
@@ -98,6 +98,11 @@ export default function Pipeline() {
             <Tag tone={fit.data.ticks_source === "live_history" ? "measured" : fit.data.ticks_source === "replay" ? "replay" : "neutral"}>
               {fit.data.ticks_source === "live_history" ? "real price history" : fit.data.ticks_source === "replay" ? "replay ticks" : "no price history"}
             </Tag>
+            {fit.data.family && fit.data.score != null && (() => {
+              const sv = fitScoreView(fit.data);
+              // Neutral (never green) when the signal adds nothing over a static hedge of the same size.
+              return <Tag tone={sv.tone === "positive" ? "ai" : "neutral"} title={sv.title}>{sv.short}</Tag>;
+            })()}
           </>
         )}
         {mode === "demo" && fit?.noDirection && <Tag tone="neutral" title={fit.error ?? undefined}>no hedge fit · direction unknown</Tag>}

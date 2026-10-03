@@ -107,6 +107,7 @@ describe("library manifest parsing", () => {
 
 describe("pipeline steps", () => {
   const ctx: PipeContext = { question: "Will the Fed cut rates at the December meeting?", venues: ["Kalshi"], yes: 62, vol: "2.4M", ticker: "JPM", held: 400, move: -0.9, rev: -0.6, brand: 0, why: "NII compresses." };
+  // No score_basis: an older backend whose hedge score was the raw variance cut (score.test.ts pins the vs-static labels).
   const fit: FitOut = { event_class: "macro_fed", division: "hedge", family: "macro_fed_hedge", preset_index: 14, params: { c: 0.5, k: 2 }, score: 0.412, alternatives: [{ family: "equity_delta_bridge", score: 0.3 }], rationale: "Fed odds lead bank stocks.", llm: "rules", ticks_source: "live_history", n_ticks: 1440 };
 
   it("maps the fit response to classify, shortlist, history, tune, explain, ready", () => {

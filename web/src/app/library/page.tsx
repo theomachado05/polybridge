@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ALGOS, IN_CHAIN } from "@/lib/demo";
 import { fmtNs, prettyId } from "@/lib/fmt";
 import { UI_FAMILIES, type LibRow } from "@/lib/library";
+import { fitScoreView, type FitScoreView } from "@/lib/pipeline";
 import { useStore } from "@/lib/store";
 import { Chip, DemoTag, Glass, Tag } from "@/components/pb";
 
@@ -19,7 +20,7 @@ function UsePill({ n, label }: { n: number; label?: string }) {
   );
 }
 
-function RealRow({ r, fitted, running }: { r: LibRow; fitted: boolean; running: (number | null)[] }) {
+function RealRow({ r, fitted, running }: { r: LibRow; fitted: FitScoreView | null; running: (number | null)[] }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="pb-row-soft" style={{ borderRadius: 20, transition: "background .2s ease" }}>
@@ -40,7 +41,9 @@ function RealRow({ r, fitted, running }: { r: LibRow; fitted: boolean; running: 
         <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
           {running.length
             ? <span title={`hedgecore.Algo runs this family on ${running.length} live bridge${running.length === 1 ? "" : "s"} (the AI fit sent with the approved proposal)`}><Tag tone="ai">Running · preset {running.map((n) => n ?? "custom").join(", ")}</Tag></span>
-            : fitted ? <span title="Picked by POST /pipeline/fit for your last pick; it runs once you approve a bridge for it"><Tag tone="ai">AI fit · not running yet</Tag></span> : <UsePill n={0} />}
+            : fitted ? <span title={`Picked by POST /pipeline/fit for your last pick; it runs once you approve a bridge for it. ${fitted.title}`}><Tag tone="ai">AI fit · not running yet</Tag></span> : <UsePill n={0} />}
+          {/* What the signal adds over a static hedge (neutral, never green, when it adds nothing). */}
+          {fitted?.scored && <span className="pb-pretty" title={fitted.title} style={{ fontSize: 11, lineHeight: 1.35, color: fitted.tone === "positive" ? "#2B57D6" : "#5A627A" }}>{fitted.short} (in-sample)</span>}
           <span className="pb-mono" style={{ fontSize: 11, color: "#5A627A" }}>{r.presets.toLocaleString("en-US")} presets</span>
         </div>
       </div>
@@ -77,7 +80,9 @@ export default function Library() {
   const lib = s.library.status === "ok" ? s.library.data : null;
   // Live bridges started with an AI fit run that family and preset (hedgecore.Algo); those families are marked as
   // running. The latest AI fit without a bridge is marked separately, as a pick that is not running yet.
-  const fitted = s.fit?.status === "ok" ? s.fit.data?.family ?? null : null;
+  const fitData = s.fit?.status === "ok" ? s.fit.data ?? null : null;
+  const fitted = fitData?.family ?? null;
+  const fittedView = fitData?.family ? fitScoreView(fitData) : null;
   const running: Record<string, (number | null)[]> = {};
   for (const b of s.bridges) if (b.kind === "live" && b.fit) (running[b.fit.family] ??= []).push(b.fit.preset_index);
   const demoBridges = s.bridges.filter((b) => b.kind === "demo").length;
@@ -104,7 +109,7 @@ export default function Library() {
         </div>
       </div>
       <Glass style={{ padding: 8 }}>
-        {lib && rows.map((r) => <RealRow key={r.id} r={r} fitted={r.id === fitted} running={running[r.id] ?? []} />)}
+        {lib && rows.map((r) => <RealRow key={r.id} r={r} fitted={r.id === fitted ? fittedView : null} running={running[r.id] ?? []} />)}
         {lib && rows.length === 0 && <div style={{ padding: "18px", fontSize: 13, color: "#5A627A" }}>No family in the catalog uses a {fam} block yet.</div>}
         {!lib && demoRows.map((a) => {
           const n = IN_CHAIN.has(a.name) ? demoBridges : 0;
