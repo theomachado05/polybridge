@@ -35,3 +35,11 @@ engine/recordings/*.jsonl
 # research data (API responses are not committed)
 .massive_cache/
 research/taxonomy/
+
+# python envs and tool caches
+.venv/
+backend/.venv/
+research/.venv/
+*.egg-info/
+engine/hedgecore/build/
+.ipynb_checkpoints/
