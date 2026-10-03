@@ -14,12 +14,20 @@ from .engine_adapter import EngineAdapter
 from .explain import explain
 from .llm import LLMProvider, RulesProvider, rules_classify
 from .shortlist import shortlist, unmet_requirements
+from .options_join import join_options
 from .ticks import (TickSet, _universe_entry, available_requirements, build_ticks, kalshi_series, orient_to_adverse,
                     resolve_polymarket)
 from .tune import tune
 
 Direction = Literal["down_on_yes", "up_on_yes"]
 TICKS_BUDGET_S = 15.0
+OPTIONS_BUDGET_S = 12.0
+
+
+def _has_options(ts: TickSet) -> bool:
+    import numpy as np
+    v = (ts.ticks or {}).get("opt_implied_prob")
+    return v is not None and bool(np.isfinite(v).any())
 
 
 class MarketRef(BaseModel):
@@ -34,6 +42,11 @@ class FitRequest(BaseModel):
     ticker: str = Field(min_length=1, max_length=12, pattern=r"^[A-Za-z][A-Za-z0-9.\-]{0,11}$")
     direction: Direction = "down_on_yes"
     shares_held: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    # Optional (request only; the response keys are unchanged): fit this division instead of the default choice
+    # (hedge when shares are held, else opportunity) -- the Build screen asks for both to offer Hedge vs Opportunity.
+    division: Literal["hedge", "opportunity"] | None = None
+    # The market's resolution date (ISO), used to read a threshold question without a date; else the universe's.
+    end_date: str | None = Field(default=None, max_length=40)
 
     @field_validator("ticker")
     @classmethod
@@ -111,9 +124,12 @@ async def _question_for(req: FitRequest, deps: Deps) -> tuple[str, str | None]:
     return "", token
 
 
-def choose_division(lists: dict[str, list[dict]], shares_held: float | None) -> str | None:
+def choose_division(lists: dict[str, list[dict]], shares_held: float | None, asked: str | None = None) -> str | None:
     """Hedge when the user holds shares (hedge variance is defined only then); otherwise opportunity.
-    Falls back to the other division when the preferred one has no family for this class."""
+    Falls back to the other division when the preferred one has no family for this class. An explicitly asked
+    division is honoured without fallback (None when it has no eligible family)."""
+    if asked is not None:
+        return asked if lists.get(asked) else None
     preferred = "hedge" if (shares_held or 0) > 0 else "opportunity"
     other = "opportunity" if preferred == "hedge" else "hedge"
     if lists.get(preferred):
@@ -128,15 +144,28 @@ async def run_fit(req: FitRequest, deps: Deps) -> dict:
     if req.market:
         market = {"source": req.market.source, "id": req.market.id, "token_id": token}
 
+    end_date = req.end_date or (_universe_entry(req.market.source, req.market.id).get("end_date")
+                                if req.market else None)
+
     async def ticks() -> TickSet:
         try:  # bound the whole network chain (Gamma + CLOB + Massive); on overrun use recorded data only
-            return await asyncio.wait_for(
+            ts = await asyncio.wait_for(
                 build_ticks(market, req.ticker, http=deps.http, massive=deps.massive, offline=deps.offline),
                 TICKS_BUDGET_S)
         except asyncio.TimeoutError:
             ts = await build_ticks(market, req.ticker, http=None, massive=None, offline=True)
             ts.notes.append(f"live history took over {TICKS_BUDGET_S:g} s")
             return ts
+        if ts.ticks is not None and not _has_options(ts):  # threshold questions: options-implied history
+            try:
+                joined, info = await asyncio.wait_for(
+                    join_options(ts.ticks, question or ts.question, end_date, massive=deps.massive,
+                                 offline=deps.offline), OPTIONS_BUDGET_S)
+                ts.ticks = joined
+                ts.notes.extend(info.get("notes") or [])
+            except asyncio.TimeoutError:
+                ts.notes.append(f"options history took over {OPTIONS_BUDGET_S:g} s")
+        return ts
 
     (event_class, llm), ts = await asyncio.gather(
         classify(question, deps.provider, manifest.get("event_classes"), req.ticker), ticks())
@@ -146,7 +175,7 @@ async def run_fit(req: FitRequest, deps: Deps) -> dict:
     available = available_requirements(ts)
     lists = {d: [f for f in fams if not unmet_requirements(f, available)]
              for d, fams in shortlist(manifest, event_class, available).items()}
-    division = choose_division(lists, req.shares_held)
+    division = choose_division(lists, req.shares_held, req.division)
     families = lists.get(division, []) if division else []
     # §3.3 Position fields only. The direction reaches the engine through the ticks: for a hedge, YES is re-oriented
     # to the outcome that hurts the held equity (see ticks.orient_to_adverse), so every family sees one convention.

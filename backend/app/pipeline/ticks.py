@@ -15,7 +15,9 @@ Honesty rules:
   is known at start + 1 h; a daily bar (``t`` = midnight ET of the session) only from the end of that day, so a
   10:00 tick on day D sees day D-1's close, never day D's 16:00 close. NaN before the first finished bar or when
   no bars are available. ``under_bid``/``under_ask`` are NaN.
-- Options, other-venue and 8-K fields are NaN / 0 (``eightk_score`` 0 = none, per the MarketTick contract).
+- Other-venue and 8-K fields are NaN / 0 here (``eightk_score`` 0 = none, per the MarketTick contract). Option fields
+  are NaN here; for threshold questions the fit service then joins options-implied history from listed-contract bar
+  closes (``app.pipeline.options_join``), which also sets ``eightk_score`` per date (NaN where no data covers it).
 """
 from __future__ import annotations
 
@@ -339,10 +341,13 @@ def orient_to_adverse(ticks: dict[str, Any], direction: str) -> dict[str, Any]:
 
 def available_requirements(ts: "TickSet") -> set[str]:
     """Family requirements this tick set can meet. 'both_venues' needs a finite other-venue price somewhere;
-    'listed_options' is never met yet (no options data is joined into the ticks)."""
+    'listed_options' needs a finite options-implied probability somewhere (joined by
+    ``app.pipeline.options_join.join_options`` for mapped threshold questions, or carried by a recording)."""
     have: set[str] = set()
     if ts.ticks is not None and np.isfinite(ts.ticks.get("p_other_venue", np.array([]))).any():
         have.add("both_venues")
+    if ts.ticks is not None and np.isfinite(ts.ticks.get("opt_implied_prob", np.array([]))).any():
+        have.add("listed_options")
     return have
 
 
