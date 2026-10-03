@@ -372,6 +372,11 @@ wheels = [
 ]
 
 [[package]]
+name = "hedgecore"
+version = "0.1.0"
+source = { directory = "../engine/hedgecore" }
+
+[[package]]
 name = "httpcore"
 version = "1.0.9"
 source = { registry = "https://pypi.org/simple" }
@@ -876,6 +881,9 @@ dev = [
     { name = "httpx" },
     { name = "pytest" },
 ]
+engine = [
+    { name = "hedgecore" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -890,6 +898,7 @@ dev = [
     { name = "httpx", specifier = ">=0.27" },
     { name = "pytest", specifier = ">=8" },
 ]
+engine = [{ name = "hedgecore", directory = "../engine/hedgecore" }]
 
 [[package]]
 name = "polybridge-research"
