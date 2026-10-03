@@ -49,10 +49,14 @@ export async function startRealBridge(q: Question, eq: EquityPick, maxHedge: str
   let spot = eq.px;
   if (!spot) spot = await getEquity(eq.t).then((c) => c.implied_move?.spot ?? null, () => null);
   const cap = Math.min(1, (parseInt(maxHedge, 10) || 100) / 100);
+  // With a fit, target_coverage is the user's Max hedge: the backend caps the algo's coverage at it and clips every
+  // sell beyond it (contracts.md), so the approved proposal bounds what is hedged. Without a fit the default Engine
+  // hedges target_coverage itself: half the position, never above Max hedge.
+  const coverage = fit ? cap : Math.min(0.5, cap);
   const market = { source: m.source, id: m.id, token_id: m.token_id };
   const mine = (await listProposals().catch(() => [] as Proposal[]))
     .filter((p) => p.ticker === eq.t && p.family === "hedge" && sameMarket(p, m) && (p.direction ?? "down_on_yes") === eq.direction
-      && sameAlgo(p, fit));
+      && sameAlgo(p, fit) && (!fit || p.target_coverage === coverage));
   const approved = mine.find((p) => p.status === "approved");
   const pending = mine.find((p) => p.status === "proposed");
   let ok: Proposal;
@@ -60,7 +64,7 @@ export async function startRealBridge(q: Question, eq: EquityPick, maxHedge: str
   else if (pending) ok = await approveProposal(pending.id);
   else {
     const algo = fit ? { algo: { family: fit.family, preset_index: fit.preset_index ?? undefined, source: "ai_fit" as const } } : {};
-    const prop = await createProposal({ ticker: eq.t, market, direction: eq.direction, shares_held: eq.held || 500, target_coverage: Math.min(0.5, cap), ...algo });
+    const prop = await createProposal({ ticker: eq.t, market, direction: eq.direction, shares_held: eq.held || 500, target_coverage: coverage, ...algo });
     ok = prop.status === "approved" ? prop : await approveProposal(prop.id);
   }
   const gap = gapPerShare(spot, eq.move);

@@ -95,7 +95,7 @@ describe("startRealBridge with an AI fit", () => {
     assert.equal(b.preset_index, 5);
   });
   it("reuses only a proposal approved with the same algo", async () => {
-    const same = prop({ id: "same", status: "approved", algo: { family: "macro_fed_hedge", preset_index: 5 } });
+    const same = prop({ id: "same", status: "approved", target_coverage: 1, algo: { family: "macro_fed_hedge", preset_index: 5 } });
     const other = prop({ id: "other", status: "approved", algo: { family: "macro_fed_hedge", preset_index: 6 } });
     const none = prop({ id: "none", status: "approved" });
     assert.equal((await startRealBridge(q, eq, "100%", fitApi([other, none, same]).api, fit)).bridgeId, "b-same");
@@ -104,6 +104,18 @@ describe("startRealBridge with an AI fit", () => {
     assert.ok(calls.create);
     // no fit: a proposal approved with an algo is not reused (the bridge would run that algo, not the default)
     assert.equal((await startRealBridge(q, eq, "100%", fitApi([same, none]).api)).bridgeId, "b-none");
+  });
+  it("with a fit the approved target_coverage is the user's Max hedge (the backend caps the algo at it)", async () => {
+    const { api, calls } = fitApi([]);
+    await startRealBridge(q, eq, "40%", api, fit);
+    assert.equal((calls.create as { target_coverage: number }).target_coverage, 0.4);
+    const noFit = fitApi([]);
+    await startRealBridge(q, eq, "100%", noFit.api);
+    assert.equal((noFit.calls.create as { target_coverage: number }).target_coverage, 0.5); // default Engine: half
+    // a proposal approved at another cap is not reused: the approval bounds what the bridge may hedge
+    const atHalf = prop({ id: "half", status: "approved", target_coverage: 0.5, algo: { family: "macro_fed_hedge", preset_index: 5 } });
+    assert.equal((await startRealBridge(q, eq, "40%", fitApi([atHalf]).api, fit)).bridgeId, "b-new");
+    assert.equal((await startRealBridge(q, eq, "50%", fitApi([atHalf]).api, fit)).bridgeId, "b-half");
   });
   it("without a fit the bridge body carries no family (the engine default spec runs)", async () => {
     const { api, calls } = fitApi([]);

@@ -197,11 +197,19 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
   const running = summary.data?.engine === "algo" && summary.data.algo
     ? { family: summary.data.algo.family, preset_index: summary.data.algo.preset_index ?? null }
     : summary.data?.engine === "legacy" ? null : entry.fit;
+  const algoInfo = summary.data?.engine === "algo" ? summary.data.algo : null;
+  const capNote = algoInfo?.coverage_cap != null
+    ? ` Hedge capped at the approved ${Math.round(algoInfo.coverage_cap * 100)}% of the position${algoInfo.capped ? ` (the preset's ${Object.entries(algoInfo.capped).map(([k, v]) => `${k} ${v}`).join(", ")} was lowered to it)` : ""}.`
+    : "";
   const fitTag = running
-    ? <Tag tone="ai" title={`hedgecore.Algo runs ${prettyId(running.family)}${running.preset_index != null ? ` preset #${running.preset_index}` : " with custom params"}: the AI fit sent with the approved proposal.`}>Running {prettyId(running.family)} · preset {running.preset_index ?? "custom"}</Tag>
+    ? <Tag tone="ai" title={`hedgecore.Algo runs ${prettyId(running.family)}${running.preset_index != null ? ` preset #${running.preset_index}` : " with custom params"}: the AI fit sent with the approved proposal.${capNote}`}>Running {prettyId(running.family)} · preset {running.preset_index ?? "custom"}</Tag>
     : entry.unapplied
       ? <Tag tone="ai" title={`POST /pipeline/fit picked ${prettyId(entry.unapplied.family)}, but ${entry.unapplied.why}; the engine runs its default delta-bridge spec.`}>AI fit: {prettyId(entry.unapplied.family)} (not applied: {entry.unapplied.why})</Tag>
       : null;
+  // A replay with no recorded equity price for this ticker: the hedge families hold (fee_unknown) on every tick.
+  const holdTag = summary.data?.engine === "algo" && summary.data.equity_price === "none"
+    ? <Tag tone="sim" title={`No equity price for ${summary.data.ticker ?? "this ticker"} on this replay (no recorded bars), so the algo's fee gate cannot price a trade and it holds with reason fee_unknown.`}>holding: no equity price on replay</Tag>
+    : null;
   const gateTag = entry.gap === 0
     ? <Tag tone="sim" title="Started with gap_per_share = 0 because there was no quote or impact estimate; the engine's fee gate is off (docs/contracts.md).">fee gate off (no quote/impact)</Tag>
     : null;
@@ -224,7 +232,7 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
         px={spot ? spot.toFixed(2) : "—"} pxColor="#5A627A" pxDelta={spot ? "Not streamed on this bridge" : "No quote available"} pxSpark={[]}
         driftLabel="Priced-in drift since start (mapping estimate)" drift={priced == null ? "n/a" : fmtPct(priced, 2)}
       />
-      <AlgoDock label={running ? "04 · ENGINE GATES · AI FIT" : "04 · ENGINE GATES · DEFAULT SPEC"} algos={algos} tag={<span style={{ display: "inline-flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>{gateTag}{fitTag}{sourceTag}</span>} />
+      <AlgoDock label={running ? "04 · ENGINE GATES · AI FIT" : "04 · ENGINE GATES · DEFAULT SPEC"} algos={algos} tag={<span style={{ display: "inline-flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>{gateTag}{fitTag}{holdTag}{sourceTag}</span>} />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,340px),1fr))", gap: 16, alignItems: "stretch" }}>
         <PortfolioPanel
           tag={<Tag tone={acct.tone} title="Account that receives the engine's orders (GET /account)">{acct.name}</Tag>}

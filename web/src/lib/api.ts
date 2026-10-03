@@ -154,6 +154,11 @@ export interface BridgeSummary {
   /** "algo": hedgecore.Algo runs `algo` (the fit); "legacy": the Engine default spec (no fit sent). */
   engine?: "algo" | "legacy";
   algo?: (AlgoChoice & { params?: Record<string, number> | null }) | null;
+  /** Algo bridges: the approved coverage cap, sells it held, and what equity price the algo can see. */
+  coverage_cap?: number | null;
+  cap_holds?: number;
+  equity_price?: "live_quote" | "recorded" | "none" | null;
+  equity_source?: string | null;
 }
 
 /** The hedgecore algo a bridge runs (contracts.md): a catalog family plus one preset, or explicit params. */
@@ -162,6 +167,11 @@ export interface AlgoChoice {
   preset_index?: number | null;
   params?: Record<string, number> | null;
   source?: "ai_fit" | "user";
+  /** Server-set on the stored proposal: the params that will run after the approved target_coverage capped the
+   *  hedge-size params, the cap, and the params it lowered ({name: original}). */
+  resolved_params?: Record<string, number> | null;
+  coverage_cap?: number | null;
+  capped?: Record<string, number> | null;
 }
 
 export interface HedgeStatus { status: "none" | "proposed" | "approved" | "bridging" | "rejected"; proposal_id: string | null; bridge_id: string | null }
