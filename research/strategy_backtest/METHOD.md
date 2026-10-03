@@ -92,4 +92,4 @@ The gate is re-evaluated at every closure, so a market can enter and leave. No m
 
 ## Amendments
 
-(none)
+1. **Crash of the first invocation and rerun (2026-10-03, before any result).** The first invocation (`d32365f`, 22:14Z) crashed with a pandas `TypeError` while parsing the SPY daily bars in `data.fetch_daily` (a `tz_convert` on a Series instead of its dates). At that point only SPY minute and daily bars had been requested; no prediction-market price had been fetched, no closure, record, trade or metric had been computed, and nothing was written except the crash entry in `RUN_LOG.md`. The parse is fixed in `71d2445` (with fetch tests on synthetic payloads); no rule changes. The study is rerun once from the same code otherwise. Two earlier pre-run fixes, made before any invocation, are in `404f23c` (on 13:00 early-close days the regular session ends at 13:00, so post-market bars are not read as the close, as section 1 intends; and a cleaner traded-notional expression with identical values).
