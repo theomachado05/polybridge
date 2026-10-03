@@ -1,7 +1,8 @@
 """WebullBroker: the Broker interface against the Webull OpenAPI paper (sandbox) trading endpoints.
 
 Built from Webull's public developer docs and the Apache-2.0 official Python SDK (webull-openapi-python-sdk 3.0.2):
-  host         api.sandbox.webull.com (sandbox, paper money). Production is api.webull.com and is never used here.
+  host         api.sandbox.webull.com (sandbox, paper money) over https, and nothing else: WebullClient refuses any other
+               host (production is api.webull.com), so an order placed here can only ever reach the paper sandbox.
   signing      HMAC-SHA256 (HMAC-SHA1 + MD5 body hash is the older documented variant, kept as an option).
                string to sign = path & sorted "k=v" of (x-app-key, x-signature-algorithm, x-signature-version,
                x-signature-nonce, x-timestamp, host, and the query params) [& UPPERCASE hex digest of the compact
@@ -35,13 +36,39 @@ from .sim import SimBroker
 log = logging.getLogger(__name__)
 
 SANDBOX_HOST = "https://api.sandbox.webull.com"
-TIMEOUT_S = 8.0
+SANDBOX_HOSTNAME = "api.sandbox.webull.com"  # the only host this integration talks to (paper money)
+# Hard deadline per HTTP request (connect + send + read). The longest chain inside one place_order is a split sell:
+# positions + accounts/list + 2 x (orders/place + orders/get) = 6 requests, 24 s at most, which stays inside the
+# bridge's BROKER_TIMEOUT_S (30 s), so the bridge never abandons a call that may still place an order.
+TIMEOUT_S = 4.0
 SIM_NOTE = "Routed to the simulator: Webull paper is only used for equities in this integration."
 _LISTS = ("data", "accounts", "positions", "orders", "holdings", "items", "list", "results")
 
 
 class WebullAPIError(BrokerError):
-    """Webull answered with an error status (the request was understood and refused)."""
+    """Webull answered with an error status. ``http_status`` is Webull's own status: a 4xx other than 429 means the
+    request was understood and refused; a 5xx or 429 says nothing about whether an order was accepted."""
+
+    def __init__(self, message: str, status_code: int = 502, http_status: int | None = None) -> None:
+        super().__init__(message, status_code)
+        self.http_status = http_status
+
+    @property
+    def refused(self) -> bool:
+        return self.http_status is not None and 400 <= self.http_status < 500 and self.http_status != 429
+
+
+class NotSandboxHost(ValueError):
+    """WEBULL_BASE_URL names a host other than the Webull paper sandbox (real money is out of scope)."""
+
+
+def check_sandbox_url(base_url: str) -> str:
+    """The base URL when it is https://api.sandbox.webull.com (any path), else NotSandboxHost."""
+    url = httpx.URL(base_url.rstrip("/"))
+    if url.scheme != "https" or url.host != SANDBOX_HOSTNAME:
+        raise NotSandboxHost(f"Webull base URL {url.scheme}://{url.host} is not the paper sandbox "
+                             f"(https://{SANDBOX_HOSTNAME}); real-money hosts are refused")
+    return str(url).rstrip("/")
 
 
 def _dec(x: float) -> str:
@@ -92,7 +119,7 @@ class WebullClient:
                  http: httpx.AsyncClient | None = None, algorithm: str = "HMAC-SHA256",
                  now: Callable[[], dt.datetime] | None = None, nonce: Callable[[], str] | None = None) -> None:
         self._key, self._secret, self.algorithm = app_key, app_secret, algorithm
-        self.base_url = base_url.rstrip("/")
+        self.base_url = check_sandbox_url(base_url)  # never a production (real-money) host
         self.host = httpx.URL(self.base_url).host
         self._http = http
         self._now = now or (lambda: dt.datetime.now(dt.UTC))
@@ -108,9 +135,9 @@ class WebullClient:
             content = body_json(body).encode()  # the exact bytes that were hashed
         http = self._http or httpx.AsyncClient(timeout=TIMEOUT_S)
         try:
-            r = await http.request(method, self.base_url + path, params=query or None, headers=headers, content=content,
-                                   timeout=TIMEOUT_S)
-        except httpx.HTTPError as e:
+            r = await asyncio.wait_for(http.request(method, self.base_url + path, params=query or None, headers=headers,
+                                                    content=content, timeout=TIMEOUT_S), TIMEOUT_S)
+        except (httpx.HTTPError, asyncio.TimeoutError) as e:
             raise BrokerError(f"Webull request failed: {type(e).__name__}", 502) from e
         finally:
             if self._http is None:
@@ -121,7 +148,7 @@ class WebullClient:
             payload = None
         if r.status_code >= 400:
             msg = payload.get("message") or payload.get("msg") or payload.get("error_code") if isinstance(payload, dict) else None
-            raise WebullAPIError(f"Webull {r.status_code}: {str(msg or r.text)[:200]}", 502)
+            raise WebullAPIError(f"Webull {r.status_code}: {str(msg or r.text)[:200]}", 502, http_status=r.status_code)
         return payload
 
 
@@ -184,7 +211,8 @@ def order_from_webull(d: dict, fallback: Order | None = None) -> Order:
                  side="sell" if side in ("sell", "short", "sell_short") else "buy", qty=qty,
                  type="limit" if (_str(d, "order_type") or "").upper().startswith("LIMIT") else "market",
                  limit_px=_num(d, "limit_price"), status=status, filled_qty=filled,
-                 fill_px=_num(d, "filled_price", "avg_filled_price", "fill_price"),
+                 fill_px=_num(d, "filled_price", "avg_filled_price", "filled_avg_price", "fill_price", "avg_price",
+                              "average_price"),
                  created_at=fallback.created_at if fallback else now_iso(),
                  filled_at=now_iso() if status == "filled" else None,
                  tag=fallback.tag if fallback else None, price_source="webull_paper",
@@ -317,10 +345,20 @@ class WebullBroker:
                      price_source="webull_paper", note=req.note)
         try:
             resp = await self.client.request("POST", "/trading/orders/place", body={"account_id": aid, "new_orders": [item]})
-        except WebullAPIError as e:  # understood and refused: a rejected order, not a crash
-            base.status, base.reject_reason = "rejected", e.message
-            self._placed[cid] = base
-            return base
+        except WebullAPIError as e:
+            if e.refused:  # a 4xx: understood and refused, a rejected order, not a crash
+                base.status, base.reject_reason = "rejected", e.message
+                self._placed[cid] = base
+                return base
+            # 5xx / 429: the order may have been accepted anyway. Ask Webull; if it knows the order, report what it
+            # says, otherwise raise so the caller tracks it as unconfirmed (never booked as "nothing traded").
+            try:
+                known = await self.find_order(cid, fallback=base)
+            except BrokerError:
+                known = None
+            if known is None:
+                raise
+            return known
         base.id = _str(_row(resp), "order_id") or base.id
         self._placed[cid] = base
         try:  # paper orders usually fill at once; ask once, otherwise it is reported open
@@ -328,6 +366,30 @@ class WebullBroker:
         except BrokerError:
             pass
         return base
+
+    async def find_order(self, client_order_id: str, fallback: Order | None = None) -> Order | None:
+        """Webull's state of an order by our client_order_id, or None when Webull does not know it (never placed).
+        Used to reconcile an order whose place call timed out or failed after it may have been accepted."""
+        if (o := self._placed.get(client_order_id)) is not None:
+            try:
+                return await self._refresh(o)
+            except BrokerError:
+                return o
+        try:
+            d = await self.client.request("GET", "/trading/orders/get",
+                                          {"account_id": await self._aid(), "client_order_id": client_order_id})
+        except WebullAPIError as e:
+            if e.refused:
+                return None
+            raise
+        row = _row(d)
+        if not (_str(row, "order_id") or _str(row, "status", "order_status")):
+            return None
+        o = order_from_webull(row, fallback=fallback or Order(
+            id=client_order_id, client_order_id=client_order_id, broker=self.name, symbol="", asset="equity",
+            side="buy", qty=0, type="market", status="open", created_at=now_iso()))
+        self._placed[client_order_id] = o
+        return o
 
     async def _refresh(self, o: Order) -> Order:
         aid = await self._aid()

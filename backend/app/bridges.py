@@ -4,9 +4,15 @@ and publishes tick/decision/fill/position events over SSE. hedgecore is imported
 Two engines:
 - ``algo`` (the proposal or the body names a fitted family + preset/params): ``hedgecore.Algo`` for that family is fed
   full MarketTicks (book, other venue, equity quote). Its Order intents go to the broker; a fill calls
-  ``Algo.on_fill``, a reject / expiry / cancel / broker error calls ``Algo.on_reject``, and any resting order of the
-  bridge is cancelled before a new one is sent. The hedge reported is what the broker filled.
-- ``legacy`` (no fit): the original ``hedgecore.Engine`` default spec on the adverse probability, unchanged.
+  ``Algo.on_fill``, a reject / expiry / cancel calls ``Algo.on_reject``, and any resting order of the bridge is
+  cancelled before a new one is sent. A place call that fails or times out is tracked as an unconfirmed resting order
+  (by client_order_id) and reconciled first, never booked as "nothing traded". The hedge reported is what the broker
+  filled.
+- ``legacy`` (no fit): the original ``hedgecore.Engine`` default spec on the adverse probability. Its broker side is
+  position-aware: buys never exceed the short the broker filled, sells never exceed the approved target_coverage, and
+  open orders are tracked and cancelled like the algo path's.
+A live bridge whose source fails falls back only to a recording of its own market, after settling what is open at the
+account broker.
 - opportunity (an approved opportunity proposal with an Opportunity-division options family): the same Algo loop
   on raw (never oriented) ticks whose option fields come from ``OptionsEnricher``; each Option intent becomes one
   multi-leg option order (``app.options.fills`` structure legs priced at the Massive quotes, filled all-or-none by
@@ -46,7 +52,11 @@ HEARTBEAT_S = 15.0
 MAX_EVENTS = 20_000
 REPLAYS_DIR = Path(__file__).resolve().parents[1] / "replays"
 NO_ENGINE = "engine not installed (uv sync --group engine)"
-BROKER_TIMEOUT_S = 20.0  # an order never stalls the bridge loop longer than this
+# An order never stalls the bridge loop longer than this. It is above the longest chain of broker requests inside one
+# place_order (Webull: 6 requests x 4 s hard deadline each = 24 s), so a call that may still place an order is never
+# abandoned half-way; if it is (timeout or error after the request was built), the order is tracked as unconfirmed
+# and reconciled by client_order_id before anything else is sent.
+BROKER_TIMEOUT_S = 30.0
 MAX_FILLS = 500
 REPLAY_NOTE = "replay: priced at the current market, not the replayed time"
 REPLAY_BROKER_NAME = "sim-replay"
@@ -110,8 +120,10 @@ class Bridge:
         self.algo = algo  # {family, preset_index, params, source, coverage_cap, capped} or None (legacy Engine)
         self.twin: dict | None = None  # the other-venue market feeding p_other_venue, and where it came from
         self.choice: AlgoChoice | None = None  # what the algo was chosen as (idempotent re-POSTs are compared to it)
-        # The bridge's open broker order: {order_id, instrument, side, qty, applied (filled qty already fed back)}.
+        # The bridge's open broker order: {order_id, client_order_id, instrument, side, qty, applied (filled qty fed
+        # back to the algo), hedged (filled qty already in broker_hedge), unconfirmed / unpriced flags}.
         self.resting: dict | None = None
+        self.resting_broker: Broker | None = None  # the broker holding it (a live->replay fallback never loses it)
         self.cancels = 0
         self.cap_holds = 0  # sell intents the approved coverage cap clipped to zero
         self.equity_source: str | None = None  # where the last live under_px came from (None: no quote)
@@ -240,41 +252,85 @@ def _resolve(prop: Proposal, body: BridgeIn) -> tuple[MarketRef, str]:
     return body.market, body.direction
 
 
-def _fallback_path(app) -> Path | None:
+def _fallback_path(app, market: MarketRef | None = None) -> Path | None:
+    """The recording a live bridge falls back to when its source fails: only a recording of THIS market (the replay
+    index / ``replays/<market id>.jsonl``, see ``pipeline.ticks._replay_candidates``). POLYBRIDGE_REPLAY_PATH is used
+    only when it is one of those files; another market's history is never replayed under this market's title."""
+    from .pipeline.ticks import DATA, _replay_candidates
     configured = getattr(app.state, "replay_path", None) or os.environ.get("POLYBRIDGE_REPLAY_PATH")
-    return Path(configured) if configured else None
+    if market is None:
+        return None
+    try:
+        cands = _replay_candidates(market.source, market.id, market.token_id, DATA, REPLAYS_DIR)
+    except Exception:
+        cands = []
+    if configured:
+        conf = Path(configured)
+        names = {c.name for c in cands}
+        if conf.name in names or conf.stem in (market.id, market.token_id):
+            return conf
+    return next((c for c in cands if c.is_file()), None)
 
 
 async def _send_to_broker(bridge: Bridge, order_qty: float) -> dict | None:
     """Route one engine order to the active broker: sell to add to the short hedge, buy to reduce it.
-    Returns the fill record for the stream; never raises (a broker failure must not stop the bridge)."""
+    Returns the fill record for the stream; never raises (a broker failure must not stop the bridge).
+
+    The legacy Engine advances on every intent, whatever the broker did, so the broker side is position-aware: a buy
+    never exceeds the short the broker really holds for this bridge (a rejected sell is never "bought back" into an
+    unapproved long), a sell never exceeds the approved target_coverage, and an order left open is tracked as resting
+    (settled before the next order and cancelled at bridge end), exactly like the algo path."""
     broker = bridge.order_broker()
     if broker is None:
         return None
-    bridge.broker_name = broker.name
     side = "sell" if order_qty > 0 else "buy"
-    rec: dict = {"broker": broker.name, "side": side, "qty": abs(order_qty), "symbol": bridge.proposal.ticker}
+    qty = abs(order_qty)
+    rec: dict = {"broker": broker.name, "side": side, "qty": qty, "symbol": bridge.proposal.ticker}
+    if not await _settle_resting(bridge, None, broker, "replace"):
+        rec.update(status="held", reject_reason="previous order still resting at the broker (retried next time)",
+                   filled_qty=0.0)
+        return rec
+    room = _coverage_room(bridge) if side == "sell" else max(0.0, bridge.broker_hedge)
+    if qty > room:
+        rec["capped_from"] = qty
+        qty = float(math.floor(room + 1e-9)) if side == "sell" else room
+        rec["qty"] = qty
+        if qty <= 1e-9:
+            bridge.cap_holds += 1
+            why = (f"coverage cap: the approved target_coverage {bridge.proposal.target_coverage:g} is already hedged"
+                   if side == "sell" else "no short filled at the broker to buy back (an earlier sell did not fill)")
+            rec.update(status="held", reject_reason=why, filled_qty=0.0)
+            return rec
+    bridge.broker_name = broker.name
     note = None
     if bridge.effective_source == "replay":
         note = REPLAY_NOTE
         rec["price_note"] = "priced at the current market, not the replayed time"
         rec["scope"] = "account" if bridge.replay_to_account else "replay_sandbox"
+    req = OrderRequest(symbol=bridge.proposal.ticker, asset="equity", side=side, qty=qty, type="market",
+                       client_order_id=f"{bridge.id}-{bridge.orders}", tag=bridge.id, note=note)
     try:
-        req = OrderRequest(symbol=bridge.proposal.ticker, asset="equity", side=side, qty=abs(order_qty), type="market",
-                           client_order_id=f"{bridge.id}-{bridge.orders}", tag=bridge.id, note=note)
         o = await asyncio.wait_for(broker.place_order(req), BROKER_TIMEOUT_S)
     except Exception as e:
-        bridge.broker_errors += 1
-        rec.update(status="error", error=type(e).__name__, filled_qty=0.0)
+        _track_unconfirmed(bridge, broker, req, "equity")
+        rec.update(status="error", error=type(e).__name__, filled_qty=0.0, order_id=req.client_order_id,
+                   kept_resting=True)
         return rec
     rec.update(status=o.status, order_id=o.id, fill_px=o.fill_px, fee=o.fee, price_source=o.price_source,
                reject_reason=o.reject_reason, note=o.note, broker=o.broker, filled_qty=o.filled_qty)
-    bridge.broker_hedge += o.filled_qty if side == "sell" else -o.filled_qty  # only what was really filled
-    if o.status == "filled":
-        bridge.broker_filled += 1
-    elif o.status == "rejected":
-        bridge.broker_rejects += 1
+    await _apply_order_state(bridge, None, o, side, "equity", broker=broker)  # broker_hedge: only what really filled
     return rec
+
+
+def _track_unconfirmed(bridge: Bridge, broker: Broker, req: OrderRequest, instrument: str) -> None:
+    """The place call failed or timed out after the request was built: the broker may have accepted it. It is tracked
+    as resting under its client_order_id, so the next order (or the bridge end) reconciles it first: a fill is booked,
+    an open order is cancelled, an order the broker never saw is dropped. Never booked as "nothing traded"."""
+    bridge.broker_errors += 1
+    bridge.resting = {"order_id": req.client_order_id, "client_order_id": req.client_order_id,
+                      "instrument": instrument, "side": req.side, "qty": req.qty, "applied": 0.0, "hedged": 0.0,
+                      "unconfirmed": True}
+    bridge.resting_broker = broker
 
 
 def _fin(x: Any) -> float | None:
@@ -418,38 +474,76 @@ def _signed(side: str, qty: float) -> float:
     return qty if side == "buy" else -qty
 
 
-async def _apply_order_state(bridge: Bridge, algo, o, side: str, instrument: str, applied: float = 0.0) -> None:
-    """Feed the broker's answer back to the algo: filled -> on_fill(signed qty, fill px); rejected / cancelled ->
-    on_reject; open -> the bridge remembers it as resting (cancel/replace before the next order).
+def _positive(x: Any) -> float | None:
+    v = _fin(x)
+    return v if v is not None and v > 0 else None
 
-    ``filled_qty`` is cumulative per order, so only the part not fed back yet (``applied``: a partial fill already
-    applied while the order rested) reaches on_fill and the broker hedge; a partial fill is never counted twice."""
+
+async def _apply_order_state(bridge: Bridge, algo, o, side: str, instrument: str, applied: float = 0.0,
+                             hedged: float | None = None, ref_px: float | None = None,
+                             broker: Broker | None = None) -> None:
+    """Feed the broker's answer back to the algo: filled -> on_fill(signed qty, fill px); rejected / cancelled ->
+    on_reject; open -> the bridge remembers it as resting (cancel/replace before the next order). ``algo`` None is the
+    legacy Engine (it already advanced on the intent): only the broker hedge and the resting order are tracked.
+
+    ``filled_qty`` is cumulative per order, so only the part not fed back yet reaches on_fill (``applied``) and the
+    broker hedge (``hedged``); a partial fill is never counted twice. The filled quantity always reaches broker_hedge
+    (the coverage cap must see every share the broker sold). The algo's fill price is the broker's fill price, else
+    the order's limit, else ``ref_px`` (the tick's equity price); with none of them the order stays resting (flagged
+    ``unpriced``) so a later lookup can price it, and no further order is stacked on top of it."""
     filled = float(getattr(o, "filled_qty", 0.0) or 0.0)
-    new = filled - applied
-    px = _fin(getattr(o, "fill_px", None))
-    if new > 1e-9 and px is not None:
-        algo.on_fill(instrument, _signed(side, new), px)
-        bridge.broker_hedge += new if side == "sell" else -new
-        bridge.hedge = bridge.broker_hedge
+    hedged = applied if hedged is None else hedged
+    if filled - hedged > 1e-9:
+        d = filled - hedged
+        bridge.broker_hedge += d if side == "sell" else -d
+        if algo is not None:
+            bridge.hedge = bridge.broker_hedge
+        hedged = filled
+    unpriced = False
+    if algo is not None and filled - applied > 1e-9:
+        px = _positive(getattr(o, "fill_px", None)) or _positive(getattr(o, "limit_px", None)) or _positive(ref_px)
+        if px is not None:
+            algo.on_fill(instrument, _signed(side, filled - applied), px)
+            applied = filled
+        else:
+            unpriced = True
+    elif algo is None:
         applied = filled
+    keep = {"order_id": o.id, "client_order_id": getattr(o, "client_order_id", None) or o.id,
+            "instrument": instrument, "side": side, "qty": o.qty, "applied": applied, "hedged": hedged}
+    if unpriced:
+        bridge.resting = {**keep, "unpriced": True, "status": o.status}
+        bridge.resting_broker = broker or bridge.resting_broker
+        await bridge.emit("error", {"message": f"order {o.id} reports {filled:g} filled with no fill price; kept as "
+                                               "resting until it can be priced", "source": "broker"})
+        return
     if o.status == "filled":
         bridge.broker_filled += 1
-        bridge.resting = None
+        bridge.resting = bridge.resting_broker = None
     elif o.status == "open":
-        bridge.resting = {"order_id": o.id, "instrument": instrument, "side": side, "qty": o.qty, "applied": applied}
+        bridge.resting = keep
+        bridge.resting_broker = broker or bridge.resting_broker
     else:  # rejected or cancelled: nothing (more) traded
         if o.status == "rejected":
             bridge.broker_rejects += 1
-        bridge.resting = None
-        algo.on_reject(instrument)
+        bridge.resting = bridge.resting_broker = None
+        if algo is not None:
+            algo.on_reject(instrument)
 
 
-async def _lookup(broker: Broker, order_id: str):
+async def _lookup(broker: Broker, order_id: str, client_order_id: str | None = None):
+    """The broker's current state of an order, by broker id or by our client_order_id (an unconfirmed order only has
+    the latter). A broker that can read one order by client id (Webull) is asked directly when the list misses it."""
+    ids = {order_id, client_order_id} - {None}
     rows = await asyncio.wait_for(broker.orders(), BROKER_TIMEOUT_S)
-    return next((o for o in rows if o.id == order_id), None)
+    hit = next((o for o in rows if o.id in ids or getattr(o, "client_order_id", None) in ids), None)
+    find = getattr(broker, "find_order", None)
+    if hit is None and find is not None:
+        hit = await asyncio.wait_for(find(client_order_id or order_id), BROKER_TIMEOUT_S)
+    return hit
 
 
-async def _settle_resting(bridge: Bridge, algo, broker: Broker | None, why: str) -> bool:
+async def _settle_resting(bridge: Bridge, algo, broker: Broker | None, why: str, ref_px: float | None = None) -> bool:
     """Cancel/replace: before a new order (or when the bridge ends), the bridge's resting order is looked up; if it
     filled meanwhile the fill goes to the algo, otherwise it is cancelled and the algo hears on_reject (expired).
 
@@ -457,35 +551,43 @@ async def _settle_resting(bridge: Bridge, algo, broker: Broker | None, why: str)
     may still be working: it stays in ``bridge.resting`` (retried before the next order and at bridge end) and the
     caller must not send another order on top of it (False)."""
     r = bridge.resting
+    broker = bridge.resting_broker or broker  # the broker that took it, even after a live->replay switch
     if r is None or broker is None:
         return r is None
+    cid = r.get("client_order_id")
     rec: dict = {"order_id": r["order_id"], "reason": why, "broker": broker.name}
     try:
-        current = await _lookup(broker, r["order_id"])
+        current = await _lookup(broker, r["order_id"], cid)
         if current is not None and current.status == "open":
             try:
-                current = await asyncio.wait_for(broker.cancel(r["order_id"]), BROKER_TIMEOUT_S)
+                current = await asyncio.wait_for(broker.cancel(current.id), BROKER_TIMEOUT_S)
             except Exception:  # filled or gone between the lookup and the cancel: read it again
-                current = await _lookup(broker, r["order_id"])
+                current = await _lookup(broker, r["order_id"], cid)
     except Exception as e:
         bridge.broker_errors += 1
         rec.update(status="error", error=type(e).__name__, kept_resting=True)
         await bridge.emit("cancel", rec)
         return False
+    applied, hedged = float(r.get("applied") or 0.0), float(r.get("hedged", r.get("applied")) or 0.0)
     if current is None:  # the broker no longer knows it: nothing can still trade, treat as expired
-        bridge.resting = None
-        algo.on_reject(r["instrument"])
+        bridge.resting = bridge.resting_broker = None
+        if algo is not None:
+            algo.on_reject(r["instrument"])
         rec["status"] = "unknown"
     elif current.status == "open":  # the cancel did not take: it may still fill, so keep tracking it
-        await _apply_order_state(bridge, algo, current, r["side"], r["instrument"], float(r.get("applied") or 0.0))
+        await _apply_order_state(bridge, algo, current, r["side"], r["instrument"], applied, hedged, ref_px, broker)
         rec.update(status="cancel_failed", kept_resting=True, filled_qty=current.filled_qty)
         await bridge.emit("cancel", rec)
         return False
     else:
         if current.status == "cancelled":
             bridge.cancels += 1
-        await _apply_order_state(bridge, algo, current, r["side"], r["instrument"], float(r.get("applied") or 0.0))
+        await _apply_order_state(bridge, algo, current, r["side"], r["instrument"], applied, hedged, ref_px, broker)
         rec.update(status=current.status, filled_qty=current.filled_qty, fill_px=current.fill_px)
+        if bridge.resting is not None:  # filled but still unpriced: keep it, send nothing on top
+            rec["kept_resting"] = True
+            await bridge.emit("cancel", rec)
+            return False
     await bridge.emit("cancel", rec)
     return True
 
@@ -516,7 +618,7 @@ async def _send_intent(bridge: Bridge, algo, intent: dict, t: Tick) -> dict:
         rec.update(status="error", error="no broker", filled_qty=0.0, broker=None)
         return rec
     rec["broker"] = broker.name
-    if not await _settle_resting(bridge, algo, broker, "replace"):
+    if not await _settle_resting(bridge, algo, broker, "replace", _positive(t.fields.get("under_px"))):
         algo.on_reject(instrument)  # the old order may still be working: never stack a new one on top of it
         rec.update(status="held", reject_reason="previous order still resting at the broker (retried next time)",
                    filled_qty=0.0)
@@ -555,13 +657,22 @@ async def _send_intent(bridge: Bridge, algo, intent: dict, t: Tick) -> dict:
                            type="limit" if limit is not None else "market", limit_px=limit, ref_px=ref,
                            ref_source=ref_source, client_order_id=f"{bridge.id}-{bridge.orders}", tag=bridge.id,
                            note=note)
-        o = await asyncio.wait_for(broker.place_order(req), BROKER_TIMEOUT_S)
     except Exception as e:
         bridge.broker_errors += 1
-        algo.on_reject(instrument)  # nothing is known to have traded
+        algo.on_reject(instrument)  # never sent: nothing traded
         rec.update(status="error", error=type(e).__name__, filled_qty=0.0)
         return rec
-    await _apply_order_state(bridge, algo, o, side, instrument)
+    try:
+        o = await asyncio.wait_for(broker.place_order(req), BROKER_TIMEOUT_S)
+    except Exception as e:
+        # The broker may have accepted it (a timeout after the POST, a 5xx): track it under its client_order_id and
+        # reconcile it before the next order, so an accepted order is never re-sent on top of itself.
+        _track_unconfirmed(bridge, broker, req, instrument)
+        rec.update(status="error", error=type(e).__name__, filled_qty=0.0, order_id=req.client_order_id,
+                   kept_resting=True)
+        return rec
+    await _apply_order_state(bridge, algo, o, side, instrument, ref_px=_positive(t.fields.get("under_px")),
+                             broker=broker)
     if bridge.effective_source == "replay":
         if ref_source == RECORDED_SOURCE and o.filled_qty > 0:
             bridge.recorded_fills += 1
@@ -877,6 +988,9 @@ async def _run(bridge: Bridge, app, hc, source, fallback: Path | None) -> None:
         except (SourceError, OSError) as e:
             await bridge.emit("error", {"message": str(e), "source": bridge.effective_source})
             if bridge.effective_source == "live" and fallback is not None and fallback.is_file():
+                # Settle what is open at the account broker first (resting order, open option structure): after the
+                # switch, orders go to the replay sandbox and must never orphan what the live phase left working.
+                await _finish_orders(bridge, engine)
                 bridge.effective_source = "replay"
                 await bridge.emit("status", {"status": "running", "source": "replay", "note": "live failed; replaying"})
                 bars = _bars(bridge.proposal.ticker)
@@ -905,8 +1019,8 @@ async def _finish_orders(bridge: Bridge, engine) -> None:
     """A bridge that ends leaves no order resting at the broker, and an opportunity bridge leaves no option structure
     open: it is closed on its own legs (simulated, labelled). A close that cannot be priced is reported, not hidden:
     the structure then stays in the summary's option_structure."""
-    if bridge.algo and bridge.resting is not None:
-        await _settle_resting(bridge, engine, bridge.order_broker(), "bridge_end")
+    if bridge.resting is not None:  # algo and legacy bridges alike
+        await _settle_resting(bridge, engine if bridge.algo else None, bridge.order_broker(), "bridge_end")
     if bridge.algo and bridge.division == "opportunity" and bridge.opt_pos != 0 and bridge.opt_open is not None:
         bridge.orders += 1
         intent = {"action": "order", "instrument": "option", "side": -1 if bridge.opt_pos > 0 else 1,
@@ -1090,7 +1204,12 @@ async def start_bridge(body: BridgeIn, request: Request, response: Response) -> 
                                  "executed as a single simulated options order, not by hedgecore.")
     reg = _registry(request)
     existing = reg.get(prop.id)
-    if existing is not None:  # idempotent: one bridge per approved proposal id
+    if existing is not None and existing.status != "running":
+        # finished / stopped: a new POST starts a fresh bridge (it replaces the registry entry); the old one stays
+        # readable by its id (summary / stream) but is never handed back as if it were the new run
+        _history(request)[existing.id] = existing
+        existing = None
+    if existing is not None:  # idempotent: one running bridge per approved proposal id
         if existing.requested_source != body.source:
             raise HTTPException(409, f"Bridge {existing.id} already started for proposal {prop.id} with source {existing.requested_source}.")
         asked = _asked_algo(body)  # a body naming an algo must name the one running (else the caller is misled)
@@ -1108,7 +1227,7 @@ async def start_bridge(body: BridgeIn, request: Request, response: Response) -> 
     bridge = Bridge(prop, body.source, market, body.gap_per_share, direction, body.replay_to_account, algo)
     bridge.choice = choice
 
-    fallback = _fallback_path(request.app)
+    fallback = _fallback_path(request.app, market)
     if body.source == "replay":
         path = _replay_path(request, market, body.market)
         if path is None or not path.is_file():
@@ -1142,10 +1261,18 @@ async def start_bridge(body: BridgeIn, request: Request, response: Response) -> 
     return {"bridge_id": bridge.id}
 
 
+def _history(request: Request) -> dict[str, Bridge]:
+    if not hasattr(request.app.state, "bridge_history"):
+        request.app.state.bridge_history = {}
+    return request.app.state.bridge_history
+
+
 def _find(request: Request, bridge_id: str) -> Bridge:
     for b in _registry(request).values():
         if b.id == bridge_id:
             return b
+    if (old := _history(request).get(bridge_id)) is not None:
+        return old
     raise HTTPException(404, f"No bridge {bridge_id}.")
 
 

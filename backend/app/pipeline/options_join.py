@@ -113,6 +113,24 @@ def bar_interval(bars: list[tuple[int, float]], default: float = 3600.0) -> floa
     return float(np.median(gaps)) if len(gaps) else default
 
 
+MAX_PAIR_AGE_S = 3.5 * 86400.0  # a synced pair older than a long weekend is not a current spread
+
+
+def leg_sync_mask(ts_s: np.ndarray, leg_bars: list[list[tuple[int, float]]]) -> tuple[np.ndarray, int]:
+    """(mask, n dropped): True where every leg has a known close, the legs' last closes are within one bar interval of
+    each other (the more liquid leg's spacing), and the pair is not older than max(2 intervals, MAX_PAIR_AGE_S)."""
+    n = len(ts_s)
+    if not leg_bars or any(not b for b in leg_bars):
+        return np.zeros(n, dtype=bool), 0
+    known = [asof_known(ts_s, b) for b in leg_bars]
+    tol = min(bar_interval(b) for b in leg_bars)
+    lo, hi = np.fmin.reduce(known), np.fmax.reduce(known)
+    have = np.all([np.isfinite(k) for k in known], axis=0)
+    with np.errstate(invalid="ignore"):
+        ok = have & (hi - lo <= tol) & (ts_s.astype(np.float64) - hi <= max(2.0 * tol, MAX_PAIR_AGE_S))
+    return ok, int((have & ~ok).sum())
+
+
 def spread_series(ts_s: np.ndarray, legs: list[tuple[int, list[tuple[int, float]]]]) -> np.ndarray:
     """As-of join of signed leg closes: sum(sign * close of the last bar known at t); NaN until every leg has one."""
     out = np.zeros(len(ts_s))
@@ -195,6 +213,11 @@ async def join_options(ticks: dict[str, np.ndarray], question: str | None, end_d
         for sign, tk in signed:
             legs.append((sign, await bounded(bars, client, tk, start_s, end_s)))
         mid = spread_series(ts_s, legs)
+        # Both legs must have closed at about the same time: an illiquid strike's last close can be days older than
+        # the other leg's, and that spread never existed at one moment (a fake PM-vs-options gap that "converges"
+        # when the stale leg prints). Same rule as the IV path below; also drop pairs older than any weekend gap.
+        synced, n_unsynced = leg_sync_mask(ts_s, [b for _, b in legs])
+        mid = np.where(synced, mid, NAN)
         width = k_hi - k_lo
         dates = [dt.datetime.fromtimestamp(int(t), dt.timezone.utc).date() for t in ts_s]
         df = np.array([_discount(RISK_FREE, expiry, d) for d in dates])
@@ -211,6 +234,10 @@ async def join_options(ticks: dict[str, np.ndarray], question: str | None, end_d
         info.update(available=n_ok > 0, n_with_options=n_ok, underlying_used=und, strike_used=k,
                     structure={"kind": "call_spread" if above else "put_spread", "expiry": res["expiry"],
                                "k_lo": k_lo, "k_hi": k_hi, "legs": [t for _, t in signed]})
+        info["n_unsynced_legs"] = n_unsynced
+        if n_unsynced:
+            notes.append(f"options: {n_unsynced}/{len(ts_s)} ticks dropped because the two legs' last bar closes "
+                         "were more than one bar interval apart (or stale), so their spread never traded at once")
         if n_ok == 0:
             notes.append("options: no bar closes for both legs inside the history window")
         else:

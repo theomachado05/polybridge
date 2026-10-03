@@ -41,11 +41,28 @@ def test_fee_gate_reaches_the_stream(client):
 def test_start_is_idempotent_per_proposal(client):
     pid = _approved(client)
     first = client.post("/bridges", json=_body(pid))
+    _events(client, first.json()["bridge_id"])
+    client.app.state.bridges[pid].status = "running"  # as if still running (replays at speed 0 finish at once)
     again = client.post("/bridges", json=_body(pid))
     assert first.status_code == 201 and again.status_code == 200
     assert again.json() == first.json()
     assert client.post("/bridges", json=_body(pid, source="live")).status_code == 409
     assert len(client.app.state.bridges) == 1
+
+
+def test_a_finished_bridge_is_never_handed_back_a_new_post_starts_a_fresh_one(client):
+    pid = _approved(client)
+    first = client.post("/bridges", json=_body(pid)).json()["bridge_id"]
+    assert _events(client, first)[-1][1]["status"] == "finished"
+    again = client.post("/bridges", json=_body(pid))
+    assert again.status_code == 201 and again.json()["bridge_id"] != first
+    ev = _events(client, again.json()["bridge_id"])
+    assert [k for k, _ in ev].count("tick") == 20  # a full fresh run, not the old history in one burst
+    assert client.app.state.bridges[pid].id == again.json()["bridge_id"]
+    assert client.get(f"/bridges/{first}").json()["status"] == "finished"  # the old run is still readable by id
+    # a stopped one (e.g. a live source that failed) can be restarted too, with another source
+    client.app.state.bridges[pid].status = "stopped"
+    assert client.post("/bridges", json=_body(pid, source="live")).status_code == 201
 
 
 class _FailingLive:
@@ -57,8 +74,11 @@ class _FailingLive:
         yield  # pragma: no cover
 
 
-def test_live_failure_switches_to_replay(client):
+def test_live_failure_switches_to_replay(client, replay_file):
     client.app.state.live_source_factory = _FailingLive
+    own = replay_file.with_name("m1.jsonl")  # a recording of THIS market (replays/<market id>.jsonl naming)
+    own.write_text(replay_file.read_text())
+    client.app.state.replay_path = str(own)
     pid = _approved(client)
     bid = client.post("/bridges", json=_body(pid, source="live")).json()["bridge_id"]
     ev = _events(client, bid)
@@ -66,6 +86,16 @@ def test_live_failure_switches_to_replay(client):
     assert kinds[0] == "error" and "network down" in ev[0][1]["message"]
     assert kinds.count("tick") == 20 and ev[-1][1]["status"] == "finished"
     assert client.get(f"/bridges/{bid}").json()["source"] == "replay"
+
+
+def test_live_failure_never_replays_another_markets_recording(client):
+    client.app.state.live_source_factory = _FailingLive  # replay_path is fixture.jsonl: not market m1's recording
+    pid = _approved(client)
+    bid = client.post("/bridges", json=_body(pid, source="live")).json()["bridge_id"]
+    ev = _events(client, bid)
+    assert [k for k, _ in ev] == ["error", "status"]
+    assert ev[-1][1] == {"status": "stopped", "reason": "source_failed"}
+    assert client.get(f"/bridges/{bid}").json()["source"] == "live"
 
 
 def test_live_failure_without_replay_stops(client):
@@ -116,6 +146,7 @@ def test_market_event_proposal_runs_a_bridge(client):
     s = client.get(f"/bridges/{bid}").json()
     assert s["direction"] == "down_on_yes" and s["market"]["id"] == "2589813" and s["basis"] == "market_event"
     assert s["label"] == "Product hedge — no confirmatory claim"
+    client.app.state.bridges[p["id"]].status = "running"  # as if still running
     assert client.post("/bridges", json=body).status_code == 200
     assert client.post("/bridges", json={**body, "source": "live"}).status_code == 409
 

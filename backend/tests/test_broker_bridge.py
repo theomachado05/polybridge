@@ -88,19 +88,21 @@ def test_no_price_rejects_are_recorded_and_the_loop_keeps_running(client, tmp_pa
     pin(client, SimBroker(tmp_path / "s.json", FakeQuotes()))  # no Massive price for ABNB, none supplied
     bid, ev = start(client, replay_to_account=True)
     fills = [d for k, d in ev if k == "fill"]
-    assert [f["status"] for f in fills] == ["rejected"] * 3 and fills[0]["reject_reason"].startswith("no_price")
+    assert [f["status"] for f in fills] == ["rejected", "rejected", "held"] and fills[0]["reject_reason"].startswith("no_price")
+    # the engine's reducing buy (-80) is held: the broker never filled a short, so a buy would open an unapproved long
+    assert fills[2]["reject_reason"].startswith("no short filled") and fills[2]["capped_from"] == 80.0
     kinds = [k for k, _ in ev]
     assert kinds.count("tick") == 20 and ev[-1][1]["status"] == "finished"
     s = client.get(f"/bridges/{bid}").json()
-    assert s["broker_rejects"] == 3 and s["broker_filled"] == 0 and s["orders"] == 3
+    assert s["broker_rejects"] == 2 and s["broker_filled"] == 0 and s["orders"] == 3 and s["broker_hedge"] == 0.0
 
 
 def test_insufficient_buying_power_is_reported_not_raised(client, tmp_path):
     b = pin(client, SimBroker(tmp_path / "s.json", FakeQuotes(equity={"ABNB": Quote(150.0, None, "q")}), starting_cash=1000.0))
     bid, ev = start(client, replay_to_account=True)
     fills = [d for k, d in ev if k == "fill"]
-    assert [f["status"] for f in fills] == ["rejected"] * 3
-    assert {f["reject_reason"] for f in fills} == {"insufficient_buying_power"}
+    assert [f["status"] for f in fills] == ["rejected", "rejected", "held"]
+    assert {f["reject_reason"] for f in fills[:2]} == {"insufficient_buying_power"}
     assert run(b.positions()) == [] and run(b.account()).cash == 1000.0
     assert [d["broker_hedge"] for k, d in ev if k == "position"] == [0.0, 0.0, 0.0]  # nothing filled, and it says so
     assert [d["hedge"] for k, d in ev if k == "position"] == [100.0, 150.0, 70.0]  # engine intent is still reported
@@ -118,10 +120,14 @@ def test_a_raising_broker_never_stops_the_bridge(client):
     pin(client, _Exploding())
     bid, ev = start(client, replay_to_account=True)
     fills = [d for k, d in ev if k == "fill"]
-    assert [f["status"] for f in fills] == ["error"] * 3 and fills[0]["error"] == "RuntimeError"
+    # the failed order may have been accepted: it is tracked as unconfirmed and nothing is stacked on top of it while
+    # the broker cannot say what happened to it
+    assert [f["status"] for f in fills] == ["error", "held", "held"] and fills[0]["error"] == "RuntimeError"
+    assert fills[0]["kept_resting"] is True and fills[0]["order_id"] == f"{bid}-1"
     assert "on fire" not in str(fills)  # the exception text is not echoed to the stream
     s = client.get(f"/bridges/{bid}").json()
-    assert s["broker_errors"] == 3 and s["status"] == "finished" and s["ticks"] == 20
+    assert s["broker_errors"] >= 3 and s["status"] == "finished" and s["ticks"] == 20
+    assert s["resting_order"]["unconfirmed"] is True
     assert [d["hedge"] for k, d in ev if k == "position"] == [100.0, 150.0, 70.0]
     assert [d["broker_hedge"] for k, d in ev if k == "position"] == [0.0, 0.0, 0.0]
 
@@ -137,7 +143,7 @@ def test_a_hanging_broker_is_cut_off_by_the_timeout(client, monkeypatch):
     monkeypatch.setattr(bridges, "BROKER_TIMEOUT_S", 0.05)
     pin(client, _Hanging())
     bid, ev = start(client, replay_to_account=True)
-    assert [d["status"] for k, d in ev if k == "fill"] == ["error"] * 3
+    assert [d["status"] for k, d in ev if k == "fill"] == ["error", "held", "held"]
     assert ev[-1][1]["status"] == "finished"
 
 
@@ -156,7 +162,7 @@ def test_default_broker_comes_from_the_environment_and_is_the_sim(client):
     bid, ev = start(client)  # nothing pinned: get_broker(app) builds the sim (no market data in tests)
     s = client.get(f"/bridges/{bid}").json()
     assert s["account_scope"] == "replay_sandbox" and s["broker"] == "sim-replay"  # replay never touches the account
-    assert [d["status"] for k, d in ev if k == "fill"] == ["rejected"] * 3
+    assert [d["status"] for k, d in ev if k == "fill"] == ["rejected", "rejected", "held"]
     assert s["broker_hedge"] == 0.0 and s["hedge"] == 70.0 and s["hedge_basis"] == "engine_intent"
     assert [d["broker_hedge"] for k, d in ev if k == "position"] == [0.0] * 3  # rejected: nothing is held anywhere
     live = start(client, replay_to_account=True)  # a second bridge needs its own proposal: opting in picks the account

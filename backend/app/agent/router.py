@@ -19,7 +19,9 @@ def list_tools() -> dict:
 @router.post("/tool/{name}")
 async def call_tool(name: str, request: Request, body: dict | None = Body(default=None),
                     x_agent_secret: str | None = Header(default=None)) -> dict:
-    secret = os.environ.get("AGENT_TOOL_SECRET")  # unset: open, as before
+    # Set: required on every call. Unset: open on localhost only; a call through a tunnel is refused by
+    # app.security.guard_remote_writes (which also protects every other write route).
+    secret = os.environ.get("AGENT_TOOL_SECRET")
     if secret and not hmac.compare_digest(x_agent_secret or "", secret):
         raise HTTPException(401, "Missing or wrong X-Agent-Secret.")
     if name not in NAMES:

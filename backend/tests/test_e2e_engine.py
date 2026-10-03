@@ -63,5 +63,5 @@ def test_market_event_propose_approve_bridge_stream(client):
     assert s["ticks"] == 30 and s["orders"] >= 1 and s["status"] == "finished"
     assert sum(s["reasons"].values()) == 30
 
-    again = client.post("/bridges", json=body)
-    assert again.status_code == 200 and again.json()["bridge_id"] == bid
+    again = client.post("/bridges", json=body)  # the bridge finished: a re-POST starts a fresh run, never the old one
+    assert again.status_code == 201 and again.json()["bridge_id"] != bid

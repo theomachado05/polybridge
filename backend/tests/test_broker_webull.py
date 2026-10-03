@@ -370,3 +370,95 @@ def test_factory_pins_app_state_broker():
     fake = SimBroker(None)
     A.state.broker = fake
     assert get_broker(A) is fake
+
+
+# --- review fixes: sandbox-only host, 5xx after acceptance, find_order -------------------------------
+
+@pytest.mark.parametrize("url", ["https://api.webull.com", "https://api.webull.com/", "http://api.sandbox.webull.com",
+                                 "https://api.sandbox.webull.com.evil.example", "https://evil.example"])
+def test_client_refuses_any_host_but_the_paper_sandbox(url):
+    from app.broker.webull import NotSandboxHost
+    with pytest.raises(NotSandboxHost):
+        WebullClient("K", "S", url)
+    assert WebullClient("K", "S", "https://api.sandbox.webull.com/").base_url == SANDBOX_HOST
+
+
+def test_factory_falls_back_to_the_sim_for_a_production_webull_host(monkeypatch, caplog):
+    env = {"BROKER": "webull", "WEBULL_APP_KEY": "k", "WEBULL_APP_SECRET": "s", "WEBULL_BASE_URL": "https://api.webull.com"}
+    monkeypatch.setattr(broker_mod, "_env", lambda n: env.get(n, ""))
+    with caplog.at_level("ERROR"):
+        b = broker_mod.build_broker()
+    assert b.name == "sim" and isinstance(b, SimBroker)
+    assert any("not the paper sandbox" in r.getMessage() for r in caplog.records)
+
+
+def _place_status_sandbox(code, known):
+    sb = Sandbox()
+    inner = sb.handler
+
+    def handler(r):
+        if r.url.path == "/trading/orders/place":
+            sb.requests.append(r)
+            item = json.loads(r.content)["new_orders"][0]
+            sb.qty[item["client_order_id"]] = item["quantity"]
+            return httpx.Response(code, json={"message": "gateway"})
+        if r.url.path == "/trading/orders/get" and not known:
+            sb.requests.append(r)
+            return httpx.Response(404, json={"message": "order not found"})
+        return inner(r)
+    return sb, handler
+
+
+@pytest.mark.parametrize("code", [500, 502, 429])
+def test_5xx_or_429_on_place_reports_what_webull_knows_not_a_reject(tmp_path, code):
+    sb, handler = _place_status_sandbox(code, known=True)
+
+    async def go():
+        b = WebullBroker(WebullClient("K", "S", http=httpx.AsyncClient(transport=httpx.MockTransport(handler))),
+                         SimBroker(None), account_id="A")
+        return await b.place_order(OrderRequest(symbol="AAPL", asset="equity", side="buy", qty=10, client_order_id="c5"))
+    o = run(go())
+    assert o.status == "filled" and o.filled_qty == 10 and o.client_order_id == "c5"
+
+
+def test_5xx_on_place_with_an_unknown_order_raises_instead_of_booking_a_reject(tmp_path):
+    sb, handler = _place_status_sandbox(503, known=False)
+
+    async def go():
+        b = WebullBroker(WebullClient("K", "S", http=httpx.AsyncClient(transport=httpx.MockTransport(handler))),
+                         SimBroker(None), account_id="A")
+        return await b.place_order(OrderRequest(symbol="AAPL", asset="equity", side="buy", qty=10, client_order_id="c6"))
+    with pytest.raises(BrokerError):
+        run(go())
+
+
+def test_4xx_on_place_is_still_a_rejected_order(tmp_path):
+    sb = Sandbox(place_error="insufficient buying power")
+
+    async def go():
+        return await make(sb, tmp_path).place_order(OrderRequest(symbol="AAPL", asset="equity", side="buy", qty=10,
+                                                                 client_order_id="c7"))
+    o = run(go())
+    assert o.status == "rejected" and "insufficient" in (o.reject_reason or "")
+
+
+def test_find_order_reads_an_order_placed_elsewhere_by_client_id_and_none_when_unknown(tmp_path):
+    sb = Sandbox()
+
+    async def go():
+        b = make(sb, tmp_path)
+        found = await b.find_order("bridge-7")
+        _, handler = _place_status_sandbox(500, known=False)
+        b2 = WebullBroker(WebullClient("K", "S", http=httpx.AsyncClient(transport=httpx.MockTransport(handler))),
+                          SimBroker(None), account_id="A")
+        return found, await b2.find_order("nope")
+    found, missing = run(go())
+    assert found is not None and found.status == "filled" and found.client_order_id == "bridge-7"
+    assert missing is None
+
+
+def test_fill_price_is_read_from_the_avg_price_key_too():
+    from app.broker.webull import order_from_webull
+    o = order_from_webull({"order_id": "1", "status": "FILLED", "filled_quantity": "5", "avg_price": "10.5",
+                           "client_order_id": "c"})
+    assert o.fill_px == 10.5

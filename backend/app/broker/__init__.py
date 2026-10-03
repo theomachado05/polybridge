@@ -3,6 +3,8 @@
 get_broker() is the one place that decides which broker is active:
   BROKER=webull + WEBULL_APP_KEY + WEBULL_APP_SECRET   -> WebullBroker (paper); options and prediction legs to the sim
   anything else, or a missing Webull key               -> SimBroker (never a crash)
+  WEBULL_BASE_URL other than https://api.sandbox.webull.com (e.g. production api.webull.com)
+                                                       -> refused, logged, SimBroker: nothing here reaches real money
 Tests and the app can pin a broker with app.state.broker."""
 from __future__ import annotations
 
@@ -15,7 +17,7 @@ from polybridge_research.massive import MissingApiKey, load_api_key
 from .models import Account, Broker, BrokerError, Order, OrderRequest, Position
 from .quotes import MassiveQuotes, NullQuotes
 from .sim import DEFAULT_PATH, START_CASH, SimBroker
-from .webull import SANDBOX_HOST, SIM_NOTE, WebullBroker, WebullClient
+from .webull import SANDBOX_HOST, SIM_NOTE, NotSandboxHost, WebullBroker, WebullClient
 
 __all__ = ["Account", "Broker", "BrokerError", "Order", "OrderRequest", "Position", "SimBroker", "WebullBroker",
            "WebullClient", "get_broker", "build_broker", "reset_default_broker"]
@@ -50,9 +52,13 @@ def build_broker(app: Any | None = None) -> Broker:
     if _env("BROKER").lower() == "webull":
         key, secret = _env("WEBULL_APP_KEY"), _env("WEBULL_APP_SECRET")
         if key and secret:
+            try:
+                client = WebullClient(key, secret, _env("WEBULL_BASE_URL") or SANDBOX_HOST,
+                                      algorithm=_env("WEBULL_SIGN_ALG") or "HMAC-SHA256")
+            except NotSandboxHost as e:  # a production host would place real-money orders under a "paper" label
+                log.error("%s; using the simulated broker", e)
+                return SimBroker(path, _quotes(app), cash)
             sim = SimBroker(path, _quotes(app), cash, order_note=SIM_NOTE)
-            client = WebullClient(key, secret, _env("WEBULL_BASE_URL") or SANDBOX_HOST,
-                                  algorithm=_env("WEBULL_SIGN_ALG") or "HMAC-SHA256")
             return WebullBroker(client, sim, account_id=_env("WEBULL_ACCOUNT_ID") or None)
         log.warning("BROKER=webull but WEBULL_APP_KEY / WEBULL_APP_SECRET are not set; using the simulated broker")
     return SimBroker(path, _quotes(app), cash)

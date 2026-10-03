@@ -139,7 +139,8 @@ def test_bridge_runs_the_approved_algo_with_its_preset(client):
     s = client.get(f"/bridges/{bid}").json()
     assert s["engine"] == "algo" and s["algo"]["family"] == "macro_fed_hedge" and s["algo"]["preset_index"] == 5
     assert s["reasons"] == {"inside_band": 20} and s["hedge_basis"] == "broker_fill"
-    # approval gate unchanged: one bridge per proposal, idempotent; a different algo in the body is refused
+    # approval gate unchanged: one running bridge per proposal, idempotent; a different algo in the body is refused
+    client.app.state.bridges[p["id"]].status = "running"  # as if still running (replays at speed 0 finish at once)
     assert start(client, p["id"]).status_code == 200
     assert start(client, p["id"], family="macro_fed_hedge", preset_index=5).status_code == 200  # same algo: fine
     r = start(client, p["id"], family="housing_rates")  # the caller is never told a different algo is running

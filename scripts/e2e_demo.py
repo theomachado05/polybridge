@@ -276,8 +276,12 @@ def run_flow(base: str, args) -> dict:
         raise Abort("bridge not started")
     bid = br["bridge_id"]
     out["bridge_id"] = bid
-    s, again = call(base, "POST", "/bridges", body)
-    check("re-POST is idempotent (200, same bridge)", s == 200 and again.get("bridge_id") == bid, f"{s}")
+    _, sm0 = call(base, "GET", f"/bridges/{bid}")
+    if (sm0 or {}).get("status") == "running":  # idempotent only while running; a finished bridge is never handed back
+        s, again = call(base, "POST", "/bridges", body)
+        check("re-POST is idempotent (200, same bridge)", s == 200 and again.get("bridge_id") == bid, f"{s}")
+    else:
+        say("     bridge already finished: skipping the idempotency re-POST (it would start a fresh run)")
     s, other = call(base, "POST", "/bridges", {**body, "family": "equity_delta_bridge", "preset_index": 0})
     check("a different algo than the approved one is refused (409)", s == 409, f"{s}")
 

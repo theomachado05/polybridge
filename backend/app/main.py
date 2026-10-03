@@ -15,6 +15,7 @@ from .mapping import router as mapping_router
 from .bridges import router as bridges_router
 from .portfolio import router as portfolio_router
 from .broker.routes import router as broker_router
+from .security import guard_remote_writes
 
 
 async def _validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
@@ -26,6 +27,7 @@ async def _validation_error(_: Request, exc: RequestValidationError) -> JSONResp
 def create_app() -> FastAPI:
     app = FastAPI(title="PolyBridge backend", version="0.1.0")
     app.state.store = ProposalStore()
+    app.middleware("http")(guard_remote_writes)  # remote (tunnelled) writes need X-Agent-Secret
     app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"], allow_methods=["*"], allow_headers=["*"])
     app.add_exception_handler(RequestValidationError, _validation_error)
     app.include_router(router)

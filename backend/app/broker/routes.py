@@ -51,6 +51,8 @@ async def get_orders(request: Request, status: Literal["filled", "open", "cancel
 
 @router.post("/orders", response_model=Order, status_code=201)
 async def post_order(body: OrderRequest, request: Request) -> Order:
+    if getattr(request.state, "remote", False):  # a caller outside localhost never picks its own fill price
+        body = body.model_copy(update={"ref_px": None, "ref_half_spread": None, "ref_source": None})
     order = await _call(get_broker(request.app).place_order(body))
     if order.status == "rejected":
         raise HTTPException(422, order.reject_reason or "order rejected")

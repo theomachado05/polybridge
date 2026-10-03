@@ -242,6 +242,26 @@ def test_opt_iv_is_nan_when_leg_and_spot_bars_are_not_in_sync():
     assert bar_interval(spot) == 3600.0 and np.isnan(asof_known(np.array([t0 - 1]), spot)).all()
 
 
+def test_spread_estimate_is_nan_when_one_leg_is_stale_against_the_other():
+    """k_lo trades every hour; k_hi last traded 3 hours before the window's ticks: that spread never existed at one
+    moment, so opt_mid / opt_implied_prob are NaN there (not a fake PM-vs-options gap), and the notes say so."""
+    pts = _points()
+    ticks = assemble(pts)
+    t0 = pts[0][0]
+    lo = [(t0 + 3600 * h, 8.0 + 0.01 * h) for h in range(0, 24)]
+    bars = {"O:NVDA261218C00145000": lo, "O:NVDA261218C00155000": [(t0, 3.0), (t0 + 3600 * 12, 3.2)]}
+
+    async def refresh(und, k, expiry, **kw):
+        return nvda_chain(), False
+    out, info = run(join_options(ticks, Q_ABOVE, None, massive=lambda: object(), refresh=refresh,
+                                 bars=lambda client, tk, s, e: bars[tk], eightk=False, today=dt.date(2026, 10, 2)))
+    mid, prob = out["opt_mid"], out["opt_implied_prob"]
+    assert np.isfinite(mid[0]) and np.isfinite(mid[1])  # both legs closed within one hour
+    assert np.isnan(mid[2:12]).all() and np.isnan(prob[2:12]).all()  # k_hi is 2..11 hours stale
+    assert np.isfinite(mid[12]) and np.isfinite(mid[13]) and np.isnan(mid[14:]).all()
+    assert info["n_unsynced_legs"] == len(pts) - 4 and any("never traded at once" in n for n in info["notes"])
+
+
 def test_spread_series_needs_every_leg():
     ts = np.array([10, 20, 30])
     assert np.isnan(spread_series(ts, [(1, [(15, 2.0)]), (-1, [])])).all()
@@ -383,12 +403,13 @@ def test_opportunity_bridge_keeps_every_approval_gate(opp_client):
     r = c.post("/bridges", json=body(p["id"]))
     assert r.status_code == 201
     bid = r.json()["bridge_id"]
+    _events(c, bid)
+    c.app.state.bridges[p["id"]].status = "running"  # as if still running (replays at speed 0 finish at once)
     again = c.post("/bridges", json=body(p["id"]))
     assert again.status_code == 200 and again.json()["bridge_id"] == bid  # idempotent, same source
-    assert c.post("/bridges", json=body(p["id"], "live")).status_code == 409  # one bridge per proposal
+    assert c.post("/bridges", json=body(p["id"], "live")).status_code == 409  # one running bridge per proposal
     other = c.post("/bridges", json={**body(p["id"]), "family": "vol_vs_pm_move"})
     assert other.status_code == 409  # the approval covers what runs
-    _events(c, bid)
     # a filing opportunity proposal without an options algo still never reaches hedgecore
     pid = c.post("/proposals", json={"ticker": "ABNB", "tags": ["workforce_reduction"], "shares_held": 10}).json()["id"]
     c.post(f"/proposals/{pid}/approve")
@@ -607,7 +628,7 @@ class _IdleAdapter:
         return [{"preset_index": 0, "params": {}, "n_orders": 4, "pnl": -30.0, "fees": 2.0, "max_dd": 40.0}]
 
 
-def _opt_ticks(n=48, iv=True, eightk=False, straddle=True):
+def _opt_ticks(n=48, iv=True, eightk=False, straddle=True, put=False):
     pts = _points(n)
     t = assemble(pts)
     t["opt_implied_prob"] = np.full(n, 0.4)
@@ -616,6 +637,8 @@ def _opt_ticks(n=48, iv=True, eightk=False, straddle=True):
     if straddle:
         t["opt_straddle_mid"] = np.full(n, 9.0)
     t["eightk_score"] = np.full(n, 0.7) if eightk else np.full(n, NAN)
+    if put:
+        t["opt_put_mid"] = np.full(n, 3.0)
     return TickSet(t, "replay", n, True)
 
 
@@ -633,10 +656,22 @@ def test_family_without_its_signal_history_is_not_replayed():
     out = tune(a, fams, "opportunity", {}, _opt_ticks(iv=False, eightk=False))
     assert a.calls == ["binary_vs_spread_arb"] and out["family"] == "binary_vs_spread_arb"
     assert missing_signal("vol_vs_pm_move", _opt_ticks(iv=False).ticks) == "opt_iv"
-    assert missing_signal("eightk_opportunity", _opt_ticks(eightk=True).ticks) is None
+    assert missing_signal("eightk_opportunity", _opt_ticks(eightk=True, put=True).ticks) is None
     a = _IdleAdapter(idle=())
     out = tune(a, fams[:2], "opportunity", {}, _opt_ticks(iv=False))
     assert a.calls == [] and not out["scored"] and "opt_iv has no history" in out["unscored_reason"]
+
+
+def test_eightk_is_never_scored_on_the_yes_spread():
+    """It trades a put / put spread; opt_mid is the YES spread (a call spread on "above K"), so its replay would book
+    the opposite exposure. With an 8-K score but no put price history it is not replayed, and the reason says why."""
+    a = _IdleAdapter(idle=())
+    ticks = _opt_ticks(eightk=True)
+    assert missing_signal("eightk_opportunity", ticks.ticks) == "opt_put_mid"
+    out = tune(a, [{"id": "eightk_opportunity"}, {"id": "binary_vs_spread_arb"}], "opportunity", {}, ticks)
+    assert a.calls == ["binary_vs_spread_arb"] and out["family"] == "binary_vs_spread_arb"
+    out = tune(_IdleAdapter(idle=()), [{"id": "eightk_opportunity"}], "opportunity", {}, ticks)
+    assert not out["scored"] and "no put price history" in out["unscored_reason"]
 
 
 def test_fit_skips_vol_vs_pm_move_without_iv_history(monkeypatch):
@@ -670,7 +705,7 @@ def test_orient_for_family_flips_only_eightk_on_above_questions():
 
 def test_fit_feeds_eightk_the_adverse_probability_on_an_above_question():
     fams = [{"id": "eightk_opportunity"}, {"id": "binary_vs_spread_arb"}]
-    ts = _opt_ticks(eightk=True)
+    ts = _opt_ticks(eightk=True, put=True)
     seen = {}
 
     class Rec(_IdleAdapter):
@@ -694,7 +729,7 @@ def test_service_orients_eightk_by_the_matched_question(monkeypatch):
         out = dict(t)
         n = len(pts)
         out.update(opt_implied_prob=np.full(n, 0.4), opt_mid=np.full(n, 4.0), opt_iv=np.full(n, 0.4),
-                   eightk_score=np.full(n, 0.8))
+                   eightk_score=np.full(n, 0.8), opt_put_mid=np.full(n, 3.0))
         return out, {"available": True, "notes": [], "match": {"direction": "above"}}
 
     class Rec(_IdleAdapter):
