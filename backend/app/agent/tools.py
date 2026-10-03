@@ -64,6 +64,10 @@ TOOLS: list[dict] = [
          "proposal_id": {"type": "string"},
          "source": {"type": "string", "enum": ["live", "replay"], "description": "replay for the demo, live for real prices."},
          "gap_per_share": {"type": "number"},
+         "market_source": {"type": "string", "description": "polymarket or kalshi. Only for proposals built from filing tags."},
+         "market_id": {"type": "string", "description": "Market id. Only for proposals built from filing tags."},
+         "token_id": {"type": "string", "description": "Polymarket yes token id, if known."},
+         "direction": _DIRECTION,
          "confirm": _CONFIRM}, ["proposal_id", "confirm"])},
     {"name": "bridge_status", "method": "GET", "path": "/bridges/{bridge_id}",
      "description": "Check how a running hedge is doing.",
@@ -137,8 +141,10 @@ async def _fit(request: Request, a: dict):
         body["market"] = m
     out = _dump(await pr.pipeline_fit(FitRequest(**body), request))
     score = out.get("score")
-    s = (f"For {str(body['ticker']).upper()} I picked a {out.get('family') or 'default'} hedge for a {out.get('event_class')} event"
-         + (f", score {score:.2f}" if isinstance(score, (int, float)) else ", unscored") + f". {out.get('rationale', '')}")
+    how = "Gemini suggested" if out.get("llm") == "gemini" else "A rules-based pick:"
+    s = (f"For {str(body['ticker']).upper()} {how} a {out.get('family') or 'default'} hedge for a {out.get('event_class')} event"
+         + (f", replay score {score:.2f} on {out.get('n_ticks') or 0} historical ticks" if isinstance(score, (int, float))
+            else ", unscored") + f". {out.get('rationale', '')}")
     return s.strip(), out
 
 
@@ -152,8 +158,10 @@ async def _propose(request: Request, a: dict):
     if (m := _market(a)):
         body["market"] = m
     out = _dump(routes.create_proposal(ProposalIn(**body), request))
-    return (f"I drafted proposal {out['id']}: a {out['strategy'].replace('_', ' ')} on {out['ticker']} covering "
-            f"{round(out['target_coverage'] * 100)} percent of {out['shares_held']:g} shares. It is waiting for your approval. "
+    kind = "an opportunity, not a hedge" if out.get("family") == "opportunity" else "a draft"
+    label = f" {out['label']}." if out.get("label") else ""
+    return (f"I drafted proposal {out['id']} ({kind}): a {out['strategy'].replace('_', ' ')} on {out['ticker']} covering "
+            f"{round(out['target_coverage'] * 100)} percent of {out['shares_held']:g} shares.{label} It is waiting for your approval. "
             "Shall I approve it?"), out
 
 
@@ -175,10 +183,17 @@ async def _start_bridge(request: Request, a: dict):
     from .. import bridges
     pid = str(_need(a, "proposal_id"))
     _require_confirm(a, f"start the hedge for proposal {pid}")
-    body = bridges.BridgeIn(proposal_id=pid, source=a.get("source") or "replay",
-                            gap_per_share=a.get("gap_per_share") or 0.0)
+    source = a.get("source") or "replay"
+    kw: dict = {}
+    if (m := _market(a)):
+        kw["market"] = m
+    if a.get("direction"):
+        kw["direction"] = a["direction"]
+    body = bridges.BridgeIn(proposal_id=pid, source=source, gap_per_share=a.get("gap_per_share") or 0.0, **kw)
     out = _dump(await bridges.start_bridge(body, request, Response()))
-    return f"The hedge is running as bridge {out.get('bridge_id')}.", out
+    where = ("on replayed historical data in a sandbox account, not live" if source == "replay"
+             else "requesting live data")
+    return (f"Started bridge {out.get('bridge_id')} {where}. Hedge figures are the engine's intent, not broker fills."), out
 
 
 async def _bridge_status(request: Request, a: dict):
@@ -186,7 +201,15 @@ async def _bridge_status(request: Request, a: dict):
     out = _dump(bridges.bridge_summary(str(_need(a, "bridge_id")), request))
     bits = [f"{k.replace('_', ' ')} {v}" for k, v in out.items()
             if k in ("status", "ticks", "orders", "hedge", "coverage") and not isinstance(v, (dict, list))]
-    return "Bridge status: " + (", ".join(bits) if bits else "running") + ".", out
+    eff, req = out.get("source"), out.get("requested_source")
+    src = ""
+    if eff:
+        src = f" Running on {eff} data" + (", in a sandbox account, not live" if out.get("account_scope") == "replay_sandbox" else "")
+        if req and req != eff:
+            src += f"; you asked for {req} but it is running on {eff}"
+        src += "."
+    return ("Bridge status: " + (", ".join(bits) if bits else "running") + "." + src
+            + " Hedge and coverage are the engine's intent, not broker fills."), out
 
 
 async def _account(request: Request, a: dict):

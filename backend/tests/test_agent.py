@@ -95,10 +95,12 @@ def test_start_bridge_requires_confirm_and_never_reaches_route(client, monkeypat
         called.append(body)
         return {"bridge_id": "b1"}
     monkeypatch.setattr(bridges, "start_bridge", fake)
-    r = call(client, "start_bridge", {"proposal_id": "p1"}).json()
-    assert r["ok"] is False and r["needs_confirmation"] and called == []
+    for bad in ({}, {"confirm": False}, {"confirm": "true"}, {"confirm": 1}):
+        r = call(client, "start_bridge", {"proposal_id": "p1", **bad}).json()
+        assert r["ok"] is False and r["needs_confirmation"] and called == []
     r = call(client, "start_bridge", {"proposal_id": "p1", "confirm": True, "source": "replay"}).json()
     assert r["ok"] and called[0].proposal_id == "p1" and called[0].source == "replay" and "b1" in r["summary"]
+    assert "replay" in r["summary"] and "not live" in r["summary"]
 
 
 def test_account_and_positions(client):
@@ -134,3 +136,17 @@ def test_handler_crash_is_contained(client, monkeypatch):
 def test_non_object_body_is_not_500(client):
     assert client.post("/agent/tool/account", content="not json", headers={"content-type": "application/json"}).status_code < 500
     assert client.post("/agent/tool/account", json=[1, 2]).status_code < 500
+
+
+def test_bridge_status_flags_fallback(client, monkeypatch):
+    from app import bridges
+    monkeypatch.setattr(bridges, "bridge_summary", lambda bid, request: {
+        "status": "running", "source": "replay", "requested_source": "live", "account_scope": "replay_sandbox"})
+    r = call(client, "bridge_status", {"bridge_id": "b1"}).json()
+    assert r["ok"] and "asked for live" in r["summary"] and "replay" in r["summary"] and "intent" in r["summary"]
+
+
+def test_agent_secret_enforced_when_set(client, monkeypatch):
+    monkeypatch.setenv("AGENT_TOOL_SECRET", "s3")
+    assert client.post("/agent/tool/account", json={}).status_code == 401
+    assert client.post("/agent/tool/account", json={}, headers={"X-Agent-Secret": "s3"}).status_code == 200

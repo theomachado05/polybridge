@@ -95,7 +95,12 @@ cd web && pnpm dev
 ```
 
 A "Talk to PolyBridge" pill appears bottom right. Click it: the widget script loads from the ElevenLabs embed on
-first click, the orb switches to its listening state, and the agent greets you. Allow the microphone when asked.
+first click and the widget opens. Press the widget's own Start call button and allow the microphone; then the agent greets you.
+
+## Optional shared secret
+
+The tunnel URL is public. Set `AGENT_TOOL_SECRET=<random string>` in the backend env, and add a custom header
+`X-Agent-Secret: <same string>` on each ElevenLabs server tool. With the variable unset, `/agent/tool/*` stays open.
 
 ## Sanity check before the demo
 
@@ -110,7 +115,7 @@ curl -s -X POST TUNNEL_URL/agent/tool/account -H 'content-type: application/json
 
 Times are approximate. Lines in quotes are what you say; the agent's reply is paraphrased.
 
-- **0:00** Click the pill. Agent greets. *"I hold two hundred shares of Airbnb and I'm nervous about the Fed."*
+- **0:00** Click the pill, press Start in the widget, allow the mic. Agent greets. *"I hold two hundred shares of Airbnb and I'm nervous about the Fed."*
 - **0:10** Agent searches and reads the top market: a Fed rate decision at some percent. *"Yes, that one."*
 - **0:20** Agent calls fit and explains the chosen hedge in a sentence, noting if it is rules-based. *"Make a proposal at fifty percent coverage."*
 - **0:30** Agent reads back the proposal and asks: "Shall I approve this?" Say *"Yes, approve it."*

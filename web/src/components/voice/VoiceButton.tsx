@@ -61,11 +61,11 @@ export function VoiceButton({ agentId = AGENT_ID }: { agentId?: string }) {
   if (!agentId) return null;
 
   const label =
-    phase === "listening" ? "Listening. Tap to hide"
+    phase === "listening" ? "Voice ready: press Start in the widget"
     : phase === "loading" ? "Connecting"
     : phase === "error" ? "Voice unavailable. Retry"
     : "Talk to PolyBridge";
-  const orbState = phase === "listening" ? "listening" : phase === "loading" ? "connecting" : "breathing";
+  const orbState = phase === "loading" ? "connecting" : "breathing";
 
   return (
     <div className="pb-voice" data-phase={phase}>
