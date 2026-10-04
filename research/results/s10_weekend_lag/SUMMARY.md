@@ -75,6 +75,15 @@ exactly those markets and finds +0.07 points before costs.
 
 Every row, with Sharpe, drawdown, worst month and turnover, is in `mechanism/metrics.csv`.
 
+## Part 4, hold the stale side to the result (pre-registered in amendment 3, commit `e661545`, before any result was read)
+
+**A null.** Part 2's 2,340 stale-side entries, held until the question resolves instead of 30 minutes. 2,154 have a
+result in the catalogue (70 questions; 186 entries on 23 questions not resolved yet, left out). Before costs the
+stale side earns **−0.96 points** per entry (95% interval resampling questions [−3.09, +1.27]); after costs **−2.12**
+[−4.28, +0.13]; −3.28 at 2×. Out-of-sample (entries from 2026-05-22): +0.37 [−2.82, +4.59] on 332 entries but 19
+questions, and in-sample −2.58. **Not a pass.** A stale price that ignored its linked question's jump was not wrong in
+that direction when the question resolved. Files: [`hold/`](hold/).
+
 # Part 1: oil, inside the weekend
 
 ## Answer
