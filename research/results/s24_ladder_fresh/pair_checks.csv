@@ -1,0 +1,162 @@
+ladder,set,kind,rich,cheap,year_ok,corrected_ok,corrected_reason,partner_used
+1,a,strike,574073,516864,True,True,nested,False
+3,a,strike,516884,574068,True,True,nested,False
+8,a,strike,515504,515505,True,True,nested,False
+9,a,strike,511526,511528,True,True,nested,False
+9,a,strike,511525,511526,True,True,nested,False
+9,a,strike,511581,512254,True,False,descriptions differ,False
+9,a,strike,512255,511581,True,True,nested,False
+10,b,date,2624123,2624124,True,True,nested,False
+19,b,date,1706349,1706351,True,True,nested,False
+19,b,date,1706351,1706352,True,True,nested,False
+28,a,strike,570849,570848,True,True,nested,False
+28,a,strike,570847,571730,True,True,nested,False
+33,a,strike,570864,570863,True,True,nested,False
+33,a,strike,570862,570861,True,True,nested,False
+37,a,strike,511534,511530,True,False,descriptions differ,False
+45,b,date,1937464,1937465,True,True,nested,False
+46,a,strike,548727,548726,True,True,nested,False
+55,a,strike,526239,526238,True,True,nested,False
+57,a,date,517603,514502,False,False,rung order wrong once each deadline's year is re-derived,False
+57,a,date,570815,568122,True,True,nested,False
+57,a,date,568122,565367,True,True,nested,False
+60,a,strike,570881,570880,True,True,nested,False
+60,a,strike,570880,570879,True,True,nested,False
+61,a,strike,575900,570869,True,True,nested,False
+64,b,strike,2944546,2944544,True,False,descriptions differ,False
+68,a,strike,540439,540438,True,True,nested,False
+70,a,strike,584986,584985,True,True,nested,False
+70,a,strike,584984,584983,True,True,nested,False
+73,a,strike,542932,542931,True,True,nested,False
+74,b,date,2743690,2743691,True,True,nested,False
+79,a,strike,564495,565001,True,False,descriptions differ,False
+84,a,strike,532857,532858,True,True,nested,False
+84,a,strike,532856,532857,True,True,nested,False
+84,a,strike,532855,532856,True,True,nested,False
+85,b,strike,4409109,4409115,True,True,nested,False
+88,b,date,2132399,2132400,True,True,nested,False
+93,a,date,521026,521017,False,False,rung order wrong once each deadline's year is re-derived,True
+93,a,date,545880,560559,True,False,descriptions differ,True
+99,b,strike,2944253,2944252,True,True,nested,False
+125,b,date,1170477,1170478,True,True,nested,False
+125,b,date,1170478,1170479,True,True,nested,False
+129,b,strike,623489,623486,True,True,nested,False
+131,b,strike,2895265,2895263,True,False,descriptions differ,False
+133,a,strike,577873,579431,True,True,nested,False
+133,a,strike,577874,577873,True,True,nested,False
+133,a,strike,577875,577874,True,True,nested,False
+138,a,strike,577734,579430,True,True,nested,False
+138,a,strike,576711,577734,True,True,nested,False
+138,a,strike,576712,576711,True,True,nested,False
+140,b,strike,2403012,2403010,True,True,nested,False
+141,a,strike,574903,574228,True,True,nested,False
+141,a,strike,574904,574903,True,True,nested,False
+142,a,strike,578908,578907,True,True,nested,False
+142,a,strike,578910,578909,True,True,nested,False
+142,a,strike,578911,578910,True,True,nested,False
+142,a,strike,578912,578911,True,True,nested,False
+146,a,date,561699,549618,True,True,nested,True
+151,a,date,585601,575196,False,False,rung order wrong once each deadline's year is re-derived,True
+152,a,date,604675,604674,False,False,rung order wrong once each deadline's year is re-derived,True
+153,b,date,1937572,1937573,True,True,nested,False
+153,b,date,1937573,1937574,True,True,nested,False
+153,b,date,1937574,1937593,True,True,nested,False
+157,b,strike,701733,701734,True,True,nested,False
+160,b,date,3584200,3584209,True,False,descriptions differ,False
+168,b,date,2060040,2060039,True,True,nested,False
+170,a,strike,579944,579943,True,True,nested,False
+170,a,strike,579945,579944,True,True,nested,False
+170,a,strike,579946,579945,True,True,nested,False
+170,a,strike,579947,579946,True,True,nested,False
+176,a,strike,576716,577726,True,True,nested,False
+176,a,strike,576717,576716,True,True,nested,False
+176,a,strike,576718,576717,True,True,nested,False
+176,a,strike,576719,576718,True,True,nested,False
+176,a,strike,576720,576719,True,True,nested,False
+191,b,date,4201770,4201769,True,True,nested,False
+204,b,strike,2782263,2782262,True,False,descriptions differ,False
+215,a,strike,522149,522148,True,False,descriptions differ,False
+215,a,strike,522150,522149,True,False,descriptions differ,False
+235,a,date,558010,555432,True,True,nested,False
+235,a,date,555432,558009,True,True,nested,False
+236,a,date,541058,541059,True,True,nested,False
+251,a,strike,561972,561971,True,True,nested,False
+259,b,strike,2847107,2847106,True,False,descriptions differ,False
+264,b,strike,1370033,2831225,True,True,nested,False
+266,b,date,4054581,3949523,True,True,nested,False
+276,a,date,563715,563712,False,False,rung order wrong once each deadline's year is re-derived,True
+276,a,date,563714,563713,False,False,rung order wrong once each deadline's year is re-derived,True
+278,b,date,2414227,2414228,True,True,nested,False
+278,b,date,2698662,2698663,True,False,window starts at creation and the cheap rung was created later,False
+278,b,date,2698663,2874987,True,False,window starts at creation and the cheap rung was created later,False
+278,b,date,4366394,4838804,True,False,window starts at creation and the cheap rung was created later,False
+283,a,strike,570383,570382,True,True,nested,False
+293,a,strike,511539,511541,True,True,nested,False
+293,a,strike,512251,511539,True,False,descriptions differ,False
+294,b,strike,1278354,1278353,True,True,nested,False
+294,b,strike,1278355,1278354,True,True,nested,False
+306,b,strike,4797523,4797521,True,True,nested,False
+313,a,date,595723,566502,False,False,rung order wrong once each deadline's year is re-derived,True
+329,a,date,614689,612701,False,False,rung order wrong once each deadline's year is re-derived,True
+341,a,strike,577880,577879,True,True,nested,False
+341,a,strike,577881,577880,True,True,nested,False
+341,a,strike,577882,577881,True,True,nested,False
+341,a,strike,580211,580369,True,True,nested,False
+343,b,strike,2305701,2305702,True,True,nested,False
+343,b,strike,2305672,2305701,True,False,window starts at creation and the cheap rung was created later,False
+349,b,date,1551569,1551570,True,True,nested,False
+349,b,date,1551570,1551571,True,True,nested,False
+349,b,date,1551571,1551572,True,True,nested,False
+351,b,strike,2307896,2299984,True,True,nested,False
+351,b,strike,2307904,2307896,True,True,nested,False
+364,b,strike,1847922,1847921,True,True,nested,False
+374,b,strike,814138,814137,True,True,nested,False
+375,b,strike,1386645,1385621,True,True,nested,False
+382,a,date,588095,600687,True,True,nested,False
+384,a,date,537638,537636,False,False,rung order wrong once each deadline's year is re-derived,False
+384,a,date,537636,537635,False,False,rung order wrong once each deadline's year is re-derived,False
+389,a,strike,574920,574919,True,True,nested,False
+389,a,strike,574921,574920,True,True,nested,False
+409,b,strike,658178,658177,True,True,nested,False
+434,b,date,2599475,2361216,True,True,nested,False
+442,a,date,527279,521100,True,False,descriptions differ,False
+447,b,strike,915354,915353,True,True,nested,False
+453,b,strike,2805575,2805574,True,True,nested,False
+456,b,strike,2428460,2428457,True,True,nested,False
+469,b,date,3071036,3071033,True,True,nested,False
+469,b,date,3071033,3071030,True,True,nested,False
+469,b,date,3071030,3071035,True,True,nested,False
+475,a,date,595736,581880,False,False,rung order wrong once each deadline's year is re-derived,True
+475,a,date,581880,581881,True,True,nested,True
+479,a,strike,604275,604274,True,True,nested,False
+479,a,strike,604276,604275,True,True,nested,False
+485,b,strike,2491285,2491284,True,True,nested,False
+495,b,date,951217,951218,True,True,nested,False
+500,a,date,618823,618548,False,False,rung order wrong once each deadline's year is re-derived,True
+502,b,date,3869756,3953546,True,False,window starts at creation and the cheap rung was created later,False
+502,b,date,3953546,3953548,True,True,nested,False
+502,b,date,4503080,4503081,True,True,nested,False
+502,b,date,4503081,4440617,True,True,nested,False
+503,b,date,1385844,1385843,False,False,rung order wrong once each deadline's year is re-derived,False
+514,a,strike,551529,551528,True,True,nested,False
+514,a,strike,551530,551529,True,True,nested,False
+514,a,strike,551531,551530,True,True,nested,False
+519,a,strike,603221,603220,True,True,nested,False
+537,b,date,1242469,1242470,True,True,nested,False
+566,a,date,517901,517900,False,False,rung order wrong once each deadline's year is re-derived,False
+579,b,strike,1201195,1201193,True,True,nested,False
+579,b,strike,1201197,1201195,True,True,nested,False
+583,b,strike,1943673,1943697,True,True,nested,False
+607,b,strike,701850,701849,True,True,nested,False
+608,b,strike,701842,701843,True,True,nested,False
+608,b,strike,701841,701842,True,True,nested,False
+608,b,strike,3867078,3867082,True,True,nested,False
+615,b,date,2685466,2685467,True,True,nested,False
+616,b,strike,1428007,1427995,True,True,nested,False
+683,a,strike,598976,598975,True,True,nested,False
+683,a,strike,598977,598976,True,True,nested,False
+767,a,date,610235,580857,False,False,rung order wrong once each deadline's year is re-derived,True
+792,a,date,603028,603029,True,True,nested,True
+983,a,date,537698,537697,False,False,rung order wrong once each deadline's year is re-derived,True
+983,a,date,537697,537696,False,False,rung order wrong once each deadline's year is re-derived,True
+1105,a,date,614682,593301,False,False,rung order wrong once each deadline's year is re-derived,True

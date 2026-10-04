@@ -7,6 +7,78 @@ session day to Sunday 17:55 New York time, while oil futures are shut. Files: [`
 [`event_summary.csv`](event_summary.csv), [`events.csv`](events.csv), [`metrics.csv`](metrics.csv),
 [`trades.csv`](trades.csv), [`robust.csv`](robust.csv), [`capacity.md`](capacity.md), [`RUN_LOG.md`](RUN_LOG.md).
 
+## Answer across all five parts (read first)
+
+**The inefficiency is real, and it is largest where the link is mechanical, but in every case it is gone before a
+taker can take it, or it is smaller than the taker's cost.**
+
+- **Bitcoin 15-minute markets (Part 3), the strongest result:** a fair value from spot predicts the result better
+  than Polymarket's own price at every minute (slope 0.94, t = 18.8, 5,756 markets). Polymarket absorbs it within the
+  minute: a taker one minute late nets −1.52 points per trade, 98% of fills print-verified. Live, the book follows
+  spot within five seconds (Part 5).
+- **Linked questions (Part 2):** they follow each other over 5 to 30 minutes (t = 5.7), but stale prices stay stale;
+  the follow-through is a few hundredths of a point against a 2.3-point round trip.
+- **Oil on weekends (Part 1):** the event questions lead the oil price markets by up to 30 minutes (t = 3.25); +0.11
+  points before costs against 2.7.
+- **Holding the stale side to the result (Part 4):** a null.
+
+Every pre-registered trade fails. The one place the gap is larger than the cost is inside the first seconds of
+the Bitcoin markets, which belongs to whoever quotes or reacts fastest; Polymarket's 0.07 taker fee on those markets
+is priced at about that size.
+
+## Part 3, a mechanical link: 15-minute Bitcoin markets against spot (amendments 2 and 4)
+
+**What holds up: Polymarket's minute price lags spot Bitcoin, and spot predicts the result better than Polymarket
+does.** 5,756 of Polymarket's 15-minute "Bitcoin Up or Down" markets, 2026-08-04 to 2026-10-02 (60 days; each
+trades $250k to $380k). A fair value computed from Coinbase's price, with nothing fitted, has a lower Brier score
+than Polymarket's own price at **every** minute of the window (minute 13: 0.088 against 0.096). When the two
+disagree, the result sides with spot almost one for one: the slope of (result − Polymarket) on (fair − Polymarket)
+is **0.94** (t = 18.8, 60 days). The average disagreement is 6 points, a hundred times Part 2's lags.
+
+**It lasts less than a minute, and a taker one minute late cannot keep it.** Against Polymarket's price one minute
+later the same slope is 0.13 (t = 1.97). The pre-registered trade signals at minute t, buys at t + 1 minute plus the
+0.5-point half-spread and the 0.07 × P × (1 − P) fee, and holds to the result. B0 (gap of 5+ points) earns +0.53
+points before costs and **−1.52 after** [−2.71, −0.28] on 5,686 trades; out-of-sample (from 2026-09-21) −2.52
+[−5.09, +0.20]. Every variant loses after costs. **Not a pass.** The prints are real: 5,521 of 5,640 checkable
+entries (98%) have a public print at the assumed price or better, and they lose −1.94 each. These books are deep;
+the price is there, it just already moved.
+
+![Brier score by minute](btc/brier.png)
+
+**What this says about the mechanism.** When the link is arithmetic, the information Polymarket is missing is large,
+a 6-point disagreement, not a few hundredths. But it is priced in within the minute, by traders faster than a
+one-minute history can show. That fits Polymarket charging these markets a higher taker fee (0.07 against 0.04
+elsewhere): the fee is set at about the size of what a slow taker could take. Part 5 records the live book second by
+second to see how many seconds the lag lasts.
+
+**An error in the pre-registration, fixed by amendment 4.** Amendment 2 modelled a 15-minute average. The catalogue
+says "TWAP", but the source is Chainlink's 60-second TWAP stream: in effect the price at the end against the price at
+the start (and the first 272 markets say exactly that). The pre-registered model's own check caught it: its sign at
+minute 15 matched only 84% of results. The proxy for amendment 4 was chosen on in-sample markets only (the mid of
+the last minute against the mid of the minute before the start, 96.0% on 4,608 in-sample markets; 96.0% on all). The
+pre-registered model is reported too: it loses to Polymarket on Brier from minute 2 on, and its trade nets −1.32
+[−2.67, −0.01].
+
+| Model | Variant | Segment | Trades | Net, points | 95% interval | Before costs | Costs, points | Print-verified | Verified, net |
+|---|---|---|---|---|---|---|---|---|---|
+| Amendment 4 | B0 (5+ points) | IS | 4,555 | −1.27 | [−2.65, −0.00] | +0.78 | 2.05 | 4,414 of 4,509 | −1.71 |
+| Amendment 4 | B0 | OOS | 1,131 | −2.52 | [−5.09, +0.20] | −0.49 | 2.03 | 1,107 of 1,131 | −2.83 |
+| Amendment 4 | B0 | ALL, 2× | 5,686 | −3.55 | [−4.75, −2.31] | +0.53 | 4.07 | 5,527 of 5,640 | −3.93 |
+| Amendment 4 | B1 (3+) | ALL | 5,751 | −1.80 | [−3.07, −0.48] | +0.29 | 2.09 | 5,582 of 5,705 | −2.17 |
+| Amendment 4 | B2 (10+) | ALL | 4,555 | −0.97 | [−2.24, +0.43] | +0.96 | 1.93 | 4,403 of 4,510 | −1.58 |
+| Amendment 4 | B3 (5+, minute 10 on) | ALL | 4,062 | −1.08 | [−2.27, +0.26] | +0.51 | 1.59 | 3,926 of 4,020 | −2.13 |
+| Pre-registered | B0 | ALL | 5,756 | −1.32 | [−2.67, −0.01] | +0.79 | 2.11 | 5,585 of 5,710 | −1.67 |
+| Pre-registered | B0 | OOS | 1,152 | −4.75 | [−7.56, −1.67] | −2.64 | 2.10 | 1,133 of 1,152 | −5.27 |
+
+| How fast Polymarket absorbs spot (looked at after the run) | Slope | t |
+|---|---|---|
+| Fair value now against Polymarket now | 0.94 | 18.8 |
+| Fair value now against Polymarket one minute later (what a slow taker gets) | 0.13 | 1.97 |
+| Fair value a minute ago against Polymarket now | 0.13 | 2.03 |
+
+Files: [`btc/`](btc/) (`tests.csv`, `metrics.csv`, `trades.csv`, `catchup.csv`, `minutes.csv.gz`). Every row with
+Sharpe, drawdown, worst month and turnover is in `btc/metrics.csv`; no Sharpe is above 3.
+
 ## Part 2, the mechanism (pre-registered in amendment 1, commit `9b198db`, before any of these prices was read)
 
 Theo asked to stop looking at one asset and look at the mechanism. Part 2 takes every pair of Polymarket questions

@@ -301,6 +301,10 @@ def main() -> int:
                 "main_events_ok_by_segment": {seg: sum(1 for r in recs if r["sample"] == "main" and r["kind"] == "event" and r["status"] == "ok"
                                                        and r["segment"] == seg) for seg in ("IS", "OOS")},
                 "partial_records": sum(1 for r in recs if r.get("partial")),
+                "controls_of_weekend_events": {
+                    "n": sum(1 for r in recs if r["sample"] == "main" and r["kind"] == "control" and r["status"] == "ok" and r["weekend"]),
+                    "themselves_after_a_weekend": sum(1 for r in recs if r["sample"] == "main" and r["kind"] == "control" and r["status"] == "ok"
+                                                      and r["weekend"] and bool(ctx.weekend[ctx.idx[r["day"]]]))},
                 "parity_gap_share_abs": {"n": int(len(pg)), "median": float(np.median(pg)) if len(pg) else None,
                                          "p99": float(np.percentile(pg, 99)) if len(pg) else None, "max": float(pg.max()) if len(pg) else None,
                                          "over_2pct": int((pg > 0.02).sum())},

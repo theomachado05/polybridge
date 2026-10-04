@@ -34,22 +34,24 @@
   },
   "fed": {
    "event": {
-    "no opening bar": 90,
-    "not pulled": 87,
-    "ok": 9
+    "no valid quote at 09:35": 1,
+    "ok": 185
    },
    "control": {
-    "no opening bar": 39,
-    "not pulled": 62,
-    "ok": 4
+    "no valid quote at 09:35": 2,
+    "ok": 103
    }
   },
   "v3extra": {
    "event": {
-    "not pulled": 508
+    "no valid quote at 09:35": 42,
+    "no valid quote at 15:55": 14,
+    "ok": 452
    },
    "control": {
-    "not pulled": 372
+    "no valid quote at 09:35": 32,
+    "no valid quote at 15:55": 9,
+    "ok": 331
    }
   }
  },
@@ -74,13 +76,55 @@
   "OOS": 52
  },
  "partial_records": 0,
- "parity_gap_share_abs": {
-  "n": 548,
-  "median": 0.001351423785652027,
-  "p99": 0.019991722233447688,
-  "max": 0.029541015624999924,
-  "over_2pct": 6
+ "controls_of_weekend_events": {
+  "n": 92,
+  "themselves_after_a_weekend": 13
  },
- "cache_lines": 7637,
- "pull_runs": []
+ "parity_gap_share_abs": {
+  "n": 1606,
+  "median": 0.001323848892555613,
+  "p99": 0.019695272662956224,
+  "max": 0.04205607476635516,
+  "over_2pct": 16
+ },
+ "cache_lines": 13652,
+ "pull_runs": [
+  {
+   "finished_tiers": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "stopped": null,
+   "requests": 13683,
+   "errors": 0,
+   "first_errors": [],
+   "seconds": 6935.3,
+   "items_done_by_tier": {
+    "1": 541,
+    "2": 26,
+    "4": 291,
+    "5": 880
+   },
+   "recorder_before": 51,
+   "recorder_after": 51,
+   "final_rps": 2.0,
+   "plan_meta": {
+    "sessions": 253,
+    "first_session": "2025-10-01",
+    "last_session": "2026-10-02",
+    "links": 254,
+    "fed_markets": 35,
+    "fed_dates": 62,
+    "main_events": 300,
+    "v3_extra_events": 508,
+    "brazil_events": 13,
+    "main_event_dates": 109,
+    "oos_from_check": "2026-06-22"
+   },
+   "ended_utc": "2026-10-04T05:34:01Z"
+  }
+ ]
 }

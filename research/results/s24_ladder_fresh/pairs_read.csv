@@ -1,0 +1,162 @@
+set,kind,event_title,rich_q,cheap_q,trades,first,last,mean_gap_points,mean_points,broken
+a,date,Will Trump lower tariffs on China by...?,Will Trump lower tariffs on China by July 31?,Will Trump lower tariffs on China by May 31?,23,2025-04-16,2025-05-12,18.790130434782608,16.790139532608688,0
+a,date,Fed rate cut by...?,Fed rate cut by October meeting?,Fed rate cut by September meeting?,20,2025-07-16,2025-09-17,5.9716000000000005,3.971599523499994,0
+a,strike,What price will Bitcoin hit in November?,"Will Bitcoin reach $65,000 in November?","Will Bitcoin reach $60,000 in November?",20,2024-11-01,2024-11-20,12.701365,10.701367060499997,0
+a,strike,What price will Ethereum hit in November?,"Will Ethereum reach $3,500 in November?","Will Ethereum reach $2,250 in November?",19,2024-11-07,2024-11-25,46.97446315789474,-55.02553371578948,19
+a,date,Will Trump lower tariffs on China by...?,Will Trump lower tariffs on China by May 31?,Will Trump lower tariffs on China by April 30?,13,2025-04-16,2025-05-01,50.24122307692308,-51.75877667230768,13
+a,date,Will Russia capture Pokrovsk by...?,Will Russia capture Pokrovsk by December 31?,Will Russia capture Pokrovsk by March 31?,13,2025-01-31,2025-03-28,57.79654615384615,-44.203448570769226,13
+a,date,When will the Palisades wildfire be fully contained?,Will the Palisades fire be fully contained by January 31?,Will the Palisades fire be fully contained by January 19?,12,2025-01-08,2025-01-19,54.519016666666666,-47.480987763333324,12
+a,date,Will Russia capture Siversk by...?,Will Russia capture Siversk by December 31?,Will Russia capture Siversk by September 30?,12,2025-09-02,2025-09-30,47.01958333333334,-54.98041080499999,12
+a,strike,What price will Solana hit in November?,Will Solana reach $150 in November?,Will Solana reach $130 in November?,9,2024-11-04,2024-11-17,14.31541111111111,12.315413375555556,0
+a,date,Israeli parliament dissolved by...?,Israeli parliament dissolved by March 31?,Israeli parliament dissolved by December 31?,8,2025-10-18,2025-12-29,19.4704375,17.47043294,0
+a,date,Will Trump lower tariffs on Canada by...?,Will Trump lower tariffs on Canada by December 31?,Will Trump lower tariffs on Canada by July 31?,8,2025-05-05,2025-08-01,49.146150000000006,47.14615898124999,0
+a,date,GPT-5 released by…?,Will GPT-5 be released by December 31?,Will GPT-5 be released by March 31?,7,2025-01-28,2025-03-25,75.08187142857143,-26.91812806142857,7
+a,date,Ukraine hits Moscow by....?,Ukraine hits Moscow by December 31?,Ukraine hits Moscow by September 30?,5,2025-09-23,2025-09-30,34.36,32.36000203,0
+a,strike,What price will Bitcoin hit in August?,Will Bitcoin dip to $110K in August?,Will Bitcoin dip to $111K in August?,4,2025-08-10,2025-08-24,1.5,-0.499999525,0
+a,strike,What price will Bitcoin hit in November?,"Will Bitcoin reach $67,500 in November?","Will Bitcoin reach $65,000 in November?",3,2024-11-01,2024-11-03,17.691533333333336,-84.30845600666666,3
+b,date,Will edgeX launch a token by ___?,"Will EdgeX launch a token by September 30, 2026?","Will EdgeX launch a token by December 31, 2026?",3,2026-02-13,2026-03-19,1.4600333333333335,-0.5399587433333299,0
+b,date,Next Claude Sonnet released by...?,"Will the next Claude Sonnet model be released by July 2, 2026?","Will the next Claude Sonnet model be released by July 3, 2026?",3,2026-06-28,2026-06-30,2.0,-1.3973323017866635,0
+b,date,Military action against Iran ends by...?,"Military action against Iran ends by March 29, 2026?","Military action against Iran ends by March 30, 2026?",3,2026-03-17,2026-03-20,1.0,-0.9999999999999932,0
+b,strike,What price will Zcash hit in 2026?,"Will Zcash reach $800 by December 31, 2026?","Will Zcash reach $700 by December 31, 2026?",3,2026-03-13,2026-06-21,3.6666666666666665,-1.0378999999999967,0
+b,date,Will the Supreme Court rule on Trump's tariffs by...?,Will the Supreme Court rule on Trump's tarriffs by March 31?,Will the Supreme Court rule on Trump's tarriffs by February 25?,3,2026-02-18,2026-02-20,34.500166666666665,32.50016468666666,0
+a,strike,What price will Solana hit in November?,Will Solana reach $210 in November?,Will Solana reach $150 in November?,3,2024-11-08,2024-11-10,64.66666666666667,-37.33333113333333,3
+a,date,Reconciliation bill passed by...?,Will reconciliation bill be passed by July 3?,Will reconciliation bill be passed by July 4?,3,2025-06-30,2025-07-03,1.5515666666666668,-0.44844303333333,0
+b,date,Israel x Lebanon diplomatic meeting by...?,"Israel x Lebanon diplomatic meeting by September 16, 2026?","Israel x Lebanon diplomatic meeting by September 17, 2026?",3,2026-09-12,2026-09-15,2.0,6.666666666627075e-07,0
+a,date,James Comey arrested by...?,James Comey arrested by October 31?,James Comey arrested by September 30?,3,2025-09-27,2025-09-29,33.957233333333335,31.95723615999999,0
+b,date,Another GTA VI trailer released by...?,Another GTA VI trailer released by June 26?,Another GTA VI trailer released by June 30?,3,2026-06-21,2026-06-23,4.0,0.3220006291133303,0
+a,date,Reconciliation bill passed by...?,Will reconciliation bill be passed by July 4?,Will reconciliation bill be passed by July 5?,3,2025-07-01,2025-07-03,1.6043666666666667,-0.39563270333333345,0
+a,date,US strikes Iran by...?,US strikes Iran by October 31?,US strikes Iran by October 3?,3,2025-10-01,2025-10-03,6.1004000000000005,4.10039396999999,0
+b,date,SpaceX Starship Flight Test 13,Will SpaceX Starship Flight Test 13 launch by July 24?,Will SpaceX Starship Flight Test 13 launch by July 25?,2,2026-07-23,2026-07-24,10.5,7.198605240816,0
+b,date,Ukraine strikes another tanker in Black Sea by...?,"Ukraine strikes another tanker in Black Sea by January 24, 2026?","Ukraine strikes another tanker in Black Sea by January 31, 2026?",2,2026-01-14,2026-01-22,5.4375,3.437499999999985,0
+a,strike,How high will inflation get in 2025?,Will inflation reach more than 10% in 2025?,Will inflation reach more than 8% in 2025?,2,2025-08-05,2025-08-07,0.1,-1.9,0
+b,date,Ukraine strikes another tanker in Black Sea by...?,"Ukraine strikes another tanker in Black Sea by January 17, 2026?","Ukraine strikes another tanker in Black Sea by January 24, 2026?",2,2026-01-13,2026-01-14,8.38785,6.387850974999985,0
+b,date,US x Iran diplomatic meeting by...?,"US x Iran meeting by April 13, 2026?","US x Iran meeting by April 14, 2026?",2,2026-04-10,2026-04-11,1.8686,-0.13141024999999495,0
+a,strike,Plasma market cap (FDV) one day after launch?,Plasma >$1B market cap (FDV) one day after launch?,Plasma >$800M market cap (FDV) one day after launch?,2,2025-07-01,2025-08-10,9.9024,7.902380950000006,0
+b,date,Starmer out by...?,"Starmer out by June 24, 2026?","Starmer out by June 25, 2026?",2,2026-06-21,2026-06-22,1.5,-1.258997669767995,0
+b,date,SpaceX Starship Flight Test 13,Will SpaceX Starship Flight Test 13 launch by July 25?,Will SpaceX Starship Flight Test 13 launch by July 26?,2,2026-07-23,2026-07-24,3.11935,0.434575881047425,0
+b,date,DeepSeek V4 released by...?,DeepSeek V4 released by April 26?,DeepSeek V4 released by April 28?,2,2026-04-23,2026-04-24,2.1551,0.15513618999999004,0
+a,strike,What price will XRP hit in April?,Will XRP reach $2.70 in April?,Will XRP reach $2.50 in April?,2,2025-04-07,2025-04-09,0.44999999999999996,-1.54999999999999,0
+b,date,Israel x Lebanon diplomatic meeting by...?,"Israel x Lebanon diplomatic meeting by September 11, 2026?","Israel x Lebanon diplomatic meeting by September 13, 2026?",2,2026-09-01,2026-09-03,1.2989000000000002,-0.701102239999995,0
+b,date,Military action against Iran ends by...?,"Military action against Iran ends by March 28, 2026?","Military action against Iran ends by March 29, 2026?",2,2026-03-16,2026-03-17,1.5,-0.5000000000000043,0
+a,strike,What price will Bitcoin hit in November?,"Will Bitcoin reach $87,500 in November?","Will Bitcoin reach $85,000 in November?",2,2024-11-07,2024-11-11,1.55,-0.4499852600000016,0
+a,strike,What price will Ethereum hit in August?,Will Ethereum dip to $3200 in August?,Will Ethereum dip to $3300 in August?,2,2025-08-19,2025-08-20,0.14015,-1.859868020000005,0
+b,date,Next Google Gemini Pro Model released by...?,"Will the next Google Gemini Pro model be released by June 19, 2026?","Will the next Google Gemini Pro model be released by June 26, 2026?",2,2026-06-01,2026-06-02,1.67855,-1.744601465523505,0
+b,date,JD Vance diplomatic meeting with Iran by...?,JD Vance diplomatic meeting with Iran by April 13?,JD Vance diplomatic meeting with Iran by April 14?,2,2026-04-10,2026-04-11,1.2040000000000002,-0.7960020349999951,0
+b,date,Next Google Gemini Pro Model released by...?,"Will the next Google Gemini Pro model be released by July 17, 2026?","Will the next Google Gemini Pro model be released by July 24, 2026?",2,2026-06-28,2026-06-30,4.99165,1.32533059739951,0
+b,date,Military action against Iran ends by...?,"Military action against Iran ends by April 10, 2026?","Military action against Iran ends by April 11, 2026?",2,2026-04-09,2026-04-10,0.7125999999999999,-1.2874035549999951,0
+a,date,Fed rate cut by...?,Fed rate cut by December meeting?,Fed rate cut by July meeting?,2,2025-07-16,2025-07-18,80.25585000000001,-21.744163049999997,2
+b,date,GPT-6 released by…?,"Will GPT-6 be released by October 31, 2026?","Will GPT-6 be released by November 30, 2026?",2,2026-08-30,2026-09-02,3.38795,-0.46184170855978507,0
+a,strike,Bitcoin above ___ on August 27?,Bitcoin above $114K on August 27?,Bitcoin above $112K on August 27?,2,2025-08-22,2025-08-24,4.5,2.5000000000000098,0
+a,strike,Bitcoin above ___ on August 27?,Bitcoin above $108K on August 27?,Bitcoin above $106K on August 27?,2,2025-08-24,2025-08-26,0.2,-1.8000000000000003,0
+a,strike,Bitcoin above ___ on September 22?,"Will the price of Bitcoin be above $112,000 on September 22?","Will the price of Bitcoin be above $110,000 on September 22?",2,2025-09-21,2025-09-22,1.3,-0.7000000000000056,0
+a,date,GPT-5 released by…?,Will GPT-5 be released by August 10?,Will GPT-5 be released by August 15?,2,2025-08-05,2025-08-06,0.33075,-1.6692436949999951,0
+a,date,Will Trump lower tariffs on Canada by...?,Will Trump lower tariffs on Canada by July 31?,Will Trump lower tariffs on Canada by May 31?,2,2025-04-17,2025-05-28,30.4,28.39999999999999,0
+a,date,NATO downs another Russian drone by...?,NATO downs another Russian drone by October 31?,NATO downs another Russian drone by September 30?,2,2025-09-28,2025-09-29,30.96865,28.968650664999995,0
+a,strike,Bitcoin above ___ on August 25?,Bitcoin above $112K on August 25?,Bitcoin above $110K on August 25?,2,2025-08-22,2025-08-24,5.35,3.349999999999995,0
+a,strike,Bitcoin above ___ on August 25?,Bitcoin above $114K on August 25?,Bitcoin above $112K on August 25?,2,2025-08-22,2025-08-24,3.5,101.50000000000001,0
+a,strike,Bitcoin above ___ on August 25?,Bitcoin above $116K on August 25?,Bitcoin above $114K on August 25?,2,2025-08-22,2025-08-24,2.0,-6.938893903907227e-15,0
+b,date,Next Google Gemini Pro Model released by...?,"Will the next Google Gemini Pro model be released by July 24, 2026?","Will the next Google Gemini Pro model be released by July 30, 2026?",1,2026-07-14,2026-07-14,2.0,-0.84479983516798,0
+b,strike,What price will Zcash hit in 2026?,"Will Zcash reach $1500 by December 31, 2026?","Will Zcash reach $1400 by December 31, 2026?",1,2026-09-15,2026-09-15,5.0,-0.47969751197398997,0
+b,strike,What price will Zcash hit in 2026?,"Will Zcash reach $900 by December 31, 2026?","Will Zcash reach $800 by December 31, 2026?",1,2026-06-04,2026-06-04,5.0,-0.1157,0
+b,strike,What will Gold (XAUUSD) hit in May 2026?,"Will Gold (XAUUSD) hit (HIGH) $4,700 in May?","Will Gold (XAUUSD) hit (HIGH) $4,650 in May?",1,2026-05-20,2026-05-20,7.0,3.3412212244320902,0
+b,strike,What will Gold (XAUUSD) hit in May 2026?,"Will Gold (XAUUSD) hit (HIGH) $4,750 in May?","Will Gold (XAUUSD) hit (HIGH) $4,700 in May?",1,2026-05-21,2026-05-21,5.0,1.79560165919999,0
+b,strike,What will Powell say during April Press Conference?,"Will Powell say ""Inflation"" 60+ times during April press conference?","Will Powell say ""Inflation"" 50+ times during April press conference?",1,2026-04-29,2026-04-29,5.0,1.9539999999999902,0
+b,strike,What will Powell say during December Press Conference?,"Will Powell say ""Inflation"" 60+ times during December press conference?","Will Powell say ""Inflation"" 50+ times during December press conference?",1,2025-12-10,2025-12-10,9.0921,7.09210682000001,0
+b,strike,Fabric ($ROBO) FDV above ___ one day after launch?,Fabric FDV above $1B one day after launch?,Fabric FDV above $800M one day after launch?,1,2026-02-21,2026-02-21,0.2,-1.79999999999999,0
+b,date,Military action against Iran ends by...?,"Military action against Iran ends by March 27, 2026?","Military action against Iran ends by March 28, 2026?",1,2026-03-19,2026-03-19,1.0,-0.99999999999999,0
+b,strike,What price will Hyperliquid hit in 2026?,"Will Hyperliquid reach $50 by December 31, 2026?","Will Hyperliquid reach $46 by December 31, 2026?",1,2026-05-08,2026-05-08,2.5,-1.588624655876,0
+b,strike,What will Powell say during January Press Conference?,"Will Powell say ""Inflation"" 60+ times during January press conference?","Will Powell say ""Inflation"" 50+ times during January press conference?",1,2026-01-28,2026-01-28,1.1701,-0.82986355,0
+b,date,Military action against Iran ends by...?,"Military action against Iran ends by April 8, 2026?","Military action against Iran ends by April 10, 2026?",1,2026-04-07,2026-04-07,5.4,103.4,0
+b,strike,Will Apple (AAPL) finish week of January 19 above___?,Will Apple (AAPL) finish week of January 19 above $245?,Will Apple (AAPL) finish week of January 19 above $240?,1,2026-01-20,2026-01-20,8.0,6.0,0
+b,date,JD Vance diplomatic meeting with Iran by...?,JD Vance diplomatic meeting with Iran by April 14?,JD Vance diplomatic meeting with Iran by April 15?,1,2026-04-10,2026-04-10,1.66,-0.33999999999999997,0
+b,date,JD Vance diplomatic meeting with Iran by...?,JD Vance diplomatic meeting with Iran by April 12?,JD Vance diplomatic meeting with Iran by April 13?,1,2026-04-11,2026-04-11,1.0942,-0.90575709,0
+b,date,Israel x Lebanon diplomatic meeting by...?,"Israel x Lebanon diplomatic meeting by September 9, 2026?","Israel x Lebanon diplomatic meeting by September 11, 2026?",1,2026-09-01,2026-09-01,1.0,-1.0,0
+b,strike,Will Apple (AAPL) finish week of January 19 above___?,Will Apple (AAPL) finish week of January 19 above $250?,Will Apple (AAPL) finish week of January 19 above $245?,1,2026-01-20,2026-01-20,10.0,108.0,0
+b,date,Israel x Lebanon diplomatic meeting by...?,"Israel x Lebanon diplomatic meeting by September 17, 2026?","Israel x Lebanon diplomatic meeting by September 25, 2026?",1,2026-09-15,2026-09-15,0.1,-1.89999972,0
+b,strike,Will OpenAI's valuation hit __ by December 31?,Will OpenAI's valuation hit (HIGH) $4.0T by December 31?,Will OpenAI's valuation hit (HIGH) $3.0T by December 31?,1,2026-06-06,2026-06-06,2.0,-0.7832,0
+b,strike,What price will Zcash hit in 2026?,"Will Zcash dip to $50 by December 31, 2026?","Will Zcash dip to $100 by December 31, 2026?",1,2026-02-14,2026-02-14,9.0,3.5259,0
+b,date,Next Mythos-Class Model released by…?,"Next Mythos-Class Model released by September 3, 2026?","Next Mythos-Class Model released by September 7, 2026?",1,2026-09-01,2026-09-01,1.3679,-1.89680824006996,0
+b,strike,What price will Bitcoin hit on April 11?,"Will Bitcoin reach $78,000 on April 11?","Will Bitcoin reach $76,000 on April 11?",1,2026-04-11,2026-04-11,0.9,-1.460745,0
+b,date,Next Google Gemini Pro Model released by...?,"Will the next Google Gemini Pro model be released by October 15, 2026?","Will the next Google Gemini Pro model be released by October 23, 2026?",1,2026-09-22,2026-09-22,21.0,17.21799999999999,0
+b,strike,Brazil vs. Norway - Player Props,Matheus Cunha: 2+ goals,Matheus Cunha: 1+ goals,1,2026-07-05,2026-07-05,1.3,-0.85471299999999,0
+b,strike,Bitcoin above ___ on September 28?,"Will the price of Bitcoin be above $96,000 on September 28?","Will the price of Bitcoin be above $94,000 on September 28?",1,2026-09-21,2026-09-21,2.0,-1.1466000000000098,0
+b,strike,Bitcoin above ___ on June 7?,"Will the price of Bitcoin be above $78,000 on June 7?","Will the price of Bitcoin be above $76,000 on June 7?",1,2026-06-02,2026-06-02,0.9058,-1.32055851198057,0
+b,strike,Base FDV above ___ one day after launch?,Base FDV above $1B one day after launch?,Base FDV above $500M one day after launch?,1,2026-06-17,2026-06-17,3.0,-1.5893000000000002,0
+b,strike,Argentina vs. Cabo Verde - Player Props,Lautaro Martínez: 2+ assists,Lautaro Martínez: 1+ assists,1,2026-07-03,2026-07-03,1.0,-1.61049999999999,0
+b,strike,$LAPTOP FDV above ___ one day after launch?,LAPTOP FDV above $4B one day after launch?,LAPTOP FDV above $3B one day after launch?,1,2026-09-09,2026-09-09,1.8,-0.48781199999999997,0
+b,strike,Fabric ($ROBO) FDV above ___ one day after launch?,Fabric FDV above $800M one day after launch?,Fabric FDV above $700M one day after launch?,1,2026-02-17,2026-02-17,0.6,-1.4000000000000001,0
+b,strike,France vs. England - Player Props,Bukayo Saka: 2+ goals,Bukayo Saka: 1+ goals,1,2026-07-18,2026-07-18,1.0,-1.8594930215999699,0
+b,strike,HumidiFi FDV above ___ one day after launch?,HumidiFi FDV above $700M one day after launch?,HumidiFi FDV above $600M one day after launch?,1,2025-12-04,2025-12-04,0.6,-1.4000000000000001,0
+b,strike,Measles cases in U.S. by February 28?,"Will there be at least 1,300 measles cases in the U.S. by February 28, 2026?","Will there be at least 1,250 measles cases in the U.S. by February 28, 2026?",1,2026-02-20,2026-02-20,0.6233,-1.37665842000001,0
+b,strike,Solana above ___ on March 3?,Will the price of Solana be above $70 on March 3?,Will the price of Solana be above $60 on March 3?,1,2026-03-01,2026-03-01,0.9614,-1.03855233999999,0
+b,strike,Solana above ___ on October 13?,Will the price of Solana be above $230 on October 13?,Will the price of Solana be above $220 on October 13?,1,2025-10-10,2025-10-10,3.3,1.29999999999999,0
+b,date,SpaceX Starship Flight Test 13,Will SpaceX Starship Flight Test 13 launch by July 26?,Will SpaceX Starship Flight Test 13 launch by July 27?,1,2026-07-24,2026-07-24,0.5286,-1.91384909551485,0
+b,date,Solana all time high by ___?,"Solana all time high by September 30, 2026?","Solana all time high by December 31, 2026?",1,2026-03-23,2026-03-23,3.0,-1.1105000000000098,0
+b,strike,Spain vs. Argentina - Player Props,Lamine Yamal: 3+ shots,Lamine Yamal: 2+ shots,1,2026-07-17,2026-07-17,3.0,-1.47950000000001,0
+b,strike,Spain vs. Belgium - Player Props,Youri Tielemans: 2+ shots,Youri Tielemans: 1+ shots,1,2026-07-10,2026-07-10,2.0,-1.3055965279079902,0
+b,date,OpenAI’s Astra released by…?,"Will OpenAI’s Astra model be released by September 6, 2026?","Will OpenAI’s Astra model be released by September 8, 2026?",1,2026-09-04,2026-09-04,5.0,1.60680000000001,0
+b,strike,StandX FDV above ___ one day after launch?,StandX FDV above $200M one day after launch?,StandX FDV above $50M one day after launch?,1,2026-07-08,2026-07-08,9.0,3.5959021628019996,0
+b,strike,Ethereum above ___ on June 10?,"Will the price of Ethereum be above $2,200 on June 10?","Will the price of Ethereum be above $2,100 on June 10?",1,2026-06-05,2026-06-05,5.2921,2.52435606226783,0
+b,strike,England vs. Argentina - Player Props,Lionel Messi: 4+ shots,Lionel Messi: 3+ shots,1,2026-07-15,2026-07-15,30.0,26.851999999999997,0
+a,strike,What price will Solana hit in August?,Will Solana reach $220 in August?,Will Solana reach $210 in August?,1,2025-08-14,2025-08-14,2.0,100.0,0
+b,date,GPT-5.6 released by...?,"GPT-5.6 released by May 15, 2026?","GPT-5.6 released by May 22, 2026?",1,2026-05-12,2026-05-12,40.9,37.32864422121438,0
+a,strike,Ethereum above ___ on August 22?,Ethereum above $4600 on August 22?,Ethereum above $4500 on August 22?,1,2025-08-22,2025-08-22,2.5,0.49999999999997996,0
+a,strike,Ethereum above ___ on August 22?,Ethereum above $4400 on August 22?,Ethereum above $4200 on August 22?,1,2025-08-22,2025-08-22,1.0,-1.0,0
+a,strike,Bitcoin above ___ on September 26?,"Will the price of Bitcoin be above $110,000 on September 26?","Will the price of Bitcoin be above $108,000 on September 26?",1,2025-09-22,2025-09-22,1.5,99.5,0
+a,strike,Bitcoin above ___ on September 26?,"Will the price of Bitcoin be above $108,000 on September 26?","Will the price of Bitcoin be above $106,000 on September 26?",1,2025-09-21,2025-09-21,3.6,1.6,0
+a,strike,Bitcoin above ___ on September 22?,"Will the price of Bitcoin be above $114,000 on September 22?","Will the price of Bitcoin be above $112,000 on September 22?",1,2025-09-22,2025-09-22,0.9,98.9,0
+a,strike,Bitcoin above ___ on August 29?,Bitcoin above $116K on August 29?,Bitcoin above $114K on August 29?,1,2025-08-24,2025-08-24,5.0,2.99999999999999,0
+a,strike,Bitcoin above ___ on August 29?,Bitcoin above $114K on August 29?,Bitcoin above $112K on August 29?,1,2025-08-24,2025-08-24,1.0,-0.99999999999999,0
+a,strike,Bitcoin above ___ on August 29?,Bitcoin above $112K on August 29?,Bitcoin above $110K on August 29?,1,2025-08-24,2025-08-24,7.0,4.99999999999999,0
+a,strike,Bitcoin above ___ on August 29?,Bitcoin above $110K on August 29?,Bitcoin above $108K on August 29?,1,2025-08-24,2025-08-24,6.5,104.5,0
+a,strike,Bitcoin above ___ on August 27?,Bitcoin above $116K on August 27?,Bitcoin above $114K on August 27?,1,2025-08-24,2025-08-24,2.0,0.0,0
+a,strike,Bitcoin above ___ on August 27?,Bitcoin above $112K on August 27?,Bitcoin above $110K on August 27?,1,2025-08-24,2025-08-24,1.0,99.0,0
+a,strike,Bitcoin above ___ on August 22?,Bitcoin above $116K on August 22?,Bitcoin above $114K on August 22?,1,2025-08-22,2025-08-22,1.2,-0.80000000000001,0
+a,strike,Bitcoin above ___ on August 22?,Bitcoin above $114K on August 22?,Bitcoin above $112K on August 22?,1,2025-08-22,2025-08-22,3.0,1.0,0
+a,strike,Bitcoin above ___ on August 22?,Bitcoin above $112K on August 22?,Bitcoin above $110K on August 22?,1,2025-08-22,2025-08-22,1.0,-1.0,0
+a,strike,Bitcoin above ___ on August 18?,Bitcoin above $124K on August 18?,Bitcoin above $122K on August 18?,1,2025-08-14,2025-08-14,4.0,1.99999999999998,0
+a,strike,Bitcoin above ___ on August 18?,Bitcoin above $122K on August 18?,Bitcoin above $120K on August 18?,1,2025-08-14,2025-08-14,7.0,5.0000003699999995,0
+a,strike,Bitcoin above ___ on August 15?,Bitcoin above $124000 on August 15?,Bitcoin above $122000 on August 15?,1,2025-08-14,2025-08-14,0.9961,-1.0038560400000098,0
+a,strike,Bitcoin above ___ on August 15?,Bitcoin above $122000 on August 15?,Bitcoin above $120000 on August 15?,1,2025-08-14,2025-08-14,1.0,-1.0,0
+a,date,Will Russia recapture Sudzha by...?,Will Russia recapture Sudzha by March 31?,Will Russia recapture Sudzha by April 30?,1,2025-03-08,2025-03-08,3.0,1.0,0
+a,date,Will Russia capture Pokrovsk train station by...?,Will Russia capture Pokrovsk train station by September 30?,Will Russia capture Pokrovsk train station by October 31?,1,2025-08-29,2025-08-29,1.0,99.000017,0
+a,date,Will Russia capture Pokrovsk train station by...?,Will Russia capture Pokrovsk train station by December 31?,Will Russia capture Pokrovsk train station by September 30?,1,2025-09-18,2025-09-18,53.0,-49.0,1
+a,date,Will Russia capture Pokrovsk by...?,Will Russia capture Pokrovsk by August 31?,Will Russia capture Pokrovsk by October 31?,1,2025-08-08,2025-08-08,1.4,-0.6,0
+a,date,Will Russia capture Myrnohrad by...?,Will Russia capture Myrnohrad by December 31?,Will Russia capture Myrnohrad by September 30?,1,2025-09-19,2025-09-19,44.3,-57.699999999999996,1
+a,date,Will Eric Adams drop out by...?,Will Eric Adams drop out by September 30?,Will Eric Adams drop out by October 15?,1,2025-09-28,2025-09-28,4.2285,2.22854488999999,0
+a,date,Reconciliation bill passed by...?,Will reconciliation bill be passed by July 31? ,Will reconciliation bill be passed by August 31? ,1,2025-05-06,2025-05-06,15.6192,13.61920892999999,0
+a,date,Pump.fun airdrop by ....? ,Will Pump.fun perform an airdrop by July 18? ,Will Pump.fun perform an airdrop by July 31? ,1,2025-07-13,2025-07-13,11.916,6.8107134934878,0
+a,date,Jimmy Kimmel back on air by...?,"Jimmy Kimmel hosts an episode of ""Jimmy Kimmel Live!"" by September 30?","Jimmy Kimmel hosts an episode of ""Jimmy Kimmel Live!"" by October 15?",1,2025-09-22,2025-09-22,29.0,27.0,0
+a,date,GPT-5 released by…?,Will GPT-5 be released by August 15?,Will GPT-5 be released by August 31?,1,2025-08-05,2025-08-05,0.0,-1.99999999000001,0
+a,strike,Ethereum above ___ on August 22?,Ethereum above $4500 on August 22?,Ethereum above $4400 on August 22?,1,2025-08-22,2025-08-22,3.3,1.29999999999999,0
+a,strike,Ethereum above ___ on August 22?,Ethereum above $4700 on August 22?,Ethereum above $4600 on August 22?,1,2025-08-22,2025-08-22,4.3,102.3,0
+b,date,Claude Fable 5 restored for US customers by…?,Will Claude Fable 5 be restored for US customers by July 6?,Will Claude Fable 5 be restored for US customers by July 8?,1,2026-06-30,2026-06-30,17.4386,13.81528446312478,0
+a,strike,Ethereum above ___ on August 22?,Ethereum above $4800 on August 22?,Ethereum above $4700 on August 22?,1,2025-08-22,2025-08-22,1.2,-0.8,0
+a,strike,What will Powell say during September Press Conference?,"Will Powell say ""Inflation"" 60+ times during September press conference?","Will Powell say ""Inflation"" 50+ times during September press conference?",1,2025-09-17,2025-09-17,2.0,100.0,0
+a,strike,What will Powell say during October Press Conference?,"Will Powell say ""Inflation"" 50+ times during October press conference?","Will Powell say ""Inflation"" 40+ times during October press conference?",1,2025-10-29,2025-10-29,3.1017,101.10169176,0
+a,strike,What will Powell say during June Press Conference?,"Will Powell say ""Inflation"" 60+ times during June Press Conference?","Will Powell say ""Inflation"" 50+ times during June Press Conference?",1,2025-06-18,2025-06-18,0.0,-1.9999974399999998,0
+a,strike,What price will XRP hit in July?,Will XRP reach $5.0 in July?,Will XRP reach $3.7 in July?,1,2025-07-18,2025-07-18,8.0,5.99999999999999,0
+a,strike,What price will XRP hit in April?,Will XRP reach $3.50 in April?,Will XRP reach $3.00 in April?,1,2025-04-07,2025-04-07,0.5,-1.5,0
+a,strike,What price will XRP hit in April?,Will XRP reach $3.00 in April?,Will XRP reach $2.70 in April?,1,2025-04-07,2025-04-07,0.2017,-1.7982999999999898,0
+a,strike,What price will Solana hit in September?,Will Solana dip to $180 in September?,Will Solana dip to $185 in September?,1,2025-09-29,2025-09-29,0.2,-1.79999999999999,0
+a,strike,What price will Solana hit in September?,Will Solana dip to $170 in September?,Will Solana dip to $175 in September?,1,2025-09-27,2025-09-27,0.1957,-1.80432457,0
+a,strike,What price will Solana hit in May?,Will Solana dip to $110 in May?,Will Solana dip to $120 in May?,1,2025-05-23,2025-05-23,0.8,-1.2,0
+a,strike,What price will Solana hit in March?,Will Solana dip to $120 in March?,Will Solana dip to $130 in March?,1,2025-03-02,2025-03-02,4.0,2.0,0
+a,strike,What price will Solana hit in August?,Will Solana dip to $145 in August?,Will Solana dip to $150 in August?,1,2025-08-14,2025-08-14,1.0,-1.0,0
+a,strike,What price will Solana hit in August?,Will Solana dip to $140 in August?,Will Solana dip to $145 in August?,1,2025-08-22,2025-08-22,1.6,-0.39999996999999,0
+a,strike,What price will Ethereum hit in June?,Will Ethereum dip to $2200 in June?,Will Ethereum dip to $2300 in June?,1,2025-06-21,2025-06-21,0.6667,-1.3333333299999999,0
+a,strike,What price will Ethereum hit in August?,Will Ethereum dip to $2800 in August?,Will Ethereum dip to $3000 in August?,1,2025-08-12,2025-08-12,0.2,-1.7999999999999998,0
+a,strike,What price will Ethereum hit in 2025?,"Will Ethereum dip to $1,000 by December 31?","Will Ethereum dip to $1,300 by December 31?",1,2025-08-14,2025-08-14,0.1,-1.9,0
+a,strike,What price will Bitcoin hit in November?,"Will Bitcoin reach $85,000 in November?","Will Bitcoin reach $82,500 in November?",1,2024-11-07,2024-11-07,1.3333,-0.66666667,0
+a,strike,What price will Bitcoin hit in August?,Will Bitcoin dip to $100K in August?,Will Bitcoin dip to $105K in August?,1,2025-08-24,2025-08-24,0.2,-1.80000000000001,0
+a,strike,What price will Bitcoin hit in 2025?,"Will Bitcoin reach $170,000 by December 31, 2025?","Will Bitcoin reach $150,000 by December 31, 2025?",1,2025-12-05,2025-12-05,3.1,1.0999999999999999,0
+a,strike,What price will Bitcoin hit by March 31?,"Will Bitcoin reach $130,000 by March 31?","Will Bitcoin reach $120,000 by March 31?",1,2025-02-27,2025-02-27,1.8,-0.19999362999998999,0
+a,strike,Plasma market cap (FDV) one day after launch?,Plasma >$4B market cap (FDV) one day after launch?,Plasma >$2B market cap (FDV) one day after launch?,1,2025-08-10,2025-08-10,1.0881,-0.91187556,0
+a,strike,Plasma market cap (FDV) one day after launch?,Plasma >$2B market cap (FDV) one day after launch?,Plasma >$1B market cap (FDV) one day after launch?,1,2025-08-22,2025-08-22,0.0106,-1.98943869,0
+a,strike,Measles cases in U.S. before 2026?,Will there be at least 1700 measles cases in the U.S. in 2025?,Will there be at least 1600 measles cases in the U.S. in 2025?,1,2025-08-21,2025-08-21,1.0,-1.0,0
+a,strike,How high will inflation get in 2025?,Will inflation reach more than 8% in 2025?,Will inflation reach more than 6% in 2025?,1,2025-10-13,2025-10-13,0.0071,-1.99287999999999,0
+a,strike,Ethereum above ___ on August 25?,Ethereum above $4800 on August 25?,Ethereum above $4700 on August 25?,1,2025-08-24,2025-08-24,1.0,-1.00000000000001,0
+a,strike,Ethereum above ___ on August 25?,Ethereum above $4500 on August 25?,Ethereum above $4400 on August 25?,1,2025-08-22,2025-08-22,6.0,4.0,0
+a,strike,Ethereum above ___ on August 25?,Ethereum above $4400 on August 25?,Ethereum above $4300 on August 25?,1,2025-08-22,2025-08-22,3.0,1.0,0
+a,strike,Ethereum above ___ on August 25?,Ethereum above $4300 on August 25?,Ethereum above $4200 on August 25?,1,2025-08-22,2025-08-22,2.0,0.0,0
+b,strike,Will OpenAI's valuation hit __ by December 31?,Will OpenAI's valuation hit (HIGH) $5.0T by December 31?,Will OpenAI's valuation hit (HIGH) $4.0T by December 31?,1,2026-05-20,2026-05-20,1.0,-1.4156,0

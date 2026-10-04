@@ -43,8 +43,9 @@ def answer(r: R) -> tuple[list[str], list[str], list[str]]:
     A: list[str] = []
     # ---- the lead: what is significant and true
     A += [f"**The overnight move is already in the option's price at the first reading of the day.** At 09:31, one minute into the session, the option "
-          f"that points the way the odds moved (a call if the odds said up, a put if down) was worth {pct(ov_d['mean'])} more than at 15:55 the day before "
-          f"(95% interval {ci(ov_d.ci_lo, ov_d.ci_hi)}, {int(ov_d.trades)} ticker-days, mid prices; {says(ov_d.ci_lo, ov_d.ci_hi)}). "
+          f"that points the way the odds moved (a call if the odds said up, a put if down) was worth {pct(ov_d['mean'])} more on average than at 15:55 the "
+          f"day before (95% interval {ci(ov_d.ci_lo, ov_d.ci_hi)}; median {pct(ov_d['median'])}; {int(ov_d.trades)} ticker-days, mid prices; "
+          f"{says(ov_d.ci_lo, ov_d.ci_hi)}). "
           f"The stock itself had opened {gap_signed:+.0f} bp in the direction of the odds (S5 found +137 bp).", ""]
     if not any_speed:
         A += ["**After that first reading there is nothing left that shows up against ordinary mornings.** Bought at the mid price at 09:31, 09:35, 09:45, "
@@ -98,12 +99,13 @@ def answer(r: R) -> tuple[list[str], list[str], list[str]]:
               f"{ci(v4i.diff_ci_lo, v4i.diff_ci_hi)}; out-of-sample {pct(v4o.diff_mean)} {ci(v4o.diff_ci_lo, v4o.diff_ci_hi)} on {int(v4o.pairs)} pairs, "
               f"which {'excludes' if excl(v4o.diff_ci_lo, v4o.diff_ci_hi) else 'includes'} zero. At real quotes the trade returned {pct(v4n['mean'])} "
               f"{ci(v4n.ci_lo, v4n.ci_hi)}. It is one of 15 looks, its own return before costs is not distinguishable from zero, its controls are mostly "
-              "weekday mornings, and it does not survive the spread.", ""]
+              f"weekday mornings ({r.meta['controls_of_weekend_events']['themselves_after_a_weekend']} of {r.meta['controls_of_weekend_events']['n']} follow a "
+              "weekend), and it does not survive the spread.", ""]
     # ---- the case files in one line each
     bz, oil_d, oil_s = row("H-dir", "ALL", "1x", "V0", "case: brazil"), row("H-dir", "ALL", "1x", "V0", "case: oil"), row("H-slow", "ALL", "1x", "V0", "case: oil")
     bzs = row("H-slow", "ALL", "1x", "V0", "case: brazil")
     bzm = row("H-dir", "ALL", "mid", "V0", "case: brazil")
-    fd_s, fd_m = row("H-slow", "ALL", "1x", "V0", "case: fed"), row("H-slow", "ALL", "mid", "V0", "case: fed")
+    fd_s, fd_m, fd_r = row("H-slow", "ALL", "1x", "V0", "case: fed"), row("H-slow", "ALL", "mid", "V0", "case: fed"), row("H-rich", "ALL", "1x", "V0", "case: fed")
     A.append("**Case files (exploratory, details below).**")
     if bz is not None and bzs is not None:
         bsm, brn = row("H-slow", "ALL", "mid", "V0", "case: brazil"), row("H-rich", "ALL", "1x", "V0", "case: brazil")
@@ -125,10 +127,21 @@ def answer(r: R) -> tuple[list[str], list[str], list[str]]:
     if fd_s is not None:
         A.append(f"- Fed and banks (TLT, KRE, XLF straddles on mornings when a Fed question moved 5+ points), {int(fd_s.trades)} ticker-days"
                  + ("" if 4 in fin else " (incomplete pull)") + f": bought at 09:35, {pct(fd_s['mean'])} net {ci(fd_s.ci_lo, fd_s.ci_hi)}, {pct(fd_m['mean'])} "
-                 f"mid to mid {ci(fd_m.ci_lo, fd_m.ci_hi)}; against controls mid to mid {pct(fd_m.diff_mean)} {ci(fd_m.diff_ci_lo, fd_m.diff_ci_hi)} "
-                 f"({int(fd_m.pairs)} pairs).")
+                 f"mid to mid {ci(fd_m.ci_lo, fd_m.ci_hi)}; sold at 09:35, {pct(fd_r['mean'])} net {ci(fd_r.ci_lo, fd_r.ci_hi)}; against controls mid to mid "
+                 f"{pct(fd_m.diff_mean)} {ci(fd_m.diff_ci_lo, fd_m.diff_ci_hi)} ({int(fd_m.pairs)} pairs). Before costs the difference from quiet mornings "
+                 "is not distinguishable from zero; at real quotes neither side pays.")
     else:
         A.append("- Fed and banks: not pulled.")
+    sm = row("H-slow", "ALL", "mid")
+    tilt = [("main sample", sm), ("oil (part of the main sample)", row("H-slow", "ALL", "mid", "V0", "case: oil")), ("Fed and banks", fd_m),
+            ("Brazil", row("H-slow", "ALL", "mid", "V0", "case: brazil"))]
+    tilt = [(n_, x) for n_, x in tilt if x is not None]
+    if tilt and all(x.diff_mean < 0 for _, x in tilt):
+        A += ["", "**If there is a tilt, it points the other way from the claim.** In every sample the straddle bought at 09:35 did a little worse on event "
+              "mornings than on quiet mornings, mid to mid: " + "; ".join(f"{n_} {pct(x.diff_mean)} {ci(x.diff_ci_lo, x.diff_ci_hi)}" for n_, x in tilt)
+              + ". Intervals that exclude zero: " + (", ".join(n_ for n_, x in tilt if excl(x.diff_ci_lo, x.diff_ci_hi)) or "none")
+              + ". That is options slightly too dear at 09:35 after an odds move, not too cheap, and in every sample it "
+              "is a fraction of the spread a seller would have to cross."]
     A += ["",
           "**What this does and does not say about the claim.** The claim was that the whole overnight move cannot be perfectly priced into the options in "
           "the first moments of the session. This study's first reading is at 09:31, sixty seconds in. It does not see the first second, and at 09:31 the "
@@ -157,7 +170,7 @@ def answer(r: R) -> tuple[list[str], list[str], list[str]]:
                   "09:30 price; entry and exit are at opposite sides of the quote; "
                   f"put-call parity at 09:35 holds to a median of {upct(pa['median'], 2)} of the stock price, with {pa['over_2pct']} of {pa['n']} above 2% "
                   f"({', '.join(sorted(set(r.obs[r.obs.parity_gap_share.abs() > 0.02].ticker)))}): mornings with a very wide quote or a stock that moved several "
-                  "percent in its first five minutes, none a wrong contract. "
+                  "percent in its first five minutes. In each of them the strike is the listed one nearest the opening price, so none is a wrong contract. "
                   "No bug was found.", ""]
     # ---- every event-minus-control interval in the result files that excludes zero (the price of many looks)
     mm = r.m[r.m.diff_ci_lo.notna() & r.m.diff_ci_hi.notna()]
@@ -216,6 +229,10 @@ def answer(r: R) -> tuple[list[str], list[str], list[str]]:
         "One addition was made after the first 16 events were visible: the median spread split, which is reported under \"Looked at after the run\" and "
         "enters no verdict.",
         "Tests: `cd research && .venv/bin/python -m pytest s16_overnight_options/tests -q` gave 21 passed, exit code 0.",
+        "An interim result was committed and pushed at 00:44 (`25abd7e`) when the main sample was complete and the case tiers were still pulling; its "
+        "SUMMARY.md carried an INTERIM banner. The main-sample numbers did not change between that commit and the final one.",
+        "The pull ended at 01:34 New York time, before the 01:50 hard stop of METHOD.md section 10, so no tier was cut. It ran at 2 requests a second "
+        "throughout; the recorder's `fetch failed` count was 51 before, at every check during, and after the pull, so the rate was never lowered.",
         f"Pull tiers finished: {fin}." + (f" The pull stopped: {stopped}." if stopped else ""),
         "Could not verify: the election date itself (the metadata on disk gives only the questions' end date, 2026-10-05T03:59Z); whether a strike listed "
         "today for an expired expiry was already listed on the event morning (if it was not, there is no quote and the ticker-day is dropped, so no fill "

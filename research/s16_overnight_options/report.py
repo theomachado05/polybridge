@@ -376,7 +376,7 @@ def run_log(r: R, notes: list[str]) -> str:
                           "research/s16_overnight_options", "research/results/s16_overnight_options"],
                          cwd=RESEARCH.parent, capture_output=True, text=True, env={"TZ": "America/New_York", "PATH": "/usr/bin:/bin:/opt/homebrew/bin"}).stdout.strip().splitlines()
     log = (CACHE / "pull.log").read_text().splitlines() if (CACHE / "pull.log").exists() else []
-    keep = [x for x in log if any(k in x for k in ("pull start", "recorder", "finished", "hard stop", "pull end", "request failed", "in a row"))]
+    keep = [x for x in log if any(k in x for k in ("pull start", "before the pull", "finished", "hard stop", "pull end", "request failed", "in a row", "dropping"))]
     fin, stopped = tier_state(r.meta)
     runs = r.meta.get("pull_runs", [])
     L = ["# S16 (overnight options): run log", "",
