@@ -324,6 +324,7 @@ def main() -> int:
         S.append(f"| ({s}) | {built[s]['pulled_pairs']:,} | {cov_n[s]['every print checked']:,} | {cov_n[s]['latest 20,000 prints only']:,} | "
                  f"{cov_n[s]['no prints served']:,} | {pairs_with_trade[s]:,} |")
     S += [""]
+    S += notes.secondary(locals())
     S += notes.body(locals())
     (RESULTS / "SUMMARY.md").write_text("\n".join(S) + "\n")
     print("\n".join(S[:60]))

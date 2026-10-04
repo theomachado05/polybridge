@@ -1,0 +1,18 @@
+{
+ "a": {
+  "oos_start": "2025-09-11",
+  "trade_dates": 160,
+  "trades": 280,
+  "first_date": "2024-11-01",
+  "last_date": "2025-12-29"
+ },
+ "b": {
+  "oos_start": "2026-07-18",
+  "trade_dates": 67,
+  "trades": 95,
+  "first_date": "2025-10-10",
+  "last_date": "2026-09-22"
+ },
+ "written_utc": "2026-10-04T06:42:15.795170+00:00",
+ "rule": "within each set, the most recent 20% (rounded up) of the New York dates with a primary (10-minute) trade"
+}

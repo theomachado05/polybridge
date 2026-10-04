@@ -17,9 +17,21 @@ RUN_LOG = [
     ("Sun 01:58", "Every template shape of the list read (text only). One strike ladder removed by a new text rule (\"or lower\" against the word \"reach\"). 22 tests pass."),
     ("Sun 01:59", "METHOD.md, config.py, the list, engine, pull and run code and tests committed and pushed before any print was pulled: `c5e0b22`."),
     ("Sun 01:59", "Print pull started: one worker, one request a second at most, the two sets in turns, largest event first."),
+    ("Sun 02:01", "Report, audit and notes code and an end-to-end test on made-up prints committed while the pull ran: `eee3a9b`."),
+    ("Sun 02:02", "Format check of the prints of the first 110 markets: counts of sides and outcomes, no detection."),
+    ("Sun 02:04", "**A detection smoke test on part of the pull** (127 pairs), written to a scratch folder only: 43 matches at 10 minutes, 34 at 2 minutes, provisional cut dates, seconds between prints, events with the most matches. No result read, no P&L."),
+    ("Sun 02:30", "The coordinator's message arrived: the partner's study `research/ladder_replay` (origin/main `a876979` 02:11, `b57d2a8` 02:21, `4d9ac93` 02:21) found that S11's year rule misdates some rungs, and had seen results on a fresh universe that overlaps this one. Read with `git show` at 02:31."),
+    ("Sun 02:31–02:35", "**Which case applied: prints had already been analysed (the 02:04 smoke test), so the registered test was not changed.** Amendment 1 written: the registered test stands; a secondary analysis (the partner's year check and nesting rule, and an unseen sample without the 58 shared markets) fixed before any result or P&L. Committed and pushed at 02:34:58: `61c05e0`. At that moment the pull was still running, no result had been read and `run detect` had not been run on the full pull."),
 ]
 
-WENT_WRONG: list[str] = []
+WENT_WRONG: list[str] = [
+    "The freshness claim of METHOD.md section 1 failed for 58 markets: the partner's study analysed them (set (a), 20 date ladders, 38 pairs) "
+    "between 02:00 and 02:21, while this study's pull ran. Results are shown with and without them.",
+    "A detection smoke test was run on part of the pull at 02:04, before the partner's finding was known. It showed match counts only, but it means "
+    "the corrected rule could not be registered as this study's test. It is a secondary analysis, fixed before any result or P&L (`61c05e0`).",
+    "The first catalogue run stopped at 2,100 events a query (offset cap) and cost 44 requests.",
+    "Both catalogue queries stopped at their page cap: events under $289,305 (set a) and $169,507 (set b) of volume were never read.",
+]
 
 S11 = {"points": 3.89, "lo": 2.49, "hi": 5.43, "trades": 99, "dates": 71, "oos": 3.24, "oos_lo": 0.62, "oos_hi": 7.09, "oos_trades": 11,
        "two_x": 4.34, "usd": 385, "sharpe": 4.64}          # from research/results/s11_bundles/SUMMARY.md, for the comparison line only
@@ -188,3 +200,74 @@ def _body(v: dict, au: dict) -> list[str]:
 
 AFTER: list[str] = []
 BODY = _body
+
+
+# ---------------------------------------------------------------- amendment 1: the secondary analysis
+
+def secondary(v: dict) -> list[str]:
+    from . import report as rp
+    from .run import RESULTS
+    f, usd, get, M, T = rp.f, rp.usd, rp.get, v["M"], v["T"]
+    if "corrected_ok" not in T:
+        return []
+    pc = json.loads((RESULTS / "pair_checks.json").read_text()) if (RESULTS / "pair_checks.json").exists() else {}
+    P = T[T.variant == "W600"]
+    out = ["## Secondary: the corrected ladder rule (added after the partner's finding; not the registered test)", "",
+           "At 02:30 the partner's study (`research/ladder_replay`, origin/main `4d9ac93`) became known here. It found that S11's year rule puts "
+           "some date rungs in the wrong order, and that some pairs are not truly nested. Its year check and its nesting rule were adopted as "
+           "written, in METHOD.md amendment 1 (`61c05e0`, 02:34:58). **When that was committed, this study had read no result and computed no "
+           "P&L. It had run one detection pass on part of the pull (127 pairs, counts of matches only) at 02:04.** So these rows are not "
+           "the registered test. They are fixed before the results, by a rule that came from someone else's data.", "",
+           "| Row (10-minute trades) | Trades | Dates | Net, points per trade, 1× | 95% interval | In-sample | Out-of-sample | At 2× | P&L, cap | P&L, full size | Losing trades | Order violated at the result | The four pass lines |",
+           "|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+
+    def one(label, scope, variant="W600"):
+        a, i, o, a2 = get(M, variant, scope), get(M, variant, scope, segment="IS"), get(M, variant, scope, segment="OOS"), get(M, variant, scope, costs="2x")
+        if not a.trades:
+            return f"| {label} | 0 | | | | | | | | | | | |"
+        lines = rp.pass_lines(M, scope, variant)
+        verdict = "all hold" if all(ok for _, ok, _ in lines) else "fails " + ", ".join(name[0] for name, ok, _ in lines if not ok)
+
+        def seg(r):
+            return f"{f(r.net_points_per_trade)} [{f(r.ci_lo)}, {f(r.ci_hi)}], {int(r.trades)} on {int(r.dates)} dates" if r.trades else "none"
+        return (f"| {label} | {int(a.trades):,} | {int(a.dates):,} | {f(a.net_points_per_trade)} | [{f(a.ci_lo)}, {f(a.ci_hi)}] | {seg(i)} | {seg(o)} | "
+                f"{f(a2.net_points_per_trade)} | {usd(a.usd_capped)} | {usd(a.usd_uncapped)} | {int(round(a.losers * a.trades))} | {int(a.order_violated_at_result)} | {verdict} |")
+    out += [one("Registered rule, every pulled pair (the registered test)", "pooled"),
+            one("Year check", "year check"),
+            one("Corrected rule (year check + nesting)", "corrected rule"),
+            one("**Corrected rule, unseen sample**", "corrected rule, unseen sample"),
+            one("Registered rule, unseen sample", "registered rule, unseen sample"),
+            one("Corrected rule, unseen sample, set (a)", "corrected rule, unseen sample, set a"),
+            one("Corrected rule, unseen sample, set (b)", "corrected rule, unseen sample, set b"),
+            one("Corrected rule, unseen sample, date ladders", "corrected rule, unseen sample, date ladders"),
+            one("Corrected rule, unseen sample, strike ladders", "corrected rule, unseen sample, strike ladders"),
+            one("Corrected rule, unseen sample, prints within 2 minutes", "corrected rule, unseen sample", "W120"), ""]
+    if pc:
+        pairs = P[["rich", "cheap", "corrected_ok", "corrected_reason", "year_ok", "partner_used"]].drop_duplicates(["rich", "cheap"])
+        n_tr = len(P)
+        reasons = P.groupby("corrected_reason").agg(trades=("pnl_1x", "size"), pairs=("rich", lambda s: len(set(zip(s, P.loc[s.index, "cheap"])))),
+                                                    points=("pnl_1x", lambda s: float(s.mean() * 100)), losers=("pnl_1x", lambda s: int((s < 0).sum())),
+                                                    violated=("broken", "sum"), usd=("usd_capped_1x", "sum")).reset_index()
+        out += ["**What the corrected rule says about the pairs that traded** (10-minute trades):", "",
+                "| Verdict | Pairs | Trades | Net, points per trade, 1× | Losing trades | Order violated at the result | P&L, cap |", "|---|---|---|---|---|---|---|"]
+        for r in reasons.sort_values("trades", ascending=False).itertuples():
+            out.append(f"| {r.corrected_reason} | {r.pairs} | {r.trades} | {f(r.points)} | {r.losers} | {int(r.violated)} | {usd(r.usd)} |")
+        pu = P[P.partner_used.astype(bool)]
+        u = pc.get("universe", {})
+        oc = pc.get("outcome_text_check") or {}
+        out += ["",
+                f"- **Markets the partner's study had used**: {int(pairs.partner_used.sum())} of the {len(pairs)} pairs that traded, carrying {len(pu)} of the "
+                f"{n_tr:,} trades ({f(float(pu.pnl_1x.mean() * 100)) if len(pu) else 'n/a'} points per trade). They are removed from the unseen rows. "
+                f"In the pulled list: {u.get('a date pairs with a market the partner used', 0)} of {u.get('a date pairs', 0)} date pairs of set (a); none in set (b).",
+                f"- **Year check over every pulled date pair** (from the question and the start date): "
+                f"{u.get('a date pairs failing the year check', 0)} of {u.get('a date pairs', 0)} fail in set (a), "
+                f"{u.get('b date pairs failing the year check', 0)} of {u.get('b date pairs', 0)} in set (b). "
+                f"Among pairs that traded: {pc.get('year_check_fails_traded', 0)}.",
+                f"- The descriptions and sources were read for the {pc.get('traded_pairs', 0)} pairs that traded only ({pc.get('texts_read', 0)} markets), "
+                "so the nesting rule's count over the whole list is not known."]
+        if oc:
+            out += [f"- **Print mapping.** The partner found the API's `outcomeIndex` wrong on many prints. This study maps by the `outcome` text. On one market "
+                    f"read again ({oc['prints']:,} prints) the text agreed with the token on {oc['outcome_text_agrees_with_token']:,} prints and disagreed on "
+                    f"{oc['disagrees']}; `outcomeIndex` disagreed with the token on {oc['outcomeIndex_disagrees_with_token']:,}."]
+        out += [""]
+    return out

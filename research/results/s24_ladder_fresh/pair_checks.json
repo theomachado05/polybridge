@@ -1,0 +1,97 @@
+{
+ "traded_pairs": 161,
+ "by_reason": [
+  {
+   "set": "a",
+   "kind": "date",
+   "corrected_reason": "descriptions differ",
+   "pairs": 2
+  },
+  {
+   "set": "a",
+   "kind": "date",
+   "corrected_reason": "nested",
+   "pairs": 9
+  },
+  {
+   "set": "a",
+   "kind": "date",
+   "corrected_reason": "rung order wrong once each deadline's year is re-derived",
+   "pairs": 17
+  },
+  {
+   "set": "a",
+   "kind": "strike",
+   "corrected_reason": "descriptions differ",
+   "pairs": 6
+  },
+  {
+   "set": "a",
+   "kind": "strike",
+   "corrected_reason": "nested",
+   "pairs": 60
+  },
+  {
+   "set": "b",
+   "kind": "date",
+   "corrected_reason": "descriptions differ",
+   "pairs": 1
+  },
+  {
+   "set": "b",
+   "kind": "date",
+   "corrected_reason": "nested",
+   "pairs": 28
+  },
+  {
+   "set": "b",
+   "kind": "date",
+   "corrected_reason": "rung order wrong once each deadline's year is re-derived",
+   "pairs": 1
+  },
+  {
+   "set": "b",
+   "kind": "date",
+   "corrected_reason": "window starts at creation and the cheap rung was created later",
+   "pairs": 4
+  },
+  {
+   "set": "b",
+   "kind": "strike",
+   "corrected_reason": "descriptions differ",
+   "pairs": 4
+  },
+  {
+   "set": "b",
+   "kind": "strike",
+   "corrected_reason": "nested",
+   "pairs": 28
+  },
+  {
+   "set": "b",
+   "kind": "strike",
+   "corrected_reason": "window starts at creation and the cheap rung was created later",
+   "pairs": 1
+  }
+ ],
+ "year_check_fails_traded": 18,
+ "partner_used_traded": 17,
+ "universe": {
+  "a strike pairs": 628,
+  "b date pairs": 100,
+  "b strike pairs": 876,
+  "a date pairs": 76,
+  "a date pairs with a market the partner used": 38,
+  "a date pairs failing the year check": 21,
+  "b date pairs failing the year check": 3
+ },
+ "texts_read": 273,
+ "outcome_text_check": {
+  "market": "574073",
+  "prints": 9450,
+  "outcome_text_agrees_with_token": 9450,
+  "disagrees": 0,
+  "unmapped": 0,
+  "outcomeIndex_disagrees_with_token": 0
+ }
+}
