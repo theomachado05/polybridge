@@ -1,0 +1,52 @@
+{
+ "kind": "ladder_live_check",
+ "run_utc": "2026-10-04T06:57:30.094353+00:00",
+ "stamp": "20261004T065730Z",
+ "raw_dir": "ladders/raw/20261004T065730Z",
+ "frozen": [
+  {
+   "file": "research/ladder_replay/METHOD.md",
+   "sha256": "5392ab6307e0e129df45d278872dea1fdeb987684bb898c8497b123651f4ad88",
+   "commit": "a876979",
+   "modified_since_commit": false
+  },
+  {
+   "file": "research/ladder_replay/live.py",
+   "sha256": "41758608f56d6287641f3bb99cd80e0e9840e943e37ccfa604ddaa33bd33a738",
+   "commit": "3b7dbe2",
+   "modified_since_commit": false
+  },
+  {
+   "file": "research/ladder_replay/replay.py",
+   "sha256": "d391425bcc190be3061fa88371430b8eb5b4f9babd76113d893214ef1108e134",
+   "commit": "a876979",
+   "modified_since_commit": false
+  },
+  {
+   "file": "research/ladder_replay/config.py",
+   "sha256": "47161e4708012607665a1f5029d30a692c636479e7932672cbe4ebb080bfa7e1",
+   "commit": "864af49",
+   "modified_since_commit": false
+  }
+ ],
+ "snapshot_utc": "2026-10-04T06:57:36.360655+00:00",
+ "events_read": 1001,
+ "date_ladders": 34,
+ "pairs": 61,
+ "pairs_with_books": 60,
+ "nested_pairs": 48,
+ "violations_net_of_fees": 0,
+ "violations_nested": 0,
+ "locked_usd": 0,
+ "locked_usd_nested": 0,
+ "median_gap_points_to_arb": 10.520380000000001,
+ "gap_points_to_arb": {
+  "n_pairs": 60,
+  "median": 10.26,
+  "p10": 5.07,
+  "p90": 30.26,
+  "min": 2.65,
+  "max": 94.28
+ },
+ "violations": []
+}

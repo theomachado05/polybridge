@@ -129,3 +129,25 @@ voice-agent:
 # Which keys are present (names only); runs gemini-check and read-only ElevenLabs calls when their keys are present.
 keys-check:
 	cd backend && uv run --locked $(ENVFILE) python scripts/keys_check.py
+
+# --- forward tests (rules frozen; no trading) -----------------------------------------------------------------------
+# make forward-ladders: research/ladder_replay/live.py once (every open date ladder's real books), a timestamped snapshot
+# under backend/data_forward/ladders/. make forward-touch: list the "will it hit" markets eligible under
+# research/touch_fresh/FORWARD.md (listed from Mon 5 Oct) and record their state under backend/data_forward/touch/.
+# The frozen runner's timed stages: forward-touch-snapshot (Friday 15:55 New York), forward-touch-prints (after Sunday
+# 20:00), forward-touch-evaluate. GET /forward/status shows the latest of each.
+.PHONY: forward-ladders forward-touch forward-touch-snapshot forward-touch-prints forward-touch-evaluate
+forward-ladders:
+	cd backend && uv run $(ENVFILE) python ../scripts/forward_ladders.py
+
+forward-touch:
+	cd backend && uv run $(ENVFILE) python ../scripts/forward_touch.py list
+
+forward-touch-snapshot:
+	cd backend && uv run $(ENVFILE) python ../scripts/forward_touch.py snapshot
+
+forward-touch-prints:
+	cd backend && uv run $(ENVFILE) python ../scripts/forward_touch.py prints
+
+forward-touch-evaluate:
+	cd backend && uv run $(ENVFILE) python ../scripts/forward_touch.py evaluate

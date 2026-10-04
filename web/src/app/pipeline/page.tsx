@@ -1,276 +1,138 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import { shortlist } from "@/lib/library";
-import { fitScoreView, fitSteps, noFitSteps, type PipeContext } from "@/lib/pipeline";
-import { algoRunLabel, brokerLabel, feeGateOff, pickKey, proposalForPick, runnableFit, useStore } from "@/lib/store";
-import { VOICE_ANCHOR } from "@/lib/voiceDrive";
-import { aiLabel, aiStatus, aiTitle } from "@/lib/ai";
-import type { EquityPick, Question } from "@/lib/markets";
-import { sessionClosed } from "@/lib/closed";
-import { hedgeTerms, prepareHedgeProposal, REPLAY_SANDBOX_SENTENCE } from "@/lib/realBridge";
-import { useAsync } from "@/lib/hooks";
-import { ackCopy, capacityFromProposal, capitalFitView, evidenceGate, isEvidenceError, OVERRIDE_ON_LINE, pmDepthLine } from "@/lib/risk";
-import { Btn, OrbDisc, Tag, Unavailable } from "@/components/pb";
-import { BadgeTag, CapacityCard, EvidenceGateBox } from "@/components/risk/RiskBits";
+import { useState } from "react";
+import Link from "next/link";
+import { getLadders } from "@/lib/api";
+import { useAsync, useRetry } from "@/lib/hooks";
+import { actionPlan, mechanismFor, pairGapText, pairState, pct, rungsInOrder, sortLadders, type Ladder, type LadderPair, type Mechanism } from "@/lib/micro";
+import { Unavailable } from "@/components/pb";
+import { PageHead, ProposalPanel, StatusTag, useRegistry } from "@/components/micro/parts";
 
-const STEP_MS = 1400;
-const FIT_WAIT_MS = 10000;
+const STATE_TAG: Record<ReturnType<typeof pairState>, { text: string; tone: string }> = {
+  actionable: { text: "violation after fees · nested", tone: "up" },
+  violation_not_nested: { text: "violation, but nesting fails", tone: "warn" },
+  nested: { text: "in order", tone: "neutral" },
+  not_nested: { text: "nesting fails", tone: "warn" },
+  no_book: { text: "no two-sided book", tone: "neutral" },
+};
 
-export default function Pipeline() {
-  const s = useStore();
-  // The pick is read once: the pipeline runs on what Build chose when this screen opened. A different pick made
-  // while this screen is open (the voice agent fitted or proposed another market or ticker) restarts it on that pick.
-  const [pick, setPick] = useState(() => (s.question && s.equity ? { q: s.question, eq: s.equity } : null));
-  const liveKey = pickKey(s.question, s.equity);
-  const key = pick ? pickKey(pick.q, pick.eq) : null;
-  if (liveKey && liveKey !== key) setPick({ q: s.question!, eq: s.equity! });
-  if (!pick) {
-    return (
-      <main className="pb-page" style={{ paddingTop: "var(--sp-7)", paddingBottom: "var(--sp-8)" }}>
-        <div className="pb-card" style={{ maxWidth: 720, padding: "var(--sp-6)", display: "flex", flexDirection: "column", gap: "var(--sp-3)", alignItems: "flex-start" }}>
-          <h2 className="pb-h3">No market or stock is selected.</h2>
-          <p className="pb-body" style={{ margin: 0 }}>Select a market and a stock on the Build page. The pipeline then fits an algo to them on the history of that market.</p>
-          <Btn href="/build" style={{ marginTop: "var(--sp-2)" }}>Open Build</Btn>
-        </div>
-      </main>
-    );
-  }
-  return <PipelineRun key={key} q={pick.q} e={pick.eq} />;
-}
-
-function PipelineRun({ q, e }: { q: Question; e: EquityPick }) {
-  const router = useRouter();
-  const s = useStore();
-  const inst = s.inst ?? "shares";
-  const [stepN, setStep] = useState(0);
-  // A proposal the voice agent drafted for this pick: the screen goes straight to its approval panel.
-  const voiceProp = proposalForPick(s.voiceProposal, q, e) ? s.voiceProposal : null;
-  const step = voiceProp ? 6 : stepN;
-  // Set when the fit misses its deadline: the steps then go on with the facts of the pick (no fit); a fit that lands
-  // later still replaces them (see `mode`), since approval sends it.
-  const [timedOut, setTimedOut] = useState(false);
-  const [opening, setOpening] = useState(false);
-  const [openError, setOpenError] = useState<string | null>(null);
-  // The evidence acknowledgement, per proposal id (a new proposal needs a new tick).
-  const [ack, setAck] = useState<{ id: string; on: boolean } | null>(null);
-  // Bumped after an evidence refusal so the approval step re-reads the proposal (the backend rewrites its evidence
-  // before a 409 at approval; a refused bridge start drops it from reuse, so the re-read proposes again).
-  const [prepNonce, setPrepNonce] = useState(0);
-  const openingRef = useRef(false);
-  const { runFit } = s;
-
-  const fit = s.fit && s.fit.key === `${q.id}|${e.t}` ? s.fit : null;
-  const fitOk = fit?.status === "ok" && !!fit.data;
-  const settled = fit != null && fit.status !== "loading";
-  // A fit that lands after the deadline still takes over: approval sends it, so the steps must say so.
-  const mode: "fit" | "nofit" | "pending" = fitOk ? "fit" : timedOut || settled ? "nofit" : "pending";
-  const fitOkRef = useRef(fitOk);
-  useEffect(() => { fitOkRef.current = fitOk; });
-
-  useEffect(() => {
-    runFit(q, e);
-    const t = setTimeout(() => { if (!fitOkRef.current) setTimedOut(true); }, FIT_WAIT_MS);
-    return () => clearTimeout(t);
-  }, [runFit, q, e]);
-
-  // Approving starts the engine, which sends orders to the account. That needs a click, unless the user turned
-  // on auto-approve in Profile; a bridge that would run with its fee gate off always waits when the edge guard is on.
-  // What approving starts: openBridge sends the runnable fit (hedge family + preset) when the fit answered, else
-  // the engine runs its default delta-bridge spec. Same rule as the store, so the copy matches what runs.
-  const applied = runnableFit(fitOk ? fit!.data : null);
-  const runs = algoRunLabel(applied);
-  // Only the default spec (legacy Engine) reads gap_per_share; a fitted algo is fee-gated on the tick's under_px.
-  const gateOff = feeGateOff(q, e, applied);
-  const { guards } = s.settings;
-  const acct = brokerLabel(s.account);
-  // A ticker outside the market's mapping: no hedge fit, and startRealBridge refuses (adverse outcome unknown).
-  const noDir = !e.direction;
-
-  // The approval step reads the pending proposal first: its evidence status (the gate) and its capacity block
-  // (liquidity caps, estimated cost, capital budget). Creating a proposal approves nothing.
-  const done0 = step >= 6;
-  const terms = (() => {
-    if (noDir || !done0) return null;
-    try { return hedgeTerms(q, e, s.settings.maxHedge, applied, { closedPmHedge: s.closedPmHedge, actOnUnvalidated: s.actOnUnvalidated }); } catch { return null; }
-  })();
-  const prep = useAsync(terms && !voiceProp ? `prep:${prepNonce}:${JSON.stringify(terms)}` : null, () => prepareHedgeProposal(terms!));
-  const proposal = voiceProp ?? prep.data;
-  const gate = proposal ? evidenceGate(proposal.evidence) : null;
-  const acked = !!proposal && ack?.id === proposal.id && ack.on;
-  // Approve waits for the evidence read: on an unvalidated market a click before it lands is a certain 409. If the
-  // read fails (prep.error) Approve is allowed and the backend's gate still applies.
-  const evidencePending = !!terms && prep.loading;
-  const ackBlocked = evidencePending || (!!gate?.needsAck && !acked && proposal?.status !== "approved");
-  // The Weekend-mode override travels on the proposal (act_on_unvalidated); approving with the acknowledgement confirms it.
-  const overrideOn = !!terms?.actOnUnvalidated;
-  const capView = proposal ? capacityFromProposal(proposal.capacity) : null;
-  const capFit = proposal ? capitalFitView(proposal.capacity) : null;
-  // Auto-approve never covers an unvalidated market: that needs the explicit acknowledgement below.
-  const evidenceReady = !terms || (!!proposal && !gate?.needsAck) || proposal?.status === "approved";
-  const autoOpen = !noDir && guards.auto && !(gateOff && guards.edge) && evidenceReady;
-
-  const goBridge = async () => {
-    if (openingRef.current || ackBlocked) return;
-    openingRef.current = true;
-    setOpening(true);
-    setOpenError(null);
-    try {
-      await s.openBridge(q, e, inst, { ackUnvalidated: acked || (proposal?.status === "approved" && !!proposal.ack_unvalidated), proposal: voiceProp });
-      router.push("/bridge");
-    } catch (err) {
-      openingRef.current = false;
-      setOpening(false);
-      const evid = isEvidenceError(err);
-      setOpenError(`${evid ? "The evidence gate stopped the approval" : "The bridge did not open"}: ${err instanceof Error ? err.message : String(err)}. ${evid ? "Read the evidence status and try again." : "Try again."}`);
-      if (evid) { setAck(null); setPrepNonce((n) => n + 1); }  // re-read the proposal's evidence
-    }
-  };
-  const goRef = useRef(goBridge);
-  useEffect(() => { goRef.current = goBridge; });
-
-  const done = step >= 6;
-  useEffect(() => {
-    if (done) {
-      if (!autoOpen) return;
-      const t = setTimeout(() => void goRef.current(), STEP_MS);
-      return () => clearTimeout(t);
-    }
-    if (mode === "pending") return;
-    const t = setTimeout(() => setStep((n) => Math.min(6, n + 1)), STEP_MS);
-    return () => clearTimeout(t);
-  }, [step, done, mode, autoOpen]);
-
-  const ctx: PipeContext = {
-    question: q.q, venues: q.venues, yes: q.yes, vol: q.vol, ticker: e.t, held: e.held || 500,
-    move: e.move, rev: e.rev, brand: e.brand, why: e.why, heldReal: e.held,
-    libraryTotal: s.library.status === "ok" && s.library.data ? s.library.data.total : undefined,
-    shortlisted: fitOk && s.library.data ? shortlist(s.library.data, String(fit!.data!.event_class), fit!.data!.division ? String(fit!.data!.division) : null).map((r) => r.id) : undefined,
-    noDirection: !!fit?.noDirection,
-  };
-  const steps = mode === "fit" ? fitSteps(fit!.data!, ctx) : noFitSteps(ctx);
-  const cur = steps[Math.min(step, steps.length - 1)];
-  const orb = done ? "breathing" : cur.orb;
+/** Ladder board: live Polymarket date ladders, rungs in date order, the nesting checks, and violations after fees. */
+export default function LadderBoard() {
+  const reg = useRegistry();
+  const [n, retry] = useRetry();
+  const lad = useAsync(`ladders:${n}`, getLadders);
+  const mech = mechanismFor(reg.data, "ladder_rung");
+  const d = lad.data;
+  const ladders = d?.ok ? sortLadders(d.ladders) : [];
+  const c = d?.counts;
 
   return (
-    <main className="pb-page" style={{ paddingTop: "var(--sp-7)", paddingBottom: "var(--sp-8)" }}>
-      <div style={{ maxWidth: 880, display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-5)", width: "100%" }}>
-        <OrbDisc state={orb} disc={96} orb={72} />
-        <div style={{ minWidth: 0 }}>
-          <div className="pb-num" style={{ fontSize: "var(--fs-13)", fontWeight: 500, color: "var(--faint)" }}>{done ? (!autoOpen ? "Approval necessary" : "Bridge ready") : `Step ${Math.min(step + 1, 6)} of 6`}</div>
-          <h2 className="pb-h2 pb-balance" style={{ marginTop: "var(--sp-1)" }}>
-            {done ? (noDir ? `Select the outcome that hurts ${e.t}` : !autoOpen ? `Approve the ${e.t} bridge` : `Opening the ${e.t} bridge`) : mode === "pending" ? "Fitting an algo to the event…" : cur.name + "…"}
-          </h2>
-        </div>
-      </div>
-      <div style={{ marginTop: "var(--sp-4)", minHeight: 20, display: "flex", gap: "var(--sp-2)", flexWrap: "wrap" }}>
-        {mode === "fit" && fit?.data && (
-          <>
-            <Tag tone={aiStatus(fit.data).live ? "ai" : "neutral"} title={aiTitle(aiStatus(fit.data))}>{aiLabel(aiStatus(fit.data))}</Tag>
-            <Tag tone={fit.data.ticks_source === "live_history" ? "measured" : fit.data.ticks_source === "replay" ? "replay" : "neutral"}>
-              {fit.data.ticks_source === "live_history" ? "real price history" : fit.data.ticks_source === "replay" ? "replay ticks" : "no price history"}
-            </Tag>
-            {fit.data.family && fit.data.score != null && (() => {
-              const sv = fitScoreView(fit.data);
-              // Neutral (never green) when the signal adds nothing over a static hedge of the same size.
-              return <Tag tone={sv.tone === "positive" ? "ai" : "neutral"} title={sv.title}>{sv.short}</Tag>;
-            })()}
-          </>
-        )}
-        {mode === "nofit" && fit?.noDirection && <Tag tone="neutral" title={fit.error ?? undefined}>no hedge fit, direction unknown</Tag>}
-        {mode === "nofit" && !fit?.noDirection && <Tag tone="caution" title={`POST /pipeline/fit ${fit?.error ? "did not complete: " + fit.error : "did not answer in time"}.`}>no fit, engine default spec</Tag>}
-      </div>
-      {mode !== "fit" && fit?.status === "error" && !fit.noDirection && (
-        <Unavailable what="The fit (POST /pipeline/fit)" error={fit.error} onRetry={() => s.retryFit(q, e)} style={{ marginTop: "var(--sp-3)" }} />
-      )}
-      {mode === "nofit" && fit?.status === "loading" && <div className="pb-small" style={{ marginTop: "var(--sp-3)" }}>The fit continues to run. When it answers, it replaces these steps.</div>}
-      <div id={VOICE_ANCHOR.steps} className="pb-card pb-list" style={{ width: "100%", marginTop: "var(--sp-5)", overflow: "hidden", scrollMarginTop: 90 }}>
-        {steps.map((st, i) => {
-          const d = i < step, a = i === step && !done;
-          const text = d || a ? (mode === "pending" && a ? "Waiting for the fit…" : st.text) : "";
-          return (
-            <div key={st.key} style={{ display: "grid", gridTemplateColumns: "24px minmax(110px,190px) minmax(0,1fr)", gap: "var(--sp-4)", alignItems: "start", minHeight: 46, boxSizing: "border-box", padding: "var(--sp-3) var(--sp-5)", background: a ? "var(--surface-2)" : "transparent" }}>
-              <span className="pb-num" style={{ width: 22, height: 22, boxSizing: "border-box", borderRadius: "50%", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "var(--fs-12)", fontWeight: 600, background: a ? "var(--ink)" : d ? "var(--up-tint)" : "var(--track)", color: a ? "#fff" : d ? "var(--up-ink)" : "var(--faint)" }}>{d ? "✓" : i + 1}</span>
-              <span style={{ fontSize: "var(--fs-14)", fontWeight: 600, color: d || a ? "var(--ink)" : "var(--faint)", lineHeight: "22px" }}>{st.name}</span>
-              <span className="pb-pretty" style={{ fontSize: "var(--fs-13)", lineHeight: 1.5, color: "var(--text-2)", paddingTop: 2, minWidth: 0, overflowWrap: "anywhere" }}>{text}{a && <span className="pb-caret" />}</span>
-            </div>
-          );
-        })}
-      </div>
-      {done && (
-        <div id={VOICE_ANCHOR.approval} className="pb-body" style={{ scrollMarginTop: 90, width: "100%", boxSizing: "border-box", marginTop: "var(--sp-6)", paddingTop: "var(--sp-5)", borderTop: "1px solid var(--border-strong)", display: "flex", flexDirection: "column", gap: "var(--sp-3)" }}>
-          {noDir ? (
-            <div style={{ color: "var(--warn)" }}>
-              {e.t} is not in the mapping for this market, and you did not select the outcome that hurts it. Thus the engine cannot orient a hedge. Go to Build and select the outcome. The app makes no proposal until you do.
-            </div>
-          ) : (
-          <div>
-            When you approve, the app makes a hedge proposal for {(e.held || 500).toLocaleString("en-US")} {e.t} shares{e.held ? "" : " (notional)"} on this market. It then starts a bridge that runs {runs.sentence}.
-            {acct.tone === "demo"
-              ? <> After it starts, the engine sends orders to the active broker of the backend and does not ask again. The app cannot read the account now <Tag tone="caution" title={s.account.error ?? "The app cannot read GET /account."}>account not available</Tag>.</>
-              : <> After it starts, the engine sends orders to <Tag tone={acct.tone} title="GET /account">{acct.name}</Tag> and does not ask again.</>}
-            {" "}{REPLAY_SANDBOX_SENTENCE}
-          </div>
-          )}
-          {!noDir && sessionClosed(s.session.data) && (
-            <div data-testid="pipeline-weekend">
-              US equities are closed. The equity algo holds until the regular session. The app stages an order (hedge B) for the first tradable time. The order executes only when you press Approve plan on the Bridge page.
-              {s.closedPmHedge
-                ? <> Hedge A is on. A simulated prediction-market leg runs during the closure <Tag tone="caution" title="Research R1 found no evidence that it decreases the loss from the open gap.">estimate, not protection</Tag>.</>
-                : " Hedge A (the PM-leg estimate) is off."}
-            </div>
-          )}
-          {!noDir && !sessionClosed(s.session.data) && s.closedPmHedge && (
-            <div data-testid="pipeline-weekend">
-              Hedge A is on. US equities are open now. From the next close, a simulated prediction-market leg runs during the closure <Tag tone="caution" title="Research R1 found no evidence that it decreases the loss from the open gap.">estimate, not protection</Tag>. If you do not want hedge A, disable it in Weekend mode on Build before you approve.
-            </div>
-          )}
-          {terms && (
-            <div data-testid="approval-risk">
-              {prep.error && <div className="pb-small" style={{ color: "var(--warn)" }}>The app could not read the proposal ({prep.error}). The evidence gate of the backend still applies when you approve.</div>}
-              {overrideOn && (
-                <div data-testid="approval-override" className="pb-small" style={{ display: "flex", gap: "var(--sp-2)", alignItems: "center", flexWrap: "wrap", color: "var(--warn)", marginBottom: "var(--sp-3)" }}>
-                  <Tag tone="caution" title="Weekend mode on Build stages hedge B on a market that has no validated expected gap.">override on</Tag>
-                  <span className="pb-pretty">{OVERRIDE_ON_LINE} No staged order executes until you press Approve plan.</span>
-                </div>
-              )}
-              <EvidenceGateBox gate={gate} loading={prep.loading} acknowledged={proposal?.status === "approved" && !!proposal.ack_unvalidated} ack={acked} onAck={(on) => proposal && setAck({ id: proposal.id, on })} copy={ackCopy(e.t, "hedge", { override: overrideOn })} />
-              {prep.loading && <div className="pb-small" style={{ marginTop: "var(--sp-3)" }}>Checking the liquidity and the capital budget…</div>}
-              {capView && (
-                <CapacityCard view={capView} title={`Liquidity and capacity for ${e.t}`}
-                  tag={<Tag tone={proposal?.capacity?.source === "live" ? "live" : "sim"} title={proposal?.capacity?.label}>{proposal?.capacity?.source === "live" ? "live numbers" : "cached numbers"}</Tag>}
-                  extra={pmDepthLine(proposal?.capacity) && <div className="pb-small pb-pretty" style={{ marginTop: "var(--sp-2)" }}>{pmDepthLine(proposal?.capacity)}</div>}
-                  footer={capFit && (
-                    <div style={{ marginTop: "var(--sp-3)", paddingTop: "var(--sp-3)", borderTop: "1px solid var(--border)" }}>
-                      <div style={{ display: "flex", gap: "var(--sp-2)", alignItems: "center", flexWrap: "wrap" }}><span className="pb-h4" style={{ fontSize: "var(--fs-13)" }}>Capital budget</span><BadgeTag b={capFit.badge} /></div>
-                      <div className="pb-small pb-num" style={{ marginTop: "var(--sp-1)" }}>{capFit.lines.map((l) => <div key={l}>{l}</div>)}</div>
-                      {capFit.badge.tone === "caution" && <div className="pb-small" style={{ color: "var(--warn)", marginTop: "var(--sp-1)" }}>The app stops each order that goes above a budget before it sends the order (capital_budget).</div>}
-                    </div>
-                  )} />
-              )}
-            </div>
-          )}
-          {gateOff && !noDir && (
-            <div style={{ color: "var(--warn)" }}>
-              Fee gate off: {e.t} has no {e.px ? "impact estimate" : "quote"}. Thus the engine cannot compare an order with its fees and trades on probability only.
-              {guards.edge && " Your “act only when edge beats fees” guardrail is on, thus you must approve this bridge."}
-            </div>
-          )}
-          {guards.auto && !autoOpen && <div className="pb-small">Auto-approve is on, but it does not apply {gate?.needsAck ? "to an unvalidated market. Select the acknowledgement" : gateOff ? "when the fee gate is off" : "until the evidence check answers"}.</div>}
-          {openError && <div role="alert" className="pb-small" style={{ color: "var(--down)" }}>{openError}</div>}
-          {autoOpen && <div className="pb-small">Auto-approve is on (Profile), thus the bridge opens automatically.</div>}
+    <main className="pb-page" style={{ paddingTop: "var(--sp-7)", paddingBottom: "var(--sp-8)", display: "flex", flexDirection: "column", gap: "var(--sp-5)" }}>
+      <PageHead kicker="01 · Ladder board" title="Date ladders" tag={<StatusTag m={mech} />}>
+        {mech ? mech.claim : null}{" "}
+        <Link href="/tested#ladders" className="pb-small" style={{ color: "var(--accent)" }}>What we tested</Link>
+      </PageHead>
+      {reg.error && <Unavailable what="The evidence registry (GET /evidence/mechanisms)" error={reg.error} onRetry={reg.retry} compact />}
+      {mech && <div className="pb-small pb-pretty" data-testid="ladder-actions" style={{ maxWidth: 880 }}>{mech.actions_allowed.text}</div>}
+
+      {lad.loading && <div className="pb-small">Reading the open date ladders and their books…</div>}
+      {lad.error && <Unavailable what="The ladder board (GET /ladders)" error={lad.error} onRetry={retry} />}
+      {d && !d.ok && <Unavailable what="The ladder board (GET /ladders)" error={d.error} onRetry={retry} />}
+      {d?.ok && (
+        <div className="pb-small pb-num" style={{ display: "flex", gap: "var(--sp-4)", flexWrap: "wrap", alignItems: "center" }}>
+          <span>{c?.ladders ?? ladders.length} ladders</span>
+          <span>{c?.pairs ?? 0} adjacent pairs</span>
+          <span>{c?.nested_pairs ?? 0} nested</span>
+          <span style={{ color: c?.violations ? "var(--up-ink)" : undefined }}>{c?.violations ?? 0} violations after fees</span>
+          <span>{c?.actionable ?? 0} actionable</span>
+          {d.as_of && <span>as of {d.as_of.replace("T", " ").slice(0, 19)} UTC{d.stale ? " (cached)" : ""}</span>}
+          <button type="button" className="pb-chip pb-chip-sm" data-on={false} onClick={retry}>Refresh</button>
         </div>
       )}
-      {done && noDir ? (
-        <Btn href="/build" kind="secondary" style={{ marginTop: "var(--sp-5)" }}>Select the outcome on Build</Btn>
-      ) : (
-      <button type="button" onClick={() => (done ? void goBridge() : setStep(6))} disabled={done && ackBlocked} title={done && ackBlocked ? (evidencePending ? "The app reads the evidence status of this proposal first." : "Select the acknowledgement above because the signal of this market is unvalidated.") : undefined} className={`pb-btn ${done ? (ackBlocked ? "pb-btn-disabled" : "pb-btn-primary") : "pb-btn-secondary"}`} style={{ marginTop: "var(--sp-5)" }}>
-        {opening ? "Opening the bridge…" : !done ? "Go to approval" : evidencePending ? "Checking the evidence…" : proposal?.status === "approved" ? "Open approved bridge" : ackBlocked ? "Acknowledge the unvalidated market to approve" : gateOff ? `Approve without the fee gate${acked ? " (unvalidated)" : ""}` : acked ? "Approve on an unvalidated market" : "Approve and open the bridge"}
-      </button>
-      )}
-      </div>
+      {d?.ok && !ladders.length && <div className="pb-card pb-list-note">No open date ladder passed the volume floor right now.</div>}
+      {ladders.map((l) => <LadderCard key={l.ladder_id} l={l} mech={mech} />)}
     </main>
+  );
+}
+
+function LadderCard({ l, mech }: { l: Ladder; mech: Mechanism | null }) {
+  const rungs = rungsInOrder(l);
+  const q = (id: string) => l.rungs.find((r) => r.id === id);
+  return (
+    <section className="pb-card" style={{ overflow: "hidden" }} aria-label={l.event_title}>
+      <div style={{ padding: "var(--sp-4) var(--sp-5)", display: "flex", gap: "var(--sp-3)", alignItems: "center", flexWrap: "wrap", borderBottom: "1px solid var(--border)" }}>
+        <h2 className="pb-h4 pb-pretty" style={{ margin: 0, minWidth: 0 }}>{l.event_title}</h2>
+        <span className={`pb-tag pb-tag-${l.valid ? "neutral" : "warn"}`}>{l.valid ? `${rungs.length} rungs` : "ladder invalid"}</span>
+      </div>
+      {!l.valid && l.reasons.length > 0 && <div className="pb-list-note" style={{ color: "var(--warn)" }}>{l.reasons.join("; ")}</div>}
+      <div className="pb-list">
+        <div className="pb-mm-row pb-mm-rung pb-label" style={{ paddingTop: "var(--sp-2)", paddingBottom: "var(--sp-2)" }}>
+          <span>Date</span><span>Rung</span><span style={{ textAlign: "right" }}>Bid</span><span style={{ textAlign: "right" }}>Ask</span>
+        </div>
+        {rungs.map((r) => (
+          <div key={r.id} className="pb-mm-row pb-mm-rung">
+            <span className="pb-num" style={{ fontSize: "var(--fs-13)" }}>
+              {r.date ?? "undated"}
+              {r.year_corrected && <span className="pb-tag pb-tag-warn" title={`Year re-derived (${r.year_source ?? "creation date"}); the inherited rule read it differently.`} style={{ marginLeft: 4 }}>year fixed</span>}
+            </span>
+            <span className="pb-pretty" style={{ fontSize: "var(--fs-13)", minWidth: 0 }}>{r.question}</span>
+            <span className="pb-num" style={{ textAlign: "right", fontSize: "var(--fs-13)" }}>{pct(r.best_bid)}</span>
+            <span className="pb-num" style={{ textAlign: "right", fontSize: "var(--fs-13)" }}>{pct(r.best_ask)}</span>
+          </div>
+        ))}
+      </div>
+      {l.pairs.length > 0 && (
+        <div className="pb-list" style={{ borderTop: "1px solid var(--border-strong)" }}>
+          <div className="pb-label" style={{ padding: "var(--sp-3) var(--sp-5) var(--sp-1)" }}>Adjacent pairs: sell the earlier rung at its bid, buy the later rung at its ask</div>
+          {l.pairs.map((p) => <PairRow key={`${p.rich}-${p.cheap}`} p={p} valid={l.valid} mech={mech} richQ={q(p.rich)?.question ?? p.rich} cheapQ={q(p.cheap)?.question ?? p.cheap} />)}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function PairRow({ p, valid, mech, richQ, cheapQ }: { p: LadderPair; valid: boolean; mech: Mechanism | null; richQ: string; cheapQ: string }) {
+  const [open, setOpen] = useState(false);
+  const [showChecks, setShowChecks] = useState(false);
+  const st = pairState(p, valid);
+  const tag = STATE_TAG[st];
+  const plan = actionPlan(mech);
+  const canPropose = st === "actionable" && plan.propose;
+  return (
+    <div className={st === "actionable" ? "pb-mm-hl" : undefined} data-testid={`pair-${st}`}>
+      <div className="pb-mm-row pb-mm-pair">
+        <div style={{ minWidth: 0, fontSize: "var(--fs-13)" }}>
+          <span className="pb-num">{p.rich_date ?? "?"} → {p.cheap_date ?? "?"}</span>{" "}
+          <button type="button" className="pb-chip pb-chip-sm" data-on={showChecks} onClick={() => setShowChecks((x) => !x)}>
+            nesting {p.nested ? "pass" : "fail"} ({p.checks.filter((c) => c.ok).length}/{p.checks.length})
+          </button>
+          {!p.nested && p.reasons.length > 0 && <div className="pb-small" style={{ color: "var(--warn)", marginTop: 2 }}>{p.reasons.join("; ")}</div>}
+        </div>
+        <div className="pb-num" style={{ fontSize: "var(--fs-13)" }}>
+          bid {pct(p.bid_rich)} / ask {pct(p.ask_cheap)}
+          <div className="pb-small">{pairGapText(p)}</div>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
+          <span className={`pb-tag pb-tag-${tag.tone}`}>{tag.text}</span>
+          {canPropose && !open && <button type="button" className="pb-btn pb-btn-sm pb-btn-secondary" onClick={() => setOpen(true)}>Draft proposal</button>}
+        </div>
+      </div>
+      {showChecks && (
+        <div className="pb-list-note" style={{ paddingTop: 0 }}>
+          {p.checks.map((c) => (
+            <div key={c.check} className="pb-small"><span style={{ color: c.ok ? "var(--up-ink)" : "var(--down-ink)" }}>{c.ok ? "pass" : "fail"}</span> · {c.check}{c.detail ? `: ${c.detail}` : ""}</div>
+          ))}
+        </div>
+      )}
+      {open && (
+        <div style={{ padding: "0 var(--sp-5) var(--sp-4)" }}>
+          <ProposalPanel plan={plan} mechanism={mech} title="Ladder pair proposal" onClose={() => setOpen(false)} lines={[
+            `Sell YES on the earlier rung at ${pct(p.bid_rich)}: ${richQ}`,
+            `Buy YES on the later rung at ${pct(p.ask_cheap)}: ${cheapQ}`,
+            `Edge after one tick and both fees: ${pairGapText(p)}. Held to resolution.`,
+          ]} />
+        </div>
+      )}
+    </div>
   );
 }

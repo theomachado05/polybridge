@@ -5,6 +5,7 @@ import { BROKERS, ROUTABLE_BROKER } from "@/lib/brokers";
 import { fmtMoney } from "@/lib/fmt";
 import { brokerLabel, useStore } from "@/lib/store";
 import { REPLAY_SANDBOX_SENTENCE } from "@/lib/realBridge";
+import { FIT_PATH } from "@/lib/voiceDrive";
 import { Btn, ChipGroup, LogoTile, Tag, Unavailable } from "@/components/pb";
 
 export default function Connect() {
@@ -27,7 +28,7 @@ export default function Connect() {
 
   const run = () => {
     if (!canRun) return;
-    router.push("/pipeline");
+    router.push(FIT_PATH);
   };
 
   if (!s.question || !eq || !s.inst) {

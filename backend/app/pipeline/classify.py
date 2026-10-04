@@ -1,5 +1,15 @@
-"""Step 1: question -> event class (Gemini first, keyword rules on any failure)."""
+"""Step 1: question -> event class (Gemini first, keyword rules on any failure), and the four contract types.
+
+Two classifiers live here:
+
+- ``classify_contract`` (what the product acts on): ``ladder_rung``, ``touch_ticket``, ``close_above_ticket`` or
+  ``other``, with structured fields and link checks. The rule parser (``research/linker/link_map.classify``) decides;
+  Gemini may read the same text into the same fields and is checked against it (``app.contracts.classify``).
+- ``classify`` (the generic AI fit, unvalidated: its walk-forward test failed): question -> event class.
+"""
 from __future__ import annotations
+
+from ..contracts.classify import TYPES as CONTRACT_TYPES, classify_contract, rules_classify as rules_classify_contract  # noqa: F401
 
 from .engine_adapter import EVENT_CLASSES
 from .llm import LLMError, LLMProvider, RulesProvider
