@@ -1,0 +1,27 @@
+{
+ "markets": 50,
+ "rows": 100,
+ "valid": 45,
+ "valid_rate": 0.45,
+ "status": {
+  "scored": 45,
+  "pm_extreme": 38,
+  "no_chain": 5,
+  "no_clean_expiry": 11,
+  "pm_placeholder": 1
+ },
+ "threshold": 0.3,
+ "requests": {
+  "http": {
+   "clob.polymarket.com": 50
+  },
+  "massive": {
+   "api.massive.com": 243
+  },
+  "http_failures": 0,
+  "massive_failures": 0,
+  "failures_sample": []
+ },
+ "pm_hist_points_median": 1284.5,
+ "pass": true
+}
