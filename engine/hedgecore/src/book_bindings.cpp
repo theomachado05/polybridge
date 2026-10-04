@@ -1,9 +1,41 @@
 #include <pybind11/pybind11.h>
 
+#include <atomic>
+#include <thread>
+#ifdef __APPLE__
+#include <pthread.h>
+#include <sys/qos.h>
+#endif
+
 #include "hedgecore/book_engine.hpp"
 
 namespace py = pybind11;
 using namespace hedgecore;
+
+namespace {
+
+std::atomic<bool> g_warm{false};
+std::atomic<int> g_gen{0};
+
+bool set_interactive_qos() {
+#ifdef __APPLE__
+  return pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0) == 0;
+#else
+  return false;
+#endif
+}
+
+void keep_warm(bool on) {
+  if (on == g_warm.exchange(on) || !on) return;
+  const int gen = ++g_gen;
+  std::thread([gen] {
+    set_interactive_qos();
+    while (g_warm.load(std::memory_order_relaxed) && g_gen.load(std::memory_order_relaxed) == gen) {
+    }
+  }).detach();
+}
+
+}  // namespace
 
 PYBIND11_MODULE(hedgecore_book, m) {
   m.doc() = "Frame-to-decision engine (hedgecore/book_engine.hpp): simdjson parse, per-token books, stale-quote rule";
@@ -39,4 +71,6 @@ PYBIND11_MODULE(hedgecore_book, m) {
       .def_property_readonly("bad_frames", &BookEngine::bad_frames)
       .def_property_readonly("other_events", &BookEngine::other_events);
   m.def("mono_ns", &BookEngine::mono_ns);
+  m.def("set_interactive_qos", &set_interactive_qos);
+  m.def("keep_warm", &keep_warm, py::arg("on"));
 }

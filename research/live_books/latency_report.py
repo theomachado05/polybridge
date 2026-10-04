@@ -26,6 +26,7 @@ QS = (50, 90, 99, 99.9)
 IMPL_NAMES = {"cpp": "old path: Python json.loads and dict books, C++ detector call per token",
               "python": "old path with the pure-Python detector",
               "cpp_book": "new path: one C++ call per frame (simdjson parse, books, detector)",
+              "cpp_book+warm": "new path with keep-warm (interactive QoS, one native thread spinning to keep the P cores awake)",
               "python_book": "fallback path (Python twin of the C++ engine)"}
 
 
@@ -46,8 +47,9 @@ def read(dec_dir: Path):
                         c["bad_lines"] += 1
                         continue
                     t0, t1, t2 = r["t0"], r["t1"], r["t2"]
-                    tot, parse, dec = lat.setdefault(r["impl"], (array("q"), array("q"), array("q")))
-                    w = span.setdefault(r["impl"], [t0, t2])
+                    key = r["impl"] + ("+warm" if r.get("warm") else "")
+                    tot, parse, dec = lat.setdefault(key, (array("q"), array("q"), array("q")))
+                    w = span.setdefault(key, [t0, t2])
                     w[0], w[1] = min(w[0], t0), max(w[1], t2)
                     tot.append(t2 - t0)
                     parse.append(t1 - t0)
@@ -124,7 +126,7 @@ def main(argv=None):
     for impl in [k for k in IMPL_NAMES if k in lat] + sorted(k for k in lat if k not in IMPL_NAMES):
         tot, parse, dec = lat[impl]
         w0, w1 = spans[impl]
-        L += [f"**{IMPL_NAMES.get(impl, impl)}** (`impl={impl}`), {fmt(w0)} to {fmt(w1)} ({(w1 - w0) / 6e10:.1f} min), "
+        L += [f"**{IMPL_NAMES.get(impl, impl)}** (`{impl}`), {fmt(w0)} to {fmt(w1)} ({(w1 - w0) / 6e10:.1f} min), "
               f"{len(tot):,} decisions.", "",
               "| stage | p50 | p90 | p99 | p99.9 | mean |", "|---|---:|---:|---:|---:|---:|"]
         L += [f"| {name} | " + " | ".join(f"{v:,.2f}" for v in pct(x)) + " |" for name, x in

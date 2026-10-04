@@ -34,10 +34,11 @@ from . import detector, reference as R
 from .pybook import PyBookEngine
 
 try:
-    from .hedgecore_book import BookEngine
+    from .hedgecore_book import BookEngine, keep_warm, set_interactive_qos
     BOOK_IMPL = "cpp_book"
 except ImportError:
     BookEngine, BOOK_IMPL = PyBookEngine, "python_book"
+    keep_warm = set_interactive_qos = None
 
 UTC = timezone.utc
 WS_URL = "wss://ws-subscriptions-clob.polymarket.com/ws/market"
@@ -99,8 +100,9 @@ def yes_no(meta: dict) -> tuple[str, str]:
 
 
 class Recorder:
-    def __init__(self, out: Path, until: datetime, raw_cap: int):
+    def __init__(self, out: Path, until: datetime, raw_cap: int, warm: bool = True):
         self.out, self.until, self.raw_cap = out, until, raw_cap
+        self.warm = warm and keep_warm is not None
         self.raw = HourlyGz(out / "raw", "raw", binary=True)
         self.dec = HourlyGz(out / "decisions", "decisions")
         self.gaps = (out / "gaps.jsonl").open("a")
@@ -254,7 +256,7 @@ class Recorder:
                "reference_stale": stale, "in_window": t2 // 1_000_000_000 >= int(m["w0"]) and t2 // 1_000_000_000 <= int(m["w1"])
                and str(datetime.fromtimestamp(t2 / 1e9, R.ET).date()) == m["reopening"],
                "decision": detector.SIDES[side], "edge_pt": round(edge, 3), "net_edge_pt": round(net, 3),
-               "price": None if px != px else round(px, 4), "size": sz, "impl": BOOK_IMPL}
+               "price": None if px != px else round(px, 4), "size": sz, "impl": BOOK_IMPL, "warm": self.warm}
         self.dec.write(t2, json.dumps(row, separators=(",", ":")) + "\n")
 
     async def pinger(self, ws):
@@ -347,8 +349,11 @@ class Recorder:
         loop = asyncio.get_running_loop()
         for s in (signal.SIGTERM, signal.SIGINT):
             loop.add_signal_handler(s, lambda: (self.stop.set(), self.resub.set()))
-        self.log.info("start pid %d, frame path %s, detector impl %s, until %s", os.getpid(), BOOK_IMPL, detector.IMPL,
-                      self.until.isoformat())
+        if self.warm:
+            set_interactive_qos()
+            keep_warm(True)
+        self.log.info("start pid %d, frame path %s, detector impl %s, keep-warm %s, until %s", os.getpid(), BOOK_IMPL,
+                      detector.IMPL, self.warm, self.until.isoformat())
         tasks = [asyncio.create_task(c) for c in (self.universe_loop(), self.ref_loop(), self.ws_supervisor(), self.housekeeping())]
         await self.stop.wait()
         for t in tasks:
@@ -358,6 +363,8 @@ class Recorder:
         self.dec.close()
         self.gaps.close()
         self.pool.shutdown(wait=False, cancel_futures=True)
+        if self.warm:
+            keep_warm(False)
         self.log.info("stopped; counts %s; engine bad frames %d, other events %d", dict(self.counts), self.engine.bad_frames,
                       self.engine.other_events)
 
@@ -367,6 +374,8 @@ def main(argv=None):
     ap.add_argument("--out", type=Path, default=OUT)
     ap.add_argument("--until", default=UNTIL)
     ap.add_argument("--raw-cap-gb", type=float, default=RAW_CAP / 1024 ** 3)
+    ap.add_argument("--keep-warm", action=argparse.BooleanOptionalAction, default=True,
+                    help="interactive QoS on the event loop thread and one native thread spinning to keep the P cores awake")
     a = ap.parse_args(argv)
     a.out.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(filename=a.out / "recorder.log", level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -374,7 +383,7 @@ def main(argv=None):
     pid = a.out / "recorder.pid"
     pid.write_text(str(os.getpid()))
     try:
-        asyncio.run(Recorder(a.out, datetime.fromisoformat(a.until), int(a.raw_cap_gb * 1024 ** 3)).run())
+        asyncio.run(Recorder(a.out, datetime.fromisoformat(a.until), int(a.raw_cap_gb * 1024 ** 3), a.keep_warm).run())
     finally:
         if pid.exists() and pid.read_text().strip() == str(os.getpid()):
             pid.unlink()
