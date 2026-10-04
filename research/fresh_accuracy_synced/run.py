@@ -1,8 +1,3 @@
-"""Exploratory: option probability recomputed at the Polymarket history timestamp (METHOD.md).
-
-    cd research && SHARED_MASSIVE_CACHE=<dir> .venv/bin/python fresh_accuracy_synced/run.py --check     # reproduce p_mid at snap_utc
-    cd research && SHARED_MASSIVE_CACHE=<dir> .venv/bin/python fresh_accuracy_synced/run.py             # synced run
-"""
 from __future__ import annotations
 
 import argparse
