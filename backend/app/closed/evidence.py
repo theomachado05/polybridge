@@ -171,8 +171,10 @@ CI95_DATES = "95% interval over dates"
 CI95_EVENT = "95% interval, event bootstrap"
 CI90_DATE = "90% interval, date cluster bootstrap (equivalence margin +/-0.003)"
 CENSUS = "census count: no sampling interval (low = high = value)"
-PERCENTILES = "distribution: median to p99 of the logged decisions"
+PERCENTILES = "percentiles of the logged decisions: median (p50) and p99, not a confidence interval"
 NO_INTERVAL = "no interval reported in the result file (low = high = value); see note"
+RANGE_KINDS = {CI95_DATE: "ci95", CI95_DATES: "ci95", CI95_EVENT: "ci95", CI90_DATE: "ci90", CENSUS: "census",
+               PERCENTILES: "percentiles", NO_INTERVAL: "none"}
 
 FORWARD_START = "2026-10-05"
 
@@ -192,10 +194,21 @@ LATENCY = "research/results/live_books/LATENCY.md"
 LATENCY_REF = {"source_branch": "r/live-speed", "source_commit": "a6ba327"}
 
 
+def _kind(desc: str) -> str:
+    if desc in RANGE_KINDS:
+        return RANGE_KINDS[desc]
+    if desc.startswith("95%"):
+        return "ci95"
+    if desc.startswith("90%"):
+        return "ci90"
+    raise KeyError(desc)
+
+
 def _n(label: str, value: float, lo: float, hi: float, range_kind: str, n: int, units: str, result_file: str, *,
        confirmatory: bool, unit: str = "", also: tuple[tuple[int, str], ...] = (), note: str = "",
        ref: dict | None = None) -> dict:
-    out = {"label": label, "value": value, "unit": unit, "ci_low": lo, "ci_high": hi, "range_kind": range_kind,
+    out = {"label": label, "value": value, "unit": unit, "ci_low": lo, "ci_high": hi,
+           "range_kind": _kind(range_kind), "range_desc": range_kind,
            "sample": {"n": n, "units": units, "also": [{"n": a, "units": u} for a, u in also]},
            "result_file": result_file, "confirmatory": confirmatory}
     if note:
@@ -406,7 +419,7 @@ MECHANISMS: tuple[dict, ...] = (
 )
 
 SYSTEM_NUMBERS: tuple[dict, ...] = (
-    _n("Receive to decision, live Polymarket feed (median; range to p99)", 39.0, 39.0, 3875.9, PERCENTILES, 58610,
+    _n("Receive to decision, live Polymarket feed (median and p99)", 39.0, 39.0, 3875.9, PERCENTILES, 58610,
        "book-update decisions", LATENCY, confirmatory=False, unit="microseconds",
        note="Network time excluded; weekend reference is Friday's close, so these are latency, not trades.",
        ref=LATENCY_REF),

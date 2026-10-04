@@ -1,7 +1,9 @@
 import { API_URL } from "./api.ts";
 import { navigateReply } from "./voiceDrive.ts";
 
-export const VOICE_TOOLS = ["search_markets", "fit", "propose", "approve", "start_bridge", "bridge_status", "account", "positions", "navigate"] as const;
+export const VOICE_TOOLS = ["search_markets", "fit", "propose", "approve", "start_bridge", "bridge_status", "account", "positions", "navigate",
+  "show_ladders", "show_tickets", "explain_ticket", "explain_mechanism", "what_we_tested"] as const;
+export const READ_ONLY_TOOLS: readonly VoiceToolName[] = ["show_ladders", "show_tickets", "explain_ticket", "explain_mechanism", "what_we_tested", "navigate", "bridge_status", "account", "positions", "search_markets", "fit"];
 export const BROWSER_TOOLS: readonly VoiceToolName[] = ["navigate"];
 export type VoiceToolName = (typeof VOICE_TOOLS)[number];
 export const CONFIRM_TOOLS: readonly VoiceToolName[] = ["approve", "start_bridge"];
@@ -42,7 +44,7 @@ export async function callAgentTool(name: string, params: Record<string, unknown
 }
 
 const MAX_REPLY = 6000;
-const IDS = ["id", "proposal_id", "bridge_id", "status", "source", "ticker", "family", "preset_index", "event_class", "score", "llm"];
+const IDS = ["filter", "above", "ticket", "mechanisms", "id", "proposal_id", "bridge_id", "status", "source", "ticker", "family", "preset_index", "event_class", "score", "llm"];
 
 export function replyForAgent(r: ToolReply): string {
   let data = r.data;

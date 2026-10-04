@@ -24,14 +24,16 @@ WEB_HOSTS = ("localhost:3000", "127.0.0.1:3000")
 
 def web_hosts() -> list[str]:
     hosts = list(WEB_HOSTS)
-    extra = (os.environ.get("PUBLIC_WEB_HOST") or "").strip().lower()
-    extra = extra.split("://", 1)[-1].split("/", 1)[0]
-    if extra and extra not in hosts:
-        hosts.append(extra)
+    for raw in (os.environ.get("PUBLIC_WEB_HOST") or "").split(","):
+        extra = raw.strip().lower().split("://", 1)[-1].split("/", 1)[0]
+        if extra and extra not in hosts:
+            hosts.append(extra)
     return hosts
 TIMEOUT_S = 20.0
 TOOL_TIMEOUTS = {"fit": 90, "start_bridge": 30, "search_markets": 20, "propose": 20, "approve": 20,
-                 "bridge_status": 15, "account": 15, "positions": 15, "navigate": 5}
+                 "bridge_status": 15, "account": 15, "positions": 15, "navigate": 5,
+                 "show_tickets": 45, "explain_ticket": 45, "show_ladders": 20, "explain_mechanism": 10,
+                 "what_we_tested": 10}
 CONFIRM_NOTE = (" Only set confirm true after the user has said yes, out loud, in their last message; never on your "
                 "own initiative.")
 

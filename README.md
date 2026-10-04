@@ -4,8 +4,9 @@ PolyBridge compares Polymarket's stock contracts with the probability implied by
 
 - **Paper:** [paper/PolyBridge.pdf](paper/PolyBridge.pdf) (source `paper/main.tex`, figures `paper/figures.py`)
 - **Demo:** `make dev`, then open http://localhost:3000 ([docs/demo.md](docs/demo.md))
-- **8-K study (Massive challenge):** report [note/PolyBridge_8K_report.pdf](note/PolyBridge_8K_report.pdf) and [note/WRITEUP.md](note/WRITEUP.md), notebook [research/polybridge_8k.ipynb](research/polybridge_8k.ipynb), organizers' starter in [research/starter/](research/starter/gqh-massive-8k-starter)
+- **8-K study (Massive "Trade the 8-K" judges):** the write-up is [note/massive/PolyBridge_Massive_8K_report.pdf](note/massive/PolyBridge_Massive_8K_report.pdf) (LaTeX source in `note/massive/tex/`) and the notebook is [research/massive_8k.ipynb](research/massive_8k.ipynb), built on the organizers' starter in [research/starter/](research/starter/gqh-massive-8k-starter). To run it: `cd research && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`, put `MASSIVE_API_KEY` in `research/.env`, set `HOLDOUT_START`, `HOLDOUT_END` and `RUN_HOLDOUT = True` in the configuration cell, then run all cells (set `RUN_OOS = RUN_FRESH_2022 = False` to skip the re-runs of our own windows). Opened outside the repo, its first cell installs the package from GitHub. Pre-registration: [HYPOTHESIS.md](research/HYPOTHESIS.md), [HYPOTHESIS_TAGS.md](research/HYPOTHESIS_TAGS.md), [FORECAST.md](research/FORECAST.md)
 - **Every result with its source:** [research/EVIDENCE.md](research/EVIDENCE.md)
+- **Docs:** [design](docs/design.md) (architecture, closed-market mode, evidence gating) · [HTTP contracts](docs/contracts.md) · [voice agent](docs/voice-agent.md)
 
 | Folder | Role |
 |---|---|
@@ -16,6 +17,14 @@ PolyBridge compares Polymarket's stock contracts with the probability implied by
 | `web/` | Next.js interface |
 | `note/` | The 8-K report (PDF and Markdown) and the earlier quant note |
 | `scripts/` | End-to-end demo driver and forward-test wrappers |
+
+## Reproduce the quant note
+
+```bash
+make reproduce        # offline: reads committed result files only, no API key, no network; a few seconds
+```
+
+This checks every headline number of [note/NOTE.md](note/NOTE.md) against the committed result files and prints one line per claim: the note's value, the value found, the source file, and MATCH or MISMATCH (exit status 1 on any mismatch). Most claims are recomputed from each study's committed trade list or rows with the study's own functions and seeds; the rest are read from its committed stats file, and the line says which. It also writes the track's metrics table, [note/TABLES.md](note/TABLES.md) (the date-ladder book, in-sample and out-of-sample, net of costs), and the figures in [note/figures/](note/figures/). No study is rerun. The first run creates `research/.venv` with `uv`; to use another Python that has the research dependencies, run `make reproduce PYTHON=/path/to/python`. Code: [research/reproduce.py](research/reproduce.py), [research/note_figures.py](research/note_figures.py).
 
 ## Run the demo
 

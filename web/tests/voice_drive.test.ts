@@ -136,3 +136,36 @@ describe("the mouse continues from a voice proposal", () => {
     assert.deepEqual(seen, ["start:p7"]);
   });
 });
+
+describe("voice drives the micro-markets product (ladders, tickets, evidence)", () => {
+  it("show_tickets opens the ticket board, filtered above the reference on request", () => {
+    assert.equal(voiceDrive("show_tickets", {}, ok("show_tickets", {})).route, "/bridge?view=tickets");
+    const d = voiceDrive("show_tickets", { filter: "above_reference" }, ok("show_tickets", {}));
+    assert.equal(d.route, "/bridge?view=tickets&filter=above");
+    assert.match(d.announcement, /above the options reference/);
+  });
+  it("explain_ticket focuses and scrolls to that row; explain_mechanism opens its evidence entry", () => {
+    const t = voiceDrive("explain_ticket", { ticket_id: "2468323" }, ok("explain_ticket", {}));
+    assert.equal(t.route, "/bridge?view=tickets&ticket=2468323");
+    assert.equal(t.scrollTo, "ticket-row-2468323");
+    const m = voiceDrive("explain_mechanism", { mechanism_id: "touch" }, ok("explain_mechanism", { id: "touch" }));
+    assert.equal(m.route, "/tested#touch");
+    assert.equal(m.scrollTo, "touch");
+    assert.equal(voiceDrive("show_ladders", {}, ok("show_ladders", {})).route, "/pipeline");
+    assert.equal(voiceDrive("what_we_tested", {}, ok("what_we_tested", {})).route, "/tested");
+  });
+  it("navigate knows ladders, tickets and tested; errors stay put", () => {
+    assert.equal(voiceDrive("navigate", { screen: "tickets" }, navigateReply({ screen: "tickets" })).route, "/bridge?view=tickets");
+    assert.equal(voiceDrive("navigate", { screen: "ladders" }, navigateReply({ screen: "ladders" })).route, "/pipeline");
+    assert.equal(voiceDrive("explain_ticket", { ticket_id: "x" }, fail("explain_ticket")).route, null);
+  });
+  it("the new read-only tools are client tools and never need a confirmation", async () => {
+    const calls: string[] = [];
+    const tools = buildClientTools(async (name) => { calls.push(name); return ok(name, {}); });
+    for (const n of ["show_ladders", "show_tickets", "explain_ticket", "explain_mechanism", "what_we_tested"] as const) {
+      assert.ok(VOICE_TOOLS.includes(n));
+      await tools[n]({});
+    }
+    assert.deepEqual(calls, ["show_ladders", "show_tickets", "explain_ticket", "explain_mechanism", "what_we_tested"]);
+  });
+});

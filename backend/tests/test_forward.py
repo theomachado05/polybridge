@@ -173,3 +173,30 @@ def test_forward_counting_starts_2026_10_05_new_york(tmp_path):
     for k in ("ladders", "touch"):
         assert out[k]["snapshots_taken"] == 2 and out[k]["pre_start_checks"] == 2, k
         assert out[k]["latest"]["phase"] == "forward test"
+
+
+def test_recorder_state_live_stopped_and_dir_resolution(tmp_path, monkeypatch):
+    import os
+    from app.forward import status
+    monkeypatch.delenv("POLYBRIDGE_RECORDER_DIR", raising=False)
+    monkeypatch.setenv("RECORDER_DIR", str(tmp_path))
+    assert status.recorder_dir() == tmp_path and status.recorder() is None
+    hb = tmp_path / "heartbeat_twins.json"
+    hb.write_text('{"cycles": 5, "rows": 10, "errors": 0}')
+    (tmp_path / "heartbeat_bad.json").write_text("not json")
+    (tmp_path / "recorder.pid").write_text(str(os.getpid()))
+    os.utime(hb, (1000.0, 1000.0))
+    live = status.recorder(now=1030.0)
+    assert live["state"] == "live" and live["age_s"] == 30.0 and live["pid_alive"] is True
+    assert set(live["heartbeats"]) == {"twins"} and live["last_update_utc"].startswith("1970-01-01T00:16:40")
+    stopped = status.recorder(now=1000.0 + status.LIVE_WITHIN_S + 1)
+    assert stopped["state"] == "stopped"
+    (tmp_path / "recorder.pid").write_text("999999999")
+    dead = status.recorder(now=1030.0)
+    assert dead["pid_alive"] is False and dead["state"] == "stopped"
+    assert (tmp_path / "heartbeat_twins.json").read_text().startswith('{"cycles": 5')
+    monkeypatch.delenv("RECORDER_DIR")
+    monkeypatch.setenv("POLYBRIDGE_RECORDER_DIR", str(tmp_path / "legacy"))
+    assert status.recorder_dir() == tmp_path / "legacy"
+    monkeypatch.delenv("POLYBRIDGE_RECORDER_DIR")
+    assert status.recorder_dir() in (status.RECORDER_HOME, status.REPO / "research" / "forward")

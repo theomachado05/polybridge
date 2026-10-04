@@ -57,6 +57,9 @@ research/s9_weekend_price_markets/.cache/
 
 research/results/forward_monday/.cache/
 
+*.aux
+*.log
+*.out
 backend/data_forward/ladders/raw/
 backend/data_forward/touch/raw/
 backend/data_forward/touch/.cache_forward/

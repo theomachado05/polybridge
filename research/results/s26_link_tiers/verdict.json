@@ -1,0 +1,12 @@
+{
+ "line1_slope": false,
+ "line2_trade": false,
+ "line3_2x": false,
+ "PASS": false,
+ "oos_from": "2026-07-23",
+ "tier_counts": {
+  "C": 142,
+  "A": 101,
+  "B": 11
+ }
+}

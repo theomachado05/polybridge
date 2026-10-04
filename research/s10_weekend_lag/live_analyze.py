@@ -99,7 +99,7 @@ def trades(df: pd.DataFrame, markets: dict, results: dict, c: float = 1.0) -> li
             q = min(float(size), cfg.CONTRACTS)
             slip = (c - 1.0) * 0.01
             px = fill + slip if side == "buy Up" else fill - slip
-            gross = (res - fill) if side == "buy Up" else (fill - res)
+            gross = ((res - fill) if side == "buy Up" else (fill - res)) if res is not None else np.nan
             net = ((res - px) if side == "buy Up" else (px - res)) - fee_pts(px, rate, c) if res is not None else np.nan
             out.append({"cost_mult": c, "start": int(st), "market": mk, "elapsed_s": float(r.el), "side": side, "fair": r.fair, "quote": quote,
                         "fill": fill, "size": q, "result": res, "gross_points": 100 * gross if res is not None else np.nan,

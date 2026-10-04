@@ -74,7 +74,7 @@ def build_confirmatory_events(client, start: str, end: str, universe, cal: Tradi
     pf = _per_filing(ex)
     fam = pf["tags"].map(assign_family)
     excluded = pf[fam.isna()][["accession_number", "ticker", "filing_date", "tags"]].reset_index(drop=True)
-    keep = pf[fam.notna()].assign(family=fam[fam.notna()].map(lambda f: f.value))
+    keep = pf[fam.notna()].assign(family=fam[fam.notna()].map(lambda f: getattr(f, "value", f)))
     if keep.empty:
         return empty_ev, excluded
     ev = _collapse(keep, ["cik", "filing_date", "family"], cal)

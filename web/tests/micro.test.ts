@@ -3,10 +3,10 @@ import assert from "node:assert/strict";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import {
-  actionPlan, approveEnabled, forwardLine, hasRangeAndSample, latencyView, mechanismById, mechanismFor, numberView, pairGapText,
+  actionPlan, approveEnabled, forwardLine, hasRangeAndSample, latencyLine, latencyView, mechanismById, mechanismFor, numberView, pairGapText,
   mechanismForResult, pairState, recorderLine, rungsInOrder, statusTag, statusTone, ticketActions, ticketGap, ticketReference, ticketStrikes,
   touchProposal, forwardCount, engineLine,
-  type EvNumber, type ForwardStatus, type Ladder, type LadderPair, type Mechanism, type Registry, type Ticket,
+  type EvNumber, type ForwardStatus, type Ladder, type LadderPair, type Mechanism, type Registry, type Ticket, sortTickets,
 } from "../src/lib/micro.ts";
 import { SCREENS, SCREEN_PATH, FIT_PATH, voiceDrive } from "../src/lib/voiceDrive.ts";
 import { evidenceGate, fitAckCopy, fitEvidenceGate } from "../src/lib/risk.ts";
@@ -36,7 +36,7 @@ const REG: Registry = {
     mech("generic_ai_fit", "UNVALIDATED", "REG-unvalidated", { trade: true, proposals: true, requires_approval: true, requires_acknowledgement: true }),
     mech("other", "NO_TESTED_MECHANISM", "REG-none", {}),
   ],
-  system: [num({ label: "Receive to decision, live Polymarket feed (median; range to p99)", value: 39, ci_low: 39, ci_high: 3875.9, unit: "microseconds", range_kind: "distribution: median to p99", sample: { n: 58610, units: "book-update decisions" } })],
+  system: [num({ label: "Receive to decision, live Polymarket feed (median; range to p99)", value: 39, ci_low: 39, ci_high: 3875.9, unit: "microseconds", range_kind: "percentiles", range_desc: "percentiles of the logged decisions: median (p50) and p99, not a confidence interval", sample: { n: 58610, units: "book-update decisions" } })],
 };
 
 function walk(dir: string): string[] {
@@ -100,9 +100,34 @@ describe("no number without its range and sample", () => {
   });
   it("the engine strip's latency carries its range and sample", () => {
     const v = latencyView(REG)!;
-    assert.match(v.range, /3,875\.9/);
+    assert.equal(v.value, "median 39 µs");
+    assert.equal(v.range, "p99 3.9 ms");
+    assert.doesNotMatch(v.range, /[\[\]]/);
     assert.equal(v.sample, "n = 58,610 book-update decisions");
+    assert.equal(latencyLine(REG), "receive→decision median 39 µs · p99 3.9 ms · n = 58,610 book updates (live feed, network excluded)");
+    assert.equal(latencyLine(REG, true), "receive→decision median 39 µs");
+    assert.equal(latencyLine({ ...REG, system: [num({ label: "Receive to decision", range_kind: "ci95" })] }), null);
     assert.equal(latencyView(null), null);
+  });
+  it("percentiles format as median and p99 everywhere, intervals stay bracketed", () => {
+    const p = numberView(num({ value: 12, ci_low: 12, ci_high: 2400, unit: "microseconds", range_kind: "percentiles" }))!;
+    assert.equal(p.value, "median 12 µs");
+    assert.equal(p.range, "p99 2.4 ms");
+    assert.equal(numberView(num({ value: 158, ci_low: 158, ci_high: 158, unit: "nanoseconds per call", range_kind: "none" }))!.range, "no interval");
+    assert.equal(numberView(num())!.range, "[+6.73, +11.13]");
+  });
+  it("recorder line: live with age, stopped with the last update time, none without a heartbeat", () => {
+    const base = { label: "", ladders: null, touch: null } as unknown as ForwardStatus;
+    const hb = { twins: { age_s: 4 } };
+    const iso = "2026-10-04T05:36:00Z";
+    const live = recorderLine({ ...base, recorder: { dir: "d", heartbeats: hb, state: "live", age_s: 4, last_update_utc: iso } });
+    assert.equal(live.text, "recorder: live · last update 4s ago");
+    assert.equal(live.ok, true);
+    const t = new Date(iso), pad = (x: number) => String(x).padStart(2, "0");
+    const stopped = recorderLine({ ...base, recorder: { dir: "d", heartbeats: hb, state: "stopped", age_s: 9000, last_update_utc: iso } });
+    assert.equal(stopped.text, `recorder: stopped (last update ${pad(t.getHours())}:${pad(t.getMinutes())})`);
+    assert.equal(stopped.ok, false);
+    assert.match(recorderLine({ ...base, recorder: null }).text, /no heartbeat/);
   });
   it("forward ladder line carries the denominator and the gap range with n", () => {
     const fw = { label: "", ladders: { label: "", rule: "", state: "ok", snapshots_taken: 1, latest: { snapshot_utc: "t",
@@ -218,7 +243,7 @@ describe("voice navigation stays consistent", () => {
   });
   it("every screen path has a page", () => {
     for (const p of [...Object.values(SCREEN_PATH), FIT_PATH, "/tested"]) {
-      const f = join(ROOT, "src/app", p === "/" ? "" : p, "page.tsx");
+      const f = join(ROOT, "src/app", p === "/" ? "" : p.split("?")[0], "page.tsx");
       assert.ok(statSync(f).isFile(), f);
     }
   });
@@ -318,5 +343,15 @@ describe("micro families: catalog, library and engine strip", () => {
     assert.ok(readFileSync(join(ROOT, "src/app/pipeline/page.tsx"), "utf8").includes("engineLine(p.engine, mech)"));
     assert.ok(readFileSync(join(ROOT, "src/components/micro/TicketBoard.tsx"), "utf8").includes("engineLine(t.engine, mechanism)"));
     assert.ok(readFileSync(join(ROOT, "src/app/library/page.tsx"), "utf8").includes("lib.micro.map"));
+  });
+});
+
+describe("ticket board order", () => {
+  const tk = (id: string, extra: Record<string, unknown>) => ({ id, question: id, type: "touch_ticket", fields: {}, checks: [], linkable: false, reasons: [], best_bid: 0.5, best_ask: 0.52, ...extra }) as unknown as Ticket;
+  const ref = (mid: number) => ({ available: true, touch: { mid, lo: mid - 0.05, hi: mid + 0.05 } });
+  it("puts the engine's proposals first, then priced rows by gap, then linked, then the rest", () => {
+    const rows = [tk("none", {}), tk("linked", { linkable: true }), tk("small", { linkable: true, reference: ref(0.5) }),
+      tk("big", { linkable: true, reference: ref(0.3) }), tk("prop", { linkable: true, reference: ref(0.45), engine: { action: "propose" } })];
+    assert.deepEqual(sortTickets(rows).map((t) => t.id), ["prop", "big", "small", "linked", "none"]);
   });
 });

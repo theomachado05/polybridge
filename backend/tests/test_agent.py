@@ -5,7 +5,7 @@ from app.agent.tools import HANDLERS, NAMES
 from app.main import create_app
 
 EXPECTED = {"search_markets", "fit", "propose", "approve", "start_bridge", "bridge_status", "account", "positions",
-            "navigate"}
+            "navigate", "show_ladders", "show_tickets", "explain_ticket", "explain_mechanism", "what_we_tested"}
 
 
 @pytest.fixture
@@ -47,7 +47,7 @@ def test_navigate_is_a_browser_only_tool_with_a_screen_enum(client):
     p = t["parameters"]
     assert p["required"] == ["screen"] and set(p["properties"]) == {"screen", "bridge_id"}
     assert p["properties"]["screen"]["enum"] == ["landing", "build", "pipeline", "bridge", "portfolio", "library",
-                                                 "profile", "connect"]
+                                                 "profile", "connect", "ladders", "tickets", "tested"]
     assert p["properties"]["bridge_id"]["type"] == "string"
     j = call(client, "navigate", {"screen": "bridge", "bridge_id": "b1"}).json()
     assert j["ok"] is True and j["data"] == {"screen": "bridge", "bridge_id": "b1"}

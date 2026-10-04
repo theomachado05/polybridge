@@ -1,0 +1,62 @@
+[
+ {
+  "window": "2022 (discovery)",
+  "scope": "high fear",
+  "verdict": "PASS",
+  "above_zero_at": [
+   21,
+   42
+  ],
+  "events_21": 7,
+  "sharpe_events": 3.5605542555201164,
+  "sharpe_ordinary": 0.2874282711140706
+ },
+ {
+  "window": "2022 (discovery)",
+  "scope": "all H1",
+  "verdict": "PASS",
+  "above_zero_at": [
+   21,
+   42
+  ],
+  "events_21": 12,
+  "sharpe_events": 3.3410316690170725,
+  "sharpe_ordinary": 0.10697936585275607
+ },
+ {
+  "window": "2024-25 (seen)",
+  "scope": "high fear",
+  "verdict": "NULL",
+  "above_zero_at": [],
+  "events_21": 8,
+  "sharpe_events": -0.06517798567071968,
+  "sharpe_ordinary": 0.6924271060587602
+ },
+ {
+  "window": "2024-25 (seen)",
+  "scope": "all H1",
+  "verdict": "NULL",
+  "above_zero_at": [],
+  "events_21": 33,
+  "sharpe_events": 0.5707723872165439,
+  "sharpe_ordinary": 0.5070245099504237
+ },
+ {
+  "window": "2026 (seen)",
+  "scope": "high fear",
+  "verdict": "INSUFFICIENT",
+  "above_zero_at": [],
+  "events_21": 1,
+  "sharpe_events": NaN,
+  "sharpe_ordinary": 0.7017482953806667
+ },
+ {
+  "window": "2026 (seen)",
+  "scope": "all H1",
+  "verdict": "INSUFFICIENT",
+  "above_zero_at": [],
+  "events_21": 3,
+  "sharpe_events": 0.40891132702185895,
+  "sharpe_ordinary": 0.2993202761712114
+ }
+]

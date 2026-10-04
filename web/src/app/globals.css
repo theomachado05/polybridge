@@ -235,8 +235,17 @@ td, th { font-variant-numeric: tabular-nums; }
 .pb-mm-hl { background: var(--up-tint); }
 .pb-engine { border-bottom: 1px solid var(--border); background: var(--surface-2); }
 .pb-engine-inner { box-sizing: content-box; max-width: var(--page-max); margin: 0 auto; padding: 6px var(--gutter); display: flex; gap: var(--sp-4); flex-wrap: wrap; align-items: center; font-family: var(--code); font-size: var(--fs-12); color: var(--text-2); }
+.pb-engine-line { display: flex; gap: var(--sp-3); align-items: center; min-width: 0; width: 100%; white-space: nowrap; }
+.pb-engine-sum { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.pb-engine-toggle { flex: none; font: inherit; color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.pb-engine-details { display: flex; gap: var(--sp-4); flex-wrap: wrap; align-items: center; width: 100%; padding-top: 4px; }
 .pb-tabs { display: flex; gap: var(--sp-2); border-bottom: 1px solid var(--border); padding-bottom: var(--sp-3); flex-wrap: wrap; }
 @media (max-width: 700px) {
   .pb-mm-num, .pb-mm-rung, .pb-mm-pair, .pb-mm-ticket { grid-template-columns: minmax(0,1fr); }
   .pb-mm-num > :last-child { text-align: left !important; }
+}
+@media (max-width: 700px) {
+  .pb-engine-line { flex-wrap: wrap; white-space: normal; row-gap: 2px; }
+  .pb-engine-sum { flex: 1 1 100%; overflow: visible; text-overflow: clip; }
+  .pb-engine-toggle { margin-left: 0 !important; }
 }

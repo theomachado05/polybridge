@@ -417,6 +417,7 @@ class WebullBroker:
         self.history_truncated = False
         self._short_cache: dict[str, tuple[float, dict]] = {}
         self.transitions: deque[dict] = deque(maxlen=100)
+        self._last_account: tuple[float, Account] | None = None
 
     @property
     def regular_session_only(self) -> bool:
@@ -445,8 +446,23 @@ class WebullBroker:
         return {"account_type": typ.lower() if typ else None, "account_class": _str(r, "account_class"),
                 "account_label": _str(r, "account_label")}
 
-    @_guard
+    ACCOUNT_STALE_MAX_S = 300.0
+
     async def account(self) -> Account:
+        try:
+            acct = await self._account_live()
+        except WebullAPIError as e:
+            last = self._last_account
+            if e.http_status == 429 and last and time.monotonic() - last[0] <= self.ACCOUNT_STALE_MAX_S:
+                age = int(time.monotonic() - last[0])
+                note = f"{last[1].note} " if last[1].note else ""
+                return last[1].model_copy(update={"note": f"{note}(last read {age} s ago: Webull rate-limited the refresh)"})
+            raise
+        self._last_account = (time.monotonic(), acct)
+        return acct
+
+    @_guard
+    async def _account_live(self) -> Account:
         aid = await self._aid()
         payload = await self.client.request("GET", "/trading/assets/balances/get",
                                             {"account_id": aid, "total_asset_currency": "USD"})

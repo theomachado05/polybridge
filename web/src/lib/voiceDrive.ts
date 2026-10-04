@@ -1,17 +1,25 @@
 import type { Direction, FitOut, Market, Proposal } from "./api.ts";
 import type { ToolReply } from "./voice.ts";
 
-export const SCREENS = ["landing", "build", "pipeline", "bridge", "portfolio", "library", "profile", "connect"] as const;
+export const SCREENS = ["landing", "build", "pipeline", "bridge", "portfolio", "library", "profile", "connect", "ladders", "tickets", "tested"] as const;
 export type Screen = (typeof SCREENS)[number];
 export const FIT_PATH = "/build/fit";
 export const SCREEN_PATH: Record<Screen, string> = {
   landing: "/", build: "/build", pipeline: "/pipeline", bridge: "/bridge", portfolio: "/portfolio", library: "/library",
-  profile: "/profile", connect: "/connect",
+  profile: "/profile", connect: "/connect", ladders: "/pipeline", tickets: "/bridge?view=tickets", tested: "/tested",
 };
 const SCREEN_NAME: Record<Screen, string> = {
   landing: "the home screen", build: "Build", pipeline: "the ladder board", bridge: "the ticket board and your bridges", portfolio: "your portfolio",
-  library: "the algo library", profile: "your profile", connect: "Connect",
+  library: "the algo library", profile: "your profile", connect: "Connect", ladders: "the ladder board", tickets: "the ticket board",
+  tested: "what we tested",
 };
+export const ticketsRoute = (o: { above?: boolean; ticket?: string | null } = {}) => {
+  const q = new URLSearchParams({ view: "tickets" });
+  if (o.above) q.set("filter", "above");
+  if (o.ticket) q.set("ticket", o.ticket);
+  return `/bridge?${q.toString()}`;
+};
+export const ticketAnchor = (id: string) => `ticket-row-${id}`;
 
 export const VOICE_ANCHOR = {
   steps: "voice-steps", approval: "voice-approval", account: "voice-account", positions: "voice-positions",
@@ -47,6 +55,8 @@ export function resolveMarket(source: string | null, id: string, tokenId: string
 const TOOL_WHAT: Record<string, string> = {
   search_markets: "The market search", fit: "The fit", propose: "The proposal", approve: "The approval", start_bridge: "Starting the bridge",
   bridge_status: "The bridge check", account: "Reading the account", positions: "Reading the positions", navigate: "Opening that screen",
+  show_ladders: "The ladder board", show_tickets: "The ticket board", explain_ticket: "The ticket", explain_mechanism: "The evidence entry",
+  what_we_tested: "The evidence registry",
 };
 
 export function voiceStartLabel(tool: string, args: Record<string, unknown> | null | undefined): string {
@@ -61,6 +71,11 @@ export function voiceStartLabel(tool: string, args: Record<string, unknown> | nu
     case "account": return "Opening your account…";
     case "positions": return "Opening your positions…";
     case "navigate": return isScreen(a.screen) ? `Opening ${SCREEN_NAME[a.screen]}` : "Opening a screen…";
+    case "show_ladders": return "Reading the ladder board…";
+    case "show_tickets": return a.filter === "above_reference" ? "Finding tickets above the options reference…" : "Reading the ticket board…";
+    case "explain_ticket": return str(a.ticket_id) ? `Reading ticket ${str(a.ticket_id)}…` : "Reading the ticket…";
+    case "explain_mechanism": return str(a.mechanism_id) ? `Reading the evidence for ${str(a.mechanism_id)}…` : "Reading the evidence…";
+    case "what_we_tested": return "Reading what we tested…";
     default: return "Working…";
   }
 }
@@ -129,6 +144,24 @@ export function voiceDrive(tool: string, args: Record<string, unknown> | null | 
       const route = bid ? `/bridge/${encodeURIComponent(bid)}` : SCREEN_PATH[screen];
       return { route, storeUpdate: null, announcement: bid ? `Opening bridge ${bid}` : `Opening ${SCREEN_NAME[screen]}`, scrollTo: null };
     }
+    case "show_ladders":
+      return { route: "/pipeline", storeUpdate: null, announcement: "Showing the ladder board", scrollTo: null };
+    case "show_tickets": {
+      const above = a.filter === "above_reference";
+      return { route: ticketsRoute({ above }), storeUpdate: null, scrollTo: null,
+        announcement: above ? "Showing tickets above the options reference" : "Showing the ticket board" };
+    }
+    case "explain_ticket": {
+      const id = str(a.ticket_id);
+      if (!id) return stay("Read the ticket");
+      return { route: ticketsRoute({ ticket: id }), storeUpdate: null, announcement: `Showing ticket ${id}`, scrollTo: ticketAnchor(id) };
+    }
+    case "explain_mechanism": {
+      const id = str(d.id) ?? str(a.mechanism_id);
+      return { route: id ? `/tested#${encodeURIComponent(id)}` : "/tested", storeUpdate: null, announcement: "Showing the evidence", scrollTo: id };
+    }
+    case "what_we_tested":
+      return { route: "/tested", storeUpdate: null, announcement: "Showing what we tested", scrollTo: null };
     default:
       return stay("Done");
   }

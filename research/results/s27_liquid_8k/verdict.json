@@ -1,0 +1,150 @@
+[
+ {
+  "family": "hedge",
+  "scope": "liquid",
+  "verdict": "INSUFFICIENT",
+  "events_21": 3,
+  "sharpe_events_gross": 1.1963930560582035,
+  "sharpe_placebo_gross": -0.7385374645390176,
+  "headline": [
+   {
+    "horizon": 21,
+    "n_a": 3,
+    "n_b": 20,
+    "difference": NaN,
+    "ci_lo": NaN,
+    "ci_hi": NaN
+   },
+   {
+    "horizon": 42,
+    "n_a": 3,
+    "n_b": 19,
+    "difference": NaN,
+    "ci_lo": NaN,
+    "ci_hi": NaN
+   },
+   {
+    "horizon": "exp",
+    "n_a": 3,
+    "n_b": 19,
+    "difference": NaN,
+    "ci_lo": NaN,
+    "ci_hi": NaN
+   }
+  ],
+  "ratio_ok": [],
+  "pnl_ok": []
+ },
+ {
+  "family": "hedge",
+  "scope": "all",
+  "verdict": "NULL",
+  "events_21": 12,
+  "sharpe_events_gross": 2.5690016695572733,
+  "sharpe_placebo_gross": -0.03817492449775772,
+  "headline": [
+   {
+    "horizon": 21,
+    "n_a": 12,
+    "n_b": 90,
+    "difference": 0.04304198064826858,
+    "ci_lo": 0.005429928420555852,
+    "ci_hi": 0.07933093744422429
+   },
+   {
+    "horizon": 42,
+    "n_a": 12,
+    "n_b": 89,
+    "difference": 0.007904862968003749,
+    "ci_lo": -0.035059632445198954,
+    "ci_hi": 0.05515248697790216
+   },
+   {
+    "horizon": "exp",
+    "n_a": 11,
+    "n_b": 90,
+    "difference": 0.015408525419484117,
+    "ci_lo": -0.06333764866727369,
+    "ci_hi": 0.1161186574402117
+   }
+  ],
+  "ratio_ok": [
+   21
+  ],
+  "pnl_ok": [
+   21
+  ]
+ },
+ {
+  "family": "opportunity",
+  "scope": "liquid",
+  "verdict": "INSUFFICIENT",
+  "events_21": 1,
+  "sharpe_events_gross": NaN,
+  "sharpe_placebo_gross": -1.8837837747912909,
+  "headline": [
+   {
+    "horizon": 21,
+    "n_a": 1,
+    "n_b": 26,
+    "difference": NaN,
+    "ci_lo": NaN,
+    "ci_hi": NaN
+   },
+   {
+    "horizon": 42,
+    "n_a": 1,
+    "n_b": 26,
+    "difference": NaN,
+    "ci_lo": NaN,
+    "ci_hi": NaN
+   },
+   {
+    "horizon": "exp",
+    "n_a": 1,
+    "n_b": 26,
+    "difference": NaN,
+    "ci_lo": NaN,
+    "ci_hi": NaN
+   }
+  ],
+  "ratio_ok": [],
+  "pnl_ok": []
+ },
+ {
+  "family": "opportunity",
+  "scope": "all",
+  "verdict": "NULL",
+  "events_21": 12,
+  "sharpe_events_gross": 0.32660016436059086,
+  "sharpe_placebo_gross": -0.830575377125722,
+  "headline": [
+   {
+    "horizon": 21,
+    "n_a": 12,
+    "n_b": 106,
+    "difference": 0.004759492937410993,
+    "ci_lo": -0.017166167248994096,
+    "ci_hi": 0.02223772646287475
+   },
+   {
+    "horizon": 42,
+    "n_a": 12,
+    "n_b": 106,
+    "difference": 0.0016312667252599573,
+    "ci_lo": -0.025096214679182834,
+    "ci_hi": 0.02296447739725618
+   },
+   {
+    "horizon": "exp",
+    "n_a": 11,
+    "n_b": 102,
+    "difference": -0.010611816826964018,
+    "ci_lo": -0.05256643082264343,
+    "ci_hi": 0.02395533264008694
+   }
+  ],
+  "ratio_ok": [],
+  "pnl_ok": []
+ }
+]

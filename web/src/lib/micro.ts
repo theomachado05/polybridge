@@ -1,6 +1,6 @@
 export interface EvSample { n: number; units: string; also?: { n: number; units: string }[] }
 export interface EvNumber {
-  label: string; value: number; unit?: string; ci_low: number | null; ci_high: number | null; range_kind?: string;
+  label: string; value: number; unit?: string; ci_low: number | null; ci_high: number | null; range_kind?: string; range_desc?: string;
   sample?: EvSample | null; result_file?: string; confirmatory?: boolean; note?: string;
   result_file_on_disk?: boolean; source_branch?: string; source_commit?: string;
 }
@@ -86,13 +86,33 @@ export function fmtSigned(x: number, d = dec(x), sign = true): string {
   return (x < 0 ? MINUS : sign && x > 0 ? "+" : "") + Number(s).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
 }
 
+export function fmtDuration(x: number, unit: string | undefined): string | null {
+  const u = (unit ?? "").toLowerCase();
+  const us = u.startsWith("micro") ? x : u.startsWith("nano") ? x / 1000 : null;
+  if (us === null) return null;
+  if (us >= 1000) return `${(us / 1000).toLocaleString("en-US", { maximumFractionDigits: 1, minimumFractionDigits: 1 })} ms`;
+  if (us >= 1) return `${Math.round(us).toLocaleString("en-US")} µs`;
+  return `${Math.round(us * 1000)} ns`;
+}
+
 export interface NumberView { label: string; value: string; range: string; rangeKind: string; sample: string; source: string; sourceNote: string | null; confirmatory: boolean; note: string | null }
 
 export function numberView(n: EvNumber): NumberView | null {
   if (!hasRangeAndSample(n)) return null;
+  const s0 = n.sample!;
+  const sampleText = [`${s0.n.toLocaleString("en-US")} ${s0.units}`, ...(s0.also ?? []).map((a) => `${a.n.toLocaleString("en-US")} ${a.units}`)].join(" · ");
+  const off0 = n.result_file_on_disk === false && n.source_branch ? `on branch ${n.source_branch} @ ${n.source_commit ?? "?"}` : null;
+  if (n.range_kind === "percentiles") {
+    const f = (x: number) => fmtDuration(x, n.unit) ?? `${fmtSigned(x, dec(x), false)}${n.unit ? ` ${n.unit}` : ""}`;
+    return {
+      label: n.label, value: `median ${f(n.ci_low!)}`, range: `p99 ${f(n.ci_high!)}`,
+      rangeKind: n.range_desc ?? "percentiles (median and p99), not a confidence interval",
+      sample: `n = ${sampleText}`, source: n.result_file ?? "", sourceNote: off0, confirmatory: !!n.confirmatory, note: n.note ?? null,
+    };
+  }
   const d = Math.max(dec(n.value), dec(n.ci_low!), dec(n.ci_high!));
   const census = n.ci_low === n.value && n.ci_high === n.value;
-  const sign = n.ci_low! < 0 || n.value < 0 || (!census && !/second|ratio/i.test(n.unit ?? "") && !/percentile|p99/i.test(n.range_kind ?? ""));
+  const sign = n.ci_low! < 0 || n.value < 0 || (!census && !/second|ratio/i.test(n.unit ?? ""));
   const unit = n.unit ? ` ${n.unit}` : "";
   const s = n.sample!;
   const sample = [`${s.n.toLocaleString("en-US")} ${s.units}`, ...(s.also ?? []).map((a) => `${a.n.toLocaleString("en-US")} ${a.units}`)].join(" · ");
@@ -101,7 +121,7 @@ export function numberView(n: EvNumber): NumberView | null {
     label: n.label,
     value: `${fmtSigned(n.value, d, sign)}${unit}`,
     range: census ? "no interval" : `[${fmtSigned(n.ci_low!, d, sign)}, ${fmtSigned(n.ci_high!, d, sign)}]`,
-    rangeKind: n.range_kind ?? "",
+    rangeKind: n.range_desc ?? n.range_kind ?? "",
     sample: `n = ${sample}`,
     source: n.result_file ?? "",
     sourceNote: off,
@@ -203,6 +223,12 @@ export function ticketGap(t: Ticket): { mid: number; lo: number; hi: number } | 
   return { mid: 100 * (pm - b.mid!), lo: 100 * (t.best_bid - rhi), hi: 100 * (t.best_ask - rlo) };
 }
 
+export function sortTickets(ts: readonly Ticket[]): Ticket[] {
+  const rank = (t: Ticket) => (t.engine?.action === "propose" ? 0 : ticketGap(t) ? 1 : t.linkable ? 2 : 3);
+  return ts.map((t, i) => ({ t, i, r: rank(t), g: ticketGap(t)?.mid ?? -Infinity })).sort((a, b) =>
+    a.r - b.r || (a.r <= 1 ? b.g - a.g : 0) || (a.t.type === b.t.type ? 0 : a.t.type === "touch_ticket" ? -1 : 1) || a.i - b.i).map((x) => x.t);
+}
+
 export const referenceClosed = (r: OptionsReference | null | undefined) => !!r && r.market_open === false;
 
 export function ticketActions(t: Ticket, reg: Registry | null | undefined): { plan: ActionPlan; hedge: false; mechanism: Mechanism | null } {
@@ -243,7 +269,8 @@ export interface ForwardStatus {
     gap_points_to_arb?: { n_pairs: number; median: number; p10: number; p90: number; min: number; max: number } | null;
   } };
   touch: ForwardCounts & { label: string; rule: string; status?: string; state: string; latest: null | { run_utc?: string; phase?: string; markets_listed?: number; eligible_first_weekend?: number; eligible_events?: number; note?: string } };
-  recorder: null | { dir: string; heartbeats: Record<string, { age_s: number } & Record<string, unknown>> };
+  recorder: null | { dir: string; heartbeats: Record<string, { age_s: number } & Record<string, unknown>>;
+    state?: "live" | "stopped"; age_s?: number; last_update_utc?: string; pid_alive?: boolean | null };
 }
 
 export const isPreStart = (phase: string | null | undefined) => !!phase && phase.startsWith("pre-start");
@@ -279,14 +306,34 @@ function forwardLineRaw(fw: ForwardStatus, id: string): string | null {
   return null;
 }
 
-export function recorderLine(fw: ForwardStatus | null | undefined): { text: string; ok: boolean } {
-  const hb = fw?.recorder?.heartbeats;
-  if (!hb || !Object.keys(hb).length) return { text: "recorder: no heartbeat", ok: false };
-  const age = Math.min(...Object.values(hb).map((h) => h.age_s));
-  return { text: `recorder: heartbeat ${age < 120 ? `${Math.round(age)} s ago` : `${Math.round(age / 60)} min ago`}`, ok: age < 300 };
+function hhmm(iso: string): string {
+  const t = new Date(iso);
+  return Number.isNaN(t.getTime()) ? "?" : `${String(t.getHours()).padStart(2, "0")}:${String(t.getMinutes()).padStart(2, "0")}`;
+}
+function ago(s: number): string {
+  return s < 120 ? `${Math.max(0, Math.round(s))}s` : s < 7200 ? `${Math.round(s / 60)}min` : `${Math.round(s / 3600)}h`;
+}
+
+export function recorderLine(fw: ForwardStatus | null | undefined): { text: string; short: string; ok: boolean } {
+  const r = fw?.recorder;
+  if (!r || !r.heartbeats || !Object.keys(r.heartbeats).length) return { text: "recorder: no heartbeat found", short: "recorder: no heartbeat", ok: false };
+  const age = typeof r.age_s === "number" ? r.age_s : Math.min(...Object.values(r.heartbeats).map((h) => h.age_s));
+  const live = r.state ? r.state === "live" : age < 900;
+  if (live) return { text: `recorder: live · last update ${ago(age)} ago`, short: "recorder live", ok: true };
+  const when = r.last_update_utc ? hhmm(r.last_update_utc) : "?";
+  return { text: `recorder: stopped (last update ${when})`, short: "recorder stopped", ok: false };
 }
 
 export function latencyView(reg: Registry | null | undefined): NumberView | null {
   const n = reg?.system.find((x) => /receive to decision/i.test(x.label));
   return n ? numberView(n) : null;
+}
+
+export function latencyLine(reg: Registry | null | undefined, short = false): string | null {
+  const n = reg?.system.find((x) => /receive to decision/i.test(x.label));
+  if (!n || n.range_kind !== "percentiles" || n.ci_low == null || n.ci_high == null || !n.sample?.n) return null;
+  const med = fmtDuration(n.ci_low, n.unit), p99 = fmtDuration(n.ci_high, n.unit);
+  if (!med || !p99) return null;
+  if (short) return `receive→decision median ${med}`;
+  return `receive→decision median ${med} · p99 ${p99} · n = ${n.sample.n.toLocaleString("en-US")} book updates (live feed, network excluded)`;
 }

@@ -1,0 +1,96 @@
+{
+ "markets_in_plan": 277,
+ "events_in_plan": 62,
+ "rule_subset_in_plan": 60,
+ "hedged_primary": 252,
+ "hedged_primary_events": 57,
+ "hedged_primary_by_segment": {
+  "IS": 238,
+  "OOS": 14
+ },
+ "hedged_primary_rule": 52,
+ "hedged_primary_rule_by_segment": {
+  "IS": 50,
+  "OOS": 2
+ },
+ "dropped": 25,
+ "status": {
+  "ok": 252,
+  "the underlying's closes or splits are not served": 20,
+  "a split between the first weekend and the expiry": 4,
+  "no usable quote at Monday 09:35 (from before the open, or no offer)": 1
+ },
+ "status_rule_subset": {
+  "ok": 52,
+  "the underlying's closes or splits are not served": 6,
+  "a split between the first weekend and the expiry": 2
+ },
+ "close_status": {
+  "ok": 253,
+  "the underlying's closes or splits are not served": 20,
+  "a split between the first weekend and the expiry": 4
+ },
+ "monday_status": {
+  "ok": 276,
+  "no usable quote at Monday 09:35 (from before the open, or no offer)": 1
+ },
+ "markets_without_a_usable_monday_pair": 1,
+ "variant_B_own_set": 253,
+ "variant_B_own_rule": 52,
+ "dropped_by_ticker": {
+  "SPX": 20,
+  "OPEN": 4,
+  "HOOD": 1
+ },
+ "hedged_by_ticker": {
+  "NVDA": 59,
+  "TSLA": 41,
+  "SPY": 28,
+  "GOOGL": 24,
+  "AMZN": 21,
+  "AAPL": 20,
+  "META": 20,
+  "MSFT": 11,
+  "PLTR": 10,
+  "NFLX": 6,
+  "HOOD": 6,
+  "OPEN": 5,
+  "RKLB": 1
+ },
+ "monday_quote_age_s": {
+  "min": 0.0001494884490966797,
+  "median": 0.6619439125061035,
+  "max": 299.84764337539673
+ },
+ "crossed_pairs_P": 0,
+ "above_one_P": 3,
+ "crossed_pairs_B": 0,
+ "zero_bid_short_leg_P": 15,
+ "result_before_hedge": 0,
+ "finished_beyond_without_touch": [],
+ "copied_book_equals_s18_book_on_ticket_leg": true,
+ "recheck": {
+  "recomputed": 252,
+  "mismatches": 0
+ },
+ "median_unit_cost_P": 0.15400000000000008,
+ "median_unit_mid_P": 0.11699999999999995,
+ "median_unit_cost_B": 0.16360000000000002,
+ "median_unit_mid_B": 0.11700000000000002,
+ "median_width": 5.0,
+ "recorder_fetch_failed_now": 51,
+ "cache_lines": 1105,
+ "pull_log": [
+  "2026-10-04T05:47:49Z recorder `fetch failed` lines before the pull: 51",
+  "2026-10-04T05:47:49Z pull started: 277 markets, 62 events, 14 tickers",
+  "2026-10-04T05:47:56Z error (I:SPX raw): /v2/aggs/ticker/I:SPX/range/1/day/2025-10-27/2026-10-02 HTTP 403 {\"status\":\"NOT_AUTHORIZED\",\"request_id\":\"8e1b6264e3195b422326ee950237dba0\",\"message\":\"You are not entitled to this data. Please upgrade",
+  "2026-10-04T05:47:57Z error (I:SPX adj): /v2/aggs/ticker/I:SPX/range/1/day/2025-10-27/2026-10-02 HTTP 403 {\"status\":\"NOT_AUTHORIZED\",\"request_id\":\"78f3ed2929ecc95ff252fb814d14ef93\",\"message\":\"You are not entitled to this data. Please upgrade",
+  "2026-10-04T05:48:10Z closes and splits done: 41 requests, 2 errors",
+  "2026-10-04T05:52:40Z leg quotes done: 554 served, 0 failed, 574 requests, 2 errors, stopped early: False",
+  "2026-10-04T05:57:09Z pull finished: 1107 requests in 559s, 2 errors, final rate 2.0 rps, leg volumes 554, stopped early: False, recorder `fetch failed` lines now 51 (before: 51)",
+  "2026-10-04T05:57:09Z error: /v2/aggs/ticker/I:SPX/range/1/day/2025-10-27/2026-10-02 HTTP 403 {\"status\":\"NOT_AUTHORIZED\",\"request_id\":\"78f3ed2929ecc95ff252fb814d14ef93\",\"message\":\"You are not entitled to this data. Please upgrade your plan at https://massive.com/pricing\"}",
+  "2026-10-04T05:57:09Z error: /v2/aggs/ticker/I:SPX/range/1/day/2025-10-27/2026-10-02 HTTP 403 {\"status\":\"NOT_AUTHORIZED\",\"request_id\":\"8e1b6264e3195b422326ee950237dba0\",\"message\":\"You are not entitled to this data. Please upgrade your plan at https://massive.com/pricing\"}"
+ ],
+ "built_utc": "2026-10-04T06:00:00Z",
+ "run_seconds": 0.9
+}
