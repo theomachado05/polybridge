@@ -197,4 +197,16 @@ itself. Rules for the next session after the questions' end (expected Monday 202
 
 ## Amendments
 
-None.
+**1 (Sat 2026-10-03, 23:45 New York time, before any option quote was pulled).** Clarifications found while writing
+the code, and counts made from odds and the calendar alone:
+
+- On a session that closes early (2025-11-28 and 2025-12-24 in this window), "15:55" is read as five minutes before
+  the end of that session's last five-minute bar.
+- KRE's cached bars start on 2026-01-02 and XLF has none, so the five-minute bars of both for the whole window are
+  pulled from Massive into this study's cache. Nothing else about the Fed-and-banks case changes.
+- The listing request asks Massive for calls with a strike within 8% of the first price; the strike rule is unchanged.
+- Controls exist for 241 of the 300 main events (59 have no unused quiet session within 30 trading days), for 13 of
+  13 Brazil mornings, for 105 of 186 Fed-and-banks ticker-days and for 372 of the 508 extra events of V3. An event
+  without a control stays in the trade results and in the event rows of the speed curve; it is left out of event
+  minus control.
+- Requests at most: tier 1 7,633; tier 2 364; tier 3 about 600; tier 4 about 1,480; tier 5 4,400.
