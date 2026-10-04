@@ -22,7 +22,7 @@ from .pull import S18  # noqa: E402
 from .run import BUCKETS, RESULTS as R  # noqa: E402
 
 SURFACE, INK, INK2, GRID = "#fcfcfb", "#0b0b0b", "#52514e", "#e7e6e2"
-SERIES = {"B0": "#2a78d6", "U": "#eb6834", "B1": "#1baf7a", "B2": "#eda100"}        # validated order: blue, orange, aqua, yellow
+SERIES = {"B0": "#2a78d6", "U": "#eb6834", "B1": "#1baf7a"}        # validated order: blue, orange, aqua (B2 took two markets and is not drawn)
 NAMES = {"B0": "B0: sell, 5+ points above the central anchor", "B1": "B1: sell, 10+ points above the central anchor",
          "B2": "B2: buy, 5+ points below the lower-bound anchor", "U": "U: sell every anchored market (S18's book)",
          "U-all": "U-all: sell every stock and S&P market (S18's book)", "R1": "R1: B0 without zero-bid anchors",
@@ -56,9 +56,8 @@ def chart_buckets(t1: pd.DataFrame) -> None:
             ax.plot([i, i], [r.ci_lo, r.ci_hi], color=INK, linewidth=1.4, solid_capstyle="butt")
             for e in (r.ci_lo, r.ci_hi):
                 ax.plot([i - 0.07, i + 0.07], [e, e], color=INK, linewidth=1.4)
-        edge = (r.ci_hi if has else max(y[i], 0)) if y[i] >= 0 else (r.ci_lo if has else min(y[i], 0))
-        ax.annotate(f"{y[i]:+.1f}" + ("" if has else "\n(no interval:\nunder 5 events)"), (i, edge), xytext=(0, 5 if y[i] >= 0 else -5),
-                    textcoords="offset points", ha="center", va="bottom" if y[i] >= 0 else "top", fontsize=9.5, color=INK)
+        ax.annotate(f"{y[i]:+.1f}" + ("" if has else " (no interval: under 5 events)"), (i + 0.28, y[i]), xytext=(6, 0),
+                    textcoords="offset points", ha="left", va="center", fontsize=10, color=INK)
     ax.set_xticks(x)
     ax.set_xticklabels([f"{k}\n{int(r.markets) if r.markets == r.markets else 0} markets, {int(r.events) if r.events == r.events else 0} events\n"
                         f"paid {num(r.mean_traded_price, 0)}%, anchor {num(r.mean_anchor, 0)}%" for k, r in zip(BUCKETS, b.itertuples())], fontsize=8.5, color=INK2)
@@ -66,7 +65,8 @@ def chart_buckets(t1: pd.DataFrame) -> None:
     ax.set_ylabel("points per contract, after the fee", fontsize=9, color=INK2)
     ax.set_title("S21: what buyers of YES made, held to the result, by how far they paid above the options anchor\n"
                  "(bars: mean; whiskers: 95% interval, resampling events)", loc="left", fontsize=10.5, color=INK)
-    ax.margins(y=0.18)
+    ax.margins(y=0.08)
+    ax.set_xlim(-0.6, len(b) - 0.25)
     fig.tight_layout()
     fig.savefig(R / "gap_buckets.png", dpi=160, facecolor=SURFACE)
     plt.close(fig)
@@ -88,20 +88,20 @@ def chart_books(eq: pd.DataFrame, oos_from: str) -> None:
                 y = (full - np.maximum.accumulate(full))[1:]
             ax.plot(xx, y, color=color, linewidth=2, label=NAMES[bid], solid_capstyle="round", marker="o", markersize=4)
             ends.append((y[-1] if not dd else y.min(), xx.iloc[-1], y[-1], bid))
-        placed: list[float] = []
-        span = (ax.get_ylim()[1] - ax.get_ylim()[0]) or 1.0
-        for val, x_, y_, bid in sorted(ends, key=lambda t: t[2]):
-            yy = y_
-            while any(abs(yy - p) < 0.055 * span for p in placed):
-                yy += 0.055 * span
-            placed.append(yy)
-            ax.annotate(f"{bid} {val:+.0f}%" + (" at worst" if dd else ""), (x_, yy), xytext=(8, 0), textcoords="offset points", va="center", fontsize=9, color=INK)
+        if dd:
+            ax.annotate("Deepest: " + ", ".join(f"{bid} {val:.1f}%" for val, _, _, bid in ends) + ". A book with no losing month lies on zero.",
+                        (0.0, 0.0), xycoords="axes fraction", xytext=(12, 78), textcoords="offset points", ha="left", va="bottom", fontsize=9, color=INK)
+        else:
+            for val, x_, y_, bid in ends:
+                ax.annotate(f"{bid} {val:+.0f}%", (x_, y_), xytext=(8, 0), textcoords="offset points", va="center", fontsize=9, color=INK)
         split = pd.Timestamp(oos_from)
         ax.axvline(split, color=INK2, linewidth=1, linestyle=(0, (3, 3)))
         ax.annotate("S18's out-of-sample events start ▸", (split, 1.0), xycoords=("data", "axes fraction"), xytext=(-5, -4),
                     textcoords="offset points", va="top", ha="right", fontsize=8.5, color=INK2)
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %y"))
         ax.margins(x=0.14)
+        if dd:
+            ax.set_ylim(min(ax.get_ylim()[0], -5.0), 1.0)
         ax.set_ylabel("% of each book's capital base", fontsize=9, color=INK2)
         ax.set_title(f"S21 books at traded prices: {title}, booked in the month of the result", loc="left", fontsize=11, color=INK)
         ax.legend(loc="upper left" if not dd else "lower left", frameon=False, fontsize=8.5, labelcolor=INK)
@@ -123,7 +123,10 @@ def main() -> int:
     s18 = json.loads((S18 / "run_meta.json").read_text())
     t1, sl, t2 = pd.read_csv(R / "t1_buckets.csv"), pd.read_csv(R / "t1_slope.csv"), pd.read_csv(R / "t2_regression.csv")
     m, imp, eq = pd.read_csv(R / "metrics.csv"), pd.read_csv(R / "improvement.csv"), pd.read_csv(R / "equity.csv")
-    anc, tr = pd.read_csv(R / "anchors.csv"), pd.read_csv(R / "trades.csv")
+    anc, tr, ck = pd.read_csv(R / "anchors.csv"), pd.read_csv(R / "trades.csv"), pd.read_csv(R / "checks.csv")
+
+    def chk(check, item):
+        return ck[ck.check.str.startswith(check) & ck.item.str.startswith(item)].iloc[0]
     chart_buckets(t1)
     chart_books(eq, s18["oos_from"])
 
@@ -206,15 +209,22 @@ def main() -> int:
                      "D": "Difference", "CI": "95% interval"})
     tk = pd.DataFrame([{"T": k, "N": v["markets"], "A": v["anchored"]} for k, v in sorted(meta["by_ticker"].items(), key=lambda kv: -kv[1]["markets"])])
     ok = anc[anc.status == "ok"]
-    high_sharpe = [f"{r.book} {r.segment} {r.fee_mult:.0f}× ({r.sharpe:.2f})" for r in m.itertuples() if r.sharpe == r.sharpe and abs(r.sharpe) > 3]
+    seg_name = {"IS": "in-sample", "OOS": "out-of-sample", "ALL": "whole sample"}
+    high_sharpe = [f"{r.book} {seg_name[r.segment]} {r.sharpe:.2f} ({int(r.markets)} markets)" for r in m.itertuples()
+                   if r.fee_mult == 1.0 and r.sharpe == r.sharpe and abs(r.sharpe) >= 2.995]
 
     S = ["# S21: does the options chain tell which \"will it hit\" tickets are overpriced?", "",
          "Method, pre-registered before any option quote was pulled: [`research/s21_options_anchor/METHOD.md`](../../s21_options_anchor/METHOD.md) "
          f"(commit `df3cb4a`). Data: the {meta['markets_in_s18_file']} stock and S&P 500 price markets of S18's traded-price file, their first weekends from "
          f"{anc.anchor_day.min()} to {anc.anchor_day.max()}; real NBBO option quotes from Massive at 15:55 New York on the Friday before. Files: "
          "[`anchors.csv`](anchors.csv), [`t1_buckets.csv`](t1_buckets.csv), [`t1_slope.csv`](t1_slope.csv), [`t2_regression.csv`](t2_regression.csv), "
-         "[`metrics.csv`](metrics.csv), [`improvement.csv`](improvement.csv), [`trades.csv`](trades.csv), [`capacity.md`](capacity.md), [`RUN_LOG.md`](RUN_LOG.md).", "",
+         "[`metrics.csv`](metrics.csv), [`improvement.csv`](improvement.csv), [`trades.csv`](trades.csv), [`checks.csv`](checks.csv), [`capacity.md`](capacity.md), "
+         "[`RUN_LOG.md`](RUN_LOG.md).", "",
          "## Answer", ""]
+    ktab = md_table(ck.assign(C=ck.check, I=ck["item"], V=ck.value.map(lambda x: f"{x:+.3f}"),
+                              CI=ck.apply(lambda r: "" if r.lo != r.lo else f"[{r.lo:+.2f}, {r.hi:+.2f}]", axis=1),
+                              N=ck.n.map(lambda x: "" if x != x else f"{x:,.0f}"), NO=ck.note.fillna("")),
+                    {"C": "Check", "I": "What", "V": "Value", "CI": "Interval or range", "N": "n", "NO": "Note"})
     S += ANSWER({**locals(), "money": money, "pc": pc})
     S += ["", "## How many markets", "",
           f"- In S18's file: {meta['markets_in_s18_file']} stock and S&P markets. Parsed (ticker, level, direction, window end): {meta['parsed']}; dropped in parsing: "
@@ -248,10 +258,17 @@ def main() -> int:
           "the largest capital locked at one time; Sharpe on monthly P&L. P&L per contract weighs each market once. Many of these markets charge no fee, so the 2× "
           "rows differ little.", "",
           "### Does the anchor improve S18's unfiltered book?", "", itab, "",
+          f"The out-of-sample row rests on {int(im.loc['OOS'].taken_markets)} taken markets; its interval is a resampling artefact of so few and says nothing.", "",
           "### The pass rule (fixed before the pull)", "", "| Needed | Result | Evidence |", "|---|---|---|"]
     S += [f"| {a} | {'met' if okk else '**not met**'} | {e} |" for a, okk, e in lines]
     S += ["", f"**Verdict: {'pass (a lead needing a replication, not an edge)' if passed else 'not a pass'}.**" + ("" if passed else f" Lines not met: {failed}."), "",
           "![Equity curve](equity_curve.png)", "", "![Drawdown](drawdown.png)", "",
+          "Each point is a calendar month, as a percentage of that book's own capital base (the largest capital locked at one time). B2 took two markets and is not "
+          "drawn. In the table, rows with one or three months (the out-of-sample rows, B2) are there for completeness: a \"worst month\" above zero means no month "
+          "lost, and a Sharpe on three months means nothing.", "",
+          "## Bug hunt and checks added after the result (not pre-registered; METHOD.md amendment 2)", "",
+          "Books showed a Sharpe above 3, so the result was hunted for a bug before it was written up. None of these checks is one of the three tests, none "
+          "changed a rule, and all of them were run once and are all listed.", "", ktab, "",
           "## Costs", "",
           "- The Polymarket price is the print (S18's size-weighted traded price of one taker side over the first weekend), so no spread is assumed. The fee is the "
           "market's own taker fee, 0.04 × P × (1 − P) where the market charges one; nothing is paid at the result. At 2× the fee is doubled.",
@@ -259,16 +276,24 @@ def main() -> int:
           "## Capacity", "", "See [`capacity.md`](capacity.md).", "",
           "## Caveats", "",
           "- **We were not blind to the results**, only to the anchor: S18's file already held every market's result and traded prices.",
+          f"- **The anchor itself ran above the results this year.** On the anchored markets with a taker sale the central anchor averaged {num(ua.mean_anchor, 1)}% "
+          f"and the sellers' traded price {num(ua.mean_traded_price, 1)}%, while {num(ua.share_yes, 1)}% resolved YES. So part of what a seller earned is the premium "
+          "any seller of listed options earns when moves come in smaller than the options implied, plus the reflection rule's upward lean. Only the part above the "
+          "anchor is special to Polymarket, and that is what T1 and B0 measure.",
           "- **The central anchor is an approximation.** Twice the finish-beyond probability is the reflection rule for a touch; it ignores drift, and the expiry is at "
           "or after the question's end, which makes the anchor a little high. Stock and SPY options are American and are read as if European.",
           "- **The anchor is taken at 15:55 on Friday; the tickets traded from Friday 20:00 to Sunday 20:00.** News in between moves the ticket and not the anchor.",
           "- **The traded price is an average over a weekend of prints**, not one fill; a seller could not have chosen only the best of them.",
           "- **One year, 18 Fridays.** Markets on the same Friday share the same market weather; resampling events does not cure that.",
           f"- **A zero bid was accepted on a leg** ({zero} anchors), a stated difference from the existing code; R1 reruns the primary without them.",
-          "- " + ("**A Sharpe above 3 appears in: " + ", ".join(high_sharpe) + ".** See RUN_LOG.md for the bug hunt." if high_sharpe else
-                  "No book shows a Sharpe above 3 in absolute value."), "",
+          f"- **The loss on one contract can be several times the gain.** B0's worst market lost {num(-chk('subsets', 'B0 worst').value, 1)} points; "
+          f"{num(100 * chk('subsets', 'B0 share').value, 0)}% of its markets made money. It is selling insurance against large moves.",
+          "- **Small prints count as much as large ones** in the per-contract means (each market once). Weighted by the contracts the book holds B0 earned "
+          f"{pts(chk('subsets', 'B0 weighted').value)} points per contract.",
+          "- " + ("**A Sharpe above 3 appears in: " + ", ".join(high_sharpe) + ".** It comes from ten or eleven monthly numbers with one losing month; see the bug "
+                  "hunt above and RUN_LOG.md. Do not read it as the Sharpe of a strategy." if high_sharpe else "No book shows a Sharpe above 3 in absolute value."), "",
           "## Reproduce", "", "```", "cd research", "python -m s21_options_anchor.pull      # Massive, 2 requests a second, resumable", "python -m s21_options_anchor.run",
-          "python -m s21_options_anchor.report", "python -m pytest s21_options_anchor/tests -q", "```", ""]
+          "python -m s21_options_anchor.checks     # the bug hunt, added after the result", "python -m s21_options_anchor.report", "python -m pytest s21_options_anchor/tests -q", "```", ""]
     (R / "SUMMARY.md").write_text("\n".join(S))
 
     b0t = tr[tr.book == "B0"]
@@ -278,8 +303,11 @@ def main() -> int:
            f"${(b0t.printed_size * b0t.traded_price).median():,.0f} per market." if len(b0t) else "- B0 took no market.",
            f"- **The book as run:** up to 100 contracts per market, {int(b0a.markets)} markets, a capital base of ${b0a.capital_base:,.0f}, "
            f"${b0a.mean_capital:,.0f} of capital per market on average, locked a median of {b0a.median_days_locked:.0f} days; book P&L {money(b0a.pnl)}.",
-           "- This is a trade of tens of dollars per market. The prints show what did trade at these prices, not what else could have been sold; a taker's sale "
-           "needs a bid.",
+           f"- **The ceiling the prints prove:** every contract takers sold into bids in B0's markets over those weekends: {b0t.printed_size.sum():,.0f} contracts, "
+           f"${(b0t.printed_size * b0t.traded_price).sum():,.0f} of premium; held to the result those sales made "
+           f"{money((b0t.printed_size * b0t.pnl_points / 100).sum())}. They were other people's sales: a newcomer hitting the same bids would have moved them.",
+           "- This is a trade of tens of dollars per market as run, about ten thousand dollars a year at the ceiling. The prints show what did trade at these "
+           "prices, not what else could have been sold; a taker's sale needs a bid.",
            "- The option side is not traded, so listed-option liquidity does not limit the book; it limits only how precisely the anchor is known "
            f"(median band {num(meta['median_band_width_points'], 1)} points on the finish-beyond probability).", ""]
     (R / "capacity.md").write_text("\n".join(cap))

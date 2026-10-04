@@ -158,4 +158,18 @@ the reason it was dropped), `t1_buckets.csv`, `t2_regression.csv`, `metrics.csv`
 
 ## Amendments
 
-(none)
+- **2026-10-04 00:27 New York, clerical, while the pull was running and before any result was read.** The header says
+  "about 00:45"; the pre-registration commit (`df3cb4a`) was made at 00:19 New York, and git's timestamp is the record.
+  The pull started at 00:20. No rule changed.
+
+- **2026-10-04 00:42 New York, after the result was read: the bug hunt the Sharpe rule demands.** Books showed a Sharpe
+  above 3 (S18's unfiltered book on these markets 3.24, in-sample 3.69; B1 in-sample 3.00). `checks.py` writes
+  `checks.csv`: (1) no look-ahead: the age of every leg quote and the time from the anchor instant to the first traded
+  price; (2) a placebo with the anchors shuffled across markets, a regression of P&L on the gap with the price level
+  held fixed, and taken against left inside each of S18's traded-price buckets (is it the anchor or only the price
+  level?); (3) B0 on anchors with no leg moved outward, B0 when the traded bid is 5+ points above the top of the
+  anchor's band, B0 by printed size and by asset class; (4) the intervals of B0, of taken-minus-left and of the T1 slope
+  resampling Fridays instead of events; (5) a rough range for each monthly Sharpe. Every anchor and every book mean was
+  also recomputed independently from the cached quotes and S18's file. **These are checks, not tests:** none replaces
+  T1, T2 or T3, none changes a rule, a threshold or a bucket, each was run once, and all are reported whatever they
+  show. The charts leave out B2, which took two markets.

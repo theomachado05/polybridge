@@ -8,7 +8,7 @@ import pytest
 
 from s21_options_anchor import config as cfg
 from s21_options_anchor import engine as eg
-from s21_options_anchor import pull, run
+from s21_options_anchor import checks, pull, run
 
 B0, B1, B2 = cfg.BOOKS
 AT = 1_000_000.0
@@ -176,3 +176,19 @@ def test_build_anchor_walks_to_the_first_expiry_with_two_usable_legs():
     assert "2026-04-04" not in src.asked and src.asked[0] == "2026-03-31"          # weekends are not asked for
     none = pull.build_anchor(Fake(), {**m, "level": 500.0})
     assert none["status"] == "no listed strikes bracket the level"
+
+
+def test_placebo_with_identical_anchors_equals_the_observed_difference():
+    price = np.array([0.50, 0.60, 0.10, 0.12, 0.40, 0.05])
+    pnl = np.array([30.0, 40.0, 5.0, -80.0, 20.0, 5.0])
+    same = checks.placebo(price, np.full(6, 0.20), pnl, 5.0, draws=50)
+    taken = np.array([True, True, False, False, True, False])
+    assert same["observed"] == pytest.approx(pnl[taken].mean() - pnl[~taken].mean())
+    assert same["placebo_mean"] == pytest.approx(same["observed"]) and same["share_at_least_observed"] == 1.0 and same["mean_markets_taken"] == 3.0
+
+
+def test_placebo_keeps_prices_and_results_and_only_moves_the_anchors():
+    price = np.array([0.50, 0.50, 0.50, 0.50])
+    pnl = np.array([50.0, 50.0, -50.0, -50.0])
+    out = checks.placebo(price, np.array([0.10, 0.10, 0.60, 0.60]), pnl, 5.0, draws=200)       # the anchor picks exactly the winners
+    assert out["observed"] == pytest.approx(100.0) and out["placebo_mean"] < 60.0 and out["hi"] <= 100.0 and out["mean_markets_taken"] == 2.0
