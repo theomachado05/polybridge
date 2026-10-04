@@ -1,0 +1,14 @@
+{
+ "verdict": "INSUFFICIENT",
+ "n_rows": 0,
+ "n_markets": 0,
+ "n_tickers": 0,
+ "n_dates": 0,
+ "note": "The frozen holdout list is empty: no NYSE session closed between the arb-scan commit (2026-10-03 05:14:24 EDT) and the run, and every market resolving 2026-10-02 is in arb_gaps.csv. No price, quote or outcome was fetched.",
+ "frozen_markets": 0,
+ "method_commit": "b1ea8b9",
+ "commit": "b1ea8b9",
+ "started_utc": "2026-10-04T08:23:00.455358+00:00",
+ "first_fetch_utc": null,
+ "finished_utc": "2026-10-04T08:23:00.496563+00:00"
+}
