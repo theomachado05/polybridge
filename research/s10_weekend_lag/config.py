@@ -92,7 +92,7 @@ BTC_HALF_SPREAD = 0.005                  # half of the 1.0-point spread on the l
 BTC_PM_MAX_AGE_S = 120
 BTC_PRINT_WINDOW_S = 120                 # a print within two minutes after the signal
 BTC_GAMMA_BATCH = 20
-BTC_RATE = 2.5
+BTC_RATE = 1.8                           # 2.5 in amendment 2; lowered for the print check so a live recorder (amendment 5) fits under 3 a second
 
 
 @dataclass(frozen=True)

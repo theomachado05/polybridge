@@ -304,3 +304,32 @@ ending at t, S0 = the mid of the minute before the window, n = 15 − m: fair = 
 Variants, costs, entries, accounting, print check and success criterion are as amendment 2. Both models are reported:
 the pre-registered one as the test of amendment 2, the corrected one as this amendment's test. The out-of-sample
 dates were not used to choose the proxy.
+
+**Amendment 5, 2026-10-04 04:45 UTC (Sun 00:45 New York time), before any of these data exist: Part 5, a live
+forward test at real quotes.** Part 3 (amendment 4, looked at after its run, descriptive) shows Polymarket's minute
+price ignoring the spot move at the same minute (slope 0.94) and absorbing it a minute later (0.13): the lag is
+shorter than a minute, which one-minute history cannot resolve and which a taker one minute late cannot use. This
+part records what one-minute history cannot show: the real book.
+
+*Recording.* `live.py`, from now until **06:00 New York time**: about once a second, Coinbase's BTC-USD ticker and
+the order book (best five levels) of the current 15-minute Up/Down market's Up token; Coinbase one-minute candles
+once a minute. One Polymarket request a second.
+
+*Fair value at second s.* X = the mean of the Coinbase ticker prices in the 60 seconds to s (a 60-second average,
+like the resolution source); S0 = X at the window's start; τ = seconds left; σ = the standard deviation of the last 60
+one-minute log returns from the latest candles. fair = Φ(ln(X/S0) / (σ·√(τ/60))). Only seconds 60 to 870 of a window
+are used.
+
+*The trade (one per window, held to the result).* At snapshot k, if fair − ask ≥ **2 points + the taker fee at the
+ask** (0.07 × P × (1 − P) in points), buy Up at the **ask of snapshot k + 1** (the next second), for the size shown
+there up to 100 contracts, provided that ask is at most 1 point worse than at k. Mirror: if bid − fair ≥ 2 points +
+the fee, sell Up at the bid of snapshot k + 1. Hold to the result from the catalogue. No half-spread is added: fills
+are at recorded quotes. 2× costs: fee doubled and 1 point more slippage.
+
+*Also reported (description).* For every second, the change of Polymarket's mid over the next 5, 15, 30 and 60
+seconds against the change of fair over the last 5 seconds, by lag: how many seconds the book takes to follow spot.
+
+*Criterion.* About 20 windows is a pilot, not a test. A pass needs at least 10 trades, mean net P&L per trade above
+zero with an interval resampling windows that excludes zero at 1×, and above zero at 2×. Anything else is reported
+as a pilot result. The fills are only as real as one-second snapshots of the book: a quote seen can be gone a second
+later, and the next snapshot is the fill to approximate that.
