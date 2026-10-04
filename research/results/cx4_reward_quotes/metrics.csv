@@ -1,0 +1,7 @@
+sample,variant,cost_mult,segment,orders,fills,independent_filled_groups,filled_contracts,prior_trading_pnl_dollars,incentive_needed_dollars,needed_cents_per_filled_contract,actual_reward_income,actual_rebate_income,net_rewarded_pnl,sharpe,verdict,fresh_backtest
+known_S12_diagnostic,R0,1.0,ALL,307,90,29,7554.633825999999,48.95967118569662,0.0,0.0,,,,,NOT_TESTABLE,False
+known_S12_diagnostic,R0,1.0,IS,265,70,23,5803.148678,190.2238537639731,0.0,0.0,,,,,NOT_TESTABLE,False
+known_S12_diagnostic,R0,1.0,OOS,42,20,6,1751.4851480000002,-141.26418257827655,141.26418257827655,8.065394259242472,,,,,NOT_TESTABLE,False
+known_S12_diagnostic,R0,2.0,ALL,307,64,25,5294.515368,-108.6281851331884,108.6281851331884,2.0517115842129026,,,,,NOT_TESTABLE,False
+known_S12_diagnostic,R0,2.0,IS,265,51,20,4139.42102,18.656541296167962,0.0,0.0,,,,,NOT_TESTABLE,False
+known_S12_diagnostic,R0,2.0,OOS,42,13,5,1155.094348,-127.28472642935634,127.28472642935634,11.019422495638109,,,,,NOT_TESTABLE,False

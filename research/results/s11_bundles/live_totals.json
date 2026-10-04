@@ -1,0 +1,16 @@
+{
+ "snapshots": 31,
+ "first_et": "2026-10-03T22:55:10.014718-04:00",
+ "last_et": "2026-10-04T00:37:52.821765-04:00",
+ "checks": 7471,
+ "pairs_or_sets_tested": {
+  "date": 47,
+  "negrisk": 114,
+  "strike": 80
+ },
+ "negrisk_testable_share": 0.30843237125070744,
+ "checks_with_money_locked": 32,
+ "distinct_arbitrages": 2,
+ "arbitrages_at_least_min_order": 2,
+ "sum_of_max_locked_usd": 0.14
+}

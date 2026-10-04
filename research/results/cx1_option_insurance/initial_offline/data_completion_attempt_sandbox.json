@@ -1,0 +1,16 @@
+{
+  "started_utc": "2026-10-04T03:59:36.192571+00:00",
+  "finished_utc": "2026-10-04T03:59:36.209890+00:00",
+  "requests": 1,
+  "response_bytes": 0,
+  "max_rps": 0.5,
+  "error": "Massive request failed; details suppressed to protect authentication",
+  "log": [
+    {
+      "request": 1,
+      "cache_key": "fdb26975fa96da5cfa20de9d96b2b3ae8db57edf.json",
+      "path": "/v3/reference/options/contracts",
+      "status": "ConnectionError"
+    }
+  ]
+}

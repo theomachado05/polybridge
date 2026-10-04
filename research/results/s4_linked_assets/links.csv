@@ -1,0 +1,384 @@
+market,question,ticker,direction,critic,family,motivating,sessions_with_odds,gate_bins,gate_sessions,sensitivity_bp_per_pp,gate_t,confirmed_at_end,first_confirmed,sessions_confirmed,status
+polymarket:5126779,"Will Indiana enact a data center moratorium by December 31, 2027?",VRT,down_on_yes,not named,event,False,3,11,3,3.635615312588694,59.71326350095234,False,,0,neither
+polymarket:5126779,"Will Indiana enact a data center moratorium by December 31, 2027?",DLR,down_on_yes,not named,event,False,3,11,3,0.5668783336713741,3.921599891127758,False,,0,neither
+polymarket:5126779,"Will Indiana enact a data center moratorium by December 31, 2027?",EQIX,down_on_yes,not named,event,False,3,11,3,0.7407852221892688,10.870135355759672,False,,0,neither
+polymarket:5126779,"Will Indiana enact a data center moratorium by December 31, 2027?",ETN,down_on_yes,not named,event,False,3,11,3,1.9845978860054116,11.589651674753968,False,,0,neither
+polymarket:4662693,"Will Anthropic announce bankruptcy by December 31, 2027?",AMZN,down_on_yes,agreed,event,False,10,1,1,3.2227095546028717,54068071.743871644,False,,0,"agreed, not confirmed"
+polymarket:4662693,"Will Anthropic announce bankruptcy by December 31, 2027?",GOOGL,down_on_yes,agreed,event,False,10,1,1,-28.324228318451887,nan,False,,0,"agreed, not confirmed"
+polymarket:4662693,"Will Anthropic announce bankruptcy by December 31, 2027?",NVDA,down_on_yes,agreed,event,False,10,1,1,14.569351819620195,nan,False,,0,"agreed, not confirmed"
+polymarket:562831,"2026 Balance of Power: R Senate, R House",ICLN,down_on_yes,agreed,event,False,188,99,53,-8.80750269951672,-1.7467871061713045,False,,0,"agreed, not confirmed"
+polymarket:562831,"2026 Balance of Power: R Senate, R House",XLE,up_on_yes,not named,event,False,188,99,53,-6.109537144186368,-1.372318919932487,False,,0,neither
+polymarket:562831,"2026 Balance of Power: R Senate, R House",ITA,up_on_yes,not named,event,False,188,99,53,-0.059567031286555105,-0.020283737212249974,False,,0,neither
+polymarket:2589813,Will the Fed increase interest rates by 25 bps after the October 2026 meeting?,SPY,down_on_yes,agreed,event,False,73,143,41,-3.361046300656845e-16,-2.0729521053739313,False,,0,"agreed, not confirmed"
+polymarket:2589813,Will the Fed increase interest rates by 25 bps after the October 2026 meeting?,IWM,down_on_yes,agreed,event,False,73,143,41,1.7092984091552734,2.994444654820361,True,2026-08-31,24,trusted
+polymarket:2589813,Will the Fed increase interest rates by 25 bps after the October 2026 meeting?,XHB,down_on_yes,not named,event,False,73,143,41,0.765636498119218,0.7705232044062449,False,,0,neither
+polymarket:562828,"2026 Balance of Power: D Senate, D House",ICLN,up_on_yes,agreed,event,False,188,121,63,-1.2386793897227817,-0.44008096850809625,False,,0,"agreed, not confirmed"
+polymarket:562828,"2026 Balance of Power: D Senate, D House",XLE,down_on_yes,not named,event,False,188,121,63,-1.7776077031666753,-0.5955571751001985,False,,0,neither
+polymarket:665374,Will the U.S. invade Iran before 2027?,XLE,up_on_yes,not named,event,False,188,489,129,1.3201374132755344,1.3562147910341757,False,,0,neither
+polymarket:665374,Will the U.S. invade Iran before 2027?,LMT,up_on_yes,not named,event,False,188,489,129,-1.8884608878654325,-2.3383579146788853,False,,0,neither
+polymarket:665374,Will the U.S. invade Iran before 2027?,SPY,down_on_yes,not named,event,False,188,489,129,1.6665137899702517e-17,0.1177731615322382,False,2026-04-08,1,"confirmed, not agreed"
+polymarket:665374,Will the U.S. invade Iran before 2027?,JETS,down_on_yes,agreed,event,False,188,489,129,5.306844683634069,3.2629753753033985,True,2026-05-04,106,trusted
+polymarket:562802,Will the Democratic Party control the House after the 2026 Midterm elections?,ICLN,up_on_yes,agreed,event,False,188,100,52,-0.6082815843490076,-0.254391951458422,False,,0,"agreed, not confirmed"
+polymarket:562802,Will the Democratic Party control the House after the 2026 Midterm elections?,XLE,down_on_yes,not named,event,False,188,100,52,0.3875789061294588,0.16442596913847632,False,,0,neither
+polymarket:5179198,"Will Indiana enact a data center moratorium by December 31, 2028?",VRT,down_on_yes,not named,event,False,1,2,1,14.466415745966437,75845537.12212405,False,,0,neither
+polymarket:5179198,"Will Indiana enact a data center moratorium by December 31, 2028?",DLR,down_on_yes,not named,event,False,1,2,1,-8.999058916125758,-94361792.03926234,False,,0,neither
+polymarket:5179198,"Will Indiana enact a data center moratorium by December 31, 2028?",EQIX,down_on_yes,not named,event,False,1,2,1,-1.3388770000173889,nan,False,,0,neither
+polymarket:5179198,"Will Indiana enact a data center moratorium by December 31, 2028?",ETN,down_on_yes,not named,event,False,1,2,1,-12.495547460633263,-92648709.72536539,False,,0,neither
+polymarket:5170735,"Will Bitcoin reach $87,500 in October?",IBIT,up_on_yes,agreed,spot_proxy,False,1,22,2,8.978896683106457,49.73460495328444,False,,0,"agreed, not confirmed"
+polymarket:5170735,"Will Bitcoin reach $87,500 in October?",COIN,up_on_yes,not named,spot_proxy,False,1,22,2,18.476552910998684,67.55462883485184,False,,0,neither
+polymarket:5170735,"Will Bitcoin reach $87,500 in October?",MSTR,up_on_yes,agreed,spot_proxy,False,1,22,2,17.421529892926827,392.1029023257092,False,,0,"agreed, not confirmed"
+polymarket:5170735,"Will Bitcoin reach $87,500 in October?",MARA,up_on_yes,agreed,spot_proxy,False,1,22,2,16.88275839500169,3.9508731720621006,False,,0,"agreed, not confirmed"
+polymarket:1365861,Will Flávio Bolsonaro finish in second place in the first round of the 2026 Brazilian presidential election?,EWZ,up_on_yes,opposite direction,event,True,160,553,129,-0.23058761434908331,-0.2759177443829186,False,,0,neither
+polymarket:4037599,Will Lula win the most votes in the first round of the 2026 Brazil presidential election?,EWZ,down_on_yes,agreed,event,True,23,71,20,3.0318280716560926,1.275419287459039,False,,0,"agreed, not confirmed"
+polymarket:562803,Will the Republican Party control the House after the 2026 Midterm elections?,XLE,up_on_yes,not named,event,False,188,92,50,2.696408100344049,0.9079018310155915,False,,0,neither
+polymarket:562803,Will the Republican Party control the House after the 2026 Midterm elections?,ICLN,down_on_yes,agreed,event,False,188,92,50,-3.1450881097056507,-1.026059951173507,False,,0,"agreed, not confirmed"
+polymarket:4985048,"Will the price of Bitcoin be above $74,000 on October 3?",IBIT,up_on_yes,agreed,spot_proxy,False,4,26,5,66.4230064202089,1.060321997667751,False,,0,"agreed, not confirmed"
+polymarket:4985048,"Will the price of Bitcoin be above $74,000 on October 3?",COIN,up_on_yes,not named,spot_proxy,False,4,26,5,117.00623232781146,2.379288429857737,False,,0,neither
+polymarket:4985048,"Will the price of Bitcoin be above $74,000 on October 3?",MSTR,up_on_yes,agreed,spot_proxy,False,4,26,5,156.04391786716388,1.1647558688082664,False,,0,"agreed, not confirmed"
+polymarket:4985048,"Will the price of Bitcoin be above $74,000 on October 3?",MARA,up_on_yes,agreed,spot_proxy,False,4,26,5,76.89425778203241,1.0559584530575592,False,,0,"agreed, not confirmed"
+polymarket:4985052,"Will the price of Bitcoin be above $76,000 on October 3?",IBIT,up_on_yes,agreed,spot_proxy,False,4,35,5,52.280643788400056,2.770997439617138,False,,0,"agreed, not confirmed"
+polymarket:4985052,"Will the price of Bitcoin be above $76,000 on October 3?",COIN,up_on_yes,not named,spot_proxy,False,4,35,5,33.230836093972314,2.3115424422120947,False,,0,neither
+polymarket:4985052,"Will the price of Bitcoin be above $76,000 on October 3?",MSTR,up_on_yes,agreed,spot_proxy,False,4,35,5,76.84943473258976,6.108225709398239,False,,0,"agreed, not confirmed"
+polymarket:4985052,"Will the price of Bitcoin be above $76,000 on October 3?",MARA,up_on_yes,agreed,spot_proxy,False,4,35,5,54.93705620136222,1.6832978028727306,False,,0,"agreed, not confirmed"
+polymarket:2589810,Will the Fed decrease interest rates by 50+ bps after the October 2026 meeting?,IWM,up_on_yes,not named,event,False,73,101,35,0.7146907784824683,0.3100901380285176,False,,0,neither
+polymarket:2589810,Will the Fed decrease interest rates by 50+ bps after the October 2026 meeting?,GLD,up_on_yes,agreed,event,False,73,101,35,1.1461499022666868,0.6313592631999222,False,,0,"agreed, not confirmed"
+polymarket:5126782,"Will Oklahoma enact a data center moratorium by December 31, 2027?",VRT,down_on_yes,not named,event,False,3,6,2,-0.4241208584665276,-9.205079658989748,False,,0,neither
+polymarket:5126782,"Will Oklahoma enact a data center moratorium by December 31, 2027?",DLR,down_on_yes,not named,event,False,3,6,2,1.5985838161687282,693.2142957968979,False,,0,neither
+polymarket:5126782,"Will Oklahoma enact a data center moratorium by December 31, 2027?",EQIX,down_on_yes,not named,event,False,3,6,2,0.43948532220710623,10.967018079472078,False,,0,neither
+polymarket:5126782,"Will Oklahoma enact a data center moratorium by December 31, 2027?",ETN,down_on_yes,not named,event,False,3,6,2,-0.178150967318128,-0.8740447101709954,False,,0,neither
+polymarket:4037600,Will Flavio Bolsonaro win the most votes in the first round of the 2026 Brazil presidential election?,EWZ,up_on_yes,agreed,event,True,23,80,20,-1.0937130829898263,-0.5020496194231859,False,,0,"agreed, not confirmed"
+polymarket:5062249,"Will Bitcoin reach $92,000 September 28-October 4?",IBIT,up_on_yes,agreed,spot_proxy,False,4,57,5,44.690725746452365,5.731624705956552,False,,0,"agreed, not confirmed"
+polymarket:5062249,"Will Bitcoin reach $92,000 September 28-October 4?",COIN,up_on_yes,not named,spot_proxy,False,4,57,5,108.33584419309223,3.042750987508895,False,,0,neither
+polymarket:5062249,"Will Bitcoin reach $92,000 September 28-October 4?",MSTR,up_on_yes,agreed,spot_proxy,False,4,57,5,120.95127968999824,4.2195194061569525,False,,0,"agreed, not confirmed"
+polymarket:5062249,"Will Bitcoin reach $92,000 September 28-October 4?",MARA,up_on_yes,agreed,spot_proxy,False,4,57,5,98.15168475904444,3.1646284302321743,False,,0,"agreed, not confirmed"
+polymarket:2589814,Will the Fed increase interest rates by 50+ bps after the October 2026 meeting?,SPY,down_on_yes,agreed,event,False,73,117,42,-1.0540506391448485e-16,-1.1032098984590213,False,,0,"agreed, not confirmed"
+polymarket:2589814,Will the Fed increase interest rates by 50+ bps after the October 2026 meeting?,IWM,down_on_yes,agreed,event,False,73,117,42,-0.2995305060940493,-0.8664870271639942,False,,0,"agreed, not confirmed"
+polymarket:2589814,Will the Fed increase interest rates by 50+ bps after the October 2026 meeting?,XHB,down_on_yes,not named,event,False,73,117,42,-0.18499220238695377,-0.24527080573662027,False,,0,neither
+polymarket:5123857,"Will Texas enact a data center moratorium by December 31, 2027?",VRT,down_on_yes,agreed,event,False,3,13,3,1.374605954442362,21.62929871389186,False,,0,"agreed, not confirmed"
+polymarket:5123857,"Will Texas enact a data center moratorium by December 31, 2027?",DLR,down_on_yes,not named,event,False,3,13,3,0.05257195447438733,1.1270425065869814,False,,0,neither
+polymarket:5123857,"Will Texas enact a data center moratorium by December 31, 2027?",EQIX,down_on_yes,not named,event,False,3,13,3,-0.5764210500993133,-7.088599792581356,False,,0,neither
+polymarket:5123857,"Will Texas enact a data center moratorium by December 31, 2027?",ETN,down_on_yes,not named,event,False,3,13,3,0.20529262476147409,2.1141019986285685,False,,0,neither
+polymarket:2176270,Strait of Hormuz traffic returns to normal by December 31?,XLE,down_on_yes,not named,event,False,100,304,77,0.35733213900666744,0.26153812163847207,False,,0,neither
+polymarket:2176270,Strait of Hormuz traffic returns to normal by December 31?,OXY,down_on_yes,not named,event,False,100,304,77,1.801876317388392,1.062743407115904,False,2026-06-01,1,"confirmed, not agreed"
+polymarket:2176270,Strait of Hormuz traffic returns to normal by December 31?,JETS,up_on_yes,agreed,event,False,100,304,77,2.6807701923398657,1.2119503383131032,False,,0,"agreed, not confirmed"
+polymarket:5164765,Israel accuses Iran/proxies of plane stabbing incident by Oct 31?,XLE,up_on_yes,not named,none,False,1,16,2,1.2792154459351068,4.2157860786274135,False,,0,neither
+polymarket:5164765,Israel accuses Iran/proxies of plane stabbing incident by Oct 31?,ITA,up_on_yes,not named,none,False,1,16,2,-0.18892193434951393,-0.45143321980536283,False,,0,neither
+polymarket:2589811,Will the Fed decrease interest rates by 25 bps after the October 2026 meeting?,SPY,up_on_yes,not named,event,False,73,156,44,1.4341512805847542e-16,0.5270513533563412,False,,0,neither
+polymarket:2589811,Will the Fed decrease interest rates by 25 bps after the October 2026 meeting?,IWM,up_on_yes,agreed,event,False,73,156,44,2.0001449441761006,0.8491310282609124,False,,0,"agreed, not confirmed"
+polymarket:2589811,Will the Fed decrease interest rates by 25 bps after the October 2026 meeting?,XHB,up_on_yes,agreed,event,False,73,156,44,10.79546860084496,2.1238331553734877,True,2026-08-26,26,trusted
+polymarket:4985072,"Will the price of Bitcoin be above $84,000 on October 3?",IBIT,up_on_yes,agreed,spot_proxy,False,4,62,5,4.69085097544917,8.840603638453574,True,,0,"agreed, not confirmed"
+polymarket:4985072,"Will the price of Bitcoin be above $84,000 on October 3?",COIN,up_on_yes,not named,spot_proxy,False,4,62,5,7.131591808378636,2.5399264876418854,True,,0,neither
+polymarket:4985072,"Will the price of Bitcoin be above $84,000 on October 3?",MSTR,up_on_yes,agreed,spot_proxy,False,4,62,5,9.584308835359597,5.112543778309606,True,,0,"agreed, not confirmed"
+polymarket:4985072,"Will the price of Bitcoin be above $84,000 on October 3?",MARA,up_on_yes,agreed,spot_proxy,False,4,62,5,7.625662950071652,2.159083386469877,True,,0,"agreed, not confirmed"
+polymarket:5062265,"Will Bitcoin reach $88,000 September 28-October 4?",IBIT,up_on_yes,agreed,spot_proxy,False,4,60,5,5.848821320472731,5.968732302863545,True,,0,"agreed, not confirmed"
+polymarket:5062265,"Will Bitcoin reach $88,000 September 28-October 4?",COIN,up_on_yes,not named,spot_proxy,False,4,60,5,12.804094167210778,4.659945497843496,True,,0,neither
+polymarket:5062265,"Will Bitcoin reach $88,000 September 28-October 4?",MSTR,up_on_yes,agreed,spot_proxy,False,4,60,5,13.49726472873628,5.943898386084956,True,,0,"agreed, not confirmed"
+polymarket:5062265,"Will Bitcoin reach $88,000 September 28-October 4?",MARA,up_on_yes,agreed,spot_proxy,False,4,60,5,14.614929838553596,4.368438023637296,True,,0,"agreed, not confirmed"
+polymarket:5126781,"Will Oklahoma enact a data center moratorium by June 30, 2027?",VRT,down_on_yes,not named,event,False,3,6,2,2.097471640601136,11.31572932477167,False,,0,neither
+polymarket:5126781,"Will Oklahoma enact a data center moratorium by June 30, 2027?",DLR,down_on_yes,not named,event,False,3,6,2,0.16609646522753196,2.1695335682923824,False,,0,neither
+polymarket:5126781,"Will Oklahoma enact a data center moratorium by June 30, 2027?",EQIX,down_on_yes,not named,event,False,3,6,2,0.9394950079093014,12.351994147873677,False,,0,neither
+polymarket:5126781,"Will Oklahoma enact a data center moratorium by June 30, 2027?",ETN,down_on_yes,not named,event,False,3,6,2,1.3968285819758421,13.476932969681767,False,,0,neither
+polymarket:5062275,"Will Bitcoin dip to $82,000 September 28-October 4?",COIN,down_on_yes,not named,spot_proxy,False,4,59,5,6.4511455664586155,2.4239065208815824,False,,0,neither
+polymarket:5062275,"Will Bitcoin dip to $82,000 September 28-October 4?",MSTR,down_on_yes,agreed,spot_proxy,False,4,59,5,8.767582885045167,3.8226809382205116,False,,0,"agreed, not confirmed"
+polymarket:5062275,"Will Bitcoin dip to $82,000 September 28-October 4?",IBIT,down_on_yes,agreed,spot_proxy,False,4,59,5,4.159861021135409,6.154363445049667,False,,0,"agreed, not confirmed"
+polymarket:5062275,"Will Bitcoin dip to $82,000 September 28-October 4?",MARA,down_on_yes,agreed,spot_proxy,False,4,59,5,6.713829128553544,2.0109020868435383,False,,0,"agreed, not confirmed"
+polymarket:5179177,"Will Missouri enact a data center moratorium by December 31, 2028?",VRT,down_on_yes,not named,event,False,1,2,2,-2.37709176852711,-0.09045110348992459,False,,0,neither
+polymarket:5179177,"Will Missouri enact a data center moratorium by December 31, 2028?",DLR,down_on_yes,not named,event,False,1,2,2,4.933022435381814,0.5612549221706985,False,,0,neither
+polymarket:5179177,"Will Missouri enact a data center moratorium by December 31, 2028?",EQIX,down_on_yes,not named,event,False,1,2,2,3.8790740521879656,16.80137913170813,False,,0,neither
+polymarket:5179177,"Will Missouri enact a data center moratorium by December 31, 2028?",ETN,down_on_yes,not named,event,False,1,2,2,-1.3743904536581086,-0.0831732593751299,False,,0,neither
+polymarket:5180113,Bitcoin Up or Down on October 3?,IBIT,up_on_yes,agreed,spot_proxy,False,1,10,1,3.0848713987743817,72049760.3794796,False,,0,"agreed, not confirmed"
+polymarket:5180113,Bitcoin Up or Down on October 3?,COIN,up_on_yes,not named,spot_proxy,False,1,10,1,1.9064921683447567,nan,False,,0,neither
+polymarket:5180113,Bitcoin Up or Down on October 3?,MSTR,up_on_yes,agreed,spot_proxy,False,1,10,1,5.910266705569851,69019619.43767048,False,,0,"agreed, not confirmed"
+polymarket:5180113,Bitcoin Up or Down on October 3?,MARA,up_on_yes,agreed,spot_proxy,False,1,10,1,-1.5002242887096537,nan,False,,0,"agreed, not confirmed"
+polymarket:5126778,"Will Indiana enact a data center moratorium by June 30, 2027?",VRT,down_on_yes,not named,event,False,3,5,1,5.986417839185694,nan,False,,0,neither
+polymarket:5126778,"Will Indiana enact a data center moratorium by June 30, 2027?",DLR,down_on_yes,not named,event,False,3,5,1,1.969545582601633,72927990.39306882,False,,0,neither
+polymarket:5126778,"Will Indiana enact a data center moratorium by June 30, 2027?",EQIX,down_on_yes,not named,event,False,3,5,1,1.0366425609838057,nan,False,,0,neither
+polymarket:5126778,"Will Indiana enact a data center moratorium by June 30, 2027?",ETN,down_on_yes,not named,event,False,3,5,1,2.5643119959096388,nan,False,,0,neither
+polymarket:3215007,Will there be no change in Fed interest rates after the December 2026 meeting?,IWM,down_on_yes,not named,event,False,45,63,18,-1.1577616734998026,-0.9295317000526016,False,,0,neither
+polymarket:3215007,Will there be no change in Fed interest rates after the December 2026 meeting?,XHB,down_on_yes,not named,event,False,45,63,18,-3.360580957902471,-1.928437075317404,False,,0,neither
+polymarket:5062278,"Will Bitcoin dip to $80,000 September 28-October 4?",COIN,down_on_yes,not named,spot_proxy,False,4,59,5,7.3210206791550245,1.6247746082558137,False,,0,neither
+polymarket:5062278,"Will Bitcoin dip to $80,000 September 28-October 4?",MSTR,down_on_yes,agreed,spot_proxy,False,4,59,5,11.034299487544384,2.6707815055380677,False,,0,"agreed, not confirmed"
+polymarket:5062278,"Will Bitcoin dip to $80,000 September 28-October 4?",IBIT,down_on_yes,agreed,spot_proxy,False,4,59,5,5.95739541894894,3.4877607157252806,False,,0,"agreed, not confirmed"
+polymarket:5062278,"Will Bitcoin dip to $80,000 September 28-October 4?",MARA,down_on_yes,agreed,spot_proxy,False,4,59,5,9.016043940480639,1.699872281099589,False,,0,"agreed, not confirmed"
+polymarket:5081860,Kharg Island no longer under Iranian control by October 31?,XLE,up_on_yes,not named,event,False,4,9,4,-16.10945867426071,-0.38930458936552964,False,,0,neither
+polymarket:5081860,Kharg Island no longer under Iranian control by October 31?,LMT,up_on_yes,not named,event,False,4,9,4,-107.2744505915686,-8.27474880912696,False,,0,neither
+polymarket:4662694,"Will Anthropic announce bankruptcy by December 31, 2028?",AMZN,down_on_yes,agreed,event,False,10,0,0,nan,nan,False,,0,"agreed, not confirmed"
+polymarket:4662694,"Will Anthropic announce bankruptcy by December 31, 2028?",GOOGL,down_on_yes,not named,event,False,10,0,0,nan,nan,False,,0,neither
+polymarket:4662694,"Will Anthropic announce bankruptcy by December 31, 2028?",NVDA,down_on_yes,agreed,event,False,10,0,0,nan,nan,False,,0,"agreed, not confirmed"
+polymarket:4662696,"Will NuScale announce bankruptcy by December 31, 2027?",SMR,down_on_yes,agreed,event,False,10,0,0,nan,nan,False,,0,"agreed, not confirmed"
+polymarket:4662696,"Will NuScale announce bankruptcy by December 31, 2027?",OKLO,down_on_yes,agreed,event,False,10,0,0,nan,nan,False,,0,"agreed, not confirmed"
+polymarket:4662696,"Will NuScale announce bankruptcy by December 31, 2027?",CEG,down_on_yes,not named,event,False,10,0,0,nan,nan,False,,0,neither
+polymarket:4906127,"US announces end of Iranian blockade by October 15, 2026?",XLE,down_on_yes,not named,event,False,6,56,7,2.145860501469852,2.0183819154729186,False,,0,neither
+polymarket:4906127,"US announces end of Iranian blockade by October 15, 2026?",OXY,down_on_yes,not named,event,False,6,56,7,2.3219337001073486,1.7670389406456064,False,,0,neither
+polymarket:4906127,"US announces end of Iranian blockade by October 15, 2026?",JETS,up_on_yes,agreed,event,False,6,56,7,11.383214501260856,3.717889456865316,False,,0,"agreed, not confirmed"
+polymarket:567621,Will China invade Taiwan by end of 2026?,TSM,down_on_yes,agreed,event,False,188,509,126,4.273117995076672,0.44333699945275873,False,,0,"agreed, not confirmed"
+polymarket:567621,Will China invade Taiwan by end of 2026?,NVDA,down_on_yes,not named,event,False,188,509,126,-10.640076670816967,-0.7352855856089702,False,,0,neither
+polymarket:567621,Will China invade Taiwan by end of 2026?,SMH,down_on_yes,agreed,event,False,188,509,126,0.2737951212078565,0.04585679529624245,False,,0,"agreed, not confirmed"
+polymarket:567621,Will China invade Taiwan by end of 2026?,SPY,down_on_yes,not named,event,False,188,509,126,1.5884676181283253e-16,0.31077231878989425,False,,0,neither
+polymarket:567621,Will China invade Taiwan by end of 2026?,AAPL,down_on_yes,not named,event,False,188,509,126,7.4069777209764265,0.8658814973461013,False,,0,neither
+polymarket:4641065,US x Iran ceasefire continues through October 31?,XLE,down_on_yes,not named,event,False,11,71,12,1.3135918505305195,1.1908785320351774,False,,0,neither
+polymarket:4641065,US x Iran ceasefire continues through October 31?,JETS,up_on_yes,agreed,event,False,11,71,12,3.7051244328077337,1.6337458397363183,False,,0,"agreed, not confirmed"
+polymarket:4641065,US x Iran ceasefire continues through October 31?,SPY,up_on_yes,not named,event,False,11,71,12,-5.1218582231378576e-17,-0.42493329835673227,False,,0,neither
+polymarket:1107582,US strike on Cuba by December 31?,XLE,up_on_yes,not named,none,False,187,437,116,-0.4365614010035264,-0.46190900555780595,False,,0,neither
+polymarket:1107582,US strike on Cuba by December 31?,CCL,down_on_yes,not named,none,False,187,437,116,-1.058175203682832,-0.6113534461733252,False,,0,neither
+polymarket:1107582,US strike on Cuba by December 31?,SPY,down_on_yes,not named,none,False,187,437,116,8.859680415925715e-17,1.285211488669915,False,,0,neither
+polymarket:4985083,"Will the price of Bitcoin be above $88,000 on October 3?",COIN,up_on_yes,not named,spot_proxy,False,4,57,5,33.96001348209815,3.882998163322942,False,,0,neither
+polymarket:4985083,"Will the price of Bitcoin be above $88,000 on October 3?",MSTR,up_on_yes,agreed,spot_proxy,False,4,57,5,34.393628259486555,5.152677355444542,False,,0,"agreed, not confirmed"
+polymarket:4985083,"Will the price of Bitcoin be above $88,000 on October 3?",MARA,up_on_yes,agreed,spot_proxy,False,4,57,5,33.271651617576396,2.963404583452804,False,,0,"agreed, not confirmed"
+polymarket:666861,Trump out as President before 2027?,SPY,down_on_yes,not named,event,False,188,149,57,-4.663313083910027e-16,-1.3714546486051797,False,,0,neither
+polymarket:4985077,"Will the price of Bitcoin be above $86,000 on October 3?",COIN,up_on_yes,not named,spot_proxy,False,4,57,5,10.603093277599287,4.031369243756051,False,,0,neither
+polymarket:4985077,"Will the price of Bitcoin be above $86,000 on October 3?",MSTR,up_on_yes,agreed,spot_proxy,False,4,57,5,10.943151424574674,3.681630014415672,False,,0,"agreed, not confirmed"
+polymarket:4985077,"Will the price of Bitcoin be above $86,000 on October 3?",MARA,up_on_yes,agreed,spot_proxy,False,4,57,5,13.187351472848285,4.530520873602893,False,,0,"agreed, not confirmed"
+polymarket:4985067,"Will the price of Bitcoin be above $82,000 on October 3?",COIN,up_on_yes,not named,spot_proxy,False,4,56,5,10.09230612799457,2.131053141370313,False,,0,neither
+polymarket:4985067,"Will the price of Bitcoin be above $82,000 on October 3?",MSTR,up_on_yes,agreed,spot_proxy,False,4,56,5,13.42563754288521,3.3064536280532613,False,,0,"agreed, not confirmed"
+polymarket:4985067,"Will the price of Bitcoin be above $82,000 on October 3?",MARA,up_on_yes,agreed,spot_proxy,False,4,56,5,9.084110622591966,1.5629138614344138,False,,0,"agreed, not confirmed"
+polymarket:5062327,"Will Ethereum dip to $2,600 September 28-October 4?",COIN,down_on_yes,agreed,spot_proxy,False,4,63,5,6.00947075910858,2.9468567296413255,True,,0,"agreed, not confirmed"
+polymarket:5062327,"Will Ethereum dip to $2,600 September 28-October 4?",ETHA,down_on_yes,agreed,spot_proxy,False,4,63,5,5.292862525415598,13.336577342285137,True,,0,"agreed, not confirmed"
+polymarket:5062327,"Will Ethereum dip to $2,600 September 28-October 4?",BMNR,down_on_yes,agreed,spot_proxy,False,4,63,5,7.167793237563426,7.052321170773726,True,,0,"agreed, not confirmed"
+polymarket:3554657,Will Anthropic have the best AI model at the end of October 2026?,GOOGL,down_on_yes,not named,none,False,35,70,21,-0.44916959745823676,-1.6904962667908794,False,,0,neither
+polymarket:3554657,Will Anthropic have the best AI model at the end of October 2026?,AMZN,up_on_yes,not named,none,False,35,70,21,-0.04657074714836403,-0.1398564642423651,False,,0,neither
+polymarket:5170731,"Will Bitcoin reach $97,500 in October?",COIN,up_on_yes,not named,spot_proxy,False,1,12,2,24.342634860562747,3.660105392824152,False,,0,neither
+polymarket:5170731,"Will Bitcoin reach $97,500 in October?",MSTR,up_on_yes,agreed,spot_proxy,False,1,12,2,23.795196762565777,1.7800375065519118,False,,0,"agreed, not confirmed"
+polymarket:5170731,"Will Bitcoin reach $97,500 in October?",MARA,up_on_yes,agreed,spot_proxy,False,1,12,2,0.8601900244405128,0.12299973366645131,False,,0,"agreed, not confirmed"
+polymarket:4662584,"Will OpenAI announce bankruptcy by December 31, 2027?",MSFT,down_on_yes,agreed,event,False,10,1,1,10.9857825113929,nan,False,,0,"agreed, not confirmed"
+polymarket:4662584,"Will OpenAI announce bankruptcy by December 31, 2027?",ORCL,down_on_yes,agreed,event,False,10,1,1,-176.59916738974738,nan,False,,0,"agreed, not confirmed"
+polymarket:4662584,"Will OpenAI announce bankruptcy by December 31, 2027?",NVDA,down_on_yes,not named,event,False,10,1,1,74.15954979779954,nan,False,,0,neither
+polymarket:4662584,"Will OpenAI announce bankruptcy by December 31, 2027?",CRWV,down_on_yes,agreed,event,False,10,1,1,-51.67615181564256,-76631185.19525306,False,,0,"agreed, not confirmed"
+polymarket:1535973,Iran leadership change by December 31?,XLE,down_on_yes,not named,event,False,144,244,84,1.8666844423965474,0.7173706241893465,False,,0,neither
+polymarket:1535973,Iran leadership change by December 31?,ITA,down_on_yes,not named,event,False,144,244,84,2.0769982116261536,1.7512482979283062,False,2026-04-01,6,"confirmed, not agreed"
+polymarket:5179176,"Will Louisiana enact a data center moratorium by December 31, 2028?",EQIX,down_on_yes,not named,event,False,1,3,1,-6.381714773175307,nan,False,,0,neither
+polymarket:5179176,"Will Louisiana enact a data center moratorium by December 31, 2028?",DLR,down_on_yes,not named,event,False,1,3,1,-8.131734684032043,nan,False,,0,neither
+polymarket:5179176,"Will Louisiana enact a data center moratorium by December 31, 2028?",META,down_on_yes,not named,event,False,1,3,1,8.726373751115087,82352237.66739066,False,,0,neither
+polymarket:2126461,Will Crude Oil reach a new all-time high by December 31?,XLE,up_on_yes,agreed,spot_proxy,False,107,282,80,0.5951817367985711,0.788538226849893,False,,0,"agreed, not confirmed"
+polymarket:2126461,Will Crude Oil reach a new all-time high by December 31?,XOM,up_on_yes,not named,spot_proxy,False,107,282,80,1.0848346691681585,1.170846028965224,False,,0,neither
+polymarket:2126461,Will Crude Oil reach a new all-time high by December 31?,OXY,up_on_yes,not named,spot_proxy,False,107,282,80,1.3426789709787073,1.3635054141284346,False,,0,neither
+polymarket:2170255,Bab el-Mandeb Strait effectively closed by September 30?,XLE,up_on_yes,not named,event,False,103,421,91,0.7366424618364242,0.380799100375224,False,,0,neither
+polymarket:2170255,Bab el-Mandeb Strait effectively closed by September 30?,ZIM,up_on_yes,agreed,event,False,103,421,91,-5.577788290069783,-1.523063953976427,False,,0,"agreed, not confirmed"
+polymarket:2170255,Bab el-Mandeb Strait effectively closed by September 30?,DAL,down_on_yes,not named,event,False,103,421,91,-0.37711840655714984,-0.1072679788520026,False,,0,neither
+polymarket:3399459,Israel x Iran ceasefire continues through October 31?,XLE,down_on_yes,not named,event,False,39,90,26,-0.6578936985810492,-2.0255849192279856,False,,0,neither
+polymarket:3399459,Israel x Iran ceasefire continues through October 31?,ITA,down_on_yes,not named,event,False,39,90,26,-0.2186593516576486,-0.43326621732303633,False,,0,neither
+polymarket:3399459,Israel x Iran ceasefire continues through October 31?,SPY,up_on_yes,not named,event,False,39,90,26,-4.694320525303891e-17,-0.6307913448970939,False,,0,neither
+polymarket:5170746,"Will Bitcoin dip to $60,000 in October?",COIN,down_on_yes,not named,spot_proxy,False,1,15,2,1.3324998555088619,0.04660673429940233,False,,0,neither
+polymarket:5170746,"Will Bitcoin dip to $60,000 in October?",MSTR,down_on_yes,agreed,spot_proxy,False,1,15,2,-100.69074766055864,-9.063106033709525,False,,0,"agreed, not confirmed"
+polymarket:5170746,"Will Bitcoin dip to $60,000 in October?",MARA,down_on_yes,agreed,spot_proxy,False,1,15,2,-187.353942009073,-1.4292689655958113,False,,0,"agreed, not confirmed"
+polymarket:3128888,"US announces end of Iranian blockade by October 31, 2026?",XLE,down_on_yes,not named,event,False,48,279,46,3.465129341466651,3.2395703123174746,True,2026-08-12,37,"confirmed, not agreed"
+polymarket:3128888,"US announces end of Iranian blockade by October 31, 2026?",XOM,down_on_yes,not named,event,False,48,279,46,3.5044977504326096,3.2420484589144745,True,2026-08-12,31,"confirmed, not agreed"
+polymarket:3128888,"US announces end of Iranian blockade by October 31, 2026?",DAL,up_on_yes,not named,event,False,48,279,46,4.119904530785353,2.030760104683176,True,2026-08-12,3,"confirmed, not agreed"
+polymarket:3128888,"US announces end of Iranian blockade by October 31, 2026?",UAL,up_on_yes,not named,event,False,48,279,46,8.184048787467013,3.1458481286993414,True,2026-08-26,26,"confirmed, not agreed"
+polymarket:663583,Will the Iranian regime fall before 2027?,XLE,down_on_yes,not named,event,False,188,335,95,-2.5301319977904604,-1.2590115330460896,False,,0,neither
+polymarket:663583,Will the Iranian regime fall before 2027?,ITA,up_on_yes,not named,event,False,188,335,95,0.08641037602316907,0.07572267007152053,False,,0,neither
+polymarket:4824013,Will the US announce a diesel export ban by October 31?,VLO,down_on_yes,agreed,event,False,8,33,7,6.036208013473834,4.702655816009318,False,,0,"agreed, not confirmed"
+polymarket:4824013,Will the US announce a diesel export ban by October 31?,MPC,down_on_yes,agreed,event,False,8,33,7,4.363508419745566,4.9945362200768315,False,,0,"agreed, not confirmed"
+polymarket:4824013,Will the US announce a diesel export ban by October 31?,PSX,down_on_yes,agreed,event,False,8,33,7,5.166823263202885,6.259752109708708,False,,0,"agreed, not confirmed"
+polymarket:4824013,Will the US announce a diesel export ban by October 31?,DAL,up_on_yes,not named,event,False,8,33,7,0.9800711456718134,4.832115879782311,False,,0,neither
+polymarket:560317,"Putin out as President of Russia by December 31, 2026?",SPY,up_on_yes,not named,event,False,188,131,57,2.008066112723522e-16,0.47882073494921756,False,,0,neither
+polymarket:560317,"Putin out as President of Russia by December 31, 2026?",ITA,down_on_yes,not named,event,False,188,131,57,-2.9298086936080363,-0.8349129952614199,False,,0,neither
+polymarket:3491459,"US-Iran Final Nuclear Deal by October 31, 2026?",XLE,down_on_yes,not named,event,False,38,133,34,1.4497084082168747,4.849784916411506,True,2026-09-10,17,"confirmed, not agreed"
+polymarket:3491459,"US-Iran Final Nuclear Deal by October 31, 2026?",ITA,down_on_yes,not named,event,False,38,133,34,-0.3863002462184448,-1.3494998593534382,False,,0,neither
+polymarket:3491459,"US-Iran Final Nuclear Deal by October 31, 2026?",DAL,up_on_yes,not named,event,False,38,133,34,3.1849631073618836,4.203155495187648,True,2026-09-10,17,"confirmed, not agreed"
+polymarket:4620900,Another Fed rate hike in 2026?,TLT,down_on_yes,agreed,event,False,12,34,10,1.452370244516397,1.9235464680581666,False,,0,"agreed, not confirmed"
+polymarket:4620900,Another Fed rate hike in 2026?,KRE,up_on_yes,not named,event,False,12,34,10,1.5830228498275156,0.29380228124005436,False,,0,neither
+polymarket:4620900,Another Fed rate hike in 2026?,XHB,down_on_yes,agreed,event,False,12,34,10,-0.5811148643646225,-0.2234051324109147,False,,0,"agreed, not confirmed"
+polymarket:4620900,Another Fed rate hike in 2026?,SPY,down_on_yes,not named,event,False,12,34,10,2.152595198191326e-16,0.44153396317793797,False,,0,neither
+polymarket:3215008,Will the Fed increase interest rates by 25 bps after the December 2026 meeting?,TLT,down_on_yes,agreed,event,False,45,85,25,1.4904146216987633,2.6781595046669944,True,2026-09-29,4,trusted
+polymarket:3215008,Will the Fed increase interest rates by 25 bps after the December 2026 meeting?,XHB,down_on_yes,not named,event,False,45,85,25,6.400519871688373,4.906011621564208,True,2026-09-29,4,"confirmed, not agreed"
+polymarket:3215008,Will the Fed increase interest rates by 25 bps after the December 2026 meeting?,SPY,down_on_yes,agreed,event,False,45,85,25,-2.8919572213729687e-16,-1.1111260190816372,False,,0,"agreed, not confirmed"
+polymarket:3215008,Will the Fed increase interest rates by 25 bps after the December 2026 meeting?,KRE,up_on_yes,not named,event,False,45,85,25,-4.382731383201568,-1.7699649161095536,False,,0,neither
+polymarket:3554666,Will SpaceXAI have the best AI model at the end of October 2026?,TSLA,up_on_yes,not named,none,False,35,107,19,0.5893572815810341,0.03305771317305018,False,,0,neither
+polymarket:3554666,Will SpaceXAI have the best AI model at the end of October 2026?,NVDA,up_on_yes,not named,none,False,35,107,19,-2.792113644186151,-0.5627629286479179,False,,0,neither
+polymarket:3554659,Will Google have the best AI model at the end of October 2026?,GOOGL,up_on_yes,agreed,event,False,35,218,32,-0.1616316101878248,-0.08698196336737489,False,,0,"agreed, not confirmed"
+polymarket:3554659,Will Google have the best AI model at the end of October 2026?,MSFT,down_on_yes,not named,event,False,35,218,32,-0.36776324455546233,-0.4257942547566698,False,,0,neither
+polymarket:562829,"2026 Balance of Power: D Senate, R House",SPY,down_on_yes,not named,none,False,188,242,100,-1.0766461799704626e-15,-0.9003902592002168,False,,0,neither
+polymarket:5130978,US x Iran ceasefire continues through October 15?,XLE,down_on_yes,not named,event,False,3,30,4,1.2397892402102615,0.8680904097280516,False,,0,neither
+polymarket:5130978,US x Iran ceasefire continues through October 15?,DAL,up_on_yes,not named,event,False,3,30,4,-2.4750934731387573,-1.4398186459372595,False,,0,neither
+polymarket:5130978,US x Iran ceasefire continues through October 15?,SPY,up_on_yes,not named,event,False,3,30,4,-9.345704886380547e-17,-1.5450580018411422,False,,0,neither
+polymarket:5062258,"Will Bitcoin reach $90,000 September 28-October 4?",COIN,up_on_yes,not named,spot_proxy,False,4,53,5,25.000431773998123,2.496490814493737,False,,0,neither
+polymarket:5062258,"Will Bitcoin reach $90,000 September 28-October 4?",MSTR,up_on_yes,agreed,spot_proxy,False,4,53,5,33.28608209575557,4.615265090180393,False,,0,"agreed, not confirmed"
+polymarket:5062258,"Will Bitcoin reach $90,000 September 28-October 4?",MARA,up_on_yes,agreed,spot_proxy,False,4,53,5,43.16073719349166,3.1724950667179397,False,,0,"agreed, not confirmed"
+polymarket:5170771,"Will Ethereum reach $3,000 in October?",COIN,up_on_yes,agreed,spot_proxy,False,1,19,2,46.550751601899286,91.60679422809501,False,,0,"agreed, not confirmed"
+polymarket:5170771,"Will Ethereum reach $3,000 in October?",ETHA,up_on_yes,agreed,spot_proxy,False,1,19,2,21.89116984783792,20.712340288023668,False,,0,"agreed, not confirmed"
+polymarket:5170771,"Will Ethereum reach $3,000 in October?",BMNR,up_on_yes,agreed,spot_proxy,False,1,19,2,34.796198573700146,3.667819673894904,False,,0,"agreed, not confirmed"
+polymarket:4985100,"Will the price of Bitcoin be above $94,000 on October 3?",COIN,up_on_yes,not named,spot_proxy,False,4,32,5,-130.4364918705034,-0.504041304187613,False,,0,neither
+polymarket:4985100,"Will the price of Bitcoin be above $94,000 on October 3?",MSTR,up_on_yes,agreed,spot_proxy,False,4,32,5,-97.96788988151452,-0.3847071093157261,False,,0,"agreed, not confirmed"
+polymarket:4985100,"Will the price of Bitcoin be above $94,000 on October 3?",MARA,up_on_yes,agreed,spot_proxy,False,4,32,5,-210.70730945309143,-0.7173453498306911,False,,0,"agreed, not confirmed"
+polymarket:701494,"Will Bitcoin reach $120,000 by December 31, 2026?",COIN,up_on_yes,not named,spot_proxy,False,188,315,109,15.065655841022364,2.2849747258602022,True,2026-08-25,28,"confirmed, not agreed"
+polymarket:701494,"Will Bitcoin reach $120,000 by December 31, 2026?",MSTR,up_on_yes,agreed,spot_proxy,False,188,315,109,10.384523656609781,1.7163692748283759,False,2026-01-22,4,trusted
+polymarket:701494,"Will Bitcoin reach $120,000 by December 31, 2026?",MARA,up_on_yes,agreed,spot_proxy,False,188,315,109,7.9192244318575975,1.1123868782349513,False,,0,"agreed, not confirmed"
+polymarket:5130977,US x Iran ceasefire continues through October 7?,XLE,down_on_yes,not named,event,False,3,27,4,0.9491149135005298,0.8842187784861286,False,,0,neither
+polymarket:5130977,US x Iran ceasefire continues through October 7?,DAL,up_on_yes,not named,event,False,3,27,4,0.6127507245186424,0.4036535167927907,False,,0,neither
+polymarket:5130977,US x Iran ceasefire continues through October 7?,SPY,up_on_yes,not named,event,False,3,27,4,-5.685770353463875e-17,-2.5786619516849036,False,,0,neither
+polymarket:5123850,"Will Ohio enact a data center moratorium by December 31, 2027?",AEP,down_on_yes,agreed,event,False,3,7,2,-0.27145384750108303,-222.62238624868039,False,,0,"agreed, not confirmed"
+polymarket:5123850,"Will Ohio enact a data center moratorium by December 31, 2027?",DLR,down_on_yes,not named,event,False,3,7,2,0.3187062111025526,344.7344407607024,False,,0,neither
+polymarket:5123850,"Will Ohio enact a data center moratorium by December 31, 2027?",VRT,down_on_yes,not named,event,False,3,7,2,0.6310056898778984,143.58292490788443,False,,0,neither
+polymarket:5170773,"Will Ethereum reach $2,800 in October?",ETHA,up_on_yes,agreed,spot_proxy,False,1,18,2,13.362730560790041,6.179199185504065,False,,0,"agreed, not confirmed"
+polymarket:5170773,"Will Ethereum reach $2,800 in October?",BMNR,up_on_yes,agreed,spot_proxy,False,1,18,2,16.63390074423338,1.478483155808537,False,,0,"agreed, not confirmed"
+polymarket:5170773,"Will Ethereum reach $2,800 in October?",COIN,up_on_yes,agreed,spot_proxy,False,1,18,2,21.893354722604748,4.783792339607867,False,,0,"agreed, not confirmed"
+polymarket:4985089,"Will the price of Bitcoin be above $90,000 on October 3?",IBIT,up_on_yes,agreed,spot_proxy,False,4,54,5,34.003825196169046,6.430004133936902,False,,0,"agreed, not confirmed"
+polymarket:4985089,"Will the price of Bitcoin be above $90,000 on October 3?",COIN,up_on_yes,not named,spot_proxy,False,4,54,5,82.34693531555844,3.0441534985518905,False,,0,neither
+polymarket:4985089,"Will the price of Bitcoin be above $90,000 on October 3?",MSTR,up_on_yes,agreed,spot_proxy,False,4,54,5,79.41321001440659,4.473373077919154,False,,0,"agreed, not confirmed"
+polymarket:4985089,"Will the price of Bitcoin be above $90,000 on October 3?",MARA,up_on_yes,agreed,spot_proxy,False,4,54,5,65.80326393356187,1.5042767421990333,False,,0,"agreed, not confirmed"
+polymarket:3758964,Bab el-Mandeb Strait effectively closed by October 31?,XLE,up_on_yes,not named,event,False,29,59,21,4.157163900886913,0.9999872547235473,False,,0,neither
+polymarket:3758964,Bab el-Mandeb Strait effectively closed by October 31?,STNG,up_on_yes,agreed,event,False,29,59,21,13.124976643391019,2.537919486101834,False,,0,"agreed, not confirmed"
+polymarket:3758964,Bab el-Mandeb Strait effectively closed by October 31?,FRO,up_on_yes,agreed,event,False,29,59,21,13.13589314857968,2.3156863678572748,False,,0,"agreed, not confirmed"
+polymarket:3758964,Bab el-Mandeb Strait effectively closed by October 31?,ZIM,up_on_yes,agreed,event,False,29,59,21,-3.733548860173889,-0.7027323273953947,False,,0,"agreed, not confirmed"
+polymarket:5062280,"Will Bitcoin dip to $78,000 September 28-October 4?",IBIT,down_on_yes,agreed,spot_proxy,False,4,39,5,8.106744233834224,2.4891506032536594,False,,0,"agreed, not confirmed"
+polymarket:5062280,"Will Bitcoin dip to $78,000 September 28-October 4?",COIN,down_on_yes,not named,spot_proxy,False,4,39,5,8.643425084254455,1.949699386923314,False,,0,neither
+polymarket:5062280,"Will Bitcoin dip to $78,000 September 28-October 4?",MSTR,down_on_yes,agreed,spot_proxy,False,4,39,5,14.30561557138016,2.24247484400427,False,,0,"agreed, not confirmed"
+polymarket:5062280,"Will Bitcoin dip to $78,000 September 28-October 4?",MARA,down_on_yes,agreed,spot_proxy,False,4,39,5,5.722872221495569,2.6345953217255635,False,,0,"agreed, not confirmed"
+polymarket:5062325,"Will Ethereum reach $2,800 September 28-October 4?",ETHA,up_on_yes,agreed,spot_proxy,False,4,60,5,5.664114884164503,9.517738074788404,True,,0,"agreed, not confirmed"
+polymarket:5062325,"Will Ethereum reach $2,800 September 28-October 4?",BMNR,up_on_yes,agreed,spot_proxy,False,4,60,5,8.810638852320885,7.075084150502808,True,,0,"agreed, not confirmed"
+polymarket:5062325,"Will Ethereum reach $2,800 September 28-October 4?",COIN,up_on_yes,agreed,spot_proxy,False,4,60,5,9.394987745758604,4.356971465020786,True,,0,"agreed, not confirmed"
+polymarket:5170730,"Will Bitcoin reach $100,000 in October?",IBIT,up_on_yes,agreed,spot_proxy,False,1,9,2,29.521970279788462,70.30974845975297,False,,0,"agreed, not confirmed"
+polymarket:5170730,"Will Bitcoin reach $100,000 in October?",COIN,up_on_yes,not named,spot_proxy,False,1,9,2,77.41210632806636,63.4752169991952,False,,0,neither
+polymarket:5170730,"Will Bitcoin reach $100,000 in October?",MSTR,up_on_yes,agreed,spot_proxy,False,1,9,2,62.50218101052205,8.504549398091616,False,,0,"agreed, not confirmed"
+polymarket:5170730,"Will Bitcoin reach $100,000 in October?",MARA,up_on_yes,agreed,spot_proxy,False,1,9,2,22.87363421318922,1.025255014048864,False,,0,"agreed, not confirmed"
+polymarket:701502,"Will Bitcoin dip to $45,000 by December 31, 2026?",IBIT,down_on_yes,agreed,spot_proxy,False,188,518,152,10.578715959803164,2.8307533892181347,True,2026-02-06,139,trusted
+polymarket:701502,"Will Bitcoin dip to $45,000 by December 31, 2026?",COIN,down_on_yes,not named,spot_proxy,False,188,518,152,4.276222010595839,1.441398921537388,False,2026-02-05,14,"confirmed, not agreed"
+polymarket:701502,"Will Bitcoin dip to $45,000 by December 31, 2026?",MSTR,down_on_yes,agreed,spot_proxy,False,188,518,152,12.330934190626463,2.716653040126223,True,2026-02-06,83,trusted
+polymarket:701502,"Will Bitcoin dip to $45,000 by December 31, 2026?",MARA,down_on_yes,agreed,spot_proxy,False,188,518,152,11.024926699625238,1.9526869015763886,False,2026-02-05,15,trusted
+polymarket:701496,"Will Bitcoin reach $100,000 by December 31, 2026?",IBIT,up_on_yes,agreed,spot_proxy,False,188,604,149,13.060841836761236,5.129078239589909,True,2026-01-23,175,trusted
+polymarket:701496,"Will Bitcoin reach $100,000 by December 31, 2026?",COIN,up_on_yes,not named,spot_proxy,False,188,604,149,15.62602216940162,3.924159053399529,True,2026-01-23,92,"confirmed, not agreed"
+polymarket:701496,"Will Bitcoin reach $100,000 by December 31, 2026?",MSTR,up_on_yes,agreed,spot_proxy,False,188,604,149,20.938574278646243,4.221065392601666,True,2026-01-23,175,trusted
+polymarket:701496,"Will Bitcoin reach $100,000 by December 31, 2026?",MARA,up_on_yes,agreed,spot_proxy,False,188,604,149,17.591277908578913,3.2487749625683326,True,2026-01-23,92,trusted
+polymarket:5126792,"Will Missouri enact a data center moratorium by June 30, 2027?",AEE,down_on_yes,agreed,event,False,3,8,3,-1.1805282963923684,-4.611525681886244,False,,0,"agreed, not confirmed"
+polymarket:5126792,"Will Missouri enact a data center moratorium by June 30, 2027?",DLR,down_on_yes,not named,event,False,3,8,3,0.9381569967444907,0.41547975716485763,False,,0,neither
+polymarket:5126792,"Will Missouri enact a data center moratorium by June 30, 2027?",VRT,down_on_yes,not named,event,False,3,8,3,6.01364990946111,1.6422269107356835,False,,0,neither
+polymarket:5126795,"Will Louisiana enact a data center moratorium by June 30, 2027?",ETR,down_on_yes,agreed,event,False,3,6,2,1.1487977632884971,1.7763843998346698,False,,0,"agreed, not confirmed"
+polymarket:5126795,"Will Louisiana enact a data center moratorium by June 30, 2027?",DLR,down_on_yes,not named,event,False,3,6,2,0.2604018628012378,4.879888817029406,False,,0,neither
+polymarket:5126795,"Will Louisiana enact a data center moratorium by June 30, 2027?",VRT,down_on_yes,not named,event,False,3,6,2,-7.423560214638067,-10.846733846993937,False,,0,neither
+polymarket:559651,Xi Jinping out before 2027?,FXI,down_on_yes,not named,event,False,188,328,109,2.370943670122272,0.6577923872600409,False,,0,neither
+polymarket:559651,Xi Jinping out before 2027?,KWEB,down_on_yes,not named,event,False,188,328,109,5.820103049618007,1.473179426783263,False,,0,neither
+polymarket:5170728,"Will Bitcoin reach $105,000 in October?",IBIT,up_on_yes,agreed,spot_proxy,False,1,16,2,8.776714283129337,19.232470552343685,False,,0,"agreed, not confirmed"
+polymarket:5170728,"Will Bitcoin reach $105,000 in October?",COIN,up_on_yes,not named,spot_proxy,False,1,16,2,-18.62580935267317,-1.226037946451109,False,,0,neither
+polymarket:5170728,"Will Bitcoin reach $105,000 in October?",MSTR,up_on_yes,agreed,spot_proxy,False,1,16,2,23.426880582441314,1.3965917970454005,False,,0,"agreed, not confirmed"
+polymarket:5170728,"Will Bitcoin reach $105,000 in October?",MARA,up_on_yes,agreed,spot_proxy,False,1,16,2,146.9204787016712,2.8788526530114433,False,,0,"agreed, not confirmed"
+polymarket:4984993,"Will the price of Ethereum be above $2,800 on October 3?",ETHA,up_on_yes,agreed,spot_proxy,False,4,53,5,12.88441579701799,20.053857898954973,False,,0,"agreed, not confirmed"
+polymarket:4984993,"Will the price of Ethereum be above $2,800 on October 3?",BMNR,up_on_yes,agreed,spot_proxy,False,4,53,5,20.08044194847205,7.369570736447438,False,,0,"agreed, not confirmed"
+polymarket:4984993,"Will the price of Ethereum be above $2,800 on October 3?",COIN,up_on_yes,agreed,spot_proxy,False,4,53,5,19.057457909534392,3.3404396682191577,False,,0,"agreed, not confirmed"
+polymarket:5170740,"Will Bitcoin dip to $75,000 in October?",IBIT,down_on_yes,agreed,spot_proxy,False,1,11,2,13.95185047473856,3.201563178377596,False,,0,"agreed, not confirmed"
+polymarket:5170740,"Will Bitcoin dip to $75,000 in October?",COIN,down_on_yes,not named,spot_proxy,False,1,11,2,27.80676269384207,3.8255766948938192,False,,0,neither
+polymarket:5170740,"Will Bitcoin dip to $75,000 in October?",MSTR,down_on_yes,agreed,spot_proxy,False,1,11,2,29.246392539604734,4.070174526295618,False,,0,"agreed, not confirmed"
+polymarket:5170740,"Will Bitcoin dip to $75,000 in October?",MARA,down_on_yes,agreed,spot_proxy,False,1,11,2,18.58082180085021,0.7485145729530733,False,,0,"agreed, not confirmed"
+polymarket:4936105,Will WTI Crude Oil (WTI) hit (LOW) $80 in October?,XLE,down_on_yes,agreed,spot_proxy,False,5,54,6,0.22286647421929914,0.40156241882664373,False,,0,"agreed, not confirmed"
+polymarket:4936105,Will WTI Crude Oil (WTI) hit (LOW) $80 in October?,XOP,down_on_yes,agreed,spot_proxy,False,5,54,6,0.526017370861565,0.7824341804133487,False,,0,"agreed, not confirmed"
+polymarket:4936105,Will WTI Crude Oil (WTI) hit (LOW) $80 in October?,USO,down_on_yes,agreed,spot_proxy,False,5,54,6,2.1830503973590116,2.459617885609095,False,,0,"agreed, not confirmed"
+polymarket:3501950,Strait of Hormuz traffic returns to normal by October 31?,XLE,down_on_yes,not named,event,False,37,115,30,2.671530968096777,1.0299954254732877,False,,0,neither
+polymarket:3501950,Strait of Hormuz traffic returns to normal by October 31?,USO,down_on_yes,agreed,event,False,37,115,30,6.134405281065013,1.210205628017562,False,,0,"agreed, not confirmed"
+polymarket:3501950,Strait of Hormuz traffic returns to normal by October 31?,STNG,down_on_yes,not named,event,False,37,115,30,5.218082487118296,0.7698007276130368,False,,0,neither
+polymarket:3501950,Strait of Hormuz traffic returns to normal by October 31?,DAL,up_on_yes,not named,event,False,37,115,30,1.9869901324875259,0.5568849978320296,False,,0,neither
+polymarket:5180122,Ethereum Up or Down on October 3?,ETHA,up_on_yes,agreed,spot_proxy,False,1,10,1,3.2848515011717523,nan,False,,0,"agreed, not confirmed"
+polymarket:5180122,Ethereum Up or Down on October 3?,BMNR,up_on_yes,agreed,spot_proxy,False,1,10,1,4.5535823692409005,nan,False,,0,"agreed, not confirmed"
+polymarket:5180122,Ethereum Up or Down on October 3?,COIN,up_on_yes,not named,spot_proxy,False,1,10,1,1.9551995208731445,nan,False,,0,neither
+polymarket:701548,"Will Ethereum reach $4,000 by December 31, 2026?",ETHA,up_on_yes,agreed,spot_proxy,False,188,333,112,17.60078722983695,3.334235241287836,True,2026-01-28,172,trusted
+polymarket:701548,"Will Ethereum reach $4,000 by December 31, 2026?",BMNR,up_on_yes,agreed,spot_proxy,False,188,333,112,11.8031906170625,1.827543112577242,False,,0,"agreed, not confirmed"
+polymarket:701548,"Will Ethereum reach $4,000 by December 31, 2026?",COIN,up_on_yes,agreed,spot_proxy,False,188,333,112,1.2368112982486852,0.2639755376800115,False,,0,"agreed, not confirmed"
+polymarket:5170744,"Will Bitcoin dip to $65,000 in October?",IBIT,down_on_yes,agreed,spot_proxy,False,1,20,2,-16.68149747476199,-1.398401792670365,False,,0,"agreed, not confirmed"
+polymarket:5170744,"Will Bitcoin dip to $65,000 in October?",COIN,down_on_yes,not named,spot_proxy,False,1,20,2,-33.926134141752115,-1.5442339041650215,False,,0,neither
+polymarket:5170744,"Will Bitcoin dip to $65,000 in October?",MSTR,down_on_yes,agreed,spot_proxy,False,1,20,2,-46.23074652295278,-1.5982654557907154,False,,0,"agreed, not confirmed"
+polymarket:5170744,"Will Bitcoin dip to $65,000 in October?",MARA,down_on_yes,agreed,spot_proxy,False,1,20,2,-36.145264287293365,-2.413504926059737,False,,0,"agreed, not confirmed"
+polymarket:5170772,"Will Ethereum reach $2,900 in October?",ETHA,up_on_yes,agreed,spot_proxy,False,1,17,2,13.582163807015924,20.285811388293503,False,,0,"agreed, not confirmed"
+polymarket:5170772,"Will Ethereum reach $2,900 in October?",BMNR,up_on_yes,agreed,spot_proxy,False,1,17,2,13.916631813741523,13.656782188524488,False,,0,"agreed, not confirmed"
+polymarket:5170772,"Will Ethereum reach $2,900 in October?",COIN,up_on_yes,agreed,spot_proxy,False,1,17,2,20.51032862704195,3.743770259553146,False,,0,"agreed, not confirmed"
+polymarket:5062323,"Will Ethereum reach $2,900 September 28-October 4?",ETHA,up_on_yes,agreed,spot_proxy,False,4,52,5,12.92187653603311,5.814587297224046,False,,0,"agreed, not confirmed"
+polymarket:5062323,"Will Ethereum reach $2,900 September 28-October 4?",BMNR,up_on_yes,agreed,spot_proxy,False,4,52,5,20.46019578421001,4.123650629687852,False,,0,"agreed, not confirmed"
+polymarket:5062323,"Will Ethereum reach $2,900 September 28-October 4?",COIN,up_on_yes,agreed,spot_proxy,False,4,52,5,18.58296960963403,2.0313963921268208,False,,0,"agreed, not confirmed"
+polymarket:1163699,Clarity Act (H.R.3633) signed into law in 2026?,COIN,up_on_yes,agreed,event,False,182,716,150,0.3739224603700775,0.4286985202650581,False,,0,"agreed, not confirmed"
+polymarket:1163699,Clarity Act (H.R.3633) signed into law in 2026?,HOOD,up_on_yes,agreed,event,False,182,716,150,-0.48852075285342794,-0.7586393959803298,False,,0,"agreed, not confirmed"
+polymarket:1163699,Clarity Act (H.R.3633) signed into law in 2026?,CRCL,up_on_yes,not named,event,False,182,716,150,0.09549165040025509,0.07527689867552122,False,,0,neither
+polymarket:1163699,Clarity Act (H.R.3633) signed into law in 2026?,GLXY,up_on_yes,agreed,event,False,182,716,150,-1.8757666700788105,-1.6405160600649684,False,,0,"agreed, not confirmed"
+polymarket:5036103,"Will the price of Bitcoin be above $84,000 on October 4?",IBIT,up_on_yes,agreed,spot_proxy,False,4,62,5,5.397065474500685,10.337283455388354,True,,0,"agreed, not confirmed"
+polymarket:5036103,"Will the price of Bitcoin be above $84,000 on October 4?",COIN,up_on_yes,not named,spot_proxy,False,4,62,5,8.686124270283205,2.9649796621877744,True,,0,neither
+polymarket:5036103,"Will the price of Bitcoin be above $84,000 on October 4?",MSTR,up_on_yes,agreed,spot_proxy,False,4,62,5,11.459433253531182,6.0739923552328845,True,,0,"agreed, not confirmed"
+polymarket:5036103,"Will the price of Bitcoin be above $84,000 on October 4?",MARA,up_on_yes,agreed,spot_proxy,False,4,62,5,8.608769251565647,2.1366504629479772,True,,0,"agreed, not confirmed"
+polymarket:5036098,"Will the price of Bitcoin be above $82,000 on October 4?",IBIT,up_on_yes,agreed,spot_proxy,False,4,60,5,7.366291304729208,5.315481784891791,True,,0,"agreed, not confirmed"
+polymarket:5036098,"Will the price of Bitcoin be above $82,000 on October 4?",COIN,up_on_yes,not named,spot_proxy,False,4,60,5,11.476818533951972,2.0482953172113505,True,,0,neither
+polymarket:5036098,"Will the price of Bitcoin be above $82,000 on October 4?",MSTR,up_on_yes,agreed,spot_proxy,False,4,60,5,14.925473867041697,3.201097240737592,True,,0,"agreed, not confirmed"
+polymarket:5036098,"Will the price of Bitcoin be above $82,000 on October 4?",MARA,up_on_yes,agreed,spot_proxy,False,4,60,5,10.789346163843465,1.6199198086960267,False,,0,"agreed, not confirmed"
+polymarket:4713962,"Russia military action against an EU country by December 31, 2026?",ITA,up_on_yes,agreed,event,False,9,6,3,-17.27077413674097,-0.8994473072190572,False,,0,"agreed, not confirmed"
+polymarket:4713962,"Russia military action against an EU country by December 31, 2026?",LMT,up_on_yes,not named,event,False,9,6,3,-1.099246458019966,-0.04752906524815954,False,,0,neither
+polymarket:4713962,"Russia military action against an EU country by December 31, 2026?",VGK,down_on_yes,agreed,event,False,9,6,3,-3.390410421239337,-1.7508899575742214,False,,0,"agreed, not confirmed"
+polymarket:4985057,"Will the price of Bitcoin be above $78,000 on October 3?",IBIT,up_on_yes,agreed,spot_proxy,False,4,50,5,24.89590522979802,2.2279993670869898,False,,0,"agreed, not confirmed"
+polymarket:4985057,"Will the price of Bitcoin be above $78,000 on October 3?",COIN,up_on_yes,not named,spot_proxy,False,4,50,5,24.277758100866347,1.333905902142335,False,,0,neither
+polymarket:4985057,"Will the price of Bitcoin be above $78,000 on October 3?",MSTR,up_on_yes,agreed,spot_proxy,False,4,50,5,45.536784748090845,2.1314442125900537,False,,0,"agreed, not confirmed"
+polymarket:4985057,"Will the price of Bitcoin be above $78,000 on October 3?",MARA,up_on_yes,agreed,spot_proxy,False,4,50,5,28.903309100966897,1.9898171427719136,False,,0,"agreed, not confirmed"
+polymarket:5170732,"Will Bitcoin reach $95,000 in October?",IBIT,up_on_yes,agreed,spot_proxy,False,1,19,2,12.142469953246504,6.083962966836256,False,,0,"agreed, not confirmed"
+polymarket:5170732,"Will Bitcoin reach $95,000 in October?",COIN,up_on_yes,not named,spot_proxy,False,1,19,2,34.94403346309302,4.974057704746879,False,,0,neither
+polymarket:5170732,"Will Bitcoin reach $95,000 in October?",MSTR,up_on_yes,agreed,spot_proxy,False,1,19,2,38.42618279808667,4.334288555236312,False,,0,"agreed, not confirmed"
+polymarket:5170732,"Will Bitcoin reach $95,000 in October?",MARA,up_on_yes,agreed,spot_proxy,False,1,19,2,23.832004241827352,1.3904382914778965,False,,0,"agreed, not confirmed"
+polymarket:4951230,Will WTI Crude Oil (WTI) hit (LOW) $65 in October?,XLE,down_on_yes,agreed,spot_proxy,False,5,38,6,1.9119068846110494,0.8829008483721561,False,,0,"agreed, not confirmed"
+polymarket:4951230,Will WTI Crude Oil (WTI) hit (LOW) $65 in October?,OXY,down_on_yes,not named,spot_proxy,False,5,38,6,1.7678583338544323,0.6577933327095146,False,,0,neither
+polymarket:4951230,Will WTI Crude Oil (WTI) hit (LOW) $65 in October?,DAL,up_on_yes,not named,spot_proxy,False,5,38,6,8.811700874847372,1.9062742285934247,False,,0,neither
+polymarket:4662695,"Will Anthropic announce bankruptcy by December 31, 2029?",AMZN,down_on_yes,agreed,event,False,10,0,0,nan,nan,False,,0,"agreed, not confirmed"
+polymarket:4662695,"Will Anthropic announce bankruptcy by December 31, 2029?",GOOGL,down_on_yes,not named,event,False,10,0,0,nan,nan,False,,0,neither
+polymarket:2774057,Strait of Hormuz traffic returns to normal by September 30?,XLE,down_on_yes,not named,event,False,63,171,48,6.223593142833866,1.9249153269933568,False,2026-08-27,2,"confirmed, not agreed"
+polymarket:2774057,Strait of Hormuz traffic returns to normal by September 30?,DAL,up_on_yes,not named,event,False,63,171,48,1.3758391483660026,0.4438237022744845,False,,0,neither
+polymarket:2774057,Strait of Hormuz traffic returns to normal by September 30?,UAL,up_on_yes,not named,event,False,63,171,48,8.795343531783878,1.9559786574823739,False,,0,neither
+polymarket:562794,Will the Republican Party control the Senate after the 2026 Midterm elections?,XLE,up_on_yes,not named,event,False,188,71,44,0.9556517054151629,0.25183335291162146,False,,0,neither
+polymarket:562794,Will the Republican Party control the Senate after the 2026 Midterm elections?,ICLN,down_on_yes,agreed,event,False,188,71,44,5.462836466594544,1.5249297152537042,False,,0,"agreed, not confirmed"
+polymarket:562794,Will the Republican Party control the Senate after the 2026 Midterm elections?,KRE,up_on_yes,not named,event,False,188,71,44,-1.7653509787785768,-0.4380487025895191,False,,0,neither
+polymarket:5170734,"Will Bitcoin reach $90,000 in October?",MSTR,up_on_yes,agreed,spot_proxy,False,1,22,2,25.740736156407277,4.401687882231983,False,,0,"agreed, not confirmed"
+polymarket:5170734,"Will Bitcoin reach $90,000 in October?",COIN,up_on_yes,not named,spot_proxy,False,1,22,2,25.023202225731428,49.152640797502265,False,,0,neither
+polymarket:5170734,"Will Bitcoin reach $90,000 in October?",IBIT,up_on_yes,agreed,spot_proxy,False,1,22,2,11.007743669024197,18.842673172783726,False,,0,"agreed, not confirmed"
+polymarket:5170734,"Will Bitcoin reach $90,000 in October?",MARA,up_on_yes,agreed,spot_proxy,False,1,22,2,18.44767159843233,63.83380470310186,False,,0,"agreed, not confirmed"
+polymarket:1090496,"NATO x Russia military clash by December 31, 2026?",ITA,up_on_yes,agreed,event,False,181,369,131,0.4783718462967188,1.238754068030735,False,,0,"agreed, not confirmed"
+polymarket:1090496,"NATO x Russia military clash by December 31, 2026?",LMT,up_on_yes,not named,event,False,181,369,131,0.5011917495090517,0.8699679209592966,False,,0,neither
+polymarket:1090496,"NATO x Russia military clash by December 31, 2026?",RTX,up_on_yes,not named,event,False,181,369,131,0.5080041884222481,1.048988665622952,False,2026-03-09,8,"confirmed, not agreed"
+polymarket:1090496,"NATO x Russia military clash by December 31, 2026?",SPY,down_on_yes,not named,event,False,181,369,131,-1.1836595129757933e-16,-2.8154048298345633,False,,0,neither
+polymarket:5170745,"Will Bitcoin dip to $62,500 in October?",MSTR,down_on_yes,agreed,spot_proxy,False,1,17,2,-42.1863167320322,-2.930201105849098,False,,0,"agreed, not confirmed"
+polymarket:5170745,"Will Bitcoin dip to $62,500 in October?",COIN,down_on_yes,not named,spot_proxy,False,1,17,2,-56.12880670493609,-7.39198610623986,False,,0,neither
+polymarket:5170745,"Will Bitcoin dip to $62,500 in October?",IBIT,down_on_yes,agreed,spot_proxy,False,1,17,2,-20.67472510844836,-2.0397345262949127,False,,0,"agreed, not confirmed"
+polymarket:5170745,"Will Bitcoin dip to $62,500 in October?",MARA,down_on_yes,agreed,spot_proxy,False,1,17,2,-3.1073716573585415,-0.2381926507524264,False,,0,"agreed, not confirmed"
+polymarket:4885967,Saudi Oil Pipeline (East-West) restarts by October 15?,XLE,down_on_yes,not named,event,False,7,60,8,0.552473089846032,0.9406503618593788,False,,0,neither
+polymarket:4885967,Saudi Oil Pipeline (East-West) restarts by October 15?,XOM,down_on_yes,not named,event,False,7,60,8,0.11750059568513566,0.295016815930628,False,,0,neither
+polymarket:5170743,"Will Bitcoin dip to $67,500 in October?",MSTR,down_on_yes,agreed,spot_proxy,False,1,10,2,34.470874808740575,14.721290015356008,False,,0,"agreed, not confirmed"
+polymarket:5170743,"Will Bitcoin dip to $67,500 in October?",COIN,down_on_yes,not named,spot_proxy,False,1,10,2,28.581008640448708,6.534561176055967,False,,0,neither
+polymarket:5170743,"Will Bitcoin dip to $67,500 in October?",IBIT,down_on_yes,agreed,spot_proxy,False,1,10,2,16.236602755871864,2.8063875977228667,False,,0,"agreed, not confirmed"
+polymarket:5170743,"Will Bitcoin dip to $67,500 in October?",MARA,down_on_yes,agreed,spot_proxy,False,1,10,2,70.84189422033913,24.902296405781268,False,,0,"agreed, not confirmed"
+polymarket:4936100,Will WTI Crude Oil (WTI) hit (HIGH) $130 in October?,XLE,up_on_yes,agreed,spot_proxy,False,5,24,6,1.129437147933993,1.8594642910825065,False,,0,"agreed, not confirmed"
+polymarket:4936100,Will WTI Crude Oil (WTI) hit (HIGH) $130 in October?,OXY,up_on_yes,not named,spot_proxy,False,5,24,6,-1.3329673125989117,-2.2975016070206777,False,,0,neither
+polymarket:4936100,Will WTI Crude Oil (WTI) hit (HIGH) $130 in October?,XOM,up_on_yes,not named,spot_proxy,False,5,24,6,1.0264585327272633,1.0905170269246736,False,,0,neither
+polymarket:4936100,Will WTI Crude Oil (WTI) hit (HIGH) $130 in October?,DAL,down_on_yes,not named,spot_proxy,False,5,24,6,1.2854202370729444,0.6910605726112364,False,,0,neither
+polymarket:4936100,Will WTI Crude Oil (WTI) hit (HIGH) $130 in October?,UAL,down_on_yes,not named,spot_proxy,False,5,24,6,3.840647296496172,1.723870515446821,False,,0,neither
+polymarket:3554662,Will OpenAI have the best AI model at the end of October 2026?,GOOGL,down_on_yes,agreed,event,False,35,223,33,1.958608671189534,1.7288085975160952,False,2026-08-28,5,trusted
+polymarket:3554662,Will OpenAI have the best AI model at the end of October 2026?,MSFT,up_on_yes,agreed,event,False,35,223,33,0.20486502714941732,0.3711194480913105,False,2026-09-04,1,trusted
+polymarket:2467206,"Will Bitcoin reach $95,000 by December 31, 2026?",MSTR,up_on_yes,agreed,spot_proxy,False,81,210,54,42.98217301100726,4.501866098570848,True,2026-08-03,42,trusted
+polymarket:2467206,"Will Bitcoin reach $95,000 by December 31, 2026?",COIN,up_on_yes,not named,spot_proxy,False,81,210,54,37.234023306362005,4.7160633754107355,True,2026-07-31,45,"confirmed, not agreed"
+polymarket:2467206,"Will Bitcoin reach $95,000 by December 31, 2026?",IBIT,up_on_yes,agreed,spot_proxy,False,81,210,54,19.745085631339094,4.62600201935464,True,2026-08-03,30,trusted
+polymarket:2467206,"Will Bitcoin reach $95,000 by December 31, 2026?",MARA,up_on_yes,agreed,spot_proxy,False,81,210,54,33.01855089567594,3.9666587458022504,True,2026-07-31,33,trusted
+polymarket:5126794,"Will Louisiana enact a data center moratorium by December 31, 2026?",DLR,down_on_yes,not named,event,False,3,5,1,-1.2682799696180913,nan,False,,0,neither
+polymarket:5126794,"Will Louisiana enact a data center moratorium by December 31, 2026?",EQIX,down_on_yes,not named,event,False,3,5,1,-0.07685432954912241,nan,False,,0,neither
+polymarket:5126794,"Will Louisiana enact a data center moratorium by December 31, 2026?",VRT,down_on_yes,not named,event,False,3,5,1,-5.728499570482126,nan,False,,0,neither
+polymarket:5062329,"Will Ethereum dip to $2,500 September 28-October 4?",COIN,down_on_yes,agreed,spot_proxy,False,4,49,5,14.167160580456617,1.8677442044089843,False,,0,"agreed, not confirmed"
+polymarket:5062329,"Will Ethereum dip to $2,500 September 28-October 4?",ETHA,down_on_yes,agreed,spot_proxy,False,4,49,5,12.430980507990977,5.288834422059607,False,,0,"agreed, not confirmed"
+polymarket:5062329,"Will Ethereum dip to $2,500 September 28-October 4?",BMNR,down_on_yes,agreed,spot_proxy,False,4,49,5,16.318226655622937,3.712254718507562,False,,0,"agreed, not confirmed"
+polymarket:3554658,Will Meta have the best AI model at the end of October 2026?,META,up_on_yes,agreed,event,False,35,125,27,-9.342171319169509,-2.367531948299569,False,,0,"agreed, not confirmed"
+polymarket:3554658,Will Meta have the best AI model at the end of October 2026?,GOOGL,down_on_yes,not named,event,False,35,125,27,2.128537160386698,2.670899557920147,True,2026-09-08,19,"confirmed, not agreed"
+polymarket:701488,"Will Bitcoin reach $180,000 by December 31, 2026?",MSTR,up_on_yes,agreed,spot_proxy,False,188,253,88,26.2358082274075,1.2003379126880769,False,,0,"agreed, not confirmed"
+polymarket:701488,"Will Bitcoin reach $180,000 by December 31, 2026?",COIN,up_on_yes,not named,spot_proxy,False,188,253,88,-4.51041868118145,-0.2475577505009482,False,,0,neither
+polymarket:701488,"Will Bitcoin reach $180,000 by December 31, 2026?",IBIT,up_on_yes,agreed,spot_proxy,False,188,253,88,30.77319664153327,3.250530728680327,True,2026-04-30,108,trusted
+polymarket:701488,"Will Bitcoin reach $180,000 by December 31, 2026?",MARA,up_on_yes,agreed,spot_proxy,False,188,253,88,-9.792565784089613,-0.3493685703322358,False,,0,"agreed, not confirmed"
+polymarket:4412200,"Will OpenAI announce another Millennium Prize solution by December 31, 2026?",MSFT,up_on_yes,not named,none,False,17,68,17,-0.17339140241154657,-0.35302167407623014,False,,0,neither
+polymarket:4412200,"Will OpenAI announce another Millennium Prize solution by December 31, 2026?",GOOGL,down_on_yes,not named,none,False,17,68,17,0.8191953339066029,1.9156264231273101,False,,0,neither
+polymarket:3399450,Iran leadership change by October 31?,XLE,down_on_yes,not named,event,False,39,37,16,17.337728084651744,1.215808957530362,False,,0,neither
+polymarket:3399450,Iran leadership change by October 31?,ITA,down_on_yes,not named,event,False,39,37,16,2.192003735829224,0.4991317477152463,False,,0,neither
+polymarket:3399450,Iran leadership change by October 31?,DAL,up_on_yes,not named,event,False,39,37,16,-3.9251055171783737,-0.4833792513784037,False,,0,neither
+polymarket:5170729,"Will Bitcoin reach $102,500 in October?",MSTR,up_on_yes,agreed,spot_proxy,False,1,9,2,57.162084036789416,416.23997751826425,False,,0,"agreed, not confirmed"
+polymarket:5170729,"Will Bitcoin reach $102,500 in October?",COIN,up_on_yes,not named,spot_proxy,False,1,9,2,70.67836387961476,9.586890311504852,False,,0,neither
+polymarket:5170729,"Will Bitcoin reach $102,500 in October?",IBIT,up_on_yes,agreed,spot_proxy,False,1,9,2,29.322537649064966,4.167651956745078,False,,0,"agreed, not confirmed"
+polymarket:5170729,"Will Bitcoin reach $102,500 in October?",MARA,up_on_yes,agreed,spot_proxy,False,1,9,2,27.246908711983636,1.5173790719807314,False,,0,"agreed, not confirmed"
+polymarket:1345531,"Will Bitcoin reach $90,000 by December 31, 2026?",MSTR,up_on_yes,agreed,spot_proxy,False,164,595,132,21.901684998965525,4.772285473523368,True,2026-03-03,147,trusted
+polymarket:1345531,"Will Bitcoin reach $90,000 by December 31, 2026?",COIN,up_on_yes,not named,spot_proxy,False,164,595,132,18.57284602292043,4.148884559808024,True,2026-03-03,70,"confirmed, not agreed"
+polymarket:1345531,"Will Bitcoin reach $90,000 by December 31, 2026?",IBIT,up_on_yes,agreed,spot_proxy,False,164,595,132,12.527133966999553,6.182297592106997,True,2026-03-03,149,trusted
+polymarket:1345531,"Will Bitcoin reach $90,000 by December 31, 2026?",MARA,up_on_yes,agreed,spot_proxy,False,164,595,132,18.434147276626604,3.959975243467737,True,2026-05-05,104,trusted
+polymarket:3399468,Israel x Iran ceasefire continues through December 31?,XLE,down_on_yes,not named,event,False,39,71,22,-0.7575155778776755,-1.5512799223722584,False,,0,neither
+polymarket:3399468,Israel x Iran ceasefire continues through December 31?,ITA,down_on_yes,not named,event,False,39,71,22,-0.4615886135851629,-2.2359041799537973,False,,0,neither
+polymarket:3399468,Israel x Iran ceasefire continues through December 31?,SPY,up_on_yes,not named,event,False,39,71,22,5.587981387828607e-17,0.828585985033735,False,,0,neither
+polymarket:5062285,"Will Bitcoin dip to $74,000 September 28-October 4?",MSTR,down_on_yes,agreed,spot_proxy,False,4,42,5,-3.7658447935555044,-0.1269328335757611,False,,0,"agreed, not confirmed"
+polymarket:5062285,"Will Bitcoin dip to $74,000 September 28-October 4?",COIN,down_on_yes,not named,spot_proxy,False,4,42,5,-0.9974788959317624,-0.03496278216061599,False,,0,neither
+polymarket:5062285,"Will Bitcoin dip to $74,000 September 28-October 4?",IBIT,down_on_yes,agreed,spot_proxy,False,4,42,5,4.133842859242309,0.38557240273171384,False,,0,"agreed, not confirmed"
+polymarket:5062285,"Will Bitcoin dip to $74,000 September 28-October 4?",MARA,down_on_yes,agreed,spot_proxy,False,4,42,5,-7.990868513167204,-0.27745463863886716,False,,0,"agreed, not confirmed"
+polymarket:4936101,Will WTI Crude Oil (WTI) hit (HIGH) $120 in October?,XLE,up_on_yes,agreed,spot_proxy,False,5,22,4,-3.6733187503130185,-0.9727143770801479,False,,0,"agreed, not confirmed"
+polymarket:4936101,Will WTI Crude Oil (WTI) hit (HIGH) $120 in October?,OXY,up_on_yes,not named,spot_proxy,False,5,22,4,-11.131173211120768,-0.9786487373058176,False,,0,neither
+polymarket:4936101,Will WTI Crude Oil (WTI) hit (HIGH) $120 in October?,XOM,up_on_yes,not named,spot_proxy,False,5,22,4,-3.6223073241571537,-1.2443108694886191,False,,0,neither
+polymarket:4936101,Will WTI Crude Oil (WTI) hit (HIGH) $120 in October?,DAL,down_on_yes,not named,spot_proxy,False,5,22,4,-1.7295742514095136,-0.21507072806737235,False,,0,neither
+polymarket:4936101,Will WTI Crude Oil (WTI) hit (HIGH) $120 in October?,UAL,down_on_yes,not named,spot_proxy,False,5,22,4,1.958994232164196,0.1749744192002569,False,,0,neither

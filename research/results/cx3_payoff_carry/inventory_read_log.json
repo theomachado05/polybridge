@@ -1,0 +1,26 @@
+[
+  {
+    "source": "S1_PM",
+    "failures": []
+  },
+  {
+    "source": "S1_Kalshi",
+    "failures": []
+  },
+  {
+    "source": "S4_PM",
+    "failures": []
+  },
+  {
+    "source": "S5_PM",
+    "failures": []
+  },
+  {
+    "source": "S9_PM",
+    "failures": []
+  },
+  {
+    "source": "S11_PM",
+    "failures": []
+  }
+]

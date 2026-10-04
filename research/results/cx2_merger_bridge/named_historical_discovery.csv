@@ -1,0 +1,6 @@
+buyer,target,ticker,frozen_local_contract_match,verified_public_completion_contract,performance_eligible,status
+Microsoft,Activision,ATVI,False,False,False,NO_MATCH_VERIFIED_IN_LIMITED_DISCOVERY
+JetBlue,Spirit,SAVE,False,False,False,NO_MATCH_VERIFIED_IN_LIMITED_DISCOVERY
+Kroger,Albertsons,ACI,False,False,False,NO_MATCH_VERIFIED_IN_LIMITED_DISCOVERY
+Nippon Steel,US Steel,X,False,False,False,NO_MATCH_VERIFIED_IN_LIMITED_DISCOVERY
+Skydance,Paramount,PARA,False,False,False,NO_MATCH_VERIFIED_IN_LIMITED_DISCOVERY

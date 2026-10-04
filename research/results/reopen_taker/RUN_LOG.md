@@ -1,0 +1,24 @@
+# Study A run log
+
+- 2026-10-03 21:29:51 ET: start, commit 0b01ea8; events.csv sha256 10f75a1ac2013853d5b8347fac2b17d1e332320c320423c28e806704aab5a7a6
+- 2026-10-03 21:29:52 ET: 0/1535 events; trades(tau 0.05) 0; elapsed 1s
+- 2026-10-03 21:30:19 ET: 100/1535 events; trades(tau 0.05) 16; elapsed 27s
+- 2026-10-03 21:31:05 ET: 300/1535 events; trades(tau 0.05) 52; elapsed 73s
+- 2026-10-03 21:31:28 ET: 400/1535 events; trades(tau 0.05) 74; elapsed 97s
+- 2026-10-03 21:33:11 ET: 800/1535 events; trades(tau 0.05) 232; elapsed 200s
+- 2026-10-03 21:33:57 ET: 1000/1535 events; trades(tau 0.05) 304; elapsed 245s
+- 2026-10-03 21:34:17 ET: 1100/1535 events; trades(tau 0.05) 333; elapsed 265s
+- 2026-10-03 21:35:27 ET: 1500/1535 events; trades(tau 0.05) 402; elapsed 335s
+- 2026-10-03 21:35:33 ET: trade list FROZEN before outcomes were joined: trades_frozen.csv sha256 59de7cda0c4b6565d9293947597c6258424eeb49d9df6eb0275625ebe4dadd7b; scope {'events': 1535, 'closures': 44, 'markets_evaluated': 969, 'markets_offset_cap': 0, 'prints_raw': 16319, 'prints_kept': 11780, 'drop_option_unusable': 566}; http requests {'gamma-api.polymarket.com': 779, 'data-api.polymarket.com': 971}; failures 0
+- crash after freeze while joining outcomes (duplicate market_id in R3 events); fixed the join (METHOD amendment 1), restarted from cache; the restart must reproduce sha256 59de7cda0c4b6565d9293947597c6258424eeb49d9df6eb0275625ebe4dadd7b
+- 2026-10-03 21:36:01 ET: start, commit 0b01ea8; events.csv sha256 10f75a1ac2013853d5b8347fac2b17d1e332320c320423c28e806704aab5a7a6
+- 2026-10-03 21:36:01 ET: 0/1535 events; trades(tau 0.05) 0; elapsed 0s
+- 2026-10-03 21:36:01 ET: 100/1535 events; trades(tau 0.05) 16; elapsed 0s
+- 2026-10-03 21:36:01 ET: 300/1535 events; trades(tau 0.05) 52; elapsed 0s
+- 2026-10-03 21:36:01 ET: 400/1535 events; trades(tau 0.05) 74; elapsed 0s
+- 2026-10-03 21:36:01 ET: 800/1535 events; trades(tau 0.05) 232; elapsed 0s
+- 2026-10-03 21:36:02 ET: 1000/1535 events; trades(tau 0.05) 304; elapsed 0s
+- 2026-10-03 21:36:02 ET: 1100/1535 events; trades(tau 0.05) 333; elapsed 0s
+- 2026-10-03 21:36:02 ET: 1500/1535 events; trades(tau 0.05) 402; elapsed 0s
+- 2026-10-03 21:36:02 ET: trade list FROZEN before outcomes were joined: trades_frozen.csv sha256 59de7cda0c4b6565d9293947597c6258424eeb49d9df6eb0275625ebe4dadd7b; scope {'events': 1535, 'closures': 44, 'markets_evaluated': 969, 'markets_offset_cap': 0, 'prints_raw': 16319, 'prints_kept': 11780, 'drop_option_unusable': 566}; http requests {}; failures 0
+- 2026-10-03 21:36:02 ET: done: verdict NULL; primary {"n": 402, "clusters": 44, "mean": -0.003973392013404535, "lo": -0.04675452098939684, "hi": 0.037363551165244785}; elapsed 1s

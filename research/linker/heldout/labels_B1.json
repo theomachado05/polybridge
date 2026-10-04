@@ -1,0 +1,1145 @@
+{
+ "labeller": "B1",
+ "answers": [
+  {
+   "id": "polymarket:704475",
+   "family": "none",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:679049",
+   "family": "event",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:679033",
+   "family": "event",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:679023",
+   "family": "event",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:679041",
+   "family": "event",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:679036",
+   "family": "event",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:631291",
+   "family": "spot_proxy",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:2507607",
+   "family": "event",
+   "role": "duplicate",
+   "links": []
+  },
+  {
+   "id": "polymarket:2507618",
+   "family": "event",
+   "role": "carrier",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.55,
+     "impact_pct": 5,
+     "alternative": "Iran keeps control of Kharg Island and no seizure is attempted",
+     "mechanism": "Kharg handles the bulk of Iran's crude exports, so its seizure means a ground operation, lost Iranian barrels and a higher risk of retaliation on Gulf supply."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "impact_pct": 2,
+     "alternative": "Iran keeps control of Kharg Island and no seizure is attempted",
+     "mechanism": "A renewed escalation that lifts crude lifts US energy producers with it."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:546257",
+   "family": "none",
+   "role": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:567562",
+   "family": "none",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:1501205",
+   "family": "none",
+   "role": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:604067",
+   "family": "none",
+   "role": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:645986",
+   "family": "none",
+   "role": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1494703",
+   "family": "spot_proxy",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:558107",
+   "family": "none",
+   "role": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1223258",
+   "family": "none",
+   "role": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1223261",
+   "family": "none",
+   "role": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1130016",
+   "family": "none",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:1130015",
+   "family": "none",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:516730",
+   "family": "event",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:551143",
+   "family": "none",
+   "role": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:549625",
+   "family": "none",
+   "role": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:635529",
+   "family": "none",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:635528",
+   "family": "none",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:635518",
+   "family": "none",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:1484915",
+   "family": "event",
+   "role": "carrier",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.7,
+     "impact_pct": 7,
+     "alternative": "the war continues past the deadline",
+     "mechanism": "An end to the war removes the supply-disruption premium on Gulf crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "impact_pct": 3,
+     "alternative": "the war continues past the deadline",
+     "mechanism": "Energy equities give back the war premium as crude falls."
+    },
+    {
+     "ticker": "JETS",
+     "direction": "up_on_yes",
+     "confidence": 0.5,
+     "impact_pct": 3,
+     "alternative": "the war continues past the deadline",
+     "mechanism": "Airlines gain from cheaper jet fuel and reopened Middle East airspace."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1567747",
+   "family": "event",
+   "role": "duplicate",
+   "links": []
+  },
+  {
+   "id": "polymarket:1466150",
+   "family": "event",
+   "role": "duplicate",
+   "links": []
+  },
+  {
+   "id": "polymarket:2241742",
+   "family": "event",
+   "role": "carrier",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.5,
+     "impact_pct": 3,
+     "alternative": "Iranian airspace stays open, meaning no new round of strikes is expected",
+     "mechanism": "Iran shuts its airspace when it expects or is under attack, so a closure signals renewed fighting and a higher crude risk premium."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1198479",
+   "family": "event",
+   "role": "carrier",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.65,
+     "impact_pct": 4,
+     "alternative": "no strike before the deadline",
+     "mechanism": "A strike on Iran raises the risk to Iranian exports and Hormuz traffic, lifting crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "impact_pct": 2,
+     "alternative": "no strike before the deadline",
+     "mechanism": "US energy producers rise with the crude risk premium."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1273937",
+   "family": "event",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:1273936",
+   "family": "event",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:2262267",
+   "family": "none",
+   "role": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:549876",
+   "family": "none",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:549874",
+   "family": "none",
+   "role": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:569362",
+   "family": "none",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:947288",
+   "family": "none",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:947281",
+   "family": "none",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:2002685",
+   "family": "event",
+   "role": "carrier",
+   "links": [
+    {
+     "ticker": "EWU",
+     "direction": "down_on_yes",
+     "confidence": 0.35,
+     "impact_pct": 1,
+     "alternative": "Starmer stays as prime minister",
+     "mechanism": "A forced exit raises the chance of a looser-fiscal successor, which has pushed gilts and sterling down and takes the dollar value of UK shares with them."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1500922",
+   "family": "event",
+   "role": "duplicate",
+   "links": []
+  },
+  {
+   "id": "polymarket:623601",
+   "family": "event",
+   "role": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1394368",
+   "family": "event",
+   "role": "carrier",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.6,
+     "impact_pct": 8,
+     "alternative": "no US ground invasion",
+     "mechanism": "A ground invasion is the largest escalation available and puts Iranian and Gulf supply at risk for longer."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "impact_pct": 4,
+     "alternative": "no US ground invasion",
+     "mechanism": "Energy equities follow the jump in crude."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1105751",
+   "family": "event",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:1105753",
+   "family": "event",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:965261",
+   "family": "spot_proxy",
+   "role": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:2296152",
+   "family": "event",
+   "role": "duplicate",
+   "links": []
+  },
+  {
+   "id": "polymarket:2241674",
+   "family": "event",
+   "role": "carrier",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "impact_pct": 3,
+     "alternative": "Israeli airspace stays open, meaning no new exchange with Iran",
+     "mechanism": "Israel closes its airspace when it expects incoming fire or is about to strike, so a closure signals renewed fighting with Iran and a higher crude premium."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:562189",
+   "family": "none",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:562186",
+   "family": "none",
+   "role": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:562187",
+   "family": "none",
+   "role": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:3128887",
+   "family": "event",
+   "role": "carrier",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.6,
+     "impact_pct": 4,
+     "alternative": "the blockade stays in place",
+     "mechanism": "Lifting the blockade returns Iranian barrels to the market and signals de-escalation."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.45,
+     "impact_pct": 2,
+     "alternative": "the blockade stays in place",
+     "mechanism": "Energy equities fall with crude as the supply premium unwinds."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:2910438",
+   "family": "event",
+   "role": "duplicate",
+   "links": []
+  },
+  {
+   "id": "polymarket:663849",
+   "family": "event",
+   "role": "carrier",
+   "links": [
+    {
+     "ticker": "CVX",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "impact_pct": 2,
+     "alternative": "Maduro remains in power",
+     "mechanism": "Chevron is the one US major producing in Venezuela and stands to gain most from a government that reopens the oil sector and eases sanctions."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:516937",
+   "family": "event",
+   "role": "carrier",
+   "links": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "confidence": 0.6,
+     "impact_pct": 6,
+     "alternative": "no federal bitcoin reserve is created",
+     "mechanism": "A government reserve adds a large official buyer and holder, supporting the bitcoin price."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "confidence": 0.55,
+     "impact_pct": 8,
+     "alternative": "no federal bitcoin reserve is created",
+     "mechanism": "Strategy is a leveraged holder of bitcoin and moves more than the coin."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "impact_pct": 5,
+     "alternative": "no federal bitcoin reserve is created",
+     "mechanism": "Coinbase gains from higher crypto prices and volumes and from official endorsement of the asset."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1731345",
+   "family": "event",
+   "role": "carrier",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.55,
+     "impact_pct": 4,
+     "alternative": "Iran refuses and the standoff continues",
+     "mechanism": "Giving up the stockpile is the core concession for a settlement, which lowers the crude risk premium."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.4,
+     "impact_pct": 2,
+     "alternative": "Iran refuses and the standoff continues",
+     "mechanism": "Energy equities fall with crude as the settlement odds rise."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:2126542",
+   "family": "event",
+   "role": "duplicate",
+   "links": []
+  },
+  {
+   "id": "polymarket:665307",
+   "family": "event",
+   "role": "carrier",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.8,
+     "impact_pct": 15,
+     "alternative": "the strait stays open",
+     "mechanism": "About a fifth of world oil passes through the strait, so a closure is a direct supply shock."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "confidence": 0.6,
+     "impact_pct": 5,
+     "alternative": "the strait stays open",
+     "mechanism": "US producers outside the Gulf earn more on every barrel when crude spikes."
+    },
+    {
+     "ticker": "JETS",
+     "direction": "down_on_yes",
+     "confidence": 0.55,
+     "impact_pct": 5,
+     "alternative": "the strait stays open",
+     "mechanism": "Airlines are hit by the jump in jet fuel and by the wider risk-off move."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:517817",
+   "family": "none",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:680919",
+   "family": "none",
+   "role": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:608420",
+   "family": "none",
+   "role": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:616913",
+   "family": "event",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:616912",
+   "family": "event",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:616911",
+   "family": "event",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:616908",
+   "family": "event",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:2099579",
+   "family": "event",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:2099583",
+   "family": "event",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:2099585",
+   "family": "event",
+   "role": "carrier",
+   "links": [
+    {
+     "ticker": "EWQ",
+     "direction": "down_on_yes",
+     "confidence": 0.4,
+     "impact_pct": 1.5,
+     "alternative": "Lecornu's government survives while another leader leaves first or none does",
+     "mechanism": "Another fallen French government reopens the budget fight and the risk of a dissolution, which has widened French spreads and hit banks and the index each time."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1469755",
+   "family": "event",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:1144471",
+   "family": "event",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:1466575",
+   "family": "event",
+   "role": "duplicate",
+   "links": []
+  },
+  {
+   "id": "polymarket:1895140",
+   "family": "event",
+   "role": "carrier",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.65,
+     "impact_pct": 6,
+     "alternative": "operations against Iran continue",
+     "mechanism": "An announced end to US operations removes the war premium on Gulf crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "impact_pct": 3,
+     "alternative": "operations against Iran continue",
+     "mechanism": "Energy equities give back the premium as crude falls."
+    },
+    {
+     "ticker": "JETS",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "impact_pct": 3,
+     "alternative": "operations against Iran continue",
+     "mechanism": "Airlines gain from cheaper fuel and reopened routes."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:631143",
+   "family": "none",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:556016",
+   "family": "none",
+   "role": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:516845",
+   "family": "spot_proxy",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:642090",
+   "family": "none",
+   "role": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1288111",
+   "family": "event",
+   "role": "carrier",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.55,
+     "impact_pct": 4,
+     "alternative": "no strike on an Iranian nuclear site before the deadline",
+     "mechanism": "A strike on a nuclear facility is a major attack on Iran and raises the risk to Gulf supply."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "impact_pct": 2,
+     "alternative": "no strike on an Iranian nuclear site before the deadline",
+     "mechanism": "Energy equities rise with the crude premium."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1169205",
+   "family": "event",
+   "role": "carrier",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.55,
+     "impact_pct": 3,
+     "alternative": "Iran does not strike Israel before the deadline",
+     "mechanism": "An Iranian strike invites Israeli retaliation, possibly on energy targets, and lifts the crude risk premium."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:553374",
+   "family": "event",
+   "role": "carrier",
+   "links": [
+    {
+     "ticker": "EIS",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "impact_pct": 3,
+     "alternative": "the Islamic Republic stays in power",
+     "mechanism": "The fall of the government that funds and arms Israel's main adversaries would cut the risk premium on Israeli assets; crude is left out because its direction is unclear."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1535972",
+   "family": "event",
+   "role": "duplicate",
+   "links": []
+  },
+  {
+   "id": "polymarket:1708133",
+   "family": "event",
+   "role": "carrier",
+   "links": []
+  },
+  {
+   "id": "polymarket:1385748",
+   "family": "none",
+   "role": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:666494",
+   "family": "spot_proxy",
+   "role": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:642524",
+   "family": "event",
+   "role": "carrier",
+   "links": [
+    {
+     "ticker": "EPOL",
+     "direction": "up_on_yes",
+     "confidence": 0.55,
+     "impact_pct": 3,
+     "alternative": "the war continues with no ceasefire",
+     "mechanism": "Polish equities carry the largest war discount on the menu and rally on peace news."
+    },
+    {
+     "ticker": "EWG",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "impact_pct": 1.5,
+     "alternative": "the war continues with no ceasefire",
+     "mechanism": "German industry gains from lower energy costs and reconstruction demand."
+    },
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.45,
+     "impact_pct": 2,
+     "alternative": "the war continues with no ceasefire",
+     "mechanism": "A ceasefire points to eased sanctions and fewer attacks on Russian energy facilities, lowering the crude premium."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:920396",
+   "family": "none",
+   "role": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:628955",
+   "family": "none",
+   "role": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:948043",
+   "family": "none",
+   "role": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:948039",
+   "family": "none",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:540844",
+   "family": "spot_proxy",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:585593",
+   "family": "event",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:586301",
+   "family": "event",
+   "role": "carrier",
+   "links": [
+    {
+     "ticker": "NKE",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "impact_pct": 3,
+     "alternative": "the Court strikes down the emergency-powers tariffs",
+     "mechanism": "Nike sources almost everything in countries covered by these tariffs, so upholding them keeps the cost and removes the chance of refunds."
+    },
+    {
+     "ticker": "XRT",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "impact_pct": 1.5,
+     "alternative": "the Court strikes down the emergency-powers tariffs",
+     "mechanism": "Retailers are the importers of record and lose the margin relief and refunds a strike-down would bring."
+    },
+    {
+     "ticker": "TGT",
+     "direction": "down_on_yes",
+     "confidence": 0.4,
+     "impact_pct": 1.5,
+     "alternative": "the Court strikes down the emergency-powers tariffs",
+     "mechanism": "Target imports a large share of its general merchandise and has thin margins to absorb the duty."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:2109449",
+   "family": "event",
+   "role": "carrier",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.45,
+     "impact_pct": 2,
+     "alternative": "no meeting takes place and the standoff continues",
+     "mechanism": "Direct talks raise the odds of a settlement that reopens Gulf supply."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1500768",
+   "family": "event",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:676716",
+   "family": "spot_proxy",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:1796310",
+   "family": "none",
+   "role": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:625811",
+   "family": "event",
+   "role": "carrier",
+   "links": [
+    {
+     "ticker": "GOOGL",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "impact_pct": 1,
+     "alternative": "the release slips past November",
+     "mechanism": "Shipping the flagship model on time supports the view that Google is keeping pace in AI, which is the main debate on the stock."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:661700",
+   "family": "event",
+   "role": "carrier",
+   "links": []
+  },
+  {
+   "id": "polymarket:1032303",
+   "family": "spot_proxy",
+   "role": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:2633430",
+   "family": "event",
+   "role": "carrier",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.65,
+     "impact_pct": 5,
+     "alternative": "no deal and the standoff continues",
+     "mechanism": "A final deal ends the confrontation and brings sanctioned Iranian barrels back."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "impact_pct": 2.5,
+     "alternative": "no deal and the standoff continues",
+     "mechanism": "Energy equities fall with crude."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1170143",
+   "family": "event",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:556034",
+   "family": "spot_proxy",
+   "role": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:678937",
+   "family": "none",
+   "role": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:678931",
+   "family": "none",
+   "role": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:2183424",
+   "family": "event",
+   "role": "carrier",
+   "links": []
+  },
+  {
+   "id": "polymarket:631182",
+   "family": "spot_proxy",
+   "role": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:631185",
+   "family": "spot_proxy",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:668098",
+   "family": "none",
+   "role": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:958448",
+   "family": "event",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:1235514",
+   "family": "none",
+   "role": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1237456",
+   "family": "spot_proxy",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:1820098",
+   "family": "event",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:2155023",
+   "family": "event",
+   "role": "carrier",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.6,
+     "impact_pct": 5,
+     "alternative": "the US blockade stays in place",
+     "mechanism": "Lifting the blockade restores tanker traffic and signals the confrontation is winding down."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.45,
+     "impact_pct": 2.5,
+     "alternative": "the US blockade stays in place",
+     "mechanism": "Energy equities fall with crude."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:516960",
+   "family": "event",
+   "role": "carrier",
+   "links": [
+    {
+     "ticker": "GOOGL",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "impact_pct": 1.5,
+     "alternative": "OpenAI or another lab holds the top spot",
+     "mechanism": "Holding the top-ranked model answers the fear that Google is losing the AI race and its search franchise with it."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:516971",
+   "family": "event",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:638734",
+   "family": "event",
+   "role": "duplicate",
+   "links": []
+  },
+  {
+   "id": "polymarket:638735",
+   "family": "event",
+   "role": "carrier",
+   "links": [
+    {
+     "ticker": "JETS",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "impact_pct": 1.5,
+     "alternative": "the shutdown runs past the end of November",
+     "mechanism": "Airlines lose flights to unpaid controller shortages and lose government travel while the shutdown lasts."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:550022",
+   "family": "none",
+   "role": "tail",
+   "links": []
+  },
+  {
+   "id": "polymarket:1277190",
+   "family": "event",
+   "role": "carrier",
+   "links": [
+    {
+     "ticker": "GOOGL",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "impact_pct": 1.5,
+     "alternative": "another lab holds the top spot",
+     "mechanism": "Taking the top ranking would come from a new Gemini release and supports Google's AI standing."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1198451",
+   "family": "event",
+   "role": "carrier",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.65,
+     "impact_pct": 4,
+     "alternative": "no Israeli strike before the deadline",
+     "mechanism": "An Israeli strike raises the risk to Iranian exports and Hormuz traffic."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "impact_pct": 2,
+     "alternative": "no Israeli strike before the deadline",
+     "mechanism": "Energy equities rise with the crude premium."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1472026",
+   "family": "event",
+   "role": "carrier",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "impact_pct": 2,
+     "alternative": "no state beyond the US and Israel joins",
+     "mechanism": "A third country joining, most plausibly a Gulf state, widens the war toward the region's own oil facilities."
+    }
+   ]
+  }
+ ]
+}

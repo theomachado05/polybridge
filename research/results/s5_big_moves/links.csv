@@ -1,0 +1,221 @@
+market,question,ticker,direction_label,confidence_a,confidence_b,volume,sessions_with_odds,max_abs_overnight_move_pp,sessions_gate_confirmed,status
+polymarket:1540766,Strait of Hormuz traffic returns to normal by end of April?,SPY,up_on_yes,0.35,0.35,38005859.138665095,45,33.000004291534424,0,used
+polymarket:1540766,Strait of Hormuz traffic returns to normal by end of April?,USO,down_on_yes,0.7,0.7,38005859.138665095,45,33.000004291534424,16,used
+polymarket:1540766,Strait of Hormuz traffic returns to normal by end of April?,XLE,down_on_yes,0.45,0.5,38005859.138665095,45,33.000004291534424,0,used
+polymarket:1370652, Iran agrees to end enrichment of uranium by June 30?,USO,down_on_yes,0.5,0.5,12362413.907608908,94,38.00000101327896,0,used
+polymarket:1370652, Iran agrees to end enrichment of uranium by June 30?,XLE,down_on_yes,0.35,0.35,12362413.907608908,94,38.00000101327896,0,used
+polymarket:654415,Will the Fed increase interest rates by 25+ bps after the March 2026 meeting?,IEF,down_on_yes,0.55,0.6,172972056.63332495,95,3.999999910593033,0,used
+polymarket:654415,Will the Fed increase interest rates by 25+ bps after the March 2026 meeting?,SHY,down_on_yes,0.6,0.7,172972056.63332495,95,3.999999910593033,0,used
+polymarket:654415,Will the Fed increase interest rates by 25+ bps after the March 2026 meeting?,TLT,down_on_yes,0.4,0.45,172972056.63332495,95,3.999999910593033,0,used
+polymarket:601698,Fed decreases interest rates by 25 bps after January 2026 meeting?,IEF,up_on_yes,0.6,0.6,101211542.667667,81,13.999998569488525,0,used
+polymarket:601698,Fed decreases interest rates by 25 bps after January 2026 meeting?,SHY,up_on_yes,0.65,0.7,101211542.667667,81,13.999998569488525,3,used
+polymarket:601698,Fed decreases interest rates by 25 bps after January 2026 meeting?,TLT,up_on_yes,0.45,0.45,101211542.667667,81,13.999998569488525,0,used
+polymarket:2535468,Strait of Hormuz traffic returns to normal by July 15?,SPY,up_on_yes,0.35,0.35,11792334.437210953,24,18.99999976158142,17,used
+polymarket:2535468,Strait of Hormuz traffic returns to normal by July 15?,USO,down_on_yes,0.7,0.7,11792334.437210953,24,18.99999976158142,13,used
+polymarket:2535468,Strait of Hormuz traffic returns to normal by July 15?,XLE,down_on_yes,0.45,0.5,11792334.437210953,24,18.99999976158142,17,used
+polymarket:516710,US recession in 2025?,IWM,down_on_yes,0.55,0.55,11734512.428529,63,1.0999999940395355,0,used
+polymarket:516710,US recession in 2025?,SPY,down_on_yes,0.6,0.6,11734512.428529,63,1.0999999940395355,0,used
+polymarket:1706766,Iran x Israel/US conflict ends by April 7?,SPY,up_on_yes,0.4,0.4,48720376.31273075,22,41.600000485777855,0,used
+polymarket:1706766,Iran x Israel/US conflict ends by April 7?,USO,down_on_yes,0.65,0.65,48720376.31273075,22,41.600000485777855,0,used
+polymarket:1706766,Iran x Israel/US conflict ends by April 7?,XLE,down_on_yes,0.45,0.5,48720376.31273075,22,41.600000485777855,0,used
+polymarket:597967,"Starmer out by June 30, 2026?",EWU,down_on_yes,0.3,0.3,7912817.765875065,179,36.500003933906555,27,used
+polymarket:666860,Trump out as President by March 31?,DJT,down_on_yes,0.4,0.5,13448709.655509828,98,3.449999913573265,0,used
+polymarket:2937525,US x Iran Effective Ceasefire by July 31?,SPY,up_on_yes,0.35,0.4,8917606.208237005,19,46.50000035762787,0,used
+polymarket:2937525,US x Iran Effective Ceasefire by July 31?,USO,down_on_yes,0.6,0.6,8917606.208237005,19,46.50000035762787,0,used
+polymarket:2937525,US x Iran Effective Ceasefire by July 31?,XLE,down_on_yes,0.4,0.45,8917606.208237005,19,46.50000035762787,0,used
+polymarket:669662,Will there be no change in Fed interest rates after the April 2026 meeting?,IEF,down_on_yes,0.3,0.35,76909226.49304736,113,9.999999403953552,0,used
+polymarket:669662,Will there be no change in Fed interest rates after the April 2026 meeting?,SHY,down_on_yes,0.3,0.4,76909226.49304736,113,9.999999403953552,0,used
+polymarket:1708109,Kharg Island no longer under Iranian control by May 31?,USO,up_on_yes,0.35,0.45,11190577.830452636,45,17.499999701976776,0,used
+polymarket:1654956,Will the Fed decrease interest rates by 50+ bps after the July 2026 meeting?,IEF,up_on_yes,0.5,0.6,22015343.545755006,89,2.2999998182058334,0,used
+polymarket:1654956,Will the Fed decrease interest rates by 50+ bps after the July 2026 meeting?,SHY,up_on_yes,0.55,0.7,22015343.545755006,89,2.2999998182058334,0,used
+polymarket:1654956,Will the Fed decrease interest rates by 50+ bps after the July 2026 meeting?,TLT,up_on_yes,0.4,0.45,22015343.545755006,89,2.2999998182058334,0,used
+polymarket:565930,Tesla launches unsupervised full self driving (FSD) by June 30?,TSLA,up_on_yes,0.65,0.6,12177341.281891,83,31.349998712539673,0,used
+polymarket:2169995,"MicroStrategy sells any Bitcoin by May 31, 2026?",IBIT,down_on_yes,0.4,0.4,375813104.55575246,19,55.250002443790436,0,used
+polymarket:2169995,"MicroStrategy sells any Bitcoin by May 31, 2026?",MSTR,down_on_yes,0.5,0.55,375813104.55575246,19,55.250002443790436,0,used
+polymarket:601699,No change in Fed interest rates after January 2026 meeting?,IEF,down_on_yes,0.35,0.45,106767096.072298,81,12.5,49,used
+polymarket:601699,No change in Fed interest rates after January 2026 meeting?,SHY,down_on_yes,0.4,0.5,106767096.072298,81,12.5,7,used
+polymarket:1243248,"Russia x Ukraine ceasefire by February 28, 2026?",EPOL,up_on_yes,0.5,0.5,6968929.48738,25,3.0000001192092896,13,used
+polymarket:1243248,"Russia x Ukraine ceasefire by February 28, 2026?",USO,down_on_yes,0.35,0.35,6968929.48738,25,3.0000001192092896,0,used
+polymarket:1243248,"Russia x Ukraine ceasefire by February 28, 2026?",VGK,up_on_yes,0.4,0.4,6968929.48738,25,3.0000001192092896,13,used
+polymarket:1809560,Strait of Hormuz traffic returns to normal by end of May?,SPY,up_on_yes,0.35,0.35,34564221.91767358,42,25.999999046325684,0,used
+polymarket:1809560,Strait of Hormuz traffic returns to normal by end of May?,USO,down_on_yes,0.7,0.7,34564221.91767358,42,25.999999046325684,35,used
+polymarket:1809560,Strait of Hormuz traffic returns to normal by end of May?,XLE,down_on_yes,0.45,0.5,34564221.91767358,42,25.999999046325684,30,used
+polymarket:1484914,Iran x Israel/US conflict ends by May 15?,SPY,up_on_yes,0.4,0.4,13670502.108909987,38,30.99999725818634,0,used
+polymarket:1484914,Iran x Israel/US conflict ends by May 15?,USO,down_on_yes,0.65,0.65,13670502.108909987,38,30.99999725818634,0,used
+polymarket:1484914,Iran x Israel/US conflict ends by May 15?,XLE,down_on_yes,0.45,0.5,13670502.108909987,38,30.99999725818634,0,used
+polymarket:1795527,"Russia x Ukraine ceasefire by May 31, 2026?",EPOL,up_on_yes,0.5,0.5,141250712.68070313,26,3.4999996423721313,0,used
+polymarket:1795527,"Russia x Ukraine ceasefire by May 31, 2026?",USO,down_on_yes,0.35,0.35,141250712.68070313,26,3.4999996423721313,0,used
+polymarket:1795527,"Russia x Ukraine ceasefire by May 31, 2026?",VGK,up_on_yes,0.4,0.4,141250712.68070313,26,3.4999996423721313,0,used
+polymarket:2133405,Iran closes its airspace by May 31?,USO,up_on_yes,0.4,0.4,8565902.329688976,19,17.1999990940094,8,used
+polymarket:1517835,Trump announces end of military operations against Iran by April 30th?,SPY,up_on_yes,0.4,0.4,13050669.286966823,37,21.99999988079071,0,used
+polymarket:1517835,Trump announces end of military operations against Iran by April 30th?,USO,down_on_yes,0.6,0.6,13050669.286966823,37,21.99999988079071,28,used
+polymarket:1517835,Trump announces end of military operations against Iran by April 30th?,XLE,down_on_yes,0.4,0.45,13050669.286966823,37,21.99999988079071,5,used
+polymarket:563368,Will Satoshi move any Bitcoin in 2025?,IBIT,down_on_yes,0.45,0.5,44180791.509037,63,4.8500001430511475,0,used
+polymarket:563368,Will Satoshi move any Bitcoin in 2025?,MSTR,down_on_yes,0.35,0.4,44180791.509037,63,4.8500001430511475,0,used
+polymarket:906973,Will the Fed decrease interest rates by 25 bps after the June 2026 meeting?,IEF,up_on_yes,0.6,0.6,30934915.761426214,128,20.000001788139343,0,used
+polymarket:906973,Will the Fed decrease interest rates by 25 bps after the June 2026 meeting?,SHY,up_on_yes,0.65,0.7,30934915.761426214,128,20.000001788139343,98,used
+polymarket:906973,Will the Fed decrease interest rates by 25 bps after the June 2026 meeting?,TLT,up_on_yes,0.45,0.45,30934915.761426214,128,20.000001788139343,0,used
+polymarket:1654959,Will the Fed increase interest rates by 25 bps after the July 2026 meeting?,IEF,down_on_yes,0.55,0.6,25890005.575899016,89,27.99999862909317,28,used
+polymarket:1654959,Will the Fed increase interest rates by 25 bps after the July 2026 meeting?,SHY,down_on_yes,0.6,0.7,25890005.575899016,89,27.99999862909317,28,used
+polymarket:1654959,Will the Fed increase interest rates by 25 bps after the July 2026 meeting?,TLT,down_on_yes,0.4,0.45,25890005.575899016,89,27.99999862909317,55,used
+polymarket:1654960,Will the Fed increase interest rates by 50+ bps after the July 2026 meeting?,IEF,down_on_yes,0.5,0.6,27556966.68968001,89,3.249999973922968,0,used
+polymarket:1654960,Will the Fed increase interest rates by 50+ bps after the July 2026 meeting?,SHY,down_on_yes,0.55,0.7,27556966.68968001,89,3.249999973922968,0,used
+polymarket:1654960,Will the Fed increase interest rates by 50+ bps after the July 2026 meeting?,TLT,down_on_yes,0.4,0.45,27556966.68968001,89,3.249999973922968,0,used
+polymarket:1919425,"US x Iran permanent peace deal by May 31, 2026?",SPY,up_on_yes,0.4,0.4,87888981.28583376,36,15.000000596046448,0,used
+polymarket:1919425,"US x Iran permanent peace deal by May 31, 2026?",USO,down_on_yes,0.65,0.65,87888981.28583376,36,15.000000596046448,15,used
+polymarket:1919425,"US x Iran permanent peace deal by May 31, 2026?",XLE,down_on_yes,0.45,0.5,87888981.28583376,36,15.000000596046448,1,used
+polymarket:994900,"Israel strikes Iran by January 31, 2026?",ITA,up_on_yes,0.3,0.3,16913391.371627,26,15.000000596046448,5,used
+polymarket:994900,"Israel strikes Iran by January 31, 2026?",USO,up_on_yes,0.55,0.55,16913391.371627,26,15.000000596046448,0,used
+polymarket:994900,"Israel strikes Iran by January 31, 2026?",XLE,up_on_yes,0.35,0.4,16913391.371627,26,15.000000596046448,0,used
+polymarket:516716,Khamenei out as Supreme Leader of Iran in 2025?,USO,up_on_yes,0.35,0.35,10993955.915443,63,2.5000005960464478,0,used
+polymarket:1567746,Iran x Israel/US conflict ends by April 15?,SPY,up_on_yes,0.4,0.4,17450416.216830038,30,46.299999952316284,0,used
+polymarket:1567746,Iran x Israel/US conflict ends by April 15?,USO,down_on_yes,0.65,0.65,17450416.216830038,30,46.299999952316284,0,used
+polymarket:1567746,Iran x Israel/US conflict ends by April 15?,XLE,down_on_yes,0.45,0.5,17450416.216830038,30,46.299999952316284,0,used
+polymarket:623603,Will the Government shutdown end November 12-15?,JETS,up_on_yes,0.3,0.35,8422644.165384,28,54.00000214576721,0,used
+polymarket:623603,Will the Government shutdown end November 12-15?,SPY,up_on_yes,0.3,0.3,8422644.165384,28,54.00000214576721,0,used
+polymarket:669661,Will the Fed decrease interest rates by 25 bps after the April 2026 meeting?,IEF,up_on_yes,0.6,0.6,65311948.7161929,113,9.50000137090683,0,used
+polymarket:669661,Will the Fed decrease interest rates by 25 bps after the April 2026 meeting?,SHY,up_on_yes,0.65,0.7,65311948.7161929,113,9.50000137090683,0,used
+polymarket:669661,Will the Fed decrease interest rates by 25 bps after the April 2026 meeting?,TLT,up_on_yes,0.45,0.45,65311948.7161929,113,9.50000137090683,0,used
+polymarket:1985666,Will Trump visit China by May 15?,FXI,up_on_yes,0.3,0.3,15068494.055106035,20,8.600002527236938,0,used
+polymarket:2002564,"Israel x Iran permanent peace deal by June 30, 2026?",USO,down_on_yes,0.5,0.5,8533780.847550053,50,10.500000417232513,4,used
+polymarket:2002564,"Israel x Iran permanent peace deal by June 30, 2026?",XLE,down_on_yes,0.35,0.35,8533780.847550053,50,10.500000417232513,9,used
+polymarket:570361,Fed decreases interest rates by 25 bps after December 2025 meeting?,IEF,up_on_yes,0.6,0.6,54634506.683355,49,33.000001311302185,28,used
+polymarket:570361,Fed decreases interest rates by 25 bps after December 2025 meeting?,SHY,up_on_yes,0.65,0.7,54634506.683355,49,33.000001311302185,29,used
+polymarket:570361,Fed decreases interest rates by 25 bps after December 2025 meeting?,TLT,up_on_yes,0.45,0.45,54634506.683355,49,33.000001311302185,29,used
+polymarket:1733817,Trump out as President by April 30?,DJT,down_on_yes,0.4,0.5,16315167.812269002,25,0.4500000737607479,17,used
+polymarket:984442,"US strikes Iran by June 30, 2026?",ITA,up_on_yes,0.3,0.3,9193272.467516,45,16.00000262260437,0,used
+polymarket:984442,"US strikes Iran by June 30, 2026?",USO,up_on_yes,0.55,0.6,9193272.467516,45,16.00000262260437,0,used
+polymarket:984442,"US strikes Iran by June 30, 2026?",XLE,up_on_yes,0.4,0.45,9193272.467516,45,16.00000262260437,32,used
+polymarket:2270338,"US x Iran permanent peace deal by July 31, 2026?",SPY,up_on_yes,0.4,0.4,12699539.82302617,21,37.00000047683716,0,used
+polymarket:2270338,"US x Iran permanent peace deal by July 31, 2026?",USO,down_on_yes,0.65,0.65,12699539.82302617,21,37.00000047683716,14,used
+polymarket:2270338,"US x Iran permanent peace deal by July 31, 2026?",XLE,down_on_yes,0.45,0.5,12699539.82302617,21,37.00000047683716,14,used
+polymarket:1962237,"US x Iran permanent peace deal by June 30, 2026?",SPY,up_on_yes,0.4,0.4,49036513.606860146,46,49.49999749660492,0,used
+polymarket:1962237,"US x Iran permanent peace deal by June 30, 2026?",USO,down_on_yes,0.65,0.65,49036513.606860146,46,49.49999749660492,37,used
+polymarket:1962237,"US x Iran permanent peace deal by June 30, 2026?",XLE,down_on_yes,0.45,0.5,49036513.606860146,46,49.49999749660492,18,used
+polymarket:701290,"Will China invade Taiwan by March 31, 2026?",EWT,down_on_yes,0.8,0.8,10607442.318742946,86,2.2499999031424522,0,used
+polymarket:701290,"Will China invade Taiwan by March 31, 2026?",SMH,down_on_yes,0.6,0.6,10607442.318742946,86,2.2499999031424522,13,used
+polymarket:701290,"Will China invade Taiwan by March 31, 2026?",TSM,down_on_yes,0.8,0.8,10607442.318742946,86,2.2499999031424522,0,used
+polymarket:1180303,Khamenei out as Supreme Leader of Iran by February 28?,USO,up_on_yes,0.4,0.35,131114970.827221,32,98.24999887496233,17,used
+polymarket:2109450,"US x Iran diplomatic meeting by June 30, 2026?",USO,down_on_yes,0.45,0.4,6999918.236180979,36,24.000000953674316,16,used
+polymarket:2109450,"US x Iran diplomatic meeting by June 30, 2026?",XLE,down_on_yes,0.3,0.3,6999918.236180979,36,24.000000953674316,28,used
+polymarket:957019,US-Iran nuclear deal by June 30?,USO,down_on_yes,0.55,0.55,11324069.03899108,120,23.499998450279236,2,used
+polymarket:957019,US-Iran nuclear deal by June 30?,XLE,down_on_yes,0.4,0.4,11324069.03899108,120,23.499998450279236,0,used
+polymarket:956590,"Will China invade Taiwan by June 30, 2026?",EWT,down_on_yes,0.8,0.8,12006094.235334797,132,3.450000286102295,0,used
+polymarket:956590,"Will China invade Taiwan by June 30, 2026?",SMH,down_on_yes,0.6,0.6,12006094.235334797,132,3.450000286102295,0,used
+polymarket:956590,"Will China invade Taiwan by June 30, 2026?",TSM,down_on_yes,0.8,0.8,12006094.235334797,132,3.450000286102295,0,used
+polymarket:516719,Russia x Ukraine ceasefire in 2025?,EPOL,up_on_yes,0.5,0.5,73752993.267722,63,7.999999821186066,44,used
+polymarket:516719,Russia x Ukraine ceasefire in 2025?,USO,down_on_yes,0.35,0.35,73752993.267722,63,7.999999821186066,0,used
+polymarket:516719,Russia x Ukraine ceasefire in 2025?,VGK,up_on_yes,0.4,0.4,73752993.267722,63,7.999999821186066,18,used
+polymarket:2774056,Strait of Hormuz traffic returns to normal by August 31?,SPY,up_on_yes,0.35,0.35,18063387.164730005,46,9.550000354647636,0,used
+polymarket:2774056,Strait of Hormuz traffic returns to normal by August 31?,USO,down_on_yes,0.7,0.7,18063387.164730005,46,9.550000354647636,0,used
+polymarket:2774056,Strait of Hormuz traffic returns to normal by August 31?,XLE,down_on_yes,0.45,0.5,18063387.164730005,46,9.550000354647636,0,used
+polymarket:2111640,US-Iran nuclear deal by May 31?,SPY,up_on_yes,0.3,0.35,6905766.889778924,21,12.200000882148743,0,used
+polymarket:2111640,US-Iran nuclear deal by May 31?,USO,down_on_yes,0.55,0.6,6905766.889778924,21,12.200000882148743,7,used
+polymarket:2111640,US-Iran nuclear deal by May 31?,XLE,down_on_yes,0.4,0.45,6905766.889778924,21,12.200000882148743,7,used
+polymarket:2176262,Strait of Hormuz traffic returns to normal by July 31?,SPY,up_on_yes,0.35,0.35,24291657.998471,58,20.000001788139343,0,used
+polymarket:2176262,Strait of Hormuz traffic returns to normal by July 31?,USO,down_on_yes,0.7,0.7,24291657.998471,58,20.000001788139343,49,used
+polymarket:2176262,Strait of Hormuz traffic returns to normal by July 31?,XLE,down_on_yes,0.45,0.5,24291657.998471,58,20.000001788139343,49,used
+polymarket:537882,TikTok sale announced in 2025?,ORCL,up_on_yes,0.45,0.4,9671895.18163,59,73.10000136494637,0,used
+polymarket:2054133,Strait of Hormuz traffic returns to normal by May 15?,SPY,up_on_yes,0.35,0.35,17940559.114660934,19,3.800000064074993,0,used
+polymarket:2054133,Strait of Hormuz traffic returns to normal by May 15?,USO,down_on_yes,0.7,0.7,17940559.114660934,19,3.800000064074993,0,used
+polymarket:2054133,Strait of Hormuz traffic returns to normal by May 15?,XLE,down_on_yes,0.45,0.5,17940559.114660934,19,3.800000064074993,0,used
+polymarket:601700,Fed increases interest rates by 25+ bps after January 2026 meeting?,IEF,down_on_yes,0.5,0.6,216455743.153891,81,0.8500000461935997,0,used
+polymarket:601700,Fed increases interest rates by 25+ bps after January 2026 meeting?,SHY,down_on_yes,0.55,0.7,216455743.153891,81,0.8500000461935997,0,used
+polymarket:601700,Fed increases interest rates by 25+ bps after January 2026 meeting?,TLT,down_on_yes,0.4,0.45,216455743.153891,81,0.8500000461935997,0,used
+polymarket:570363,Fed increases interest rates by 25+ bps after December 2025 meeting?,IEF,down_on_yes,0.6,0.4,133173605.453166,49,0.8999999612569809,0,used
+polymarket:570363,Fed increases interest rates by 25+ bps after December 2025 meeting?,SHY,down_on_yes,0.7,0.5,133173605.453166,49,0.8999999612569809,0,used
+polymarket:601697,Fed decreases interest rates by 50+ bps after January 2026 meeting?,IEF,up_on_yes,0.6,0.45,235065166.637259,81,4.100000113248825,0,used
+polymarket:601697,Fed decreases interest rates by 50+ bps after January 2026 meeting?,SHY,up_on_yes,0.7,0.55,235065166.637259,81,4.100000113248825,0,used
+polymarket:601697,Fed decreases interest rates by 50+ bps after January 2026 meeting?,TLT,up_on_yes,0.5,0.35,235065166.637259,81,4.100000113248825,0,used
+polymarket:1171663,"Russia x Ukraine ceasefire by June 30, 2026?",EPOL,up_on_yes,0.5,0.5,60668118.31172506,80,5.000000447034836,0,used
+polymarket:1171663,"Russia x Ukraine ceasefire by June 30, 2026?",USO,down_on_yes,0.4,0.35,60668118.31172506,80,5.000000447034836,0,used
+polymarket:1171663,"Russia x Ukraine ceasefire by June 30, 2026?",VGK,up_on_yes,0.45,0.45,60668118.31172506,80,5.000000447034836,0,used
+polymarket:2155052,"US x Iran permanent peace deal by December 31, 2026?",USO,down_on_yes,0.65,0.65,14411915.111413987,31,20.350003242492676,18,used
+polymarket:2155052,"US x Iran permanent peace deal by December 31, 2026?",XLE,down_on_yes,0.5,0.45,14411915.111413987,31,20.350003242492676,12,used
+polymarket:2155052,"US x Iran permanent peace deal by December 31, 2026?",XOP,down_on_yes,0.45,0.45,14411915.111413987,31,20.350003242492676,0,used
+polymarket:1559394,Trump out as President by June 30?,DJT,down_on_yes,0.5,0.45,9272254.794885797,76,2.0000003278255463,0,used
+polymarket:604490,Will Trump visit China by March 31?,FXI,up_on_yes,0.3,0.3,10369639.104046939,124,48.499999940395355,27,used
+polymarket:604490,Will Trump visit China by March 31?,KWEB,up_on_yes,0.3,0.3,10369639.104046939,124,48.499999940395355,27,used
+polymarket:1708086,Kharg Island no longer under Iranian control by June 30?,USO,up_on_yes,0.45,0.4,13456217.023449102,66,13.500000536441803,36,used
+polymarket:1708086,Kharg Island no longer under Iranian control by June 30?,XLE,up_on_yes,0.35,0.3,13456217.023449102,66,13.500000536441803,0,used
+polymarket:706279,Will Trump visit China by April 30?,FXI,up_on_yes,0.3,0.3,12827468.473153912,104,40.49999862909317,0,used
+polymarket:706279,Will Trump visit China by April 30?,KWEB,up_on_yes,0.3,0.3,12827468.473153912,104,40.49999862909317,0,used
+polymarket:669660,Will the Fed decrease interest rates by 50+ bps after the April 2026 meeting?,IEF,up_on_yes,0.6,0.45,66025383.9220003,113,4.4999998062849045,0,used
+polymarket:669660,Will the Fed decrease interest rates by 50+ bps after the April 2026 meeting?,SHY,up_on_yes,0.7,0.55,66025383.9220003,113,4.4999998062849045,0,used
+polymarket:669660,Will the Fed decrease interest rates by 50+ bps after the April 2026 meeting?,TLT,up_on_yes,0.5,0.35,66025383.9220003,113,4.4999998062849045,0,used
+polymarket:520630,Will China invade Taiwan in 2025?,EWT,down_on_yes,0.85,0.8,12364377.621775,63,0.65000019967556,0,used
+polymarket:520630,Will China invade Taiwan in 2025?,SMH,down_on_yes,0.7,0.6,12364377.621775,63,0.65000019967556,0,used
+polymarket:520630,Will China invade Taiwan in 2025?,TSM,down_on_yes,0.85,0.8,12364377.621775,63,0.65000019967556,0,used
+polymarket:704339,"Russia x Ukraine ceasefire by January 31, 2026?",EPOL,up_on_yes,0.5,0.5,26995077.577181,43,6.499999761581421,0,used
+polymarket:704339,"Russia x Ukraine ceasefire by January 31, 2026?",USO,down_on_yes,0.4,0.35,26995077.577181,43,6.499999761581421,0,used
+polymarket:704339,"Russia x Ukraine ceasefire by January 31, 2026?",VGK,up_on_yes,0.45,0.45,26995077.577181,43,6.499999761581421,0,used
+polymarket:906975,Will the Fed increase interest rates by 25 bps after the June 2026 meeting?,IEF,down_on_yes,0.6,0.45,31037182.120555956,128,3.749999590218067,0,used
+polymarket:906975,Will the Fed increase interest rates by 25 bps after the June 2026 meeting?,SHY,down_on_yes,0.7,0.55,31037182.120555956,128,3.749999590218067,0,used
+polymarket:516969,Will Microsoft have the top AI model on December 31?,MSFT,up_on_yes,0.3,0.3,8697440.388086,63,0.09999999892897904,0,used
+polymarket:572485,Will Trump nominate Rick Rieder as the next Fed chair?,SHY,up_on_yes,0.4,0.35,35603624.85201814,105,37.84999886993319,0,used
+polymarket:2270330,"US x Iran permanent peace deal by June 15, 2026?",USO,down_on_yes,0.7,0.65,177370818.43892464,21,69.80000138282776,15,used
+polymarket:2270330,"US x Iran permanent peace deal by June 15, 2026?",XLE,down_on_yes,0.5,0.45,177370818.43892464,21,69.80000138282776,15,used
+polymarket:2270330,"US x Iran permanent peace deal by June 15, 2026?",XOP,down_on_yes,0.5,0.45,177370818.43892464,21,69.80000138282776,15,used
+polymarket:1500755,Will Judy Shelton be confirmed as Fed Chair?,GLD,up_on_yes,0.35,0.35,23970639.983398777,48,0.5499999970197678,0,used
+polymarket:623604,Will the Government shutdown end November 16 or later?,JETS,down_on_yes,0.4,0.4,9839429.155274,28,43.799999356269836,0,used
+polymarket:623604,Will the Government shutdown end November 16 or later?,SPY,down_on_yes,0.3,0.3,9839429.155274,28,43.799999356269836,3,used
+polymarket:1611267,Kharg Island no longer under Iranian control by April 30?,USO,up_on_yes,0.45,0.4,17372089.246162925,31,8.999999612569809,0,used
+polymarket:1611267,Kharg Island no longer under Iranian control by April 30?,XLE,up_on_yes,0.35,0.3,17372089.246162925,31,8.999999612569809,0,used
+polymarket:1198423,"US strikes Iran by February 28, 2026?",USO,up_on_yes,0.7,0.7,89652867.363489,27,23.999997973442078,10,used
+polymarket:1198423,"US strikes Iran by February 28, 2026?",XLE,up_on_yes,0.5,0.5,89652867.363489,27,23.999997973442078,20,used
+polymarket:1198423,"US strikes Iran by February 28, 2026?",XOP,up_on_yes,0.5,0.5,89652867.363489,27,23.999997973442078,10,used
+polymarket:956450,"Will the U.S. invade Venezuela by January 31, 2026?",CVX,up_on_yes,0.4,0.35,8368550.515088,29,13.000000268220901,0,used
+polymarket:567687,Russia x Ukraine ceasefire by end of 2026?,EPOL,up_on_yes,0.5,0.5,14502613.985482976,151,9.499996900558472,63,used
+polymarket:567687,Russia x Ukraine ceasefire by end of 2026?,USO,down_on_yes,0.4,0.35,14502613.985482976,151,9.499996900558472,83,used
+polymarket:567687,Russia x Ukraine ceasefire by end of 2026?,VGK,up_on_yes,0.45,0.45,14502613.985482976,151,9.499996900558472,0,used
+polymarket:570362,No change in Fed interest rates after December 2025 meeting?,IEF,down_on_yes,0.55,0.55,44523455.111481,49,33.000001311302185,26,used
+polymarket:570362,No change in Fed interest rates after December 2025 meeting?,SHY,down_on_yes,0.65,0.65,44523455.111481,49,33.000001311302185,27,used
+polymarket:516926,MicroStrategy sells any Bitcoin in 2025?,IBIT,down_on_yes,0.4,0.4,17976157.529867,64,4.050000011920929,0,used
+polymarket:516926,MicroStrategy sells any Bitcoin in 2025?,MSTR,down_on_yes,0.55,0.55,17976157.529867,64,4.050000011920929,0,used
+polymarket:1654957,Will the Fed decrease interest rates by 25 bps after the July 2026 meeting?,IEF,up_on_yes,0.6,0.6,27994692.422440995,89,4.499999433755875,0,used
+polymarket:1654957,Will the Fed decrease interest rates by 25 bps after the July 2026 meeting?,SHY,up_on_yes,0.7,0.7,27994692.422440995,89,4.499999433755875,0,used
+polymarket:1654957,Will the Fed decrease interest rates by 25 bps after the July 2026 meeting?,TLT,up_on_yes,0.45,0.45,27994692.422440995,89,4.499999433755875,0,used
+polymarket:516947,Maduro out in 2025?,CVX,up_on_yes,0.5,0.45,34641400.627049,63,8.99999886751175,0,used
+polymarket:906976,Will the Fed increase interest rates by 50+ bps after the June 2026 meeting?,IEF,down_on_yes,0.6,0.4,21740489.034398694,128,2.9999999329447746,0,used
+polymarket:906976,Will the Fed increase interest rates by 50+ bps after the June 2026 meeting?,SHY,down_on_yes,0.7,0.5,21740489.034398694,128,2.9999999329447746,0,used
+polymarket:1972137,"Will Donald Trump announce that the United States blockade of the Strait of Hormuz has been lifted by May 31, 2026?",USO,down_on_yes,0.6,0.55,9359876.895693928,33,17.500001192092896,25,used
+polymarket:1972137,"Will Donald Trump announce that the United States blockade of the Strait of Hormuz has been lifted by May 31, 2026?",XLE,down_on_yes,0.45,0.4,9359876.895693928,33,17.500001192092896,25,used
+polymarket:1972137,"Will Donald Trump announce that the United States blockade of the Strait of Hormuz has been lifted by May 31, 2026?",XOP,down_on_yes,0.4,0.4,9359876.895693928,33,17.500001192092896,25,used
+polymarket:669663,Will the Fed increase interest rates by 25+ bps after the April 2026 meeting?,IEF,down_on_yes,0.6,0.45,75978206.16104123,113,3.2499998807907104,0,used
+polymarket:669663,Will the Fed increase interest rates by 25+ bps after the April 2026 meeting?,SHY,down_on_yes,0.7,0.55,75978206.16104123,113,3.2499998807907104,12,used
+polymarket:984441,"US strikes Iran by March 31, 2026?",USO,up_on_yes,0.7,0.7,22213247.327937,45,22.499999403953552,0,used
+polymarket:984441,"US strikes Iran by March 31, 2026?",XLE,up_on_yes,0.5,0.5,22213247.327937,45,22.499999403953552,0,used
+polymarket:984441,"US strikes Iran by March 31, 2026?",XOP,up_on_yes,0.5,0.5,22213247.327937,45,22.499999403953552,0,used
+polymarket:572470,Will Trump nominate Kevin Hassett as the next Fed chair?,GLD,up_on_yes,0.4,0.35,36122905.93072796,105,17.000001668930054,0,used
+polymarket:572470,Will Trump nominate Kevin Hassett as the next Fed chair?,SHY,up_on_yes,0.5,0.5,36122905.93072796,105,17.000001668930054,42,used
+polymarket:572470,Will Trump nominate Kevin Hassett as the next Fed chair?,UUP,down_on_yes,0.5,0.45,36122905.93072796,105,17.000001668930054,4,used
+polymarket:2354976,Strait of Hormuz traffic returns to normal by June 15?,USO,down_on_yes,0.75,0.7,12147872.86032706,19,6.499999761581421,0,used
+polymarket:2354976,Strait of Hormuz traffic returns to normal by June 15?,XLE,down_on_yes,0.55,0.5,12147872.86032706,19,6.499999761581421,0,used
+polymarket:2354976,Strait of Hormuz traffic returns to normal by June 15?,XOP,down_on_yes,0.5,0.5,12147872.86032706,19,6.499999761581421,0,used
+polymarket:570360,Fed decreases interest rates by 50+ bps after December 2025 meeting?,IEF,up_on_yes,0.6,0.45,161574382.129451,49,4.000000283122063,0,used
+polymarket:570360,Fed decreases interest rates by 50+ bps after December 2025 meeting?,SHY,up_on_yes,0.7,0.55,161574382.129451,49,4.000000283122063,0,used
+polymarket:570360,Fed decreases interest rates by 50+ bps after December 2025 meeting?,TLT,up_on_yes,0.5,0.35,161574382.129451,49,4.000000283122063,0,used
+polymarket:1971905,Strait of Hormuz traffic returns to normal by end of June?,USO,down_on_yes,0.75,0.7,44111324.778536566,57,16.999995708465576,24,used
+polymarket:1971905,Strait of Hormuz traffic returns to normal by end of June?,XLE,down_on_yes,0.55,0.5,44111324.778536566,57,16.999995708465576,0,used
+polymarket:1971905,Strait of Hormuz traffic returns to normal by end of June?,XOP,down_on_yes,0.5,0.5,44111324.778536566,57,16.999995708465576,0,used
+polymarket:1439560,"Russia x Ukraine ceasefire by April 30, 2026?",EPOL,up_on_yes,0.5,0.5,9527883.414922891,43,3.0000001192092896,0,used
+polymarket:1439560,"Russia x Ukraine ceasefire by April 30, 2026?",USO,down_on_yes,0.4,0.35,9527883.414922891,43,3.0000001192092896,0,used
+polymarket:1439560,"Russia x Ukraine ceasefire by April 30, 2026?",VGK,up_on_yes,0.45,0.45,9527883.414922891,43,3.0000001192092896,0,used
+polymarket:520930,Jerome Powell out as Fed Chair in 2025?,GLD,up_on_yes,0.55,0.45,11760101.336012,63,1.6499999910593033,0,used
+polymarket:520930,Jerome Powell out as Fed Chair in 2025?,TLT,down_on_yes,0.45,0.4,11760101.336012,63,1.6499999910593033,0,used
+polymarket:520930,Jerome Powell out as Fed Chair in 2025?,UUP,down_on_yes,0.55,0.5,11760101.336012,63,1.6499999910593033,0,used
+polymarket:1611527,Will Trump visit China by May 31?,FXI,up_on_yes,0.3,0.3,7626224.046920019,40,12.999999523162842,0,used
+polymarket:1611527,Will Trump visit China by May 31?,KWEB,up_on_yes,0.3,0.3,7626224.046920019,40,12.999999523162842,0,used
+polymarket:572473,Will Trump nominate Judy Shelton as the next Fed chair?,GLD,up_on_yes,0.4,0.4,127684064.95211223,105,2.8999998699873686,0,used
+polymarket:572469,Will Trump nominate Kevin Warsh as the next Fed chair?,GLD,down_on_yes,0.55,0.45,59907150.95188258,105,69.24999952316284,0,used
+polymarket:572469,Will Trump nominate Kevin Warsh as the next Fed chair?,UUP,up_on_yes,0.55,0.45,59907150.95188258,105,69.24999952316284,1,used
+polymarket:692258,"MicroStrategy sells any Bitcoin by June 30, 2026?",IBIT,down_on_yes,0.4,0.4,8418661.007786024,130,32.94999599456787,78,used
+polymarket:692258,"MicroStrategy sells any Bitcoin by June 30, 2026?",MSTR,down_on_yes,0.55,0.55,8418661.007786024,130,32.94999599456787,0,used
+polymarket:654413,Will the Fed decrease interest rates by 25 bps after the March 2026 meeting?,IEF,up_on_yes,0.6,0.6,87103283.7263213,95,9.000000357627869,0,used
+polymarket:654413,Will the Fed decrease interest rates by 25 bps after the March 2026 meeting?,SHY,up_on_yes,0.7,0.7,87103283.7263213,95,9.000000357627869,9,used
+polymarket:654413,Will the Fed decrease interest rates by 25 bps after the March 2026 meeting?,TLT,up_on_yes,0.45,0.45,87103283.7263213,95,9.000000357627869,0,used
+polymarket:906972,Will the Fed decrease interest rates by 50+ bps after the June 2026 meeting?,IEF,up_on_yes,0.6,0.45,37866883.42341023,128,3.4999996423721313,0,used
+polymarket:906972,Will the Fed decrease interest rates by 50+ bps after the June 2026 meeting?,SHY,up_on_yes,0.7,0.55,37866883.42341023,128,3.4999996423721313,0,used
+polymarket:906972,Will the Fed decrease interest rates by 50+ bps after the June 2026 meeting?,TLT,up_on_yes,0.5,0.35,37866883.42341023,128,3.4999996423721313,0,used
+polymarket:616902,Will no Fed rate cuts happen in 2026?,IEF,down_on_yes,0.55,0.55,8776299.854855001,252,8.149999380111694,73,used
+polymarket:616902,Will no Fed rate cuts happen in 2026?,SHY,down_on_yes,0.7,0.65,8776299.854855001,252,8.149999380111694,0,used

@@ -407,11 +407,119 @@ that hedge B reduces the gap itself; that the PM-contract hedge (hedge A) protec
 arbitrage.
 """
 
+S1_MD = """\
+## Twin spread: the same question on Polymarket and Kalshi (S1)
+
+Thirty-three questions trade on both venues with the same resolution terms. When YES is cheaper on one venue than on the
+other by more than every cost, buying YES on the cheap venue and NO on the rich one pays exactly $1 at resolution. The
+method was committed before any price history was pulled (`s1_twin_spread/METHOD.md`).
+
+**Reproducible offline.** These cells read only the committed files in `results/s1_twin_spread`. They make no network
+call and need no key. The headline numbers are recomputed from the committed trade list and equity path with the
+study's own functions, then checked against the committed `metrics.csv`.
+"""
+
+S1_1 = '''\
+# S1 twin spread: recompute the headline numbers from the committed files (no network, no key)
+import sys
+from pathlib import Path
+
+import pandas as pd
+from IPython.display import display
+
+RESEARCH = next(p for p in (Path.cwd(), Path.cwd() / "research") if (p / "twin_spread_section.py").exists())
+if str(RESEARCH) not in sys.path:
+    sys.path.insert(0, str(RESEARCH))
+import twin_spread_section as tss
+
+s1_data = tss.load(RESEARCH / "results" / "s1_twin_spread")
+s1 = tss.recompute(s1_data)
+s1_check = tss.comparison(s1, s1_data)
+with pd.option_context("display.float_format", "{:.6g}".format):
+    display(s1_check.set_index(["segment", "costs", "statistic"]))
+print(f"{int(s1_check['match'].sum())} of {len(s1_check)} recomputed S1 numbers match the committed metrics.csv"
+      + ("" if s1_check["match"].all() else "  <-- MISMATCH: the committed files disagree; trust neither until resolved"))
+'''
+
+S1_2 = '''\
+import matplotlib.pyplot as plt
+
+tss.chart(s1_data)
+plt.show()
+'''
+
+S1_3 = '''\
+with pd.option_context("display.max_colwidth", None):
+    display(tss.summary(s1).set_index("finding"))
+s1_forward = tss.forward_table(s1_data)
+if s1_forward is None:
+    print("Forward paper test on the recorded weekend books: not run yet.")
+else:
+    display(s1_forward)
+'''
+
+S1_END = """\
+**What this supports.** Cross-venue gaps on the same question do appear, and the ones a public Polymarket trade print
+confirms were profitable after Kalshi fees, Polymarket fees, both spreads and the cost of capital locked until
+resolution, at 1x and at 2x costs. They are few and small.
+
+**What it does not support.** That the twin spread is a strategy with capacity: the pre-registered test is not a pass,
+because most backtest entries have no trade print behind the Polymarket price. The blue curve above is what an assumed
+Polymarket spread manufactures, and its Sharpe ratio is an artifact. No pair has resolved, so resolution risk is unmeasured.
+"""
+
+
+WS_MD = """\
+## Weekend and linked-asset studies (S3 to S15)
+
+Eleven more pre-registered studies ask where the prediction-market signal can be traded while stocks and options are shut.
+Each method was committed before its data was pulled; each summary is under `results/<study>/SUMMARY.md`.
+
+**Reproducible offline.** The cells below read only committed result files. For every study with a trade list, the number
+of trades and the mean net result per trade of the pre-registered primary variant are recomputed from `trades.csv` and
+checked against `metrics.csv`. The second table reads each study's main statistic from its result files.
+
+![S9 equity curve](results/s9_weekend_price_markets/equity_curve.png)
+"""
+
+WS_1 = '''\
+# Weekend studies: recompute the primary variant of each study from its committed trade list (no network, no key)
+import sys
+from pathlib import Path
+
+import pandas as pd
+from IPython.display import display
+
+RESEARCH = next(p for p in (Path.cwd(), Path.cwd() / "research") if (p / "weekend_studies_section.py").exists())
+if str(RESEARCH) not in sys.path:
+    sys.path.insert(0, str(RESEARCH))
+import weekend_studies_section as wss
+
+ws_check = wss.recompute(RESEARCH / "results")
+with pd.option_context("display.float_format", "{:.4f}".format):
+    display(ws_check.set_index(["study", "segment", "costs"]))
+print(f"{int(ws_check['match'].sum())} of {len(ws_check)} recomputed numbers match the committed metrics.csv files"
+      + ("" if ws_check["match"].all() else "  <-- MISMATCH: the committed files disagree; trust neither until resolved"))
+'''
+
+WS_2 = '''\
+with pd.option_context("display.max_colwidth", None):
+    display(wss.findings(RESEARCH / "results").set_index(["study", "finding"]))
+'''
+
+WS_END = """\
+**Reading.** The link between a question and an asset is real (S4, S5, S9, S14) and it is in the price by the time the
+asset can be traded: at the open, in Friday's options, and on Polymarket itself once costs are paid. None of these
+studies passes its pre-registered criterion. Each is reported as run.
+"""
+
 
 def build(path: Path | None = None) -> None:
     nb = new_notebook(cells=[md(C1), code(C2), code(C3), code(C4), code(C5), code(C6), code(C6R), code(C7), code(C8), code(C9),
                              code(C10), code(C11), md(C12M), code(C12), md(C13),
-                             md(CM_MD), code(CM1), code(CM2), code(CM3), md(CM_END)])
+                             md(CM_MD), code(CM1), code(CM2), code(CM3), md(CM_END),
+                             md(S1_MD), code(S1_1), code(S1_2), code(S1_3), md(S1_END),
+                             md(WS_MD), code(WS_1), code(WS_2), md(WS_END)])
     nb.metadata["kernelspec"] = {"display_name": "Python 3", "language": "python", "name": "python3"}
     for i, cell in enumerate(nb.cells):
         cell["id"] = f"cell-{i:02d}"

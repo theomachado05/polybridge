@@ -1,0 +1,120 @@
+{
+  "recorded_utc": "2026-10-04T05:14:53.681828+00:00",
+  "purpose": "Judging readiness assessment; no new backtest or protected observations",
+  "verified_rendered_pages": [
+    "https://www.gqhacks.com/tracks/systematic-trading",
+    "https://www.gqhacks.com/tracks/systematic-trading/massive"
+  ],
+  "public_response_fingerprints": [
+    {
+      "url": "https://www.gqhacks.com/tracks/systematic-trading",
+      "bytes": 4141,
+      "sha256": "86b3daa2a1a8eb2b633726bcdbc5d654a4f8be0f272f20f97720561dbb95d17a"
+    },
+    {
+      "url": "https://www.gqhacks.com/assets/index-kbCCNJjf.js",
+      "bytes": 312455,
+      "sha256": "4f3dfb8b944f6d2e3eb0ad6a3ada642da8854fe53496b7244705a0500112de72"
+    },
+    {
+      "url": "https://www.gqhacks.com/assets/SystematicTrackPage-BBnusa24.js",
+      "bytes": 170386,
+      "sha256": "5bd04260bd5daae57e67ad5691c52688bcaeeea8438393725851635865ad294d"
+    },
+    {
+      "url": "https://www.gqhacks.com/assets/MassiveTrackPage-BW2sy2w7.js",
+      "bytes": 113372,
+      "sha256": "cf0c8a2a803a4bd0ae0b554b2f36ba58f37d70a4d19c03e6f81964efae685d03"
+    }
+  ],
+  "local_inputs": {
+    "research/results/cx5_strategy_selection/SUMMARY.md": {
+      "bytes": 8653,
+      "sha256": "b95c44a07bae4c2e9d887a4bf07ae8cfe7295b13e38018bbcec7595ee01c850e"
+    },
+    "research/results/cx5_strategy_selection/OPTION_MICRO_METRICS.csv": {
+      "bytes": 47949,
+      "sha256": "4140bd3ffdeb2ea0fbe2a789bc94237b7a7fa71fb707d80684002357beaa3073"
+    },
+    "research/results/cx5_strategy_selection/S11_S10_S16_AUDIT.md": {
+      "bytes": 25034,
+      "sha256": "612d8477db44d27260950da2661f823b8f3647a0ad1f097a0256d863d82e1bf2"
+    },
+    "research/results/s20_closed_vs_open/SUMMARY.md": {
+      "bytes": 53922,
+      "sha256": "0ba702e588d3e31e87ff5d9d1458eb35b322672c36e27d52643a0bb46d0a62c0"
+    },
+    "research/results/s21_options_anchor/SUMMARY.md": {
+      "bytes": 28481,
+      "sha256": "25ab95cf824f281b60fda4d248e75d118698b0670448f2676d00402b94c2028f"
+    },
+    "research/s21_options_anchor/METHOD.md": {
+      "bytes": 14273,
+      "sha256": "cca6100623a307839746248994037bad622790336c80397e1463eb25f760f590"
+    },
+    "research/results/s22_options_quoting/RUN_LOG.md": {
+      "bytes": 5991,
+      "sha256": "fcf27e7804c0a3f514a5966e0fc6a96a178d6e99a0be89b8ac48da3f715145ee"
+    },
+    "research/results/s22_options_quoting/metrics.csv": {
+      "bytes": 17942,
+      "sha256": "c5b8c1fceea906cdbc70d3bc7e17d3b7dc45d32a738d3ec48f029040fcd87da0"
+    },
+    "research/s22_options_quoting/METHOD.md": {
+      "bytes": 13236,
+      "sha256": "6573cc60b1ddd8d27a139f6cbcc0efd3690d0280f04fc5073603c031f0c3248a"
+    },
+    "research/results/s23_monday_fade_real/SUMMARY.md": {
+      "bytes": 17189,
+      "sha256": "6281116e753557b4907713345093285f4452ea747c9d993a4d1941e377311edf"
+    },
+    "research/HYPOTHESIS.md": {
+      "bytes": 12111,
+      "sha256": "a8fccf10f1526caeac8ee45567e8332e6aacfc4ecf78b1ac1d1f107957d6076b"
+    },
+    "research/FORECAST.md": {
+      "bytes": 3724,
+      "sha256": "4f5aa0988bb6d214d6ce558fb8a965e6a09e8b0f5e1a0eac646cdd0e0d679494"
+    },
+    "research/s18_price_market_calibration/METHOD.md": {
+      "bytes": 7877,
+      "sha256": "0125c5a3bfd578f45ae8efead7f076b78077cc73ff07c2009b42ad2b612db20b"
+    },
+    "research/results/in_sample/SUMMARY.md": {
+      "bytes": 7130,
+      "sha256": "10df573eeb11bb2ab670aa468280828b7f39b244edd09f1c7f195cc4131675f0"
+    },
+    "research/results/oos/SUMMARY.md": {
+      "bytes": 7177,
+      "sha256": "f657bc6c5c63dbd5f9afc601b79fb81a94ed21cee6696e9065eb39dae827fbba"
+    },
+    "research/EVIDENCE.md": {
+      "bytes": 85817,
+      "sha256": "a690ad5d407263a0e802c7155430a514f00a8e50f3ea36223527ccc6224b9b61"
+    },
+    "note/WRITEUP.md": {
+      "bytes": 6077,
+      "sha256": "e8c8c1dc56c01e41e985f4fce90de209b55eea975db45943dee6505df4b0e557"
+    },
+    "note/RECONCILE.md": {
+      "bytes": 17702,
+      "sha256": "3b471511abb0cf9f68dffab83b5261e536ae556332a964981da5d904f659def2"
+    },
+    "engine/hedgecore/BENCH.md": {
+      "bytes": 8249,
+      "sha256": "81744ccaabd2125646536e6c3b7b5c509cb3cc668362f6d105147d97b6e6bc5a"
+    },
+    "CONTRIBUTING.md": {
+      "bytes": 1774,
+      "sha256": "d933d7cc46c59834facc08c9929fb7c3acd3036742be26fb376a825a03e383f6"
+    },
+    "README.md": {
+      "bytes": 17230,
+      "sha256": "5247e3dd9cae816697a9dedbfc065aab39fb5d95b22c6675aa1c2d9531f5b751"
+    }
+  },
+  "independent_reaudit_this_turn": false,
+  "newer_studies_status": "S20-S23 saved-source findings, not independently certified",
+  "official_score_prediction": false,
+  "assessment": "Share with caveats"
+}

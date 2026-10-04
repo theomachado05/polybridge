@@ -40,13 +40,21 @@ def panel_a_markets(session=None) -> list[dict]:
         if cache.exists():
             meta = json.loads(cache.read_text())
         else:
-            r = s.get(f"{GAMMA}/markets", params={"slug": m["market_slug"]}, timeout=60)
-            r.raise_for_status()
-            rows = r.json()
-            meta = {k: rows[0].get(k) for k in ("startDate", "createdAt", "closedTime", "endDate", "closed")} if rows else {}
+            rows = []
+            for extra in ({}, {"closed": "true"}):
+                r = s.get(f"{GAMMA}/markets", params={"slug": m["market_slug"], **extra}, timeout=60)
+                r.raise_for_status()
+                rows = r.json()
+                if rows:
+                    break
+            if not rows:
+                raise RuntimeError(f"gamma returned no metadata for {m['market_slug']}")
+            meta = {k: rows[0].get(k) for k in ("startDate", "createdAt", "closedTime", "endDate", "closed")}
             cache.parent.mkdir(parents=True, exist_ok=True)
             cache.write_text(json.dumps(meta))
         start = meta.get("startDate") or meta.get("createdAt")
+        if not start:
+            raise RuntimeError(f"no start date in gamma metadata for {m['market_slug']}")
         end = (meta.get("closedTime") if meta.get("closed") else None) or meta.get("endDate")
         out.append({"market_slug": m["market_slug"], "label": key, "token_id": str(m["token_id"]), "sign": int(m["sign"]),
                     "start": _utc(start).isoformat(), "end": _utc(end).isoformat(), "source": "panel_A"})
@@ -123,7 +131,7 @@ def fetch_daily(client, start: str, end: str, ticker: str = TICKER) -> pd.DataFr
     rows = client.get_all(f"/v2/aggs/ticker/{ticker}/range/1/day/{start}/{end}",
                           {"adjusted": "true", "sort": "asc", "limit": 50000})
     df = pd.DataFrame(rows)
-    idx = pd.to_datetime(df["t"], unit="ms", utc=True).tz_convert("America/New_York").normalize().tz_localize(None)
+    idx = pd.DatetimeIndex(pd.to_datetime(df["t"], unit="ms", utc=True)).tz_convert("America/New_York").normalize().tz_localize(None)
     return pd.DataFrame({"open": df["o"].astype(float).to_numpy(), "close": df["c"].astype(float).to_numpy(),
                          "volume": df["v"].astype(float).to_numpy(),
                          "vwap": df.get("vw", df["c"]).astype(float).to_numpy()}, index=idx)

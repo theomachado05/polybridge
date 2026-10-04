@@ -1,0 +1,4475 @@
+{
+ "counts": {
+  "events": 2400,
+  "events_dropped_by_tag": 1846,
+  "markets_seen": 7601,
+  "in_s4": 56,
+  "by_word": 162,
+  "low_volume": 5770,
+  "short_life": 444,
+  "stopped_at_offset_true": 2100,
+  "last_event_volume_true": 3484769.059747
+ },
+ "candidates": 892,
+ "markets": [
+  {
+   "id": "polymarket:2169995",
+   "question": "MicroStrategy sells any Bitcoin by May 31, 2026?",
+   "volume": 375813104.55575246,
+   "start": "2026-05-05T23:48:20.102Z",
+   "end": "2026-06-04 00:34:19+00",
+   "closed": true,
+   "token": "25714007960293389110960044475283546872601238755063051359394740854408462452120",
+   "event": "microstrategy-sell-any-bitcoin-in-2025",
+   "tags": [
+    "Economy",
+    "Business",
+    "2025 Predictions",
+    "Crypto",
+    "MicroStrategy",
+    "Stocks"
+   ]
+  },
+  {
+   "id": "polymarket:601697",
+   "question": "Fed decreases interest rates by 50+ bps after January 2026 meeting?",
+   "volume": 235065166.637259,
+   "start": "2025-09-17T19:03:50.012988Z",
+   "end": "2026-01-28 22:53:04+00",
+   "closed": true,
+   "token": "11862165566757345985240476164489718219056735011698825377388402888080786399275",
+   "event": "fed-decision-in-january",
+   "tags": [
+    "fomc",
+    "Fed Rates",
+    "Economy",
+    "Politics",
+    "Economic Policy",
+    "Jerome Powell",
+    "Fed",
+    "Finance"
+   ]
+  },
+  {
+   "id": "polymarket:601700",
+   "question": "Fed increases interest rates by 25+ bps after January 2026 meeting?",
+   "volume": 216455743.153891,
+   "start": "2025-09-17T19:03:55.038077Z",
+   "end": "2026-01-28 23:04:04+00",
+   "closed": true,
+   "token": "16419649354067298412736919830777830730026677464626899811394461690794060330642",
+   "event": "fed-decision-in-january",
+   "tags": [
+    "fomc",
+    "Fed Rates",
+    "Economy",
+    "Politics",
+    "Economic Policy",
+    "Jerome Powell",
+    "Fed",
+    "Finance"
+   ]
+  },
+  {
+   "id": "polymarket:2270330",
+   "question": "US x Iran permanent peace deal by June 15, 2026?",
+   "volume": 177370818.43892464,
+   "start": "2026-05-15T20:13:39.789Z",
+   "end": "2026-06-18 00:32:19+00",
+   "closed": true,
+   "token": "5904694069529905826680225678119990013628860098514322777023141327768111791078",
+   "event": "us-x-iran-permanent-peace-deal-by",
+   "tags": [
+    "Iran",
+    "Trump",
+    "U.S. x Iran",
+    "ceasefire",
+    "Geopolitics",
+    "Iran Ceasefire",
+    "Agreement",
+    "10-point",
+    "Politics",
+    "Peace Deal"
+   ]
+  },
+  {
+   "id": "polymarket:654415",
+   "question": "Will the Fed increase interest rates by 25+ bps after the March 2026 meeting?",
+   "volume": 172972056.63332495,
+   "start": "2025-10-29T19:01:07.490058Z",
+   "end": "2026-03-18 21:19:03+00",
+   "closed": true,
+   "token": "54073086346734626735797775941991553522163760164405051969883391401961188364109",
+   "event": "fed-decision-in-march-885",
+   "tags": [
+    "Parent For Derivative",
+    "fomc",
+    "Economy",
+    "Fed Rates",
+    "Economic Policy",
+    "Politics",
+    "Jerome Powell",
+    "Fed"
+   ]
+  },
+  {
+   "id": "polymarket:570360",
+   "question": "Fed decreases interest rates by 50+ bps after December 2025 meeting?",
+   "volume": 161574382.129451,
+   "start": "2025-07-31T19:47:24.365335Z",
+   "end": "2025-12-10 22:17:52+00",
+   "closed": true,
+   "token": "74018646712472971445258547247048869505144598783748525202442089895996249694683",
+   "event": "fed-decision-in-december",
+   "tags": [
+    "fomc",
+    "Politics",
+    "Fed Rates",
+    "Economic Policy",
+    "Economy",
+    "Jerome Powell",
+    "Fed"
+   ]
+  },
+  {
+   "id": "polymarket:680392",
+   "question": "US government shutdown Saturday?",
+   "volume": 157296576.448084,
+   "start": "2025-11-13T14:59:43.611Z",
+   "end": "2026-02-04 00:35:28+00",
+   "closed": true,
+   "token": "52607315900507156846622820770453728082833251091510131025984187712529448877245",
+   "event": "will-there-be-another-us-government-shutdown-by-january-31",
+   "tags": [
+    "Parent For Derivative",
+    "Gov Shutdown",
+    "Politics",
+    "Congress"
+   ]
+  },
+  {
+   "id": "polymarket:538932",
+   "question": "Will Zohran Mamdani win the 2025 NYC mayoral election?",
+   "volume": 143254859.334333,
+   "start": "2025-04-22T16:10:05.987Z",
+   "end": "2025-11-05 05:44:47+00",
+   "closed": true,
+   "token": "33945469250963963541781051637999677727672635213493648594066577298999471399137",
+   "event": "new-york-city-mayoral-election",
+   "tags": [
+    "nyc",
+    "NYC Mayor",
+    "Macro Election 2",
+    "World Elections",
+    "mayor",
+    "Politics",
+    "US Election",
+    "Mayoral Elections",
+    "Nov 4 Elections"
+   ]
+  },
+  {
+   "id": "polymarket:1795527",
+   "question": "Russia x Ukraine ceasefire by May 31, 2026?",
+   "volume": 141250712.68070313,
+   "start": "2026-03-31T20:03:10.489Z",
+   "end": "2026-05-09 19:52:26+00",
+   "closed": true,
+   "token": "79574854225464477884287524461980167393583915155475895540399834902850789709576",
+   "event": "russia-x-ukraine-ceasefire-by-may-31-2026",
+   "tags": [
+    "Geopolitics",
+    "Ukraine Peace Deal",
+    "Trump-Zelenskyy",
+    "Trump",
+    "putin",
+    "Ukraine"
+   ]
+  },
+  {
+   "id": "polymarket:570363",
+   "question": "Fed increases interest rates by 25+ bps after December 2025 meeting?",
+   "volume": 133173605.453166,
+   "start": "2025-07-31T19:47:28.374313Z",
+   "end": "2025-12-10 22:18:48+00",
+   "closed": true,
+   "token": "111653286751222233434552489231342053782305860121514128195211070982702807638967",
+   "event": "fed-decision-in-december",
+   "tags": [
+    "fomc",
+    "Politics",
+    "Fed Rates",
+    "Economic Policy",
+    "Economy",
+    "Jerome Powell",
+    "Fed"
+   ]
+  },
+  {
+   "id": "polymarket:1180303",
+   "question": "Khamenei out as Supreme Leader of Iran by February 28?",
+   "volume": 131114970.827221,
+   "start": "2026-01-14T01:35:04.513Z",
+   "end": "2026-03-04 01:05:25+00",
+   "closed": true,
+   "token": "39317885422026394259056328144566743331998444273202427934141325790266108570112",
+   "event": "khamenei-out-as-supreme-leader-of-iran-by-february-28",
+   "tags": [
+    "Geopolitics",
+    "Iran",
+    "Middle East",
+    "World",
+    "Politics"
+   ]
+  },
+  {
+   "id": "polymarket:572473",
+   "question": "Will Trump nominate Judy Shelton as the next Fed chair?",
+   "volume": 127684064.95211223,
+   "start": "2025-08-05T17:28:21.437992Z",
+   "end": "2026-03-04 19:25:55+00",
+   "closed": true,
+   "token": "5031084282167950494806674428243037744881029417420880897305642929037077494331",
+   "event": "who-will-trump-nominate-as-fed-chair",
+   "tags": [
+    "Parent For Derivative",
+    "Jerome Powell",
+    "Politics",
+    "Trump Presidency",
+    "Trump",
+    "Fed Rates",
+    "Fed"
+   ]
+  },
+  {
+   "id": "polymarket:601699",
+   "question": "No change in Fed interest rates after January 2026 meeting?",
+   "volume": 106767096.072298,
+   "start": "2025-09-17T19:03:52.068853Z",
+   "end": "2026-01-28 22:52:08+00",
+   "closed": true,
+   "token": "112838095111461683880944516726938163688341306245473734071798778736646352193304",
+   "event": "fed-decision-in-january",
+   "tags": [
+    "fomc",
+    "Fed Rates",
+    "Economy",
+    "Politics",
+    "Economic Policy",
+    "Jerome Powell",
+    "Fed",
+    "Finance"
+   ]
+  },
+  {
+   "id": "polymarket:1484949",
+   "question": "Netanyahu out by March 31?",
+   "volume": 104205875.48971872,
+   "start": "2026-03-02T17:46:49.625Z",
+   "end": "2026-04-05 06:13:09+00",
+   "closed": true,
+   "token": "68651215661669695672235506829747686724194100790999648420763714425224567728520",
+   "event": "netanyahu-out-before-2027",
+   "tags": [
+    "Geopolitics",
+    "World",
+    "Middle East",
+    "Israel",
+    "Politics",
+    "Earn 3.25%",
+    "Israel Election"
+   ]
+  },
+  {
+   "id": "polymarket:601698",
+   "question": "Fed decreases interest rates by 25 bps after January 2026 meeting?",
+   "volume": 101211542.667667,
+   "start": "2025-09-17T19:03:51.816263Z",
+   "end": "2026-01-28 22:54:06+00",
+   "closed": true,
+   "token": "92703761682322480664976766247614127878023988651992837287050266308961660624165",
+   "event": "fed-decision-in-january",
+   "tags": [
+    "fomc",
+    "Fed Rates",
+    "Economy",
+    "Politics",
+    "Economic Policy",
+    "Jerome Powell",
+    "Fed",
+    "Finance"
+   ]
+  },
+  {
+   "id": "polymarket:1198423",
+   "question": "US strikes Iran by February 28, 2026?",
+   "volume": 89652867.363489,
+   "start": "2026-01-19T20:34:32.385Z",
+   "end": "2026-02-28 09:31:17+00",
+   "closed": true,
+   "token": "110790003121442365126855864076707686014650523258783405996925622264696084778807",
+   "event": "us-strikes-iran-by",
+   "tags": [
+    "Parent For Derivative",
+    "HFC",
+    "Iran",
+    "Politics",
+    "Middle East",
+    "World",
+    "Geopolitics"
+   ]
+  },
+  {
+   "id": "polymarket:1919425",
+   "question": "US x Iran permanent peace deal by May 31, 2026?",
+   "volume": 87888981.28583376,
+   "start": "2026-04-08T16:19:31.125Z",
+   "end": "2026-06-01 12:17:00+00",
+   "closed": true,
+   "token": "72094069823942324362885404801938332659316240217382754851102758232469673300092",
+   "event": "us-x-iran-permanent-peace-deal-by",
+   "tags": [
+    "Iran",
+    "Trump",
+    "U.S. x Iran",
+    "ceasefire",
+    "Geopolitics",
+    "Iran Ceasefire",
+    "Agreement",
+    "10-point",
+    "Politics",
+    "Peace Deal"
+   ]
+  },
+  {
+   "id": "polymarket:654413",
+   "question": "Will the Fed decrease interest rates by 25 bps after the March 2026 meeting?",
+   "volume": 87103283.7263213,
+   "start": "2025-10-29T19:01:04.993149Z",
+   "end": "2026-03-18 21:18:07+00",
+   "closed": true,
+   "token": "62938043365772447095885755955446362343142416536419862840923032141775380249586",
+   "event": "fed-decision-in-march-885",
+   "tags": [
+    "Parent For Derivative",
+    "fomc",
+    "Economy",
+    "Fed Rates",
+    "Economic Policy",
+    "Politics",
+    "Jerome Powell",
+    "Fed"
+   ]
+  },
+  {
+   "id": "polymarket:2063134",
+   "question": "Will Adanech Abiebie be the next Prime Minister of Ethiopia?",
+   "volume": 83460060.365002,
+   "start": "2026-04-27T21:55:14.576Z",
+   "end": "2026-06-02T03:59:00Z",
+   "closed": false,
+   "token": "27146956652877944551877724690365745048289675287536243265951843487691050802191",
+   "event": "next-prime-minister-of-ethiopia",
+   "tags": [
+    "Ethiopia",
+    "Elections",
+    "Main Election",
+    "Global Elections",
+    "Politics"
+   ]
+  },
+  {
+   "id": "polymarket:551963",
+   "question": "Xi Jinping out in 2025?",
+   "volume": 78655911.742866,
+   "start": "2025-06-12T19:41:07.661Z",
+   "end": "2026-01-01 08:18:43+00",
+   "closed": true,
+   "token": "114304586861386186441621124384163963092522056897081085884483958561365015034812",
+   "event": "xi-jinping-out-in-2025",
+   "tags": [
+    "Geopolitics",
+    "world affairs",
+    "World"
+   ]
+  },
+  {
+   "id": "polymarket:669662",
+   "question": "Will there be no change in Fed interest rates after the April 2026 meeting?",
+   "volume": 76909226.49304736,
+   "start": "2025-11-13T00:40:36.249998Z",
+   "end": "2026-04-29 21:24:28+00",
+   "closed": true,
+   "token": "63586620628756015058616403521099137018911742768824051367331188904593189743777",
+   "event": "fed-decision-in-april",
+   "tags": [
+    "fomc",
+    "Economy",
+    "Economic Policy",
+    "Jerome Powell",
+    "Fed Rates",
+    "Fed",
+    "Politics"
+   ]
+  },
+  {
+   "id": "polymarket:669663",
+   "question": "Will the Fed increase interest rates by 25+ bps after the April 2026 meeting?",
+   "volume": 75978206.16104123,
+   "start": "2025-11-13T00:40:39.240352Z",
+   "end": "2026-04-29 21:24:38+00",
+   "closed": true,
+   "token": "9556122149160720922715284597610520228366807023831966638741974320131898296289",
+   "event": "fed-decision-in-april",
+   "tags": [
+    "fomc",
+    "Economy",
+    "Economic Policy",
+    "Jerome Powell",
+    "Fed Rates",
+    "Fed",
+    "Politics"
+   ]
+  },
+  {
+   "id": "polymarket:516719",
+   "question": "Russia x Ukraine ceasefire in 2025?",
+   "volume": 73752993.267722,
+   "start": "2024-12-29T22:51:33.18Z",
+   "end": "2026-01-01 07:18:23+00",
+   "closed": true,
+   "token": "15974786252393396629980467963784550802583781222733347534844974829144359265969",
+   "event": "russia-x-ukraine-ceasefire-in-2025",
+   "tags": [
+    "Geopolitics",
+    "Politics",
+    "2025 Predictions",
+    "Ukraine",
+    "Foreign Policy",
+    "World",
+    "Trump-Putin"
+   ]
+  },
+  {
+   "id": "polymarket:669660",
+   "question": "Will the Fed decrease interest rates by 50+ bps after the April 2026 meeting?",
+   "volume": 66025383.9220003,
+   "start": "2025-11-13T00:40:37.279833Z",
+   "end": "2026-04-29 21:24:08+00",
+   "closed": true,
+   "token": "18690049947242812495755151360212639738977254879109748949267393375856311641700",
+   "event": "fed-decision-in-april",
+   "tags": [
+    "fomc",
+    "Economy",
+    "Economic Policy",
+    "Jerome Powell",
+    "Fed Rates",
+    "Fed",
+    "Politics"
+   ]
+  },
+  {
+   "id": "polymarket:958443",
+   "question": "Will the Iranian regime fall by June 30?",
+   "volume": 65931940.58445303,
+   "start": "2025-12-17T23:02:16.567221Z",
+   "end": "2026-07-01 06:04:10+00",
+   "closed": true,
+   "token": "38397507750621893057346880033441136112987238933685677349709401910643842844855",
+   "event": "will-the-iranian-regime-fall-by-june-30",
+   "tags": [
+    "Reza Pahlavi",
+    "Iran Regime",
+    "Israel",
+    "Geopolitics",
+    "World",
+    "Politics",
+    "Middle East",
+    "Iran",
+    "Khamenei"
+   ]
+  },
+  {
+   "id": "polymarket:566331",
+   "question": "Will Polymarket US go live in 2025?",
+   "volume": 65428102.459334,
+   "start": "2025-07-22T06:32:00.747Z",
+   "end": "2025-12-06 00:32:35+00",
+   "closed": true,
+   "token": "11011989236331164054844679338128881575446679057930991995271488699513863012857",
+   "event": "will-polymarket-us-go-live-in-2025",
+   "tags": [
+    "Politics",
+    "Tech",
+    "Prediction Markets"
+   ]
+  },
+  {
+   "id": "polymarket:669661",
+   "question": "Will the Fed decrease interest rates by 25 bps after the April 2026 meeting?",
+   "volume": 65311948.7161929,
+   "start": "2025-11-13T00:40:36.764725Z",
+   "end": "2026-04-29 21:24:18+00",
+   "closed": true,
+   "token": "83479140651306794046790588004449066364152228067472874205697111967337978544729",
+   "event": "fed-decision-in-april",
+   "tags": [
+    "fomc",
+    "Economy",
+    "Economic Policy",
+    "Jerome Powell",
+    "Fed Rates",
+    "Fed",
+    "Politics"
+   ]
+  },
+  {
+   "id": "polymarket:916732",
+   "question": "Khamenei out as Supreme Leader of Iran by March 31?",
+   "volume": 63238697.721704,
+   "start": "2025-12-12T00:41:16.645Z",
+   "end": "2026-03-04 00:58:01+00",
+   "closed": true,
+   "token": "70771354585365381988139008309072205730081182435161568795508496003376222185889",
+   "event": "khamenei-out-as-supreme-leader-of-iran-by-march-31",
+   "tags": [
+    "Parent For Derivative",
+    "Politics",
+    "Middle East",
+    "Geopolitics",
+    "World",
+    "Iran",
+    "Khamenei",
+    "Israel"
+   ]
+  },
+  {
+   "id": "polymarket:958442",
+   "question": "Will the Iranian regime fall by March 31?",
+   "volume": 63229537.94105003,
+   "start": "2025-12-17T23:01:53.379097Z",
+   "end": "2026-04-01 06:48:37+00",
+   "closed": true,
+   "token": "48825140812430902098404528620382945035793471220915259967486864813738884055220",
+   "event": "will-the-iranian-regime-fall-by-march-31",
+   "tags": [
+    "Reza Pahlavi",
+    "Iran Regime",
+    "Iran",
+    "Israel",
+    "Politics",
+    "World",
+    "Middle East",
+    "Geopolitics",
+    "Khamenei"
+   ]
+  },
+  {
+   "id": "polymarket:1171663",
+   "question": "Russia x Ukraine ceasefire by June 30, 2026?",
+   "volume": 60668118.31172506,
+   "start": "2026-01-13T19:24:04.55Z",
+   "end": "2026-05-09 19:45:22+00",
+   "closed": true,
+   "token": "92338023949892178944669766466918011858071833335063600591564160751176113496073",
+   "event": "russia-x-ukraine-ceasefire-by-june-30-2026",
+   "tags": [
+    "Trump-Zelenskyy",
+    "World",
+    "Ukraine Peace Deal",
+    "Politics",
+    "Foreign Policy",
+    "Geopolitics",
+    "Ukraine",
+    "Trump-Zelensky"
+   ]
+  },
+  {
+   "id": "polymarket:538930",
+   "question": "Will Curtis Sliwa win the 2025 NYC mayoral election?",
+   "volume": 60402049.764981,
+   "start": "2025-04-22T16:09:30.103Z",
+   "end": "2025-11-05 06:13:17+00",
+   "closed": true,
+   "token": "106645483208866512069057468273735379467092160028743318106715987586591689242591",
+   "event": "new-york-city-mayoral-election",
+   "tags": [
+    "nyc",
+    "NYC Mayor",
+    "Macro Election 2",
+    "World Elections",
+    "mayor",
+    "Politics",
+    "US Election",
+    "Mayoral Elections",
+    "Nov 4 Elections"
+   ]
+  },
+  {
+   "id": "polymarket:572469",
+   "question": "Will Trump nominate Kevin Warsh as the next Fed chair?",
+   "volume": 59907150.95188258,
+   "start": "2025-08-05T17:28:15.516Z",
+   "end": "2026-03-04 19:25:43+00",
+   "closed": true,
+   "token": "51338236787729560681434534660841415073585974762690814047670810862722808070955",
+   "event": "who-will-trump-nominate-as-fed-chair",
+   "tags": [
+    "Parent For Derivative",
+    "Jerome Powell",
+    "Politics",
+    "Trump Presidency",
+    "Trump",
+    "Fed Rates",
+    "Fed"
+   ]
+  },
+  {
+   "id": "polymarket:2063135",
+   "question": "Will Gedion Timothewos be the next Prime Minister of Ethiopia?",
+   "volume": 55938233.411122985,
+   "start": "2026-04-27T21:55:15.894Z",
+   "end": "2026-06-02T03:59:00Z",
+   "closed": false,
+   "token": "26485245961222313575373928818655498088613748810606082451526412785977121014592",
+   "event": "next-prime-minister-of-ethiopia",
+   "tags": [
+    "Ethiopia",
+    "Elections",
+    "Main Election",
+    "Global Elections",
+    "Politics"
+   ]
+  },
+  {
+   "id": "polymarket:686122",
+   "question": "Lighter market cap (FDV) >$1B one day after launch?",
+   "volume": 55056697.127347,
+   "start": "2025-11-16T23:39:23.589Z",
+   "end": "2026-01-03 01:35:37+00",
+   "closed": true,
+   "token": "108054592060808479303370270554306028883916458239782628449790057811735078958789",
+   "event": "lighter-market-cap-fdv-one-day-after-launch",
+   "tags": [
+    "FDV",
+    "Featured",
+    "Crypto",
+    "Airdrops",
+    "Pre-Market",
+    "Lighter"
+   ]
+  },
+  {
+   "id": "polymarket:570361",
+   "question": "Fed decreases interest rates by 25 bps after December 2025 meeting?",
+   "volume": 54634506.683355,
+   "start": "2025-07-31T19:47:26.391724Z",
+   "end": "2025-12-10 22:16:48+00",
+   "closed": true,
+   "token": "87769991026114894163580777793845523168226980076553814689875238288185044414090",
+   "event": "fed-decision-in-december",
+   "tags": [
+    "fomc",
+    "Politics",
+    "Fed Rates",
+    "Economic Policy",
+    "Economy",
+    "Jerome Powell",
+    "Fed"
+   ]
+  },
+  {
+   "id": "polymarket:1507751",
+   "question": "Will the Iranian regime fall by April 30?",
+   "volume": 52714900.01335832,
+   "start": "2026-03-05T17:10:01.165417Z",
+   "end": "2026-05-01 13:56:36+00",
+   "closed": true,
+   "token": "48764428286656921488851644351774667118009263342042758531252625616470924946480",
+   "event": "will-the-iranian-regime-fall-by-april-30",
+   "tags": [
+    "Reza Pahlavi",
+    "Politics",
+    "Middle East",
+    "Israel",
+    "Geopolitics",
+    "Iran",
+    "Iran Regime"
+   ]
+  },
+  {
+   "id": "polymarket:588775",
+   "question": "US x Venezuela military engagement by December 31?",
+   "volume": 51073020.592839,
+   "start": "2025-09-05T16:59:22.064Z",
+   "end": "2026-01-05 00:33:37+00",
+   "closed": true,
+   "token": "58194798786674267467235696472878300864943462064955274098210719743062794563955",
+   "event": "us-x-venezuela-military-engagement-by",
+   "tags": [
+    "World",
+    "Politics",
+    "Venezuela",
+    "Geopolitics"
+   ]
+  },
+  {
+   "id": "polymarket:538931",
+   "question": "Will Jim Walden win the 2025 NYC mayoral election?",
+   "volume": 49207581.601009,
+   "start": "2025-04-22T16:09:49.101Z",
+   "end": "2025-11-05 06:14:21+00",
+   "closed": true,
+   "token": "10142872462975275995759595767341515402450823584364917228661247714894341308969",
+   "event": "new-york-city-mayoral-election",
+   "tags": [
+    "nyc",
+    "NYC Mayor",
+    "Macro Election 2",
+    "World Elections",
+    "mayor",
+    "Politics",
+    "US Election",
+    "Mayoral Elections",
+    "Nov 4 Elections"
+   ]
+  },
+  {
+   "id": "polymarket:1962237",
+   "question": "US x Iran permanent peace deal by June 30, 2026?",
+   "volume": 49036513.606860146,
+   "start": "2026-04-12T20:50:20.876Z",
+   "end": "2026-06-18 00:33:07+00",
+   "closed": true,
+   "token": "31867385211987925701696042012772036156561382644688734856312468506547392739862",
+   "event": "us-x-iran-permanent-peace-deal-by",
+   "tags": [
+    "Iran",
+    "Trump",
+    "U.S. x Iran",
+    "ceasefire",
+    "Geopolitics",
+    "Iran Ceasefire",
+    "Agreement",
+    "10-point",
+    "Politics",
+    "Peace Deal"
+   ]
+  },
+  {
+   "id": "polymarket:538929",
+   "question": "Will Andrew Cuomo win the 2025 NYC mayoral election?",
+   "volume": 48755937.180665,
+   "start": "2025-04-22T16:08:59.912Z",
+   "end": "2025-11-05 05:56:23+00",
+   "closed": true,
+   "token": "72685162394098505217895638060393901041260225434938300730127268362092284806692",
+   "event": "new-york-city-mayoral-election",
+   "tags": [
+    "nyc",
+    "NYC Mayor",
+    "Macro Election 2",
+    "World Elections",
+    "mayor",
+    "Politics",
+    "US Election",
+    "Mayoral Elections",
+    "Nov 4 Elections"
+   ]
+  },
+  {
+   "id": "polymarket:1706766",
+   "question": "Iran x Israel/US conflict ends by April 7?",
+   "volume": 48720376.31273075,
+   "start": "2026-03-24T17:52:18.787227Z",
+   "end": "2026-04-25 00:43:00+00",
+   "closed": true,
+   "token": "21743669032210695168079601505378236205866986767926346409604806906483294819314",
+   "event": "iran-x-israelus-conflict-ends-by",
+   "tags": [
+    "Iran",
+    "World",
+    "Trump",
+    "Politics",
+    "Israel",
+    "Middle East",
+    "Geopolitics",
+    "Iran Ceasefire",
+    "Israel x Iran"
+   ]
+  },
+  {
+   "id": "polymarket:570362",
+   "question": "No change in Fed interest rates after December 2025 meeting?",
+   "volume": 44523455.111481,
+   "start": "2025-07-31T19:47:26.644562Z",
+   "end": "2025-12-10 22:17:52+00",
+   "closed": true,
+   "token": "80746058984644290629624903019922696017323803605256698757445938534814122585786",
+   "event": "fed-decision-in-december",
+   "tags": [
+    "fomc",
+    "Politics",
+    "Fed Rates",
+    "Economic Policy",
+    "Economy",
+    "Jerome Powell",
+    "Fed"
+   ]
+  },
+  {
+   "id": "polymarket:563368",
+   "question": "Will Satoshi move any Bitcoin in 2025?",
+   "volume": 44180791.509037,
+   "start": "2025-07-14T16:03:36.611Z",
+   "end": "2026-01-01 08:27:53+00",
+   "closed": true,
+   "token": "57338714801830110409291906331043415122319095430948035858069240523339447935973",
+   "event": "will-satoshi-move-any-bitcoin-in-2025",
+   "tags": [
+    "Crypto",
+    "Bitcoin"
+   ]
+  },
+  {
+   "id": "polymarket:1971905",
+   "question": "Strait of Hormuz traffic returns to normal by end of June?",
+   "volume": 44111324.778536566,
+   "start": "2026-04-13T22:16:43.957993Z",
+   "end": "2026-07-07 15:27:17+00",
+   "closed": true,
+   "token": "46130022848920611732202507184264902690726361824951579816156441452797397798181",
+   "event": "strait-of-hormuz-traffic-returns-to-normal-by-end-of-june",
+   "tags": [
+    "transit",
+    "Economy",
+    "Macro Geopolitics",
+    "Hormuz",
+    "Oil",
+    "ships",
+    "Iran",
+    "Strait of Hormuz",
+    "Geopolitics"
+   ]
+  },
+  {
+   "id": "polymarket:906974",
+   "question": "Will there be no change in Fed interest rates after the June 2026 meeting?",
+   "volume": 43061416.20801809,
+   "start": "2025-12-10T21:45:58.269771Z",
+   "end": "2026-06-17 21:07:28+00",
+   "closed": true,
+   "token": "30767812841387255642892182147223249245545002662653079696958384408588201824258",
+   "event": "fed-decision-in-june-825",
+   "tags": [
+    "fomc",
+    "Economic Policy",
+    "Jerome Powell",
+    "Fed Rates",
+    "Fed",
+    "Politics",
+    "Economy"
+   ]
+  },
+  {
+   "id": "polymarket:2063133",
+   "question": "Will Shimelis Abdisa be the next Prime Minister of Ethiopia?",
+   "volume": 41582547.35253099,
+   "start": "2026-04-27T21:55:07.879Z",
+   "end": "2026-06-02T03:59:00Z",
+   "closed": false,
+   "token": "4489049127093187435445530909063903861654656526363504166478270583011546818111",
+   "event": "next-prime-minister-of-ethiopia",
+   "tags": [
+    "Ethiopia",
+    "Elections",
+    "Main Election",
+    "Global Elections",
+    "Politics"
+   ]
+  },
+  {
+   "id": "polymarket:1654958",
+   "question": "Will there be no change in Fed interest rates after the July 2026 meeting?",
+   "volume": 40497085.547722004,
+   "start": "2026-03-20T00:12:44.271047Z",
+   "end": "2026-07-29 20:06:41+00",
+   "closed": true,
+   "token": "111604417349377875799825956621596386269673370070912696668140891647145772186047",
+   "event": "fed-decision-in-july-181",
+   "tags": [
+    "Economic Policy",
+    "Economy",
+    "Jerome Powell",
+    "fomc",
+    "Fed",
+    "Fed Rates",
+    "Politics",
+    "CPI Release"
+   ]
+  },
+  {
+   "id": "polymarket:572481",
+   "question": "Will Trump nominate Scott Bessent as the next Fed chair?",
+   "volume": 38740980.44605291,
+   "start": "2025-08-05T17:28:29.598Z",
+   "end": "2026-03-04 20:13:15+00",
+   "closed": true,
+   "token": "107497259924014101120833054359244209179064033764980103636954562467069199808803",
+   "event": "who-will-trump-nominate-as-fed-chair",
+   "tags": [
+    "Parent For Derivative",
+    "Jerome Powell",
+    "Politics",
+    "Trump Presidency",
+    "Trump",
+    "Fed Rates",
+    "Fed"
+   ]
+  },
+  {
+   "id": "polymarket:571191",
+   "question": "Will Rob Riggle win the 2025 National Heads-Up Poker Championship?",
+   "volume": 38337948.635363,
+   "start": "2025-08-03T16:55:39.648911Z",
+   "end": "2025-12-19 04:32:15+00",
+   "closed": true,
+   "token": "83155121487302893701205374720745341333006516456801290302046437362427097293161",
+   "event": "2025-national-heads-up-poker-championship-winner-845",
+   "tags": [
+    "Culture",
+    "Poker game"
+   ]
+  },
+  {
+   "id": "polymarket:1707932",
+   "question": "Will the Iranian regime fall by May 31?",
+   "volume": 38330965.45359882,
+   "start": "2026-04-01T16:23:13.899442Z",
+   "end": "2026-06-01 07:09:24+00",
+   "closed": true,
+   "token": "57360053771630303266236723124451177814047338705194149193939656360140487569996",
+   "event": "will-the-iranian-regime-fall-by-may-31",
+   "tags": [
+    "Israel",
+    "Iran Regime",
+    "Israel x Iran",
+    "Geopolitics",
+    "Iran",
+    "U.S. x Iran",
+    "Politics",
+    "Khamenei",
+    "Reza Pahlavi",
+    "Middle East"
+   ]
+  },
+  {
+   "id": "polymarket:1540766",
+   "question": "Strait of Hormuz traffic returns to normal by end of April?",
+   "volume": 38005859.138665095,
+   "start": "2026-03-09T18:03:29.402Z",
+   "end": "2026-05-12 15:25:37+00",
+   "closed": true,
+   "token": "77893140510362582253172593084218413010407941075415081594586195705930819989216",
+   "event": "strait-of-hormuz-traffic-returns-to-normal-by-april-30",
+   "tags": [
+    "Geopolitics",
+    "Oil",
+    "Iran",
+    "Economy",
+    "China",
+    "U.S. x Iran",
+    "ships",
+    "transit",
+    "Hormuz",
+    "Strait of Hormuz",
+    "Macro Geopolitics"
+   ]
+  },
+  {
+   "id": "polymarket:906972",
+   "question": "Will the Fed decrease interest rates by 50+ bps after the June 2026 meeting?",
+   "volume": 37866883.42341023,
+   "start": "2025-12-10T21:45:56.196927Z",
+   "end": "2026-06-17 21:07:23+00",
+   "closed": true,
+   "token": "110884561568299698460551977852169332756450294345019257864587852438060900499251",
+   "event": "fed-decision-in-june-825",
+   "tags": [
+    "fomc",
+    "Economic Policy",
+    "Jerome Powell",
+    "Fed Rates",
+    "Fed",
+    "Politics",
+    "Economy"
+   ]
+  },
+  {
+   "id": "polymarket:947289",
+   "question": "Will Roberto Sánchez Palomino win the 2026 Peruvian presidential election?",
+   "volume": 36601896.005035795,
+   "start": "2025-12-16T20:14:42.03Z",
+   "end": "2026-07-06 13:42:37+00",
+   "closed": true,
+   "token": "40073700561695212653451049120779209383948898865772011302940523990213422296817",
+   "event": "peru-presidential-election-winner",
+   "tags": [
+    "Peru",
+    "Peru Election",
+    "Main Election",
+    "Politics",
+    "Global Elections",
+    "World Elections",
+    "Elections"
+   ]
+  },
+  {
+   "id": "polymarket:572470",
+   "question": "Will Trump nominate Kevin Hassett as the next Fed chair?",
+   "volume": 36122905.93072796,
+   "start": "2025-08-05T17:28:17.427441Z",
+   "end": "2026-03-04 19:57:05+00",
+   "closed": true,
+   "token": "34551606549875928972193520396544368029176529083448203019529657908155427866742",
+   "event": "who-will-trump-nominate-as-fed-chair",
+   "tags": [
+    "Parent For Derivative",
+    "Jerome Powell",
+    "Politics",
+    "Trump Presidency",
+    "Trump",
+    "Fed Rates",
+    "Fed"
+   ]
+  },
+  {
+   "id": "polymarket:997488",
+   "question": "Will Trump acquire Greenland before 2027?",
+   "volume": 35606231.40454011,
+   "start": "2025-12-23T00:58:12.158Z",
+   "end": "2027-01-01T04:59:00Z",
+   "closed": false,
+   "token": "5161623255678193352839985156330393796378434470119114669671615782853260939535",
+   "event": "will-trump-acquire-greenland-before-2027",
+   "tags": [
+    "Davos",
+    "Parent For Derivative",
+    "Foreign Policy",
+    "Politics",
+    "Denmark",
+    "Trump",
+    "Greenland"
+   ]
+  },
+  {
+   "id": "polymarket:572485",
+   "question": "Will Trump nominate Rick Rieder as the next Fed chair?",
+   "volume": 35603624.85201814,
+   "start": "2025-08-05T17:28:33.836Z",
+   "end": "2026-03-04 20:10:11+00",
+   "closed": true,
+   "token": "16206267440377108972343351482425564384973031696941663558076310969498822538172",
+   "event": "who-will-trump-nominate-as-fed-chair",
+   "tags": [
+    "Parent For Derivative",
+    "Jerome Powell",
+    "Politics",
+    "Trump Presidency",
+    "Trump",
+    "Fed Rates",
+    "Fed"
+   ]
+  },
+  {
+   "id": "polymarket:649847",
+   "question": "Monad market cap (FDV) >$4B one day after launch?",
+   "volume": 34894820.551069,
+   "start": "2025-10-25T18:46:50.346Z",
+   "end": "2025-11-28 00:33:23+00",
+   "closed": true,
+   "token": "39765353778464750787631192721907889057482998132457144837307768128298789022189",
+   "event": "monad-market-cap-fdv-one-day-after-launch",
+   "tags": [
+    "FDV",
+    "Airdrops",
+    "Crypto",
+    "Featured",
+    "Monad",
+    "Pre-Market",
+    "Token Sales"
+   ]
+  },
+  {
+   "id": "polymarket:516947",
+   "question": "Maduro out in 2025?",
+   "volume": 34641400.627049,
+   "start": "2024-12-31T18:56:24.381Z",
+   "end": "2026-01-01 08:30:59+00",
+   "closed": true,
+   "token": "45343480653694577807177505914664405669209636932459044719445554137639656106379",
+   "event": "maduro-out-in-2025",
+   "tags": [
+    "Venezuela",
+    "Politics",
+    "2025 Predictions",
+    "World"
+   ]
+  },
+  {
+   "id": "polymarket:1809560",
+   "question": "Strait of Hormuz traffic returns to normal by end of May?",
+   "volume": 34564221.91767358,
+   "start": "2026-03-31T21:44:10.759Z",
+   "end": "2026-06-02 18:21:25+00",
+   "closed": true,
+   "token": "75845920741796858670183364159540464375486880005358999101126589340494255300090",
+   "event": "strait-of-hormuz-traffic-returns-to-normal-by-end-of-may",
+   "tags": [
+    "Economy",
+    "transit",
+    "Hormuz",
+    "China",
+    "Oil",
+    "Iran",
+    "Geopolitics",
+    "Macro Geopolitics",
+    "Strait of Hormuz",
+    "U.S. x Iran",
+    "ships"
+   ]
+  },
+  {
+   "id": "polymarket:1105754",
+   "question": "Will Richard Grenell be the leader of Venezuela end of 2026?",
+   "volume": 32790733.048844993,
+   "start": "2026-01-04T18:21:34.133Z",
+   "end": "2026-12-31T00:00:00Z",
+   "closed": false,
+   "token": "63041927234014862550752749844577619438319946530923167906649363118591050055991",
+   "event": "venezuela-leader-end-of-2026",
+   "tags": [
+    "Trump-Machado",
+    "Rewards 20, 4.5, 50",
+    "Venezuela",
+    "Trump",
+    "Politics",
+    "Geopolitics",
+    "maduro"
+   ]
+  },
+  {
+   "id": "polymarket:2063129",
+   "question": "Will Belete Molla be the next Prime Minister of Ethiopia?",
+   "volume": 32292281.311426997,
+   "start": "2026-04-27T21:54:41.666Z",
+   "end": "2026-06-02T03:59:00Z",
+   "closed": false,
+   "token": "85367286745806857961178482075931972831841231758328346969840810630055458089640",
+   "event": "next-prime-minister-of-ethiopia",
+   "tags": [
+    "Ethiopia",
+    "Elections",
+    "Main Election",
+    "Global Elections",
+    "Politics"
+   ]
+  },
+  {
+   "id": "polymarket:906975",
+   "question": "Will the Fed increase interest rates by 25 bps after the June 2026 meeting?",
+   "volume": 31037182.120555956,
+   "start": "2025-12-10T21:45:58.775194Z",
+   "end": "2026-06-17 21:20:40+00",
+   "closed": true,
+   "token": "54688507565884542490190759171719899637342914252863057837926715255559077706253",
+   "event": "fed-decision-in-june-825",
+   "tags": [
+    "fomc",
+    "Economic Policy",
+    "Jerome Powell",
+    "Fed Rates",
+    "Fed",
+    "Politics",
+    "Economy"
+   ]
+  },
+  {
+   "id": "polymarket:906973",
+   "question": "Will the Fed decrease interest rates by 25 bps after the June 2026 meeting?",
+   "volume": 30934915.761426214,
+   "start": "2025-12-10T21:45:58.522699Z",
+   "end": "2026-06-17 21:15:16+00",
+   "closed": true,
+   "token": "65193234666628291664907888364936366210889305490897648116746073820519263548476",
+   "event": "fed-decision-in-june-825",
+   "tags": [
+    "fomc",
+    "Economic Policy",
+    "Jerome Powell",
+    "Fed Rates",
+    "Fed",
+    "Politics",
+    "Economy"
+   ]
+  },
+  {
+   "id": "polymarket:2063130",
+   "question": "Will Berhanu Nega be the next Prime Minister of Ethiopia?",
+   "volume": 29707646.329099998,
+   "start": "2026-04-27T21:54:45.451Z",
+   "end": "2026-06-02T03:59:00Z",
+   "closed": false,
+   "token": "9700525976462326306802795530553376348116310383328382626789994562350229436531",
+   "event": "next-prime-minister-of-ethiopia",
+   "tags": [
+    "Ethiopia",
+    "Elections",
+    "Main Election",
+    "Global Elections",
+    "Politics"
+   ]
+  },
+  {
+   "id": "polymarket:2063132",
+   "question": "Will Demeke Mekonnen be the next Prime Minister of Ethiopia?",
+   "volume": 29330600.537182003,
+   "start": "2026-04-27T21:54:59.91Z",
+   "end": "2026-06-02T03:59:00Z",
+   "closed": false,
+   "token": "2782564244692790193407832532237218722544517902619602647018377360625351910716",
+   "event": "next-prime-minister-of-ethiopia",
+   "tags": [
+    "Ethiopia",
+    "Elections",
+    "Main Election",
+    "Global Elections",
+    "Politics"
+   ]
+  },
+  {
+   "id": "polymarket:538935",
+   "question": "Will Brad Lander win the 2025 NYC mayoral election?",
+   "volume": 29246888.170365,
+   "start": "2025-04-22T16:11:19.586Z",
+   "end": "2025-11-05 06:13:17+00",
+   "closed": true,
+   "token": "107994222693888332350594321437565759480970489245315274952274526225090527223452",
+   "event": "new-york-city-mayoral-election",
+   "tags": [
+    "nyc",
+    "NYC Mayor",
+    "Macro Election 2",
+    "World Elections",
+    "mayor",
+    "Politics",
+    "US Election",
+    "Mayoral Elections",
+    "Nov 4 Elections"
+   ]
+  },
+  {
+   "id": "polymarket:572471",
+   "question": "Will Trump nominate Christopher Waller as the next Fed chair?",
+   "volume": 29229521.621000286,
+   "start": "2025-08-05T17:28:19.714Z",
+   "end": "2026-03-04 19:56:09+00",
+   "closed": true,
+   "token": "114421380098084026753773605667430150755820287180340356465450569515479471185603",
+   "event": "who-will-trump-nominate-as-fed-chair",
+   "tags": [
+    "Parent For Derivative",
+    "Jerome Powell",
+    "Politics",
+    "Trump Presidency",
+    "Trump",
+    "Fed Rates",
+    "Fed"
+   ]
+  },
+  {
+   "id": "polymarket:1654957",
+   "question": "Will the Fed decrease interest rates by 25 bps after the July 2026 meeting?",
+   "volume": 27994692.422440995,
+   "start": "2026-03-20T00:12:36.429499Z",
+   "end": "2026-07-29 20:01:42+00",
+   "closed": true,
+   "token": "107111506004559425167535337910569809007100298896139468418632748246491535011700",
+   "event": "fed-decision-in-july-181",
+   "tags": [
+    "Economic Policy",
+    "Economy",
+    "Jerome Powell",
+    "fomc",
+    "Fed",
+    "Fed Rates",
+    "Politics",
+    "CPI Release"
+   ]
+  },
+  {
+   "id": "polymarket:1654960",
+   "question": "Will the Fed increase interest rates by 50+ bps after the July 2026 meeting?",
+   "volume": 27556966.68968001,
+   "start": "2026-03-20T00:12:57.861797Z",
+   "end": "2026-07-29 20:01:42+00",
+   "closed": true,
+   "token": "55547507942649396203839937021705347989082320770224485499197798791654376614809",
+   "event": "fed-decision-in-july-181",
+   "tags": [
+    "Economic Policy",
+    "Economy",
+    "Jerome Powell",
+    "fomc",
+    "Fed",
+    "Fed Rates",
+    "Politics",
+    "CPI Release"
+   ]
+  },
+  {
+   "id": "polymarket:704339",
+   "question": "Russia x Ukraine ceasefire by January 31, 2026?",
+   "volume": 26995077.577181,
+   "start": "2025-11-26T12:31:27.051721Z",
+   "end": "2026-02-01 07:27:48+00",
+   "closed": true,
+   "token": "14705029091296171110674089399091656949154521086160164017708184564241023149952",
+   "event": "russia-x-ukraine-ceasefire-by-january-31-2026",
+   "tags": [
+    "World",
+    "Politics",
+    "Ukraine",
+    "Foreign Policy",
+    "Geopolitics",
+    "Trump-Zelensky",
+    "Trump-Zelenskyy",
+    "Ukraine Peace Deal"
+   ]
+  },
+  {
+   "id": "polymarket:571202",
+   "question": "Will David Williams win the 2025 National Heads-Up Poker Championship?",
+   "volume": 26661572.0032,
+   "start": "2025-08-03T16:55:49.84522Z",
+   "end": "2025-12-19 05:02:57+00",
+   "closed": true,
+   "token": "35871328391709784478490175838211946385711547220542341100344399221573832148053",
+   "event": "2025-national-heads-up-poker-championship-winner-845",
+   "tags": [
+    "Culture",
+    "Poker game"
+   ]
+  },
+  {
+   "id": "polymarket:1105752",
+   "question": "Will Frank Donovan be the leader of Venezuela end of 2026?",
+   "volume": 25890109.315588,
+   "start": "2026-01-04T18:21:32.058Z",
+   "end": "2026-12-31T00:00:00Z",
+   "closed": false,
+   "token": "102488069217181040733050347118082609606893446345922306325497036296077206149582",
+   "event": "venezuela-leader-end-of-2026",
+   "tags": [
+    "Trump-Machado",
+    "Rewards 20, 4.5, 50",
+    "Venezuela",
+    "Trump",
+    "Politics",
+    "Geopolitics",
+    "maduro"
+   ]
+  },
+  {
+   "id": "polymarket:1654959",
+   "question": "Will the Fed increase interest rates by 25 bps after the July 2026 meeting?",
+   "volume": 25890005.575899016,
+   "start": "2026-03-20T00:12:51.189884Z",
+   "end": "2026-07-29 20:01:42+00",
+   "closed": true,
+   "token": "10547381015916960267379463101229159185405356924982461726471550099674011526491",
+   "event": "fed-decision-in-july-181",
+   "tags": [
+    "Economic Policy",
+    "Economy",
+    "Jerome Powell",
+    "fomc",
+    "Fed",
+    "Fed Rates",
+    "Politics",
+    "CPI Release"
+   ]
+  },
+  {
+   "id": "polymarket:1819243",
+   "question": "QatarEnergy announces/resumes LNG production in Qatar by April 30?",
+   "volume": 25495050.864901926,
+   "start": "2026-04-01T20:50:47.329607Z",
+   "end": "2026-05-05 00:30:00+00",
+   "closed": true,
+   "token": "96351650250139397447438653380483970772060142397849794315678720298272472897874",
+   "event": "qatarenergy-announcesresumes-lng-production-in-qatar-by-april-30",
+   "tags": [
+    "Politics",
+    "Geopolitics",
+    "Oil",
+    "natural gas",
+    "Qatar",
+    "Regional Spillover",
+    "Iran",
+    "Liquefied natural gas"
+   ]
+  },
+  {
+   "id": "polymarket:567560",
+   "question": "Will the next Prime Minister of Hungary be Viktor Orbán?",
+   "volume": 25456113.707224935,
+   "start": "2025-07-24T22:00:06.287Z",
+   "end": "2026-05-09 17:36:51+00",
+   "closed": true,
+   "token": "16894424691858208925745474726543713759924126381815674402361002638388880101929",
+   "event": "next-prime-minister-of-hungary",
+   "tags": [
+    "Politics",
+    "Hungary Election",
+    "Elections",
+    "Global Elections",
+    "Hungary",
+    "World",
+    "World Elections",
+    "Main Election"
+   ]
+  },
+  {
+   "id": "polymarket:516846",
+   "question": "Will Saudi Aramco be the largest company in the world by market cap on December 31?",
+   "volume": 25240782.288934,
+   "start": "2024-12-30T18:06:41.169257Z",
+   "end": "2026-01-01 01:11:43+00",
+   "closed": true,
+   "token": "68139167816966444400203701872723030754694483720831257634095589500048189850577",
+   "event": "largest-company-end-of-2025",
+   "tags": [
+    "Business",
+    "Economy",
+    "2025 Predictions",
+    "DeepSeek",
+    "Big Tech",
+    "Best of 2025"
+   ]
+  },
+  {
+   "id": "polymarket:556033",
+   "question": "Lighter market cap (FDV) >$2B one day after launch?",
+   "volume": 25086666.676263,
+   "start": "2025-06-26T19:49:03.5Z",
+   "end": "2026-01-03 08:30:07+00",
+   "closed": true,
+   "token": "56570835185013181930169513733177012805556365530301435672575968757674556017763",
+   "event": "lighter-market-cap-fdv-one-day-after-launch",
+   "tags": [
+    "FDV",
+    "Featured",
+    "Crypto",
+    "Airdrops",
+    "Pre-Market",
+    "Lighter"
+   ]
+  },
+  {
+   "id": "polymarket:567561",
+   "question": "Will the next Prime Minister of Hungary be Péter Magyar?",
+   "volume": 24555476.477281053,
+   "start": "2025-07-24T22:00:07.54Z",
+   "end": "2026-05-09 17:02:22+00",
+   "closed": true,
+   "token": "94192784911459194325909253314484842244405314804074606736702592885535642919725",
+   "event": "next-prime-minister-of-hungary",
+   "tags": [
+    "Politics",
+    "Hungary Election",
+    "Elections",
+    "Global Elections",
+    "Hungary",
+    "World",
+    "World Elections",
+    "Main Election"
+   ]
+  },
+  {
+   "id": "polymarket:538928",
+   "question": "Will Eric Adams win the 2025 NYC mayoral election?",
+   "volume": 24498006.503446,
+   "start": "2025-04-22T16:08:39.801Z",
+   "end": "2025-11-05 06:12:19+00",
+   "closed": true,
+   "token": "12541509255877010177934715422358422748052378132651567836811989084820478865881",
+   "event": "new-york-city-mayoral-election",
+   "tags": [
+    "nyc",
+    "NYC Mayor",
+    "Macro Election 2",
+    "World Elections",
+    "mayor",
+    "Politics",
+    "US Election",
+    "Mayoral Elections",
+    "Nov 4 Elections"
+   ]
+  },
+  {
+   "id": "polymarket:1130012",
+   "question": "Will United Russia (ER) gain the most seats in the next Russian parliamentary election?",
+   "volume": 24490194.082594994,
+   "start": "2026-01-07T21:34:52.537984Z",
+   "end": "2026-09-21 12:43:47+00",
+   "closed": true,
+   "token": "20915769520649892253891152116814645067070024223185517956799957803974344024878",
+   "event": "which-party-will-gain-most-seats-in-russian-parliamentary-election",
+   "tags": [
+    "Politics",
+    "International Election Props",
+    "Russia Election",
+    "World Elections",
+    "Elections",
+    "Global Elections",
+    "putin",
+    "Russia",
+    "World"
+   ]
+  },
+  {
+   "id": "polymarket:2176262",
+   "question": "Strait of Hormuz traffic returns to normal by July 31?",
+   "volume": 24291657.998471,
+   "start": "2026-05-11T13:14:49.964Z",
+   "end": "2026-08-04 18:19:27+00",
+   "closed": true,
+   "token": "106929013576622300718402895513457875547556389240247806666273814836599548721421",
+   "event": "strait-of-hormuz-traffic-returns-to-normal-by-july-31",
+   "tags": [
+    "Politics",
+    "ships",
+    "Iran",
+    "Iran Ceasefire",
+    "Strait of Hormuz",
+    "Oil",
+    "Economy",
+    "Geopolitics"
+   ]
+  },
+  {
+   "id": "polymarket:1500755",
+   "question": "Will Judy Shelton be confirmed as Fed Chair?",
+   "volume": 23970639.983398777,
+   "start": "2026-03-04T20:51:39.532369Z",
+   "end": "2026-05-14 01:22:23+00",
+   "closed": true,
+   "token": "29577345180542753188700941748705224076025927865234220835903826643992439907745",
+   "event": "who-will-be-confirmed-as-fed-chair",
+   "tags": [
+    "Fed",
+    "Trump",
+    "Politics",
+    "Fed Rates",
+    "Jerome Powell",
+    "Kevin Warsh",
+    "Judy Shelton",
+    "Fed Chair"
+   ]
+  },
+  {
+   "id": "polymarket:571214",
+   "question": "Will Chef Phillip win the 2025 National Heads-Up Poker Championship?",
+   "volume": 22533633.258365,
+   "start": "2025-08-03T16:55:58.988Z",
+   "end": "2025-12-19 05:02:57+00",
+   "closed": true,
+   "token": "23177813977939886658777764814269533751935144724225193484920990396098116916620",
+   "event": "2025-national-heads-up-poker-championship-winner-845",
+   "tags": [
+    "Culture",
+    "Poker game"
+   ]
+  },
+  {
+   "id": "polymarket:984441",
+   "question": "US strikes Iran by March 31, 2026?",
+   "volume": 22213247.327937,
+   "start": "2025-12-22T16:30:05.642Z",
+   "end": "2026-02-28 09:34:03+00",
+   "closed": true,
+   "token": "114073431155826730926052468626599502581519892859155799641358176120253844422606",
+   "event": "us-strikes-iran-by",
+   "tags": [
+    "Parent For Derivative",
+    "HFC",
+    "Iran",
+    "Politics",
+    "Middle East",
+    "World",
+    "Geopolitics"
+   ]
+  },
+  {
+   "id": "polymarket:1654956",
+   "question": "Will the Fed decrease interest rates by 50+ bps after the July 2026 meeting?",
+   "volume": 22015343.545755006,
+   "start": "2026-03-20T00:12:28.430927Z",
+   "end": "2026-07-29 20:01:42+00",
+   "closed": true,
+   "token": "34352156398446436078106018571351437965469399998092625112032289774684767742814",
+   "event": "fed-decision-in-july-181",
+   "tags": [
+    "Economic Policy",
+    "Economy",
+    "Jerome Powell",
+    "fomc",
+    "Fed",
+    "Fed Rates",
+    "Politics",
+    "CPI Release"
+   ]
+  },
+  {
+   "id": "polymarket:947269",
+   "question": "Will Keiko Fujimori win the 2026 Peruvian presidential election?",
+   "volume": 21817048.613106236,
+   "start": "2025-12-16T20:14:33.824Z",
+   "end": "2026-07-06 13:41:52+00",
+   "closed": true,
+   "token": "64703998724474008677827057135436893758254552168142785204605792475717308499827",
+   "event": "peru-presidential-election-winner",
+   "tags": [
+    "Peru",
+    "Peru Election",
+    "Main Election",
+    "Politics",
+    "Global Elections",
+    "World Elections",
+    "Elections"
+   ]
+  },
+  {
+   "id": "polymarket:567564",
+   "question": "Will the next Prime Minister of Hungary be István Kapitány?",
+   "volume": 21744519.72813603,
+   "start": "2025-07-24T22:00:10.563Z",
+   "end": "2026-05-09 17:37:49+00",
+   "closed": true,
+   "token": "112334119315898655379557681849814313140380376299028916203775469724730149194325",
+   "event": "next-prime-minister-of-hungary",
+   "tags": [
+    "Politics",
+    "Hungary Election",
+    "Elections",
+    "Global Elections",
+    "Hungary",
+    "World",
+    "World Elections",
+    "Main Election"
+   ]
+  },
+  {
+   "id": "polymarket:906976",
+   "question": "Will the Fed increase interest rates by 50+ bps after the June 2026 meeting?",
+   "volume": 21740489.034398694,
+   "start": "2025-12-10T21:45:59.028092Z",
+   "end": "2026-06-17 21:20:46+00",
+   "closed": true,
+   "token": "11019686559003253359318459636510036787281809199165975947920974072245914352862",
+   "event": "fed-decision-in-june-825",
+   "tags": [
+    "fomc",
+    "Economic Policy",
+    "Jerome Powell",
+    "Fed Rates",
+    "Fed",
+    "Politics",
+    "Economy"
+   ]
+  },
+  {
+   "id": "polymarket:1808970",
+   "question": "US obtains Iranian enriched uranium by May 31?",
+   "volume": 20542829.378676113,
+   "start": "2026-03-31T21:49:31.495Z",
+   "end": "2026-06-01 06:05:35+00",
+   "closed": true,
+   "token": "99787107393065498256888522570939526464960671564345515510320748534859284179297",
+   "event": "us-obtains-iranian-enriched-uranium-by",
+   "tags": [
+    "Politics",
+    "U.S. x Iran",
+    "Geopolitics",
+    "Iran Ceasefire",
+    "Iran",
+    "Trump",
+    "Negotiation Topics"
+   ]
+  },
+  {
+   "id": "polymarket:546262",
+   "question": "Will Octavian Berceanu be the next Mayor of Bucharest?",
+   "volume": 20304686.659728,
+   "start": "2025-05-21T00:10:03.101Z",
+   "end": "2025-12-08 04:23:11+00",
+   "closed": true,
+   "token": "2337114197168953713809510934847459253965379669104545820462882004588566922961",
+   "event": "romania-bucharest-mayoral-election",
+   "tags": [
+    "Romania",
+    "World",
+    "Global Elections",
+    "World Elections",
+    "Elections",
+    "Bucharest Mayor"
+   ]
+  },
+  {
+   "id": "polymarket:569426",
+   "question": "Will André Ventura win the 2026 Portugal presidential election?",
+   "volume": 19399481.037677,
+   "start": "2025-08-29T19:08:43.046312Z",
+   "end": "2026-02-09 04:25:29+00",
+   "closed": true,
+   "token": "87048058140607839077917415447158941112086606824479198286281986963033007181784",
+   "event": "portugal-presidential-election",
+   "tags": [
+    "Global Elections",
+    "Politics",
+    "World",
+    "World Elections",
+    "Elections",
+    "Macro Election 2",
+    "Portugal Election"
+   ]
+  },
+  {
+   "id": "polymarket:569437",
+   "question": "Will Raul Perestrello win the 2026 Portugal presidential election?",
+   "volume": 18905388.951092,
+   "start": "2025-08-29T19:08:55.029278Z",
+   "end": "2026-02-09 04:08:29+00",
+   "closed": true,
+   "token": "100873440839630488787675306991927169852104936846951905917156069066481005498699",
+   "event": "portugal-presidential-election",
+   "tags": [
+    "Global Elections",
+    "Politics",
+    "World",
+    "World Elections",
+    "Elections",
+    "Macro Election 2",
+    "Portugal Election"
+   ]
+  },
+  {
+   "id": "polymarket:2774056",
+   "question": "Strait of Hormuz traffic returns to normal by August 31?",
+   "volume": 18063387.164730005,
+   "start": "2026-07-02T21:49:34.448693Z",
+   "end": "2026-09-09 14:37:01+00",
+   "closed": true,
+   "token": "105426373826369935595603860663411604941599130211176020843036778867927711117332",
+   "event": "strait-of-hormuz-traffic-returns-to-normal-by-august-31-20260702154212320",
+   "tags": [
+    "Oil",
+    "Iran",
+    "Politics",
+    "Geopolitics",
+    "Strait of Hormuz"
+   ]
+  },
+  {
+   "id": "polymarket:516926",
+   "question": "MicroStrategy sells any Bitcoin in 2025?",
+   "volume": 17976157.529867,
+   "start": "2024-12-31T18:51:34.648Z",
+   "end": "2026-01-05 04:22:25+00",
+   "closed": true,
+   "token": "93592949212798121127213117304912625505836768562433217537850469496310204567695",
+   "event": "microstrategy-sell-any-bitcoin-in-2025",
+   "tags": [
+    "Economy",
+    "Business",
+    "2025 Predictions",
+    "Crypto",
+    "MicroStrategy",
+    "Stocks"
+   ]
+  },
+  {
+   "id": "polymarket:2054133",
+   "question": "Strait of Hormuz traffic returns to normal by May 15?",
+   "volume": 17940559.114660934,
+   "start": "2026-04-22T18:13:00.463Z",
+   "end": "2026-05-19 21:47:23+00",
+   "closed": true,
+   "token": "9476445326282666463762072399564010356029268509631635291163637063240758755114",
+   "event": "strait-of-hormuz-traffic-returns-to-normal-by-may-15",
+   "tags": [
+    "transit",
+    "Macro Geopolitics",
+    "Strait of Hormuz",
+    "Iran",
+    "Hormuz",
+    "Oil",
+    "ships",
+    "U.S. x Iran",
+    "Economy",
+    "Geopolitics",
+    "China"
+   ]
+  },
+  {
+   "id": "polymarket:1003798",
+   "question": "Will the Indian National Congress (INC) win the most seats in the 2026 Tamil Nadu Legislative Assembly election?",
+   "volume": 17877969.460003857,
+   "start": "2025-12-23T21:01:13.899Z",
+   "end": "2026-05-04 20:27:32+00",
+   "closed": true,
+   "token": "3386970881734107644549907426169651426236762857671752966978225438133599751345",
+   "event": "tamil-nadu-legislative-assembly-election-winner",
+   "tags": [
+    "India",
+    "Main Election",
+    "Indian Elections",
+    "Politics",
+    "World Elections",
+    "Global Elections",
+    "Elections"
+   ]
+  },
+  {
+   "id": "polymarket:1567746",
+   "question": "Iran x Israel/US conflict ends by April 15?",
+   "volume": 17450416.216830038,
+   "start": "2026-03-12T16:49:29.582Z",
+   "end": "2026-04-25 00:30:06+00",
+   "closed": true,
+   "token": "91851388830923641218615793149765322805282194001900444983744404881757241655792",
+   "event": "iran-x-israelus-conflict-ends-by",
+   "tags": [
+    "Iran",
+    "World",
+    "Trump",
+    "Politics",
+    "Israel",
+    "Middle East",
+    "Geopolitics",
+    "Iran Ceasefire",
+    "Israel x Iran"
+   ]
+  },
+  {
+   "id": "polymarket:1611267",
+   "question": "Kharg Island no longer under Iranian control by April 30?",
+   "volume": 17372089.246162925,
+   "start": "2026-03-16T21:43:59.839Z",
+   "end": "2026-05-01 06:47:52+00",
+   "closed": true,
+   "token": "66760013958706218500063341242954853503885044406421636173986330736153883161818",
+   "event": "kharg-island-no-longer-under-iranian-control-by-march-31",
+   "tags": [
+    "Iran Regime",
+    "Iran",
+    "Mojtaba Khamenei",
+    "Khamenei",
+    "Geopolitics",
+    "Kharg Island",
+    "Strait of Hormuz",
+    "U.S. x Iran",
+    "Iran Ceasefire"
+   ]
+  },
+  {
+   "id": "polymarket:994900",
+   "question": "Israel strikes Iran by January 31, 2026?",
+   "volume": 16913391.371627,
+   "start": "2025-12-22T17:28:44.726Z",
+   "end": "2026-02-01 12:04:54+00",
+   "closed": true,
+   "token": "15091760884604171309203489618212539770109612407760305338364320626709285790409",
+   "event": "israel-strikes-iran-by-january-31-2026",
+   "tags": [
+    "Gaza",
+    "Israel",
+    "Politics",
+    "Middle East",
+    "Geopolitics",
+    "Iran",
+    "israel strike iran"
+   ]
+  },
+  {
+   "id": "polymarket:537892",
+   "question": "Trump declassifies UFO files in 2025?",
+   "volume": 16680240.903723,
+   "start": "2025-04-17T22:15:24.18Z",
+   "end": "2025-12-10 00:27:58+00",
+   "closed": true,
+   "token": "51488901526730069771868285104742328410384372749069959905403041328868803754709",
+   "event": "trump-declassifies-ufo-files-in-2025",
+   "tags": [
+    "Culture",
+    "Trump Presidency",
+    "Politics"
+   ]
+  },
+  {
+   "id": "polymarket:1467766",
+   "question": "Will Crude Oil (CL) hit (HIGH) $100 by end of March?",
+   "volume": 16595338.399712065,
+   "start": "2026-02-28T18:54:50.403Z",
+   "end": "2026-03-31 07:09:45+00",
+   "closed": true,
+   "token": "79605660806991457811890435537160628976099500543939220857753925926896831621219",
+   "event": "will-crude-oil-cl-hit-by-end-of-march",
+   "tags": [
+    "NYMEX Crude Oil Futures",
+    "Commodities",
+    "Iran",
+    "Oil",
+    "Geopolitics",
+    "Hormuz"
+   ]
+  },
+  {
+   "id": "polymarket:948045",
+   "question": "Will Movement for a Better Hungary (Jobbik) win the most seats in the next Hungarian parliamentary election?",
+   "volume": 16550425.532013956,
+   "start": "2025-12-16T20:28:32.395Z",
+   "end": "2026-04-13 00:59:55+00",
+   "closed": true,
+   "token": "30849933191316686435782664908401890804163810081470441695928144220535231269695",
+   "event": "hungary-parliamentary-election-winner",
+   "tags": [
+    "Hungary Election",
+    "Hungary",
+    "World Elections",
+    "Global Elections",
+    "Elections",
+    "Politics"
+   ]
+  },
+  {
+   "id": "polymarket:1733817",
+   "question": "Trump out as President by April 30?",
+   "volume": 16315167.812269002,
+   "start": "2026-03-26T18:48:47.24391Z",
+   "end": "2026-05-01 13:57:32+00",
+   "closed": true,
+   "token": "64692489991058251805493211665308232352904714094444866630395154130535717537678",
+   "event": "trump-out-as-president-by-april-30",
+   "tags": [
+    "Politics",
+    "Trump",
+    "Elections"
+   ]
+  },
+  {
+   "id": "polymarket:546255",
+   "question": "Will Sorin Grindeanu be the next Mayor of Bucharest?",
+   "volume": 15810680.148466,
+   "start": "2025-05-21T00:09:59.045Z",
+   "end": "2025-12-08 04:24:05+00",
+   "closed": true,
+   "token": "108117157953752958186246006685653202922789024045902716504148101302624836131664",
+   "event": "romania-bucharest-mayoral-election",
+   "tags": [
+    "Romania",
+    "World",
+    "Global Elections",
+    "World Elections",
+    "Elections",
+    "Bucharest Mayor"
+   ]
+  },
+  {
+   "id": "polymarket:1235517",
+   "question": "Will Phạm Minh Chính be the next President of Vietnam?",
+   "volume": 15557300.26332597,
+   "start": "2026-01-21T18:48:40.614676Z",
+   "end": "2026-04-07 08:24:11+00",
+   "closed": true,
+   "token": "40143048263981796652696013147213585447022933832104405821510706617705632953700",
+   "event": "next-president-of-vietnam",
+   "tags": [
+    "Elections",
+    "Politics",
+    "Global Elections",
+    "Vietnam",
+    "presidential",
+    "Communist",
+    "Main Election"
+   ]
+  },
+  {
+   "id": "polymarket:948046",
+   "question": "Will LMP – Hungary’s Green Party (LMP) win the most seats in the next Hungarian parliamentary election?",
+   "volume": 15379379.627399104,
+   "start": "2025-12-16T20:28:32.651Z",
+   "end": "2026-04-13 00:58:51+00",
+   "closed": true,
+   "token": "70502362111037557690872376093830156080180966461780810463183055982822634657262",
+   "event": "hungary-parliamentary-election-winner",
+   "tags": [
+    "Hungary Election",
+    "Hungary",
+    "World Elections",
+    "Global Elections",
+    "Elections",
+    "Politics"
+   ]
+  },
+  {
+   "id": "polymarket:540881",
+   "question": "GTA VI released before June 2026?",
+   "volume": 15249931.011636002,
+   "start": "2025-05-02T17:00:26.233Z",
+   "end": "2026-06-01 12:13:31+00",
+   "closed": true,
+   "token": "8441400852834915183759801017793514978104486628517653995211751018945988243154",
+   "event": "gta-vi-released-before-june-2026",
+   "tags": [
+    "Culture",
+    "GTA VI",
+    "Breaking News"
+   ]
+  },
+  {
+   "id": "polymarket:571190",
+   "question": "Will T.J. Lavin win the 2025 National Heads-Up Poker Championship?",
+   "volume": 15113495.368893,
+   "start": "2025-08-03T16:55:35.781065Z",
+   "end": "2025-12-19 04:39:11+00",
+   "closed": true,
+   "token": "89482867767756371514232352520008467367839609532086258158905296524900584492573",
+   "event": "2025-national-heads-up-poker-championship-winner-845",
+   "tags": [
+    "Culture",
+    "Poker game"
+   ]
+  },
+  {
+   "id": "polymarket:1985666",
+   "question": "Will Trump visit China by May 15?",
+   "volume": 15068494.055106035,
+   "start": "2026-04-14T21:55:34.383Z",
+   "end": "2026-05-13 17:18:32+00",
+   "closed": true,
+   "token": "27413838353174106032543688429086466524477590332994852162615655865819795164419",
+   "event": "will-trump-visit-china-by",
+   "tags": [
+    "Trade War",
+    "Tariffs",
+    "Trump-Xi Summit",
+    "Trump Presidency",
+    "Trump",
+    "Politics",
+    "China",
+    "TikTok",
+    "World",
+    "Trump-Xi"
+   ]
+  },
+  {
+   "id": "polymarket:571195",
+   "question": "Will Erick Lindgren win the 2025 National Heads-Up Poker Championship?",
+   "volume": 14836968.140613,
+   "start": "2025-08-03T16:55:43.869731Z",
+   "end": "2025-12-19 04:58:43+00",
+   "closed": true,
+   "token": "63242660228722450376540634366857523615049717784641155585918139123308275434733",
+   "event": "2025-national-heads-up-poker-championship-winner-845",
+   "tags": [
+    "Culture",
+    "Poker game"
+   ]
+  },
+  {
+   "id": "polymarket:947268",
+   "question": "Will Rafael López Aliaga win the 2026 Peruvian presidential election?",
+   "volume": 14784685.9830578,
+   "start": "2025-12-16T20:14:30.887Z",
+   "end": "2026-07-04 01:42:11+00",
+   "closed": true,
+   "token": "91464516107556165907566387619157396733019262339196802152206657889196699256450",
+   "event": "peru-presidential-election-winner",
+   "tags": [
+    "Peru",
+    "Peru Election",
+    "Main Election",
+    "Politics",
+    "Global Elections",
+    "World Elections",
+    "Elections"
+   ]
+  },
+  {
+   "id": "polymarket:567687",
+   "question": "Russia x Ukraine ceasefire by end of 2026?",
+   "volume": 14502613.985482976,
+   "start": "2025-07-24T23:38:05.189Z",
+   "end": "2026-05-09 19:53:03+00",
+   "closed": true,
+   "token": "104071616575689490708756996503755160411785604144351427331378560378097635400347",
+   "event": "russia-x-ukraine-ceasefire-before-2027",
+   "tags": [
+    "Ukraine",
+    "Geopolitics",
+    "Politics",
+    "Foreign Policy",
+    "World",
+    "Earn 3.25%",
+    "Trump-Zelenskyy",
+    "Ukraine Peace Deal"
+   ]
+  },
+  {
+   "id": "polymarket:1500754",
+   "question": "Will Kevin Warsh be confirmed as Fed Chair?",
+   "volume": 14412257.808405764,
+   "start": "2026-03-04T20:51:33.638853Z",
+   "end": "2026-05-14 00:04:48+00",
+   "closed": true,
+   "token": "66581786403328670900354976753624410175196577607177076834389236263921375429170",
+   "event": "who-will-be-confirmed-as-fed-chair",
+   "tags": [
+    "Fed",
+    "Trump",
+    "Politics",
+    "Fed Rates",
+    "Jerome Powell",
+    "Kevin Warsh",
+    "Judy Shelton",
+    "Fed Chair"
+   ]
+  },
+  {
+   "id": "polymarket:2155052",
+   "question": "US x Iran permanent peace deal by December 31, 2026?",
+   "volume": 14411915.111413987,
+   "start": "2026-05-04T14:49:25.357Z",
+   "end": "2026-06-18 00:38:20+00",
+   "closed": true,
+   "token": "104718292808309433767402444061650910790437726449955521731268760928480423099204",
+   "event": "us-x-iran-permanent-peace-deal-by",
+   "tags": [
+    "Iran",
+    "Trump",
+    "U.S. x Iran",
+    "ceasefire",
+    "Geopolitics",
+    "Iran Ceasefire",
+    "Agreement",
+    "10-point",
+    "Politics",
+    "Peace Deal"
+   ]
+  },
+  {
+   "id": "polymarket:635516",
+   "question": "Will the next Dutch government be VVD + CDA + JA21?",
+   "volume": 14367771.692999,
+   "start": "2025-10-15T17:54:06.255Z",
+   "end": "2026-02-23 13:18:18+00",
+   "closed": true,
+   "token": "16847538596006667607583326029408137048454641641030582011761027405540233401519",
+   "event": "which-coalition-will-form-the-next-dutch-government",
+   "tags": [
+    "Politics",
+    "World",
+    "Elections",
+    "Netherlands",
+    "Global Elections",
+    "Dutch Election"
+   ]
+  },
+  {
+   "id": "polymarket:635246",
+   "question": "Will d4vd be the #1 searched person on Google this year?",
+   "volume": 13950282.417654,
+   "start": "2025-10-14T12:31:40.844Z",
+   "end": "2025-12-08 01:42:01+00",
+   "closed": true,
+   "token": "59266083370178875282124191940686913388686921997545132180129524954487833756236",
+   "event": "1-searched-person-on-google-this-year",
+   "tags": [
+    "Culture",
+    "Tech",
+    "google",
+    "Celebrities",
+    "Google Search",
+    "Best of 2025"
+   ]
+  },
+  {
+   "id": "polymarket:567563",
+   "question": "Will the next Prime Minister of Hungary be László Toroczkai?",
+   "volume": 13863122.728459079,
+   "start": "2025-07-24T22:00:10.289Z",
+   "end": "2026-05-09 17:37:45+00",
+   "closed": true,
+   "token": "62276312834902257904558594246531967377131544314278449037472956208145787396192",
+   "event": "next-prime-minister-of-hungary",
+   "tags": [
+    "Politics",
+    "Hungary Election",
+    "Elections",
+    "Global Elections",
+    "Hungary",
+    "World",
+    "World Elections",
+    "Main Election"
+   ]
+  },
+  {
+   "id": "polymarket:546259",
+   "question": "Will Marian Vanghelie be the next Mayor of Bucharest?",
+   "volume": 13822679.398023,
+   "start": "2025-05-21T00:10:03.609Z",
+   "end": "2025-12-08 04:23:09+00",
+   "closed": true,
+   "token": "27904998001260267225722216096455105604469879526408624700177303559424547760509",
+   "event": "romania-bucharest-mayoral-election",
+   "tags": [
+    "Romania",
+    "World",
+    "Global Elections",
+    "World Elections",
+    "Elections",
+    "Bucharest Mayor"
+   ]
+  },
+  {
+   "id": "polymarket:1484914",
+   "question": "Iran x Israel/US conflict ends by May 15?",
+   "volume": 13670502.108909987,
+   "start": "2026-03-02T17:18:07.028Z",
+   "end": "2026-04-25 00:30:14+00",
+   "closed": true,
+   "token": "19426830997860641827867742428794225516264548638293070052741093336218482490309",
+   "event": "iran-x-israelus-conflict-ends-by",
+   "tags": [
+    "Iran",
+    "World",
+    "Trump",
+    "Politics",
+    "Israel",
+    "Middle East",
+    "Geopolitics",
+    "Iran Ceasefire",
+    "Israel x Iran"
+   ]
+  },
+  {
+   "id": "polymarket:1708086",
+   "question": "Kharg Island no longer under Iranian control by June 30?",
+   "volume": 13456217.023449102,
+   "start": "2026-03-24T20:16:09.463Z",
+   "end": "2026-07-01 06:09:38+00",
+   "closed": true,
+   "token": "29245464513969532033634287470900755719499302279516205593200700547528308197658",
+   "event": "kharg-island-no-longer-under-iranian-control-by-march-31",
+   "tags": [
+    "Iran Regime",
+    "Iran",
+    "Mojtaba Khamenei",
+    "Khamenei",
+    "Geopolitics",
+    "Kharg Island",
+    "Strait of Hormuz",
+    "U.S. x Iran",
+    "Iran Ceasefire"
+   ]
+  },
+  {
+   "id": "polymarket:666860",
+   "question": "Trump out as President by March 31?",
+   "volume": 13448709.655509828,
+   "start": "2025-11-05T21:55:57.250512Z",
+   "end": "2026-04-01 07:34:43+00",
+   "closed": true,
+   "token": "35310682957697690340134737345493711959150107013422405879293611184874706794887",
+   "event": "trump-out-as-president-by-march-31",
+   "tags": [
+    "Politics",
+    "Trump",
+    "Elections",
+    "Epstein"
+   ]
+  },
+  {
+   "id": "polymarket:541625",
+   "question": "Will Ximena Rincón win the Chilean presidential election?",
+   "volume": 13270465.032302,
+   "start": "2025-05-05T23:52:14.232494Z",
+   "end": "2025-11-20 12:06:31+00",
+   "closed": true,
+   "token": "55955102725826905600098048877035381360969999023976947843041442762659192729359",
+   "event": "chile-presidential-election",
+   "tags": [
+    "Elections",
+    "Global Elections",
+    "Politics",
+    "Chile Election",
+    "world election",
+    "World Elections",
+    "World"
+   ]
+  },
+  {
+   "id": "polymarket:947271",
+   "question": "Will Carlos Álvarez win the 2026 Peruvian presidential election?",
+   "volume": 13208030.096722003,
+   "start": "2025-12-16T20:14:33.315554Z",
+   "end": "2026-07-02 18:13:43+00",
+   "closed": true,
+   "token": "96778993542273611384637311499081700062825144626170214374801025348770797572532",
+   "event": "peru-presidential-election-winner",
+   "tags": [
+    "Peru",
+    "Peru Election",
+    "Main Election",
+    "Politics",
+    "Global Elections",
+    "World Elections",
+    "Elections"
+   ]
+  },
+  {
+   "id": "polymarket:571213",
+   "question": "Will Scott Seiver win the 2025 National Heads-Up Poker Championship?",
+   "volume": 13158088.244989,
+   "start": "2025-08-03T16:55:59.494096Z",
+   "end": "2025-12-19 05:02:55+00",
+   "closed": true,
+   "token": "13258564955502292700175505967514180269278255407255384581475000155653305646788",
+   "event": "2025-national-heads-up-poker-championship-winner-845",
+   "tags": [
+    "Culture",
+    "Poker game"
+   ]
+  },
+  {
+   "id": "polymarket:1517835",
+   "question": "Trump announces end of military operations against Iran by April 30th?",
+   "volume": 13050669.286966823,
+   "start": "2026-03-06T21:10:39.007Z",
+   "end": "2026-05-01 06:42:30+00",
+   "closed": true,
+   "token": "112434828665041337854033745240098052999773438249964130665844574663228374653496",
+   "event": "trump-announces-end-of-military-operations-against-iran-by",
+   "tags": [
+    "Politics",
+    "Middle East",
+    "Geopolitics",
+    "Trump",
+    "Iran",
+    "US-Iran",
+    "Iran Ceasefire",
+    "U.S. x Iran"
+   ]
+  },
+  {
+   "id": "polymarket:706279",
+   "question": "Will Trump visit China by April 30?",
+   "volume": 12827468.473153912,
+   "start": "2025-11-26T22:30:43.843563Z",
+   "end": "2026-05-01 07:05:52+00",
+   "closed": true,
+   "token": "44446804496889907209027787393532554522900719536131325061789855807185516080089",
+   "event": "will-trump-visit-china-by",
+   "tags": [
+    "Trade War",
+    "Tariffs",
+    "Trump-Xi Summit",
+    "Trump Presidency",
+    "Trump",
+    "Politics",
+    "China",
+    "TikTok",
+    "World",
+    "Trump-Xi"
+   ]
+  },
+  {
+   "id": "polymarket:2270338",
+   "question": "US x Iran permanent peace deal by July 31, 2026?",
+   "volume": 12699539.82302617,
+   "start": "2026-05-15T20:13:34.764Z",
+   "end": "2026-06-18 00:32:35+00",
+   "closed": true,
+   "token": "99566541619640652317512639709808184120400767516277184685355777020179304540844",
+   "event": "us-x-iran-permanent-peace-deal-by",
+   "tags": [
+    "Iran",
+    "Trump",
+    "U.S. x Iran",
+    "ceasefire",
+    "Geopolitics",
+    "Iran Ceasefire",
+    "Agreement",
+    "10-point",
+    "Politics",
+    "Peace Deal"
+   ]
+  },
+  {
+   "id": "polymarket:2099582",
+   "question": "Will Volodymyr Zelenskyy be the next leader out before 2027?",
+   "volume": 12461579.884952983,
+   "start": "2026-04-27T22:07:37.013571Z",
+   "end": "2026-07-20 13:13:13+00",
+   "closed": true,
+   "token": "24235913298707853619396909650115067908443145092303477647202018466380476622845",
+   "event": "next-leader-out-of-power-before-2027-no-orban",
+   "tags": [
+    "Politics",
+    "Geopolitics",
+    "Starmer",
+    "Rewards 20, 4.5, 50",
+    "UK Labour Leadership"
+   ]
+  },
+  {
+   "id": "polymarket:546256",
+   "question": "Will Călin Georgescu be the next Mayor of Bucharest?",
+   "volume": 12394296.45555,
+   "start": "2025-05-21T00:09:59.805Z",
+   "end": "2025-12-08 04:25:09+00",
+   "closed": true,
+   "token": "106903870463999312376447070677417377460493036950370762350824487002140285210896",
+   "event": "romania-bucharest-mayoral-election",
+   "tags": [
+    "Romania",
+    "World",
+    "Global Elections",
+    "World Elections",
+    "Elections",
+    "Bucharest Mayor"
+   ]
+  },
+  {
+   "id": "polymarket:520630",
+   "question": "Will China invade Taiwan in 2025?",
+   "volume": 12364377.621775,
+   "start": "2025-01-29T00:13:22.603Z",
+   "end": "2026-01-01 08:24:49+00",
+   "closed": true,
+   "token": "31744904918540551255746477870591988696765533508454358136402838182759217759615",
+   "event": "will-china-invade-taiwan-in-2025",
+   "tags": [
+    "China",
+    "Geopolitics",
+    "Politics",
+    "Foreign Policy",
+    "World"
+   ]
+  },
+  {
+   "id": "polymarket:1370652",
+   "question": " Iran agrees to end enrichment of uranium by June 30?",
+   "volume": 12362413.907608908,
+   "start": "2026-02-12T20:28:21.109Z",
+   "end": "2026-07-01 06:09:38+00",
+   "closed": true,
+   "token": "25525886838936661349801315808447476243176190100445157889430252006398510133975",
+   "event": "iran-agrees-to-end-enrichment-of-uranium-by-june-30",
+   "tags": [
+    "Trump",
+    "Geopolitics",
+    "Middle East",
+    "Politics",
+    "World",
+    "Iran",
+    "Nuclear",
+    "Iran Ceasefire",
+    "Negotiation Topics"
+   ]
+  },
+  {
+   "id": "polymarket:1455604",
+   "question": "Will Trump talk to Xi Jinping in March?",
+   "volume": 12358578.449661002,
+   "start": "2026-03-01T18:50:47.83724Z",
+   "end": "2026-04-07 02:22:03+00",
+   "closed": true,
+   "token": "97799548617883562371099987524353846715161843398499100552568275384882002822021",
+   "event": "who-will-trump-talk-to-in-march",
+   "tags": [
+    "Trump",
+    "Geopolitics",
+    "Politics",
+    "Reza Pahlavi"
+   ]
+  },
+  {
+   "id": "polymarket:565930",
+   "question": "Tesla launches unsupervised full self driving (FSD) by June 30?",
+   "volume": 12177341.281891,
+   "start": "2025-07-21T14:43:26.177Z",
+   "end": "2026-02-02 00:57:48+00",
+   "closed": true,
+   "token": "107281002012721876026695277673649500471455902224367011098589595335909329157141",
+   "event": "tesla-launches-unsupervised-full-self-driving-fsd-by",
+   "tags": [
+    "Elon Musk",
+    "Tech",
+    "Tesla",
+    "AI"
+   ]
+  },
+  {
+   "id": "polymarket:2354976",
+   "question": "Strait of Hormuz traffic returns to normal by June 15?",
+   "volume": 12147872.86032706,
+   "start": "2026-05-26T05:04:24.758Z",
+   "end": "2026-06-23 15:25:32+00",
+   "closed": true,
+   "token": "64982649349833799070726872985810077351223251203012444487225704868921642973394",
+   "event": "strait-of-hormuz-traffic-returns-to-normal-by-june-15",
+   "tags": [
+    "Geopolitics",
+    "Iran",
+    "ships",
+    "Strait of Hormuz",
+    "Oil",
+    "Hormuz",
+    "transit",
+    "Economy"
+   ]
+  },
+  {
+   "id": "polymarket:1478016",
+   "question": "Will Benjamin Netanyahu enter Iran by June 30?",
+   "volume": 12086752.327925,
+   "start": "2026-03-01T20:10:33.388451Z",
+   "end": "2026-07-01 06:10:55+00",
+   "closed": true,
+   "token": "13265448810970451421006542393165618576926964649374055337580146768273870202113",
+   "event": "who-will-enter-iran-by-june-30",
+   "tags": [
+    "Politics",
+    "Iran",
+    "Geopolitics",
+    "Middle East",
+    "U.S. x Iran"
+   ]
+  },
+  {
+   "id": "polymarket:516824",
+   "question": "Will Tesla be the largest company in the world by market cap on December 31?",
+   "volume": 12050070.052878,
+   "start": "2024-12-30T18:07:06.352395Z",
+   "end": "2026-01-01 01:12:47+00",
+   "closed": true,
+   "token": "20754954427427178281469581263846329008146070520504999815539832461608878525555",
+   "event": "largest-company-end-of-2025",
+   "tags": [
+    "Business",
+    "Economy",
+    "2025 Predictions",
+    "DeepSeek",
+    "Big Tech",
+    "Best of 2025"
+   ]
+  },
+  {
+   "id": "polymarket:956590",
+   "question": "Will China invade Taiwan by June 30, 2026?",
+   "volume": 12006094.235334797,
+   "start": "2025-12-17T20:25:43.74221Z",
+   "end": "2026-07-01 06:03:23+00",
+   "closed": true,
+   "token": "19417265162808201523789648874586390360859187511220432732521613022479578431850",
+   "event": "will-china-invade-taiwan-by-june-30-2026",
+   "tags": [
+    "World",
+    "China",
+    "Geopolitics",
+    "Politics"
+   ]
+  },
+  {
+   "id": "polymarket:540819",
+   "question": "Will Jesus Christ return before GTA VI?",
+   "volume": 11922530.085529989,
+   "start": "2025-05-02T15:48:16.854Z",
+   "end": "2026-08-01 06:15:24+00",
+   "closed": true,
+   "token": "90435811253665578014957380826505992530054077692143838383981805324273750424057",
+   "event": "what-will-happen-before-gta-vi",
+   "tags": [
+    "Culture",
+    "All",
+    "Politics",
+    "GTA VI"
+   ]
+  },
+  {
+   "id": "polymarket:2535468",
+   "question": "Strait of Hormuz traffic returns to normal by July 15?",
+   "volume": 11792334.437210953,
+   "start": "2026-06-13T21:49:27.766504Z",
+   "end": "2026-07-21 16:19:13+00",
+   "closed": true,
+   "token": "89075579425844467185868633488322759623361856543369509366205030098390192743019",
+   "event": "strait-of-hormuz-traffic-returns-to-normal-by-july-15",
+   "tags": [
+    "Politics",
+    "U.S. x Iran",
+    "Geopolitics",
+    "Strait of Hormuz",
+    "Iran Ceasefire",
+    "Iran",
+    "Oil"
+   ]
+  },
+  {
+   "id": "polymarket:623602",
+   "question": "Will the Government shutdown end November 8-11?",
+   "volume": 11773855.877798,
+   "start": "2025-10-06T17:18:19.165Z",
+   "end": "2025-11-12 08:06:57+00",
+   "closed": true,
+   "token": "34124572068052077909406302056995239675264911172488920973407960367842984448300",
+   "event": "when-will-the-government-shutdown-end-545",
+   "tags": [
+    "Gov Shutdown",
+    "Culture",
+    "Trump Presidency",
+    "Trump",
+    "Congress"
+   ]
+  },
+  {
+   "id": "polymarket:1472548",
+   "question": "Will Reza Pahlavi lead Iran in 2026?",
+   "volume": 11768756.989909,
+   "start": "2026-03-01T03:38:32.366385Z",
+   "end": "2027-01-01T04:59:00Z",
+   "closed": false,
+   "token": "104932610032177696635191871147557737718087870958469629338467406422339967452218",
+   "event": "will-reza-pahlavi-lead-iran-in-2026",
+   "tags": [
+    "Iran",
+    "shah",
+    "Geopolitics",
+    "Politics",
+    "Reza Pahlavi",
+    "Iran Regime"
+   ]
+  },
+  {
+   "id": "polymarket:520930",
+   "question": "Jerome Powell out as Fed Chair in 2025?",
+   "volume": 11760101.336012,
+   "start": "2025-01-29T23:13:22.244Z",
+   "end": "2026-01-01 08:35:53+00",
+   "closed": true,
+   "token": "44446628319261786751896876365833910598445252343588252409740203088317210950410",
+   "event": "will-trump-remove-jerome-powell",
+   "tags": [
+    "Politics",
+    "Fed Rates",
+    "Trump Presidency",
+    "MAGA",
+    "Economic Policy",
+    "Trump",
+    "U.S. Politics",
+    "Fed",
+    "Jerome Powell"
+   ]
+  },
+  {
+   "id": "polymarket:516710",
+   "question": "US recession in 2025?",
+   "volume": 11734512.428529,
+   "start": "2025-01-08T01:33:54.924Z",
+   "end": "2026-01-01 09:23:25+00",
+   "closed": true,
+   "token": "104173557214744537570424345347209544585775842950109756851652855913015295701992",
+   "event": "us-recession-in-2025",
+   "tags": [
+    "Business",
+    "Economy",
+    "2025 Predictions",
+    "Economic Policy",
+    "xtrd-1"
+   ]
+  },
+  {
+   "id": "polymarket:631220",
+   "question": "Will Tesla be the largest company in the world by market cap on November 30?",
+   "volume": 11637679.639845,
+   "start": "2025-10-10T21:52:29.869Z",
+   "end": "2025-12-01 01:04:14+00",
+   "closed": true,
+   "token": "12497224091041469803182929113658229521197931584783005052605760702572847704826",
+   "event": "largest-company-end-of-november",
+   "tags": [
+    "DeepSeek",
+    "Tech",
+    "Economy",
+    "Big Tech",
+    "Business",
+    "Finance",
+    "Monthly"
+   ]
+  },
+  {
+   "id": "polymarket:690635",
+   "question": "Will Stephen Colbert be named in newly released Epstein files?",
+   "volume": 11385724.578479,
+   "start": "2025-11-19T00:05:33.138607Z",
+   "end": "2025-12-26 01:05:23+00",
+   "closed": true,
+   "token": "2242068176400298492061418352715563914061114187773762813780136124238064181894",
+   "event": "who-will-be-named-in-newly-released-epstein-files",
+   "tags": [
+    "Epstein",
+    "Trump",
+    "Trump Presidency",
+    "list"
+   ]
+  },
+  {
+   "id": "polymarket:541627",
+   "question": "Will Marco Enríquez-Ominami win the Chilean presidential election?",
+   "volume": 11376039.492757,
+   "start": "2025-05-05T23:52:19.750397Z",
+   "end": "2025-11-20 11:59:21+00",
+   "closed": true,
+   "token": "101690358768242113035511597288562173826537296165505308420504673877386572273884",
+   "event": "chile-presidential-election",
+   "tags": [
+    "Elections",
+    "Global Elections",
+    "Politics",
+    "Chile Election",
+    "world election",
+    "World Elections",
+    "World"
+   ]
+  },
+  {
+   "id": "polymarket:957019",
+   "question": "US-Iran nuclear deal by June 30?",
+   "volume": 11324069.03899108,
+   "start": "2025-12-17T22:48:36.561004Z",
+   "end": "2026-06-15 04:49:27+00",
+   "closed": true,
+   "token": "68283792174293775430535402015214113701251372409839518501034763677920213819299",
+   "event": "us-iran-nuclear-deal-by-june-30",
+   "tags": [
+    "Iran Ceasefire",
+    "Nuclear",
+    "Negotiation Topics",
+    "World",
+    "Israel",
+    "Politics",
+    "Geopolitics",
+    "Middle East",
+    "Iran"
+   ]
+  },
+  {
+   "id": "polymarket:2034723",
+   "question": "Will the US confirm that aliens exist by June 30?",
+   "volume": 11225287.27295614,
+   "start": "2026-04-20T16:14:03.832613Z",
+   "end": "2026-07-01 06:04:58+00",
+   "closed": true,
+   "token": "46812900989504880098357062882629805283165626694938174242352493727380998246351",
+   "event": "will-the-us-confirm-that-aliens-exist-before-2027",
+   "tags": [
+    "Aliens",
+    "Politics",
+    "Culture",
+    "Science"
+   ]
+  },
+  {
+   "id": "polymarket:1708109",
+   "question": "Kharg Island no longer under Iranian control by May 31?",
+   "volume": 11190577.830452636,
+   "start": "2026-03-24T20:15:52.713Z",
+   "end": "2026-06-01 08:24:55+00",
+   "closed": true,
+   "token": "34141894076461090122188007837560653115836547685839714096383156529096483178653",
+   "event": "kharg-island-no-longer-under-iranian-control-by-march-31",
+   "tags": [
+    "Iran Regime",
+    "Iran",
+    "Mojtaba Khamenei",
+    "Khamenei",
+    "Geopolitics",
+    "Kharg Island",
+    "Strait of Hormuz",
+    "U.S. x Iran",
+    "Iran Ceasefire"
+   ]
+  },
+  {
+   "id": "polymarket:587981",
+   "question": "Will Monad perform an airdrop by October 31? ",
+   "volume": 11023838.946488,
+   "start": "2025-09-04T19:31:55.394998Z",
+   "end": "2025-11-01 06:14:04+00",
+   "closed": true,
+   "token": "21484687121848686656655589707363818796614714096018493290756372403371180191710",
+   "event": "monad-airdrop-by",
+   "tags": [
+    "Crypto",
+    "Featured",
+    "Monad",
+    "Airdrops",
+    "Pre-Market"
+   ]
+  },
+  {
+   "id": "polymarket:516716",
+   "question": "Khamenei out as Supreme Leader of Iran in 2025?",
+   "volume": 10993955.915443,
+   "start": "2024-12-29T22:39:48.361Z",
+   "end": "2026-01-01 07:16:21+00",
+   "closed": true,
+   "token": "75505728818237076147318796536066812362152358606307154083407489467059230821371",
+   "event": "khamenei-out-as-supreme-leader-of-iran-in-2025",
+   "tags": [
+    "Geopolitics",
+    "Politics",
+    "Middle East",
+    "2025 Predictions",
+    "Israel",
+    "World",
+    "Iran",
+    "Khamenei"
+   ]
+  },
+  {
+   "id": "polymarket:1126504",
+   "question": "Will the US acquire part of Greenland in 2026?",
+   "volume": 10896521.40882199,
+   "start": "2026-01-07T04:34:36.508662Z",
+   "end": "2027-01-01T04:59:00Z",
+   "closed": false,
+   "token": "60745476350338574489643206785963608049827415658137795738920858026399504782388",
+   "event": "will-the-us-acquire-any-part-of-greenland-in-2026",
+   "tags": [
+    "Davos",
+    "Politics",
+    "Trump",
+    "Geopolitics",
+    "Greenland"
+   ]
+  },
+  {
+   "id": "polymarket:521918",
+   "question": "Will UCR hold the most seats in the Chamber of Deputies following the 2025 Argentina election?",
+   "volume": 10876038.028228,
+   "start": "2025-02-06T00:03:20.627Z",
+   "end": "2025-12-10 10:43:35+00",
+   "closed": true,
+   "token": "16427833483150021126148898369905272534923433639726314563756187815616456189233",
+   "event": "which-party-holds-the-most-seats-after-argentina-deputies-election",
+   "tags": [
+    "Global Elections",
+    "Politics",
+    "javier milei",
+    "World",
+    "Argentina Election"
+   ]
+  },
+  {
+   "id": "polymarket:1500770",
+   "question": "Will Michelle Bowman be confirmed as Fed Chair?",
+   "volume": 10611543.693432987,
+   "start": "2026-03-04T20:52:20.245Z",
+   "end": "2026-05-14 01:20:21+00",
+   "closed": true,
+   "token": "29263958654354796311788973357180442160747806750694580213339330729683579170780",
+   "event": "who-will-be-confirmed-as-fed-chair",
+   "tags": [
+    "Fed",
+    "Trump",
+    "Politics",
+    "Fed Rates",
+    "Jerome Powell",
+    "Kevin Warsh",
+    "Judy Shelton",
+    "Fed Chair"
+   ]
+  },
+  {
+   "id": "polymarket:701290",
+   "question": "Will China invade Taiwan by March 31, 2026?",
+   "volume": 10607442.318742946,
+   "start": "2025-11-24T17:48:11.644324Z",
+   "end": "2026-04-01 07:49:15+00",
+   "closed": true,
+   "token": "106549993070946237758310281255754864390927967486677098278324584793561067743644",
+   "event": "will-china-invade-taiwan-by-march-31-2026",
+   "tags": [
+    "Foreign Policy",
+    "Geopolitics",
+    "Earn 3.25%",
+    "China",
+    "World",
+    "Politics"
+   ]
+  },
+  {
+   "id": "polymarket:555827",
+   "question": "Will LeBron James be TIME's Person of the Year for 2025?",
+   "volume": 10523451.346859,
+   "start": "2025-06-26T15:05:54.692391Z",
+   "end": "2025-12-16 04:15:13+00",
+   "closed": true,
+   "token": "22660463552745828059828440374615279792253436618366221337095213796497078581471",
+   "event": "time-2025-person-of-the-year",
+   "tags": [
+    "Culture",
+    "magazine",
+    "poty",
+    "Best of 2025",
+    "Time POTY"
+   ]
+  },
+  {
+   "id": "polymarket:635222",
+   "question": "Will Donald Trump be the #1 searched person on Google this year?",
+   "volume": 10483734.021399,
+   "start": "2025-10-14T12:31:33.814Z",
+   "end": "2025-12-04 07:31:49+00",
+   "closed": true,
+   "token": "108294418470154331012315576418925896822555088973525283627907335955315114276930",
+   "event": "1-searched-person-on-google-this-year",
+   "tags": [
+    "Culture",
+    "Tech",
+    "google",
+    "Celebrities",
+    "Google Search",
+    "Best of 2025"
+   ]
+  },
+  {
+   "id": "polymarket:604490",
+   "question": "Will Trump visit China by March 31?",
+   "volume": 10369639.104046939,
+   "start": "2025-09-19T21:22:55.165261Z",
+   "end": "2026-04-01 08:17:59+00",
+   "closed": true,
+   "token": "70235644432412964121917864255900359382638971100146813592379821470215190007259",
+   "event": "will-trump-visit-china-by",
+   "tags": [
+    "Trade War",
+    "Tariffs",
+    "Trump-Xi Summit",
+    "Trump Presidency",
+    "Trump",
+    "Politics",
+    "China",
+    "TikTok",
+    "World",
+    "Trump-Xi"
+   ]
+  },
+  {
+   "id": "polymarket:549621",
+   "question": "Will the Party for Freedom win the most seats in the 2025 Netherlands parliamentary election?",
+   "volume": 10147546.752816,
+   "start": "2025-06-03T22:01:15.425916Z",
+   "end": "2025-11-02 16:26:01+00",
+   "closed": true,
+   "token": "105493243911415328186853135427180882742964878728761632341401884622809951441015",
+   "event": "netherlands-parliamentary-election",
+   "tags": [
+    "Elections",
+    "Global Elections",
+    "dutch",
+    "Netherlands",
+    "Dutch Election"
+   ]
+  },
+  {
+   "id": "polymarket:623604",
+   "question": "Will the Government shutdown end November 16 or later?",
+   "volume": 9839429.155274,
+   "start": "2025-10-06T17:18:25.754Z",
+   "end": "2025-11-13 14:43:26+00",
+   "closed": true,
+   "token": "59964717011473581387089048234239097005165234934041431203725679550377112731340",
+   "event": "when-will-the-government-shutdown-end-545",
+   "tags": [
+    "Gov Shutdown",
+    "Culture",
+    "Trump Presidency",
+    "Trump",
+    "Congress"
+   ]
+  },
+  {
+   "id": "polymarket:537882",
+   "question": "TikTok sale announced in 2025?",
+   "volume": 9671895.18163,
+   "start": "2025-04-17T21:46:13.374Z",
+   "end": "2025-12-26 00:35:43+00",
+   "closed": true,
+   "token": "4149251664517640299965130273628133325857680891787528454768893425877314791040",
+   "event": "tiktok-sale-announced-in-2025",
+   "tags": [
+    "TikTok",
+    "Tech"
+   ]
+  },
+  {
+   "id": "polymarket:1632763",
+   "question": "Netanyahu out by April 30?",
+   "volume": 9575896.405742953,
+   "start": "2026-03-18T23:59:58.839Z",
+   "end": "2026-05-01 07:29:48+00",
+   "closed": true,
+   "token": "94971791649616758046979838862595479708845542618213971624131398549272319500007",
+   "event": "netanyahu-out-before-2027",
+   "tags": [
+    "Geopolitics",
+    "World",
+    "Middle East",
+    "Israel",
+    "Politics",
+    "Earn 3.25%",
+    "Israel Election"
+   ]
+  },
+  {
+   "id": "polymarket:666646",
+   "question": "Lighter market cap (FDV) >$3B one day after launch?",
+   "volume": 9575649.779967,
+   "start": "2025-11-05T17:03:20.221Z",
+   "end": "2025-12-31 08:58:33+00",
+   "closed": true,
+   "token": "39990519069078050877939785178382282910283627213228178395713951019444406574966",
+   "event": "lighter-market-cap-fdv-one-day-after-launch",
+   "tags": [
+    "FDV",
+    "Featured",
+    "Crypto",
+    "Airdrops",
+    "Pre-Market",
+    "Lighter"
+   ]
+  },
+  {
+   "id": "polymarket:1439560",
+   "question": "Russia x Ukraine ceasefire by April 30, 2026?",
+   "volume": 9527883.414922891,
+   "start": "2026-02-26T23:05:21.582521Z",
+   "end": "2026-05-01 06:54:52+00",
+   "closed": true,
+   "token": "49104850284632622899464724213962069238178748191343145680035482303540284145930",
+   "event": "russia-x-ukraine-ceasefire-by-april-30-2026",
+   "tags": [
+    "zelensky",
+    "Ukraine Peace Deal",
+    "Geopolitics",
+    "Ukraine",
+    "World",
+    "Trump-Zelenskyy",
+    "Foreign Policy",
+    "Politics"
+   ]
+  },
+  {
+   "id": "polymarket:1477563",
+   "question": "Will Crude Oil (CL) hit (HIGH) $150 by end of March?",
+   "volume": 9471175.115201969,
+   "start": "2026-03-01T18:07:24.417Z",
+   "end": "2026-04-01 07:13:31+00",
+   "closed": true,
+   "token": "72223647059482161321777035355535254168984102436017216383672365031077799535046",
+   "event": "will-crude-oil-cl-hit-by-end-of-march",
+   "tags": [
+    "NYMEX Crude Oil Futures",
+    "Commodities",
+    "Iran",
+    "Oil",
+    "Geopolitics",
+    "Hormuz"
+   ]
+  },
+  {
+   "id": "polymarket:1972137",
+   "question": "Will Donald Trump announce that the United States blockade of the Strait of Hormuz has been lifted by May 31, 2026?",
+   "volume": 9359876.895693928,
+   "start": "2026-04-13T17:29:21.242Z",
+   "end": "2026-06-01 06:07:39+00",
+   "closed": true,
+   "token": "926377706175971731068420551849041218012736398250875962020506643091812084572",
+   "event": "trump-announces-us-blockade-of-hormuz-lifted-by",
+   "tags": [
+    "Trump",
+    "Politics",
+    "Iran Ceasefire",
+    "Strait of Hormuz",
+    "Iran",
+    "Geopolitics",
+    "Hormuz",
+    "U.S. x Iran",
+    "Middle East",
+    "Negotiation Topics"
+   ]
+  },
+  {
+   "id": "polymarket:567565",
+   "question": "Will the next Prime Minister of Hungary be János Lázár?",
+   "volume": 9297942.55577898,
+   "start": "2025-07-24T22:00:12.261Z",
+   "end": "2026-05-09 17:40:23+00",
+   "closed": true,
+   "token": "51037625779056581606819614184446816710505006861008496087735536016411882582167",
+   "event": "next-prime-minister-of-hungary",
+   "tags": [
+    "Politics",
+    "Hungary Election",
+    "Elections",
+    "Global Elections",
+    "Hungary",
+    "World",
+    "World Elections",
+    "Main Election"
+   ]
+  },
+  {
+   "id": "polymarket:2099587",
+   "question": "Will Mahmoud Abbas be the next leader out before 2027?",
+   "volume": 9297722.05795501,
+   "start": "2026-04-27T22:08:00.921754Z",
+   "end": "2026-07-20 13:12:16+00",
+   "closed": true,
+   "token": "27515376806864755746117462108058322816028804950298382335430385114192925746414",
+   "event": "next-leader-out-of-power-before-2027-no-orban",
+   "tags": [
+    "Politics",
+    "Geopolitics",
+    "Starmer",
+    "Rewards 20, 4.5, 50",
+    "UK Labour Leadership"
+   ]
+  },
+  {
+   "id": "polymarket:1105750",
+   "question": "Will Pete Hegseth be the leader of Venezuela end of 2026?",
+   "volume": 9276120.984329998,
+   "start": "2026-01-04T18:21:29.687Z",
+   "end": "2026-12-31T00:00:00Z",
+   "closed": false,
+   "token": "104769838619091338531297529252838473576191240472079657441003392006780754738080",
+   "event": "venezuela-leader-end-of-2026",
+   "tags": [
+    "Trump-Machado",
+    "Rewards 20, 4.5, 50",
+    "Venezuela",
+    "Trump",
+    "Politics",
+    "Geopolitics",
+    "maduro"
+   ]
+  },
+  {
+   "id": "polymarket:1559394",
+   "question": "Trump out as President by June 30?",
+   "volume": 9272254.794885797,
+   "start": "2026-03-11T16:24:04.764226Z",
+   "end": "2026-07-01 06:08:38+00",
+   "closed": true,
+   "token": "21712452774938486579405065503390580825770961329526390262641406320650803998687",
+   "event": "trump-out-as-president-by-june-30",
+   "tags": [
+    "Trump",
+    "Elections",
+    "Politics"
+   ]
+  },
+  {
+   "id": "polymarket:690390",
+   "question": "Epstein blackmail evidence released in 2025? ",
+   "volume": 9257039.920657,
+   "start": "2025-11-20T23:03:39.522Z",
+   "end": "2025-12-28 03:50:11+00",
+   "closed": true,
+   "token": "27695328018487126865140678987084292751433108128829892791442349095512543527405",
+   "event": "epstein-blackmail-files-released-in-2025",
+   "tags": [
+    "Politics",
+    "Epstein"
+   ]
+  },
+  {
+   "id": "polymarket:2099595",
+   "question": "Will no listed leader be out before 2027?",
+   "volume": 9233752.661475008,
+   "start": "2026-04-27T22:08:42.083759Z",
+   "end": "2026-07-20 13:13:13+00",
+   "closed": true,
+   "token": "34928863542604747577136069195537517831839938618288352858238947625130728675067",
+   "event": "next-leader-out-of-power-before-2027-no-orban",
+   "tags": [
+    "Politics",
+    "Geopolitics",
+    "Starmer",
+    "Rewards 20, 4.5, 50",
+    "UK Labour Leadership"
+   ]
+  },
+  {
+   "id": "polymarket:984442",
+   "question": "US strikes Iran by June 30, 2026?",
+   "volume": 9193272.467516,
+   "start": "2025-12-22T16:30:05.386Z",
+   "end": "2026-02-28 09:35:05+00",
+   "closed": true,
+   "token": "22252502611282362722836616535222124555071018472020227405221424834675316026440",
+   "event": "us-strikes-iran-by",
+   "tags": [
+    "Parent For Derivative",
+    "HFC",
+    "Iran",
+    "Politics",
+    "Middle East",
+    "World",
+    "Geopolitics"
+   ]
+  },
+  {
+   "id": "polymarket:621018",
+   "question": "US x Venezuela military engagement by November 30?",
+   "volume": 9188343.67475,
+   "start": "2025-10-03T19:49:22.248Z",
+   "end": "2025-12-01 07:18:48+00",
+   "closed": true,
+   "token": "52495530769657433426315073623394145992266323233191674488787593449327803900186",
+   "event": "us-x-venezuela-military-engagement-by",
+   "tags": [
+    "World",
+    "Politics",
+    "Venezuela",
+    "Geopolitics"
+   ]
+  },
+  {
+   "id": "polymarket:516818",
+   "question": "Will NVIDIA be the largest company in the world by market cap on December 31?",
+   "volume": 9158406.645494,
+   "start": "2024-12-30T18:01:45.528784Z",
+   "end": "2026-01-01 01:11:41+00",
+   "closed": true,
+   "token": "94850533403292240972948844256810904078895883844462287088135166537739765648754",
+   "event": "largest-company-end-of-2025",
+   "tags": [
+    "Business",
+    "Economy",
+    "2025 Predictions",
+    "DeepSeek",
+    "Big Tech",
+    "Best of 2025"
+   ]
+  },
+  {
+   "id": "polymarket:569428",
+   "question": "Will Aristides Teixeira win the 2026 Portugal presidential election?",
+   "volume": 9129551.072016,
+   "start": "2025-08-29T19:08:47.12817Z",
+   "end": "2026-02-09 04:14:21+00",
+   "closed": true,
+   "token": "15849160483277897689949967085542532873284061361999325893867258022262592692821",
+   "event": "portugal-presidential-election",
+   "tags": [
+    "Global Elections",
+    "Politics",
+    "World",
+    "World Elections",
+    "Elections",
+    "Macro Election 2",
+    "Portugal Election"
+   ]
+  },
+  {
+   "id": "polymarket:556062",
+   "question": "MegaETH market cap (FDV) >$2B one day after launch?",
+   "volume": 9056989.371149095,
+   "start": "2025-06-26T19:48:44.456Z",
+   "end": "2026-05-01 13:03:54+00",
+   "closed": true,
+   "token": "57301498276970257025109591078431189727442302532145853906375186182281603517458",
+   "event": "megaeth-market-cap-fdv-one-day-after-launch",
+   "tags": [
+    "FDV",
+    "Airdrops",
+    "Featured",
+    "Crypto",
+    "MegaETH",
+    "Pre-Market"
+   ]
+  },
+  {
+   "id": "polymarket:601577",
+   "question": "Lighter market cap (FDV) >$4B one day after launch?",
+   "volume": 9042717.463856,
+   "start": "2025-09-17T14:14:54.083Z",
+   "end": "2025-12-31 08:58:35+00",
+   "closed": true,
+   "token": "105090431466795848420500177147419402976010608107899033764467865695481603432708",
+   "event": "lighter-market-cap-fdv-one-day-after-launch",
+   "tags": [
+    "FDV",
+    "Featured",
+    "Crypto",
+    "Airdrops",
+    "Pre-Market",
+    "Lighter"
+   ]
+  },
+  {
+   "id": "polymarket:2937525",
+   "question": "US x Iran Effective Ceasefire by July 31?",
+   "volume": 8917606.208237005,
+   "start": "2026-07-15T19:54:32.240747Z",
+   "end": "2026-08-12 18:04:28+00",
+   "closed": true,
+   "token": "95577979648711137561778638101766617213130581085760544385254830392377913395624",
+   "event": "us-x-iran-effective-ceasfire-byptptpt-2-week-pause-20260715194822042",
+   "tags": [
+    "Iran",
+    "ceasefire",
+    "Peace Deal",
+    "Geopolitics",
+    "U.S. x Iran",
+    "Iran Ceasefire"
+   ]
+  },
+  {
+   "id": "polymarket:541615",
+   "question": "Will Jeannette Jara win the Chilean presidential election?",
+   "volume": 8873168.0766,
+   "start": "2025-05-05T23:52:03.708376Z",
+   "end": "2025-12-15 02:46:17+00",
+   "closed": true,
+   "token": "25275258976601860306151056759609321158827361858594627600120521769056579627932",
+   "event": "chile-presidential-election",
+   "tags": [
+    "Elections",
+    "Global Elections",
+    "Politics",
+    "Chile Election",
+    "world election",
+    "World Elections",
+    "World"
+   ]
+  },
+  {
+   "id": "polymarket:546272",
+   "question": "Will Crin Antonescu be the next Mayor of Bucharest?",
+   "volume": 8854318.163173,
+   "start": "2025-05-21T00:10:13.576Z",
+   "end": "2025-12-08 04:22:07+00",
+   "closed": true,
+   "token": "15489696058183502651475460596030839076066869924325553324713798522304919134539",
+   "event": "romania-bucharest-mayoral-election",
+   "tags": [
+    "Romania",
+    "World",
+    "Global Elections",
+    "World Elections",
+    "Elections",
+    "Bucharest Mayor"
+   ]
+  },
+  {
+   "id": "polymarket:616902",
+   "question": "Will no Fed rate cuts happen in 2026?",
+   "volume": 8776299.854855001,
+   "start": "2025-09-29T22:24:45.988997Z",
+   "end": "2027-01-01T04:59:00Z",
+   "closed": false,
+   "token": "12403602920039269077597917340921667997547115084613238528792639013246536343316",
+   "event": "how-many-fed-rate-cuts-in-2026",
+   "tags": [
+    "Rewards 200, 4.5, 50 Deprec",
+    "Fed Rates",
+    "Economic Policy",
+    "Fed",
+    "Business",
+    "Economy",
+    "Finance",
+    "Kevin Warsh"
+   ]
+  },
+  {
+   "id": "polymarket:2034747",
+   "question": "Will the US confirm that aliens exist by May 31?",
+   "volume": 8741732.8038059,
+   "start": "2026-04-20T16:14:00.53002Z",
+   "end": "2026-06-01 08:12:33+00",
+   "closed": true,
+   "token": "12389685960289535793784844547591626184160820043533024006256206890230791648531",
+   "event": "will-the-us-confirm-that-aliens-exist-before-2027",
+   "tags": [
+    "Aliens",
+    "Politics",
+    "Culture",
+    "Science"
+   ]
+  },
+  {
+   "id": "polymarket:631279",
+   "question": "Will Saudi Aramco be the second-largest company in the world by market cap on December 31?",
+   "volume": 8736917.396424,
+   "start": "2025-10-13T16:11:09.56217Z",
+   "end": "2026-01-01 01:16:55+00",
+   "closed": true,
+   "token": "92705578025334888956099206838088681888636894058539069921715033052645914202183",
+   "event": "2nd-largest-company-end-of-2025",
+   "tags": [
+    "Tech",
+    "Economy",
+    "Big Tech",
+    "Finance",
+    "Business"
+   ]
+  },
+  {
+   "id": "polymarket:569431",
+   "question": "Will Pedro Tinoco de Faria win the 2026 Portugal presidential election?",
+   "volume": 8706167.69264,
+   "start": "2025-08-29T19:08:51.292784Z",
+   "end": "2026-02-09 04:07:27+00",
+   "closed": true,
+   "token": "36939152546450760203623734882262020084965306583669559634703365151985518078748",
+   "event": "portugal-presidential-election",
+   "tags": [
+    "Global Elections",
+    "Politics",
+    "World",
+    "World Elections",
+    "Elections",
+    "Macro Election 2",
+    "Portugal Election"
+   ]
+  },
+  {
+   "id": "polymarket:516969",
+   "question": "Will Microsoft have the top AI model on December 31?",
+   "volume": 8697440.388086,
+   "start": "2024-12-31T20:22:51.882Z",
+   "end": "2025-12-31 20:44:55+00",
+   "closed": true,
+   "token": "94483763215904102737715534811483835997414013687836952960666923130702965537191",
+   "event": "which-company-has-best-ai-model-end-of-2025",
+   "tags": [
+    "Business",
+    "AI",
+    "2025 Predictions",
+    "DeepSeek",
+    "Grok",
+    "Tech",
+    "Gemini 3",
+    "Best of 2025"
+   ]
+  },
+  {
+   "id": "polymarket:2133405",
+   "question": "Iran closes its airspace by May 31?",
+   "volume": 8565902.329688976,
+   "start": "2026-05-01T18:19:59.97Z",
+   "end": "2026-06-01 12:41:54+00",
+   "closed": true,
+   "token": "110474507112100782314899291119134194443200805577700445554821199693457132940419",
+   "event": "iran-closes-its-airspace-by",
+   "tags": [
+    "Politics",
+    "Geopolitics",
+    "U.S. x Iran",
+    "Iran"
+   ]
+  },
+  {
+   "id": "polymarket:1198709",
+   "question": "Will Reza Pahlavi enter Iran by March 31?",
+   "volume": 8547233.512894925,
+   "start": "2026-01-19T20:35:47.945Z",
+   "end": "2026-04-01 06:47:47+00",
+   "closed": true,
+   "token": "71234839178991605382801314059946316250218609059082410958894693704291672758572",
+   "event": "will-reza-pahlavi-enter-iran-by-june-30",
+   "tags": [
+    "shah",
+    "Reza Pahlavi",
+    "Iran Regime",
+    "Iran",
+    "World",
+    "Middle East",
+    "Israel",
+    "Geopolitics"
+   ]
+  },
+  {
+   "id": "polymarket:2002564",
+   "question": "Israel x Iran permanent peace deal by June 30, 2026?",
+   "volume": 8533780.847550053,
+   "start": "2026-04-16T23:52:09.323Z",
+   "end": "2026-07-01 06:06:55+00",
+   "closed": true,
+   "token": "5052978505742109596729920389479817407677796482555237481771010048052329486595",
+   "event": "israel-x-iran-permanent-peace-deal-by",
+   "tags": [
+    "Geopolitics",
+    "Lebanon",
+    "Iran Ceasefire",
+    "Israel",
+    "Iran",
+    "Israel x Iran",
+    "Hezbollah",
+    "Peace Deal"
+   ]
+  },
+  {
+   "id": "polymarket:582313",
+   "question": "Will MrBeast reach 450 million subscribers in 2025?",
+   "volume": 8495812.451834,
+   "start": "2025-08-27T22:30:57.41841Z",
+   "end": "2025-11-07 13:30:17+00",
+   "closed": true,
+   "token": "65743211782153646765506096149088707773653985933717987209508626184528672613127",
+   "event": "will-mrbeast-reach-450-million-subscribers-in-2025",
+   "tags": [
+    "Celebrities",
+    "Culture",
+    "MrBeast"
+   ]
+  },
+  {
+   "id": "polymarket:642841",
+   "question": "Will Stable launch a token in 2025?",
+   "volume": 8477043.897253,
+   "start": "2025-10-21T18:35:46.874016Z",
+   "end": "2025-12-08 20:53:47+00",
+   "closed": true,
+   "token": "26649830167437535045617341556383442127167754423632585601080961645134939908601",
+   "event": "will-stable-launch-a-token-in-2025",
+   "tags": [
+    "token launch",
+    "Crypto",
+    "Pre-Market"
+   ]
+  },
+  {
+   "id": "polymarket:569438",
+   "question": "Will José Cardoso win the 2026 Portugal presidential election?",
+   "volume": 8448383.481392,
+   "start": "2025-08-29T19:08:55.283873Z",
+   "end": "2026-02-09 04:09:29+00",
+   "closed": true,
+   "token": "62947063083572838306765336947158511397004781598875199570718451493234069599112",
+   "event": "portugal-presidential-election",
+   "tags": [
+    "Global Elections",
+    "Politics",
+    "World",
+    "World Elections",
+    "Elections",
+    "Macro Election 2",
+    "Portugal Election"
+   ]
+  },
+  {
+   "id": "polymarket:623603",
+   "question": "Will the Government shutdown end November 12-15?",
+   "volume": 8422644.165384,
+   "start": "2025-10-06T17:18:19.753Z",
+   "end": "2025-11-13 14:43:28+00",
+   "closed": true,
+   "token": "7045107161367241233811523851106536676632348173555291268726302515224841822187",
+   "event": "when-will-the-government-shutdown-end-545",
+   "tags": [
+    "Gov Shutdown",
+    "Culture",
+    "Trump Presidency",
+    "Trump",
+    "Congress"
+   ]
+  },
+  {
+   "id": "polymarket:692258",
+   "question": "MicroStrategy sells any Bitcoin by June 30, 2026?",
+   "volume": 8418661.007786024,
+   "start": "2025-11-19T22:51:30.483Z",
+   "end": "2026-06-01 14:07:11+00",
+   "closed": true,
+   "token": "110251828161543119357013227499774714771527179764174739487025581227481937033858",
+   "event": "microstrategy-sell-any-bitcoin-in-2025",
+   "tags": [
+    "Economy",
+    "Business",
+    "2025 Predictions",
+    "Crypto",
+    "MicroStrategy",
+    "Stocks"
+   ]
+  },
+  {
+   "id": "polymarket:516925",
+   "question": "Will the US confirm that aliens exist in 2025?",
+   "volume": 8394057.087119,
+   "start": "2024-12-31T18:51:24.874Z",
+   "end": "2026-01-01 08:32:01+00",
+   "closed": true,
+   "token": "27489607967254830440928740057210075156058938975022466608385700336406661385026",
+   "event": "will-the-us-confirm-that-aliens-exist-in-2025",
+   "tags": [
+    "Culture",
+    "Science",
+    "Aliens",
+    "Politics",
+    "2025 Predictions",
+    "Declassification",
+    "U.S. Politics"
+   ]
+  },
+  {
+   "id": "polymarket:956450",
+   "question": "Will the U.S. invade Venezuela by January 31, 2026?",
+   "volume": 8368550.515088,
+   "start": "2025-12-17T20:22:20.082Z",
+   "end": "2026-02-01 07:41:52+00",
+   "closed": true,
+   "token": "93715017999299261588944061464372509395185250817523863925904889301335289765870",
+   "event": "will-the-us-invade-venezuela-in-2025",
+   "tags": [
+    "Politics",
+    "Geopolitics",
+    "Trump Presidency",
+    "World",
+    "Venezuela"
+   ]
+  },
+  {
+   "id": "polymarket:1608448",
+   "question": "Will a U.S. anti-cartel operation outside of the United States occur by April 30, 2026?",
+   "volume": 8284127.671512002,
+   "start": "2026-03-16T18:14:36.983877Z",
+   "end": "2026-05-05 01:01:42+00",
+   "closed": true,
+   "token": "108615985167451045197781101977391757333251129632219335729531996334265284371112",
+   "event": "us-anti-cartel-operation-outside-of-the-us-by",
+   "tags": [
+    "Politics",
+    "Mexico",
+    "mencho",
+    "Mexico Cartel War",
+    "Geopolitics"
+   ]
+  },
+  {
+   "id": "polymarket:661699",
+   "question": "Khamenei out as Supreme Leader of Iran by June 30?",
+   "volume": 8216307.646169,
+   "start": "2025-11-03T19:30:01.869381Z",
+   "end": "2026-03-01 00:02:17+00",
+   "closed": true,
+   "token": "9116770648672617954873502150906669109632013173266181691206825621739241400461",
+   "event": "khamenei-out-as-supreme-leader-of-iran-by-june-30-747",
+   "tags": [
+    "Politics",
+    "World",
+    "Iran",
+    "Khamenei",
+    "Geopolitics",
+    "Israel",
+    "Middle East"
+   ]
+  },
+  {
+   "id": "polymarket:668100",
+   "question": "Will Salvador Nasralla win the 2025 Honduras presidential election?",
+   "volume": 8185435.249886,
+   "start": "2025-11-06T17:49:49.519Z",
+   "end": "2025-12-25 03:51:51+00",
+   "closed": true,
+   "token": "61063847007915444342759642072603125875625873051163366008032163898248405257870",
+   "event": "honduras-presidential-election",
+   "tags": [
+    "Politics",
+    "Elections",
+    "Global Elections",
+    "World Elections",
+    "Tito",
+    "Honduras"
+   ]
+  },
+  {
+   "id": "polymarket:555821",
+   "question": "Will Donald Trump be TIME's Person of the Year for 2025?",
+   "volume": 8080076.410123,
+   "start": "2025-06-26T15:05:50.614807Z",
+   "end": "2025-12-11 17:50:41+00",
+   "closed": true,
+   "token": "1891139530288101466360827889001064386176078694605601493533714481162107118833",
+   "event": "time-2025-person-of-the-year",
+   "tags": [
+    "Culture",
+    "magazine",
+    "poty",
+    "Best of 2025",
+    "Time POTY"
+   ]
+  },
+  {
+   "id": "polymarket:541629",
+   "question": "Will Alberto Undurraga win the Chilean presidential election?",
+   "volume": 8076282.887557,
+   "start": "2025-05-05T23:52:20.004211Z",
+   "end": "2025-11-20 09:26:57+00",
+   "closed": true,
+   "token": "111387308426117165854401420775484925113773124199302406437783672274169014370633",
+   "event": "chile-presidential-election",
+   "tags": [
+    "Elections",
+    "Global Elections",
+    "Politics",
+    "Chile Election",
+    "world election",
+    "World Elections",
+    "World"
+   ]
+  },
+  {
+   "id": "polymarket:1467765",
+   "question": "Will Crude Oil (CL) hit (HIGH) $110 by end of March?",
+   "volume": 8009442.956812905,
+   "start": "2026-02-28T18:54:54.344Z",
+   "end": "2026-04-01 07:12:39+00",
+   "closed": true,
+   "token": "68339523648891823346525943170923809752656111307494446683897840426837639357923",
+   "event": "will-crude-oil-cl-hit-by-end-of-march",
+   "tags": [
+    "NYMEX Crude Oil Futures",
+    "Commodities",
+    "Iran",
+    "Oil",
+    "Geopolitics",
+    "Hormuz"
+   ]
+  },
+  {
+   "id": "polymarket:1467763",
+   "question": "Will Crude Oil (CL) hit (HIGH) $120 by end of March?",
+   "volume": 7966559.269008993,
+   "start": "2026-02-28T18:54:48.662Z",
+   "end": "2026-04-01 07:14:35+00",
+   "closed": true,
+   "token": "69136365945621600854789649488423522395843457249417452310260493085275775221076",
+   "event": "will-crude-oil-cl-hit-by-end-of-march",
+   "tags": [
+    "NYMEX Crude Oil Futures",
+    "Commodities",
+    "Iran",
+    "Oil",
+    "Geopolitics",
+    "Hormuz"
+   ]
+  },
+  {
+   "id": "polymarket:694936",
+   "question": "Will Nebius Group be acquired before 2027?",
+   "volume": 7961067.867891,
+   "start": "2025-11-24T17:49:17.883Z",
+   "end": "2027-01-01T04:59:00Z",
+   "closed": false,
+   "token": "111459230416043857818772115954120316062080149477780988827460623382161213865425",
+   "event": "which-companies-will-be-acquired-before-2027",
+   "tags": [
+    "Business",
+    "Big Tech",
+    "Prediction Markets",
+    "Finance",
+    "Tech",
+    "AI",
+    "Acquisitions",
+    "buy"
+   ]
+  },
+  {
+   "id": "polymarket:1116646",
+   "question": "Israel x Syria security agreement by June 30?",
+   "volume": 7961066.721005983,
+   "start": "2026-01-05T22:56:12.404932Z",
+   "end": "2026-07-01 06:05:28+00",
+   "closed": true,
+   "token": "84348038402659639941836209260221772039942739491890721010819630693075602597129",
+   "event": "israel-x-syria-security-agreement-by-september-30",
+   "tags": [
+    "Geopolitics",
+    "World",
+    "Politics",
+    "Middle East",
+    "Israel",
+    "Syria",
+    "Trump x al-Sharaa"
+   ]
+  },
+  {
+   "id": "polymarket:690645",
+   "question": "Will Elon Musk be named in newly released Epstein files?",
+   "volume": 7924514.669527,
+   "start": "2025-11-19T00:05:39.157397Z",
+   "end": "2025-12-26 02:05:29+00",
+   "closed": true,
+   "token": "113518489791042826951640507710356134903927411293470969292727470748600751577743",
+   "event": "who-will-be-named-in-newly-released-epstein-files",
+   "tags": [
+    "Epstein",
+    "Trump",
+    "Trump Presidency",
+    "list"
+   ]
+  },
+  {
+   "id": "polymarket:597967",
+   "question": "Starmer out by June 30, 2026?",
+   "volume": 7912817.765875065,
+   "start": "2025-09-14T21:22:38.473Z",
+   "end": "2026-06-22 10:40:34+00",
+   "closed": true,
+   "token": "34554555827438551101000555305203609600029621153428996114009350892614396532498",
+   "event": "starmer-out-in-2025",
+   "tags": [
+    "UK",
+    "Starmer",
+    "keir",
+    "Grooming Gangs",
+    "Politics",
+    "World",
+    "UK Labour Leadership"
+   ]
+  },
+  {
+   "id": "polymarket:668101",
+   "question": "Will Nasry Juan Asfura Zablah win the 2025 Honduras presidential election?",
+   "volume": 7902409.57029,
+   "start": "2025-11-06T17:49:50.026Z",
+   "end": "2025-12-25 03:25:09+00",
+   "closed": true,
+   "token": "106707254226006199166558879859947769657148001774671911298412918303247198536745",
+   "event": "honduras-presidential-election",
+   "tags": [
+    "Politics",
+    "Elections",
+    "Global Elections",
+    "World Elections",
+    "Tito",
+    "Honduras"
+   ]
+  },
+  {
+   "id": "polymarket:569433",
+   "question": "Will António José Seguro win the 2026 Portugal presidential election?",
+   "volume": 7867806.308222,
+   "start": "2025-08-29T19:08:53.007837Z",
+   "end": "2026-02-09 04:53:15+00",
+   "closed": true,
+   "token": "16754375222233973989954094649431109282368408854808102040230156977754673841406",
+   "event": "portugal-presidential-election",
+   "tags": [
+    "Global Elections",
+    "Politics",
+    "World",
+    "World Elections",
+    "Elections",
+    "Macro Election 2",
+    "Portugal Election"
+   ]
+  },
+  {
+   "id": "polymarket:629035",
+   "question": "Will Spencer Pratt win the 2026 Los Angeles mayoral election?",
+   "volume": 7857675.11950206,
+   "start": "2025-10-09T20:38:07.526Z",
+   "end": "2026-07-01 12:24:25+00",
+   "closed": true,
+   "token": "84204843763363692452087731991840646974465033840290811886282964917432364505726",
+   "event": "los-angeles-mayoral-election-117",
+   "tags": [
+    "LA",
+    "Los Angeles Mayoral Election",
+    "LA Mayor",
+    "mayor",
+    "Politics",
+    "US Election",
+    "Elections",
+    "Los Angeles",
+    "Mayoral Elections"
+   ]
+  },
+  {
+   "id": "polymarket:948040",
+   "question": "Will the Democratic Coalition (DK) win the most seats in the next Hungarian parliamentary election?",
+   "volume": 7636388.892528013,
+   "start": "2025-12-16T20:28:31.315Z",
+   "end": "2026-04-13 01:02:13+00",
+   "closed": true,
+   "token": "37654263301652169455218962004270870247868994865836101066625038864863642356316",
+   "event": "hungary-parliamentary-election-winner",
+   "tags": [
+    "Hungary Election",
+    "Hungary",
+    "World Elections",
+    "Global Elections",
+    "Elections",
+    "Politics"
+   ]
+  },
+  {
+   "id": "polymarket:1611527",
+   "question": "Will Trump visit China by May 31?",
+   "volume": 7626224.046920019,
+   "start": "2026-03-16T22:24:01.825Z",
+   "end": "2026-05-13 16:18:15+00",
+   "closed": true,
+   "token": "51545532861486385873692934524720384955493736271416969951012544640145812214434",
+   "event": "will-trump-visit-china-by",
+   "tags": [
+    "Trade War",
+    "Tariffs",
+    "Trump-Xi Summit",
+    "Trump Presidency",
+    "Trump",
+    "Politics",
+    "China",
+    "TikTok",
+    "World",
+    "Trump-Xi"
+   ]
+  },
+  {
+   "id": "polymarket:517311",
+   "question": "Will Trump deport 250,000-500,000 people?",
+   "volume": 7563256.444224,
+   "start": "2025-01-05T18:49:40.686629Z",
+   "end": "2026-03-01 08:57:13+00",
+   "closed": true,
+   "token": "13244681086321087932946246027856416106585284024824496763706748621681543444582",
+   "event": "how-many-people-will-trump-deport-in-2025",
+   "tags": [
+    "Politics",
+    "Trump Presidency",
+    "Trump",
+    "Immigration",
+    "2025 Predictions",
+    "Immigration/Border",
+    "U.S. Politics"
+   ]
+  },
+  {
+   "id": "polymarket:635230",
+   "question": "Will Pope Leo XIV be the #1 searched person on Google this year?",
+   "volume": 7533509.09764,
+   "start": "2025-10-14T12:31:38.294Z",
+   "end": "2025-12-04 07:25:53+00",
+   "closed": true,
+   "token": "61692527866605447177495066572237617366984557949706515710777942043523999125645",
+   "event": "1-searched-person-on-google-this-year",
+   "tags": [
+    "Culture",
+    "Tech",
+    "google",
+    "Celebrities",
+    "Google Search",
+    "Best of 2025"
+   ]
+  },
+  {
+   "id": "polymarket:801289",
+   "question": "Will Meituan have the best AI model at the end of January 2026?",
+   "volume": 7527608.300541,
+   "start": "2025-12-02T23:49:06.406565Z",
+   "end": "2026-01-31 20:54:52+00",
+   "closed": true,
+   "token": "55168552054795322689018727161320944577512426911787446544277373119717874724159",
+   "event": "which-company-has-the-best-ai-model-end-of-january",
+   "tags": [
+    "Tech",
+    "Grok",
+    "AI",
+    "Gemini 3",
+    "Big Tech",
+    "OpenAI"
+   ]
+  },
+  {
+   "id": "polymarket:551137",
+   "question": "Will Mikie Sherrill win the New Jersey Governor Election in 2025",
+   "volume": 7479198.557189,
+   "start": "2025-06-10T01:47:49.561Z",
+   "end": "2025-11-05 05:35:45+00",
+   "closed": true,
+   "token": "23056089932958374419797522644901592808991002026498053086166940911059008923379",
+   "event": "new-jersey-governor-election-winner-2025",
+   "tags": [
+    "NJ Governor",
+    "Global Elections",
+    "Politics",
+    "Elections",
+    "World Elections",
+    "US Election",
+    "Nov 4 Elections"
+   ]
+  },
+  {
+   "id": "polymarket:920389",
+   "question": "Will Trump talk to Vladimir Putin in January?",
+   "volume": 7456315.379733,
+   "start": "2025-12-12T21:50:31.009454Z",
+   "end": "2026-02-04 00:27:32+00",
+   "closed": true,
+   "token": "15631821676887099899145118278843400257602269360221049118391374890586669885976",
+   "event": "who-will-trump-talk-to-in-january",
+   "tags": [
+    "Davos",
+    "Politics",
+    "Geopolitics",
+    "Trump"
+   ]
+  },
+  {
+   "id": "polymarket:556074",
+   "question": "Monad market cap (FDV) >$2B one day after launch?",
+   "volume": 7362833.34727,
+   "start": "2025-06-26T19:48:05.232869Z",
+   "end": "2025-11-25 16:14:15+00",
+   "closed": true,
+   "token": "74613028027513134128955311548776374441793397100774125435275515858595795089143",
+   "event": "monad-market-cap-fdv-one-day-after-launch",
+   "tags": [
+    "FDV",
+    "Airdrops",
+    "Crypto",
+    "Featured",
+    "Monad",
+    "Pre-Market",
+    "Token Sales"
+   ]
+  },
+  {
+   "id": "polymarket:569368",
+   "question": "Will Ivan Cepeda Castro win the 2026 Colombian presidential election?",
+   "volume": 7331927.18613499,
+   "start": "2025-07-29T17:23:07.325Z",
+   "end": "2026-06-24 19:52:41+00",
+   "closed": true,
+   "token": "62374557612691330043510053829591470998236327248924987579815802826988260253261",
+   "event": "colombia-presidential-election",
+   "tags": [
+    "Colombia Election",
+    "Colombia",
+    "Politics",
+    "Global Elections",
+    "Elections",
+    "World",
+    "Main Election",
+    "Macro Election 1",
+    "World Elections"
+   ]
+  },
+  {
+   "id": "polymarket:801288",
+   "question": "Will Mistral have the best AI model at the end of January 2026?",
+   "volume": 7300705.855094,
+   "start": "2025-12-02T23:49:06.660968Z",
+   "end": "2026-01-31 21:20:24+00",
+   "closed": true,
+   "token": "78011854501582715783467239249886200659508167915404812721213392628628773684229",
+   "event": "which-company-has-the-best-ai-model-end-of-january",
+   "tags": [
+    "Tech",
+    "Grok",
+    "AI",
+    "Gemini 3",
+    "Big Tech",
+    "OpenAI"
+   ]
+  },
+  {
+   "id": "polymarket:678929",
+   "question": "Will Oh Se-hoon win the 2026 Seoul Mayoral Election",
+   "volume": 7267637.774252003,
+   "start": "2025-11-13T00:40:09.883Z",
+   "end": "2026-06-04 07:00:01+00",
+   "closed": true,
+   "token": "22722140325895252008881018982078677032976059664658234256718533386059691162042",
+   "event": "2026-seoul-mayoral-election-winner",
+   "tags": [
+    "South Korea Elections",
+    "Politics",
+    "World",
+    "Elections",
+    "South Korea",
+    "Global Elections",
+    "World Elections"
+   ]
+  },
+  {
+   "id": "polymarket:635229",
+   "question": "Will Vladimir Putin be the #1 searched person on Google this year?",
+   "volume": 7248122.509011,
+   "start": "2025-10-14T12:31:36.774Z",
+   "end": "2025-12-04 07:31:47+00",
+   "closed": true,
+   "token": "110577510838385101554636100288150814659072111079890634081088687413759808234749",
+   "event": "1-searched-person-on-google-this-year",
+   "tags": [
+    "Culture",
+    "Tech",
+    "google",
+    "Celebrities",
+    "Google Search",
+    "Best of 2025"
+   ]
+  },
+  {
+   "id": "polymarket:2034729",
+   "question": "Will the US confirm that aliens exist by September 30?",
+   "volume": 7189413.583947,
+   "start": "2026-04-20T16:14:03.578497Z",
+   "end": "2026-10-01 06:09:59+00",
+   "closed": true,
+   "token": "105069795193894788513793544317232573603113601482800430284884125529472460504203",
+   "event": "will-the-us-confirm-that-aliens-exist-before-2027",
+   "tags": [
+    "Aliens",
+    "Politics",
+    "Culture",
+    "Science"
+   ]
+  },
+  {
+   "id": "polymarket:948042",
+   "question": "Will Dialogue for Hungary (Párbeszéd) win the most seats in the next Hungarian parliamentary election?",
+   "volume": 7139482.6455000155,
+   "start": "2025-12-16T20:28:31.83Z",
+   "end": "2026-04-13 01:05:09+00",
+   "closed": true,
+   "token": "93953210425001630882390558717433145795369934633177193647737909000045852063346",
+   "event": "hungary-parliamentary-election-winner",
+   "tags": [
+    "Hungary Election",
+    "Hungary",
+    "World Elections",
+    "Global Elections",
+    "Elections",
+    "Politics"
+   ]
+  },
+  {
+   "id": "polymarket:2109450",
+   "question": "US x Iran diplomatic meeting by June 30, 2026?",
+   "volume": 6999918.236180979,
+   "start": "2026-04-28T19:17:35.617Z",
+   "end": "2026-06-21 13:38:16+00",
+   "closed": true,
+   "token": "42651487770072584399780567111092653963782174358340706174105521278109948131465",
+   "event": "us-x-iran-diplomatic-meeting-by-329",
+   "tags": [
+    "Politics",
+    "Iran Ceasefire",
+    "Iran",
+    "Trump",
+    "U.S. x Iran",
+    "Geopolitics",
+    "Vance",
+    "Peace Deal"
+   ]
+  },
+  {
+   "id": "polymarket:923041",
+   "question": "Will People’s Party (PPLE) win the most seats in the 2026 Thai legislative election?",
+   "volume": 6981656.439055,
+   "start": "2025-12-16T00:36:32.169522Z",
+   "end": "2026-02-09 08:27:49+00",
+   "closed": true,
+   "token": "50178306595800060471430951874976657618055148106679384594654922816495456398170",
+   "event": "thai-legislative-election-winner",
+   "tags": [
+    "World",
+    "Thailand Election",
+    "Politics",
+    "Elections",
+    "Global Elections",
+    "Thailand",
+    "Thailand-Cambodia"
+   ]
+  },
+  {
+   "id": "polymarket:1243248",
+   "question": "Russia x Ukraine ceasefire by February 28, 2026?",
+   "volume": 6968929.48738,
+   "start": "2026-01-22T18:38:49.926837Z",
+   "end": "2026-03-01 09:25:01+00",
+   "closed": true,
+   "token": "48542681435247439258666128962898934229410828949745554458943224971747087131816",
+   "event": "russia-x-ukraine-ceasefire-by-february-28-2026",
+   "tags": [
+    "Trump-Zelenskyy",
+    "Ukraine Peace Deal",
+    "World",
+    "Geopolitics",
+    "Foreign Policy",
+    "Ukraine",
+    "zelensky",
+    "Politics"
+   ]
+  },
+  {
+   "id": "polymarket:555826",
+   "question": "Will Artificial Intelligence be TIME's Person of the Year for 2025?",
+   "volume": 6960359.244157,
+   "start": "2025-06-26T15:05:54.947935Z",
+   "end": "2025-12-11 17:50:41+00",
+   "closed": true,
+   "token": "97738289848450488297763027547275619371606557963137023790940218654157116963791",
+   "event": "time-2025-person-of-the-year",
+   "tags": [
+    "Culture",
+    "magazine",
+    "poty",
+    "Best of 2025",
+    "Time POTY"
+   ]
+  },
+  {
+   "id": "polymarket:1484987",
+   "question": "Netanyahu out by June 30?",
+   "volume": 6918554.048317918,
+   "start": "2026-03-02T17:42:07.509Z",
+   "end": "2026-07-01 06:06:58+00",
+   "closed": true,
+   "token": "110540225177219524039862595475289990032643955968401089134377304882717624846278",
+   "event": "netanyahu-out-before-2027",
+   "tags": [
+    "Geopolitics",
+    "World",
+    "Middle East",
+    "Israel",
+    "Politics",
+    "Earn 3.25%",
+    "Israel Election"
+   ]
+  },
+  {
+   "id": "polymarket:541622",
+   "question": "Will José Antonio Kast win the Chilean presidential election?",
+   "volume": 6918328.14737,
+   "start": "2025-05-05T23:52:13.978619Z",
+   "end": "2025-12-15 02:48:15+00",
+   "closed": true,
+   "token": "57527508293969725929016010432598810481282998125631347013024726997019637985331",
+   "event": "chile-presidential-election",
+   "tags": [
+    "Elections",
+    "Global Elections",
+    "Politics",
+    "Chile Election",
+    "world election",
+    "World Elections",
+    "World"
+   ]
+  },
+  {
+   "id": "polymarket:2111640",
+   "question": "US-Iran nuclear deal by May 31?",
+   "volume": 6905766.889778924,
+   "start": "2026-04-29T02:42:01.439Z",
+   "end": "2026-06-01 10:49:19+00",
+   "closed": true,
+   "token": "74212672038111642338418441232512878463316619437420953019668868649846340962463",
+   "event": "us-iran-nuclear-deal-by-may-31-974",
+   "tags": [
+    "Iran",
+    "Geopolitics",
+    "Iran Ceasefire",
+    "Middle East",
+    "U.S. x Iran",
+    "Peace Deal"
+   ]
+  },
+  {
+   "id": "polymarket:569366",
+   "question": "Will Abelardo de la Espriella  win the 2026 Colombian presidential election?",
+   "volume": 6883971.476312924,
+   "start": "2025-07-29T17:23:05.155Z",
+   "end": "2026-06-24 19:45:29+00",
+   "closed": true,
+   "token": "87037476560262355019736573472997730954875286944171789280729969665019434635807",
+   "event": "colombia-presidential-election",
+   "tags": [
+    "Colombia Election",
+    "Colombia",
+    "Politics",
+    "Global Elections",
+    "Elections",
+    "World",
+    "Main Election",
+    "Macro Election 1",
+    "World Elections"
+   ]
+  },
+  {
+   "id": "polymarket:635513",
+   "question": "Will the next Dutch government be PVV + VVD + D66?",
+   "volume": 6830276.448354,
+   "start": "2025-10-15T17:54:05.24Z",
+   "end": "2026-02-23 12:55:10+00",
+   "closed": true,
+   "token": "87769013921010281459571002950564452998911961661195469839063899269689887926679",
+   "event": "which-coalition-will-form-the-next-dutch-government",
+   "tags": [
+    "Politics",
+    "World",
+    "Elections",
+    "Netherlands",
+    "Global Elections",
+    "Dutch Election"
+   ]
+  },
+  {
+   "id": "polymarket:541626",
+   "question": "Will Michelle Bachelet win the Chilean presidential election?",
+   "volume": 6818524.005079,
+   "start": "2025-05-05T23:52:13.724916Z",
+   "end": "2025-11-20 12:02:23+00",
+   "closed": true,
+   "token": "27745123481192376904824382289341895679921094704127016937934449810552889552306",
+   "event": "chile-presidential-election",
+   "tags": [
+    "Elections",
+    "Global Elections",
+    "Politics",
+    "Chile Election",
+    "world election",
+    "World Elections",
+    "World"
+   ]
+  },
+  {
+   "id": "polymarket:579306",
+   "question": "US x Venezuela military engagement by October 31?",
+   "volume": 6816571.45939,
+   "start": "2025-08-21T19:48:05.2Z",
+   "end": "2025-11-01 06:19:58+00",
+   "closed": true,
+   "token": "52859417050735918868656908741603454505096049718734443404219679209972083783955",
+   "event": "us-x-venezuela-military-engagement-by",
+   "tags": [
+    "World",
+    "Politics",
+    "Venezuela",
+    "Geopolitics"
+   ]
+  },
+  {
+   "id": "polymarket:679035",
+   "question": "Will Ségolène Royal win the 2027 French presidential election?",
+   "volume": 6755612.188203001,
+   "start": "2025-11-13T23:09:45.311428Z",
+   "end": "2027-04-19T03:59:00Z",
+   "closed": false,
+   "token": "84076705244364178126697754730242283842575751486659062354818892653573605561738",
+   "event": "next-french-presidential-election",
+   "tags": [
+    "French Election",
+    "Main Election",
+    "France",
+    "World",
+    "Politics",
+    "Global Elections",
+    "Elections"
+   ]
+  },
+  {
+   "id": "polymarket:1469737",
+   "question": "Will Mojtaba Khamenei be head of state in Iran end of 2026?",
+   "volume": 6641486.034332005,
+   "start": "2026-03-01T00:15:27.113703Z",
+   "end": "2026-12-31T17:00:00Z",
+   "closed": false,
+   "token": "111988618077786263362718284278451225707405623288593888751575373086664059387290",
+   "event": "iran-leader-end-of-2026",
+   "tags": [
+    "Middle East",
+    "Iran",
+    "World",
+    "Geopolitics",
+    "Politics",
+    "Iran Regime",
+    "Rewards 50, 4.5, 100 Deprec"
+   ]
+  },
+  {
+   "id": "polymarket:1090199",
+   "question": "Will Reza Pahlavi enter Iran by June 30?",
+   "volume": 6617007.231985036,
+   "start": "2026-01-03T08:07:20.074Z",
+   "end": "2026-07-01 06:09:25+00",
+   "closed": true,
+   "token": "4576347847245480575260753962072852009398058944437537080619261475961185008530",
+   "event": "will-reza-pahlavi-enter-iran-by-june-30",
+   "tags": [
+    "shah",
+    "Reza Pahlavi",
+    "Iran Regime",
+    "Iran",
+    "World",
+    "Middle East",
+    "Israel",
+    "Geopolitics"
+   ]
+  },
+  {
+   "id": "polymarket:638492",
+   "question": "Will edgeX launch a token in 2025?",
+   "volume": 6533516.768918,
+   "start": "2025-10-17T16:16:52.354Z",
+   "end": "2026-01-03 00:36:49+00",
+   "closed": true,
+   "token": "71050426559855927155645347680711886453829378742645913933743200211179053347853",
+   "event": "will-edgex-launch-a-token-in-2025",
+   "tags": [
+    "token launch",
+    "Crypto",
+    "Pre-Market"
+   ]
+  },
+  {
+   "id": "polymarket:1501211",
+   "question": "Will La U win the third most seats in the 2026 Colombian Chamber of Representatives election?",
+   "volume": 6469917.215593102,
+   "start": "2026-03-04T20:57:55.624742Z",
+   "end": "2026-04-25 03:52:52+00",
+   "closed": true,
+   "token": "33491838041161689961120053015551842912887698164838877144090754306282106822034",
+   "event": "colombia-chamber-of-representatives-election-3rd-place",
+   "tags": [
+    "Elections",
+    "Politics",
+    "Global Elections",
+    "columbia",
+    "Colombia"
+   ]
+  }
+ ]
+}

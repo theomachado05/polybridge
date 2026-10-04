@@ -1,0 +1,98 @@
+{
+ "markets_in_s18_file": 424,
+ "parsed": 424,
+ "dropped_in_parsing": {},
+ "anchored": 387,
+ "status": {
+  "ok": 387,
+  "no quote at or before the instant on the bracketing strikes": 24,
+  "no usable pair of leg quotes (stale, or no offer)": 9,
+  "no listed strikes bracket the level": 4
+ },
+ "anchored_with_a_taker_purchase": 248,
+ "anchored_with_a_taker_sale": 277,
+ "anchored_events": 74,
+ "anchored_by_segment": {
+  "IS": 358,
+  "OOS": 29
+ },
+ "zero_bid_leg": 15,
+ "stepped": 214,
+ "noarb_violation": 7,
+ "expiry_rank_counts": {
+  "1": 337,
+  "2": 41,
+  "3": 9
+ },
+ "median_days_expiry_after_end": 0.0,
+ "max_days_expiry_after_end": 17.0,
+ "median_band_width_points": 6.0046045056119715,
+ "median_anchor_lower": 11.535341866640184,
+ "by_ticker": {
+  "AAPL": {
+   "markets": 24,
+   "anchored": 24
+  },
+  "AMZN": {
+   "markets": 30,
+   "anchored": 29
+  },
+  "GOOGL": {
+   "markets": 39,
+   "anchored": 38
+  },
+  "HOOD": {
+   "markets": 7,
+   "anchored": 7
+  },
+  "META": {
+   "markets": 28,
+   "anchored": 28
+  },
+  "MSFT": {
+   "markets": 22,
+   "anchored": 21
+  },
+  "NFLX": {
+   "markets": 26,
+   "anchored": 8
+  },
+  "NVDA": {
+   "markets": 79,
+   "anchored": 79
+  },
+  "OPEN": {
+   "markets": 16,
+   "anchored": 15
+  },
+  "PLTR": {
+   "markets": 20,
+   "anchored": 17
+  },
+  "RKLB": {
+   "markets": 3,
+   "anchored": 2
+  },
+  "SPX": {
+   "markets": 30,
+   "anchored": 26
+  },
+  "SPY": {
+   "markets": 41,
+   "anchored": 34
+  },
+  "TSLA": {
+   "markets": 59,
+   "anchored": 59
+  }
+ },
+ "cache_lines": 2023,
+ "pull_log": [
+  "2026-10-04T04:20:43Z recorder `fetch failed` lines before the pull: 51",
+  "2026-10-04T04:20:55Z recorder `fetch failed` lines before the pull: 51",
+  "2026-10-04T04:20:55Z pull started: 424 markets parsed, dropped in parsing: {}",
+  "2026-10-04T04:37:53Z pull finished: 2015 requests in 1018s, 0 errors, final rate 2.0 rps, recorder `fetch failed` lines now 51 (before: 51); status {'ok': 387, 'no quote at or before the instant on the bracketing strikes': 24, 'no usable pair of leg quotes (stale, or no offer)': 9, 'no listed strikes bracket the level': 4}"
+ ],
+ "built_utc": "2026-10-04T04:45:44Z",
+ "run_seconds": 0.3
+}

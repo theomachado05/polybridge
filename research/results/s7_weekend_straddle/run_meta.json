@@ -1,0 +1,19 @@
+{
+ "weekends": 55,
+ "first_friday": "2025-10-03",
+ "last_friday": "2026-09-25",
+ "oos_from": "2026-07-17",
+ "oos_weekends": 11,
+ "weekends_per_year": 56.23249299719888,
+ "planned_trades": 625,
+ "status": {
+  "ok": 505,
+  "no valid quote: call_fri": 50,
+  "no underlying price": 32,
+  "no valid quote: put_fri": 24,
+  "no valid quote: call_mon": 7,
+  "no valid quote: put_mon": 7
+ },
+ "option_request_failures": 0,
+ "run_seconds": 136.7
+}

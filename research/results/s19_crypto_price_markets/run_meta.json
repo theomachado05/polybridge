@@ -1,0 +1,17 @@
+{
+ "markets_in_sample": 1265,
+ "events_in_sample": 336,
+ "left_out": {
+  "the request failed": 0,
+  "its first 48 hours are beyond what the API serves": 0
+ },
+ "markets_checked": 1265,
+ "checked_with_no_print_in_the_window": 101,
+ "with_a_taker_sell": 1132,
+ "with_a_taker_buy": 880,
+ "oos_events": 68,
+ "oos_from": "2026-06-15",
+ "first_listing": "2024-10-01",
+ "last_listing": "2026-10-01",
+ "run_seconds": 0.3
+}

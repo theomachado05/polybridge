@@ -1,0 +1,13 @@
+hypothesis,verdict,line,met,evidence
+H-dir,fail,(a) at least 30 out-of-sample trades,True,52 trades
+H-dir,fail,"(b) out-of-sample mean net return above zero, interval excluding zero (1x costs)",False,"-23.0%, interval from -32.1%"
+H-dir,fail,(c) out-of-sample mean above zero at 2x costs,False,-36.1%
+H-dir,fail,(d) in-sample mean net return above zero,False,-17.9%
+H-slow,fail,(a) at least 30 out-of-sample trades,True,52 trades
+H-slow,fail,"(b) out-of-sample mean net return above zero, interval excluding zero (1x costs)",False,"-20.9%, interval from -24.4%"
+H-slow,fail,(c) out-of-sample mean above zero at 2x costs,False,-34.7%
+H-slow,fail,(d) in-sample mean net return above zero,False,-18.4%
+H-rich,fail,(a) at least 30 out-of-sample trades,True,52 trades
+H-rich,fail,"(b) out-of-sample mean net return above zero, interval excluding zero (1x costs)",False,"-27.2%, interval from -35.7%"
+H-rich,fail,(c) out-of-sample mean above zero at 2x costs,False,-621.1%
+H-rich,fail,(d) in-sample mean net return above zero,False,-29.9%

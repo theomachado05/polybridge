@@ -1,0 +1,783 @@
+{
+ "critic": "B",
+ "answers": [
+  {
+   "id": "polymarket:2589812",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:2589813",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "IWM",
+     "direction": "down_on_yes",
+     "confidence": 0.6,
+     "mechanism": "Small caps carry more floating-rate debt and are the most rate-sensitive equity index, so a more likely hike pushes them down."
+    },
+    {
+     "ticker": "TLT",
+     "direction": "down_on_yes",
+     "confidence": 0.55,
+     "mechanism": "A more likely hike lifts the expected policy-rate path and yields along the curve, lowering long Treasury prices."
+    },
+    {
+     "ticker": "SPY",
+     "direction": "down_on_yes",
+     "confidence": 0.55,
+     "mechanism": "A rate hike is a market-wide tightening of financial conditions that raises the discount rate on all equities."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:703257",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:5179198",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "AEP",
+     "direction": "down_on_yes",
+     "confidence": 0.45,
+     "mechanism": "AEP's Indiana Michigan Power has large contracted hyperscaler load in Indiana, so a state moratorium cuts its load and rate-base growth."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1365861",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "EWZ",
+     "direction": "down_on_yes",
+     "confidence": 0.3,
+     "mechanism": "The realistic alternative to second is Flavio Bolsonaro topping the round, so second place means Lula led, which lowers the odds of the change of government Brazilian equities favour."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:4985048",
+   "family": "spot_proxy",
+   "links": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "confidence": 0.95,
+     "mechanism": "IBIT holds spot bitcoin, so it rises one-for-one with the bitcoin move that makes YES more likely."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "confidence": 0.85,
+     "mechanism": "Strategy's value is dominated by its leveraged bitcoin treasury, so the share price rises with bitcoin at a beta above one."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "confidence": 0.7,
+     "mechanism": "MARA mines and holds bitcoin, so its revenue and treasury value move with the bitcoin price and the stock rises with it."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:5166375",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:5062249",
+   "family": "spot_proxy",
+   "links": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "confidence": 0.95,
+     "mechanism": "IBIT holds spot bitcoin, so it rises one-for-one with the bitcoin move that makes YES more likely."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "confidence": 0.85,
+     "mechanism": "Strategy's value is dominated by its leveraged bitcoin treasury, so the share price rises with bitcoin at a beta above one."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "confidence": 0.7,
+     "mechanism": "MARA mines and holds bitcoin, so its revenue and treasury value move with the bitcoin price and the stock rises with it."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:2176270",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.75,
+     "mechanism": "Normal Hormuz traffic restores Gulf crude flows and removes the supply-disruption premium, lowering WTI."
+    },
+    {
+     "ticker": "XOP",
+     "direction": "down_on_yes",
+     "confidence": 0.55,
+     "mechanism": "Lower crude prices on restored Gulf supply cut producers' cash flows."
+    },
+    {
+     "ticker": "JETS",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Lower crude and jet fuel prices cut airlines' largest variable cost."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:4985072",
+   "family": "spot_proxy",
+   "links": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "confidence": 0.95,
+     "mechanism": "IBIT holds spot bitcoin, so it rises one-for-one with the bitcoin move that makes YES more likely."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "confidence": 0.85,
+     "mechanism": "Strategy's value is dominated by its leveraged bitcoin treasury, so the share price rises with bitcoin at a beta above one."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "confidence": 0.7,
+     "mechanism": "MARA mines and holds bitcoin, so its revenue and treasury value move with the bitcoin price and the stock rises with it."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:5126781",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "AEP",
+     "direction": "down_on_yes",
+     "confidence": 0.3,
+     "mechanism": "AEP's Public Service Company of Oklahoma counts on new data center load, so a state moratorium trims a part of AEP's growth plan."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:5180113",
+   "family": "spot_proxy",
+   "links": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "confidence": 0.81,
+     "mechanism": "IBIT holds spot bitcoin, so it rises one-for-one with the bitcoin move that makes YES more likely (YES read as the Up outcome)."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "confidence": 0.72,
+     "mechanism": "Strategy's value is dominated by its leveraged bitcoin treasury, so the share price rises with bitcoin at a beta above one."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "confidence": 0.59,
+     "mechanism": "MARA mines and holds bitcoin, so its revenue and treasury value move with the bitcoin price and the stock rises with it."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:3215007",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:4662694",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "AMZN",
+     "direction": "down_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Amazon holds a large equity stake in Anthropic and counts it as a major AWS compute customer, so a bankruptcy means a write-off and lost cloud revenue."
+    },
+    {
+     "ticker": "NVDA",
+     "direction": "down_on_yes",
+     "confidence": 0.3,
+     "mechanism": "Failure of a leading AI lab would signal that AI compute spending is unsustainable, hitting demand expectations for Nvidia chips."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:567621",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "TSM",
+     "direction": "down_on_yes",
+     "confidence": 0.95,
+     "mechanism": "TSMC's fabs and headquarters are in Taiwan, so an invasion threatens its production and the ADR directly."
+    },
+    {
+     "ticker": "SMH",
+     "direction": "down_on_yes",
+     "confidence": 0.9,
+     "mechanism": "The semiconductor ETF is concentrated in TSMC and in chip designers that depend on Taiwanese fabrication."
+    },
+    {
+     "ticker": "FXI",
+     "direction": "down_on_yes",
+     "confidence": 0.85,
+     "mechanism": "An invasion would trigger sanctions and capital flight from Chinese large caps."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1365854",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "EWZ",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Lula coming second means an opposition candidate beat him in the first round, raising the odds of a change of government that Brazilian equities have priced as positive."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:682705",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:4985067",
+   "family": "spot_proxy",
+   "links": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "confidence": 0.95,
+     "mechanism": "IBIT holds spot bitcoin, so it rises one-for-one with the bitcoin move that makes YES more likely."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "confidence": 0.85,
+     "mechanism": "Strategy's value is dominated by its leveraged bitcoin treasury, so the share price rises with bitcoin at a beta above one."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "confidence": 0.7,
+     "mechanism": "MARA mines and holds bitcoin, so its revenue and treasury value move with the bitcoin price and the stock rises with it."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:5170731",
+   "family": "spot_proxy",
+   "links": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "confidence": 0.95,
+     "mechanism": "IBIT holds spot bitcoin, so it rises one-for-one with the bitcoin move that makes YES more likely."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "confidence": 0.85,
+     "mechanism": "Strategy's value is dominated by its leveraged bitcoin treasury, so the share price rises with bitcoin at a beta above one."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "confidence": 0.7,
+     "mechanism": "MARA mines and holds bitcoin, so its revenue and treasury value move with the bitcoin price and the stock rises with it."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:5179176",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "ETR",
+     "direction": "down_on_yes",
+     "confidence": 0.55,
+     "mechanism": "Entergy Louisiana's growth plan is built on new generation for hyperscale data centers such as Meta's Richland Parish site, so a moratorium halts further load growth."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:4753005",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:3399459",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.55,
+     "mechanism": "A ceasefire that holds keeps the Gulf supply-risk premium out of crude, while a collapse would add it back."
+    },
+    {
+     "ticker": "XOP",
+     "direction": "down_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Producers lose the war-premium uplift in crude prices when the ceasefire is expected to hold."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:663583",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:560317",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:4730298",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:3554659",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "GOOGL",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Holding the top-ranked model supports the view that Alphabet is winning the AI race, which has driven its multiple."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:562829",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:5062258",
+   "family": "spot_proxy",
+   "links": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "confidence": 0.95,
+     "mechanism": "IBIT holds spot bitcoin, so it rises one-for-one with the bitcoin move that makes YES more likely."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "confidence": 0.85,
+     "mechanism": "Strategy's value is dominated by its leveraged bitcoin treasury, so the share price rises with bitcoin at a beta above one."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "confidence": 0.7,
+     "mechanism": "MARA mines and holds bitcoin, so its revenue and treasury value move with the bitcoin price and the stock rises with it."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1365894",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:701494",
+   "family": "spot_proxy",
+   "links": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "confidence": 0.95,
+     "mechanism": "IBIT holds spot bitcoin, so it rises one-for-one with the bitcoin move that makes YES more likely."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "confidence": 0.85,
+     "mechanism": "Strategy's value is dominated by its leveraged bitcoin treasury, so the share price rises with bitcoin at a beta above one."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "confidence": 0.7,
+     "mechanism": "MARA mines and holds bitcoin, so its revenue and treasury value move with the bitcoin price and the stock rises with it."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:5123850",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "AEP",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "mechanism": "AEP Ohio serves the central Ohio data center cluster that anchors AEP's load-growth and capital plan, so a moratorium removes that growth."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:4985089",
+   "family": "spot_proxy",
+   "links": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "confidence": 0.95,
+     "mechanism": "IBIT holds spot bitcoin, so it rises one-for-one with the bitcoin move that makes YES more likely."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "confidence": 0.85,
+     "mechanism": "Strategy's value is dominated by its leveraged bitcoin treasury, so the share price rises with bitcoin at a beta above one."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "confidence": 0.7,
+     "mechanism": "MARA mines and holds bitcoin, so its revenue and treasury value move with the bitcoin price and the stock rises with it."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:5062280",
+   "family": "spot_proxy",
+   "links": [
+    {
+     "ticker": "IBIT",
+     "direction": "down_on_yes",
+     "confidence": 0.95,
+     "mechanism": "IBIT holds spot bitcoin, so it falls one-for-one with the bitcoin move that makes YES more likely."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "down_on_yes",
+     "confidence": 0.85,
+     "mechanism": "Strategy's value is dominated by its leveraged bitcoin treasury, so the share price falls with bitcoin at a beta above one."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "down_on_yes",
+     "confidence": 0.7,
+     "mechanism": "MARA mines and holds bitcoin, so its revenue and treasury value move with the bitcoin price and the stock falls with it."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:2100981",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:5170730",
+   "family": "spot_proxy",
+   "links": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "confidence": 0.95,
+     "mechanism": "IBIT holds spot bitcoin, so it rises one-for-one with the bitcoin move that makes YES more likely."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "confidence": 0.85,
+     "mechanism": "Strategy's value is dominated by its leveraged bitcoin treasury, so the share price rises with bitcoin at a beta above one."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "confidence": 0.7,
+     "mechanism": "MARA mines and holds bitcoin, so its revenue and treasury value move with the bitcoin price and the stock rises with it."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:4757283",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:5126795",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "ETR",
+     "direction": "down_on_yes",
+     "confidence": 0.55,
+     "mechanism": "Entergy Louisiana's growth plan is built on new generation for hyperscale data centers such as Meta's Richland Parish site, so a moratorium halts further load growth."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:5082318",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1321567",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:682710",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:701548",
+   "family": "spot_proxy",
+   "links": [
+    {
+     "ticker": "ETHA",
+     "direction": "up_on_yes",
+     "confidence": 0.95,
+     "mechanism": "ETHA holds spot ether, so it rises one-for-one with the ether rally needed to reach the level."
+    },
+    {
+     "ticker": "BMNR",
+     "direction": "up_on_yes",
+     "confidence": 0.85,
+     "mechanism": "BitMine's value is dominated by its ether treasury, so the stock rises with ether at a beta above one."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Coinbase trading and staking revenue rise with ether prices and the activity that accompanies a rally."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:5170744",
+   "family": "spot_proxy",
+   "links": [
+    {
+     "ticker": "IBIT",
+     "direction": "down_on_yes",
+     "confidence": 0.95,
+     "mechanism": "IBIT holds spot bitcoin, so it falls one-for-one with the bitcoin move that makes YES more likely."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "down_on_yes",
+     "confidence": 0.85,
+     "mechanism": "Strategy's value is dominated by its leveraged bitcoin treasury, so the share price falls with bitcoin at a beta above one."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "down_on_yes",
+     "confidence": 0.7,
+     "mechanism": "MARA mines and holds bitcoin, so its revenue and treasury value move with the bitcoin price and the stock falls with it."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1163699",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "confidence": 0.7,
+     "mechanism": "A US market-structure law gives Coinbase legal clarity for listing and trading tokens and removes enforcement overhang."
+    },
+    {
+     "ticker": "GLXY",
+     "direction": "up_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Galaxy's trading, asset management and token holdings benefit from clearer US rules and the crypto rally they would bring."
+    },
+    {
+     "ticker": "HOOD",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Robinhood's crypto trading and tokenisation businesses gain from a clear federal framework."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:703258",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:4747307",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1117222",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:4662695",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "AMZN",
+     "direction": "down_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Amazon holds a large equity stake in Anthropic and counts it as a major AWS compute customer, so a bankruptcy means a write-off and lost cloud revenue."
+    },
+    {
+     "ticker": "NVDA",
+     "direction": "down_on_yes",
+     "confidence": 0.3,
+     "mechanism": "Failure of a leading AI lab would signal that AI compute spending is unsustainable, hitting demand expectations for Nvidia chips."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:5170734",
+   "family": "spot_proxy",
+   "links": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "confidence": 0.95,
+     "mechanism": "IBIT holds spot bitcoin, so it rises one-for-one with the bitcoin move that makes YES more likely."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "confidence": 0.85,
+     "mechanism": "Strategy's value is dominated by its leveraged bitcoin treasury, so the share price rises with bitcoin at a beta above one."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "confidence": 0.7,
+     "mechanism": "MARA mines and holds bitcoin, so its revenue and treasury value move with the bitcoin price and the stock rises with it."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:2757891",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:4936100",
+   "family": "spot_proxy",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.9,
+     "mechanism": "USO holds front-month WTI futures, so it rises directly with the crude rally needed to print $130."
+    },
+    {
+     "ticker": "XOP",
+     "direction": "up_on_yes",
+     "confidence": 0.75,
+     "mechanism": "Oil and gas producers' cash flows rise with crude, and XOP is the highest-beta equity basket to WTI on the menu."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "confidence": 0.7,
+     "mechanism": "Energy-sector earnings rise with crude prices, lifting the sector ETF."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1321570",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:4984991",
+   "family": "spot_proxy",
+   "links": []
+  },
+  {
+   "id": "polymarket:630963",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:4970500",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:4412200",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:5170729",
+   "family": "spot_proxy",
+   "links": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "confidence": 0.95,
+     "mechanism": "IBIT holds spot bitcoin, so it rises one-for-one with the bitcoin move that makes YES more likely."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "confidence": 0.85,
+     "mechanism": "Strategy's value is dominated by its leveraged bitcoin treasury, so the share price rises with bitcoin at a beta above one."
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "confidence": 0.7,
+     "mechanism": "MARA mines and holds bitcoin, so its revenue and treasury value move with the bitcoin price and the stock rises with it."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:3399468",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.55,
+     "mechanism": "A ceasefire that holds keeps the Gulf supply-risk premium out of crude, while a collapse would add it back."
+    },
+    {
+     "ticker": "XOP",
+     "direction": "down_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Producers lose the war-premium uplift in crude prices when the ceasefire is expected to hold."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:4824866",
+   "family": "none",
+   "links": []
+  }
+ ]
+}
