@@ -78,3 +78,35 @@ EVENT_HALF_SPREAD = 0.005       # S8: half of the 1.0-point median spread of eve
 EVENT_FEE_RATE = 0.04           # taker fee 0.04 x P x (1 - P), as S8
 PICKOFF_EXIT_S = 1800
 PICKOFF_MAX_PER_DATE = 10
+
+
+# ==== Part 3, a mechanical link: 15-minute Bitcoin Up/Down markets against spot (METHOD.md amendment 2) ====
+BTC_SLUG = "btc-updown-15m-{start}"      # start = window start, epoch seconds (multiple of 900)
+BTC_FIRST_ET = "2026-08-04 00:00"        # windows starting from here ...
+BTC_LAST_ET = "2026-10-03 00:00"         # ... to here (60 days, 5,760 windows)
+BTC_WINDOW_S = 900
+BTC_SPOT = "coinbase BTC-USD 1-minute candles"
+BTC_VOL_LOOKBACK_MIN = 60                # volatility: std of the last 60 one-minute log returns
+BTC_SIGNAL_MINUTES = tuple(range(1, 14)) # minutes into the window at which a signal is read (entry one minute later)
+BTC_HALF_SPREAD = 0.005                  # half of the 1.0-point spread on the live books, Sat 2026-10-03 23:50 New York time
+BTC_PM_MAX_AGE_S = 120
+BTC_PRINT_WINDOW_S = 120                 # a print within two minutes after the signal
+BTC_GAMMA_BATCH = 20
+BTC_RATE = 2.5
+
+
+@dataclass(frozen=True)
+class BtcVariant:
+    id: str
+    theta: float             # minimum |fair - Polymarket| in points to trade
+    min_minute: int          # earliest signal minute
+
+
+BTC_VARIANTS = (
+    BtcVariant("B0", 5.0, 1),             # primary
+    BtcVariant("B1", 3.0, 1),
+    BtcVariant("B2", 10.0, 1),
+    BtcVariant("B3", 5.0, 10),
+)
+BTC_PRIMARY = "B0"
+BTC_MIN_OOS_TRADES, BTC_MIN_OOS_DATES = 30, 10

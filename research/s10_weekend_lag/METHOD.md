@@ -203,3 +203,59 @@ null.
 *Caveat known now.* "Stale" is read from a one-minute price history that Polymarket fills in every minute. A price
 that does not change can be a quote nobody moved, or no quote worth trading. The print check is what tells them
 apart, and only for recent prints (the latest 20,000 per market).
+
+**Amendment 2, 2026-10-04 03:55 UTC (Sat 23:55 New York time), before any price of these markets or of Bitcoin in
+the study window is read: Part 3, a mechanical link.** After Part 2, Theo asked to keep looking, academically, for
+where the inefficiency is larger than its cost. Parts 1 and 2 show that loose links (an event question and an asset)
+carry a few hundredths of a point per point. A **mechanical** link can carry far more: a market whose fair value is
+arithmetic on a price that trades every second.
+
+*Markets.* Polymarket's **15-minute "Bitcoin Up or Down"** markets (slug `btc-updown-15m-<start epoch>`). A market
+resolves Up if the Chainlink BTC/USD time-weighted average price over the 15 minutes is at or above the price at the
+start. Windows starting from 2026-08-04 00:00 to 2026-10-03 00:00 New York time: 5,760 windows, 60 days.
+
+*What was seen before this amendment.* One resolved market's catalogue entry (rule above; taker fee 0.07 × P ×
+(1 − P), taker only; tick 0.001). Tonight's live books of four current markets: spread 1.0 point in each, $10 to $79
+at the best price. That the catalogue serves events in batches, and that Coinbase serves 2024 one-minute candles.
+**No price of any market or of Bitcoin inside the study window has been read.**
+
+*Data.* The one-minute price history of each market's "Up" token from the window's start to its end (Polymarket),
+each market's result and fee schedule (catalogue), and Coinbase BTC-USD one-minute candles over the whole period.
+Coinbase stands in for Chainlink, which averages several exchanges; the difference is a source of error, reported by
+how often the model's sign at minute 15 matches the actual result.
+
+*Fair value.* At minute m of the window (t = start + 60m, m = 1 to 13): S0 = the Coinbase open of the first minute;
+A = the mean of the closes of the m completed minutes; S = the last close; σ = the standard deviation of the last 60
+one-minute log returns. With n = 15 − m minutes left, the final average is (m·A + n·F)/15, where F, the average of the
+minutes still to come, is taken as normal with mean S and standard deviation S·σ·√(n/3). So
+fair = Φ((m·A + n·S − 15·S0) / (n·S·σ·√(n/3))). Nothing is fitted.
+
+*Tests before costs.* T1: Brier score of the fair value against the result, and of Polymarket's price at the same
+minute, by minute. T2: the slope of (result − Polymarket price) on (fair − Polymarket price), errors clustered by
+New York date: 0 if Polymarket already knows what spot knows, 1 if it ignores it.
+
+*The trade.* At the first signal minute m of a market (m at or after the variant's earliest minute) where |fair −
+Polymarket price at t| is at least θ, buy the side the fair value favours at the Polymarket price one minute later
+(t + 60 s), plus the half-spread (**0.5 point**, tonight's books) plus the market's own taker fee. **Hold to the result**
+(no exit fill, no exit fee). One trade per market, 100 contracts. 2× costs: half-spread and fee doubled.
+
+| id | θ, points | earliest signal minute |
+|---|---|---|
+| **B0, primary** | 5 | 1 |
+| B1 | 3 | 1 |
+| B2 | 10 | 1 |
+| B3 | 5 | 10 |
+
+*Accounting.* As section 5, by New York date: Sharpe annualised by 365, out-of-sample the most recent 20% of dates,
+intervals resampling dates. The deflated Sharpe ratio uses 4 trials. **A Sharpe above 3 starts the bug hunt before
+anything is reported**: the fair value uses nothing after t; the entry is a minute after the signal; costs; whether
+the Polymarket prices were there (prints); whether one day carries the result.
+
+*Print check.* Every entry: a public print in the two minutes after the signal at the assumed price or better on the
+side that proves the fill (section 6's rule, prices on the Up token). Verified share and the P&L of verified entries.
+
+*Success criterion (B0).* As section 7's trade criterion, with at least 30 OOS trades on at least 10 OOS dates, and
+the print-verified entries' mean net P&L above zero.
+
+*Capacity known now.* $10 to $79 at the best price on a Saturday night. Capacity will be reported from printed
+sizes.
