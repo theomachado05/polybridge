@@ -55,10 +55,10 @@ export function questionFromMarket(m: Market): Question {
  *  claims; option structures are priced from real quotes on Build (GET /options/hedge-quote) for comparison only. */
 export const HEDGE_INSTRUMENTS = (spot: number | null): Instrument[] => [
   {
-    id: "shares", kind: "DYNAMIC HEDGE", name: "Short shares · re-sized by the engine as the probability moves",
-    cover: "Scales with Δp", cost: spot ? `last quote $${spot.toFixed(2)}` : "quote unavailable",
-    tax: "No tax-lot or wash-sale logic on live bridges yet",
-    fit: "The hedge the engine runs today: a short position sized to the adverse-outcome probability.",
+    id: "shares", kind: "DYNAMIC HEDGE", name: "Short shares that the engine resizes when the probability changes",
+    cover: "Changes with Δp", cost: spot ? `last quote $${spot.toFixed(2)}` : "quote unavailable",
+    tax: "Live bridges do not use tax-lot or wash-sale rules",
+    fit: "The engine runs this hedge. It sizes a short position to the probability of the adverse outcome.",
     rec: false, short: "Dynamic short hedge", phrase: "a dynamic short hedge",
   },
 ];
@@ -92,7 +92,7 @@ export const isWeekendReplay = (m: Pick<Market, "source" | "id"> | null | undefi
   !!m && m.source === WEEKEND_REPLAY.source && String(m.id) === WEEKEND_REPLAY.id;
 
 /** The weekend market as a Build question: the backend's own search row when it returns one (its final price and
- *  dates), else the recording's identity with no price (shown as "—", never invented). */
+ *  dates), else the recording's identity with no price (shown as "n/a", never invented). */
 export function weekendQuestion(rows: readonly Market[] | null | undefined): Question {
   const hit = (rows ?? []).find((m) => isWeekendReplay(m));
   const m: Market = hit
@@ -107,7 +107,7 @@ export function weekendQuestion(rows: readonly Market[] | null | undefined): Que
 export function weekendPick(holding: { name?: string | null; spot?: number | null; shares?: number } | null): EquityPick {
   return {
     t: WEEKEND_REPLAY.ticker, move: 0, rev: null, brand: null, real: true,
-    why: "Direction from the recording: a recession YES is adverse for SPY (down on YES). No impact size is estimated for this market.",
+    why: "The recording gives the direction. A recession YES is adverse for SPY (down on YES). This market has no impact estimate.",
     direction: WEEKEND_REPLAY.direction, directionSource: "recording",
     name: holding?.name ?? WEEKEND_REPLAY.ticker, px: holding?.spot ?? null, held: holding?.shares ?? 0,
   };

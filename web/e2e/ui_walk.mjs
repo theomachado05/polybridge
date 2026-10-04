@@ -193,7 +193,7 @@ try {
   check("UI: portfolio shows the broker account and capital usage apart from demo holdings", await ev(`!!document.querySelector('[data-testid=broker-account]') && !!document.querySelector('[data-testid=capital-panel]')`), "");
   await sleep(1500);
   await shot(6, "portfolio");
-  await click("a", "JD");
+  await ev(`(() => { const el = document.querySelector('a[href="/profile"]'); if (!el) return false; el.click(); return true; })()`);
   await waitFor(`location.pathname === '/profile'`, "profile route", 30_000);
   await shot(8, "profile");
 } catch (e) {

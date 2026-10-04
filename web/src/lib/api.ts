@@ -52,7 +52,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   try {
     res = await fetch(`${API_URL}${path}`, { cache: "no-store", ...init });
   } catch {
-    throw new ApiError(`Cannot reach the backend at ${API_URL}. Is it running?`, 0);
+    throw new ApiError(`Cannot reach the backend at ${API_URL}. Start the backend and try again.`, 0);
   }
   if (!res.ok) {
     let detail = "";
@@ -60,7 +60,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       const body = await res.json();
       detail = typeof body.detail === "string" ? body.detail : Array.isArray(body.detail) ? body.detail.map((d: { msg: string }) => d.msg).join("; ") : "";
     } catch {}
-    throw new ApiError(detail || `${init?.method ?? "GET"} ${path} failed with ${res.status}`, res.status);
+    throw new ApiError(detail || `${init?.method ?? "GET"} ${path} did not complete (error ${res.status})`, res.status);
   }
   return res.json() as Promise<T>;
 }

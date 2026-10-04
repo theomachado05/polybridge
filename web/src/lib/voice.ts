@@ -23,8 +23,8 @@ export const voiceEnabled = (agentId: string | null | undefined): agentId is str
 export interface ToolReply { ok: boolean; tool: string; summary: string; data?: unknown; needs_confirmation?: boolean; status?: number }
 
 export const SECRET_REFUSED =
-  "The backend refused this call from the browser because it asks for the agent secret, which the web app never holds. " +
-  "Open the app on localhost; if it still fails, the backend must accept local calls without the secret.";
+  "The backend rejected this call from the browser because the call needs the agent secret. The web app does not keep this secret. " +
+  "Open the app on localhost. If the error continues, set the backend to accept local calls without the secret.";
 
 type Fetch = (input: string, init?: RequestInit) => Promise<Response>;
 
@@ -125,15 +125,15 @@ export const ORB_FOR: Record<VoicePhase, string> = {
 };
 
 export const PHASE_LABEL: Record<VoicePhase, string> = {
-  idle: "Talk to PolyBridge", permission: "Allow the microphone…", connecting: "Connecting…", listening: "Listening",
-  thinking: "Thinking", speaking: "Speaking", error: "Voice unavailable · retry",
+  idle: "Talk to PolyBridge", permission: "Allow the microphone", connecting: "Connection starts…", listening: "Talk now",
+  thinking: "Agent works…", speaking: "Agent talks", error: "Voice not available. Try again",
 };
 
 /** A readable reason for a failed microphone request (getUserMedia's DOMException names). */
 export function micErrorText(e: unknown): string {
   const name = e && typeof e === "object" && "name" in e ? String((e as { name: unknown }).name) : "";
-  if (name === "NotAllowedError" || name === "SecurityError") return "Microphone blocked. Allow it for this site in the browser's address bar, then try again.";
-  if (name === "NotFoundError" || name === "OverconstrainedError") return "No microphone found. Connect one and try again.";
-  if (name === "NotReadableError") return "The microphone is in use by another app.";
-  return "The microphone could not be opened.";
+  if (name === "NotAllowedError" || name === "SecurityError") return "The browser blocks the microphone. In the address bar, set the microphone to Allow for this site. Then try again.";
+  if (name === "NotFoundError" || name === "OverconstrainedError") return "The app cannot find a microphone. Connect a microphone and try again.";
+  if (name === "NotReadableError") return "Another app uses the microphone. Close that app and try again.";
+  return "The app cannot open the microphone. Try again.";
 }

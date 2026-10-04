@@ -87,7 +87,7 @@ describe("replay sidecar alerts", () => {
   it("warns on another market's recording and names it", () => {
     const n = replayNotice("replay", "replay", replayInfo(sum({ source: "polymarket", id: "4641065", token_id: null }, "iran.jsonl")), fed)!;
     assert.equal(n.tone, "warn");
-    assert.match(n.text, /This replay \(iran\.jsonl\) was recorded on another market \(polymarket:4641065\), not the question shown here/);
+    assert.match(n.text, /CAUTION: Do not read this replay \(iran\.jsonl\) as data for this question\. It records a different market \(polymarket:4641065\)/);
     assert.equal(priceSubtitle("replay", "polymarket", replayInfo(sum({ source: "polymarket", id: "4641065" })), "2589813").mismatch, true);
   });
   it("notes a recording with no sidecar, a live-to-replay fallback, and stays quiet otherwise", () => {
@@ -96,8 +96,8 @@ describe("replay sidecar alerts", () => {
     assert.match(unknown.text, /mystery\.jsonl has no \.meta\.json sidecar/);
     const fb = replayNotice("replay", "live", replayInfo(sum(fed)), fed)!;
     assert.equal(fb.tone, "info");
-    assert.equal(fb.text, "The live feed was unavailable, so this bridge fell back to the recording fed.jsonl. It records this market (polymarket:2589813).");
-    assert.equal(replayNotice("replay", "live", replayInfo({ replay_file: "fed.jsonl" }), fed)!.text, "The live feed was unavailable, so this bridge fell back to the recording fed.jsonl.");
+    assert.equal(fb.text, "The live feed was not available, so this bridge uses the recording fed.jsonl. It records this market (polymarket:2589813).");
+    assert.equal(replayNotice("replay", "live", replayInfo({ replay_file: "fed.jsonl" }), fed)!.text, "The live feed was not available, so this bridge uses the recording fed.jsonl.");
     assert.equal(replayNotice("replay", "replay", replayInfo(sum(fed)), fed), null);
     assert.equal(replayNotice("live", "live", replayInfo(sum({ source: "polymarket", id: "1" })), fed), null);
   });
