@@ -7,7 +7,7 @@ import { join } from "node:path";
 import {
   actionPlan, approveEnabled, forwardLine, hasRangeAndSample, latencyView, mechanismById, mechanismFor, numberView, pairGapText,
   mechanismForResult, pairState, recorderLine, rungsInOrder, statusTag, statusTone, ticketActions, ticketGap, ticketReference, ticketStrikes,
-  touchProposal, forwardCount,
+  touchProposal, forwardCount, engineLine,
   type EvNumber, type ForwardStatus, type Ladder, type LadderPair, type Mechanism, type Registry, type Ticket,
 } from "../src/lib/micro.ts";
 import { SCREENS, SCREEN_PATH, FIT_PATH, voiceDrive } from "../src/lib/voiceDrive.ts";
@@ -239,7 +239,16 @@ describe("review fixes: statuses, BTC watch, touch threshold, fit gate", () => {
     assert.equal(mechanismForResult(REG, { type: "touch_ticket", mechanism: "touch" })!.id, "touch");
   });
   const T: Ticket = { id: "1", question: "Will NVDA hit $200 by Oct 30?", type: "touch_ticket", fields: {}, linkable: true, reasons: [],
-    best_bid: 0.3, best_ask: 0.34, reference: { available: true, finish_beyond: { mid: 0.12, lo: 0.1, hi: 0.14 }, touch: { mid: 0.24, lo: 0.2, hi: 0.28 } } };
+    best_bid: 0.3, best_ask: 0.34, reference: { available: true, finish_beyond: { mid: 0.12, lo: 0.1, hi: 0.14 }, touch: { mid: 0.24, lo: 0.2, hi: 0.28 } },
+    engine: { family: "touch_ticket_reference", source: "engine", preset: 0, action: "propose", reason: "proposal", latency_ns: 42 } };
+  it("the Draft proposal needs the backend's touch_ticket_reference action to be propose", () => {
+    assert.ok(touchProposal(T, REG));
+    assert.equal(touchProposal({ ...T, engine: { ...T.engine!, action: "hold", reason: "no_signal" } }, REG), null);
+    assert.equal(touchProposal({ ...T, engine: undefined }, REG), null);               // no decision block: no draft
+    assert.equal(engineLine(T.engine, mechanismById(REG, "touch")), `decided by C++ · touch_ticket_reference #0 · proposal · 42 ns · ${mechanismById(REG, "touch")!.status_label}`);
+    assert.match(engineLine({ family: "ladder_pair", source: "python_fallback", action: "hold", reason: "python: no violation" }, null)!, /^decided by the Python fallback \(C\+\+ micro families not compiled\) · ladder_pair/);
+    assert.equal(engineLine(undefined, null), null);
+  });
   it("a touch proposal needs the bid 5+ points above the touch reference, priced at the bid", () => {
     const p = touchProposal(T, REG)!;                       // bid 30 vs touch mid 24: +6 points
     assert.equal(p.price, 0.3);
@@ -293,5 +302,24 @@ describe("review fixes: statuses, BTC watch, touch threshold, fit gate", () => {
     assert.ok(src.includes("useRegistry()") && src.includes("StatusTag"));
     assert.ok(!/passed the out-of-sample test/.test(src));
     assert.ok(!/best in-sample result/.test(src));
+  });
+});
+
+describe("micro families: catalog, library and engine strip", () => {
+  it("parseLibrary carries the catalog's micro families with their status words", async () => {
+    const { parseLibrary } = await import("../src/lib/library.ts");
+    const lib = parseLibrary({ families: [{ id: "x", preset_count: 3 }], total_presets: 3, micro_total: 19,
+      micro_families: [{ id: "ladder_pair", status: "lead", preset_count: 18, division: "micro/ladder", params: [{ name: "min_edge", grid: [1, 2, 3] }] },
+                       { id: "touch_ticket_reference", status: "unvalidated", preset_count: 1 }] } as never)!;
+    assert.equal(lib.microTotal, 19);
+    assert.deepEqual(lib.micro.map((m) => [m.id, m.status, m.presets]), [["ladder_pair", "lead", 18], ["touch_ticket_reference", "unvalidated", 1]]);
+    assert.equal(parseLibrary({ families: [{ id: "x" }] } as never)!.micro.length, 0);
+  });
+  it("boards and strip show the C++ decision from the API, not local math", () => {
+    const strip = readFileSync(join(ROOT, "src/components/micro/EngineStrip.tsx"), "utf8");
+    assert.ok(strip.includes("micro_bench") && strip.includes("synthetic tape") && strip.includes("b.sample"));
+    assert.ok(readFileSync(join(ROOT, "src/app/pipeline/page.tsx"), "utf8").includes("engineLine(p.engine, mech)"));
+    assert.ok(readFileSync(join(ROOT, "src/components/micro/TicketBoard.tsx"), "utf8").includes("engineLine(t.engine, mechanism)"));
+    assert.ok(readFileSync(join(ROOT, "src/app/library/page.tsx"), "utf8").includes("lib.micro.map"));
   });
 });

@@ -54,7 +54,24 @@ export interface LibRow {
   p50ns: number | null;
   p99ns: number | null;
 }
-export interface Library { rows: LibRow[]; total: number; source: string | null }
+/** A micro family (hedgecore ladder_pair, touch_ticket_reference): its own tick type, outside the 17 families. The
+ *  status word is the catalog's (`lead`, `unvalidated`). */
+export interface MicroFam { id: string; name: string; status: string; idea: string; division: string; presets: number; params: LibParam[] }
+export interface Library { rows: LibRow[]; total: number; source: string | null; micro: MicroFam[]; microTotal: number }
+
+type RawMicro = { id?: unknown; status?: unknown; idea?: unknown; division?: unknown; preset_count?: unknown; params?: CatalogFamily["params"] };
+
+/** The catalog's `micro_families` (empty when the catalog has none). */
+export function parseMicro(raw: unknown): { micro: MicroFam[]; microTotal: number } {
+  const r = (raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {}) as { micro_families?: RawMicro[]; micro_total?: unknown };
+  const micro = (Array.isArray(r.micro_families) ? r.micro_families : []).filter((f) => f && typeof f.id === "string").map((f) => ({
+    id: f.id as string, name: prettyId(f.id as string), status: typeof f.status === "string" ? f.status : "",
+    idea: typeof f.idea === "string" ? f.idea : "", division: typeof f.division === "string" ? f.division : "micro",
+    presets: typeof f.preset_count === "number" ? f.preset_count : 0, params: params(f.params),
+  }));
+  const microTotal = typeof r.micro_total === "number" ? r.micro_total : micro.reduce((a, m) => a + m.presets, 0);
+  return { micro, microTotal };
+}
 
 function params(p: CatalogFamily["params"]): LibParam[] {
   if (!p) return [];
@@ -87,7 +104,7 @@ export function parseLibrary(raw: LibraryOut | CatalogFamily[] | null | undefine
   });
   const reported = Array.isArray(raw) ? undefined : raw.total_presets ?? raw.preset_total ?? raw.total;
   const total = typeof reported === "number" ? reported : rows.reduce((a, r) => a + r.presets, 0);
-  return { rows, total, source: Array.isArray(raw) ? null : raw.source ?? null };
+  return { rows, total, source: Array.isArray(raw) ? null : raw.source ?? null, ...parseMicro(raw) };
 }
 
 /** Families whose event classes include `cls` (the pipeline's shortlist step, recomputed client-side). With

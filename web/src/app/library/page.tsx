@@ -107,6 +107,24 @@ export default function Library() {
         {s.library.status === "loading" && <div className="pb-list-note" style={{ display: "flex", gap: "var(--sp-3)", alignItems: "center" }}><Orb state="working" size={20} />Reading the compiled catalog…</div>}
         {s.library.status === "error" && <Unavailable what="The algorithm library (GET /library)" error={s.library.error} onRetry={s.reloadLibrary} style={{ padding: "var(--sp-4) var(--sp-5)" }} />}
       </div>
+      {lib && lib.micro.length > 0 && (
+        <div className="pb-card pb-list" data-testid="library-micro" style={{ overflow: "hidden" }}>
+          <div className="pb-list-note">
+            <span style={{ fontWeight: 500, color: "var(--ink)" }}>Micro families · {lib.microTotal} presets</span> · their own tick types (two ladder books; a ticket and its options reference), outside the {lib.rows.length} families above. They decide the ladder and ticket boards. Status words are the catalog&apos;s.
+          </div>
+          {lib.micro.map((m) => (
+            <div key={m.id} className="pb-list-note" style={{ borderTop: "1px solid var(--line)" }}>
+              <div style={{ display: "flex", gap: "var(--sp-2)", alignItems: "center", flexWrap: "wrap" }}>
+                <span className="pb-num" style={{ fontWeight: 500, color: "var(--ink)" }}>{m.id}</span>
+                <Tag tone={m.status === "lead" ? "measured" : "caution"} title="Status word from the compiled catalog">{m.status}</Tag>
+                <span className="pb-small pb-num">{m.division} · {m.presets} preset{m.presets === 1 ? "" : "s"}</span>
+              </div>
+              <div className="pb-small pb-pretty">{m.idea}</div>
+              <div className="pb-small pb-num">{m.params.filter((p) => p.grid.length > 0).map((p) => `${p.name} ${p.grid.join("/")}`).join(" · ")}</div>
+            </div>
+          ))}
+        </div>
+      )}
     </main>
   );
 }

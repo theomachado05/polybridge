@@ -91,3 +91,57 @@ Caveats, stated plainly:
 The first 16 families (1,278 presets) over 20,000 ticks: 1.68 s total, 1.521e+07 preset-ticks per second (sum of the table's seconds from the first run, so this is the cost of scoring those families once on one thread).
 
 ¹ From the second run, which was slowed by other jobs on the machine: `equity_delta_bridge` took 0.199 s (1.087e+07 preset-ticks/s) in that run against 0.140 s above, so compare `closed_session_hedge` with that same-run figure rather than with the rows above. With all 17 families the library has 1,386 presets.
+
+## Micro families: `ladder_pair` and `touch_ticket_reference`
+
+Added on 2026-10-04 (branch `p/engine-micro`). Status words are fixed: `ladder_pair` is a **lead**,
+`touch_ticket_reference` is **unvalidated** (it emits proposals only unless the tick carries `validated = True`).
+These families take their own tick types (`LadderTick`, `TicketTick`), so they are not in `AnyAlgo` and the 17
+families, their 1,386 presets and their replay outputs are unchanged (locked by `tests/golden/`).
+
+**Run:** the same `hedgecore_bench 1000000 20000` command, built in `engine/hedgecore/build` (CMake Release, same
+machine, compiler and flags as above), 2026-10-04 03:21 ET. Other jobs shared the machine (load average about 5.7). In
+this run `equity_delta_bridge` measured 29.9 ns mean and 13.8 ns step() mean (30.7 and 13.6 above), so the rows below
+are comparable with the table above.
+
+**Tape (synthetic, deterministic, LCG seed 42, 1-second ticks, 1,000,000 ticks per family, default preset).**
+`ladder_pair`: rich bid 0.50 + 0.08 z against a cheap ask of 0.47, sizes 5 to 120 on each leg, taker fee rate 0.02
+on both legs, tick 0.01, rich quote age 0 to 89 s, nested flag missing on 1 tick in 10, `event_held` 0.
+`touch_ticket_reference`: bid 0.30 + 0.10 z, ask bid + 0.02, central reference 0.28, sizes 1 to 200, `validated` True on
+every other tick, positions 0. Fills are fed back in full at the quoted price in every pass, as for the other families.
+
+| family | status | mean | step() mean | per-call p50 | per-call p99 | per-call p99.9 | 64-block p50 | 64-block p99 | 64-block p99.9 | presets | orders emitted |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| `ladder_pair` | lead | 26.5 | 5.5 | 42 | 42 | 84 | 26 | 33 | 35 | 18 | 22 |
+| `touch_ticket_reference` | unvalidated | 26.3 | 3.5 | 42 | 42 | 84 | 25 | 31 | 33 | 1 | 2 |
+
+All values in nanoseconds, same four views as above. `on_tick` keeps `AlgoBase::on_tick`'s latency stamp (two
+`steady_clock` reads inside the call); `step()` mean is the decision logic alone. Neither family allocates on the tick
+path (`NoAlloc.MicroFamiliesNeverAllocate`).
+
+**Replay throughput** (`replay_ladder` / `replay_tickets`, every preset over the first 20,000 rows of the tapes above,
+one warm-up call first; fills only at the quoted bid or ask, never more than the quoted size, never at a mid):
+
+| family | presets | rows | seconds | preset-rows / s | notes |
+|---|---:|---:|---:|---:|---|
+| `ladder_pair` | 18 | 20,000 | 0.011 | 3.280e+07 | rows spread over 50 pairs in 10 events |
+| `touch_ticket_reference` | 1 | 20,000 | 0.001 | 3.173e+07 | 200 tickets, 20 underlyings, 40 events |
+
+**On the research files** (correctness, not timing): replaying
+`research/results/ladder_replay/order_check/trades_fresh.csv` (562 rows) through `replay_ladder` with the research
+rule's settings (min_edge 0, max_age 60 s, cap 100, no event cap, 3,600 s between entries on a pair, tick 0 because
+the file's prices already carry its one tick per leg) gives 562 trades and a mean of +8.8235 points per trade, the same
+count and mean as the file; replaying the 303 U-all markets of `research/results/s21_options_anchor/trades.csv`
+through `replay_tickets` proposes exactly the 60 markets of S21's book B0 and emits no order. On those rows the
+self-stamped `on_tick` latency is below the clock's 42 ns resolution at the median (p50 0 ns, p99 42 ns as read).
+
+Caveats, stated plainly:
+
+- Synthetic tapes. On them `ladder_pair` emitted 22 orders: after about 20 entries the pair reaches its per-event cap
+  of 1,000 contracts and the 3,600 s re-entry gap applies between entries, so most ticks take the capped or cooldown
+  path. `touch_ticket_reference` emitted 2 orders before its 100-contract ticket cap filled; most later ticks end at the
+  cap. Both order paths run under the no-alloc test on separate tapes.
+- The research-file replays check that the family reproduces the research rule's selection and arithmetic. They are
+  not new evidence: the ladder file is the year-checked sample whose rule was fixed after the registered test came back
+  NULL, and the S21 book failed its own confirmation rule.
+- One machine, one run, one thread, shared with other jobs.
