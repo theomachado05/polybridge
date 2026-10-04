@@ -210,3 +210,9 @@ the code, and counts made from odds and the calendar alone:
   without a control stays in the trade results and in the event rows of the speed curve; it is left out of event
   minus control.
 - Requests at most: tier 1 7,633; tier 2 364; tier 3 about 600; tier 4 about 1,480; tier 5 4,400.
+
+**2 (Sat 2026-10-03, 23:40 New York time).** Label only. Another session took the label "S16" for a different study
+(`research/s16_kalshi_quotes`), committed in the same minute. This study is called **S17 (overnight odds against
+options)** from now on, in the titles of its summary and run log and in its commit messages. The folder names stay
+`research/s16_overnight_options` and `research/results/s16_overnight_options`, so the path of the pre-registration
+commit is unchanged. No rule changed. (Amendment 1 is stamped 23:45; its commit, `c18e2bc`, was made at 23:38.)
