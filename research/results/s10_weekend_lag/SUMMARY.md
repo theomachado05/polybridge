@@ -75,6 +75,23 @@ exactly those markets and finds +0.07 points before costs.
 
 Every row, with Sharpe, drawdown, worst month and turnover, is in `mechanism/metrics.csv`.
 
+## Part 5, a live pilot at real quotes (amendment 5, recorded Sun 00:40 to 06:00 New York time)
+
+**A pilot null, and the reason is in my signal, not in the market.** 19,035 one-second snapshots of the live book of
+the current 15-minute Bitcoin market and Coinbase's price, 22 windows (21 resolved). The book follows spot inside
+the **same five seconds** (slope of the mid's change on the fair value's change 0.30, t = 5.93); nothing significant
+follows in the next 5, 15 or 30 seconds (t = 0.60, 0.96, 1.03). The pre-registered trade (fair beyond the quote by 2
+points plus the fee, filled at the next second's quote, held to the result) made **20 trades: −13.3 points each**
+[−31.3, +4.9], 30% winners, about 96 contracts filled per trade at the quoted size. At 2× costs −15.9.
+
+**Why it lost (looked at after the run).** Most signals fired at the first second allowed, 60 seconds into the
+window, with the fair value near 50% and Polymarket already well away from it (for example 0.30). Polymarket was
+right more often. My live fair value used the mean of the last 60 seconds of Coinbase prices, so it lagged the price
+that Polymarket's quoters use. I built a lag into the signal. It is not re-tuned here: 20 trades is too few, and it
+would be fitted after seeing the result. What the pilot does show is how fast the book is: it moves with spot within
+seconds. So the gap Part 3 sees in the minute history is gone before a person, or a one-second poller, can take it.
+Files: [`live/`](live/).
+
 ## Part 4, hold the stale side to the result (pre-registered in amendment 3, commit `e661545`, before any result was read)
 
 **A null.** Part 2's 2,340 stale-side entries, held until the question resolves instead of 30 minutes. 2,154 have a
