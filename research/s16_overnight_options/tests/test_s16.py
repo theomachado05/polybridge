@@ -1,4 +1,4 @@
-"""S17 (folder s16_overnight_options): the rules of METHOD.md as tests. No network."""
+"""S16 (overnight options): the rules of METHOD.md as tests. No network."""
 from __future__ import annotations
 
 import math

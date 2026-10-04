@@ -1,4 +1,4 @@
-"""S17 (folder s16_overnight_options): charts, SUMMARY.md and capacity.md, every number read back from the result files.
+"""S16 (overnight options): charts, SUMMARY.md and capacity.md, every number read back from the result files.
 
 Run from `research/`:  python -m s16_overnight_options.report
 """
@@ -216,11 +216,10 @@ def summary(r: R, answer: list[str], after: list[str]) -> str:
     st = meta["status"]
     fin, stopped = tier_state(meta)
     L: list[str] = []
-    L += ["# S17 (overnight odds against options): after a big overnight move in the odds, are options on the linked asset mispriced in the first minutes?",
+    L += ["# S16 (overnight options): after a big overnight move in the odds, are options on the linked asset mispriced in the first minutes?",
           "",
-          "Folder name `s16_overnight_options` (the label moved from S16 to S17 after a clash with another session; METHOD.md amendment 2). "
           "Method, pre-registered before any option quote was pulled: [`research/s16_overnight_options/METHOD.md`](../../s16_overnight_options/METHOD.md) "
-          "(commit `1185abb`; amendments `c18e2bc`, `d80ff94`). "
+          "(commit `1185abb`; amendments in METHOD.md, the label is S16: amendment 3). "
           f"{meta['sessions']} sessions, {meta['first_session']} to {meta['last_session']}; out-of-sample is every session from {meta['oos_from']}. "
           "Files: [`metrics.csv`](metrics.csv), [`trades.csv`](trades.csv), [`observations.csv`](observations.csv), [`speed_curve.csv`](speed_curve.csv), "
           "[`spreads.csv`](spreads.csv), [`verdicts.csv`](verdicts.csv), [`top_moves.csv`](top_moves.csv), [`equity.csv`](equity.csv), "
@@ -339,7 +338,7 @@ def summary(r: R, answer: list[str], after: list[str]) -> str:
 
 def capacity(r: R) -> str:
     t = r.t[(r.t.variant == "V0") & (r.t.kind == "event")]
-    L = ["# S17 capacity and costs: what could be traded at the 09:35 quote", "",
+    L = ["# S16 (overnight options): capacity and costs: what could be traded at the 09:35 quote", "",
          "Main-sample events (overnight odds move of 10+ points), primary timing. Sizes are the NBBO size at the entry price (the ask for a purchase, the "
          "bid for a sale; for a straddle the smaller of the two legs). Volume is the day's volume of the contract (for a straddle the smaller leg). "
          "Costs are measured from the quotes themselves: mid-to-mid P&L minus P&L at bid/ask with $0.65 per contract per leg each way.", "",

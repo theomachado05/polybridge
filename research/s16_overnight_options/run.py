@@ -1,4 +1,4 @@
-"""S17 (folder s16_overnight_options): the three trades, the speed curve, spreads and the case files, from the cache
+"""S16 (overnight options): the three trades, the speed curve, spreads and the case files, from the cache
 (METHOD.md sections 5 to 9). No network: a quote that was not pulled is "not pulled", never a modelled price.
 
 Run from `research/`:  python -m s16_overnight_options.run
@@ -107,6 +107,27 @@ def stat_row(ev: list[dict], ct: list[dict], col: str, days: list[str] | None = 
         dr = np.array([float(np.mean(be[x])) if x in be else 0.0 for x in days])
         row.update(eg.book(dr, days))
     return row
+
+
+def spread_split(trades: list[dict]) -> list[dict]:
+    """NOT pre-registered (added while the pull ran, after the first 16 events showed that a few very wide quotes dominate
+    a mean): the primary trades split at the median entry spread of the event straddles. No threshold is chosen."""
+    v0 = [t for t in trades if t["variant"] == "V0"]
+    st = {(t["sample"], t["ticker"], t["event_day"]): t["entry_spread_share"] for t in v0 if t["hypothesis"] == "H-slow" and t["kind"] == "event"}
+    if not st:
+        return []
+    cut = float(np.median(list(st.values())))
+    rows = []
+    for half, keep in (("tighter half", lambda s_: s_ <= cut), ("wider half", lambda s_: s_ > cut)):
+        keys = {k for k, s_ in st.items() if keep(s_)}
+        for hyp in cfg.HYPOTHESES:
+            ev = [t for t in v0 if t["hypothesis"] == hyp and t["kind"] == "event" and (t["sample"], t["ticker"], t["event_day"]) in keys]
+            ct = [t for t in v0 if t["hypothesis"] == hyp and t["kind"] == "control" and (t["sample"], t["ticker"], t["event_day"]) in keys]
+            for name, _ in COSTS:
+                s = stat_row(ev, ct, f"ret_{name}")
+                rows.append({"half": half, "median_cut_spread_share": cut, "hypothesis": hyp, "costs": name,
+                             "tickers_list": " ".join(sorted({t["ticker"] for t in ev})), **s})
+    return rows
 
 
 def segments(days: list[str]) -> list[tuple[str, list[str]]]:
@@ -297,6 +318,7 @@ def main() -> int:
             eq += [{"hypothesis": hyp, "costs": name, "day": d, "segment": "OOS" if d >= cfg.OOS_FROM else "IS", "trades": len(be.get(d, [])),
                     "day_return": float(a), "cumulative": float(b), "drawdown": float(c)} for d, a, b, c in zip(days, dr, cum, dd)]
     write_csv(RESULTS / "equity.csv", eq)
+    write_csv(RESULTS / "after_the_run_spread_split.csv", spread_split(trades))
 
     obs = [{k: v for k, v in r.items()} for r in recs]
     write_csv(RESULTS / "observations.csv", obs)

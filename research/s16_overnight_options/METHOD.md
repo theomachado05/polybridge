@@ -216,3 +216,7 @@ the code, and counts made from odds and the calendar alone:
 options)** from now on, in the titles of its summary and run log and in its commit messages. The folder names stay
 `research/s16_overnight_options` and `research/results/s16_overnight_options`, so the path of the pre-registration
 commit is unchanged. No rule changed. (Amendment 1 is stamped 23:45; its commit, `c18e2bc`, was made at 23:38.)
+
+**3 (Sat 2026-10-03, 23:50 New York time).** Label only. The label is **S16 (overnight options)** again, matching the
+folder name: the main session's `research/s17_first_minute` holds the number S17 and already refers to this study as
+S16. Amendment 2 is superseded as to the label. No rule changed.
