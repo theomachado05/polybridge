@@ -130,4 +130,8 @@ reported as that.
 
 ## Amendments
 
-None.
+**Amendment 1, 2026-10-04 00:27 UTC, before any test-sample price was pulled: 5-minute equity bars.** Section 2 says
+1-minute equity bars. One-minute bars for 66 tickers over nine months would not fit on the disk that is left.
+Five-minute regular-session bars are used instead. Nothing in the rules changes: the open is the open of the 09:30
+bar, the 10:00 exit is the close of the 09:55 bar, the 30-minute gate bins are six bars. The capacity figure of
+section 3 uses the first five minutes instead of the first minute. Polymarket odds stay at 1 minute.
