@@ -41,7 +41,7 @@ WEB_HOSTS = ("localhost:3000", "127.0.0.1:3000")  # widget allowlist (exact host
 TIMEOUT_S = 20.0
 # Seconds the agent waits for each client tool (ElevenLabs allows 1..120). fit replays history (up to ~45 s worst case).
 TOOL_TIMEOUTS = {"fit": 90, "start_bridge": 30, "search_markets": 20, "propose": 20, "approve": 20,
-                 "bridge_status": 15, "account": 15, "positions": 15}
+                 "bridge_status": 15, "account": 15, "positions": 15, "navigate": 5}
 CONFIRM_NOTE = (" Only set confirm true after the user has said yes, out loud, in their last message; never on your "
                 "own initiative.")
 

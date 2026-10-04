@@ -144,10 +144,10 @@ def test_create_writes_only_the_agent_id_and_masks_it(env_local, monkeypatch):
     fake = FakeEleven()
     code, out = _run([], fake, env_local, monkeypatch, ELEVENLABS_API_KEY=EL_KEY)
     assert code == 0, out
-    assert len(fake.tools) == 8 and all(c["type"] == "client" for c in fake.tools.values())
+    assert len(fake.tools) == 9 and all(c["type"] == "client" for c in fake.tools.values())
     (aid, body), = fake.agents.items()
     prompt = body["conversation_config"]["agent"]["prompt"]
-    assert prompt["tool_ids"] == [f"tool_{i}" for i in range(1, 9)] and prompt["llm"] == "gemini-2.5-flash"
+    assert prompt["tool_ids"] == [f"tool_{i}" for i in range(1, 10)] and prompt["llm"] == "gemini-2.5-flash"
     assert prompt["prompt"].startswith("You are PolyBridge") and "tools" not in prompt
     assert body["platform_settings"]["auth"] == {"enable_auth": False, "allowlist": [
         {"hostname": "localhost:3000"}, {"hostname": "127.0.0.1:3000"}]}
@@ -164,7 +164,7 @@ def test_rerun_is_idempotent_updates_in_place(env_local, monkeypatch):
     code, out = _run([], fake, env_local, monkeypatch, ELEVENLABS_API_KEY=EL_KEY)
     assert code == 0, out
     assert set(fake.tools) == set(tools_before) and set(fake.agents) == agents_before  # nothing new
-    assert "agent updated" in out and "0 created, 8 updated" in out
+    assert "agent updated" in out and "0 created, 9 updated" in out
     methods = [(r.method, r.url.path.split("/")[3] if r.url.path.count("/") > 2 else r.url.path) for r in fake.requests]
     assert ("PATCH", "agents") in methods
     assert env_local.read_text().count("NEXT_PUBLIC_ELEVENLABS_AGENT_ID=") == 1
@@ -174,7 +174,7 @@ def test_foreign_client_tool_with_the_same_name_is_left_alone(env_local, monkeyp
     foreign = {"type": "client", "name": "account", "description": "Someone else's tool", "parameters": {}}
     fake = FakeEleven(tools={"theirs": foreign})
     assert _run([], fake, env_local, monkeypatch, ELEVENLABS_API_KEY=EL_KEY)[0] == 0
-    assert fake.tools["theirs"] == foreign and len(fake.tools) == 9
+    assert fake.tools["theirs"] == foreign and len(fake.tools) == 10
 
 
 def test_stale_agent_id_gets_a_new_agent(env_local, monkeypatch):

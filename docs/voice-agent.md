@@ -21,7 +21,7 @@ Keys go in the repo-root `.env` (gitignored; never commit them, never paste them
 
 ```bash
 make keys-check      # which keys are present (names only); runs the Gemini check and read-only ElevenLabs calls
-make voice-agent     # creates (or updates) the agent and its 8 client tools; writes web/.env.local
+make voice-agent     # creates (or updates) the agent and its 9 client tools; writes web/.env.local
 make dev             # restart so Next.js picks up NEXT_PUBLIC_ELEVENLABS_AGENT_ID; open http://localhost:3000
 ```
 
@@ -77,9 +77,31 @@ Running it again updates the same tools and agent, so edit the prompt below and 
 | `bridge_status` | `GET /bridges/{id}` | no |
 | `account` | `GET /account` | no |
 | `positions` | `GET /positions` | no |
+| `navigate` | none: runs in the browser only (`client_only: true`, `method`/`path` null); the dispatcher just echoes it | no |
 
 `search_markets` appends recorded markets whose question contains every query word (from the replay index), because
 a live search does not list resolved markets; the summary names them as "Recorded replays ... (id ...)".
+
+## The screen follows the voice
+
+Every client tool result also moves the screen (`web/src/lib/voiceDrive.ts`, a pure `voiceDrive(tool, args, reply)`
+→ `{route, storeUpdate, announcement, scrollTo}`, unit-tested in `web/tests/voice_drive.test.ts`). The store gets the
+same state the mouse flow would have produced and the Next router goes to that screen, so the user can carry on with
+the mouse at any point:
+
+| Tool result | Screen |
+|---|---|
+| `search_markets` | `/build`, step 1, the query typed in, its live results listed |
+| `fit` (with a market id) | the fit lands in the store for that market + ticker; `/pipeline` runs its steps (score, AI label, history source) |
+| `propose` | `/pipeline` approval panel for that pending proposal (evidence badge, acknowledgement box, liquidity & capacity card); Approve there approves this proposal |
+| `approve` (`confirm: true` only) | the same panel, now approved |
+| `start_bridge` | `/bridge/{id}`, live |
+| `bridge_status` | `/bridge/{id}` |
+| `account` / `positions` | `/portfolio`, scrolled to the broker account panel / its positions |
+| `navigate` | the named screen (`landing`, `build`, `pipeline`, `bridge` [+ `bridge_id`], `portfolio`, `library`, `profile`, `connect`); answered in the browser, no backend call |
+
+A result with `ok: false` (including a missing confirmation) never navigates away and never changes the store. While a
+call is active a small glass pill ("Voice is driving · Fitting SPY…") shows the last action; it takes no clicks.
 
 ## The web page's side of the contract
 
@@ -165,6 +187,13 @@ Workflow:
    confirm true. Use source replay unless the user asks for live.
 7. Use bridge_status, account and positions when asked how it is going.
 
+The screen follows you: after each tool call the user's screen moves to show the result (search results on Build,
+the fit's steps and score, the proposal's approval panel, the running bridge, the portfolio). You may say "it's on
+your screen" instead of reading every detail. When the user asks to see or open something ("show me my portfolio",
+"go back to the bridge", "open the library"), call navigate with that screen (and bridge_id for a specific bridge);
+it changes nothing and needs no confirmation. Moving the screen is never a confirmation: approve and start_bridge
+still need the user's spoken yes.
+
 Rules:
 - Never set confirm or ack_unvalidated to true on your own. A confirmation must come from the user's last turn.
 - If a tool returns ok false, say its summary plainly and offer the next step. Do not retry confirm-gated tools.
@@ -176,7 +205,7 @@ Rules:
 ## Sanity check before the demo
 
 ```bash
-make keys-check                                   # Gemini live? ElevenLabs key accepted? agent exists, 8 tools?
+make keys-check                                   # Gemini live? ElevenLabs key accepted? agent exists, 9 tools?
 curl -s localhost:8000/agent/tools | head -c 300  # backend up (make dev)
 curl -s -X POST localhost:8000/agent/tool/approve -H 'content-type: application/json' \
   -H 'Origin: http://localhost:3000' -d '{"proposal_id":"x"}'

@@ -11,6 +11,7 @@ import { SandboxFillsPanel } from "@/components/SandboxFills";
 import { engineBridgeFor } from "@/lib/portfolioView";
 import { WeekendExposurePanel } from "@/components/WeekendExposure";
 import { BrokerAccountPanel, CapitalPanel } from "@/components/risk/AccountPanels";
+import { VOICE_ANCHOR } from "@/lib/voiceDrive";
 import { accountPill } from "@/lib/risk";
 
 interface Row {
@@ -185,7 +186,7 @@ export default function Portfolio() {
           <SandboxFillsPanel bridgeIds={liveIds} onOpen={(id) => router.push(`/bridge/${id}`)} />
         </div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,420px),1fr))", gap: 16 }}>
+      <div id={VOICE_ANCHOR.account} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,420px),1fr))", gap: 16, scrollMarginTop: 90 }}>
         <BrokerAccountPanel account={s.account.data} accountError={s.account.error} session={s.session.data} refreshKey="portfolio" />
         <CapitalPanel refreshKey="portfolio" />
       </div>

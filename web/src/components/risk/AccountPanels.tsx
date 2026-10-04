@@ -9,6 +9,7 @@ import type { SessionView } from "@/lib/closed";
 import { Glass, Tag } from "@/components/pb";
 import { LegMark } from "@/components/options/OptionsCards";
 import { BadgeTag, MeterRow, MetricGrid, PanelHead } from "./RiskBits";
+import { VOICE_ANCHOR } from "@/lib/voiceDrive";
 
 const num = { fontFamily: "var(--mono)", fontSize: 12, textAlign: "right" as const, fontVariantNumeric: "tabular-nums" as const };
 const head = { fontSize: 11, color: "#5A627A" };
@@ -77,7 +78,7 @@ export function BrokerAccountPanel({ account, accountError, session, refreshKey 
           </>
         )}
 
-        <div className="pb-label" style={{ marginTop: 18 }}>POSITIONS AT THE BROKER</div>
+        <div id={VOICE_ANCHOR.positions} className="pb-label" style={{ marginTop: 18, scrollMarginTop: 90 }}>POSITIONS AT THE BROKER</div>
         <div style={{ marginTop: 8 }}>
           {positions.error && <div style={{ fontSize: 12.5, color: "#5A627A" }}>GET /positions unavailable ({positions.error}).</div>}
           {positions.data && split.broker.length === 0 && <div style={{ fontSize: 12.5, color: "#5A627A" }}>No open positions in the {webull ? "Webull paper" : "simulated"} account.</div>}

@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { shortlist } from "@/lib/library";
 import { fitScoreView, fitSteps, noFitSteps, type PipeContext } from "@/lib/pipeline";
-import { algoRunLabel, brokerLabel, feeGateOff, runnableFit, useStore } from "@/lib/store";
+import { algoRunLabel, brokerLabel, feeGateOff, pickKey, proposalForPick, runnableFit, useStore } from "@/lib/store";
+import { VOICE_ANCHOR } from "@/lib/voiceDrive";
 import { aiLabel, aiStatus, aiTitle } from "@/lib/ai";
 import type { EquityPick, Question } from "@/lib/markets";
 import { sessionClosed } from "@/lib/closed";
@@ -19,8 +20,12 @@ const FIT_WAIT_MS = 10000;
 
 export default function Pipeline() {
   const s = useStore();
-  // The pick is read once: the pipeline runs on what Build chose when this screen opened.
-  const [pick] = useState(() => (s.question && s.equity ? { q: s.question, eq: s.equity } : null));
+  // The pick is read once: the pipeline runs on what Build chose when this screen opened. A different pick made
+  // while this screen is open (the voice agent fitted or proposed another market or ticker) restarts it on that pick.
+  const [pick, setPick] = useState(() => (s.question && s.equity ? { q: s.question, eq: s.equity } : null));
+  const liveKey = pickKey(s.question, s.equity);
+  const key = pick ? pickKey(pick.q, pick.eq) : null;
+  if (liveKey && liveKey !== key) setPick({ q: s.question!, eq: s.equity! });
   if (!pick) {
     return (
       <main className="pb-page" style={{ maxWidth: 760, paddingTop: 30, paddingBottom: 80 }}>
@@ -33,14 +38,17 @@ export default function Pipeline() {
       </main>
     );
   }
-  return <PipelineRun q={pick.q} e={pick.eq} />;
+  return <PipelineRun key={key} q={pick.q} e={pick.eq} />;
 }
 
 function PipelineRun({ q, e }: { q: Question; e: EquityPick }) {
   const router = useRouter();
   const s = useStore();
   const inst = s.inst ?? "shares";
-  const [step, setStep] = useState(0);
+  const [stepN, setStep] = useState(0);
+  // A proposal the voice agent drafted for this pick: the screen goes straight to its approval panel.
+  const voiceProp = proposalForPick(s.voiceProposal, q, e) ? s.voiceProposal : null;
+  const step = voiceProp ? 6 : stepN;
   // Set when the fit misses its deadline: the steps then go on with the facts of the pick (no fit); a fit that lands
   // later still replaces them (see `mode`), since approval sends it.
   const [timedOut, setTimedOut] = useState(false);
@@ -88,8 +96,8 @@ function PipelineRun({ q, e }: { q: Question; e: EquityPick }) {
     if (noDir || !done0) return null;
     try { return hedgeTerms(q, e, s.settings.maxHedge, applied, { closedPmHedge: s.closedPmHedge, actOnUnvalidated: s.actOnUnvalidated }); } catch { return null; }
   })();
-  const prep = useAsync(terms ? `prep:${prepNonce}:${JSON.stringify(terms)}` : null, () => prepareHedgeProposal(terms!));
-  const proposal = prep.data;
+  const prep = useAsync(terms && !voiceProp ? `prep:${prepNonce}:${JSON.stringify(terms)}` : null, () => prepareHedgeProposal(terms!));
+  const proposal = voiceProp ?? prep.data;
   const gate = proposal ? evidenceGate(proposal.evidence) : null;
   const acked = !!proposal && ack?.id === proposal.id && ack.on;
   // Approve waits for the evidence read: on an unvalidated market a click before it lands is a certain 409. If the
@@ -110,7 +118,7 @@ function PipelineRun({ q, e }: { q: Question; e: EquityPick }) {
     setOpening(true);
     setOpenError(null);
     try {
-      await s.openBridge(q, e, inst, { ackUnvalidated: acked });
+      await s.openBridge(q, e, inst, { ackUnvalidated: acked || (proposal?.status === "approved" && !!proposal.ack_unvalidated), proposal: voiceProp });
       router.push("/bridge");
     } catch (err) {
       openingRef.current = false;
@@ -174,7 +182,7 @@ function PipelineRun({ q, e }: { q: Question; e: EquityPick }) {
         <Unavailable what="The fit (POST /pipeline/fit)" error={fit.error} onRetry={() => s.retryFit(q, e)} style={{ marginTop: 14, justifyContent: "center" }} />
       )}
       {mode === "nofit" && fit?.status === "loading" && <div style={{ marginTop: 14, fontSize: 12.5, color: "#5A627A" }}>The fit is still running; it replaces these steps when it answers.</div>}
-      <div className="pb-glass" style={{ width: "100%", marginTop: 22, padding: "10px 12px", display: "flex", flexDirection: "column", gap: 4 }}>
+      <div id={VOICE_ANCHOR.steps} className="pb-glass" style={{ width: "100%", marginTop: 22, padding: "10px 12px", display: "flex", flexDirection: "column", gap: 4, scrollMarginTop: 90 }}>
         {steps.map((st, i) => {
           const d = i < step, a = i === step && !done;
           const text = d || a ? (mode === "pending" && a ? "Waiting on the fit…" : st.text) : "";
@@ -188,7 +196,7 @@ function PipelineRun({ q, e }: { q: Question; e: EquityPick }) {
         })}
       </div>
       {done && (
-        <div className="pb-glass" style={{ width: "100%", marginTop: 16, padding: "16px 18px", fontSize: 13.5, lineHeight: 1.55, color: "#3C4458", display: "flex", flexDirection: "column", gap: 8 }}>
+        <div id={VOICE_ANCHOR.approval} className="pb-glass" style={{ scrollMarginTop: 90, width: "100%", marginTop: 16, padding: "16px 18px", fontSize: 13.5, lineHeight: 1.55, color: "#3C4458", display: "flex", flexDirection: "column", gap: 8 }}>
           {noDir ? (
             <div style={{ color: "#8A5A00" }}>
               {e.t} is not in this market&rsquo;s mapping and you have not said which outcome hurts it, so the engine cannot orient a hedge. Go back to Build and answer the question there; nothing is proposed until then.
@@ -255,7 +263,7 @@ function PipelineRun({ q, e }: { q: Question; e: EquityPick }) {
         <Btn href="/build" kind="secondary" style={{ height: 50, padding: "0 24px", marginTop: 22 }} arrow>Say which outcome hurts {e.t}</Btn>
       ) : (
       <button type="button" onClick={() => (done ? void goBridge() : setStep(6))} disabled={done && ackBlocked} title={done && ackBlocked ? (evidencePending ? "Reading this proposal's evidence status first" : "Tick the acknowledgement above: this market's signal is unvalidated") : undefined} className={`pb-btn ${done ? (ackBlocked ? "pb-btn-disabled" : "pb-btn-primary") : "pb-btn-secondary"}`} style={{ height: 50, padding: "0 24px", marginTop: 22, transition: "all .3s ease", color: done ? (ackBlocked ? undefined : "#fff") : "#3C4458" }}>
-        {opening ? "Opening the bridge…" : !done ? "Skip to approval" : evidencePending ? "Checking the evidence…" : ackBlocked ? "Acknowledge the unvalidated market to approve" : gateOff ? `Approve without the fee gate${acked ? " (unvalidated)" : ""}` : acked ? "Approve on an unvalidated market" : "Approve and open the bridge"} <span className="pb-arrow">→</span>
+        {opening ? "Opening the bridge…" : !done ? "Skip to approval" : evidencePending ? "Checking the evidence…" : proposal?.status === "approved" ? "Approved · open the bridge" : ackBlocked ? "Acknowledge the unvalidated market to approve" : gateOff ? `Approve without the fee gate${acked ? " (unvalidated)" : ""}` : acked ? "Approve on an unvalidated market" : "Approve and open the bridge"} <span className="pb-arrow">→</span>
       </button>
       )}
     </main>

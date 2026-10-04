@@ -5,7 +5,8 @@ from fastapi.testclient import TestClient
 from app.agent.tools import HANDLERS, NAMES
 from app.main import create_app
 
-EXPECTED = {"search_markets", "fit", "propose", "approve", "start_bridge", "bridge_status", "account", "positions"}
+EXPECTED = {"search_markets", "fit", "propose", "approve", "start_bridge", "bridge_status", "account", "positions",
+            "navigate"}
 
 
 @pytest.fixture
@@ -26,8 +27,11 @@ def test_tool_list_shape(client):
     assert {t["name"] for t in tools} == EXPECTED == NAMES == set(HANDLERS)
     routes = {(p, m.upper()) for p, ops in client.app.openapi()["paths"].items() for m in ops}
     for t in tools:
-        assert t["method"] in ("GET", "POST") and t["path"].startswith("/")
-        assert (t["path"], t["method"]) in routes, f"{t['name']} maps to a missing route"
+        if t.get("client_only"):  # runs in the browser (navigate): no backend route behind it
+            assert t["method"] is None and t["path"] is None
+        else:
+            assert t["method"] in ("GET", "POST") and t["path"].startswith("/")
+            assert (t["path"], t["method"]) in routes, f"{t['name']} maps to a missing route"
         assert 0 < len(t["description"]) < 140
         p = t["parameters"]
         assert p["type"] == "object" and set(p["required"]) <= set(p["properties"])
@@ -35,6 +39,23 @@ def test_tool_list_shape(client):
     for n in ("approve", "start_bridge"):
         t = next(t for t in tools if t["name"] == n)
         assert "confirm" in t["parameters"]["required"]
+
+
+def test_navigate_is_a_browser_only_tool_with_a_screen_enum(client):
+    t = next(t for t in client.get("/agent/tools").json()["tools"] if t["name"] == "navigate")
+    assert t["client_only"] is True and t["method"] is None and t["path"] is None
+    assert t["description"] == "Open a screen when the user asks to see something."
+    p = t["parameters"]
+    assert p["required"] == ["screen"] and set(p["properties"]) == {"screen", "bridge_id"}
+    assert p["properties"]["screen"]["enum"] == ["landing", "build", "pipeline", "bridge", "portfolio", "library",
+                                                 "profile", "connect"]
+    assert p["properties"]["bridge_id"]["type"] == "string"
+    # The dispatcher only echoes it (the page navigates itself); a bad screen is a speakable refusal.
+    j = call(client, "navigate", {"screen": "bridge", "bridge_id": "b1"}).json()
+    assert j["ok"] is True and j["data"] == {"screen": "bridge", "bridge_id": "b1"}
+    assert call(client, "navigate", {"screen": "portfolio", "bridge_id": "b1"}).json()["data"]["bridge_id"] is None
+    bad = call(client, "navigate", {"screen": "settings"}).json()
+    assert bad["ok"] is False and "cannot open settings" in bad["summary"]
 
 
 def test_unknown_tool_is_404(client):
