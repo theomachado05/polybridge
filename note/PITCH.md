@@ -13,6 +13,8 @@
 
 ## Questions to expect
 
+- **So can you trade Polymarket off the options price?** Not at scale. On fresh 2026 markets it made money on 40 trades, too few to confirm, with about $750 of capacity; at weekend reopenings, at prices that actually traded, it was flat. The forward test for Monday's open is committed in git.
+
 - **Does the prediction market beat futures or pre-market?** No. Given SPY's own move to 08:00, the PM adds nothing (−0.60 bp per pp [−2.64, +1.44]). Futures were not on our data key.
 - **Is the accuracy gap just timing?** Partly possible: the PM series is about 47 seconds older than the option quote; on rows under 30 seconds old the gap is not significant. With a symmetric filter the gap is +0.0077 [+0.0036, +0.0129].
 - **Why should anyone use a product whose signals mostly fail?** Because it tells you which ones fail before they touch your book.

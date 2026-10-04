@@ -44,6 +44,8 @@ It holds on daily and weekly markets, at both snapshots, with equal weight per d
 
 **3. Part of the PM's closure move is overshoot.** `research/overshoot/`, a pre-registered re-analysis of R3's already-seen rows (1,123 events, 43 closures). At the reopening options had repriced 0.44 of the PM's closure move. Of the gap, the PM gives back +3.84 pt [+1.84, +6.22] by the close, options catch up −0.59 pt [−2.43, +0.88], and +4.59 pt [+2.87, +6.26] persists to the end of the day. After option costs the residual gap is NULL (+0.79 pt [−1.21, +2.78], R3).
 
+**4. Trading the gap: too few trades to confirm, and it vanishes at the reopening.** The direct trade is to take a Polymarket print that sits at least 5 points from the option-implied probability, in the options' direction, and hold to settlement. On fresh April to August 2026 markets (`research/pm_taker_v2/`) it made +29.8 pt per $1 after fees and a tick [+13.0, +44.6], but on only 40 trades over 21 days, short of the pre-registered 100, so the verdict is INSUFFICIENT. Of the +31 pt gross, about 7 pt is the edge the options price implied at entry; the other 24 pt is outcomes landing the options' way, mostly on bullish trades (31 of 40) in a rising market, so the 7 pt figure is the honest expectation. Capacity was tiny: taking half of each qualifying print would have deployed $747. At weekend reopenings, where the PM overshoots most, the same rule at actual print prices made −0.40 pt [−4.68, +3.74] on 402 trades: the overshoot shows up in per-minute prices, not in prices anyone traded at. A forward test of the reopening rule for Monday 5 October onward is committed in git before the open (`research/forward_monday/`).
+
 **What the product does with this.** Where an options price exists for the same outcome, PolyBridge shows it as the reference probability and the PM as a secondary, noisier input. Closed-market mode stages an equity hedge for the first tradable moment (hedge B) rather than acting on the PM during the closure, and labels every PM-driven estimate unvalidated until its market passes its own test.
 
 ## Part III · Evidence table, strategy backtest, risk and liquidity
@@ -60,7 +62,9 @@ It holds on daily and weekly markets, at both snapshots, with equal weight per d
 | Expected-gap model (R2) | seen panel | passes via one market | recession 97 of 151 signs; replication 50.2% |
 | Staged 09:30 hedge (R1, hedge B) | seen panel | passes, fragile | +6.82% [+0.50, +13.54] vs same-size static |
 | AI fit walk-forward | time split of seen histories | fails | median −0.0040 vs static |
-| Options-anchored PM taker | fresh | insufficient trades | 77 projected vs 100 required |
+| Options-anchored PM taker, Jan-Feb 2026 | fresh | insufficient trades | 77 projected vs 100 required |
+| Options-anchored PM taker, Apr-Aug 2026 | fresh | insufficient trades (40 of 100) | +29.8 pt per $1 [+13.0, +44.6], 21 days; see text |
+| Same trade at weekend reopenings | seen closures, real trade prints | NULL | −0.40 pt [−4.68, +3.74], 402 trades, 44 closures |
 | Overlay backtest on long SPY | 2024-01 to 2026-10 | **Fail** | no out-of-sample trade |
 
 **Strategy backtest** (`research/strategy_backtest/`, method `3c6b280`). A $1M book long SPY from the 2024-01-02 close. At 09:30 the overlay shorts up to 50% when a market that has passed its own walk-forward gate signals an adverse expected gap, and covers at 10:00. Costs 1 bp per side (2× stress). The last 20% of days (from 2026-03-18) are out of sample; nothing is tuned on them.
@@ -85,4 +89,4 @@ Verdict: **Fail.** In sample the overlay traded on 37 days, almost all driven by
 
 **Limits.** The accuracy result is about prices, not traders: the PM series PolyBridge reads is a per-minute history that can be a stale last trade or a thin-book midpoint, and it is about 47 seconds older than the option quote. Closed-market results rest on few markets and closures that are not independent; PM fills are simulated; index futures were not tested; engine latency (27.1 to 34.6 ns per decision) is measured on a synthetic tape, decision logic only.
 
-**Next.** Test the accuracy gap with time-matched PM trade prints instead of per-minute history; benchmark against index futures; and run the options-anchored PM taker on the full 2026 window once enough trades print. Until a market passes its own test, PolyBridge labels it an unvalidated estimate.
+**Next.** Test the accuracy gap with time-matched PM trade prints instead of per-minute history; benchmark against index futures; and score the forward test committed for the reopenings from 5 October. Until a market passes its own test, PolyBridge labels it an unvalidated estimate.
