@@ -1,0 +1,14 @@
+{
+ "projected_trades": 77.54074074074074,
+ "projected_days": 43.0,
+ "no_spread_share": 0.0,
+ "stop": true,
+ "reasons": [
+  "projected_trades_below_100"
+ ],
+ "kill_trades": 4,
+ "kill_markets": 135,
+ "kill_evaluated": 110,
+ "kill_no_spread": 0,
+ "kill_unusable": 16
+}

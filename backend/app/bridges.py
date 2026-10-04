@@ -1852,6 +1852,12 @@ async def start_bridge(body: BridgeIn, request: Request, response: Response) -> 
         raise HTTPException(409, f"EVIDENCE_UNVALIDATED: {prop.ticker} on {market.source}:{market.id} is an "
                                  f"unvalidated estimate ({evid['evidence']}) and proposal {prop.id} was approved "
                                  "without ack_unvalidated; propose again and approve with ack_unvalidated: true.")
+    if prop.algo is not None and prop.algo.source == "ai_fit" and not prop.ack_unvalidated:
+        raise HTTPException(409, f"GENERIC_FIT_UNVALIDATED: proposal {prop.id} runs {prop.algo.family} chosen by the "
+                                 "generic AI fit, which is unvalidated (its walk-forward test failed), and was approved "
+                                 "without ack_unvalidated; the fit acts only behind the acknowledgement gate, even on a "
+                                 "market whose gap evidence is validated. Propose again and approve with "
+                                 "ack_unvalidated: true.")
     if body.act_on_unvalidated and prop.family != "hedge":
         raise HTTPException(422, "act_on_unvalidated (the closed-market staged-hedge override) applies to hedge "
                                  "bridges only.")

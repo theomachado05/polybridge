@@ -61,3 +61,14 @@ research/s3_three_way/.cache/
 research/s4_linked_assets/.cache/
 research/s5_big_moves/.cache/
 research/linker/.cache/
+research/s6_monday_fade/.cache/
+research/s8_open_referee/.cache/
+research/s9_weekend_price_markets/.cache/
+
+# forward_monday http and massive caches
+research/results/forward_monday/.cache/
+
+# forward tests (backend/app/forward): raw books, pair CSVs and caches are not committed; summaries and the frozen runner's log are
+backend/data_forward/ladders/raw/
+backend/data_forward/touch/raw/
+backend/data_forward/touch/.cache_forward/

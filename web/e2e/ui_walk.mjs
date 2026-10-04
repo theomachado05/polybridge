@@ -94,7 +94,7 @@ try {
   await send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
 
   // `next dev` compiles each route on its first request; do it up front so the walk's clock is not the compiler's.
-  for (const p of ["/", "/build", "/connect", "/pipeline", "/bridge", "/library", "/portfolio", "/profile"]) await fetch(WEB + p).catch(() => {});
+  for (const p of ["/", "/build", "/connect", "/build/fit", "/pipeline", "/bridge", "/tested", "/library", "/portfolio", "/profile"]) await fetch(WEB + p).catch(() => {});
 
   // 1. Landing
   await goto("/");
@@ -138,23 +138,22 @@ try {
   // The approval step reads the pending proposal first: evidence gate + liquidity & capacity card.
   await waitFor(`!!document.querySelector('[data-testid=evidence-gate]') && !/checking evidence/i.test(document.querySelector('[data-testid=evidence-gate]').innerText)`, "evidence gate answers", 45_000);
   const unvalidated = await ev(`!!document.querySelector('[data-testid=evidence-ack]')`);
-  // The box must carry a real verdict: "unvalidated estimate" with the acknowledgement (or an earlier one recorded), or
-  // "validated" with no acknowledgement box. "evidence not reported" or a missing box fails.
+  // The generic AI fit is unvalidated (registry generic_ai_fit), so the box always carries an unvalidated verdict with the
+  // acknowledgement (or an earlier one recorded), whatever the market's own gap evidence. Anything else fails.
   const gateText = await ev(`(document.querySelector('[data-testid=evidence-gate]') || {}).innerText || ""`);
-  const gateOk = /unvalidated estimate/i.test(gateText)
-    ? unvalidated || await ev(`!!document.querySelector('[data-testid=evidence-acknowledged]')`)
-    : /(^|[^n])validated/i.test(gateText) && !unvalidated;
-  check("UI: approval shows the evidence gate", gateOk, /unvalidated estimate/i.test(gateText) ? (unvalidated ? "unvalidated: acknowledgement required" : "unvalidated: acknowledged earlier") : /(^|[^n])validated/i.test(gateText) ? "validated" : `no verdict: ${gateText.slice(0, 80)}`);
+  const gateOk = /unvalidated/i.test(gateText)
+    && (unvalidated || await ev(`!!document.querySelector('[data-testid=evidence-acknowledged]')`));
+  check("UI: approval shows the evidence gate", gateOk, /unvalidated/i.test(gateText) ? (unvalidated ? "unvalidated: acknowledgement required" : "unvalidated: acknowledged earlier") : `no verdict: ${gateText.slice(0, 80)}`);
   check("UI: approval shows the liquidity & capacity card", await ev(`!!document.querySelector('[data-testid=capacity-card]') || /Checking liquidity/.test(document.body.innerText)`), "");
   await shot(4, "pipeline");
 
   // 5. Approve -> bridge page (/bridge/<id>). On an unvalidated market the button stays disabled until the box is ticked.
   if (unvalidated) {
-    check("UI: approve is disabled before the acknowledgement", await ev(`[...document.querySelectorAll('button')].some(b => b.disabled && /Acknowledge the unvalidated market/.test(b.innerText))`), "");
+    check("UI: approve is disabled before the acknowledgement", await ev(`[...document.querySelectorAll('button')].some(b => b.disabled && /Acknowledge the unvalidated fit/.test(b.innerText))`), "");
     await ev(`document.querySelector('[data-testid=evidence-ack]').click()`);
     await waitFor(has("button", "Approve"), "approve enables after the acknowledgement", 10_000);
   }
-  await click("button", "Approve"); // "Approve and open the bridge", "Approve on an unvalidated market", or "Approve without the fee gate"
+  await click("button", "Approve"); // "Approve the unvalidated fit" or "Approve without the fee gate"
   await waitFor(`location.pathname.startsWith('/bridge') && /Bridge [0-9a-f]{8,}/.test(document.body.innerText)`, "opens the Bridge screen on a backend bridge", 60_000);
   const bridgeId = await ev("(/Bridge ([0-9a-f]{8,})/.exec(document.body.innerText) || [])[1]");
   check("UI: approve opened a backend bridge", /^[0-9a-f]{8,}$/.test(bridgeId), bridgeId);
@@ -193,7 +192,7 @@ try {
   check("UI: portfolio shows the broker account and capital usage apart from demo holdings", await ev(`!!document.querySelector('[data-testid=broker-account]') && !!document.querySelector('[data-testid=capital-panel]')`), "");
   await sleep(1500);
   await shot(6, "portfolio");
-  await click("a", "JD");
+  await ev(`(() => { const el = document.querySelector('a[href="/profile"]'); if (!el) return false; el.click(); return true; })()`);
   await waitFor(`location.pathname === '/profile'`, "profile route", 30_000);
   await shot(8, "profile");
 } catch (e) {

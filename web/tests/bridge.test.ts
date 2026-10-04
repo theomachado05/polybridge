@@ -233,14 +233,14 @@ describe("replay sandbox fills", () => {
 
 describe("what a bridge runs, in words", () => {
   it("names the fitted family and preset (no AI claim: the replay picks it), or the default spec with no fit", () => {
-    assert.equal(algoRunLabel(null).node, "02 · ENGINE · DEFAULT DELTA-BRIDGE SPEC");
+    assert.equal(algoRunLabel(null).node, "Engine: default delta-bridge spec");
     assert.match(algoRunLabel(null).sentence, /default delta-bridge spec/);
     const l = algoRunLabel({ family: "macro_fed_hedge", preset_index: 14 });
-    assert.equal(l.node, "02 · FITTED · MACRO FED HEDGE · PRESET #14");
+    assert.equal(l.node, "Fitted algo: Macro Fed Hedge, preset #14");
     assert.equal(l.sentence, "the fitted Macro Fed Hedge algo (preset #14)");
     assert.doesNotMatch(l.node + l.sentence, /\bAI\b/);
     assert.doesNotMatch(l.node + l.sentence, /default/i);
-    assert.match(algoRunLabel({ family: "x_y", preset_index: null }).sentence, /custom params/);
+    assert.match(algoRunLabel({ family: "x_y", preset_index: null }).sentence, /custom parameters/);
   });
 });
 

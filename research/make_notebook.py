@@ -469,11 +469,57 @@ Polymarket spread manufactures, and its Sharpe ratio is an artifact. No pair has
 """
 
 
+WS_MD = """\
+## Weekend and linked-asset studies (S3 to S15)
+
+Eleven more pre-registered studies ask where the prediction-market signal can be traded while stocks and options are shut.
+Each method was committed before its data was pulled; each summary is under `results/<study>/SUMMARY.md`.
+
+**Reproducible offline.** The cells below read only committed result files. For every study with a trade list, the number
+of trades and the mean net result per trade of the pre-registered primary variant are recomputed from `trades.csv` and
+checked against `metrics.csv`. The second table reads each study's main statistic from its result files.
+
+![S9 equity curve](results/s9_weekend_price_markets/equity_curve.png)
+"""
+
+WS_1 = '''\
+# Weekend studies: recompute the primary variant of each study from its committed trade list (no network, no key)
+import sys
+from pathlib import Path
+
+import pandas as pd
+from IPython.display import display
+
+RESEARCH = next(p for p in (Path.cwd(), Path.cwd() / "research") if (p / "weekend_studies_section.py").exists())
+if str(RESEARCH) not in sys.path:
+    sys.path.insert(0, str(RESEARCH))
+import weekend_studies_section as wss
+
+ws_check = wss.recompute(RESEARCH / "results")
+with pd.option_context("display.float_format", "{:.4f}".format):
+    display(ws_check.set_index(["study", "segment", "costs"]))
+print(f"{int(ws_check['match'].sum())} of {len(ws_check)} recomputed numbers match the committed metrics.csv files"
+      + ("" if ws_check["match"].all() else "  <-- MISMATCH: the committed files disagree; trust neither until resolved"))
+'''
+
+WS_2 = '''\
+with pd.option_context("display.max_colwidth", None):
+    display(wss.findings(RESEARCH / "results").set_index(["study", "finding"]))
+'''
+
+WS_END = """\
+**Reading.** The link between a question and an asset is real (S4, S5, S9, S14) and it is in the price by the time the
+asset can be traded: at the open, in Friday's options, and on Polymarket itself once costs are paid. None of these
+studies passes its pre-registered criterion. Each is reported as run.
+"""
+
+
 def build(path: Path | None = None) -> None:
     nb = new_notebook(cells=[md(C1), code(C2), code(C3), code(C4), code(C5), code(C6), code(C6R), code(C7), code(C8), code(C9),
                              code(C10), code(C11), md(C12M), code(C12), md(C13),
                              md(CM_MD), code(CM1), code(CM2), code(CM3), md(CM_END),
-                             md(S1_MD), code(S1_1), code(S1_2), code(S1_3), md(S1_END)])
+                             md(S1_MD), code(S1_1), code(S1_2), code(S1_3), md(S1_END),
+                             md(WS_MD), code(WS_1), code(WS_2), md(WS_END)])
     nb.metadata["kernelspec"] = {"display_name": "Python 3", "language": "python", "name": "python3"}
     for i, cell in enumerate(nb.cells):
         cell["id"] = f"cell-{i:02d}"

@@ -1,0 +1,21 @@
+universe,pair,kind,event,nested,reason,q_rich,q_cheap
+s11,2296135>2133405,date,Iran closes its airspace by...?,True,nested,Iran closes its airspace by May 27?,Iran closes its airspace by May 31?
+s11,1437724>1437725,date,US strikes Iran by...?,True,nested,"US strikes Iran by March 11, 2026?","US strikes Iran by March 12, 2026?"
+fresh,1092296>665734,date,Will Trump establish a Gaza “Board of Peace” by March 31?,True,nested,Will Trump establish a Gaza “Board of Peace” by January 31?,Will Trump establish a Gaza “Board of Peace” by March 31?
+fresh,707026>707028,date,Will Solstice launch a token by ___ ?,True,nested,Will Solstice launch a token by December 31 2025?,Will Solstice launch a token by March 31 2026?
+fresh,2648985>2100070,date,GPT-5.6 released by...?,True,nested,"GPT-5.6 released by July 24, 2026?","GPT-5.6 released by July 31, 2026?"
+fresh,3709612>3900265,date,US-Canada diplomatic agreement to lower tariffs by...?,False,descriptions differ,US-Canada diplomatic agreement to lower tariffs by August 31?,US-Canada diplomatic agreement to lower tariffs by September 30?
+s11,644471>667232,date,Gemini 3.0 released by...?,True,nested,Will Gemini 3.0 be released by November 15?,Will Gemini 3.0 be released by November 22?
+s11,1032302>1032303,strike,Will Silver (SI) hit__ by end of January?,True,nested,Will Silver (SI) hit (HIGH) $120 by end of January?,Will Silver (SI) hit (HIGH) $110 by end of January?
+fresh,1487680>1706212,date,Houthi military action against Israel by...?,False,window starts at creation and the cheap rung was created later,"Houthi strike on Israel by March 31, 2026?","Houthi strike on Israel by April 15, 2026?"
+fresh,1706369>1706370,date,Military action against Iran ends by...?,True,nested,"Military action against Iran ends by April 28, 2026?","Military action against Iran ends by April 29, 2026?"
+fresh,1720969>1250582,date,SpaceX IPO by ___ ?,True,nested,"Will SpaceX IPO by June 15, 2026?","Will SpaceX IPO by June 30, 2026?"
+s11,2159718>677366,date,Will Russia capture Kostyantynivka by...?,False,descriptions differ,Will Russia capture Kostyantynivka by September 30?,"Will Russia capture Kostyantynivka by December 31, 2026?"
+fresh,948956>948957,date,Bitcoin all time high by ___?,True,nested,"Bitcoin all time high by June 30, 2026?","Bitcoin all time high by September 30, 2026?"
+fresh,2232280>2677043,date,Will Russia capture all of Huliaipole by...?,True,nested,Will Russia capture all of Huliaipole by June 30?,Will Russia capture all of Huliaipole by September 30?
+fresh,1170467>1570752,date,DeepSeek V4 released by...?,False,descriptions differ,DeepSeek V4 released by March 31?,DeepSeek V4 released by April 15?
+fresh,2602761>2602762,date,STRC hits $100 by…,True,nested,Will STRC hit $100 by September 30?,Will STRC hit $100 by December 31?
+fresh,549618>561700,date,Pump.fun airdrop by ....? ,True,nested,Will Pump.fun perform an airdrop by July 31? ,Will Pump.fun perform an airdrop by August 31? 
+fresh,743435>743436,date,Will fomo.family launch a token by ___ ?,True,nested,Will Fomo launch a token by March 31 2026?,Will Fomo launch a token by June 30 2026?
+fresh,690673>690674,date,Will Arc launch a token by ___ ?,True,nested,Will Arc launch a token by June 30 2026?,Will Arc launch a token by September 30 2026?
+fresh,1183483>674924,date,Japanese Snap Election Called by...?,False,descriptions differ,"Japanese Snap Election Called by January 31, 2026?","Japanese Snap Election Called by June 30, 2026?"

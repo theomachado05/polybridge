@@ -160,9 +160,9 @@ export function etDayTime(iso: string | null | undefined): { day: string; hm: st
 
 /** Any UTC ISO instant as ET wall time ("Mon 04:05 ET"), with the date when asked. */
 export function fmtEt(iso: string | null | undefined, withDate = false): string {
-  if (!iso) return "—";
+  if (!iso) return "n/a";
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
+  if (Number.isNaN(d.getTime())) return "n/a";
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/New_York", weekday: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
     ...(withDate ? { day: "numeric", month: "short", year: "numeric" } : {}),
@@ -210,7 +210,7 @@ export function normalizeGap(g: Record<string, unknown> | null | undefined): Gap
   };
 }
 
-export const UNVALIDATED_REASON = "No out-of-sample test passes for this market: the expected gap is an unvalidated estimate (the 10-market replication was not accurate).";
+export const UNVALIDATED_REASON = "No out-of-sample test passes for this market. Thus the expected gap is an unvalidated estimate. The 10-market replication was not accurate.";
 
 /** The evidence badge. VALIDATED only when the backend marks the gap validated AND its status says so AND the market's
  *  own rate is in use; any doubt reads UNVALIDATED ESTIMATE. The reason is the backend's evidence sentence. */
@@ -263,7 +263,7 @@ export function executionText(o: Pick<StagedOrder, "session_target" | "execute_a
 
 export function stagedStatusText(o: StagedOrder): string {
   switch (o.status) {
-    case "staged": return "awaiting your approval";
+    case "staged": return "waits for your approval";
     case "approved": return `approved · executes at ${executionText(o)}`;
     case "working": return "sent to the broker";
     case "filled": return `filled ${fin(o.filled_qty) ? o.filled_qty : o.qty}${fin(o.fill_px) ? ` @ ${o.fill_px.toFixed(2)}` : ""}`;
@@ -297,8 +297,8 @@ export function mergeOrders(...lists: (readonly StagedOrder[] | Record<string, S
 // ------------------------------------------------------------------------------------------------- timeline
 
 const EVENT_TEXT: Record<string, string> = {
-  close: "Close", open: "Open · handoff", plan: "Plan staged (hedge B)", plan_refused: "Plan refused", plan_skipped: "Plan skipped",
-  staged_staged: "Plan staged", staged_approved: "Approved", staged_working: "Sent to broker", staged_filled: "Filled",
+  close: "Market close", open: "Market open, handoff to the algo", plan: "Plan staged (hedge B)", plan_refused: "Plan refused", plan_skipped: "Plan skipped",
+  staged_staged: "Plan staged", staged_approved: "Approved", staged_working: "Sent to the broker", staged_filled: "Filled",
   staged_cancelled: "Cancelled", staged_rejected: "Rejected", staged_skipped: "Skipped", hedge_a: "Hedge A (estimate)",
 };
 export const timelineTitle = (ev: string) => EVENT_TEXT[ev] ?? ev.replaceAll("_", " ");
@@ -313,7 +313,7 @@ export function appendTimeline(rows: TimelineRow[], row: TimelineRow | null | un
 
 // -------------------------------------------------------------------------------------------- hedges (U2, U4)
 
-export const HEDGE_A_TITLE = "estimate — not protection";
+export const HEDGE_A_TITLE = "estimate, not protection";
 
 /** Hedge A's panel: null unless the proposal opted in (enabled). Always labelled an estimate, never protection. */
 export function hedgeAView(h: HedgeASummary | null | undefined): { title: string; label: string; contracts: number; equivShares: number; pnl: number | null } | null {
@@ -330,8 +330,8 @@ export function hedgeAView(h: HedgeASummary | null | undefined): { title: string
 
 const pctCi = (x?: number, ci?: number[]) => (fin(x) ? `${signed(x * 100, 1)}%${ci && ci.length === 2 && fin(ci[0]) && fin(ci[1]) ? ` (95% CI ${signed(ci[0] * 100, 1)}% to ${signed(ci[1] * 100, 1)}%)` : ""}` : null);
 
-export const HEDGE_A_FALLBACK = "Estimate only, not protection: a simulated prediction-market leg (no Polymarket trading account). Research R1 found no evidence that holding the PM contract over a closure reduces the open-gap loss (variance reduction +4.8%, 95% CI −0.8% to +10.0%; it increased the variance on the 10-market replication panel). Off unless you opt in.";
-export const HEDGE_B_FALLBACK = "Default closed-market action: an equity order staged for the first tradable moment, sent only after you approve it. Research R1: it cut the post-open P&L variance by 11.4% (95% CI +5.1% to +18.1%), by timing, not direction; it executes after the gap, so it cannot recover the gap itself.";
+export const HEDGE_A_FALLBACK = "Estimate only, not protection. This is a simulated prediction-market leg because there is no Polymarket trading account. Research R1 found no evidence that a PM contract held over a closure decreases the open-gap loss (variance reduction +4.8%, 95% CI −0.8% to +10.0%). On the 10-market replication panel, it increased the variance. Hedge A stays off until you select it.";
+export const HEDGE_B_FALLBACK = "Default closed-market action: an equity order staged for the first tradable time. The system sends it only after you approve it. Research R1: it decreased the P&L variance after the open by 11.4% (95% CI +5.1% to +18.1%). It works by timing, not direction. It executes after the gap, so it cannot remove the gap.";
 
 /** Build's Weekend-mode copy, from GET /closed/evidence when it answered, else the committed R1 numbers. */
 export function weekendModeCopy(labels: ClosedLabels | null | undefined): { hedgeB: string; hedgeA: string; hedgeBStat: string | null; hedgeAStat: string | null } {
@@ -346,7 +346,7 @@ export function weekendModeCopy(labels: ClosedLabels | null | undefined): { hedg
 
 // --------------------------------------------------------------------------------------- opportunity at open (U5)
 
-export const OPPORTUNITY_FALLBACK = "Research only, not a trade recommendation: options reflected 0.44 of the weekend PM move at the Monday open (CI 0.33 to 0.57) but the residual gap net of option costs is NULL (+0.79 pt, CI −1.21 to +2.78; R3).";
+export const OPPORTUNITY_FALLBACK = "Research only, not a trade recommendation. At the Monday open, options showed 0.44 of the weekend PM move (CI 0.33 to 0.57). But the gap that remains after option costs is NULL (+0.79 pt, CI −1.21 to +2.78, R3).";
 
 /** The research card. `trade` is always false: R3's net gap is null, so the UI offers no order, whatever the data. */
 export function opportunityView(line: EvidenceLine | null | undefined, research?: { status?: string; verdict?: string | null } | null): { title: string; text: string; verdict: string; trade: false } {
@@ -377,16 +377,16 @@ export type StagedHedgeState = "none" | "awaiting" | "approved" | "working" | "f
  *  and never filled (cancelled, rejected, skipped) do not count. */
 export function stagedHedgeText(orders: readonly StagedOrder[]): { state: StagedHedgeState; badge: string; text: string } {
   const live = orders.filter((o) => PENDING.includes(o.status) || (o.status === "filled") || (fin(o.filled_qty) && o.filled_qty > 0));
-  if (!live.length) return { state: "none", badge: "No staged order", text: "nothing staged for the open" };
-  const parts = live.map((o) => `${o.side ?? "sell"} ${o.qty.toLocaleString("en-US")} · ${stagedStatusText(o)}`);
-  const text = `${parts.join("; ")} · hedge B trades after the gap and cannot recover it`;
+  if (!live.length) return { state: "none", badge: "No staged order", text: "No order is staged for the open." };
+  const parts = live.map((o) => `${o.side === "buy" ? "Buy" : "Sell"} ${o.qty.toLocaleString("en-US")}: ${stagedStatusText(o)}`);
+  const text = `${parts.join(". ")}. Hedge B trades after the gap and cannot remove it.`;
   const filled = live.find((o) => o.status === "filled" || (fin(o.filled_qty) && o.filled_qty > 0));
   if (filled) return { state: "filled", badge: "Hedge B filled (after the gap)", text };
   const working = live.find((o) => o.status === "working");
   if (working) return { state: "working", badge: "Hedge B sent (after the gap)", text };
   const approved = live.find((o) => o.status === "approved");
   if (approved) return { state: "approved", badge: `Hedge B approved · executes ${executionText(approved)} (after the gap)`, text };
-  return { state: "awaiting", badge: "Hedge B awaiting approval", text };
+  return { state: "awaiting", badge: "Hedge B waits for approval", text };
 }
 
 /** The weekend-exposure header total over rows that carry an exposure. Replay rows (a recorded weekend) never count,
@@ -435,7 +435,7 @@ export function pnlTotals(p: ClosurePnl | null | undefined): { k: string; v: num
     const vNo = p.vs_no_hedge_usd - p.hedge_a_usd;
     return [
       { k: `Hedged total, without hedge A (${vs(vNo)} vs no hedge)`, v: p.hedged_usd - p.hedge_a_usd },
-      { k: `Incl. hedge A estimate, simulated (${vs(p.vs_no_hedge_usd)} vs no hedge)`, v: p.hedged_usd },
+      { k: `With hedge A estimate, simulated (${vs(p.vs_no_hedge_usd)} vs no hedge)`, v: p.hedged_usd },
     ];
   }
   return [{ k: `Hedged total (${vs(p.vs_no_hedge_usd)} vs no hedge)`, v: p.hedged_usd }];

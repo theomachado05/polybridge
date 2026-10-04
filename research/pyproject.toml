@@ -17,4 +17,4 @@ include = ["polybridge_research*"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
-testpaths = ["tests", "leadlag/tests", "leadlag_closed/tests", "leadlag_replication/tests", "arb/tests", "gap_model/tests", "open_options/tests", "closed_hedge/tests", "s1_twin_spread/tests", "s3_three_way/tests", "s4_linked_assets/tests", "s5_big_moves/tests", "linker/tests"]
+testpaths = ["tests", "leadlag/tests", "leadlag_closed/tests", "leadlag_replication/tests", "arb/tests", "gap_model/tests", "open_options/tests", "closed_hedge/tests", "s1_twin_spread/tests", "s3_three_way/tests", "s4_linked_assets/tests", "s5_big_moves/tests", "linker/tests", "s6_monday_fade/tests", "s7_weekend_straddle/tests", "s8_open_referee/tests", "s9_weekend_price_markets/tests", "s14_link_ceiling/tests", "s15_weekend_scare/tests", "s16_kalshi_quotes/tests", "s18_price_market_calibration/tests", "s19_crypto_price_markets/tests", "s10_weekend_lag/tests", "s11_bundles/tests", "s12_resting_orders/tests", "overshoot/tests", "pm_vs_premarket/tests", "strategy_backtest/tests", "fresh_accuracy/tests", "pm_taker/tests", "macro_panel/tests", "reopen_taker/tests", "pm_taker_v2/tests", "forward_monday/tests"]

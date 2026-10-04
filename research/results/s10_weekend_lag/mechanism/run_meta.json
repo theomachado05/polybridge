@@ -1,0 +1,18 @@
+{
+ "questions": 128,
+ "type_b_pairs": 1301,
+ "type_a_pairs": 8978,
+ "dates": 373,
+ "first_date": "2025-09-26",
+ "last_date": "2026-10-03",
+ "price_markets": 304,
+ "pickoff_signals_b": 14319,
+ "pickoff_signals_a": 13470,
+ "trades_b": 2340,
+ "trades_a": 387,
+ "dropped_b": 0,
+ "dropped_a": 0,
+ "markets_checked_for_prints": 136,
+ "print_errors": 0,
+ "run_seconds": 275.9
+}

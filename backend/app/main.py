@@ -45,6 +45,8 @@ def create_app() -> FastAPI:
     from .closed.staged import router as staged_router; app.include_router(staged_router)  # noqa: E702
     from .closed.router import router as closed_router; app.include_router(closed_router)  # noqa: E702
     from .closed.opportunity_routes import router as opp_router; app.include_router(opp_router)  # noqa: E702
+    from .forward.router import router as forward_router; app.include_router(forward_router)  # noqa: E702
+    from .contracts.router import router as contracts_router; app.include_router(contracts_router)  # noqa: E702
     return app
 
 

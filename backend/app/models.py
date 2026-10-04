@@ -9,9 +9,9 @@ FamilyName = Literal["hedge", "opportunity"]
 Status = Literal["proposed", "approved", "rejected"]
 Direction = Literal["down_on_yes", "up_on_yes"]  # which outcome hurts a long holder
 Basis = Literal["filing_tags", "market_event"]
-MARKET_EVENT_LABEL = "Product hedge — no confirmatory claim"
-OPPORTUNITY_LABEL = ("Opportunity trade — PM price vs options-implied estimate (not a measured edge); "
-                     "option fills are simulated")
+MARKET_EVENT_LABEL = "Product hedge, not a tested claim"
+OPPORTUNITY_LABEL = ("Opportunity trade: PM price compared with the options-implied estimate, not a measured edge. "
+                     "Option fills are simulated.")
 # Risk caps an opportunity proposal is approved with when the request names none (stored on the proposal).
 OPP_DEFAULT_MAX_CONTRACTS = 10
 OPP_DEFAULT_MAX_NOTIONAL = 10_000.0

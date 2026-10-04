@@ -1,0 +1,35 @@
+{
+ "weekends_in_calendar": 52,
+ "weekends_live": 44,
+ "first_weekend": "2025-11-03",
+ "last_weekend": "2026-09-28",
+ "oos_from": "2026-08-03",
+ "oos_weekends": 9,
+ "markets_in_universe": 391,
+ "markets_without_file": 0,
+ "markets_live": 253,
+ "market_weekends": 1054,
+ "oil_event_questions": 44,
+ "weekends_with_oil_odds": 48,
+ "pull_t1": "2026-10-04T02:27:13.048395+00:00",
+ "pull_failures": 0,
+ "market_weekends_by_class": {
+  "gold": 426,
+  "crude": 393,
+  "silver": 176,
+  "stock": 35,
+  "sp500": 24
+ },
+ "moves_5pt": 401,
+ "moves_10pt": 201,
+ "exit_dropped_no_price_not_closed": 0,
+ "markets_checked_for_prints": 174,
+ "half_spread": {
+  "crude": 0.005,
+  "gold": 0.0125,
+  "silver": 0.02,
+  "sp500": 0.01,
+  "stock": 0.025
+ },
+ "run_seconds": 482.1
+}

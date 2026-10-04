@@ -6,7 +6,7 @@ import type { ChainContract, HedgeQuoteOut, HedgeStrategy, HedgeStrategyId, Live
 import { bp, usd, type Badge } from "./risk.ts";
 
 const fin = (x: unknown): x is number => typeof x === "number" && Number.isFinite(x);
-const px = (x: number | null | undefined) => (fin(x) ? x.toFixed(2) : "—");
+const px = (x: number | null | undefined) => (fin(x) ? x.toFixed(2) : "n/a");
 
 export interface LadderRow { strike: number; call: ChainContract | null; put: ChainContract | null; atm: boolean; callItm: boolean; putItm: boolean }
 
@@ -33,7 +33,7 @@ export function ladder(chain: Pick<LiveChainOut, "contracts" | "underlying_price
 /** Visible source marker for a chain IV / delta cell: "" = Massive's, "c" = Black–Scholes from the mark, "c*" = Massive's
  *  greeks with the missing ones computed (backend/app/options/live.py greeks_for). */
 export type GreekMark = "" | "c" | "c*";
-export const GREEK_LEGEND = "c = computed (Black–Scholes from the mark); c* = Massive's greeks with the missing ones computed; unmarked = Massive's.";
+export const GREEK_LEGEND = "c = computed (Black–Scholes from the mark). c* = Massive greeks, with the missing values computed. No mark = Massive values.";
 export function greekMarks(c: Pick<ChainContract, "iv" | "delta" | "iv_source" | "greeks_source"> | null): { iv: GreekMark; delta: GreekMark } {
   if (!c) return { iv: "", delta: "" };
   const g = c.greeks_source;
@@ -45,18 +45,18 @@ export function greekMarks(c: Pick<ChainContract, "iv" | "delta" | "iv_source" |
 
 /** The chain card's fill tag: option orders go to Webull paper only when the account reports options_supported. */
 export function optionFillBadge(a: { broker?: string; options_supported?: boolean; options_route?: string | null } | null | undefined): Badge {
-  if (!a) return { tone: "neutral", text: "fills: account n/a", title: "GET /account unavailable: where option orders fill is unknown." };
+  if (!a) return { tone: "neutral", text: "fills: account n/a", title: "The account data is not available. The app does not know where option orders fill." };
   if (a.options_supported) return { tone: "paper", text: "Webull paper fills", title: `Option orders go to ${a.options_route ?? a.broker ?? "the broker"} (WEBULL_OPTIONS=1).` };
-  return { tone: "sim", text: "simulated fills", title: `Option orders are filled by the simulator${(a.broker ?? "").includes("webull") ? "; Webull paper options are off unless WEBULL_OPTIONS=1" : ""}.` };
+  return { tone: "sim", text: "simulated fills", title: `The simulator fills option orders.${(a.broker ?? "").includes("webull") ? " Webull paper options are off unless WEBULL_OPTIONS=1." : ""}` };
 }
 
 /** Cells for one side of a ladder row. */
 export function sideCells(c: ChainContract | null): { bid: string; ask: string; iv: string; delta: string; oi: string; vol: string; title: string; stale: boolean; marks: { iv: GreekMark; delta: GreekMark } } {
-  if (!c) return { bid: "—", ask: "—", iv: "—", delta: "—", oi: "—", vol: "—", title: "not listed in this window", stale: false, marks: { iv: "", delta: "" } };
-  const n = (x: number | null | undefined) => (fin(x) ? Math.round(x).toLocaleString("en-US") : "—");
+  if (!c) return { bid: "n/a", ask: "n/a", iv: "n/a", delta: "n/a", oi: "n/a", vol: "n/a", title: "not listed in this window", stale: false, marks: { iv: "", delta: "" } };
+  const n = (x: number | null | undefined) => (fin(x) ? Math.round(x).toLocaleString("en-US") : "n/a");
   const src = c.quote_source === "massive_last_nbbo" ? "last NBBO (15-min delayed)" : c.mark_source === "fmv" ? "Massive fair value (no quote)" : c.quote_source ?? c.mark_source ?? "unknown";
   return {
-    bid: px(c.bid), ask: px(c.ask), iv: fin(c.iv) ? `${(c.iv * 100).toFixed(1)}%` : "—", delta: fin(c.delta) ? c.delta.toFixed(2) : "—",
+    bid: px(c.bid), ask: px(c.ask), iv: fin(c.iv) ? `${(c.iv * 100).toFixed(1)}%` : "n/a", delta: fin(c.delta) ? c.delta.toFixed(2) : "n/a",
     oi: n(c.open_interest), vol: n(c.volume),
     title: `${c.ticker} · ${src} · IV ${c.iv_source ?? "n/a"} · greeks ${c.greeks_source ?? "n/a"}${c.liquidity_flags?.length ? ` · ${c.liquidity_flags.map(flagLabel).join(", ")}` : ""}${c.stale ? ` · stale${c.stale_reason ? `: ${c.stale_reason}` : ""}` : ""}`,
     stale: !!c.stale, marks: greekMarks(c),
@@ -65,11 +65,11 @@ export function sideCells(c: ChainContract | null): { bid: string; ask: string; 
 
 /** The chain's honesty line: last close vs live, how many rows have a real quote, and how many are stale. */
 export function chainLabel(chain: LiveChainOut | null | undefined): Badge {
-  if (!chain) return { tone: "neutral", text: "loading chain" };
+  if (!chain) return { tone: "neutral", text: "no chain yet" };
   if (!chain.available) return { tone: "neutral", text: "chain unavailable", title: chain.reason ?? undefined };
   const f = chain.freshness;
   const quoted = fin(f?.n_quoted) ? `${f!.n_quoted}/${chain.n_contracts ?? chain.contracts.length} quoted` : "";
-  if (chain.market_open === false) return { tone: "sim", text: `last close${quoted ? ` · ${quoted}` : ""}`, title: chain.snapshot_label ?? "Market closed: the last session's prices, not tradable now." };
+  if (chain.market_open === false) return { tone: "sim", text: `last close${quoted ? ` · ${quoted}` : ""}`, title: chain.snapshot_label ?? "Market closed: these prices are from the last session. You cannot trade at these prices now." };
   return { tone: f?.n_stale ? "caution" : "live", text: `delayed NBBO${quoted ? ` · ${quoted}` : ""}${f?.n_stale ? ` · ${f.n_stale} stale` : ""}`, title: "Massive last NBBO, 15 minutes delayed." };
 }
 
@@ -131,10 +131,10 @@ export function hedgeRows(hq: HedgeQuoteOut | null | undefined): HedgeRow[] {
 export function hedgeNotes(hq: HedgeQuoteOut | null | undefined): string[] {
   if (!hq) return [];
   const out: string[] = [];
-  if (hq.market_open === false) out.push("Market closed: prices are the last session's close, not tradable now.");
-  if (hq.expiry_covers_horizon === false && hq.expiry) out.push(`No listed expiry covers the ${hq.horizon_days}-day horizon; the option hedges use ${hq.expiry} and would need rolling.`);
-  if (hq.assumptions?.borrow_rate_assumed) out.push(`Borrow fee assumed at ${((hq.assumptions.borrow_rate_annual ?? 0.003) * 100).toFixed(2)}%/yr (neither Massive nor Webull reports one).`);
-  out.push("Ranked by expected trading friction only; it ignores the upside each hedge gives up and how deep its protection goes.");
+  if (hq.market_open === false) out.push("Market closed: the prices are from the last session close. You cannot trade at these prices now.");
+  if (hq.expiry_covers_horizon === false && hq.expiry) out.push(`No listed expiry covers the ${hq.horizon_days}-day horizon. The option hedges use ${hq.expiry} and would need rolling.`);
+  if (hq.assumptions?.borrow_rate_assumed) out.push(`Borrow fee assumed at ${((hq.assumptions.borrow_rate_annual ?? 0.003) * 100).toFixed(2)}%/yr (Massive and Webull do not give a borrow fee).`);
+  out.push("The ranking uses only the expected trading friction. It ignores the upside each hedge gives up and the depth of its protection.");
   return out;
 }
 

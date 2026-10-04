@@ -6,6 +6,7 @@ import type {
   AccountOut, BrokerOrder, BrokerPosition, Capacity, CapitalLimits, CapitalOut, EvidenceStatus, Freshness, LiquidityEquity, ReconcileStatus,
 } from "./api.ts";
 import type { SessionView } from "./closed.ts";
+import type { Mechanism } from "./micro.ts";
 
 export type Tone = "measured" | "caution" | "neutral" | "sim" | "paper" | "live" | "replay" | "ai" | "demo";
 export interface Badge { tone: Tone; text: string; title?: string }
@@ -41,10 +42,10 @@ export interface EvidenceGateView {
 
 export function evidenceGate(ev: EvidenceStatus | null | undefined): EvidenceGateView {
   if (!ev) {
-    return { known: false, validated: false, needsAck: false, reason: "The backend did not report this market's evidence status.",
+    return { known: false, validated: false, needsAck: false, reason: "The backend did not give the evidence status for this market.",
       badge: { tone: "neutral", text: "evidence not reported" } };
   }
-  const reason = ev.evidence ?? (ev.validated ? "Passed its out-of-sample test." : "No out-of-sample record for this market.");
+  const reason = ev.evidence ?? (ev.validated ? "This market passed its out-of-sample test." : "This market has no out-of-sample record.");
   if (ev.validated) {
     return { known: true, validated: true, needsAck: false, reason, badge: { tone: "measured", text: "validated", title: reason } };
   }
@@ -54,26 +55,48 @@ export function evidenceGate(ev: EvidenceStatus | null | undefined): EvidenceGat
 /** The acknowledgement the user ticks before approving on an unvalidated market. Honest: it says what is missing,
  *  what will run anyway and how it is labelled. */
 export function ackCopy(ticker: string, kind: "hedge" | "opportunity" = "hedge", opts: { override?: boolean } = {}): string {
-  const runs = kind === "opportunity" ? "the options algo will trade on it anyway" : `the ${ticker} hedge will act on it anyway`;
-  const base = `I understand this market’s signal has not passed its out-of-sample test for ${ticker}: it is an unvalidated estimate, ${runs}, and every decision and fill will be labelled “unvalidated (acknowledged)”.`;
+  const runs = kind === "opportunity" ? "the options algo will trade on it" : `the ${ticker} hedge will use it`;
+  const base = `I understand that the signal of this market has not passed its out-of-sample test for ${ticker}. It is an unvalidated estimate, but ${runs}. The app will label each decision and fill “unvalidated (acknowledged)”.`;
   // The backend: approving a proposal that sets act_on_unvalidated with the acknowledgement also confirms the override.
   return opts.override && kind === "hedge" ? `${base} ${OVERRIDE_ACK_COPY}` : base;
 }
 
+/** The gate of the generic AI fit flow (/build/fit). The fit itself is unvalidated (registry entry generic_ai_fit: its
+ *  walk-forward test failed), so the acknowledgement is always needed, whatever the market's own closed-gap evidence
+ *  says; a "validated" market badge is never shown as the fit's status. The badge words are the registry's. */
+export function fitEvidenceGate(market: EvidenceGateView | null | undefined, fit: Mechanism | null | undefined): EvidenceGateView {
+  const fitWhy = fit ? `${fit.name}: ${fit.claim}` : "The evidence registry was not read, so the generic AI fit is treated as unvalidated.";
+  const mkt = market?.known
+    ? ` This market's own closed-gap evidence (${market.badge.text}) is about the expected gap at a closure, not about this fit.`
+    : "";
+  return {
+    known: true, validated: false, needsAck: true, reason: `${fitWhy}${mkt}`,
+    badge: { tone: "caution", text: fit?.status_label || "unvalidated", title: fit?.actions_allowed.text ?? fitWhy },
+  };
+}
+
+/** The acknowledgement for the generic AI fit: the fit's own status first, then the market's (when it is unvalidated
+ *  too, the backend's own acknowledgement is part of the same tick). */
+export function fitAckCopy(ticker: string, fit: Mechanism | null | undefined, market: EvidenceGateView | null | undefined,
+  opts: { override?: boolean } = {}): string {
+  const fitLine = `I understand that the generic AI fit is not validated (${fit?.status_label || "unvalidated"}) and that the ${ticker} hedge will use it anyway.`;
+  return market?.needsAck ? `${fitLine} ${ackCopy(ticker, "hedge", opts)}` : opts.override ? `${fitLine} ${OVERRIDE_ACK_COPY}` : fitLine;
+}
+
 /** What the acknowledgement also confirms when the Weekend-mode override is on (POST /proposals/{id}/approve 409 text). */
-export const OVERRIDE_ACK_COPY = "This also confirms the closed-market override: staged plans (hedge B) on this market are labelled “override”, and none executes until I press Approve plan.";
+export const OVERRIDE_ACK_COPY = "This also confirms the closed-market override. Staged plans (hedge B) on this market are labelled “override”, and no plan executes until I click Approve plan.";
 /** The approval box line shown whenever the override is on, acknowledged or not. */
-export const OVERRIDE_ON_LINE = "Override on: staged plans on this market are labelled “override”.";
+export const OVERRIDE_ON_LINE = "Override on: the app labels staged plans on this market “override”.";
 
 /** The closed-market override: stage hedge B on a market whose expected gap is not validated. */
-export const OVERRIDE_COPY = "Stage the weekend hedge (hedge B) on this market even though its expected gap is not validated. Each staged plan is labelled “override”, and nothing executes until you press Approve plan.";
+export const OVERRIDE_COPY = "Stage the weekend hedge (hedge B) on this market, although its expected gap is not validated. The app labels each staged plan “override”. No plan executes until you click Approve plan.";
 
 /** Badge for the `evidence` label every decision / fill / staged / hedge_a event carries. */
 export function evidenceLabelBadge(label: string | null | undefined): Badge | null {
   if (!label) return null;
-  if (label === "validated") return { tone: "measured", text: "validated", title: "This market's signal passed its out-of-sample test." };
-  if (label.startsWith("unvalidated")) return { tone: "caution", text: "unvalidated · acknowledged", title: "Approved with the acknowledgement that this market's signal has not passed its out-of-sample test." };
-  if (label === "override") return { tone: "caution", text: "override · unvalidated", title: "Closed-market override: staged on a market whose expected gap is not validated." };
+  if (label === "validated") return { tone: "measured", text: "validated", title: "The signal of this market passed its out-of-sample test." };
+  if (label.startsWith("unvalidated")) return { tone: "caution", text: "unvalidated · acknowledged", title: "You approved this with the acknowledgement that the signal of this market did not pass its out-of-sample test." };
+  if (label === "override") return { tone: "caution", text: "override · unvalidated", title: "Closed-market override: the plan is staged on a market with an expected gap that is not validated." };
   return { tone: "neutral", text: label };
 }
 
@@ -116,12 +139,12 @@ export function fillBadges(f: GatedFill | null | undefined, decisionEvidence?: s
     if (g.reason === "liquidity_capped") {
       const from = fin(g.capped_from) ? Math.round(g.capped_from) : null, to = fin(g.limit_qty) ? Math.floor(g.limit_qty) : null;
       out.push({ tone: "caution", text: `liquidity capped${from != null && to != null ? ` · ${from.toLocaleString("en-US")}→${to.toLocaleString("en-US")}` : ""}`,
-        title: `Participation cap: ${g.rule ?? bindingLabel(g.limit)}. The rest waits for later orders.` });
+        title: `Participation cap: ${g.rule ?? bindingLabel(g.limit)}. Later orders get the remaining quantity.` });
     } else if (g.reason === "capital_budget") {
       const what = (g.breaches ?? []).map(breachName).join(", ");
       out.push(g.enforced === false
-        ? { tone: "neutral", text: "capital budget · advisory", title: `Would breach the account budget (${what || "budget"}); not enforced in the replay sandbox.` }
-        : { tone: "caution", text: "capital budget · refused", title: `Refused before it was sent: ${what || "budget"}.` });
+        ? { tone: "neutral", text: "capital budget · advisory", title: `This order would go over the account budget (${what || "budget"}). The replay sandbox does not enforce the budget.` }
+        : { tone: "caution", text: "capital budget · refused", title: `The app rejected this order before it went to the broker: ${what || "budget"}.` });
     }
   }
   const rr = f.reject_reason ?? "";
@@ -139,7 +162,7 @@ export function gateSentence(f: GatedFill | null | undefined): string {
       parts.push(`Liquidity cap (${g.rule ?? bindingLabel(g.limit)}) cut it from ${fin(g.capped_from) ? Math.round(g.capped_from) : "?"} to ${fin(g.limit_qty) ? Math.floor(g.limit_qty) : "?"}.`);
     } else if (g.reason === "capital_budget") {
       const what = (g.breaches ?? []).map(breachName).join(", ") || "the budget";
-      parts.push(g.enforced === false ? `It would breach ${what}; advisory only in the replay sandbox.` : `Capital budget refused it (${what}).`);
+      parts.push(g.enforced === false ? `It would go over ${what}. This is advisory only in the replay sandbox.` : `Capital budget refused it (${what}).`);
     }
   }
   if (!parts.length && f.reject_reason && /^(liquidity_capped|capital_budget)/.test(f.reject_reason)) parts.push(`Held: ${f.reject_reason}.`);
@@ -161,10 +184,10 @@ export interface CapacityView {
 }
 
 function freshnessText(f: Freshness | null | undefined): { text: string; stale: boolean } {
-  if (!f) return { text: "freshness unknown", stale: false };
+  if (!f) return { text: "age unknown", stale: false };
   const age = fin(f.age_s) ? (f.age_s < 60 ? `${Math.round(f.age_s)} s old` : `${Math.round(f.age_s / 60)} min old`) : "";
   const stale = !!f.cache_stale || f.staleness === "stale_cache";
-  return { text: stale ? `stale cache${age ? ` (${age})` : ""}: last good value, refresh failed` : f.staleness === "fresh" ? "fresh" : age || f.staleness || "cached", stale };
+  return { text: stale ? `stale cache${age ? ` (${age})` : ""}: last good value, the refresh did not complete` : f.staleness === "fresh" ? "fresh" : age || f.staleness || "cached", stale };
 }
 
 const spreadSource = (s: string | null | undefined) =>
@@ -173,9 +196,9 @@ const spreadSource = (s: string | null | undefined) =>
 /** The capacity card from a proposal's capacity block (the hedge at its approved size) — Build approval step. */
 export function capacityFromProposal(c: Capacity | null | undefined): CapacityView {
   const e = c?.equity;
-  if (!c || c.error && !e) return { available: false, reason: c?.error ?? "No capacity block on this proposal.", rows: [], binding: "n/a", verdict: { tone: "neutral", text: "capacity unknown" }, sources: [], stale: false };
-  if (!e) return { available: false, reason: c.options?.note ?? "No equity leg on this proposal.", rows: [], binding: "n/a", verdict: { tone: "neutral", text: "per-structure caps at bridge time" }, sources: [], stale: false };
-  if (!e.available) return { available: false, reason: e.reason ?? "Liquidity numbers unavailable; orders are not capped and are labelled “unknown”.", rows: [], binding: "n/a", verdict: { tone: "neutral", text: "caps unknown" }, sources: [], stale: false };
+  if (!c || c.error && !e) return { available: false, reason: c?.error ?? "This proposal has no capacity data.", rows: [], binding: "n/a", verdict: { tone: "neutral", text: "capacity unknown" }, sources: [], stale: false };
+  if (!e) return { available: false, reason: c.options?.note ?? "This proposal has no equity leg.", rows: [], binding: "n/a", verdict: { tone: "neutral", text: "caps per structure at bridge start" }, sources: [], stale: false };
+  if (!e.available) return { available: false, reason: e.reason ?? "Liquidity data is not available. The app does not cap orders and labels them “unknown”.", rows: [], binding: "n/a", verdict: { tone: "neutral", text: "caps unknown" }, sources: [], stale: false };
   const fr = freshnessText(e.freshness);
   const inside = e.inside_caps;
   const rows: CapacityRow[] = [
@@ -183,12 +206,12 @@ export function capacityFromProposal(c: Capacity | null | undefined): CapacityVi
     { k: "MAX ORDER", v: shares(e.max_order_shares), sub: "per order at the open", warn: inside === false },
     { k: "MAX POSITION / DAY", v: shares(e.per_day_shares), sub: "1% of 20-day ADV" },
     { k: "EST. COST", v: bp(e.est_cost_bp, 2), sub: e.cost ? `${bp(e.cost.half_spread_bp, 2)} half-spread + ${bp(e.cost.impact_bp, 2)} impact` : undefined },
-    { k: "BOOK-SIZE CAPACITY", v: usd(e.book_usd_capacity), sub: `holding whose hedge fits one order at the open${fin(e.book_usd_within_one_session) ? `; ${usd(e.book_usd_within_one_session)} within one session` : ""}` },
+    { k: "BOOK-SIZE CAPACITY", v: usd(e.book_usd_capacity), sub: `holding with a hedge that fits one order at the open${fin(e.book_usd_within_one_session) ? `, ${usd(e.book_usd_within_one_session)} in one session` : ""}` },
     { k: "SESSIONS NEEDED", v: fin(e.sessions_needed) ? String(e.sessions_needed) : "n/a", sub: fin(e.orders_at_open_needed) ? `${e.orders_at_open_needed} order${e.orders_at_open_needed === 1 ? "" : "s"} at the open` : undefined, warn: fin(e.sessions_needed) && e.sessions_needed > 1 },
   ];
   const verdict: Badge = inside === true
     ? { tone: "measured", text: "inside the caps", title: "The full hedge fits one order at the open." }
-    : inside === false ? { tone: "caution", text: "above one order's cap", title: e.note ?? "Orders are capped (liquidity_capped); the rest waits for later orders." }
+    : inside === false ? { tone: "caution", text: "above one order's cap", title: e.note ?? "The app caps orders (liquidity_capped). Later orders get the remaining quantity." }
     : { tone: "neutral", text: "caps unknown" };
   const sources = [
     `Price, ADV, σ: Massive daily bars (${c.source === "cache" ? "cached" : "live"}; ${fr.text})`,
@@ -201,25 +224,25 @@ export function capacityFromProposal(c: Capacity | null | undefined): CapacityVi
 /** The capacity card from GET /liquidity/{ticker} (Bridge screen and the Build preview). `hedgeShares` is the hedge the
  *  bridge is approved for (coverage x shares), when known. */
 export function capacityFromLiquidity(l: LiquidityEquity | null | undefined, hedgeShares?: number | null): CapacityView {
-  if (!l) return { available: false, reason: "Loading liquidity…", rows: [], binding: "n/a", verdict: { tone: "neutral", text: "loading" }, sources: [], stale: false };
-  if (!l.available) return { available: false, reason: l.reason ?? "Liquidity unavailable; orders are not capped and are labelled “unknown”.", rows: [], binding: "n/a", verdict: { tone: "neutral", text: "caps unknown" }, sources: [], stale: false };
+  if (!l) return { available: false, reason: "The app reads the liquidity data…", rows: [], binding: "n/a", verdict: { tone: "neutral", text: "no data yet" }, sources: [], stale: false };
+  if (!l.available) return { available: false, reason: l.reason ?? "Liquidity data is not available. The app does not cap orders and labels them “unknown”.", rows: [], binding: "n/a", verdict: { tone: "neutral", text: "caps unknown" }, sources: [], stale: false };
   const fr = freshnessText(l.freshness);
   const inside = fin(hedgeShares) && fin(l.max_order_shares) ? hedgeShares <= l.max_order_shares : null;
   const rows: CapacityRow[] = [
     { k: "MAX ORDER", v: shares(l.max_order_shares), sub: "per order at the open", warn: inside === false },
     { k: "MAX POSITION / DAY", v: shares(l.max_position_shares ?? l.per_day_shares), sub: "1% of 20-day ADV" },
     { k: "EST. COST", v: bp(l.est_cost_bp, 2), sub: l.cost ? `at ${shares(l.cost.qty)}: ${bp(l.cost.half_spread_bp, 2)} half-spread + ${bp(l.cost.impact_bp, 2)} impact` : undefined },
-    { k: "BOOK-SIZE CAPACITY", v: usd(l.capacity?.book_usd), sub: `at ${pctOf(l.capacity?.coverage)} coverage${fin(l.capacity?.book_usd_within_one_session) ? `; ${usd(l.capacity!.book_usd_within_one_session)} in one session` : ""}` },
+    { k: "BOOK-SIZE CAPACITY", v: usd(l.capacity?.book_usd), sub: `at ${pctOf(l.capacity?.coverage)} coverage${fin(l.capacity?.book_usd_within_one_session) ? `, ${usd(l.capacity!.book_usd_within_one_session)} in one session` : ""}` },
     { k: "ADV", v: fin(l.adv_shares) ? shares(l.adv_shares) : "n/a", sub: fin(l.adv_usd) ? usd(l.adv_usd) : undefined },
     { k: "DAILY σ", v: pctOf(l.sigma_daily, 2), sub: "last 20 daily returns" },
   ];
   const verdict: Badge = inside === true ? { tone: "measured", text: "hedge inside the caps" }
-    : inside === false ? { tone: "caution", text: "hedge above one order's cap", title: "Orders are capped (liquidity_capped); the rest waits for later orders." }
+    : inside === false ? { tone: "caution", text: "hedge above one order's cap", title: "The app caps orders (liquidity_capped). Later orders get the remaining quantity." }
     : { tone: "neutral", text: "per-order caps active" };
   const sp = l.sources?.spread;
   const sources = [
     `Daily bars: ${l.sources?.daily_bars?.source ?? "Massive"}${l.sources?.daily_bars?.as_of ? ` as of ${l.sources.daily_bars.as_of.slice(0, 10)}` : ""} (${fr.text})`,
-    `Spread: ${spreadSource(l.spread_source)}${fin(l.spread_bp) ? ` (${bp(l.spread_bp, 2)})` : ""}${sp?.note ? ` — ${sp.note}` : ""}`,
+    `Spread: ${spreadSource(l.spread_source)}${fin(l.spread_bp) ? ` (${bp(l.spread_bp, 2)})` : ""}${sp?.note ? ` (${sp.note})` : ""}`,
     `Opening volume: ${l.sources?.open5?.source ?? "Massive 5-minute bars"}`,
   ];
   return { available: true, rows, binding: bindingLabel(l.binding), verdict, sources, stale: fr.stale };
@@ -229,23 +252,23 @@ export function capacityFromLiquidity(l: LiquidityEquity | null | undefined, hed
 export function pmDepthLine(c: Capacity | null | undefined): string | null {
   const pm = c?.pm;
   if (!pm) return null;
-  if (!pm.available) return `Prediction-market book: unavailable (${pm.reason ?? "no book"}).`;
+  if (!pm.available) return `Prediction market book: not available (${pm.reason ?? "no book"}).`;
   const mo = pm.max_order_contracts, d2 = pm.depth;
   const at2 = (side: "buy" | "sell") => d2?.[side]?.["2c"]?.usd;
-  return `Prediction-market book (${pm.source ?? "venue"}): max order ${fin(mo?.buy) ? mo!.buy!.toLocaleString("en-US") : "n/a"} buy / ${fin(mo?.sell) ? mo!.sell!.toLocaleString("en-US") : "n/a"} sell contracts (50% of depth within 2¢; ${usd(at2("buy"))} / ${usd(at2("sell"))} resting).`;
+  return `Prediction market book (${pm.source ?? "venue"}): max order ${fin(mo?.buy) ? mo!.buy!.toLocaleString("en-US") : "n/a"} buy / ${fin(mo?.sell) ? mo!.sell!.toLocaleString("en-US") : "n/a"} sell contracts (50% of depth within 2¢, with ${usd(at2("buy"))} / ${usd(at2("sell"))} resting).`;
 }
 
 /** The capital line of a proposal: does the full hedge fit the account budget? */
 export function capitalFitView(c: Capacity | null | undefined): { badge: Badge; lines: string[] } {
   const k = c?.capital;
-  if (!k) return { badge: { tone: "neutral", text: "capital not checked" }, lines: ["The capital check runs on the live proposal path."] };
-  if (!k.checked || k.fits == null) return { badge: { tone: "neutral", text: "capital not checked" }, lines: [k.note ?? "Account budget not checked."] };
+  if (!k) return { badge: { tone: "neutral", text: "capital not checked" }, lines: ["The app does the capital check only for live proposals."] };
+  if (!k.checked || k.fits == null) return { badge: { tone: "neutral", text: "capital not checked" }, lines: [k.note ?? "The app did not check the account budget."] };
   const lines: string[] = [];
   if (k.gross) lines.push(`Gross hedge ${usd(k.gross.now)} → ${usd(k.gross.after)} of ${usd(k.gross.limit_usd)} (${pctOf(k.limits?.max_gross_hedge_pct)} of equity)`);
   if (k.event) lines.push(`This event ${usd(k.event.now)} → ${usd(k.event.after)} of ${usd(k.event.limit_usd)} (${pctOf(k.limits?.max_event_pct)} of equity)`);
   if (k.buying_power) lines.push(`Buying power needed ${usd(k.buying_power.required)} of ${usd(k.buying_power.available)} (${k.buying_power.basis ?? "basis"})`);
-  for (const b of k.breaches ?? []) lines.push(`Breach: ${breachName(b.kind)}${b.detail ? ` — ${b.detail}` : ""}`);
-  return { badge: k.fits ? { tone: "measured", text: "fits the capital budget" } : { tone: "caution", text: "breaches the capital budget", title: "Exposure-increasing orders that breach a budget are refused (capital_budget)." }, lines };
+  for (const b of k.breaches ?? []) lines.push(`Breach: ${breachName(b.kind)}${b.detail ? `: ${b.detail}` : ""}`);
+  return { badge: k.fits ? { tone: "measured", text: "fits the capital budget" } : { tone: "caution", text: "breaches the capital budget", title: "The app rejects an order that increases exposure and goes over a budget (capital_budget)." }, lines };
 }
 
 // ------------------------------------------------------------------ capital usage (Portfolio)
@@ -283,16 +306,16 @@ export function budgetPhrase(lim: Pick<CapitalLimits, "max_gross_hedge_pct" | "m
 }
 
 export function capitalView(c: CapitalOut | null | undefined): CapitalView {
-  if (!c) return { read: false, checked: false, stale: null, status: { tone: "neutral", text: "loading budget" }, error: "Loading GET /capital…", enforcement: "", tiles: [], meters: [], events: [], breaches: [], note: "" };
+  if (!c) return { read: false, checked: false, stale: null, status: { tone: "neutral", text: "budget not read" }, error: "The app reads the capital budget…", enforcement: "", tiles: [], meters: [], events: [], breaches: [], note: "" };
   const read = c.account_read !== false && fin(c.equity);
   // account_checked is false when the broker has no account read; older payloads: a failed read carries the
   // account_unreadable breach, so its absence on an unread account means "not checked".
   const checked = c.account_checked ?? (read || (c.breaches ?? []).some((b) => b.kind === "account_unreadable"));
   const tiles: CapacityRow[] = [
-    { k: "EQUITY", v: usd(c.equity, { compact: false }), sub: c.account_label ? `${c.account_label}${c.account_type ? ` · ${c.account_type}` : ""}` : undefined },
-    { k: "BUYING POWER", v: usd(c.buying_power, { compact: false }), sub: c.buying_power_basis ? `basis: ${c.buying_power_basis}` : undefined },
-    { k: "GROSS HEDGE NOTIONAL", v: usd(c.gross_hedge_notional, { compact: false }), sub: `equity hedge ${usd(c.equity_hedge_usd)} · staged ${usd(c.staged_pending_usd)} · options ${usd(c.option_risk_usd)}` },
-    { k: "MARGIN USED (INITIAL)", v: usd(c.margin?.initial_required, { compact: false }), sub: `maintenance ${usd(c.margin?.maintenance_required)} · excess ${usd(c.margin?.excess_over_maintenance)}` },
+    { k: "EQUITY", v: usd(c.equity, { compact: false }), sub: c.account_label ? `${c.account_label}${c.account_type ? ` (${c.account_type})` : ""}` : undefined },
+    { k: "BUYING POWER", v: usd(c.buying_power, { compact: false }), sub: c.buying_power_basis ? `Basis: ${c.buying_power_basis}` : undefined },
+    { k: "GROSS HEDGE NOTIONAL", v: usd(c.gross_hedge_notional, { compact: false }), sub: `Equity hedge ${usd(c.equity_hedge_usd)}, staged ${usd(c.staged_pending_usd)}, options ${usd(c.option_risk_usd)}` },
+    { k: "MARGIN USED (INITIAL)", v: usd(c.margin?.initial_required, { compact: false }), sub: `Maintenance ${usd(c.margin?.maintenance_required)}, excess ${usd(c.margin?.excess_over_maintenance)}` },
   ];
   const lim = c.limits;
   const meters = [meter(`Gross hedge (≤ ${pctOf(lim?.max_gross_hedge_pct)} of equity)`, c.gross_hedge_notional, c.gross_limit_usd)];
@@ -304,11 +327,11 @@ export function capitalView(c: CapitalOut | null | undefined): CapitalView {
     : checked ? `Account unreadable${why}: exposure-increasing orders are refused (fail closed).`
     : `Capital budget not checked${why}: this broker gives no account read, so orders are not checked against the budget.`;
   const enforcement = read
-    ? `Orders that would breach a budget are refused before they are sent (capital_budget); an unreadable account would refuse them too (fail closed).${c.account_stale ? " The live read just failed: these figures are the last good read." : ""}`
+    ? `The app rejects an order before it goes to the broker if the order would go over a budget (capital_budget). If the app cannot read the account, it rejects these orders also (fail closed).${c.account_stale ? " The last live read did not complete. These values are from the last good read." : ""}`
     : checked ? "The account read failed, so every exposure-increasing order is refused until it can be read again (fail closed)."
-    : "Nothing is enforced against the capital budget until the broker gives an account read.";
+    : "Nothing is enforced against the capital budget until the broker gives account data.";
   const age = fin(c.account_age_s) ? ` · ${Math.round(c.account_age_s)}s old` : "";
-  const stale: Badge | null = c.account_stale ? { tone: "caution", text: `stale${age}`, title: `The live account read failed${why}; showing the last good read.` } : null;
+  const stale: Badge | null = c.account_stale ? { tone: "caution", text: `stale${age}`, title: `The live account read did not complete${why}. The values are from the last good read.` } : null;
   const status: Badge = breaches.length
     ? { tone: "caution", text: `${breaches.length} breach${breaches.length === 1 ? "" : "es"}`, title: breaches.join("\n") }
     : read ? { tone: "measured", text: "within budget" }
@@ -320,12 +343,12 @@ export function capitalView(c: CapitalOut | null | undefined): CapitalView {
 
 /** The nav / Portfolio account pill: "Webull paper · Individual Margin · market closed". */
 export function accountPill(a: AccountOut | null | undefined, session?: Pick<SessionView, "equities_open"> | null): { text: string; tone: Tone; title: string } {
-  if (!a) return { text: "Account unavailable", tone: "demo", title: "GET /account could not be read" };
+  if (!a) return { text: "Account not available", tone: "demo", title: "The app cannot read the account." };
   const webull = (a.broker ?? "").toLowerCase().includes("webull");
   const name = webull ? "Webull paper" : "Simulated account";
   const open = session?.equities_open ?? a.market_open;
   const parts = [name, ...(a.account_label ? [a.account_label] : []), ...(open == null ? [] : [open ? "market open" : "market closed"])];
-  return { text: parts.join(" · "), tone: webull ? "paper" : "sim", title: a.note ?? (webull ? "Webull paper (sandbox host only; orders accepted 09:30–16:00 ET)" : "In-process simulator") };
+  return { text: parts.join(" · "), tone: webull ? "paper" : "sim", title: a.note ?? (webull ? "Webull paper account on the sandbox host. It accepts orders from 09:30 to 16:00 ET." : "Simulated account in the app.") };
 }
 
 /** Which Webull figure BUYING POWER is: webull.py uses an explicit buying_power / stock_buying_power when Webull sends
@@ -367,7 +390,7 @@ export function orderRows(os: BrokerOrder[]): { key: string; when: string; side:
     const px = o.fill_px ?? o.filled_px ?? o.avg_fill_px ?? o.limit_px ?? null;
     const when = o.filled_at ?? o.created_at ?? null;
     return {
-      key: o.id, when: when ? when.replace("T", " ").slice(0, 16) : "—", side: o.side.toUpperCase(), qty: o.qty, symbol: o.symbol,
+      key: o.id, when: when ? when.replace("T", " ").slice(0, 16) : "n/a", side: o.side.toUpperCase(), qty: o.qty, symbol: o.symbol,
       status: `${o.status ?? "unknown"}${o.broker_status && o.broker_status.toLowerCase() !== (o.status ?? "").toLowerCase() ? ` (${o.broker_status})` : ""}`,
       px: px == null ? "mkt" : px.toFixed(2), origin: o.origin ? ORIGIN_LABEL[o.origin] ?? o.origin : "",
       title: [o.reject_reason, o.note].filter(Boolean).join(" · "),
@@ -377,14 +400,14 @@ export function orderRows(os: BrokerOrder[]): { key: string; when: string; side:
 
 /** One line on the order reconciler: running / idle (why) / stopped, passes and the last result. */
 export function reconcileView(r: ReconcileStatus | null | undefined): { badge: Badge; line: string } {
-  if (!r) return { badge: { tone: "neutral", text: "reconcile n/a" }, line: "GET /broker/reconcile unavailable." };
-  if (r.supported === false) return { badge: { tone: "neutral", text: "no reconciler" }, line: `${r.broker ?? "This broker"} fills in process; nothing to reconcile.` };
+  if (!r) return { badge: { tone: "neutral", text: "reconcile n/a" }, line: "The reconciler status is not available." };
+  if (r.supported === false) return { badge: { tone: "neutral", text: "no reconciler" }, line: `${r.broker ?? "This broker"} fills orders in the app. There is nothing to reconcile.` };
   const lr = r.last_result;
   const last = lr ? ` Last pass: ${lr.checked ?? 0} tracked, ${lr.open_at_webull ?? 0} open at Webull, ${lr.updated ?? 0} updated.` : "";
-  const errs = r.errors ? ` ${r.errors} error${r.errors === 1 ? "" : "s"}${r.last_error ? ` (last: ${r.last_error})` : ""}.` : "";
-  if (!r.running) return { badge: { tone: "neutral", text: "reconciler stopped" }, line: `Starts on the first broker request when BROKER=webull.${last}${errs}` };
-  if (r.state === "idle") return { badge: { tone: "sim", text: "reconciler idle" }, line: `${r.idle_reason ?? "Idle."} ${r.passes ?? 0} passes so far.${last}${errs}` };
-  return { badge: { tone: "live", text: "reconciling" }, line: `Every ${r.interval_s ?? 15} s in the regular session; ${r.passes ?? 0} passes.${last}${errs}` };
+  const errs = r.errors ? ` Errors: ${r.errors}${r.last_error ? ` (last: ${r.last_error})` : ""}.` : "";
+  if (!r.running) return { badge: { tone: "neutral", text: "reconciler stopped" }, line: `The reconciler starts at the first broker request when BROKER=webull.${last}${errs}` };
+  if (r.state === "idle") return { badge: { tone: "sim", text: "reconciler idle" }, line: `${r.idle_reason ?? "The reconciler is idle."} Passes: ${r.passes ?? 0}.${last}${errs}` };
+  return { badge: { tone: "live", text: "reconciling" }, line: `The reconciler runs every ${r.interval_s ?? 15} s during the regular session. Passes: ${r.passes ?? 0}.${last}${errs}` };
 }
 
 // ------------------------------------------------------------------ staged plans (hedge B)
@@ -397,7 +420,7 @@ export function stagedBadges(o: { evidence_gate?: string | null; evidence?: stri
   const codes = new Set((o.decisions ?? []).map((d) => d.code));
   const detail = (c: string) => (o.decisions ?? []).find((d) => d.code === c)?.detail ?? undefined;
   if (codes.has("LIQUIDITY_CAPPED") || o.liquidity?.status === "capped") out.push({ tone: "caution", text: "liquidity capped", title: detail("LIQUIDITY_CAPPED") ?? o.liquidity?.rule });
-  if (o.reason === "CAPITAL_BUDGET" || codes.has("CAPITAL_BUDGET") || (o.capital && o.capital.ok === false && o.capital.enforced !== false)) out.push({ tone: "caution", text: "capital budget", title: detail("CAPITAL_BUDGET") ?? "Refused: it would breach the account's capital budget." });
+  if (o.reason === "CAPITAL_BUDGET" || codes.has("CAPITAL_BUDGET") || (o.capital && o.capital.ok === false && o.capital.enforced !== false)) out.push({ tone: "caution", text: "capital budget", title: detail("CAPITAL_BUDGET") ?? "Rejected: the order would go over the capital budget of the account." });
   else if (codes.has("CAPITAL_BUDGET_ADVISORY")) out.push({ tone: "neutral", text: "capital budget · advisory", title: detail("CAPITAL_BUDGET_ADVISORY") });
   return out;
 }

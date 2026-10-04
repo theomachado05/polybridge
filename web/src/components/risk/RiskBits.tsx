@@ -3,24 +3,33 @@
 // from src/lib/risk.ts, which mirrors what the backend enforces.
 import type { CSSProperties, ReactNode } from "react";
 import type { Badge, CapacityRow, CapacityView, EvidenceGateView, Meter } from "@/lib/risk";
-import { Label, Tag } from "@/components/pb";
+import { Tag } from "@/components/pb";
 
 export const BadgeTag = ({ b }: { b: Badge }) => <Tag tone={b.tone} title={b.title}>{b.text}</Tag>;
 
-export const subBox: CSSProperties = { marginTop: 14, padding: "14px 16px", borderRadius: 18, background: "rgba(255,255,255,.7)", border: "1px solid rgba(255,255,255,.9)" };
-const k = { fontFamily: "var(--mono)", fontSize: 10.5, letterSpacing: ".04em", color: "#5A627A" } as const;
+export const subBox: CSSProperties = { marginTop: "var(--sp-4)", padding: "var(--sp-4)", borderRadius: "var(--radius-sm)", background: "var(--surface-2)", border: "1px solid var(--border)" };
+
+const KEY_LABEL: Record<string, string> = {
+  CASH: "Cash", EQUITY: "Equity", "BUYING POWER": "Buying power", "DAY BUYING POWER": "Day buying power",
+  "OPTION BUYING POWER": "Option buying power", "MARKET VALUE": "Market value", "UNREALIZED P&L": "Unrealized P&L",
+  "MAINTENANCE MARGIN": "Maintenance margin", "DAY TRADES LEFT": "Day trades left", "GROSS HEDGE NOTIONAL": "Gross hedge notional",
+  "MARGIN USED (INITIAL)": "Initial margin used", "HEDGE AT APPROVED SIZE": "Hedge at approved size", "MAX ORDER": "Maximum order",
+  "MAX POSITION / DAY": "Maximum position per day", "EST. COST": "Estimated cost", "BOOK-SIZE CAPACITY": "Book-size capacity",
+  "SESSIONS NEEDED": "Sessions necessary", ADV: "ADV", "DAILY σ": "Daily σ",
+};
+const keyLabel = (key: string) => KEY_LABEL[key] ?? key;
 
 export function MetricGrid({ rows, min = 150 }: { rows: CapacityRow[]; min?: number }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit,minmax(min(100%,${min}px),1fr))`, gap: "12px 16px", marginTop: 12 }}>
+    <dl style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit,minmax(min(100%,${min}px),1fr))`, gap: "var(--sp-4) var(--sp-5)", margin: "var(--sp-4) 0 0" }}>
       {rows.map((r) => (
         <div key={r.k} style={{ minWidth: 0 }}>
-          <div style={k}>{r.k}</div>
-          <div className="pb-tab" style={{ fontSize: 17, fontWeight: 600, letterSpacing: "-.02em", marginTop: 2, color: r.warn ? "#9A4A00" : "#0F1626" }}>{r.v}</div>
-          {r.sub && <div className="pb-pretty" style={{ fontSize: 11, color: "#5A627A", lineHeight: 1.35, marginTop: 1 }}>{r.sub}</div>}
+          <dt className="pb-label">{keyLabel(r.k)}</dt>
+          <dd className="pb-num" style={{ margin: "var(--sp-1) 0 0", fontSize: "var(--fs-16)", fontWeight: 600, color: r.warn ? "var(--warn)" : "var(--ink)" }}>{r.v}</dd>
+          {r.sub && <dd className="pb-pretty" style={{ margin: "2px 0 0", fontSize: "var(--fs-12)", color: "var(--faint)", lineHeight: 1.4 }}>{r.sub}</dd>}
         </div>
       ))}
-    </div>
+    </dl>
   );
 }
 
@@ -33,17 +42,17 @@ export function EvidenceGateBox({ gate, ack, onAck, copy, loading, acknowledged,
 }) {
   return (
     <div style={subBox} data-testid={testId}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-        <span className="pb-label">EVIDENCE GATE</span>
-        {loading || !gate ? <Tag tone="neutral">checking evidence</Tag> : <BadgeTag b={gate.badge} />}
+      <div style={{ display: "flex", justifyContent: "space-between", gap: "var(--sp-2)", flexWrap: "wrap", alignItems: "center" }}>
+        <span className="pb-h4" style={{ fontSize: "var(--fs-14)" }}>Evidence gate</span>
+        {loading || !gate ? <Tag tone="neutral">evidence not read yet</Tag> : <BadgeTag b={gate.badge} />}
       </div>
-      {gate && <div className="pb-pretty" style={{ fontSize: 12.5, color: "#3C4458", lineHeight: 1.5, marginTop: 8 }}>{gate.reason}</div>}
-      {gate?.validated && <div style={{ fontSize: 12, color: "#15804F", marginTop: 6 }}>This market passed its out-of-sample test for this ticker; decisions and fills are labelled “validated”.</div>}
-      {gate?.needsAck && acknowledged && <div data-testid="evidence-acknowledged" style={{ fontSize: 12, color: "#9A4A00", marginTop: 8 }}>Already approved with your acknowledgement; decisions and fills are labelled “unvalidated (acknowledged)”.</div>}
+      {gate && <div className="pb-small pb-pretty" style={{ marginTop: "var(--sp-2)" }}>{gate.reason}</div>}
+      {gate?.validated && <div className="pb-small" style={{ color: "var(--up)", marginTop: "var(--sp-2)" }}>This market passed its out-of-sample test for this ticker. The app labels decisions and fills “validated”.</div>}
+      {gate?.needsAck && acknowledged && <div data-testid="evidence-acknowledged" className="pb-small" style={{ color: "var(--warn)", marginTop: "var(--sp-2)" }}>You approved this with your acknowledgement. The app labels decisions and fills “unvalidated (acknowledged)”.</div>}
       {gate?.needsAck && !acknowledged && (
-        <label style={{ display: "grid", gridTemplateColumns: "20px minmax(0,1fr)", gap: 10, alignItems: "start", marginTop: 10, padding: "10px 12px", borderRadius: 14, background: ack ? "rgba(251,146,60,.10)" : "rgba(15,22,38,.04)", border: `1px solid ${ack ? "rgba(251,146,60,.45)" : "rgba(15,22,38,.10)"}`, cursor: "pointer" }}>
-          <input type="checkbox" checked={ack} onChange={(e) => onAck(e.target.checked)} data-testid="evidence-ack" style={{ width: 16, height: 16, marginTop: 2, accentColor: "#0F1626", cursor: "pointer" }} />
-          <span className="pb-pretty" style={{ fontSize: 12.5, color: "#3C4458", lineHeight: 1.5 }}>{copy}</span>
+        <label style={{ display: "grid", gridTemplateColumns: "20px minmax(0,1fr)", gap: "var(--sp-3)", alignItems: "start", marginTop: "var(--sp-3)", padding: "var(--sp-3)", borderRadius: "var(--radius-sm)", background: ack ? "var(--warn-tint)" : "var(--surface)", border: `1px solid ${ack ? "var(--warn)" : "var(--border-strong)"}`, cursor: "pointer" }}>
+          <input type="checkbox" checked={ack} onChange={(e) => onAck(e.target.checked)} data-testid="evidence-ack" style={{ width: 16, height: 16, marginTop: 2, accentColor: "var(--accent)", cursor: "pointer" }} />
+          <span className="pb-small pb-pretty" style={{ color: "var(--ink)" }}>{copy}</span>
         </label>
       )}
     </div>
@@ -55,23 +64,23 @@ export function CapacityCard({ view, title, extra, footer, tag, testId = "capaci
 }) {
   return (
     <div style={subBox} data-testid={testId}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-        <span className="pb-label">{title}</span>
-        <span style={{ display: "inline-flex", gap: 6, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: "var(--sp-2)", flexWrap: "wrap", alignItems: "center" }}>
+        <span className="pb-h4" style={{ fontSize: "var(--fs-14)" }}>{title}</span>
+        <span style={{ display: "inline-flex", gap: "var(--sp-2)", flexWrap: "wrap" }}>
           <BadgeTag b={view.verdict} />
-          {view.stale && <Tag tone="caution" title="The last refresh failed; these are the last good numbers.">stale</Tag>}
+          {view.stale && <Tag tone="caution" title="The last refresh did not complete. These are the last good values.">stale</Tag>}
           {tag}
         </span>
       </div>
       {view.available ? (
         <>
           <MetricGrid rows={view.rows} />
-          <div style={{ fontSize: 12, color: "#3C4458", marginTop: 10 }}>Binding limit: <span style={{ fontWeight: 600 }}>{view.binding}</span></div>
+          <div className="pb-small" style={{ marginTop: "var(--sp-3)" }}>Binding limit: <span style={{ fontWeight: 600, color: "var(--ink)" }}>{view.binding}</span></div>
         </>
-      ) : <div className="pb-pretty" style={{ fontSize: 12.5, color: "#5A627A", marginTop: 8, lineHeight: 1.45 }}>{view.reason}</div>}
+      ) : <div className="pb-small pb-pretty" style={{ marginTop: "var(--sp-2)" }}>{view.reason}</div>}
       {extra}
       {view.sources.length > 0 && (
-        <div className="pb-pretty" style={{ fontSize: 11, color: "#5A627A", marginTop: 8, lineHeight: 1.5 }}>
+        <div className="pb-pretty" style={{ fontSize: "var(--fs-12)", color: "var(--faint)", marginTop: "var(--sp-3)", lineHeight: 1.5 }}>
           {view.sources.map((s) => <div key={s}>{s}</div>)}
         </div>
       )}
@@ -84,18 +93,18 @@ export function MeterRow({ m }: { m: Meter }) {
   const w = m.frac == null ? 0 : Math.min(100, Math.max(m.frac > 0 ? 1.5 : 0, m.frac * 100));
   return (
     <div style={{ minWidth: 0 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, fontSize: 12.5 }}>
-        <span className="pb-ellipsis" style={{ minWidth: 0, color: "#3C4458" }} title={m.k}>{m.k}</span>
-        <span className="pb-mono pb-tab" style={{ fontSize: 11.5, flex: "none", color: m.warn ? "#9A4A00" : "#5A627A" }}>{m.text}</span>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: "var(--sp-3)", fontSize: "var(--fs-13)" }}>
+        <span className="pb-ellipsis" style={{ minWidth: 0, color: "var(--ink)" }} title={m.k}>{m.k}</span>
+        <span className="pb-num" style={{ flex: "none", color: m.warn ? "var(--warn)" : "var(--text-2)" }}>{m.text}</span>
       </div>
-      <div className="pb-bar" style={{ marginTop: 6 }}><div style={{ width: `${w}%`, background: m.frac != null && m.frac > 1 ? "#E0485A" : m.warn ? "linear-gradient(90deg,#FB923C,#E0485A)" : undefined }} /></div>
+      <div className="pb-bar" style={{ marginTop: "var(--sp-2)" }}><div style={{ width: `${w}%`, background: m.frac != null && m.frac > 1 ? "var(--down)" : m.warn ? "var(--warn)" : undefined }} /></div>
     </div>
   );
 }
 
 export const PanelHead = ({ label, children }: { label: string; children?: ReactNode }) => (
-  <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-    <Label>{label}</Label>
-    {children && <span style={{ display: "inline-flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>{children}</span>}
+  <div style={{ display: "flex", justifyContent: "space-between", gap: "var(--sp-2) var(--sp-3)", flexWrap: "wrap", alignItems: "center" }}>
+    <h2 className="pb-h4">{label}</h2>
+    {children && <span style={{ display: "inline-flex", gap: "var(--sp-2)", flexWrap: "wrap", alignItems: "center" }}>{children}</span>}
   </div>
 );

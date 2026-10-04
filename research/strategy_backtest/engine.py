@@ -14,9 +14,11 @@ from math import sqrt
 import numpy as np
 import pandas as pd
 
+from leadlag_replication.closures import EARLY_CLOSES
+
 from .config import PARAMS, TZ
 
-RTH_START, RTH_END = 570, 960  # minutes after midnight ET
+RTH_START, RTH_END, RTH_END_EARLY = 570, 960, 780  # minutes after midnight ET
 
 
 # ---------------------------------------------------------------- PM as-of
@@ -41,9 +43,10 @@ def et_instant(day: pd.Timestamp, hm: tuple[int, int]) -> pd.Timestamp:
 # ---------------------------------------------------------------- SPY per-session measures
 
 
-def session_measures(bars: pd.DataFrame, sessions: list[pd.Timestamp]) -> pd.DataFrame:
+def session_measures(bars: pd.DataFrame, sessions: list[pd.Timestamp], early_closes=EARLY_CLOSES) -> pd.DataFrame:
     """One row per session: regular-session close and its end instant, first-bar open, 10:00 price, 08:00 price,
-    5-minute opening and pre-market dollar volume. NaN where a bar is missing (never imputed)."""
+    5-minute opening and pre-market dollar volume. NaN where a bar is missing (never imputed). On 13:00 early-close
+    days the regular session ends at 13:00, so post-market bars are not read as the close."""
     et = bars.index.tz_convert(TZ)
     day = et.normalize().tz_localize(None)
     mins = et.hour * 60 + et.minute
@@ -55,7 +58,8 @@ def session_measures(bars: pd.DataFrame, sessions: list[pd.Timestamp]) -> pd.Dat
         r = {"day": pd.Timestamp(d), "rth_close": np.nan, "t_close": pd.NaT, "open_px": np.nan, "px_1000": np.nan,
              "px_0800": np.nan, "vol5_usd": np.nan, "vol5_pre_usd": np.nan}
         if g is not None:
-            rth = g[(g["_min"] >= RTH_START) & (g["_min"] < RTH_END)]
+            end = RTH_END_EARLY if pd.Timestamp(d).strftime("%Y-%m-%d") in early_closes else RTH_END
+            rth = g[(g["_min"] >= RTH_START) & (g["_min"] < end)]
             if len(rth):
                 r["rth_close"] = float(rth["close"].iloc[-1])
                 r["t_close"] = rth.index[-1] + pd.Timedelta(minutes=1)
@@ -243,6 +247,5 @@ def books(days: list[pd.Timestamp], close: pd.Series, divs: pd.Series, sig: pd.D
         long_v = shares * float(close.loc[d])
         rows.append({"day": d, "bh": long_v + div_cash, "strat": long_v + div_cash + hedge_cash,
                      "hedge_gross": gross, "hedge_cost": cost, "hedge_net": gross - cost, "notional": notional,
-                     "traded_usd": 0.0 if notional == 0 else notional + (notional - gross) if False else
-                     (notional + (q * s["exit_px"] if notional else 0.0))})
+                     "traded_usd": notional + q * s["exit_px"] if notional else 0.0})
     return pd.DataFrame(rows).set_index("day")

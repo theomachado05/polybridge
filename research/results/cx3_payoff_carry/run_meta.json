@@ -1,0 +1,25 @@
+{
+  "started_utc": "2026-10-04T03:59:29Z",
+  "finished_utc": "2026-10-04T03:59:33Z",
+  "seconds": 4.550572156906128,
+  "freeze_commit": "6e33ff0",
+  "last_own_path_commit": "6e33ff0bcd51780b4718da6fe67c72fbbc428737 2026-10-03T23:46:48-04:00 research: freeze option insurance and payoff carry tests before evaluation",
+  "protected_forward_read": false,
+  "sealed_oos_read": false,
+  "network_data_pulls": 0,
+  "price_arrays_accessed": false,
+  "reused_baseline_numeric_results_read": true,
+  "docs_checked_utc": "2026-10-04",
+  "official_docs": {
+    "resolution": "https://docs.polymarket.com/concepts/resolution",
+    "negative_risk": "https://docs.polymarket.com/concepts/negative-risk",
+    "pm_fees": "https://docs.polymarket.com/trading/fees",
+    "kalshi_fees": "https://kalshi.com/docs/kalshi-fee-schedule.pdf",
+    "prices_orderbook": "https://docs.polymarket.com/concepts/prices-orderbook"
+  },
+  "frozen_hashes": {
+    "METHOD.md": "7e366f7515ffc605291d1c32a2943cd8b4878a7d97b282413ba7e1c385c63d36",
+    "config.py": "0fa7de73070d31ef1d740d3c3cbad90bcf6f5606d7847ec23dc72efe4bf90048",
+    ".gitignore": "e5df1994f5cb4190d6bbca4817343c99f7c7ba3a4b90d84c92d52113c716654e"
+  }
+}

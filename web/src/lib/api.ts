@@ -1,5 +1,6 @@
 // Mirrors docs/contracts.md (HTTP API). Change both together, by PR.
 import type { ClosedLabels, ClosedModeSummary, ClosureView, GapView, HedgeASummary, SessionView, StagedOrder } from "./closed.ts";
+import type { ForwardStatus, LaddersOut, Registry, TicketsOut } from "./micro.ts";
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export type Family = "hedge" | "opportunity";
@@ -52,7 +53,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   try {
     res = await fetch(`${API_URL}${path}`, { cache: "no-store", ...init });
   } catch {
-    throw new ApiError(`Cannot reach the backend at ${API_URL}. Is it running?`, 0);
+    throw new ApiError(`Cannot reach the backend at ${API_URL}. Start the backend and try again.`, 0);
   }
   if (!res.ok) {
     let detail = "";
@@ -60,7 +61,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       const body = await res.json();
       detail = typeof body.detail === "string" ? body.detail : Array.isArray(body.detail) ? body.detail.map((d: { msg: string }) => d.msg).join("; ") : "";
     } catch {}
-    throw new ApiError(detail || `${init?.method ?? "GET"} ${path} failed with ${res.status}`, res.status);
+    throw new ApiError(detail || `${init?.method ?? "GET"} ${path} did not complete (error ${res.status})`, res.status);
   }
   return res.json() as Promise<T>;
 }
@@ -757,3 +758,9 @@ export interface OptionMark {
   stale?: boolean; stale_reason?: string | null; market_open?: boolean; as_of_label?: string | null; expired?: boolean; cache_stale?: boolean;
 }
 export const getOptionMark = (contract: string) => request<OptionMark>(`/options/mark/${encodeURIComponent(contract)}`);
+
+// Micro-market mechanisms (docs: backend/app/contracts, app/closed/evidence.py, app/forward). Labels come from the registry.
+export const getMechanisms = () => request<Registry>("/evidence/mechanisms");
+export const getLadders = () => request<LaddersOut>("/ladders");
+export const getTickets = () => request<TicketsOut>("/tickets");
+export const getForwardStatus = () => request<ForwardStatus>("/forward/status");

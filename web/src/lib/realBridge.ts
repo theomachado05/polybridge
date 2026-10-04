@@ -55,10 +55,10 @@ export function runnableFit(fit: Pick<FitOut, "family" | "preset_index" | "divis
 /** What a hedge bridge runs, in words: the fitted family and preset (hedgecore.Algo; picked by replaying presets in
  *  the C++ engine, whether or not an LLM classified the event), or, with no runnable fit, the engine's default spec. `node` is the Bridge screen's centre label; `sentence` reads in running text. */
 export function algoRunLabel(fit: AppliedFit | null): { node: string; sentence: string } {
-  if (!fit) return { node: "02 · ENGINE · DEFAULT DELTA-BRIDGE SPEC", sentence: "the engine's default delta-bridge spec" };
+  if (!fit) return { node: "Engine: default delta-bridge spec", sentence: "the engine's default delta-bridge spec" };
   const fam = prettyId(fit.family);
-  const preset = fit.preset_index != null ? `preset #${fit.preset_index}` : "custom params";
-  return { node: `02 · FITTED · ${fam.toUpperCase()} · ${preset.toUpperCase()}`, sentence: `the fitted ${fam} algo (${preset})` };
+  const preset = fit.preset_index != null ? `preset #${fit.preset_index}` : "custom parameters";
+  return { node: `Fitted algo: ${fam}, ${preset}`, sentence: `the fitted ${fam} algo (${preset})` };
 }
 
 /** A proposal is reusable only when it was approved for exactly this algo (or both have none): a bridge runs what
@@ -85,7 +85,7 @@ export interface HedgeOpts { closedPmHedge?: boolean; actOnUnvalidated?: boolean
 
 export function hedgeTerms(q: Question, eq: EquityPick, maxHedge: string, fit: AppliedFit | null = null, opts: HedgeOpts = {}): HedgeTerms {
   const m = q.real;
-  if (!eq.direction) throw new Error(`${eq.t} is not in this market's mapping, so the adverse outcome is unknown: say which outcome hurts it`);
+  if (!eq.direction) throw new Error(`${eq.t} is not in the mapping for this market, so the adverse outcome is not known. On Build, say which outcome hurts it.`);
   const cap = Math.min(1, (parseInt(maxHedge, 10) || 100) / 100);
   // With a fit, target_coverage is the user's Max hedge: the backend caps the algo's coverage at it and clips every
   // sell beyond it (contracts.md), so the approved proposal bounds what is hedged. Without a fit the default Engine
@@ -111,12 +111,12 @@ export const bridgeable = (p: Proposal) => !evidenceRefused.has(p.id) && !(p.sta
 /** The error a failed bridge start reports. An evidence refusal says the proposal is dropped (it is no longer reused);
  *  any other failure keeps the approved proposal for the next try (POST /bridges is idempotent per proposal). */
 function startFailure(last: unknown, proposalId: string): Error {
-  const why = last instanceof Error ? last.message : "the backend refused to start a bridge";
+  const why = last instanceof Error ? last.message.replace(/\.$/, "") : "The backend did not start the bridge";
   if (isEvidenceError(last)) {
     markEvidenceRefused(proposalId);
-    return new Error(`${why}; proposal ${proposalId} is not reused: the next try proposes again and reads the evidence afresh`);
+    return new Error(`${why}. Proposal ${proposalId} is not reused. Try again to make a new proposal with the current evidence.`);
   }
-  return new Error(`${why}; proposal ${proposalId} stays approved and is reused on the next try`);
+  return new Error(`${why}. Try again: proposal ${proposalId} stays approved and is reused on the next try.`);
 }
 
 const matchesTerms = (p: Proposal, t: HedgeTerms) => p.ticker === t.ticker && p.family === "hedge" && p.market?.source === t.market.source
@@ -230,8 +230,8 @@ export const REPLAY_SANDBOX_SENTENCE = "On a recorded replay (the default here) 
 export function fillScopeLabel(scope: string | null | undefined, acct: { name: string; tone: "sim" | "paper" | "demo" }):
   { sandbox: boolean; name: string; tone: "replay" | "sim" | "paper" | "demo"; title: string; filledVerb: string } {
   return scope === "replay_sandbox"
-    ? { sandbox: true, name: "replay sandbox · not your account", tone: "replay", title: "Replay bridges fill in an isolated sandbox (sim-replay), never your account", filledVerb: "Sandbox filled" }
-    : { sandbox: false, name: acct.name, tone: acct.tone, title: "Account that receives the engine's orders (GET /account)", filledVerb: "Broker filled" };
+    ? { sandbox: true, name: "replay sandbox, not your account", tone: "replay", title: "Replay bridges fill orders in an isolated sandbox (sim-replay), never in your account.", filledVerb: "Sandbox filled" }
+    : { sandbox: false, name: acct.name, tone: acct.tone, title: "This account gets the engine orders (GET /account).", filledVerb: "Broker filled" };
 }
 
 /** The venue a live bridge streams: the market's own (Kalshi markets stream Kalshi; contracts.md, ticks.py). */
@@ -270,7 +270,7 @@ export function priceSubtitle(source: string | null | undefined, marketSource: s
   replay?: ReplayInfo | null, marketId?: string | null, marketTokenId?: string | null):
   { sub: string; mismatch: boolean } {
   if (source === "replay") {
-    return { sub: `YES from replay ${replay?.file ?? "file"} · recorded history, not the live market`, mismatch: replayMismatch(replay, marketSource, marketId, marketTokenId) };
+    return { sub: `YES from replay ${replay?.file ?? "file"}. Recorded history, not the live market.`, mismatch: replayMismatch(replay, marketSource, marketId, marketTokenId) };
   }
   const venue = liveVenue(marketSource);
   return { sub: `YES ${venue} midpoint${venue === "Kalshi" ? "" : " · Kalshi not streamed on this bridge"}`, mismatch: false };
@@ -283,13 +283,13 @@ export function replayNotice(source: string | null | undefined, requestedSource:
   market?: { source?: string | null; id?: string | null; token_id?: string | null } | null): { tone: "warn" | "info"; text: string } | null {
   if (source !== "replay") return null;
   const file = replay?.file ? `the recording ${replay.file}` : "a recording";
-  const fellBack = requestedSource === "live" ? `The live feed was unavailable, so this bridge fell back to ${file}. ` : "";
+  const fellBack = requestedSource === "live" ? `The live feed was not available, so this bridge uses ${file}. ` : "";
   if (replayMismatch(replay, market?.source, market?.id, market?.token_id)) {
     const rec = `${replay?.market_source ? replay.market_source + ":" : ""}${replay?.market_id ?? replay?.market_token_id}`;
-    return { tone: "warn", text: `${fellBack}This replay${replay?.file ? ` (${replay.file})` : ""} was recorded on another market (${rec}), not the question shown here; its prices and trades are a playback of that recording.` };
+    return { tone: "warn", text: `${fellBack}CAUTION: Do not read this replay${replay?.file ? ` (${replay.file})` : ""} as data for this question. It records a different market (${rec}), and its prices and trades come from that recording.` };
   }
   if (replay?.known === false) {
-    return { tone: "info", text: `${fellBack}${replay.file ?? "This replay file"} has no .meta.json sidecar, so the backend cannot confirm which market it records; it plays only because the request (or the file's own name) points at this market.` };
+    return { tone: "info", text: `${fellBack}${replay.file ?? "This replay file"} has no .meta.json sidecar, so the backend cannot confirm its market. It plays because the request or the file name points to this market.` };
   }
   if (!fellBack) return null;
   const rec = replay?.known && (replay.market_id || replay.market_token_id)

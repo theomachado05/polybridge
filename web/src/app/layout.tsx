@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import { Geist, Geist_Mono, Newsreader } from "next/font/google";
 import { Nav } from "@/components/Nav";
+import { EngineStrip } from "@/components/micro/EngineStrip";
 import { VoiceButton } from "@/components/voice/VoiceButton";
 import { StoreProvider } from "@/lib/store";
 import "./globals.css";
@@ -12,7 +13,7 @@ const newsreader = Newsreader({ variable: "--font-newsreader", subsets: ["latin"
 
 export const metadata: Metadata = {
   title: "PolyBridge",
-  description: "Prediction-market signals in, fee- and tax-aware equity hedges out.",
+  description: "PolyBridge checks thin prediction-market books against their own date logic and the options chain, and shows what each check has and has not passed.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -20,16 +21,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${newsreader.variable} antialiased`}>
       <body>
         <div style={{ position: "relative", minHeight: "100vh" }}>
-          <div className="pb-bg" aria-hidden>
-            <div className="pb-blob pb-blob-1" />
-            <div className="pb-blob pb-blob-2" />
-            <div className="pb-blob pb-blob-3" />
-            <div className="pb-grid" />
-          </div>
           <StoreProvider>
             <Nav />
+            <EngineStrip />
             {children}
-            {/* Inside the store: voice tool results drive the same state and routes as the mouse flow. */}
             <VoiceButton />
           </StoreProvider>
         </div>
