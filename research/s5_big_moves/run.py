@@ -192,7 +192,10 @@ def run() -> int:
     nc = df[~df.ticker.isin(cfg.CRYPTO_EQUITIES)]
     for label, d in (("all link-days", df), ("one per ticker and day", td), ("weekends only", df[df.weekend]),
                      ("without crypto-linked equities", nc), ("earlier 80% of sessions", df[df.segment == "earlier"]),
-                     ("most recent 20% of sessions", df[df.segment == "recent"]), ("links that pass the data gate", df[df.confirmed])):
+                     ("most recent 20% of sessions", df[df.segment == "recent"]),
+                     ("sessions from 2026-07-01 (after the labellers' knowledge)", df[df.day >= cfg.KNOWLEDGE_CUTOFF_DAY]),
+                     ("sessions before 2026-07-01", df[df.day < cfg.KNOWLEDGE_CUTOFF_DAY]),
+                     ("links that pass the data gate", df[df.confirmed])):
         if len(d):
             regs.append({"sample": label, "relation": "opening gap on overnight odds move", **fit(d)})
             regs.append({"sample": label, "relation": "move after the open on overnight odds move", **fit(d[np.isfinite(d.after)], "after")})
@@ -234,8 +237,9 @@ def run() -> int:
                            "cost_bp": cost, "net_bp": gross - cost, "pnl": cfg.NOTIONAL * (gross - cost) / 1e4,
                            "traded": 2 * cfg.NOTIONAL * (1 + abs(r.beta)), "vol30": r.vol30, "question": r.question})
             trades += tt
-            for sg_name in ("all", "earlier", "recent"):
-                dl = [d for d, s_ in zip(days, seg) if sg_name == "all" or s_ == sg_name]
+            for sg_name in ("all", "earlier", "recent", "from 2026-07-01"):
+                dl = [d for d, s_ in zip(days, seg) if sg_name == "all" or s_ == sg_name
+                      or (sg_name == "from 2026-07-01" and d >= cfg.KNOWLEDGE_CUTOFF_DAY)]
                 st = [t for t in tt if t["day"] in set(dl)]
                 by_day = np.array([sum(t["pnl"] for t in st if t["day"] == d) for d in dl])
                 m = en.day_metrics(by_day, dl, sum(t["traded"] for t in st))

@@ -107,7 +107,9 @@ def main() -> int:
     gap = rg[rg.relation == "opening gap on overnight odds move"].set_index("sample")
     aft = rg[rg.relation == "move after the open on overnight odds move"].set_index("sample")
     g0, f0 = gap.loc["all link-days"], aft.loc["all link-days"]
-    p1 = g0.slope > 0 and g0.t >= cfg.P1_MIN_T
+    post = "sessions from 2026-07-01 (after the labellers' knowledge)"
+    gp = gap.loc[post] if post in gap.index else None
+    p1 = g0.slope > 0 and g0.t >= cfg.P1_MIN_T and gp is not None and gp.slope > 0 and gp.t >= cfg.P1_MIN_T
     st = meta["label_stats"]
 
     def cell(r):
@@ -141,7 +143,8 @@ def main() -> int:
          f"**P1, the replication: {'replicates' if p1 else 'does not replicate'}.** On {meta['markets_in_test']} fresh markets linked to "
          f"{meta['tickers_in_test']} tickers ({meta['link_days']:,} link-days, {meta['dates_in_test']} dates), a 1-point overnight move in odds "
          f"comes with a {g0.slope:+.2f} bp excess gap in the linked equity at the open (t = {g0.t:.2f}; S4 found +4.69, t = 4.01). "
-         f"After the open: {f0.slope:+.2f} bp per point (t = {f0.t:.2f}).", "",
+         f"After the open: {f0.slope:+.2f} bp per point (t = {f0.t:.2f}). On sessions from 2026-07-01, which the labelling models "
+         f"cannot have seen (amendment 1): " + (f"{gp.slope:+.2f} bp per point (t = {gp.t:.2f}, {int(gp.n):,} link-days)." if gp is not None else "no data."), "",
          f"**P2, the trade: {p2}.** Buying (or shorting) the linked equity at the open after an overnight move of 10 points or more, "
          f"exit at the close: {int(a1.trades)} trades on {int(a1.tickers)} tickers and {int(a1.trade_dates)} dates, {bp(a1.mean_net_bp)} net per "
          f"trade at 1× costs (95% interval {num(a1.ci_lo, 1)} to {num(a1.ci_hi, 1)}), {bp(a1.mean_gross_bp)} before costs, "
@@ -182,6 +185,8 @@ def main() -> int:
           "markets); \"earlier\" and \"recent\" split it by time.", "",
           "## Caveats", "",
           "- Links are judgements of two models; agreement is not truth.",
+          "- **Hindsight.** Most S5 markets have resolved, and one labeller said some of its links draw on how markets reacted at the "
+          "time. Figures on sessions from 2026-07-01 are free of that; figures before it may be inflated.",
           "- A resolved market's last big move is the news itself, when the equity's own news flow is heaviest.",
           "- Fills at the first regular bar's open stand for the opening auction.",
           "- S4 and S5 overlap in calendar time: different markets, same market regimes.", "",

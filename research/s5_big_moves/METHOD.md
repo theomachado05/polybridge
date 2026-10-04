@@ -104,3 +104,15 @@ event offsets above 2,000. The scan of resolved events stopped there, at an even
 ran out on their own. A market cannot have more volume than its event, and the last of the 240 kept markets has $6.5
 million, so nothing below the cut-off could have entered the list. Scan counts are in `universe.json`: 2,400 events
 read, 1,846 dropped by tag, 892 markets eligible, 240 kept (224 resolved, 16 open) from 129 events.
+
+**Amendment 1, 2026-10-04 00:52 UTC, before any S5 price was pulled: a hindsight check on the links.** One labeller
+reported that several of its links draw on its memory of how markets reacted at the time (gold and the dollar on a
+Fed-chair nomination, Chevron on Maduro, airlines on the shutdown deal), not only on the question text. Most S5
+markets have resolved, so a model can know the reaction it is asked to predict the direction of. That would inflate
+P1. The labelling models' knowledge ends in June 2026. So:
+- every P1 and P2 figure is also reported on **sessions from 2026-07-01**, which no labeller can have seen;
+- **P1 replicates only if the slope is above zero with t ≥ 2 on all link-days and on the sessions from 2026-07-01**;
+- the P2 criterion already requires a positive result in the most recent 20% of sessions, all of which fall after
+  that date.
+S4 is less exposed (its markets were open and unresolved when linked), but not immune: the same models may know how
+those equities moved with the news before June 2026.

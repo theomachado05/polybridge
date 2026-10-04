@@ -1,0 +1,1337 @@
+{
+ "labeller": "2A",
+ "answers": [
+  {
+   "id": "polymarket:601697",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "SHY",
+     "direction": "up_on_yes",
+     "confidence": 0.7,
+     "mechanism": "A cut (or a larger cut) lowers front-end Treasury yields, lifting short-dated Treasury prices."
+    },
+    {
+     "ticker": "IEF",
+     "direction": "up_on_yes",
+     "confidence": 0.6,
+     "mechanism": "A more dovish Fed outcome pulls intermediate Treasury yields down, raising 7-10 year Treasury prices."
+    },
+    {
+     "ticker": "TLT",
+     "direction": "up_on_yes",
+     "confidence": 0.5,
+     "mechanism": "A dovish surprise usually drags long yields lower too, though the long end reacts less reliably than the front end."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:2270330",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.7,
+     "mechanism": "A permanent US-Iran peace deal removes the Gulf supply-risk premium from crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Lower crude from a fading Gulf risk premium cuts energy-sector earnings expectations."
+    },
+    {
+     "ticker": "XOP",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Oil producers are the most price-sensitive equities to a falling crude risk premium."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:570360",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "SHY",
+     "direction": "up_on_yes",
+     "confidence": 0.7,
+     "mechanism": "A cut (or a larger cut) lowers front-end Treasury yields, lifting short-dated Treasury prices."
+    },
+    {
+     "ticker": "IEF",
+     "direction": "up_on_yes",
+     "confidence": 0.6,
+     "mechanism": "A more dovish Fed outcome pulls intermediate Treasury yields down, raising 7-10 year Treasury prices."
+    },
+    {
+     "ticker": "TLT",
+     "direction": "up_on_yes",
+     "confidence": 0.5,
+     "mechanism": "A dovish surprise usually drags long yields lower too, though the long end reacts less reliably than the front end."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:538932",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:570363",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "SHY",
+     "direction": "down_on_yes",
+     "confidence": 0.7,
+     "mechanism": "A hike or a withheld cut raises front-end Treasury yields, lowering short-dated Treasury prices."
+    },
+    {
+     "ticker": "IEF",
+     "direction": "down_on_yes",
+     "confidence": 0.6,
+     "mechanism": "A more hawkish Fed outcome pushes intermediate Treasury yields up, lowering 7-10 year Treasury prices."
+    },
+    {
+     "ticker": "UUP",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Higher US policy rates than expected widen rate differentials in favour of the dollar."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:572473",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "GLD",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Shelton is a gold-standard advocate seen as a political pick, so her nomination would raise Fed-credibility worries and support gold."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1484949",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:1198423",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.7,
+     "mechanism": "A US strike on Iran raises the risk to Gulf supply and Hormuz transit, adding a risk premium to crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Higher crude on Gulf supply risk lifts energy-sector earnings expectations."
+    },
+    {
+     "ticker": "XOP",
+     "direction": "up_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Oil producers are the most price-sensitive equities to a rising crude risk premium."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:654413",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "SHY",
+     "direction": "up_on_yes",
+     "confidence": 0.7,
+     "mechanism": "A cut (or a larger cut) lowers front-end Treasury yields, lifting short-dated Treasury prices."
+    },
+    {
+     "ticker": "IEF",
+     "direction": "up_on_yes",
+     "confidence": 0.6,
+     "mechanism": "A more dovish Fed outcome pulls intermediate Treasury yields down, raising 7-10 year Treasury prices."
+    },
+    {
+     "ticker": "TLT",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "mechanism": "A dovish surprise usually drags long yields lower too, though the long end reacts less reliably than the front end."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:551963",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:669663",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "SHY",
+     "direction": "down_on_yes",
+     "confidence": 0.7,
+     "mechanism": "A hike or a withheld cut raises front-end Treasury yields, lowering short-dated Treasury prices."
+    },
+    {
+     "ticker": "IEF",
+     "direction": "down_on_yes",
+     "confidence": 0.6,
+     "mechanism": "A more hawkish Fed outcome pushes intermediate Treasury yields up, lowering 7-10 year Treasury prices."
+    },
+    {
+     "ticker": "UUP",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Higher US policy rates than expected widen rate differentials in favour of the dollar."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:669660",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "SHY",
+     "direction": "up_on_yes",
+     "confidence": 0.7,
+     "mechanism": "A cut (or a larger cut) lowers front-end Treasury yields, lifting short-dated Treasury prices."
+    },
+    {
+     "ticker": "IEF",
+     "direction": "up_on_yes",
+     "confidence": 0.6,
+     "mechanism": "A more dovish Fed outcome pulls intermediate Treasury yields down, raising 7-10 year Treasury prices."
+    },
+    {
+     "ticker": "TLT",
+     "direction": "up_on_yes",
+     "confidence": 0.5,
+     "mechanism": "A dovish surprise usually drags long yields lower too, though the long end reacts less reliably than the front end."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:566331",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:916732",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Khamenei leaving by that date would most likely come through strikes or violent upheaval, raising Gulf supply risk."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1171663",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "EPOL",
+     "direction": "up_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Polish equities carry the largest listed war-risk discount next to Ukraine and re-rate on a ceasefire."
+    },
+    {
+     "ticker": "VGK",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "mechanism": "A ceasefire lowers European energy and security risk, supporting broad European equities."
+    },
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.4,
+     "mechanism": "A ceasefire raises the odds of eased sanctions on Russian barrels and removes attacks on energy infrastructure, weighing on crude."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:572469",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "UUP",
+     "direction": "up_on_yes",
+     "confidence": 0.55,
+     "mechanism": "Warsh is seen as the most orthodox, credibility-preserving candidate, which supports the dollar."
+    },
+    {
+     "ticker": "GLD",
+     "direction": "down_on_yes",
+     "confidence": 0.55,
+     "mechanism": "A credible, hawkish-leaning chair removes part of the debasement bid in gold."
+    },
+    {
+     "ticker": "TLT",
+     "direction": "down_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Warsh favours a smaller Fed balance sheet, which raises term premium and long yields."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:686122",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1507751",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:538931",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:538929",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:570362",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "SHY",
+     "direction": "down_on_yes",
+     "confidence": 0.65,
+     "mechanism": "A hike or a withheld cut raises front-end Treasury yields, lowering short-dated Treasury prices."
+    },
+    {
+     "ticker": "IEF",
+     "direction": "down_on_yes",
+     "confidence": 0.55,
+     "mechanism": "A more hawkish Fed outcome pushes intermediate Treasury yields up, lowering 7-10 year Treasury prices."
+    },
+    {
+     "ticker": "UUP",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Higher US policy rates than expected widen rate differentials in favour of the dollar."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1971905",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.75,
+     "mechanism": "Normal Hormuz traffic removes the Gulf supply-risk premium from crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.55,
+     "mechanism": "Lower crude from a fading Gulf risk premium cuts energy-sector earnings expectations."
+    },
+    {
+     "ticker": "XOP",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Oil producers are the most price-sensitive equities to a falling crude risk premium."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:2063133",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:572481",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:1707932",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:906972",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "SHY",
+     "direction": "up_on_yes",
+     "confidence": 0.7,
+     "mechanism": "A cut (or a larger cut) lowers front-end Treasury yields, lifting short-dated Treasury prices."
+    },
+    {
+     "ticker": "IEF",
+     "direction": "up_on_yes",
+     "confidence": 0.6,
+     "mechanism": "A more dovish Fed outcome pulls intermediate Treasury yields down, raising 7-10 year Treasury prices."
+    },
+    {
+     "ticker": "TLT",
+     "direction": "up_on_yes",
+     "confidence": 0.5,
+     "mechanism": "A dovish surprise usually drags long yields lower too, though the long end reacts less reliably than the front end."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:572470",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "SHY",
+     "direction": "up_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Hassett is seen as the most dovish, White House-aligned candidate, so front-end yields fall on more expected cuts."
+    },
+    {
+     "ticker": "UUP",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "mechanism": "A chair expected to cut faster and viewed as less independent weakens the dollar."
+    },
+    {
+     "ticker": "GLD",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Lower real rates and Fed-independence concerns support gold."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:572485",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "SHY",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Rieder has publicly argued for a policy rate near 3 percent, so front-end yields fall on more expected cuts."
+    },
+    {
+     "ticker": "IEF",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "A market practitioner seen as credible and favouring lower rates supports a rally in intermediate Treasuries."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:516947",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "CVX",
+     "direction": "up_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Chevron is the only US major producing in Venezuela and gains most from a post-Maduro opening of the oil sector."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1105754",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:906975",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "SHY",
+     "direction": "down_on_yes",
+     "confidence": 0.7,
+     "mechanism": "A hike or a withheld cut raises front-end Treasury yields, lowering short-dated Treasury prices."
+    },
+    {
+     "ticker": "IEF",
+     "direction": "down_on_yes",
+     "confidence": 0.6,
+     "mechanism": "A more hawkish Fed outcome pushes intermediate Treasury yields up, lowering 7-10 year Treasury prices."
+    },
+    {
+     "ticker": "UUP",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Higher US policy rates than expected widen rate differentials in favour of the dollar."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:2063130",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:538935",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1654957",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "SHY",
+     "direction": "up_on_yes",
+     "confidence": 0.7,
+     "mechanism": "A cut (or a larger cut) lowers front-end Treasury yields, lifting short-dated Treasury prices."
+    },
+    {
+     "ticker": "IEF",
+     "direction": "up_on_yes",
+     "confidence": 0.6,
+     "mechanism": "A more dovish Fed outcome pulls intermediate Treasury yields down, raising 7-10 year Treasury prices."
+    },
+    {
+     "ticker": "TLT",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "mechanism": "A dovish surprise usually drags long yields lower too, though the long end reacts less reliably than the front end."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:704339",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "EPOL",
+     "direction": "up_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Polish equities carry the largest listed war-risk discount next to Ukraine and re-rate on a ceasefire."
+    },
+    {
+     "ticker": "VGK",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "mechanism": "A ceasefire lowers European energy and security risk, supporting broad European equities."
+    },
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.4,
+     "mechanism": "A ceasefire raises the odds of eased sanctions on Russian barrels and removes attacks on energy infrastructure, weighing on crude."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1105752",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1819243",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:516846",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:567561",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1130012",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1500755",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "GLD",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "mechanism": "Shelton is a gold-standard advocate seen as a political pick, so her confirmation would raise Fed-credibility worries and support gold."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:984441",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.7,
+     "mechanism": "A US strike on Iran raises the risk to Gulf supply and Hormuz transit, adding a risk premium to crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Higher crude on Gulf supply risk lifts energy-sector earnings expectations."
+    },
+    {
+     "ticker": "XOP",
+     "direction": "up_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Oil producers are the most price-sensitive equities to a rising crude risk premium."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:947269",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:906976",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "SHY",
+     "direction": "down_on_yes",
+     "confidence": 0.7,
+     "mechanism": "A hike or a withheld cut raises front-end Treasury yields, lowering short-dated Treasury prices."
+    },
+    {
+     "ticker": "IEF",
+     "direction": "down_on_yes",
+     "confidence": 0.6,
+     "mechanism": "A more hawkish Fed outcome pushes intermediate Treasury yields up, lowering 7-10 year Treasury prices."
+    },
+    {
+     "ticker": "UUP",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Higher US policy rates than expected widen rate differentials in favour of the dollar."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:546262",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:569437",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:516926",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "MSTR",
+     "direction": "down_on_yes",
+     "confidence": 0.55,
+     "mechanism": "A sale would break the never-sell treasury thesis and signal balance-sheet stress, hitting the stock's premium."
+    },
+    {
+     "ticker": "IBIT",
+     "direction": "down_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Selling by the largest corporate holder adds supply and signals stress, and the odds themselves rise when Bitcoin is falling."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1003798",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1611267",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Seizure of Iran's main export terminal is a major escalation that invites retaliation on Gulf energy infrastructure."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "mechanism": "Higher crude on escalation around Kharg lifts energy-sector earnings expectations."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:537892",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:948045",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:546255",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:948046",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:571190",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:571195",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:567687",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "EPOL",
+     "direction": "up_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Polish equities carry the largest listed war-risk discount next to Ukraine and re-rate on a ceasefire."
+    },
+    {
+     "ticker": "VGK",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "mechanism": "A ceasefire lowers European energy and security risk, supporting broad European equities."
+    },
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.4,
+     "mechanism": "A ceasefire raises the odds of eased sanctions on Russian barrels and removes attacks on energy infrastructure, weighing on crude."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:2155052",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.65,
+     "mechanism": "A permanent US-Iran peace deal removes the Gulf supply-risk premium from crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Lower crude from a fading Gulf risk premium cuts energy-sector earnings expectations."
+    },
+    {
+     "ticker": "XOP",
+     "direction": "down_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Oil producers are the most price-sensitive equities to a falling crude risk premium."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:635246",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:546259",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1708086",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Seizure of Iran's main export terminal is a major escalation that invites retaliation on Gulf energy infrastructure."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "mechanism": "Higher crude on escalation around Kharg lifts energy-sector earnings expectations."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:541625",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:571213",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:706279",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "FXI",
+     "direction": "up_on_yes",
+     "confidence": 0.3,
+     "mechanism": "A presidential visit to Beijing signals the US-China trade truce holding, supporting Chinese large caps."
+    },
+    {
+     "ticker": "KWEB",
+     "direction": "up_on_yes",
+     "confidence": 0.3,
+     "mechanism": "US-listed Chinese internet names are the highest-beta expression of improving US-China relations."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:2099582",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:520630",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "EWT",
+     "direction": "down_on_yes",
+     "confidence": 0.85,
+     "mechanism": "An invasion would directly devastate Taiwanese equities."
+    },
+    {
+     "ticker": "TSM",
+     "direction": "down_on_yes",
+     "confidence": 0.85,
+     "mechanism": "TSMC's fabs and revenue sit in Taiwan, so an invasion threatens the business itself."
+    },
+    {
+     "ticker": "SMH",
+     "direction": "down_on_yes",
+     "confidence": 0.7,
+     "mechanism": "The semiconductor supply chain depends on Taiwanese foundry capacity, and TSMC is a top holding."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1455604",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:2354976",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.75,
+     "mechanism": "Normal Hormuz traffic removes the Gulf supply-risk premium from crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.55,
+     "mechanism": "Lower crude from a fading Gulf risk premium cuts energy-sector earnings expectations."
+    },
+    {
+     "ticker": "XOP",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Oil producers are the most price-sensitive equities to a falling crude risk premium."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:516824",
+   "family": "spot_proxy",
+   "links": [
+    {
+     "ticker": "TSLA",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "mechanism": "The question is a function of Tesla's own market value, so YES can only become more likely as the share price rises."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:540819",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:623602",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:520930",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "GLD",
+     "direction": "up_on_yes",
+     "confidence": 0.55,
+     "mechanism": "Powell forced out early would be read as a loss of Fed independence, lifting the debasement bid in gold."
+    },
+    {
+     "ticker": "UUP",
+     "direction": "down_on_yes",
+     "confidence": 0.55,
+     "mechanism": "A politically removed Fed chair undermines confidence in US monetary policy and weakens the dollar."
+    },
+    {
+     "ticker": "TLT",
+     "direction": "down_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Loss of Fed independence raises inflation risk premium at the long end, pushing long yields up."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:631220",
+   "family": "spot_proxy",
+   "links": [
+    {
+     "ticker": "TSLA",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "mechanism": "The question is a function of Tesla's own market value, so YES can only become more likely as the share price rises."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:541627",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:2034723",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:587981",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1126504",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:1500770",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:555827",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:604490",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "FXI",
+     "direction": "up_on_yes",
+     "confidence": 0.3,
+     "mechanism": "A presidential visit to Beijing signals the US-China trade truce holding, supporting Chinese large caps."
+    },
+    {
+     "ticker": "KWEB",
+     "direction": "up_on_yes",
+     "confidence": 0.3,
+     "mechanism": "US-listed Chinese internet names are the highest-beta expression of improving US-China relations."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:623604",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "JETS",
+     "direction": "down_on_yes",
+     "confidence": 0.4,
+     "mechanism": "A longer shutdown extends FAA-ordered flight cuts and air-traffic staffing problems that hit airline revenue."
+    },
+    {
+     "ticker": "SPY",
+     "direction": "down_on_yes",
+     "confidence": 0.3,
+     "mechanism": "A prolonged shutdown drags on growth and delays data, a modest market-wide negative."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1632763",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:1439560",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "EPOL",
+     "direction": "up_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Polish equities carry the largest listed war-risk discount next to Ukraine and re-rate on a ceasefire."
+    },
+    {
+     "ticker": "VGK",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "mechanism": "A ceasefire lowers European energy and security risk, supporting broad European equities."
+    },
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.4,
+     "mechanism": "A ceasefire raises the odds of eased sanctions on Russian barrels and removes attacks on energy infrastructure, weighing on crude."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1972137",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.6,
+     "mechanism": "Lifting the US blockade of Hormuz removes the Gulf supply-risk premium from crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Lower crude from a fading Gulf risk premium cuts energy-sector earnings expectations."
+    },
+    {
+     "ticker": "XOP",
+     "direction": "down_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Oil producers are the most price-sensitive equities to a falling crude risk premium."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:2099587",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1559394",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "DJT",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Trump Media's value is tied to Trump holding office and to his personal platform, so his exit removes the premium."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:2099595",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:621018",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "mechanism": "US military action against Venezuela puts its crude exports at risk in the near term, adding a small risk premium."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:569428",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:601577",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:541615",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:616902",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "SHY",
+     "direction": "down_on_yes",
+     "confidence": 0.7,
+     "mechanism": "A hike or a withheld cut raises front-end Treasury yields, lowering short-dated Treasury prices."
+    },
+    {
+     "ticker": "IEF",
+     "direction": "down_on_yes",
+     "confidence": 0.55,
+     "mechanism": "A more hawkish Fed outcome pushes intermediate Treasury yields up, lowering 7-10 year Treasury prices."
+    },
+    {
+     "ticker": "UUP",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Higher US policy rates than expected widen rate differentials in favour of the dollar."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:631279",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:516969",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "MSFT",
+     "direction": "up_on_yes",
+     "confidence": 0.3,
+     "mechanism": "A top-ranked in-house model would show Microsoft can lead in AI without relying on OpenAI, a modest positive for the stock."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1198709",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:582313",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:569438",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:692258",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "MSTR",
+     "direction": "down_on_yes",
+     "confidence": 0.55,
+     "mechanism": "A sale would break the never-sell treasury thesis and signal balance-sheet stress, hitting the stock's premium."
+    },
+    {
+     "ticker": "IBIT",
+     "direction": "down_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Selling by the largest corporate holder adds supply and signals stress, and the odds themselves rise when Bitcoin is falling."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:956450",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "CVX",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "An invasion implies regime change, and Chevron is the US major positioned to expand in a reopened Venezuelan oil sector."
+    },
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.3,
+     "mechanism": "An invasion puts Venezuelan crude exports at risk in the near term, adding a small risk premium."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:661699",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Khamenei leaving by that date would most likely come through strikes or violent upheaval, raising Gulf supply risk."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:555821",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1467765",
+   "family": "spot_proxy",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.9,
+     "mechanism": "The fund holds front-month WTI futures, the contract the question is written on."
+    },
+    {
+     "ticker": "XOP",
+     "direction": "up_on_yes",
+     "confidence": 0.7,
+     "mechanism": "Oil producers' equity value rises directly with the crude price."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "confidence": 0.65,
+     "mechanism": "Energy-sector earnings rise with the crude price."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:694936",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:690645",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:668101",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:629035",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1611527",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "FXI",
+     "direction": "up_on_yes",
+     "confidence": 0.3,
+     "mechanism": "A presidential visit to Beijing signals the US-China trade truce holding, supporting Chinese large caps."
+    },
+    {
+     "ticker": "KWEB",
+     "direction": "up_on_yes",
+     "confidence": 0.3,
+     "mechanism": "US-listed Chinese internet names are the highest-beta expression of improving US-China relations."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:635230",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:551137",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:556074",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:801288",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:635229",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:948042",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:923041",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:555826",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:541622",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:569366",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:541626",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:679035",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:1090199",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:1501211",
+   "family": "none",
+   "links": []
+  }
+ ]
+}

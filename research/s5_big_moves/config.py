@@ -44,6 +44,7 @@ OOS_FRACTION = 0.20
 DAYS_PER_YEAR = 252
 N_BOOT, BOOT_SEED = 2000, 0
 P1_MIN_T = 2.0
+KNOWLEDGE_CUTOFF_DAY = "2026-07-01"     # sessions from this day are after the labelling models' knowledge (amendment 1)
 
 
 @dataclass(frozen=True)
