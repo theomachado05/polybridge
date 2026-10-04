@@ -57,9 +57,19 @@ def select(df: pd.DataFrame, v: cfg.Variant) -> pd.DataFrame:
     return df[ok].sort_values(["weekend", "w", "market"], ascending=[True, False, True]).groupby("weekend", sort=True).head(cfg.MAX_POSITIONS)
 
 
-def pull() -> None:
+def _cached(mid: str) -> bool:
+    try:
+        np.load(CACHE / f"pm_{mid}.npz")["t"]
+        return True
+    except Exception:  # noqa: BLE001  (missing, or cut short by an interrupted pull)
+        return False
+
+
+def pull(workers: int = 6, rps: float = 5.0, resume: bool = False) -> None:
+    """`--gentle` (one worker, 2 requests a second, skipping markets already on disk) exists because the first pull,
+    run while other sessions were pulling too, coincided with DNS failures in the live recorder (RUN_LOG.md)."""
     CACHE.mkdir(parents=True, exist_ok=True)
-    cal, pt, t0 = calendar(), ds.Throttle(5.0), time.time()
+    cal, pt, t0 = calendar(), ds.Throttle(rps), time.time()
     lo = np.array([w["start"] - 3600 for w in cal])
     hi = np.array([w["exit"] + 1800 for w in cal])
     first, fails = datetime.fromtimestamp(lo.min(), UTC), []
@@ -77,12 +87,17 @@ def pull() -> None:
             fails.append({"market": m["id"], "error": repr(e)[:200]})
             return 0
 
-    ms = universe()["markets"]
-    with ThreadPoolExecutor(max_workers=6) as ex:
-        pts = list(ex.map(job, ms))
-    (CACHE / "pull_meta.json").write_text(json.dumps({"t1": datetime.now(UTC).isoformat(), "markets": len(ms), "with_data": sum(1 for p in pts if p),
-                                                      "points_kept": int(sum(pts)), "failures": fails, "seconds": round(time.time() - t0, 1)}, indent=1))
-    print(f"{time.time() - t0:.0f}s: {len(ms)} markets, {sum(1 for p in pts if p)} with weekend prices, {sum(pts):,} points kept, {len(fails)} failures")
+    every = universe()["markets"]
+    ms = [m for m in every if not (resume and _cached(m["id"]))]
+    with ThreadPoolExecutor(max_workers=workers) as ex:
+        list(ex.map(job, ms))
+    kept = [int(len(np.load(CACHE / f"pm_{m['id']}.npz")["t"])) if _cached(m["id"]) else -1 for m in every]
+    (CACHE / "pull_meta.json").write_text(json.dumps({"t1": datetime.now(UTC).isoformat(), "markets": len(every), "pulled_this_pass": len(ms),
+                                                      "on_disk": sum(1 for k in kept if k >= 0), "with_data": sum(1 for k in kept if k > 0),
+                                                      "points_kept": int(sum(k for k in kept if k > 0)), "failures": fails,
+                                                      "seconds": round(time.time() - t0, 1)}, indent=1))
+    print(f"{time.time() - t0:.0f}s: pulled {len(ms)} this pass; {sum(1 for k in kept if k >= 0)} of {len(every)} markets on disk, "
+          f"{sum(1 for k in kept if k > 0)} with weekend prices, {len(fails)} failures")
 
 
 def build() -> tuple[pd.DataFrame, dict]:
@@ -167,7 +182,7 @@ def load_prints(need: dict[str, list[float]], cond: dict[str, str]) -> dict[str,
 
 def main() -> int:
     if "--pull" in sys.argv:
-        pull()
+        pull(1, 2.0, True) if "--gentle" in sys.argv else pull()
         return 0
     t_run = time.time()
     RESULTS.mkdir(parents=True, exist_ok=True)
