@@ -22,6 +22,7 @@
 - `866d512`, 2026-10-04 00:41:12 NY: run.py, 23 unit tests on synthetic rows (all pass, exit code 0) and amendment A1 (the benchmark row), committed and pushed, still before any row of the input file was read. The runner was smoke-tested on random synthetic rows in the scratchpad first; that is where a chart-label fault (dollar signs read as maths) was found and fixed before this commit.
 - 00:41:16 NY: the run, one invocation at commit `866d512`, lines above. Not rerun.
 - 00:42 to 00:46 NY: looks after the run. First an inline script, then the same looks saved as `post_run.py` and rerun to write `post_run.csv`. The independent recomputation in plain pandas matched the runner: 74 fills, 27 dates, 46 markets, +24.51 points, offer 15 at -6.24, bid 59 at +32.33, $623.97 on $1,036.54. Three fills were checked by hand against the raw rows. Tests rerun: 23 pass, exit code 0.
+- `d2769b0`, 2026-10-04 00:46:07 NY: the results (metrics.csv, trades.csv, trades_variants.csv, daily.csv, post_run.csv, the two charts, capacity.md, this log) and post_run.py, committed and pushed to `origin r/weekend-options`.
 
 ## What went wrong
 
