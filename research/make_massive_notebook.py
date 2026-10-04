@@ -144,7 +144,9 @@ else:
 
 R_PASS = r"""
 **Reading, in-sample 2024–2025 (the committed run; a judge's window prints its own numbers above).** Both hypotheses are
-**NULL**. No headline interval excludes zero: H1's protective-put edge is +0.07% of the stock price at 21 sessions
+**NULL** in-sample, while on a fresh year no study had touched (2022, section 9) H1 met both pass conditions at 21 sessions,
++4.30% of the stock price over ordinary days [+0.54, +7.93] on 12 events, but not at 42 sessions or expiry. In-sample no
+headline interval excludes zero: H1's protective-put edge is +0.07% of the stock price at 21 sessions
 [−2.70, +2.91], +0.49% at 42 and +3.33% at expiry; H2's cash-secured-put edge is +0.09% [−0.68, +0.89], +0.21% and +0.92%.
 *R* did move the predicted way at all three headline horizons for H1 and at 21 and 42 for H2, so the direction of each
 mechanism shows up, but not its size. **What the nulls bound:** the chain did not under-price post-headline protection by
@@ -183,11 +185,49 @@ under-priced the first week. Our forecast had "no pass" and the H2 count right, 
 widths and all three signs it could score.
 """
 
+
+FRESH_MD = r"""
+## 9 · A fresh year: 2022, run once (S27)
+
+Pre-registered in `s27_liquid_8k/METHOD.md` (commit `41a04a6`) before any 2022 event or option price was pulled, and run once.
+The frozen pipeline (same tags, timing and pass rule) on a year no study had used. The registered primary, a cut to the most
+liquid option names, left 3 H1 and 1 H2 events (INSUFFICIENT); this section shows the full-year replication, which was
+registered as its secondary analysis. The decomposition at the end splits the protective put into its stock and its put.
+"""
+
+FRESH = r'''
+fresh = run_family_study(client, cal, cfg, "2022-01-01", "2022-12-31", pd.Timestamp("2026-10-02"), user_agent=None, max_workers=MAX_WORKERS)
+for fam in FAMILIES:
+    chk = fresh["checks"].get(fam)
+    r_e, r_p = of_family(fresh["results"], fam), of_family(fresh["placebo_results"], fam)
+    print(f"\n[{fam}] 2022 verdict: {verdict(chk)}; pass conditions met at: {sorted(set(chk['horizons_pnl_ok']) & set(chk['horizons_ratio_ok']), key=str) if chk else []}")
+    if len(r_e) and len(r_p):
+        show(difference_board(r_e, r_p, cfg, level=cfg.confirmatory_level, strategies=[chk["strategy"]]),
+             f"[{fam}] {chk['strategy']}: events minus ordinary days at every fixed horizon, 2022 (97.5% CI)")
+h1 = lambda d: d[(d.family == "hedge") & (d.bucket == cfg.baseline_bucket) & (d.entry == "post") & (d.otm == cfg.otm_pct) & (d.horizon == 21)]
+ev, pl = h1(fresh["results"]), h1(fresh["placebo_results"])
+show(pd.DataFrame({"filings": [ev.realized.mean(), (ev.realized < 0).mean(), (ev.protective_put - ev.stock).mean(), ev.protective_put.mean()],
+                   "ordinary days": [pl.realized.mean(), (pl.realized < 0).mean(), (pl.protective_put - pl.stock).mean(), pl.protective_put.mean()]},
+                  index=["stock return, 21 sessions", "share of stocks that fell", "put leg alone", "protective put"]).round(4),
+     "H1 in 2022, decomposed: where the protective put's gain came from")
+'''
+
+R_FRESH = r"""
+**Reading.** On a fresh year, H1 met both pass conditions at 21 sessions: +4.30% over ordinary days [+0.54, +7.93] on 12
+events, Sharpe 2.57 against −0.04 for the same put on ordinary days. It did not at 42 sessions or expiry, so the verdict is
+NULL. The decomposition shows the gain is not H1's mechanism: after the bad news the stocks rose 6.1% in 21 sessions (only a
+quarter fell) against 0.6% on ordinary days, while the put alone lost 1.8%. In a falling market the headline was oversold
+and the put dear; the protective put earned through the stock it owns. That is a lead for a test of post-filing rebounds in
+stress regimes. H2 in 2022 is NULL: +0.48% at 21 sessions [−1.72, +2.22].
+"""
+
 CONCLUSION = r"""
 ## What this says about the thesis
 
-**The ruler held.** After slow-burning bad news and after restructurings, the option chain at the 100 largest US stocks
-priced the move about right: within roughly 3% of the stock price for post-headline protection and 0.9% for restructuring
+**The ruler held, and one fresh year shows where it slips.** On 2022, run once, H1 beat ordinary days by +4.30% at
+21 sessions [+0.54, +7.93], meeting both pass conditions at that horizon, though the gain came from stocks rebounding after
+the news rather than from cheap puts (section 9). Otherwise the option chain at the 100 largest US stocks priced the move
+about right: within roughly 3% of the stock price for post-headline protection and 0.9% for restructuring
 puts over 2024–2025, and too few or too noisy events since. The mechanisms left traces in the right direction (H1's decay
 shape, H2's stable sensitivity sign), but not edges a desk could trade after costs and at this capacity.
 
@@ -275,6 +315,7 @@ new = [md(INTRO), code(CONFIG), reuse(2),
        reuse(9), md(R_COST),
        md("## 8 · Out-of-sample, 2026-01-01 to 2026-08-31\n\nThe frozen pipeline, exits pinned to 2 October 2026 as in the single committed run (`results/oos/`)."),
        code(OOS), md(R_OOS),
+       md(FRESH_MD), code(FRESH), md(R_FRESH),
        md(HOLDOUT_MD), code(HOLDOUT),
        md(CONCLUSION), reuse(14)]
 
