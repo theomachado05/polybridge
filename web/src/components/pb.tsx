@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 import { sparkPath } from "@/lib/fmt";
 
-export function Orb({ state, size, ink = "#0F1626", style }: { state: string; size: number; ink?: string; style?: CSSProperties }) {
+export function Orb({ state, size, ink = "#14182B", style }: { state: string; size: number; ink?: string; style?: CSSProperties }) {
   return <thinking-orb state={state} size={String(size)} ink={ink} style={{ display: "inline-block", width: size, height: size, ...style }} />;
 }
 
@@ -15,13 +15,16 @@ export function Label({ children, style, rule, color }: { children: ReactNode; s
 }
 
 type BtnKind = "primary" | "secondary" | "disabled";
-export function Btn({ children, kind = "primary", onClick, href, style, title }: {
-  children: ReactNode; kind?: BtnKind; onClick?: () => void; href?: string; style?: CSSProperties; arrow?: boolean; title?: string;
+export type BtnVariant = "primary" | "secondary" | "ghost";
+export type BtnSize = "md" | "sm";
+export function Btn({ children, kind = "primary", variant, size = "md", onClick, href, style, title }: {
+  children: ReactNode; kind?: BtnKind; variant?: BtnVariant; size?: BtnSize; onClick?: () => void; href?: string; style?: CSSProperties; arrow?: boolean; title?: string;
 }) {
-  const cls = `pb-btn pb-btn-${kind}`;
-  const inner = children;
-  if (href && kind !== "disabled") return <Link href={href} className={cls} style={style} onClick={onClick} title={title}>{inner}</Link>;
-  return <button type="button" className={cls} style={style} onClick={kind === "disabled" ? undefined : onClick} disabled={kind === "disabled"} title={title}>{inner}</button>;
+  const disabled = kind === "disabled";
+  const look = disabled ? "disabled" : variant ?? kind;
+  const cls = `pb-btn pb-btn-${look}${size === "sm" ? " pb-btn-sm" : ""}`;
+  if (href && !disabled) return <Link href={href} className={cls} style={style} onClick={onClick} title={title}>{children}</Link>;
+  return <button type="button" className={cls} style={style} onClick={disabled ? undefined : onClick} disabled={disabled} title={title}>{children}</button>;
 }
 
 export function Chip({ on, children, onClick, small }: { on: boolean; children: ReactNode; onClick: () => void; small?: boolean }) {
@@ -31,7 +34,7 @@ export function Chip({ on, children, onClick, small }: { on: boolean; children: 
 export function ChipGroup<T extends string>({ label, options, value, onChange }: { label: string; options: readonly T[]; value: T; onChange: (v: T) => void }) {
   return (
     <div>
-      <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 500 }}>{label}</div>
+      <div className="pb-label">{label}</div>
       <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
         {options.map((o) => <Chip key={o} on={o === value} onClick={() => onChange(o)}>{o}</Chip>)}
       </div>
@@ -48,24 +51,23 @@ export function LogoTile({ logo }: { logo: string }) {
 }
 
 export type TagTone = "demo" | "replay" | "live" | "sim" | "paper" | "ai" | "measured" | "caution" | "neutral";
-const TAG: Record<TagTone, { bg: string; fg: string }> = {
-  demo: { bg: "#FBF0D4", fg: "#7A5000" },
-  replay: { bg: "#E9EEF9", fg: "#1F3F99" },
-  live: { bg: "#E2F3EA", fg: "#11673F" },
-  sim: { bg: "#ECEDF0", fg: "#3C4458" },
-  paper: { bg: "#E9EEF9", fg: "#2B57D6" },
-  ai: { bg: "#ECEDF0", fg: "#3C4458" },
-  measured: { bg: "#E2F3EA", fg: "#11673F" },
-  caution: { bg: "#FCE9D9", fg: "#8A4200" },
-  neutral: { bg: "#ECEDF0", fg: "#5A627A" },
+const TAG: Record<TagTone, "up" | "down" | "warn" | "neutral"> = {
+  demo: "warn",
+  replay: "neutral",
+  live: "up",
+  sim: "neutral",
+  paper: "neutral",
+  ai: "neutral",
+  measured: "up",
+  caution: "warn",
+  neutral: "neutral",
 };
 export function Tag({ tone, children, title }: { tone: TagTone; children: ReactNode; title?: string }) {
-  const t = TAG[tone];
-  return <span className="pb-tag" style={{ background: t.bg, color: t.fg }} title={title}>{children}</span>;
+  return <span className={`pb-tag pb-tag-${TAG[tone]}`} title={title}>{children}</span>;
 }
 export function Unavailable({ what, error, onRetry, style, compact }: { what: string; error?: string | null; onRetry?: () => void; style?: CSSProperties; compact?: boolean }) {
   return (
-    <div role="alert" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", fontSize: compact ? 12 : 13, color: "#8A5A00", lineHeight: 1.45, ...style }}>
+    <div role="alert" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", fontSize: compact ? 12 : 13, color: "var(--warn)", lineHeight: 1.45, ...style }}>
       <span className="pb-pretty" style={{ minWidth: 0 }}>{what}: not available{error ? ` (${error})` : ""}.</span>
       {onRetry && <button type="button" className="pb-chip pb-chip-sm" data-on={false} onClick={onRetry}>Try again</button>}
     </div>
@@ -85,11 +87,11 @@ export function OrbDisc({ state, disc, orb }: { state: string; disc: number; orb
   return (
     <div style={{ position: "relative", width: disc, height: disc, display: "flex", alignItems: "center", justifyContent: "center", flex: "none" }}>
       <div style={{ position: "absolute", inset: 0, borderRadius: "50%", background: "var(--surface)", border: "1px solid var(--border)" }} />
-      <Orb state={state} size={orb} ink="#1E2A4A" style={{ position: "relative" }} />
+      <Orb state={state} size={orb} ink="#14182B" style={{ position: "relative" }} />
     </div>
   );
 }
 
-export const panel: CSSProperties = { padding: "22px 26px", minWidth: 0 };
+export const panel: CSSProperties = { padding: "24px", minWidth: 0 };
 export const upColor = (n: number) => (n >= 0 ? "#15804F" : "#C8323F");
 export const upColorBright = (n: number) => (n >= 0 ? "#22A06B" : "#E0485A");
