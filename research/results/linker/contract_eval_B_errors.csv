@@ -1,0 +1,12 @@
+id,question,field,parser,truth,parser_reasons
+1301694,Will Amazon (AMZN) close above $230 end of February?,date,2028-02-29,2026-02-27,
+1301868,Will NVIDIA (NVDA) close above $150 end of February?,date,2028-02-29,2026-02-27,
+1301972,Will Opendoor (OPEN) close above $2.00 end of February?,date,2028-02-29,2026-02-27,
+1301566,Will Apple (AAPL) close above $230 end of February?,date,2028-02-29,2026-02-27,
+516874,"Will Ethereum hit $10,000 by December 31?",date,2024-12-31,2025-12-31,
+p059,Israel x Iran ceasefire broken by July 11?  || Israel x Iran ceasefire broken by July 31?,nested,False,True,descriptions differ
+p062,Israel x Iran ceasefire broken by August 31? || Israel x Iran ceasefire broken by September 30?,nested,False,True,descriptions differ
+p065,US x Venezuela military engagement by September 30? || US x Venezuela military engagement by October 24?,nested,False,True,descriptions differ
+p068,Israeli parliament dissolved by May 31? || Israeli parliament dissolved by June 30?,nested,False,True,descriptions differ
+p072,Israel x Iran ceasefire broken by September 30? || Israel x Iran ceasefire broken by October 31?,nested,False,True,descriptions differ
+p075,Will Monad perform an airdrop by September 30?  || Will Monad perform an airdrop by October 31? ,nested,False,True,descriptions differ
