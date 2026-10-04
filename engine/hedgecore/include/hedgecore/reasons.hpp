@@ -23,12 +23,14 @@ enum class Rc : std::uint16_t {
   OutOfSession = 0x0205,
   Cooldown = 0x0206,
   OutsideEventWindow = 0x0207,
+  NotNested = 0x0208,        // micro: the linker did not mark the ladder pair nested (false or missing)
   // 0x03 sizers
   Rebalance = 0x0301,   // hedge moved toward the sizer's target
   Entry = 0x0302,       // opportunity position opened
   Exit = 0x0303,        // opportunity position closed (converged / window closed / max hold)
   ZeroTarget = 0x0304,  // sizer target equals the current position
   Handoff = 0x0305,     // session open: the closed-session PM leg is unwound and the hedge handed to the equity
+  Proposal = 0x0306,    // micro: a sale proposed for a human, not sent (the mechanism is unvalidated)
   // 0x04 execution
   InsideBand = 0x0401,
   BelowFees = 0x0402,
@@ -37,6 +39,7 @@ enum class Rc : std::uint16_t {
   IcebergCapped = 0x0405,
   Passive = 0x0406,      // order emitted as a passive join
   Aggressive = 0x0407,   // order emitted crossing the spread because urgency is high
+  Working = 0x0408,      // micro: both legs of a pair are out; nothing new until each is filled or rejected
   // 0x05 risk
   PositionCapped = 0x0501,
   NotionalCapped = 0x0502,
@@ -44,6 +47,9 @@ enum class Rc : std::uint16_t {
   GapFlipKill = 0x0504,
   DailyLossCap = 0x0505,
   NotionalUnknown = 0x0506,
+  EventCapped = 0x0507,      // micro: the per-event (or per-underlying) contract cap is full
+  LegRisk = 0x0508,          // micro: one leg of a pair did not fill; the other is cancelled or unwound, entries stop
+  PositionUnknown = 0x0509,  // micro: a position input the caps need is missing
   // 0x06 tax
   WashSale = 0x0601,
   // 0x07 routing
@@ -70,11 +76,13 @@ constexpr const char* to_string(Rc r) noexcept {
     case Rc::OutOfSession: return "out_of_session";
     case Rc::Cooldown: return "cooldown";
     case Rc::OutsideEventWindow: return "outside_event_window";
+    case Rc::NotNested: return "not_nested";
     case Rc::Rebalance: return "rebalance";
     case Rc::Entry: return "entry";
     case Rc::Exit: return "exit";
     case Rc::ZeroTarget: return "zero_target";
     case Rc::Handoff: return "handoff";
+    case Rc::Proposal: return "proposal";
     case Rc::InsideBand: return "inside_band";
     case Rc::BelowFees: return "below_fees";
     case Rc::FeeUnknown: return "fee_unknown";
@@ -82,12 +90,16 @@ constexpr const char* to_string(Rc r) noexcept {
     case Rc::IcebergCapped: return "iceberg_capped";
     case Rc::Passive: return "passive";
     case Rc::Aggressive: return "aggressive";
+    case Rc::Working: return "working";
     case Rc::PositionCapped: return "position_capped";
     case Rc::NotionalCapped: return "notional_capped";
     case Rc::DrawdownKill: return "drawdown_kill";
     case Rc::GapFlipKill: return "gap_flip_kill";
     case Rc::DailyLossCap: return "daily_loss_cap";
     case Rc::NotionalUnknown: return "notional_unknown";
+    case Rc::EventCapped: return "event_capped";
+    case Rc::LegRisk: return "leg_risk";
+    case Rc::PositionUnknown: return "position_unknown";
     case Rc::WashSale: return "wash_sale";
     case Rc::RoutedPoly: return "routed_poly";
     case Rc::RoutedKalshi: return "routed_kalshi";
@@ -120,5 +132,10 @@ inline constexpr Rc kAllReasons[] = {
     Rc::BelowFees, Rc::FeeUnknown, Rc::Sliced, Rc::IcebergCapped, Rc::Passive, Rc::Aggressive, Rc::PositionCapped,
     Rc::NotionalCapped, Rc::DrawdownKill, Rc::GapFlipKill, Rc::DailyLossCap, Rc::NotionalUnknown, Rc::WashSale,
     Rc::RoutedPoly, Rc::RoutedKalshi, Rc::NoRoute};
+
+// Reasons only the micro families (ladder_pair, touch_ticket_reference) emit. Kept out of kAllReasons so the catalog's
+// pre-existing `reasons` table is unchanged; the catalog lists these under `micro_reasons`.
+inline constexpr Rc kMicroReasons[] = {Rc::NotNested, Rc::Proposal, Rc::Working, Rc::EventCapped, Rc::LegRisk,
+                                       Rc::PositionUnknown};
 
 }  // namespace hedgecore
