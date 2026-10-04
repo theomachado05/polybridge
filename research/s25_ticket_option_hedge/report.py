@@ -225,6 +225,12 @@ def main() -> int:
         f"per ticket and paid back {num(pR.mean_hedge_payoff_points)}: it {'added' if hedge_adds >= 0 else 'took'} {num(abs(hedge_adds))} points per ticket. "
         f"In-sample {stat(mr('rule', 'P', 'IS'))} on {int(mr('rule', 'P', 'IS').markets)} markets. Out-of-sample {pts(mr('rule', 'P', 'OOS').mean_pnl_points)} on "
         f"{int(mr('rule', 'P', 'OOS').markets)} markets, which is no evidence either way. At 2× costs {stat(p2R)}.", "",
+        f"*Looked at after the run, not a test:* {int(ar('L1', 'full', 'markets left out').markets)} hedges ({int(ar('L1', 'rule', 'markets left out').markets)} in "
+        f"the rule subset) were bought on opening quotes that had not been refreshed by 09:35, one of them at \"0 bid, 15.00 offered\". The registered rule buys "
+        f"them at the offer. Without them the rule subset reads {pts(ar('L1', 'rule', 'hedged, primary').mean_pnl_points)} "
+        f"{ci(ar('L1', 'rule', 'hedged, primary').ci_lo, ar('L1', 'rule', 'hedged, primary').ci_hi)} on {int(ar('L1', 'rule', 'hedged, primary').markets)} markets and "
+        f"the full set {pts(ar('L1', 'full', 'hedged, primary').mean_pnl_points)} "
+        f"{ci(ar('L1', 'full', 'hedged, primary').ci_lo, ar('L1', 'full', 'hedged, primary').ci_hi)}. No verdict changes.", "",
         f"**H2, the hedge cuts risk: {vw(h2)}.** (a) Standard deviation of P&L per market on the rule subset: hedged {num(h2a.hedged)} points against "
         f"unhedged {num(h2a.unhedged)}, a ratio of **{num(h2a.value)} {ci0(h2a.ci_lo, h2a.ci_hi)}**; it had to be below 1 with the interval below 1: "
         f"{verdict(h2a.passes)}. (b) Worst month of the book: hedged {money(h2b.hedged)} ({pc(h2b.hedged_pct_of_capital)} of its capital base) against unhedged "

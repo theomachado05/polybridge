@@ -7,6 +7,7 @@ Sun 2026-10-04. Branch `r/weekend-options`. Commit hashes and times read from `g
 | Time | Commit | What |
 |---|---|---|
 | 01:47:44 | `9519ff4` | S25 (ticket sold, option spread bought): pre-registration. METHOD.md, config.py, the pure functions, the pull and the tests, committed before any Mond |
+| 02:00:14 | `3bcc395` | S25 (ticket sold, option spread bought) result: no lead. 252 of 277 markets hedged at real Monday 09:35 option quotes (52 of the 60 in S21's rule subs |
 
 The commit that carries this file is not listed in it; it is recorded by the next commit.
 

@@ -14,6 +14,8 @@ Words used here. A *ticket* is one YES contract of a Polymarket "will the stock 
 
 **H1, the premium survives the hedge: not met.** On the rule subset (52 markets in 29 events) the hedged trade made **+5.62 points [-11.94, +20.85]** per ticket, an interval that includes zero. The same tickets unhedged made +21.29 points [+7.54, +33.86]. The hedge cost 46.44 points per ticket and paid back 30.77: it took 15.67 points per ticket. In-sample +5.60 points [-11.62, +20.46] on 50 markets. Out-of-sample +6.03 on 2 markets, which is no evidence either way. At 2× costs -5.30 points [-28.14, +12.68].
 
+*Looked at after the run, not a test:* 17 hedges (6 in the rule subset) were bought on opening quotes that had not been refreshed by 09:35, one of them at "0 bid, 15.00 offered". The registered rule buys them at the offer. Without them the rule subset reads +12.55 [-2.59, +26.34] on 46 markets and the full set -7.77 [-16.20, -0.08]. No verdict changes.
+
 **H2, the hedge cuts risk: not met.** (a) Standard deviation of P&L per market on the rule subset: hedged 50.90 points against unhedged 38.18, a ratio of **1.33 [0.88, 1.93]**; it had to be below 1 with the interval below 1: **not met**. (b) Worst month of the book: hedged -$234 (-20.5% of its capital base) against unhedged -$77 (-11.1%): **not met**; difference -$157, interval [-$702, -$33]. Worst single market: hedged -195.16 points against unhedged -64.93. Maximum drawdown: hedged 32.6% against 11.1%. Monthly Sharpe: hedged -0.29 against 2.19. Skew per market: hedged -0.84 against -0.60.
 
 **Why the hedge fails as specified.** Three things, all visible in the outcome table below.
