@@ -94,4 +94,12 @@ and the tests of section 3 are what this study can answer.
 
 ## Amendments
 
-None.
+**Amendment 1, 2026-10-04 03:37 UTC, after the first run and before computing what it adds: the mirror of K2.** K2
+picks the nights on Kalshi's own overnight move and found that Kalshi's quoted mid gives the move back while the
+Polymarket twin does not move. The symmetric question was not in the method and has not been computed: **K3.** Pick
+the nights on **Polymarket's** own overnight move instead (its history price at 09:29 minus the previous close, 5
+points or more; also 3 and 10), with Polymarket's 09:40 price between 5% and 95% and a valid Kalshi quote (6-hour
+rule) at 09:40 and at the close. Report the mean change from 09:40 to the close, signed by Polymarket's move, of
+Polymarket's price and of Kalshi's quoted mid, and the paired difference, date bootstrap. If each venue gives back
+only the moves measured on itself, the give-back is noise in that venue's price, not the event's odds overshooting.
+No trade is added.

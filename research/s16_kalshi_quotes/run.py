@@ -89,7 +89,8 @@ def build() -> tuple[pd.DataFrame, dict]:
                 "day": days[ok], "quote_age": tag, "ticker": m["ticker"], "question": m["question"], "fee_multiplier": float(m["kalshi_fee_multiplier"]),
                 "x": x[ok], "bid_in": q["in"][0][ok], "ask_in": q["in"][1][ok], "mid_in": mid["in"][ok], "bid_out": q["out"][0][ok],
                 "ask_out": q["out"][1][ok], "mid_out": mid["out"][ok], "y_kalshi": (np.sign(x) * 100.0 * (mid["out"] - mid["in"]))[ok],
-                "x_polymarket": (100.0 * (p_sig - p_prev))[ok], "y_polymarket": (np.sign(x) * 100.0 * (p_out - p_in))[ok]}))
+                "x_polymarket": (100.0 * (p_sig - p_prev))[ok], "y_polymarket": (np.sign(x) * 100.0 * (p_out - p_in))[ok],
+                "p_in": p_in[ok], "p_out": p_out[ok]}))
     df = pd.concat(frames, ignore_index=True)
     live_days = sorted(df[df.quote_age == "6h"].day.unique())
     n_oos = int(math.ceil(cfg.OOS_FRACTION * len(live_days)))
@@ -121,6 +122,18 @@ def tests(df: pd.DataFrame) -> list[dict]:
             m = boot_mean({g: list(v) for g, v in diff.groupby("day").d})
             rows.append({"test": "K2 Polymarket minus Kalshi, paired", "quote_age": tag, "threshold": thr, "n": len(both), "dates": int(both.day.nunique()),
                          "markets": int(both.ticker.nunique()), "mean": m[0], "ci_lo": m[1], "ci_hi": m[2]})
+    # K3 (amendment 1): the nights picked on Polymarket's own overnight move
+    d = df[(df.quote_age == "6h") & df.p_in.between(*cfg.ENTRY_BAND) & df.p_out.notna() & df.mid_out.notna() & df.x_polymarket.notna()]
+    for thr in cfg.TEST_THRESHOLDS:
+        s = d[d.x_polymarket.abs() >= thr]
+        sg = np.sign(s.x_polymarket)
+        s = s.assign(k3_pm=sg * 100.0 * (s.p_out - s.p_in), k3_k=sg * 100.0 * (s.mid_out - s.mid_in))
+        s = s.assign(k3_d=s.k3_pm - s.k3_k)
+        for name, col in (("K3 nights picked on Polymarket's move: Polymarket's history price", "k3_pm"),
+                          ("K3 nights picked on Polymarket's move: Kalshi's quoted mid", "k3_k"), ("K3 Polymarket minus Kalshi, paired", "k3_d")):
+            m = boot_mean({g: list(v) for g, v in s.groupby("day")[col]})
+            rows.append({"test": name, "quote_age": "6h", "threshold": thr, "n": len(s), "dates": int(s.day.nunique()),
+                         "markets": int(s.ticker.nunique()), "mean": m[0], "ci_lo": m[1], "ci_hi": m[2]})
     return rows
 
 
@@ -196,7 +209,7 @@ def main() -> int:
         "fee_multipliers": sorted({float(x) for x in df.fee_multiplier.unique()}), "run_seconds": round(time.time() - t_run, 1)}, indent=1))
     print(json.dumps(meta), "| dropped for want of an exit quote:", dropped)
     for r in tt:
-        print(f"{r['quote_age']:3} | {r['threshold']:4.0f}+ | {r['test'][:46]:46} | n {r['n']:4d} dates {r['dates']:3d} mkts {r['markets']:2d} | "
+        print(f"{r['quote_age']:3} | {r['threshold']:4.0f}+ | {r['test'][:70]:70} | n {r['n']:4d} dates {r['dates']:3d} mkts {r['markets']:2d} | "
               f"{r['mean']:6.2f} [{r['ci_lo']:6.2f},{r['ci_hi']:6.2f}]")
     print("seg var cost trades dates  net_pts [ci]             gross spread   fee   hit  sharpe  maxDD")
     for x in rows:
