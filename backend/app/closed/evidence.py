@@ -172,3 +172,378 @@ def hedge_evidence(doc: dict | None = None) -> dict:
     return {"hedge_a": {**(doc.get("hedge_a") or {}), "label": HEDGE_A_LABEL, "default": False},
             "hedge_b": {**(doc.get("hedge_b") or {}), "label": HEDGE_B_LABEL, "default": True},
             "opportunity": {**(doc.get("opportunity") or {}), "label": OPPORTUNITY_LABEL, "research_only": True}}
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Mechanism registry (note/NOTE.md is the source of truth; every number below is copied from the result file it names).
+#
+# One entry per mechanism PolyBridge reports on. The UI reads every status, label and number from here, never from
+# hard-coded text. A number is never shown without its range and its sample: each one carries ``ci_low``/``ci_high``
+# with ``range_kind`` saying what the range is (a 95% date-cluster interval, a percentile span, or "census": a count
+# with no sampling interval, low == high == value), ``sample`` (n and units) and ``result_file`` (repo-relative).
+# Two result files are not on main yet; those numbers also carry ``source_branch`` and ``source_commit`` so a reader can
+# still open them, and ``result_file_on_disk`` (computed when served) says whether this checkout has the file.
+# ----------------------------------------------------------------------------------------------------------------------
+
+REPO = Path(__file__).resolve().parents[3]
+
+CONFIRMED_FOUNDATION = "CONFIRMED_FOUNDATION"
+LEAD = "LEAD"
+OPEN_LEAD = "OPEN_LEAD"
+WATCH_ONLY = "WATCH_ONLY"
+NO_TESTED_MECHANISM = "NO_TESTED_MECHANISM"
+FAILED = "FAILED"
+# Available but its own test failed (the generic AI fit): distinct from FAILED, which is never offered (S25).
+# Named UNVALIDATED_AVAILABLE in Python because UNVALIDATED above is the closed-market gate's label.
+UNVALIDATED_AVAILABLE = "UNVALIDATED"
+STATUSES = (CONFIRMED_FOUNDATION, LEAD, OPEN_LEAD, WATCH_ONLY, NO_TESTED_MECHANISM, UNVALIDATED_AVAILABLE, FAILED)
+
+STATUS_LABELS = {
+    CONFIRMED_FOUNDATION: "Confirmed foundation (pre-registered, fresh data)",
+    LEAD: "Lead: not validated",
+    OPEN_LEAD: "Open lead: unvalidated",
+    WATCH_ONLY: "Watch only: never traded",
+    NO_TESTED_MECHANISM: "No tested mechanism",
+    UNVALIDATED_AVAILABLE: "Unvalidated: walk-forward test failed",
+    FAILED: "Failed its test",
+}
+
+# range kinds
+CI95_DATE = "95% interval, resolution-date cluster bootstrap"
+CI95_DATES = "95% interval over dates"
+CI95_EVENT = "95% interval, event bootstrap"
+CI90_DATE = "90% interval, date cluster bootstrap (equivalence margin +/-0.003)"
+CENSUS = "census count: no sampling interval (low = high = value)"
+PERCENTILES = "distribution: median to p99 of the logged decisions"
+NO_INTERVAL = "no interval reported in the result file (low = high = value); see note"
+
+FORWARD_START = "2026-10-05"
+
+FA = "research/results/fresh_accuracy/SUMMARY.md"
+FA_STATS = "research/results/fresh_accuracy/stats.json"
+LR = "research/results/ladder_replay/SUMMARY.md"
+LR_LIVE = "research/results/ladder_replay/live_totals.json"
+S11 = "research/results/s11_bundles/SUMMARY.md"
+S21 = "research/results/s21_options_anchor/SUMMARY.md"
+TF = "research/results/touch_fresh/SUMMARY.md"
+TF_COUNTS = "research/results/touch_fresh/counts.json"
+FIT = "research/results/fit_oos/SUMMARY.md"
+SCORECARD = "research/results/WEEKEND_SCORECARD.md"
+S25 = "research/results/s25_ticket_option_hedge/SUMMARY.md"
+S25_REF = {"source_branch": "r/weekend-options", "source_commit": "bd18b9f"}
+LATENCY = "research/results/live_books/LATENCY.md"
+LATENCY_REF = {"source_branch": "r/live-speed", "source_commit": "a6ba327"}
+
+
+def _n(label: str, value: float, lo: float, hi: float, range_kind: str, n: int, units: str, result_file: str, *,
+       confirmatory: bool, unit: str = "", also: tuple[tuple[int, str], ...] = (), note: str = "",
+       ref: dict | None = None) -> dict:
+    out = {"label": label, "value": value, "unit": unit, "ci_low": lo, "ci_high": hi, "range_kind": range_kind,
+           "sample": {"n": n, "units": units, "also": [{"n": a, "units": u} for a, u in also]},
+           "result_file": result_file, "confirmatory": confirmatory}
+    if note:
+        out["note"] = note
+    if ref:
+        out.update(ref)
+    return out
+
+
+def _census(label: str, value: float, n: int, units: str, result_file: str, *, confirmatory: bool, unit: str = "",
+            also: tuple[tuple[int, str], ...] = (), note: str = "", ref: dict | None = None) -> dict:
+    return _n(label, value, value, value, CENSUS, n, units, result_file, confirmatory=confirmatory, unit=unit,
+              also=also, note=note, ref=ref)
+
+
+PTS = "points per contract"
+
+MECHANISMS: tuple[dict, ...] = (
+    {
+        "id": "foundation",
+        "name": "Options are the more accurate price",
+        "status": CONFIRMED_FOUNDATION,
+        "claim": ("On 4,561 fresh Polymarket \"close above $K\" stock markets, pre-registered and run once, the "
+                  "option-implied probability was a more accurate forecast than the Polymarket price."),
+        "actions_allowed": {"mode": "reference_only", "trade": False, "proposals": False, "requires_approval": False,
+                            "requires_acknowledgement": False,
+                            "text": ("Reference only: it tells the two mechanisms which price to compare against. "
+                                     "An accuracy gap is not an executable edge, so nothing is traded on it.")},
+        "numbers": [
+            _n("Brier score difference, Polymarket minus options (positive = options better)", 0.0108, 0.0064, 0.0158,
+               CI95_DATE, 7111, "scored rows", FA_STATS, confirmatory=True,
+               also=((4561, "markets"), (89, "resolution dates (clusters)"))),
+            _n("Log score difference, Polymarket minus options (positive = options better)", 0.0318, 0.0170, 0.0471,
+               CI95_DATE, 7111, "scored rows", FA_STATS, confirmatory=True,
+               also=((4561, "markets"), (89, "resolution dates (clusters)"))),
+            _n("Kalshi S&P 500 / Nasdaq-100 minus options, Brier (deep books match options)", 0.0013, 0.0001, 0.0025,
+               CI90_DATE, 2609, "Kalshi rows", FA, confirmatory=True, also=((215, "dates"),),
+               note="H3 verdict EQUIVALENT within the pre-set +/-0.003 margin."),
+        ],
+        "caveats": [
+            "A statement about prices, not traders: the Polymarket series is per-minute and can be a stale last price.",
+            "The Polymarket price series is older than the option quote on average, and where it is freshest the gap "
+            "is not significant (note/NOTE.md section 2).",
+            "An accuracy gap is not an executable edge; the arb scan found 0 executable gaps (5 verified).",
+        ],
+        "forward_test": None,
+    },
+    {
+        "id": "ladders",
+        "name": "Date ladders that break their own logic",
+        "status": LEAD,
+        "claim": ("An earlier-date rung can never be worth more than the same contract for a later date; when it "
+                  "traded above and both legs printed, the pair paid, but the registered fresh test is NULL."),
+        "actions_allowed": {"mode": "proposals_with_approval", "trade": True, "proposals": True,
+                            "requires_approval": True, "requires_acknowledgement": False,
+                            "text": ("Proposals only, each needs approval. Only for a pair that shares the same event "
+                                     "definition and resolution source, with each rung's year re-derived.")},
+        "numbers": [
+            _n("Fresh ladders, rule as registered: net per trade", 2.47, -1.14, 6.26, CI95_DATES, 650, "trades", LR,
+               confirmatory=True, unit=PTS, also=((221, "dates"),),
+               note="Confirmatory verdict: NULL (74 losing trades, all from 3 ladders with the year read wrong)."),
+            _n("Fresh ladders, year parsed correctly: net per trade", 8.82, 6.73, 11.13, CI95_DATES, 562, "trades", LR,
+               confirmatory=False, unit=PTS, also=((211, "dates"),),
+               note="Post hoc: the year check was chosen after seeing the losers. 0 losing trades."),
+            _n("Same, from 22 July 2026: net per trade", 9.20, 4.86, 14.01, CI95_DATES, 102, "trades", LR,
+               confirmatory=False, unit=PTS, also=((41, "dates"),), note="Post hoc (year check)."),
+            _n("Seen data (S11), print-verified violations: net per trade at 1x costs", 3.89, 2.49, 5.43, CI95_DATES,
+               99, "trades", S11, confirmatory=False, unit=PTS, also=((71, "dates"),),
+               note="Seen data; 11 out-of-sample trades."),
+            _census("Live sweep of open date ladders: violations net of fees", 0, 34, "date ladders", LR_LIVE,
+                    confirmatory=False, unit="violations", also=((61, "adjacent pairs"),),
+                    note="One snapshot, 2026-10-04 01:57 ET; median pair 10.5 points from an arbitrage."),
+            _census("Fresh pairs sharing event definition and source (registered rule)", 680, 861, "fresh pairs", LR,
+                    confirmatory=True, unit="pairs nested"),
+        ],
+        "caveats": [
+            "The result that clears zero depends on a correction chosen after the run.",
+            "Most of the dollars come from 30 of 562 trades where the event fell between the two dates; without them "
+            "the mean is 3.4 points.",
+            "Fills are simulated from public prints, not our own orders; printed size bounds capacity.",
+            "No market risk if held to resolution, but settlement-rule risk and capital lock-up remain.",
+        ],
+        "forward_test": {"file": "research/ladder_replay/live.py", "starts": FORWARD_START,
+                         "method": "research/ladder_replay/METHOD.md"},
+        # The C++ family and preset that decide every ladder pair on the board (backend/app/contracts/engine.py).
+        # METHOD.md: quotes at most 60 s apart, edge after both taker fees and one tick PER LEG > 0. ladder_pair charges
+        # one tick in total plus min_edge, so min_edge 1 point stands in for the second 1-cent tick: preset #4 of the
+        # 18 (min_edge 1, max_age_s 60, cap 100; last parameter fastest) is the closest grid point.
+        "engine_preset": {"family": "ladder_pair", "index": 4,
+                          "params": {"min_edge": 1.0, "max_age_s": 60.0, "cap": 100.0},
+                          "why": ("METHOD.md: 60 s max age; one tick per leg plus both taker fees. ladder_pair counts "
+                                  "one tick, so min_edge 1 point stands in for the second tick; cap 100 is the "
+                                  "replay's contract cap.")},
+    },
+    {
+        "id": "touch",
+        "name": "\"Will it hit\" tickets above the options reference",
+        "status": OPEN_LEAD,
+        "claim": ("In past data, stock and S&P 500 touch tickets priced well above an options-derived reference lost "
+                  "money for their buyers; a fresh test could not confirm it."),
+        "actions_allowed": {"mode": "proposals_behind_acknowledgement", "trade": True, "proposals": True,
+                            "requires_approval": True, "requires_acknowledgement": True,
+                            "side": "sell_yes", "sell_threshold_points": 5.0,   # S21 book B0 = TOUCH_SELL_THRESHOLD_POINTS
+                            "hedge_offered": False,
+                            "text": ("Proposals only, behind the acknowledgement gate: unvalidated. No option-spread "
+                                     "hedge is offered (tested in S25, it raised risk).")},
+        # touch_ticket_reference's single preset: threshold 5 points = sell_threshold_points above (S21 book B0).
+        # validated is always False on the board, so the family can only propose.
+        "engine_preset": {"family": "touch_ticket_reference", "index": 0, "params": {"threshold": 5.0},
+                          "why": "threshold 5 points = S21 book B0; validated False (unvalidated): proposals only."},
+        "numbers": [
+            _n("Seen data (S21): YES buyers paying 10+ points above the central reference", -29.76, -40.10, -18.29,
+               CI95_EVENT, 53, "markets", S21, confirmatory=False, unit=PTS, also=((29, "events"),),
+               note="Exploratory: in-sample, only 2 markets out of sample."),
+            _n("Seen data (S21): sell YES 5+ points above the reference", 22.27, 10.35, 33.14, CI95_EVENT, 60,
+               "markets", S21, confirmatory=False, unit=PTS, also=((33, "events"),), note="Exploratory."),
+            _n("Seen data (S21): sold minus left", 19.19, 5.82, 31.45, CI95_EVENT, 60, "markets sold", S21,
+               confirmatory=False, unit=PTS, also=((217, "markets left"),), note="Exploratory."),
+            _census("Fresh test: eligible markets (needed 30 markets in 15 events)", 32, 32, "markets", TF,
+                    confirmatory=True, unit="markets", also=((4, "events"),),
+                    note="Confirmatory verdict: INSUFFICIENT; the test could not run."),
+            _n("Fresh secondary sample R: sell rule", -15.38, -48.82, 21.82, CI95_EVENT, 7, "markets", TF,
+               confirmatory=False, unit=PTS, also=((7, "events"),),
+               note="INSUFFICIENT by its own book minimum (10 markets in 5 events)."),
+            _n("Fresh secondary sample R: unfiltered seller book", -2.60, -18.95, 11.52, CI95_EVENT, 38, "markets", TF,
+               confirmatory=False, unit=PTS, also=((28, "events"),)),
+            _n("Fresh secondary sample R: unfiltered book, delta-hedged", 10.50, -0.10, 20.00, CI95_EVENT, 37,
+               "markets", TF, confirmatory=False, unit=PTS, also=((27, "events"),),
+               note="Much of the premium is compensation for market exposure."),
+        ],
+        "caveats": [
+            "The touch reference rests on modelling choices (barrier versus terminal probability; option expiry later "
+            "than the ticket window).",
+            "Fresh point estimates lean against the S21 result; the samples are too thin to decide.",
+            "Selling tickets carries tail risk when the level is hit; correlated tickets on one underlying lose together.",
+        ],
+        "forward_test": {"file": "research/touch_fresh/FORWARD.md", "starts": FORWARD_START,
+                         "code": "research/touch_fresh/forward.py"},
+    },
+    {
+        "id": "ticket_option_hedge",
+        "name": "Option-spread hedge for sold tickets (S25)",
+        "status": FAILED,
+        "claim": ("Buying the matching option spread against a sold touch ticket, at real Monday quotes, cost more "
+                  "than it paid back and raised the risk instead of cutting it."),
+        "actions_allowed": {"mode": "none", "trade": False, "proposals": False, "requires_approval": False,
+                            "requires_acknowledgement": False,
+                            "text": "Never offered: tested and it raised risk."},
+        "numbers": [
+            _n("Rule subset: SD of P&L per market, hedged / unhedged (H2 needed below 1)", 1.33, 0.88, 1.93,
+               "95% interval", 52, "markets", S25, confirmatory=True, unit="ratio", also=((29, "events"),),
+               note="Pre-registered H2: not met. Markets were S21's (seen); 2 of 52 out of sample.", ref=S25_REF),
+            _n("All hedged markets: SD of P&L per market, hedged / unhedged", 1.49, 1.33, 1.67, "95% interval", 252,
+               "markets", S25, confirmatory=True, unit="ratio", also=((57, "events"),), ref=S25_REF),
+            _n("All hedged markets: hedged P&L per ticket", -9.35, -18.36, -1.68, "95% interval", 252, "markets", S25,
+               confirmatory=True, unit="points per ticket", also=((57, "events"),),
+               note="Unhedged on the same markets: +5.50 [+1.45, +9.59].", ref=S25_REF),
+        ],
+        "caveats": [
+            "The spread pays when the stock finishes beyond the level; the ticket loses when it touches it.",
+            "S25 is not cited in note/NOTE.md; its result file is on branch r/weekend-options.",
+        ],
+        "forward_test": None,
+    },
+    {
+        "id": "btc_15min",
+        "name": "15-minute Bitcoin markets against spot",
+        "status": WATCH_ONLY,
+        "claim": "Watched only, never traded: the gap to spot closes too fast to act on.",
+        "actions_allowed": {"mode": "watch_only", "trade": False, "proposals": False, "requires_approval": False,
+                            "requires_acknowledgement": False, "text": "Watch only, never trade."},
+        "numbers": [],
+        "caveats": [
+            "No result file in research/results measures this gap, so no number is shown; the watch-only rule comes "
+            "from the product brief of 2026-10-04.",
+        ],
+        "forward_test": None,
+    },
+    {
+        "id": "generic_ai_fit",
+        "name": "Generic AI fit (preset selection and tuning)",
+        "status": UNVALIDATED_AVAILABLE,
+        "claim": ("The AI-chosen preset did not beat a static hedge out of sample: its walk-forward test failed."),
+        "actions_allowed": {"mode": "available_unvalidated", "trade": True, "proposals": True,
+                            "requires_approval": True, "requires_acknowledgement": True,
+                            "text": ("Available, labelled unvalidated: the walk-forward test failed, so every fit "
+                                     "needs the acknowledgement and an approval, whatever the market's own gap "
+                                     "evidence says; it is never auto-approved.")},
+        "numbers": [
+            _census("Test window: markets where the chosen preset beat a static hedge", 19, 122, "markets", FIT,
+                    confirmatory=True, unit="markets better",
+                    note="72 worse, 31 tied; one-sided sign p = 1.000. Pre-registered criterion: FAIL."),
+            _census("Test window: markets where the chosen preset did worse than a static hedge", 72, 122, "markets",
+                    FIT, confirmatory=True, unit="markets worse"),
+            _n("Test window: median vs_static of the chosen preset", -0.0040, -0.0040, -0.0040, NO_INTERVAL, 122,
+               "markets", FIT, confirmatory=True, note="One-sided Wilcoxon p = 1.000; train median was +0.0138."),
+        ],
+        "caveats": ["In-sample the same presets looked good (98 of 122 better on train): picked on the data they "
+                    "were scored on."],
+        "forward_test": None,
+    },
+    {
+        "id": "other",
+        "name": "Everything else",
+        "status": NO_TESTED_MECHANISM,
+        "claim": "No tested mechanism: about 40 pre-registered tests, none of the others passed its own rule.",
+        "actions_allowed": {"mode": "none", "trade": False, "proposals": False, "requires_approval": False,
+                            "requires_acknowledgement": False,
+                            "text": "No tested mechanism: no trade is proposed."},
+        "numbers": [],
+        "caveats": ["Full list of what failed: note/NOTE.md section 6 and research/results/WEEKEND_SCORECARD.md."],
+        "forward_test": None,
+    },
+)
+
+SYSTEM_NUMBERS: tuple[dict, ...] = (
+    _n("Receive to decision, live Polymarket feed (median; range to p99)", 39.0, 39.0, 3875.9, PERCENTILES, 58610,
+       "book-update decisions", LATENCY, confirmatory=False, unit="microseconds",
+       note="Network time excluded; weekend reference is Friday's close, so these are latency, not trades.",
+       ref=LATENCY_REF),
+    _n("C++ stale-quote detector call (isolated)", 158, 158, 158, NO_INTERVAL, 1, "isolated benchmark", LATENCY,
+       confirmatory=False, unit="nanoseconds per call", note="Includes the pybind11 call; Python twin 290 ns.",
+       ref=LATENCY_REF),
+)
+
+# engine/hedgecore/BENCH.md, "Micro families" section (run 2026-10-04 03:21 ET): on_tick per call in nanoseconds,
+# including its own latency stamp, on a synthetic deterministic tape (LCG seed 42, 1,000,000 ticks per family,
+# default preset). The engine strip shows these only with the sample and tape stated.
+MICRO_BENCH: tuple[dict, ...] = tuple(
+    {"family": fam, "mean_ns": mean, "step_mean_ns": step, "p50_ns": 42, "p99_ns": 42, "p999_ns": 84,
+     "sample": "1,000,000 ticks, one run, one thread", "tape": tape, "result_file": "engine/hedgecore/BENCH.md",
+     "note": "Synthetic tape, not recorded market data; on_tick only (no network, no Python bridge)."}
+    for fam, mean, step, tape in (
+        ("ladder_pair", 26.5, 5.5, "synthetic ladder tape (LCG seed 42): rich bid 0.50 + 0.08 z vs cheap ask 0.47, "
+                                   "fee rate 0.02, tick 0.01, quote age 0 to 89 s"),
+        ("touch_ticket_reference", 26.3, 3.5, "synthetic ticket tape (LCG seed 42): bid 0.30 + 0.10 z, central "
+                                              "reference 0.28, validated on every other tick")))
+
+# classifier contract types -> mechanism id (and whether that mechanism may trade). The brief acts on ladders, touch
+# tickets and (watch only) 15-minute Bitcoin markets; everything else, close-above tickets included, is "no tested
+# mechanism". A close-above row may still show the finish-beyond reference, labelled reference only (``REFERENCE_FOR``).
+CONTRACT_MECHANISM = {
+    "ladder_rung": "ladders",
+    "touch_ticket": "touch",
+    "close_above_ticket": "other",
+    "btc_15min": "btc_15min",
+    "btc_15m_watch": "btc_15min",   # the classifier's ``mechanism`` for a 15-minute Bitcoin market (type "other")
+    "other": "other",
+}
+# contract types whose rows may carry the options reference for information, and the entry that explains it
+REFERENCE_FOR = {"close_above_ticket": "foundation"}
+# S21 book B0 / research/touch_fresh/FORWARD.md THRESHOLD: sell YES only when the traded bid is this many points above
+# the central (touch) reference. Below it a proposal is outside the tested mechanism.
+TOUCH_SELL_THRESHOLD_POINTS = 5.0
+
+
+def contract_key(res: dict | None) -> str:
+    """The registry key for a classifier result: its ``mechanism`` when that is the BTC watch, else its ``type``."""
+    res = res or {}
+    if res.get("mechanism") == "btc_15m_watch":
+        return "btc_15min"
+    return str(res.get("type") or "other")
+
+
+def _with_disk(n: dict) -> dict:
+    return {**n, "result_file_on_disk": (REPO / n["result_file"]).is_file()}
+
+
+def _served(m: dict) -> dict:
+    return {**m, "status_label": STATUS_LABELS[m["status"]], "numbers": [_with_disk(n) for n in m["numbers"]],
+            "caveats": list(m["caveats"])}
+
+
+def mechanisms() -> list[dict]:
+    """Every mechanism entry, as served to the UI."""
+    return [_served(m) for m in MECHANISMS]
+
+
+def mechanism(mechanism_id: str) -> dict | None:
+    for m in MECHANISMS:
+        if m["id"] == mechanism_id:
+            return _served(m)
+    return None
+
+
+def mechanism_for(contract_type: str | None) -> dict:
+    """The mechanism behind a classified contract (ladder_rung, touch_ticket, close_above_ticket, other) or the
+    classifier's ``btc_15m_watch`` mechanism.
+
+    Unknown types and close-above tickets are "other": no tested mechanism (``trade_mechanism`` False)."""
+    mid = CONTRACT_MECHANISM.get((contract_type or "other").strip().lower(), "other")
+    m = mechanism(mid)
+    assert m is not None
+    return {**m, "contract_type": contract_type or "other",
+            "trade_mechanism": bool(m["actions_allowed"]["trade"]) and m["status"] != FAILED}
+
+
+def system_numbers() -> list[dict]:
+    return [_with_disk(n) for n in SYSTEM_NUMBERS]
+
+
+def registry() -> dict:
+    """GET /evidence/mechanisms: the full registry, source of every label and number the UI shows."""
+    return {"source_of_truth": "note/NOTE.md", "statuses": dict(STATUS_LABELS), "mechanisms": mechanisms(),
+            "system": system_numbers(), "contract_types": dict(CONTRACT_MECHANISM),
+            "reference_for": dict(REFERENCE_FOR), "touch_sell_threshold_points": TOUCH_SELL_THRESHOLD_POINTS,
+            "micro_bench": [dict(b) for b in MICRO_BENCH],
+            "forward_tests_start": FORWARD_START}

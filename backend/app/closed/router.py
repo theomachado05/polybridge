@@ -22,6 +22,7 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from .evidence import gate as evidence_gate
 from .evidence import hedge_evidence, market_evidence
 from .evidence import load as load_evidence
+from .evidence import registry as mechanism_registry
 from .gap import GapRates, expected_gap_for, load_rates
 from .session import check_supported, now_utc, session_at
 from .tracker import ClosureState, ClosureTracker, market_key, tracker_for
@@ -158,3 +159,11 @@ def get_evidence(market_source: str | None = None, market_id: str | None = None,
     if market_id or token_id:
         out["market"] = market_evidence(market_source, market_id, token_id, doc)
     return out
+
+
+@router.get("/evidence/mechanisms")
+def get_mechanisms() -> dict:
+    """The mechanism registry (backend/app/closed/evidence.py): one entry per mechanism with its status, allowed
+    actions, numbers (each with range, sample and result file), caveats and forward test. The UI reads every label
+    from here."""
+    return mechanism_registry()
