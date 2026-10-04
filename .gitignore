@@ -66,3 +66,8 @@ research/s9_weekend_price_markets/.cache/
 
 # forward_monday http and massive caches
 research/results/forward_monday/.cache/
+
+# LaTeX build files
+*.aux
+*.log
+*.out

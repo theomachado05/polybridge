@@ -70,12 +70,16 @@ public after the close, so the trade enters at the close of the next session.
 ## How to run (judges)
 
 1. Put `MASSIVE_API_KEY` in the environment or a `.env` file in this folder or a parent. Nothing else is needed.
-2. `pip install -r requirements.txt` from this folder (it installs `polybridge_research` in editable mode).
+2. `pip install -r requirements.txt` from this folder (it installs `polybridge_research` in editable mode). Opened outside
+   the repo (Colab, a copied `.ipynb`), the first code cell installs the package from GitHub instead.
 3. **Sealed window:** set `HOLDOUT_START`, `HOLDOUT_END` and `RUN_HOLDOUT = True` in the configuration cell, as in the
    starter, then run all cells. The last section runs the frozen pipeline on that window for both families and prints our
    committed forecast beside the verdict.
 
-From an empty cache a full run takes about 3 to 4 minutes; from a warm cache under a minute.
+Run-all does the in-sample study, the out-of-sample re-run (`RUN_OOS`), the 2022 fresh year (`RUN_FRESH_2022`) and, when
+flipped, the sealed window. From an empty cache expect roughly 10 to 20 minutes on a first run (tens of thousands of option
+bars are fetched and cached in `.massive_cache/`); from a warm cache about a minute. Set `RUN_OOS = RUN_FRESH_2022 = False`
+to run only the in-sample study and the sealed window.
 """
 
 CONFIG = r'''
@@ -85,6 +89,7 @@ OOS_START, OOS_END = "2026-01-01", "2026-08-31"          # out-of-sample, frozen
 HOLDOUT_START, HOLDOUT_END = "2023-06-01", "2023-08-31"  # sealed: judges change these and flip RUN_HOLDOUT
 RUN_HOLDOUT = False
 
+RUN_FRESH_2022 = True        # re-runs the 2022 fresh year (section 9), run once on 4 Oct 2026
 RUN_OOS = True               # re-runs the frozen out-of-sample window with exits pinned to the freeze date (reproduces results/oos)
 OOS_LAST_SESSION = "2026-10-02"   # the last session used for exits in the single out-of-sample run
 MAX_WORKERS = 8
@@ -98,6 +103,7 @@ import pandas as pd
 from polybridge_research.analysis import (decay_table, difference_board, pass_check, robustness_table, sample_placebo,
                                          scoreboard, verdict)
 from polybridge_research.atlas import count_variants
+from polybridge_research.book import book_table
 from polybridge_research.calendar import TradingCalendar
 from polybridge_research.config import StudyConfig
 from polybridge_research.costs import cost_table
@@ -137,6 +143,7 @@ if RUN_OOS:
             cmp_ = a.merge(b, on="horizon", how="left")
             cmp_["same_sign"] = np.sign(cmp_.edge_in_sample) == np.sign(cmp_.edge_oos)
             show(cmp_.set_index("horizon"), f"[{fam}] headline horizons: in-sample vs out-of-sample edge")
+    book_report(oos, 8 / 12, "Out-of-sample Jan-Aug 2026")
 else:
     print("Out-of-sample not run (RUN_OOS = False). The committed single run is in results/oos/SUMMARY.md.")
 '''
@@ -196,20 +203,24 @@ registered as its secondary analysis. The decomposition at the end splits the pr
 """
 
 FRESH = r'''
-fresh = run_family_study(client, cal, cfg, "2022-01-01", "2022-12-31", pd.Timestamp("2026-10-02"), user_agent=None, max_workers=MAX_WORKERS)
-for fam in FAMILIES:
+fresh = None if not RUN_FRESH_2022 else run_family_study(client, cal, cfg, "2022-01-01", "2022-12-31", pd.Timestamp("2026-10-02"), user_agent=None, max_workers=MAX_WORKERS)
+for fam in (FAMILIES if fresh is not None else []):
     chk = fresh["checks"].get(fam)
     r_e, r_p = of_family(fresh["results"], fam), of_family(fresh["placebo_results"], fam)
     print(f"\n[{fam}] 2022 verdict: {verdict(chk)}; pass conditions met at: {sorted(set(chk['horizons_pnl_ok']) & set(chk['horizons_ratio_ok']), key=str) if chk else []}")
     if len(r_e) and len(r_p):
         show(difference_board(r_e, r_p, cfg, level=cfg.confirmatory_level, strategies=[chk["strategy"]]),
              f"[{fam}] {chk['strategy']}: events minus ordinary days at every fixed horizon, 2022 (97.5% CI)")
+if fresh is None:
+    print("2022 fresh year not run (RUN_FRESH_2022 = False); the committed run is in results/s27_liquid_8k/.")
 h1 = lambda d: d[(d.family == "hedge") & (d.bucket == cfg.baseline_bucket) & (d.entry == "post") & (d.otm == cfg.otm_pct) & (d.horizon == 21)]
-ev, pl = h1(fresh["results"]), h1(fresh["placebo_results"])
-show(pd.DataFrame({"filings": [ev.realized.mean(), (ev.realized < 0).mean(), (ev.protective_put - ev.stock).mean(), ev.protective_put.mean()],
+if fresh is not None:
+  ev, pl = h1(fresh["results"]), h1(fresh["placebo_results"])
+  show(pd.DataFrame({"filings": [ev.realized.mean(), (ev.realized < 0).mean(), (ev.protective_put - ev.stock).mean(), ev.protective_put.mean()],
                    "ordinary days": [pl.realized.mean(), (pl.realized < 0).mean(), (pl.protective_put - pl.stock).mean(), pl.protective_put.mean()]},
                   index=["stock return, 21 sessions", "share of stocks that fell", "put leg alone", "protective put"]).round(4),
      "H1 in 2022, decomposed: where the protective put's gain came from")
+  book_report(fresh, 1.0, "Fresh year 2022")
 '''
 
 R_FRESH = r"""
@@ -295,15 +306,82 @@ if RUN_HOLDOUT:
         else:
             print(f"[{fam}] no priced events or no placebo in this window")
     show(pd.DataFrame(rows).set_index("family"), "Sealed window: verdict against our committed forecast")
+    book_report(holdout, months / 12, f"Sealed window {HOLDOUT_START} to {HOLDOUT_END}")
 else:
     print(f"Sealed window {HOLDOUT_START}..{HOLDOUT_END} not run. Judges: set RUN_HOLDOUT = True.")
 '''
 
-new = [md(INTRO), code(CONFIG), reuse(2),
+INSTALL = r"""
+# Inside the repo, `pip install -r requirements.txt` has already installed polybridge_research. Opened on its own
+# (Colab, a copied .ipynb), install it from the public repo. No other setup is needed beyond MASSIVE_API_KEY.
+try:
+    import polybridge_research  # noqa: F401
+except ImportError:
+    %pip install -q "git+https://github.com/theomachado05/polybridge.git#subdirectory=research"
+"""
+
+BOARD = r"""
+# Table 1 of the write-up: the registered strategy alone, events minus ordinary days at every fixed horizon.
+for fam in FAMILIES:
+    chk = study["checks"].get(fam)
+    r_e, r_p = of_family(study["results"], fam), of_family(study["placebo_results"], fam)
+    if chk is None or not len(r_e) or not len(r_p):
+        print(f"[{fam}] no events or no placebo in this window")
+        continue
+    show(difference_board(r_e, r_p, cfg, level=cfg.confirmatory_level, strategies=[chk["strategy"]]),
+         f"[{fam}] {chk['strategy']}: events minus ordinary days at every fixed horizon (97.5% CI)")
+"""
+
+BOOK_FN = r"""
+STRATEGY_OF = {"hedge": "protective_put", "opportunity": "cash_secured_put"}
+
+
+def book_report(st, years, label):
+    # Each registered rule run as a book: one $1-notional trade per filing at 21 sessions, net of the 5% haircut.
+    tab, lists = book_table(st, cfg, STRATEGY_OF, years)
+    keep = ["trades", "trades_per_year", "mean_net_pct", "hit_rate", "annual_return_pct", "annual_vol_pct", "sharpe_net",
+            "max_drawdown_pct", "worst_trade_pct", "avg_open_positions", "turnover_x_per_year"]
+    show(tab[[c for c in keep if c in tab]].round(2),
+         f"{label}: the book, net of a 5% premium haircut each way (percent of one trade's stock notional). Ordinary days "
+         "are a 120-day sample per family, annualised at the filings' trade rate: compare Sharpe and mean, not trade count or drawdown.")
+    fig, ax = plt.subplots(figsize=(7, 3))
+    for fam, colr in (("hedge", "tab:red"), ("opportunity", "tab:blue")):
+        t = lists[(fam, "filings")]
+        if len(t):
+            ax.step(pd.to_datetime(t.exit_date), 100 * t.net.cumsum(), where="post", color=colr,
+                    label=f"{fam}: {STRATEGY_OF[fam]} ({len(t)} trades)")
+    ax.axhline(0, color="k", lw=0.5)
+    ax.set_ylabel("cumulative net P&L, % of one trade"); ax.set_title(f"{label}: equity curve of the registered rules")
+    ax.legend(fontsize=8); plt.show()
+    return tab, lists
+"""
+
+BOOK_MD = r"""
+## 7b · The rules run as a book: equity curve, drawdown, turnover, Sharpe
+
+One trade per filing at the registered cell (3–6 month expiry, entry at the close after the filing, 5% OTM, held
+21 sessions), each $1 of stock notional, net of the 5% premium haircut each way. Each trade books on its exit date. Holds
+overlap, so Sharpe is per trade annualised by the window's trade rate, not a daily-NAV figure. Turnover: each position
+lives 21 sessions, so capital turns over 12 times a year, and the book holds on average `avg_open_positions` trades.
+"""
+
+R_BOOK = r"""
+**Reading, in-sample 2024–2025.** H1's protective put: 32 trades, +1.81% net a trade, Sharpe 1.20 net, max drawdown
+−9.6% of one trade's notional, about 1.3 positions open at a time. The same put bought on ordinary days, at the same trade
+rate and net of the same haircut, had a Sharpe of 1.01. H2's cash-secured put: 24 trades, +0.54% net, Sharpe 1.41 net, max
+drawdown −2.8%, against 0.74 on ordinary days. Both books made money in 2024–25 mostly because puts on large caps in a
+rising market did; the filing's own contribution is the edge over ordinary days, which the pass rule tests and which is
+not distinguishable from zero.
+"""
+
+
+new = [md(INTRO), code(INSTALL), code(CONFIG), reuse(2), code(BOOK_FN),
        md("## 1 · In-sample study, 2024-01-01 to 2025-12-31\n\nEvents by family, exclusions (cross-family filings are dropped from both tests) and drops before pricing."),
        reuse(3),
        md("## 2 · Scoreboards and the placebo gap at every fixed horizon\n\nAll five strategies for events and for ordinary days, then the event-minus-placebo edge with its interval."),
        reuse(4),
+       md("**Table 1 of the write-up** (the registered strategy alone; the board above bootstraps all strategies with one generator, so its intervals differ in the last digit)."),
+       code(BOARD),
        md("## 3 · The pre-registered pass check"), reuse(5),
        md(R_PASS),
        md("## 4 · Robustness (reported next to the pass rule, never instead of it)"), reuse(6),
@@ -313,6 +391,7 @@ new = [md(INTRO), code(CONFIG), reuse(2),
        reuse(8), md(R_SENS),
        md("## 7 · Trade specification: costs, liquidity, capacity\n\nA 5% premium haircut each way at 1× and 2×, and real half-spreads where quotes exist; median leg volume on the entry day."),
        reuse(9), md(R_COST),
+       md(BOOK_MD), code("book_in, _ = book_report(study, 2.0, \"In-sample 2024-2025\")"), md(R_BOOK),
        md("## 8 · Out-of-sample, 2026-01-01 to 2026-08-31\n\nThe frozen pipeline, exits pinned to 2 October 2026 as in the single committed run (`results/oos/`)."),
        code(OOS), md(R_OOS),
        md(FRESH_MD), code(FRESH), md(R_FRESH),
