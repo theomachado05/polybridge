@@ -29,6 +29,8 @@ BOOKS_PER_CALL = 100
 MAX_CHAINS = 40                  # option-contract listings per /tickets build
 MAX_REFERENCES = 120              # options references per /tickets build (each one is its own Massive snapshot + NBBO)
 REF_CONCURRENCY = 4              # references in flight at once
+REFETCH_TIMEOUT_S = 4.0          # bound on the quote re-fetch right before the C++ decision
+LADDER_REFETCH_AFTER_S = 10.0    # ladder books older than this at decision time are fetched again (family max_age 60 s)
 ROW_TIMEOUT_S = 8.0              # one ticket's listing + reference
 TICKET_MARGIN_S = 2.0            # left of DEADLINE_S for serialising what was built
 BUDGET = "budget"                # reason on a row whose reference was not built in this build's budget
@@ -117,6 +119,51 @@ def book_ts_ns(book: dict | None) -> int | None:
     return t * 1_000_000 if t > 0 else None
 
 
+def _book_key(b: dict | None) -> tuple:
+    """What identifies a book's state: the CLOB hash when given, else its timestamp and best levels."""
+    b = b or {}
+    return (b.get("hash"), b.get("timestamp")) if b.get("hash") else (None, b.get("timestamp"), best(b, "bids"),
+                                                                       best(b, "asks"), best_size(b, "bids"), best_size(b, "asks"))
+
+
+def refresh_books(old: dict[str, dict], new: dict[str, dict], fetch_ns: int) -> dict[str, dict]:
+    """Quote books from a second fetch (``new``, fetched at ``fetch_ns``), keeping the first fetch's book (``old``)
+    for a token the second fetch did not return (a failed row: C++ then judges the old book, so "stale" is honest).
+
+    AGE BASIS. The CLOB book's ``timestamp`` is the time the book LAST CHANGED, not the server time (checked live:
+    repeated /books calls seconds apart return the same ``timestamp`` and ``hash`` for a quiet book). A book that has
+    not changed since the first fetch is therefore still a valid current quote, so its quote time is the fetch time
+    (``_age_basis`` "fetch_time_unchanged"): the family's max-age rule then measures how long ago we looked, not how
+    quiet the market is. A book that did change keeps its own timestamp ("book_timestamp"). A book that was not
+    re-fetched keeps the first fetch's timestamp ("book_timestamp_not_refetched")."""
+    out: dict[str, dict] = {}
+    for tok, b0 in old.items():
+        b1 = new.get(tok)
+        if b1 is None:
+            out[tok] = {**b0, "_age_basis": "book_timestamp_not_refetched"}
+        elif _book_key(b1) == _book_key(b0):
+            out[tok] = {**b1, "timestamp": str(fetch_ns // 1_000_000), "_age_basis": "fetch_time_unchanged"}
+        else:
+            out[tok] = {**b1, "_age_basis": "book_timestamp"}
+    for tok, b1 in new.items():
+        out.setdefault(tok, {**b1, "_age_basis": "book_timestamp"})
+    return out
+
+
+async def refetch(http: httpx.AsyncClient, old: dict[str, dict], tokens: list[str]) -> dict[str, dict]:
+    """``refresh_books`` for ``tokens`` after a bounded batched re-fetch; any failure returns ``old`` unchanged."""
+    toks = sorted({t for t in tokens if t})
+    if not toks:
+        return old
+    try:
+        new = await asyncio.wait_for(books(http, toks), REFETCH_TIMEOUT_S)
+        fetch_ns = engine._now_ns()
+    except Exception:  # noqa: BLE001 - the old books stand; C++ judges their age
+        return old
+    sub = refresh_books({t: old[t] for t in toks if t in old}, new, fetch_ns)
+    return {**old, **sub}
+
+
 def token_and_fees(m: dict) -> dict:
     """YES token, taker fee rate and exponent, tick: the S11 catalogue fields (fees off unless enabled with a schedule)."""
     toks = m.get("clobTokenIds")
@@ -188,6 +235,7 @@ def price_ladders(ladders: list[dict], bk: dict[str, dict], now_ns: int | None =
             r["best_bid"], r["best_ask"] = best(b, "bids"), best(b, "asks")
             r["bid_size"], r["ask_size"] = best_size(b, "bids"), best_size(b, "asks")
             r["book_ts_ns"] = book_ts_ns(b)
+            r["age_basis"] = (b or {}).get("_age_basis", "book_timestamp")
         for p in lad["pairs"]:
             a, b = rid[p["rich"]], rid[p["cheap"]]
             e = pair_edge(a.get("best_bid"), b.get("best_ask"), a, b)
@@ -204,7 +252,7 @@ def price_ladders(ladders: list[dict], bk: dict[str, dict], now_ns: int | None =
                                else "python: no violation, or not nested"}
             else:
                 p["actionable"] = eng.pop("actionable")
-                p["engine"] = eng
+                p["engine"] = {**eng, "age_basis": {"rich": a.get("age_basis"), "cheap": b.get("age_basis")}}
 
 
 async def ladders_board(http: httpx.AsyncClient | None = None) -> dict:
@@ -215,7 +263,11 @@ async def ladders_board(http: httpx.AsyncClient | None = None) -> dict:
             evs = await open_events(client, {"volume_min": 100000}, LADDER_PAGES)
             lads = build_ladders(evs)
             toks = sorted({r["token"] for lad in lads for r in lad["rungs"] if r.get("token")})
-            price_ladders(lads, await books(client, toks))
+            t_fetch = time.monotonic()
+            bk = await books(client, toks)
+            if time.monotonic() - t_fetch > LADDER_REFETCH_AFTER_S:   # a slow fetch: look again just before deciding
+                bk = await refetch(client, bk, toks)
+            price_ladders(lads, bk)
             return {"as_of": dt.datetime.now(dt.timezone.utc).isoformat(), "events_read": len(evs), "ladders": lads}
         finally:
             if own:
@@ -235,14 +287,19 @@ def engine_source(rows) -> str | None:
     return None if not srcs else srcs.pop() if len(srcs) == 1 else "mixed"
 
 
+def _decidable(r: dict) -> bool:
+    ref = r.get("reference") or {}
+    return r.get("type") == "touch_ticket" and bool(r.get("linkable")) and bool(ref.get("available")) \
+        and ref.get("ok") is not False
+
+
 def decide_ticket(r: dict, threshold: float, now_ns: int) -> None:
     """The decision on one touch ticket with an options reference: the C++ ``touch_ticket_reference`` family
     (validated False: proposals only) when compiled, else the previous Python rule (bid at least ``threshold``
     points above the central reference mid), labelled ``source: "python_fallback"``."""
-    ref = r.get("reference") or {}
-    if r.get("type") != "touch_ticket" or not r.get("linkable") or not ref.get("available") \
-            or ref.get("ok") is False:
+    if not _decidable(r):
         return
+    ref = r.get("reference") or {}
     eng = engine.decide_ticket(engine.ticket_tick(r, ref, now_ns), now_ns)
     if eng is None:
         central = (ref.get("central") or ref.get("touch") or {}).get("mid")
@@ -255,6 +312,7 @@ def decide_ticket(r: dict, threshold: float, now_ns: int) -> None:
     else:
         r["propose"] = eng.pop("propose")
         r["engine"] = eng
+    r["engine"]["age_basis"] = r.get("age_basis", "book_timestamp")
 
 
 def chain_rows(chain: Any) -> list[dict]:
@@ -479,11 +537,28 @@ async def tickets_board(http: httpx.AsyncClient | None = None) -> dict:
             b = bk.get(r.get("token") or "")
             r["best_bid"], r["best_ask"] = best(b, "bids"), best(b, "asks")
             r["bid_size"], r["book_ts_ns"] = best_size(b, "bids"), book_ts_ns(b)
+            r["age_basis"] = "book_timestamp"
             if not r["linkable"]:
                 r["contract"] = {"ok": False, "reason": "; ".join(r["reasons"])}
             if r["type"] == "close_above_ticket" and ref_only:
                 r.update(ref_only)
         pending = await link_and_price(rows, t0 + DEADLINE_S - TICKET_MARGIN_S)
+        # The books above were fetched before up to ~18 s of options-reference work: fetch them again for every ticket
+        # that will be decided, so the family's 30 s max-age rule judges a current quote (see refresh_books).
+        deciding = [r for r in rows if _decidable(r)]
+        if deciding:
+            own2 = http is None
+            c2 = http or httpx.AsyncClient()
+            try:
+                bk = await refetch(c2, bk, [r["token"] for r in deciding if r.get("token")])
+            finally:
+                if own2:
+                    await c2.aclose()
+            for r in deciding:
+                b = bk.get(r.get("token") or "")
+                r["best_bid"], r["best_ask"] = best(b, "bids"), best(b, "asks")
+                r["bid_size"], r["book_ts_ns"] = best_size(b, "bids"), book_ts_ns(b)
+                r["age_basis"] = (b or {}).get("_age_basis", "book_timestamp")
         th, now_ns = touch_threshold(), engine._now_ns()
         for r in rows:
             decide_ticket(r, th, now_ns)

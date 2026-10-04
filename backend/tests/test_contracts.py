@@ -350,3 +350,80 @@ def test_close_above_rows_are_reference_only(client, monkeypatch):
     [t] = d["tickets"]
     assert t["type"] == "close_above_ticket" and t["reference_only"] is True and t["evidence_id"] == "foundation"
     assert d["evidence"]["close_above_ticket"]["status"] == "NO_TESTED_MECHANISM"
+
+
+# --- quote re-fetch just before the decision (book ages) ------------------------------------------------------
+
+def _bk(ts, bid="0.20", ask="0.23", h="h1"):
+    return {"asset_id": "tk9", "timestamp": str(ts), "hash": h,
+            "bids": [{"price": bid, "size": "10"}], "asks": [{"price": ask, "size": "10"}]}
+
+
+def test_refresh_books_age_basis_unchanged_vs_changed_vs_missing():
+    fetch_ns = 1_000_000_000_000 * 1_000_000
+    old = {"a": _bk(5), "b": _bk(5), "c": _bk(5)}
+    new = {"a": _bk(5), "b": _bk(900_000_000_000, bid="0.25", h="h2")}
+    out = live.refresh_books(old, new, fetch_ns)
+    assert out["a"]["_age_basis"] == "fetch_time_unchanged" and live.book_ts_ns(out["a"]) == fetch_ns
+    assert out["b"]["_age_basis"] == "book_timestamp" and live.best(out["b"], "bids") == 0.25
+    assert out["c"]["_age_basis"] == "book_timestamp_not_refetched" and live.book_ts_ns(out["c"]) == 5_000_000
+
+
+def _tickets_setup(client, monkeypatch, second_fetch):
+    ev = {"id": "t1", "title": "What will NVIDIA (NVDA) hit in October?",
+          "markets": [{"id": "9", "question": "Will NVIDIA (NVDA) reach $220 in October?", "startDate": "2026-10-01T00:00:00Z",
+                       "clobTokenIds": json.dumps(["tk9", "no9"])}]}
+    calls = []
+
+    async def events(http, extra, pages):
+        return [ev] if extra.get("tag_slug") == "hit-price" else []
+
+    async def books(http, tokens):
+        calls.append(list(tokens))
+        if len(calls) == 1:
+            return {"tk9": _bk(1_000)}                      # last changed long ago
+        return second_fetch()
+
+    async def listed(underlying, end_session):
+        return chain(underlying, ("2026-10-30",), (210, 215, 220, 225, 230)), ""
+
+    async def reference(f, kind):
+        return {"ok": True, "available": True, "kind": kind, "lower_bound": 0.1, "central": {"mid": 0.15}}
+
+    seen = []
+
+    def decide(tick, now_ns):
+        seen.append(tick)
+        return {"family": "touch_ticket_reference", "source": "engine", "action": "hold", "reason": "x", "propose": False}
+
+    monkeypatch.setattr(live, "open_events", events)
+    monkeypatch.setattr(live, "books", books)
+    monkeypatch.setattr(live, "listed_rows", listed)
+    monkeypatch.setattr(live, "reference", reference)
+    monkeypatch.setattr(live.engine, "decide_ticket", decide)
+    live.CACHE._data.pop("tickets", None)
+    d = client.get("/tickets").json()
+    return d, calls, seen
+
+
+def test_tickets_refetch_used_and_unchanged_book_ages_from_fetch_time(client, monkeypatch):
+    d, calls, seen = _tickets_setup(client, monkeypatch, lambda: {"tk9": _bk(1_000)})
+    assert calls == [["tk9"], ["tk9"]]                      # one batched re-fetch of the ticket with a reference
+    t = d["tickets"][0]
+    assert t["age_basis"] == "fetch_time_unchanged" and t["engine"]["age_basis"] == "fetch_time_unchanged"
+    assert seen[0]["ts_ns"] > 1_000_000_000_000             # the fetch time, not the 1970 book timestamp
+
+
+def test_tickets_refetch_uses_fresh_quote_when_book_changed(client, monkeypatch):
+    d, calls, seen = _tickets_setup(client, monkeypatch, lambda: {"tk9": _bk(2_000, bid="0.30", ask="0.33", h="h2")})
+    assert seen[0]["bid"] == 0.30 and seen[0]["ask"] == 0.33 and seen[0]["ts_ns"] == 2_000_000_000
+    assert d["tickets"][0]["engine"]["age_basis"] == "book_timestamp"
+
+
+def test_tickets_refetch_failure_keeps_old_book_for_the_family_to_judge(client, monkeypatch):
+    def boom():
+        raise RuntimeError("clob down")
+    d, calls, seen = _tickets_setup(client, monkeypatch, boom)
+    assert len(calls) == 2
+    assert seen[0]["bid"] == 0.20 and seen[0]["ts_ns"] == 1_000_000_000      # old book, old timestamp: stale is honest
+    assert d["ok"] and d["tickets"][0]["engine"]["age_basis"] == "book_timestamp"
