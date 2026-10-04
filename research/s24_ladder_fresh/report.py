@@ -31,17 +31,19 @@ SETS = {"a": "Set (a): listed 2024-01 to 2025-09, $50,000+", "b": "Set (b): S11'
 def f(x, d=2, sign=True):
     if x is None or x != x:
         return "n/a"
-    return f"{x:+.{d}f}" if sign else f"{x:.{d}f}"
+    return (f"{x:+.{d}f}" if sign else f"{x:.{d}f}").replace("-", "−")
 
 
 def usd(x, d=0):
     if x is None or x != x:
         return "n/a"
+    if d == 0 and abs(x) < 100:
+        d = 2
     return f"−${abs(x):,.{d}f}" if x < 0 else f"${x:,.{d}f}"
 
 
 def pct(x, d=1):
-    return "n/a" if x is None or x != x else f"{100 * x:.{d}f}%"
+    return "n/a" if x is None or x != x else f"{100 * x:.{d}f}%".replace("-", "−")
 
 
 def row(t: pd.DataFrame, tag: str) -> dict:
@@ -72,10 +74,22 @@ def row(t: pd.DataFrame, tag: str) -> dict:
             "median_seconds_apart": float(t.seconds_apart.median())}
 
 
+SECONDARY = ("year check", "corrected rule", "corrected rule, unseen sample", "registered rule, unseen sample")
+
+
 def scopes(T: pd.DataFrame) -> dict[str, pd.DataFrame]:
-    return {"pooled": T, "set a": T[T.set == "a"], "set b": T[T.set == "b"], "date ladders": T[T.kind == "date"],
-            "strike ladders": T[T.kind == "strike"], "locked at entry": T[T.locked_at_entry.astype(bool)],
-            "resolved pairs only": T[T.settled_by == "result"]}
+    out = {"pooled": T, "set a": T[T.set == "a"], "set b": T[T.set == "b"], "date ladders": T[T.kind == "date"],
+           "strike ladders": T[T.kind == "strike"], "locked at entry": T[T.locked_at_entry.astype(bool)],
+           "resolved pairs only": T[T.settled_by == "result"]}
+    if "corrected_ok" in T:              # amendment 1: secondary rows, never the registered test
+        yo, co, pu = T.year_ok.astype(bool), T.corrected_ok.astype(bool), T.partner_used.astype(bool)
+        out.update({"year check": T[yo], "corrected rule": T[co], "corrected rule, unseen sample": T[co & ~pu],
+                    "registered rule, unseen sample": T[~pu]})
+        for s in ("a", "b"):
+            out[f"corrected rule, unseen sample, set {s}"] = T[co & ~pu & (T.set == s)]
+        for k in ("date", "strike"):
+            out[f"corrected rule, unseen sample, {k} ladders"] = T[co & ~pu & (T.kind == k)]
+    return out
 
 
 def build_metrics(T: pd.DataFrame) -> pd.DataFrame:
@@ -83,7 +97,7 @@ def build_metrics(T: pd.DataFrame) -> pd.DataFrame:
     for variant in ("W600", "W120"):
         V = T[T.variant == variant]
         for scope, S in scopes(V).items():
-            if variant == "W120" and scope not in ("pooled", "set a", "set b"):
+            if variant == "W120" and scope not in ("pooled", "set a", "set b") + SECONDARY:
                 continue
             for split, col in (("trade dates", "segment"), ("calendar", "calendar_segment")):
                 if split == "calendar" and (variant != "W600" or scope not in ("pooled", "set a", "set b")):
@@ -281,7 +295,7 @@ def main() -> int:
           "\"bp\" is basis points of the capital the trade ties up. Dollar P&L uses the smaller of the two printed sizes, capped at 100 "
           "contracts (\"cap\") or not (\"full size\"). Sharpe: daily P&L over every calendar day, booked on the day each pair settles, "
           "against the most capital locked at once.", "",
-          "| Trades | Trades | Dates | Net, points per trade | 95% interval | Net, bp of capital | Winners | P&L, cap | P&L, full size | Sharpe | Max drawdown | Worst month |",
+          "| Row | Trades | Dates | Net, points per trade | 95% interval | Net, bp of capital | Winners | P&L, cap | P&L, full size | Sharpe | Max drawdown | Worst month |",
           "|---|---|---|---|---|---|---|---|---|---|---|---|",
           hl(I1, "Pooled, in-sample, 1×"), hl(O1, "Pooled, out-of-sample, 1×"), hl(A1, "Pooled, all, 1×"), hl(A2, "Pooled, all, 2× (same trades)")]
     for s in ("a", "b"):

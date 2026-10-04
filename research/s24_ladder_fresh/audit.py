@@ -50,6 +50,29 @@ def recheck_prints(P: pd.DataFrame) -> dict:
     return {"trades": int(len(P)), "failed": len(bad), "cases": bad[:20]}
 
 
+def confirmation(P: pd.DataFrame) -> list[str]:
+    """Was the earlier print's price still there when the later print completed the match? 'same second': both prints in
+    one second. 'confirmed after': the earlier rung printed again, on the same side, at our fill price or better, between
+    the entry and 10 minutes later. 'moved away': not confirmed, and the earlier rung printed at a worse price than our
+    fill between its print and the entry. 'not confirmed': neither."""
+    out = []
+    for r in P.itertuples():
+        if r.t_sale == r.t_buy:
+            out.append("same second")
+            continue
+        T = r.t_entry
+        if r.t_sale < r.t_buy:
+            a = rn.prints(r.rich)
+            again = a["ok"] & (a["t"] >= T) & (a["t"] <= T + cfg.WINDOW_S) & (a["ys"] == -1) & (a["yp"] >= r.sell_at_1x - 1e-9)
+            away = a["ok"] & (a["t"] > r.t_sale) & (a["t"] <= T) & (a["yp"] < r.sell_at_1x - 1e-9)
+        else:
+            b = rn.prints(r.cheap)
+            again = b["ok"] & (b["t"] >= T) & (b["t"] <= T + cfg.WINDOW_S) & (b["ys"] == 1) & (b["yp"] <= r.buy_at_1x + 1e-9)
+            away = b["ok"] & (b["t"] > r.t_buy) & (b["t"] <= T) & (b["yp"] > r.buy_at_1x + 1e-9)
+        out.append("confirmed after" if again.any() else ("moved away" if away.any() else "not confirmed"))
+    return out
+
+
 def main() -> int:
     T = pd.read_csv(rn.RESULTS / "trades.csv", dtype={"rich": str, "cheap": str})
     P = T[T.variant == "W600"].copy()
@@ -86,6 +109,22 @@ def main() -> int:
         return res
     out["pnl_by_seconds_apart"] = cut_by("seconds_apart", [(-1, 0), (0, 10), (10, 60), (60, 120), (120, 600)],
                                          ["same second", "1 to 10 s", "11 to 60 s", "61 to 120 s", "121 to 600 s"])
+    P["confirmation"] = confirmation(P)
+    out["pnl_by_confirmation"] = {}
+    for lab in ("same second", "confirmed after", "not confirmed", "moved away"):
+        for seg in ("ALL", "IS", "OOS"):
+            t = P[(P.confirmation == lab) & ((P.segment == seg) | (seg == "ALL"))]
+            m, a, b, n, nd = rn.en.boot(t.assign(_p=t.pnl_1x * 100), "_p")
+            out["pnl_by_confirmation"][f"{lab} | {seg}"] = {"trades": n, "dates": nd, "points_1x": m if n else None, "lo": a if n else None, "hi": b if n else None,
+                                                            "points_2x": float(t.pnl_2x.mean() * 100) if n else None,
+                                                            "entry_edge_points": float(t.edge_1x.mean() * 100) if n else None,
+                                                            "usd_capped_1x": float(t.usd_capped_1x.sum()), "usd_uncapped_1x": float(t.usd_uncapped_1x.sum())}
+    out["event_bootstrap"] = {}
+    for seg in ("ALL", "IS", "OOS"):
+        t = P if seg == "ALL" else P[P.segment == seg]
+        m, a, b, n, nd = rn.en.boot(t.assign(_p=t.pnl_1x * 100, date=t.event), "_p")
+        out["event_bootstrap"][seg] = {"trades": n, "events": nd, "points_1x": m if n else None, "lo": a if n else None, "hi": b if n else None}
+    P[["variant", "set", "rich", "cheap", "date", "t_entry", "confirmation"]].to_csv(rn.RESULTS / "confirmation.csv", index=False)
     out["pnl_by_gap"] = cut_by("gap_points", [(0, 1.0001), (1.0001, 2.0001), (2.0001, 5.0001), (5.0001, 20.0001), (20.0001, 1000)],
                                ["1 point or less", "over 1 to 2", "over 2 to 5", "over 5 to 20", "over 20"])
     (rn.RESULTS / "audit.json").write_text(json.dumps(out, indent=1, default=lambda x: None if x != x else x))

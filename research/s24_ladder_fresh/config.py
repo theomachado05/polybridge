@@ -58,3 +58,13 @@ MIN_OOS_TRADES, MIN_OOS_DATES = 30, 10
 # 2. out-of-sample: net points per trade > 0 and the interval excludes zero
 # 3. the same trades at 2x costs: net points per trade > 0, whole sample
 # 4. at least 30 out-of-sample trades on 10 or more dates
+
+# ---- amendment 1 (Sun 2026-10-04 02:35): a secondary analysis after the partner study `research/ladder_replay` (origin/main
+# 4d9ac93). The registered test above is unchanged. The rows, the same trades filtered by pair, the same cut dates and costs:
+SECONDARY_ROWS = ("year check",                      # the partner's amendment 5: each date rung's year re-derived; rich strictly earlier
+                  "corrected rule",                  # year check + the partner's nesting rule (descriptions, sources, creation window)
+                  "corrected rule, unseen sample",   # the same, without any pair that has a market of the partner's fresh universe
+                  "registered rule, unseen sample")  # the registered trades without those pairs
+PARTNER_COMMIT = "4d9ac93"
+CREATION_TOLERANCE_S = 60                            # the cheap rung created no later than the rich rung, as the partner's rule
+TEXT_BATCH = 60                                      # markets per catalogue request for descriptions and sources

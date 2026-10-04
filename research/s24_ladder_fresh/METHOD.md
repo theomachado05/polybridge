@@ -204,4 +204,61 @@ without it, under a heading that says it was looked at after the run.
 
 ## Amendments
 
-None yet.
+**1. Sun 2026-10-04 02:35 New York time: the partner's ladder replay. The registered test is not changed. A secondary
+analysis is fixed here, before any result is read and before any P&L is computed.**
+
+*What happened, in order (commit times are the authority):*
+
+- 01:59 `c5e0b22`: this study's pre-registration. 01:59: the print pull started.
+- 02:02: a format check of the prints of the first 110 markets (counts of sides and outcomes, no detection).
+- 02:04: a smoke test of `run detect` on the part of the pull then on disk (127 pairs), written to a scratch folder
+  only. It printed 43 matches at 10 minutes and 34 at 2 minutes, the provisional cut dates, the seconds between the two
+  prints, and the events with the most matches. It read no result and computed no P&L.
+- 02:11 to 02:21: the partner's study `research/ladder_replay` reached origin/main (`a876979`, `b57d2a8`, `4d9ac93`).
+- 02:30: the coordinator's message about it arrived here. 02:31: its SUMMARY, METHOD, config and code were read with
+  `git show` (nothing checked out).
+- At the time of this amendment the print pull is still running, `run detect` has not been run on the full pull, no
+  result (YES or NO) of any rung has been read, and no P&L has been computed.
+
+*Which case applies.* The instruction was: amend the registered test only if no print had been analysed. A detection
+pass had been run on part of the pull at 02:04 (counts of matches only). That is an analysis of prints. So **sections 0
+to 9 stand as registered**: the pass rule is judged on S11's rules, on every pulled pair. Nothing above is rewritten.
+
+*What the partner's study found (now known, and seen by this study before its own results):*
+
+- S11's year rule misdates some rungs. "By December 31?" in a market created in March 2026 was read as 2025-12-31, so
+  the rung called earlier was the later one. Under S11's rule as registered, the partner's fresh-universe replay was
+  null: +2.47 points per trade [−1.14, +6.26], 650 trades on 221 dates, and every losing trade came from three
+  mis-ordered ladders. With a year check added after seeing the losers it was +8.82 [+6.73, +11.13], 562 trades, no
+  losing trade. That second number is post hoc there.
+- Some pairs are not truly nested: the descriptions or the resolution sources differ, or the window starts at market
+  creation and the cheap rung was created later.
+- The data API's `outcomeIndex` is wrong on many prints. This study never used it: prints are mapped by the `outcome`
+  text, as S11 did. One market is read once more to compare the `outcome` text with the token (`secondary.py`).
+- **Overlap.** The partner's fresh universe has 1,234 markets. 58 of them are rungs of this study: all in set (a), in
+  20 date ladders, 38 pairs. Set (b) has none. So the sentence in section 1 that no print of these markets has been
+  seen by anyone is no longer true for those 58 markets. The list is `partner_markets.json`.
+
+*The secondary rows, fixed now.* The same trades as the registered run, filtered by pair. The same cut dates, costs,
+sizes and statistics. Each row is reported against the same four pass lines, and is never called the registered test.
+
+- **Year check** (the partner's amendment 5, as written; `nesting.deadline`). Each date rung's deadline is re-derived:
+  an explicit year in its question or group title, else the first year in which the month and day fall on or after
+  the market's start date (less one day). A date pair is kept only if the rich rung's deadline is strictly earlier
+  than the cheap rung's. Strike pairs are not touched by it.
+- **Corrected rule** = the year check plus the partner's nesting rule (its step 1 with amendments 2 and 4, as written;
+  `nesting.nested`, copied from its `replay.py`): the two descriptions are identical after lower-casing, collapsing
+  whitespace and masking each rung's own date or level; the resolution sources are identical; and when the masked
+  description mentions market creation, the cheap rung was created no later than the rich rung (60 seconds). Date and
+  strike pairs. The texts are read from the catalogue only for pairs that have at least one match (request budget).
+- **Corrected rule, unseen sample** = the corrected rule without any pair that has a market of the partner's fresh
+  universe. This is the row nobody has seen. It is the main secondary row.
+- **Registered rule, unseen sample** = the registered trades without those pairs.
+
+`secondary.py` classifies the pairs from `matches.csv` and catalogue texts; it reads no result. Its output
+(`pair_checks.csv`) is committed with the cut dates, before `run settle`.
+
+*What this secondary analysis is and is not.* Its rules come from the partner's study, not from this study's data, and
+they are fixed before any result or P&L of this study. But they were fixed after the 02:04 detection pass on part of
+the pull, and after the partner's results on an overlapping universe were known. The summary says so wherever the rows
+appear.

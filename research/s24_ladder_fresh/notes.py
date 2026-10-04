@@ -76,3 +76,115 @@ def body(v: dict) -> list[str]:
 
 
 BODY = None
+
+
+# ---------------------------------------------------------------- the body of SUMMARY.md
+
+READING: list[str] = []          # what reading the trades one by one found; filled in after the run
+BROKEN_NOTES: list[str] = []     # each trade whose ladder order was violated at the result, explained
+
+
+def _body(v: dict, au: dict) -> list[str]:
+    from . import report as rp
+    f, usd, pct, get = rp.f, rp.usd, rp.pct, rp.get
+    M, A1, A2, cut = v["M"], v["A1"], v["A2"], v["cut"]
+    out = []
+
+    # ---- the 2-minute variant
+    W, WI, WO, W2 = v["W"], v["WI"], v["WO"], v["W2"]
+    out += ["## Variant: the two prints within 2 minutes", ""]
+    if W.trades:
+        out += [f"{int(W.trades):,} trades on {int(W.dates):,} dates. Net {f(W.net_points_per_trade)} points per trade at 1× "
+                f"[{f(W.ci_lo)}, {f(W.ci_hi)}]; in-sample {f(WI.net_points_per_trade)} [{f(WI.ci_lo)}, {f(WI.ci_hi)}] on {int(WI.trades):,}; "
+                f"out-of-sample {f(WO.net_points_per_trade)} [{f(WO.ci_lo)}, {f(WO.ci_hi)}] on {int(WO.trades):,} trades and {int(WO.dates):,} dates; "
+                f"{f(W2.net_points_per_trade)} at 2×. P&L {usd(W.usd_capped)} at the cap, {usd(W.usd_uncapped)} at full size. "
+                f"Sharpe {f(W.sharpe, 2, False)}. Against the same four lines: "
+                + "; ".join(f"line {name[0]} {'holds' if ok else 'fails'}" for name, ok, _ in v["wl"]) + ".", ""]
+    else:
+        out += ["No trade.", ""]
+
+    # ---- other pre-registered variants
+    out += ["## The other pre-registered rows", "",
+            "| Row | Trades | Dates | Net, points per trade, 1× | 95% interval | At 2× | P&L, cap |", "|---|---|---|---|---|---|---|"]
+
+    def line(label, r, r2):
+        if not r.trades:
+            return f"| {label} | 0 | | | | | |"
+        return (f"| {label} | {int(r.trades):,} | {int(r.dates):,} | {f(r.net_points_per_trade)} | [{f(r.ci_lo)}, {f(r.ci_hi)}] | "
+                f"{f(r2.net_points_per_trade) if r2 is not None and r2.trades else 'n/a'} | {usd(r.usd_capped)} |")
+    out += [line("Locked at entry only (entry edge above zero after the haircut)", get(M, scope="locked at entry"), get(M, scope="locked at entry", costs="2x")),
+            line("Locked at entry, out-of-sample", get(M, scope="locked at entry", segment="OOS"), get(M, scope="locked at entry", segment="OOS", costs="2x")),
+            line("Resolved pairs only (both rungs have a result)", get(M, scope="resolved pairs only"), get(M, scope="resolved pairs only", costs="2x")),
+            line("Resolved pairs only, out-of-sample", get(M, scope="resolved pairs only", segment="OOS"), get(M, scope="resolved pairs only", segment="OOS", costs="2x")),
+            line("Calendar split, in-sample (a: before 2025-05-26; b: before 2026-07-22)", get(M, split="calendar", segment="IS"), get(M, split="calendar", segment="IS", costs="2x")),
+            line("Calendar split, out-of-sample", get(M, split="calendar", segment="OOS"), get(M, split="calendar", segment="OOS", costs="2x")),
+            "",
+            f"S11's Sharpe convention (P&L booked on the entry date, capital base = the most capital opened in one day) gives "
+            f"{f(A1.sharpe_s11_convention, 2, False)} on the pooled trades (S11's own figure was {S11['sharpe']}). "
+            f"{int(A1.open_pairs)} of the {int(A1.trades):,} trades have a rung still open tonight and are booked at their entry edge alone.", ""]
+
+    # ---- money
+    out += ["## Money and capital", "",
+            f"- At 100 contracts a leg at most: **{usd(A1.usd_capped)}** at 1× costs, {usd(A2.usd_capped)} at 2×, over {int(A1.calendar_days):,} calendar days. "
+            f"That is {usd(A1.usd_per_trade_capped, 2)} a trade.",
+            f"- At the full printed size: {usd(A1.usd_uncapped)} at 1×, {usd(A2.usd_uncapped)} at 2×. An upper bound (see [`capacity.md`](capacity.md)).",
+            f"- Locked in at entry (before any result): {usd(A1.entry_edge_usd_capped)} at the cap, {usd(A1.entry_edge_usd_uncapped)} at full size.",
+            f"- Capital: about $1 a contract until the later rung closes. Most locked at once {usd(A1.capital_base_usd)}; on an average day "
+            f"{usd(A1.mean_capital_locked_usd)}. Days locked: median {A1.median_days_locked:.0f}, mean {A1.mean_days_locked:.1f}, longest {int(A1.max_days_locked)}. "
+            f"Net P&L per year on the capital actually locked: {pct(A1.return_on_locked_capital_per_year)}.",
+            f"- Costs: the fees and the one-cent haircuts took the entry gap from {f(au['gap_points']['mean']) if au else 'n/a'} points (print against print) to "
+            f"{f(A1.entry_edge_points)} points at 1× and {f(A2.entry_edge_points)} at 2×. Net of costs the trade earned {f(A1.net_bp_of_capital, 0)} bp of the "
+            f"capital tied up at 1× and {f(A2.net_bp_of_capital, 0)} bp at 2×.", ""]
+
+    # ---- the bug hunt
+    out += ["## The bug hunt (looked at after the run)", ""]
+    if au:
+        sc, rc = au["side_check"], au["recheck"]
+        out += [f"The Sharpe is {f(A1.sharpe, 2, False)}, so METHOD.md section 9 applies. What was checked:", "",
+                f"- **Each trade's two prints were found again in the stored prints** (right market, a taker sale of YES on the rich rung, a taker purchase of "
+                f"YES on the cheap rung, the stated prices and sizes, within 10 minutes, gap above the fees): {rc['trades'] - rc['failed']:,} of {rc['trades']:,} pass.",
+                f"- **No trade uses a print at or after a rung's close**: {au['print_after_close']} such trades (checked against the close times read with the results).",
+                f"- **The sides are the takers'.** Over {sc['pairs_of_prints']:,} pairs of consecutive prints of one market on opposite sides, at most 60 seconds "
+                f"apart, the taker purchase of YES printed {f(sc['mean_points'])} points above the taker sale on average (median {f(sc['median_points'])}); "
+                f"above in {pct(sc['share_positive'], 0)} of cases, below in {pct(sc['share_negative'], 0)}. A purchase at the ask prints above a sale at the bid, "
+                f"so the side field is the taker's side.",
+                f"- **Results**: both NO {au['result']['both NO']}, both YES {au['result']['both YES']}, rich NO and cheap YES (pays $1) "
+                f"{au['result']['rich NO, cheap YES (pays $1)']}, rich YES and cheap NO (order violated) {au['result']['rich YES, cheap NO (order violated)']}, "
+                f"a rung still open {au['result']['open']}."]
+    out += [f"- {x}" for x in READING]
+    out += [""]
+    if BROKEN_NOTES:
+        out += ["**Trades whose ladder order was violated at the result, one by one:**", ""] + [f"- {x}" for x in BROKEN_NOTES] + [""]
+
+    # ---- after the run
+    if au:
+        out += ["## Looked at after the run (not part of the test)", "",
+                "**How far apart the two prints were.** The closer the two prints, the closer the trade is to a proven simultaneous fill.", "",
+                "| Seconds between the two prints | Trades | Dates | Net, points per trade, 1× | 95% interval | At 2× | Entry edge, points | P&L, cap |", "|---|---|---|---|---|---|---|---|"]
+        for lab, r in au["pnl_by_seconds_apart"].items():
+            out.append(f"| {lab} | {r['trades']} | {r['dates']} | {f(r['points_1x'])} | [{f(r['lo'])}, {f(r['hi'])}] | {f(r['points_2x'])} | {f(r['entry_edge_points'])} | {usd(r['usd_capped_1x'])} |")
+        out += ["", "**How large the gap between the two prints was.**", "",
+                "| Gap, sale print minus purchase print | Trades | Dates | Net, points per trade, 1× | 95% interval | At 2× | Entry edge, points | P&L, cap |", "|---|---|---|---|---|---|---|---|"]
+        for lab, r in au["pnl_by_gap"].items():
+            out.append(f"| {lab} | {r['trades']} | {r['dates']} | {f(r['points_1x'])} | [{f(r['lo'])}, {f(r['hi'])}] | {f(r['points_2x'])} | {f(r['entry_edge_points'])} | {usd(r['usd_capped_1x'])} |")
+        out += ["", "**Was the earlier print's price still there at the entry?** \"Same second\": both prints in one second. \"Confirmed after\": the earlier "
+                "rung printed again on the same side, at our fill price or better, between the entry and 10 minutes later. \"Moved away\": not confirmed, and "
+                "the earlier rung printed at a worse price than our fill before the entry. \"Not confirmed\": neither.", "",
+                "| Group | Segment | Trades | Dates | Net, points per trade, 1× | 95% interval | At 2× | Entry edge, points | P&L, cap | P&L, full size |", "|---|---|---|---|---|---|---|---|---|---|"]
+        for lab, r in au["pnl_by_confirmation"].items():
+            g, seg = lab.split(" | ")
+            out.append(f"| {g} | {seg} | {r['trades']} | {r['dates']} | {f(r['points_1x'])} | [{f(r['lo'])}, {f(r['hi'])}] | {f(r['points_2x'])} | {f(r['entry_edge_points'])} | "
+                       f"{usd(r['usd_capped_1x'])} | {usd(r['usd_uncapped_1x'])} |")
+        eb = au["event_bootstrap"]
+        out += ["", "**Bootstrap over events instead of dates** (one event can trade on many dates): "
+                + "; ".join(f"{seg} {f(r['points_1x'])} [{f(r['lo'])}, {f(r['hi'])}] on {r['events']} events" for seg, r in eb.items()) + "."]
+        out += ["", "**Where the trades were** (events with the most trades):", "", "| Event | Trades | Sum of points | P&L, cap |", "|---|---|---|---|"]
+        for r in au["by_event_top"][:10]:
+            out.append(f"| {r['event_title']} | {r['trades']} | {f(r['points'], 1)} | {usd(r['usd_cap'])} |")
+        out += [""]
+    out += AFTER
+    return out
+
+
+AFTER: list[str] = []
+BODY = _body

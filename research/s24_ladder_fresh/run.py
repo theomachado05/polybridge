@@ -172,6 +172,10 @@ def settle() -> int:
             rec[f"usd_uncapped_{tag}"] = rec[f"pnl_{tag}"] * rec["size_uncapped"]
         out.append(rec)
     T = pd.DataFrame(out)
+    pc = RESULTS / "pair_checks.csv"
+    if pc.exists():                      # amendment 1: the secondary analysis' verdict on each pair (text only), carried along
+        C = pd.read_csv(pc, dtype={"rich": str, "cheap": str})[["rich", "cheap", "year_ok", "corrected_ok", "corrected_reason", "partner_used"]]
+        T = T.merge(C, on=["rich", "cheap"], how="left")
     T.to_csv(RESULTS / "trades.csv", index=False)
     p = T[T.variant == "W600"]
     print(f"{len(T)} rows; primary {len(p)} trades on {p.date.nunique()} dates; broken {int(p.broken.sum())}; "

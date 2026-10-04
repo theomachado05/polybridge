@@ -252,8 +252,8 @@ def test_detect_settle_and_metrics_end_to_end(tmp_path, monkeypatch):
     day = 86400
     M = {"1": mkt("1", "X by June 30?", "2025-07-01 00:00:00+00"), "2": mkt("2", "X by July 31?", "2025-08-01 00:00:00+00"),
          "3": mkt("3", "Y above $2?", None), "4": mkt("4", "Y above $1?", None)}
-    L = {"ladders": [{"set": "a", "kind": "date", "event": "x", "event_title": "X", "legs": ["1", "2"], "pairs": [["1", "2"]]},
-                     {"set": "b", "kind": "strike", "event": "y", "event_title": "Y", "legs": ["4", "3"], "pairs": [["3", "4"]]}],
+    L = {"ladders": [{"set": "a", "kind": "date", "event": "x", "event_title": "X", "event_volume": 9.0, "legs": ["1", "2"], "pairs": [["1", "2"]]},
+                     {"set": "b", "kind": "strike", "event": "y", "event_title": "Y", "event_volume": 5.0, "legs": ["4", "3"], "pairs": [["3", "4"]]}],
          "markets": M}
     (here / "ladders.json").write_text(json.dumps(L))
     (cache / "pull_state.json").write_text(json.dumps({"done": [0, 1], "used": {"a": 2, "b": 2}}))
@@ -290,3 +290,57 @@ def test_detect_settle_and_metrics_end_to_end(tmp_path, monkeypatch):
     assert rp.get(Mx, scope="set a", segment="OOS").trades == 2 and rp.get(Mx, scope="resolved pairs only").trades == 6
     lines = rp.pass_lines(Mx)
     assert [ok for _, ok, _ in lines][2:] == [True, False]            # positive at 2x; too few out-of-sample trades
+    # the audit and the report run on the same files and write every deliverable
+    from s24_ladder_fresh import audit as au
+    assert au.main() == 0
+    a = json.loads((res / "audit.json").read_text())
+    assert a["recheck"]["failed"] == 0 and a["result"]["rich NO, cheap YES (pays $1)"] == 6 and a["print_after_close"] == 0
+    for name, val in (("HERE", here), ("CACHE", cache), ("RESULTS", res)):
+        monkeypatch.setattr(rp, name, val)
+    (cache / "requests.json").write_text(json.dumps({"n": 9, "by": {"prints_a": 2}, "pauses": []}))
+    assert rp.main() == 0
+    for name in ("SUMMARY.md", "metrics.csv", "capacity.md", "RUN_LOG.md", "equity_curve.png", "drawdown.png"):
+        assert (res / name).exists() and (res / name).stat().st_size > 0
+    text = (res / "SUMMARY.md").read_text()
+    assert "NOT A PASS" in text and "4. At least 30 out-of-sample trades" in text
+
+
+# ---------------------------------------------------------------- amendment 1: the partner study's corrected rule (secondary)
+
+def test_year_check_rederives_the_rung_year():
+    from datetime import date
+
+    from s24_ladder_fresh import nesting as ne
+    assert str(ne.deadline({"question": "US strike on Syria by December 31?", "startDate": "2026-03-10T00:00:00Z"}, date(2025, 12, 31))) == "2026-12-31"
+    assert str(ne.deadline({"question": "X by January 31?", "startDate": "2025-10-10T00:00:00Z"}, date(2025, 1, 31))) == "2026-01-31"
+    assert str(ne.deadline({"question": "X by June 30, 2025?", "startDate": "2024-02-01T00:00:00Z"}, date(2025, 6, 30))) == "2025-06-30"
+    b = {"legs": ["1", "2"], "keys": ["2025-12-31", "2026-01-10"]}          # S11's order: "December 31" read as 2025, the rich rung
+    g = {"1": {"question": "Another strike by December 31?", "startDate": "2026-01-02T00:00:00Z"},
+         "2": {"question": "Another strike by January 10?", "startDate": "2026-01-02T00:00:00Z"}}
+    assert not ne.year_ok(b, "1", "2", g)                                   # really 2026-12-31: the later rung
+    g["1"]["startDate"] = g["2"]["startDate"] = "2025-12-01T00:00:00Z"
+    assert ne.year_ok(b, "1", "2", g)
+
+
+def test_nesting_rule_as_the_partner_wrote_it():
+    from s24_ladder_fresh import nesting as ne
+    b = {"legs": ["1", "2"], "keys": ["2026-04-30", "2026-05-31"]}
+    d = "This market resolves Yes if a ceasefire is announced by {}, 11:59 PM ET."
+    g = {"1": {"question": "Ceasefire by April 30?", "startDate": "2026-03-01T00:00:00Z", "description": d.format("April 30, 2026"), "resolutionSource": ""},
+         "2": {"question": "Ceasefire by May 31?", "startDate": "2026-03-01T00:00:00Z", "description": d.format("May 31, 2026"), "resolutionSource": ""}}
+    assert ne.nested("date", b, "1", "2", g) == (True, "nested")
+    g2 = {k: dict(v) for k, v in g.items()}
+    g2["2"]["description"] += " A truce does not count."
+    assert ne.nested("date", b, "1", "2", g2) == (False, "descriptions differ")
+    g3 = {k: dict(v) for k, v in g.items()}
+    g3["2"]["resolutionSource"] = "https://example.org"
+    assert ne.nested("date", b, "1", "2", g3) == (False, "sources differ")
+    c = "Resolves Yes if a strike happens between market creation and {}."
+    g4 = {"1": dict(g["1"], description=c.format("April 30, 2026")), "2": dict(g["2"], description=c.format("May 31, 2026"), startDate="2026-03-05T00:00:00Z")}
+    assert ne.nested("date", b, "1", "2", g4)[1] == "window starts at creation and the cheap rung was created later"
+    g4["2"]["startDate"] = "2026-03-01T00:00:30Z"
+    assert ne.nested("date", b, "1", "2", g4)[0]
+    s = {"legs": ["1", "2"], "keys": [100000.0, 110000.0]}
+    t = "This market resolves Yes if Bitcoin trades at or above ${} on Binance."
+    gs = {"1": {"question": "q", "description": t.format("100,000"), "resolutionSource": "binance"}, "2": {"question": "q", "description": t.format("110,000"), "resolutionSource": "binance"}}
+    assert ne.nested("strike", s, "2", "1", gs)[0]
