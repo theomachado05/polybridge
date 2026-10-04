@@ -256,3 +256,6 @@ fails. So one more test, on the mechanism and not on single links: `linker/poole
   carries the mechanism if the first slope is above zero with t ≥ 2; the size of the move is priced if the second is.
 - The code is written after this amendment and checked on the development run only; the development figures are not
   evidence. Nothing in sections 1 to 9 changes: this test adds no link and removes none.
+
+**Note, 2026-10-03 23:25 ET.** The heading of amendment 1 gives 23:27 ET; its commit (dd7e1a5) is stamped 23:24 ET.
+The commit time is the right one.
