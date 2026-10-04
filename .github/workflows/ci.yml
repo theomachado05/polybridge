@@ -24,11 +24,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: astral-sh/setup-uv@v5
       - run: sudo apt-get update && sudo apt-get install -y ninja-build
       - run: cmake -S engine/hedgecore -B engine/hedgecore/build -G Ninja -DCMAKE_BUILD_TYPE=Release
       - run: cmake --build engine/hedgecore/build
       - run: ctest --test-dir engine/hedgecore/build --output-on-failure
+      - name: golden (pre-existing families byte-identical to the base commit)
+        if: github.event_name == 'pull_request' || github.event.before != '0000000000000000000000000000000000000000'
+        run: engine/hedgecore/scripts/golden_diff.sh "${{ github.event.pull_request.base.sha || github.event.before }}"
       - run: cd backend && uv sync --locked --group engine && uv run pytest ../engine/hedgecore/tests -q
       - run: cd backend && uv run --locked --group engine pytest -q tests/test_bridges_engine.py
 

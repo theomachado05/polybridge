@@ -1,0 +1,3201 @@
+{
+  "schema": "hedgecore.catalog/v1",
+  "total": 1386,
+  "n_families": 17,
+  "event_classes": [
+    "macro_fed",
+    "elections",
+    "tariffs_trade",
+    "geopolitics_energy",
+    "housing",
+    "fig",
+    "tech_regulation",
+    "crypto",
+    "corporate_8k",
+    "company_specific"
+  ],
+  "block_kinds": {
+    "signals": "Reader",
+    "gates": "Gate",
+    "sizers": "Impact",
+    "execution": "Execution",
+    "risk": "Gate",
+    "tax": "Tax",
+    "routing": "Routing"
+  },
+  "reasons": {
+    "0": {
+      "name": "none",
+      "block": "general"
+    },
+    "1": {
+      "name": "invalid",
+      "block": "general"
+    },
+    "2": {
+      "name": "invalid_params",
+      "block": "general"
+    },
+    "3": {
+      "name": "invalid_state",
+      "block": "general"
+    },
+    "257": {
+      "name": "signal_missing",
+      "block": "signals"
+    },
+    "258": {
+      "name": "warmup",
+      "block": "signals"
+    },
+    "259": {
+      "name": "no_signal",
+      "block": "signals"
+    },
+    "513": {
+      "name": "stale",
+      "block": "gates"
+    },
+    "514": {
+      "name": "below_sigma",
+      "block": "gates"
+    },
+    "515": {
+      "name": "spread_too_wide",
+      "block": "gates"
+    },
+    "516": {
+      "name": "thin_book",
+      "block": "gates"
+    },
+    "517": {
+      "name": "out_of_session",
+      "block": "gates"
+    },
+    "518": {
+      "name": "cooldown",
+      "block": "gates"
+    },
+    "519": {
+      "name": "outside_event_window",
+      "block": "gates"
+    },
+    "769": {
+      "name": "rebalance",
+      "block": "sizers"
+    },
+    "770": {
+      "name": "entry",
+      "block": "sizers"
+    },
+    "771": {
+      "name": "exit",
+      "block": "sizers"
+    },
+    "772": {
+      "name": "zero_target",
+      "block": "sizers"
+    },
+    "773": {
+      "name": "handoff",
+      "block": "sizers"
+    },
+    "1025": {
+      "name": "inside_band",
+      "block": "execution"
+    },
+    "1026": {
+      "name": "below_fees",
+      "block": "execution"
+    },
+    "1027": {
+      "name": "fee_unknown",
+      "block": "execution"
+    },
+    "1028": {
+      "name": "sliced",
+      "block": "execution"
+    },
+    "1029": {
+      "name": "iceberg_capped",
+      "block": "execution"
+    },
+    "1030": {
+      "name": "passive",
+      "block": "execution"
+    },
+    "1031": {
+      "name": "aggressive",
+      "block": "execution"
+    },
+    "1281": {
+      "name": "position_capped",
+      "block": "risk"
+    },
+    "1282": {
+      "name": "notional_capped",
+      "block": "risk"
+    },
+    "1283": {
+      "name": "drawdown_kill",
+      "block": "risk"
+    },
+    "1284": {
+      "name": "gap_flip_kill",
+      "block": "risk"
+    },
+    "1285": {
+      "name": "daily_loss_cap",
+      "block": "risk"
+    },
+    "1286": {
+      "name": "notional_unknown",
+      "block": "risk"
+    },
+    "1537": {
+      "name": "wash_sale",
+      "block": "tax"
+    },
+    "1793": {
+      "name": "routed_poly",
+      "block": "routing"
+    },
+    "1794": {
+      "name": "routed_kalshi",
+      "block": "routing"
+    },
+    "1795": {
+      "name": "no_route",
+      "block": "routing"
+    }
+  },
+  "families": [
+    {
+      "id": "equity_delta_bridge",
+      "division": "hedge",
+      "ui_kind": "Impact",
+      "idea": "Short c * N * p_adverse shares of the held stock, re-sized when the prediction market moves enough to beat fees",
+      "event_classes": [
+        "macro_fed",
+        "elections",
+        "tariffs_trade",
+        "geopolitics_energy",
+        "housing",
+        "fig",
+        "tech_regulation",
+        "crypto",
+        "corporate_8k",
+        "company_specific"
+      ],
+      "instruments": [
+        "equity"
+      ],
+      "blocks": [
+        {
+          "kind": "signals",
+          "name": "ImpliedProb",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "signals",
+          "name": "EwmaVol",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "gates",
+          "name": "Staleness",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "gates",
+          "name": "Session",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "gates",
+          "name": "Sigma",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "sizers",
+          "name": "DeltaBridge",
+          "ui_kind": "Impact"
+        },
+        {
+          "kind": "risk",
+          "name": "PositionCap",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "execution",
+          "name": "NoTradeBand",
+          "ui_kind": "Execution"
+        },
+        {
+          "kind": "execution",
+          "name": "FeeGate",
+          "ui_kind": "Execution"
+        },
+        {
+          "kind": "tax",
+          "name": "TaxLotSelector",
+          "ui_kind": "Tax"
+        },
+        {
+          "kind": "tax",
+          "name": "WashSaleGuard",
+          "ui_kind": "Tax"
+        }
+      ],
+      "ui_kinds": [
+        "Execution",
+        "Gate",
+        "Impact",
+        "Reader",
+        "Tax"
+      ],
+      "params": [
+        {
+          "name": "coverage",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.5,
+          "grid": [
+            0.25,
+            0.5,
+            0.75,
+            1.0
+          ],
+          "tuned": true,
+          "help": "c: fraction of the position hedged at p = 1"
+        },
+        {
+          "name": "band_shares",
+          "min": 0.0,
+          "max": 1000000.0,
+          "default": 10.0,
+          "grid": [
+            10.0,
+            25.0,
+            50.0
+          ],
+          "tuned": true,
+          "help": "no-trade band in shares"
+        },
+        {
+          "name": "sigma_k",
+          "min": 0.0,
+          "max": 10.0,
+          "default": 1.0,
+          "grid": [
+            0.0,
+            1.0,
+            2.0
+          ],
+          "tuned": true,
+          "help": "trade only when |dp| >= k * EWMA sigma of dp (0 = off)"
+        },
+        {
+          "name": "fee_ratio",
+          "min": 0.0,
+          "max": 100.0,
+          "default": 1.0,
+          "grid": [
+            0.5,
+            1.0,
+            2.0
+          ],
+          "tuned": true,
+          "help": "trade only if benefit >= ratio * (fee + half-spread)"
+        },
+        {
+          "name": "impact",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.03,
+          "grid": [
+            0.03
+          ],
+          "tuned": false,
+          "help": "expected fractional stock move if the adverse event resolves (from the impact model); prices the fee gate's benefit; 0 disables the fee gate"
+        },
+        {
+          "name": "session",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "grid": [
+            0.0
+          ],
+          "tuned": false,
+          "help": "1 = trade only in US equity regular hours (live bridges)"
+        },
+        {
+          "name": "wash_guard",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "grid": [
+            0.0
+          ],
+          "tuned": false,
+          "help": "1 = block re-shorting within 30 days of a loss cover (wash sale)"
+        }
+      ],
+      "grid": {
+        "coverage": [
+          0.25,
+          0.5,
+          0.75,
+          1.0
+        ],
+        "band_shares": [
+          10.0,
+          25.0,
+          50.0
+        ],
+        "sigma_k": [
+          0.0,
+          1.0,
+          2.0
+        ],
+        "fee_ratio": [
+          0.5,
+          1.0,
+          2.0
+        ],
+        "impact": [
+          0.03
+        ],
+        "session": [
+          0.0
+        ],
+        "wash_guard": [
+          0.0
+        ]
+      },
+      "preset_count": 108
+    },
+    {
+      "id": "stress_lead_hedge",
+      "division": "hedge",
+      "ui_kind": "Execution",
+      "idea": "Hedge fast (cross, unsliced) when the prediction market moves sharply against its own volatility; work orders passively otherwise",
+      "event_classes": [
+        "macro_fed",
+        "geopolitics_energy",
+        "fig"
+      ],
+      "instruments": [
+        "equity",
+        "etf"
+      ],
+      "blocks": [
+        {
+          "kind": "signals",
+          "name": "ImpliedProb",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "signals",
+          "name": "DeltaDp",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "signals",
+          "name": "EwmaVol",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "gates",
+          "name": "Staleness",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "gates",
+          "name": "Session",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "sizers",
+          "name": "DeltaBridge",
+          "ui_kind": "Impact"
+        },
+        {
+          "kind": "risk",
+          "name": "PositionCap",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "execution",
+          "name": "NoTradeBand",
+          "ui_kind": "Execution"
+        },
+        {
+          "kind": "execution",
+          "name": "FeeGate",
+          "ui_kind": "Execution"
+        },
+        {
+          "kind": "execution",
+          "name": "Slicer",
+          "ui_kind": "Execution"
+        },
+        {
+          "kind": "execution",
+          "name": "PassiveAggressive",
+          "ui_kind": "Execution"
+        }
+      ],
+      "ui_kinds": [
+        "Execution",
+        "Gate",
+        "Impact",
+        "Reader"
+      ],
+      "params": [
+        {
+          "name": "coverage",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.75,
+          "grid": [
+            0.5,
+            0.75,
+            1.0
+          ],
+          "tuned": true,
+          "help": "c: fraction hedged at p = 1"
+        },
+        {
+          "name": "window",
+          "min": 1.0,
+          "max": 64.0,
+          "default": 5.0,
+          "grid": [
+            5.0
+          ],
+          "tuned": false,
+          "help": "ticks over which dp is measured (fixed; stress_k tunes sensitivity)"
+        },
+        {
+          "name": "stress_k",
+          "min": 0.0,
+          "max": 20.0,
+          "default": 2.0,
+          "grid": [
+            1.5,
+            2.0,
+            3.0
+          ],
+          "tuned": true,
+          "help": "stress when |dp| >= k * sigma * sqrt(window)"
+        },
+        {
+          "name": "band_shares",
+          "min": 0.0,
+          "max": 1000000.0,
+          "default": 25.0,
+          "grid": [
+            10.0,
+            25.0,
+            50.0
+          ],
+          "tuned": true,
+          "help": "no-trade band: trade only if |h* - h| >= band"
+        },
+        {
+          "name": "child_max",
+          "min": 0.0,
+          "max": 10000000.0,
+          "default": 100.0,
+          "grid": [
+            100.0,
+            250.0,
+            500.0
+          ],
+          "tuned": true,
+          "help": "calm-regime child order cap in shares"
+        },
+        {
+          "name": "impact",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.03,
+          "grid": [
+            0.03
+          ],
+          "tuned": false,
+          "help": "expected fractional stock move if the adverse event resolves (from the impact model); prices the fee gate's benefit; 0 disables the fee gate"
+        },
+        {
+          "name": "session",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "grid": [
+            0.0
+          ],
+          "tuned": false,
+          "help": "1 = trade only in US equity regular hours (live bridges)"
+        },
+        {
+          "name": "wash_guard",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "grid": [
+            0.0
+          ],
+          "tuned": false,
+          "help": "1 = block re-shorting within 30 days of a loss cover (wash sale)"
+        }
+      ],
+      "grid": {
+        "coverage": [
+          0.5,
+          0.75,
+          1.0
+        ],
+        "window": [
+          5.0
+        ],
+        "stress_k": [
+          1.5,
+          2.0,
+          3.0
+        ],
+        "band_shares": [
+          10.0,
+          25.0,
+          50.0
+        ],
+        "child_max": [
+          100.0,
+          250.0,
+          500.0
+        ],
+        "impact": [
+          0.03
+        ],
+        "session": [
+          0.0
+        ],
+        "wash_guard": [
+          0.0
+        ]
+      },
+      "preset_count": 81
+    },
+    {
+      "id": "book_imbalance_hedge",
+      "division": "hedge",
+      "ui_kind": "Reader",
+      "idea": "Pre-hedge on the order-book microprice when Polymarket/Kalshi depth is lopsided, before the mid moves",
+      "event_classes": [
+        "macro_fed",
+        "elections",
+        "tariffs_trade",
+        "geopolitics_energy",
+        "housing",
+        "fig",
+        "tech_regulation",
+        "crypto",
+        "corporate_8k",
+        "company_specific"
+      ],
+      "instruments": [
+        "equity"
+      ],
+      "blocks": [
+        {
+          "kind": "signals",
+          "name": "PMid",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "signals",
+          "name": "BookImbalance",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "signals",
+          "name": "Microprice",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "gates",
+          "name": "Staleness",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "gates",
+          "name": "Session",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "gates",
+          "name": "Depth",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "sizers",
+          "name": "DeltaBridge",
+          "ui_kind": "Impact"
+        },
+        {
+          "kind": "risk",
+          "name": "PositionCap",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "execution",
+          "name": "NoTradeBand",
+          "ui_kind": "Execution"
+        },
+        {
+          "kind": "execution",
+          "name": "FeeGate",
+          "ui_kind": "Execution"
+        },
+        {
+          "kind": "execution",
+          "name": "PassiveAggressive",
+          "ui_kind": "Execution"
+        }
+      ],
+      "ui_kinds": [
+        "Execution",
+        "Gate",
+        "Impact",
+        "Reader"
+      ],
+      "params": [
+        {
+          "name": "levels",
+          "min": 1.0,
+          "max": 5.0,
+          "default": 3.0,
+          "grid": [
+            1.0,
+            3.0,
+            5.0
+          ],
+          "tuned": true,
+          "help": "book levels summed for imbalance and depth"
+        },
+        {
+          "name": "imb_threshold",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.4,
+          "grid": [
+            0.2,
+            0.4,
+            0.6
+          ],
+          "tuned": true,
+          "help": "|imbalance| at which the microprice leads"
+        },
+        {
+          "name": "coverage",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.75,
+          "grid": [
+            0.5,
+            0.75,
+            1.0
+          ],
+          "tuned": true,
+          "help": "c: fraction hedged at p = 1"
+        },
+        {
+          "name": "min_depth",
+          "min": 0.0,
+          "max": 1000000000.0,
+          "default": 500.0,
+          "grid": [
+            100.0,
+            500.0,
+            2000.0
+          ],
+          "tuned": true,
+          "help": "minimum contracts on each side over `levels`"
+        },
+        {
+          "name": "band_shares",
+          "min": 0.0,
+          "max": 1000000.0,
+          "default": 10.0,
+          "grid": [
+            10.0
+          ],
+          "tuned": false,
+          "help": "no-trade band in shares"
+        },
+        {
+          "name": "impact",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.03,
+          "grid": [
+            0.03
+          ],
+          "tuned": false,
+          "help": "expected fractional stock move if the adverse event resolves (from the impact model); prices the fee gate's benefit; 0 disables the fee gate"
+        },
+        {
+          "name": "session",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "grid": [
+            0.0
+          ],
+          "tuned": false,
+          "help": "1 = trade only in US equity regular hours (live bridges)"
+        },
+        {
+          "name": "wash_guard",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "grid": [
+            0.0
+          ],
+          "tuned": false,
+          "help": "1 = block re-shorting within 30 days of a loss cover (wash sale)"
+        }
+      ],
+      "grid": {
+        "levels": [
+          1.0,
+          3.0,
+          5.0
+        ],
+        "imb_threshold": [
+          0.2,
+          0.4,
+          0.6
+        ],
+        "coverage": [
+          0.5,
+          0.75,
+          1.0
+        ],
+        "min_depth": [
+          100.0,
+          500.0,
+          2000.0
+        ],
+        "band_shares": [
+          10.0
+        ],
+        "impact": [
+          0.03
+        ],
+        "session": [
+          0.0
+        ],
+        "wash_guard": [
+          0.0
+        ]
+      },
+      "preset_count": 81
+    },
+    {
+      "id": "poly_kalshi_spread",
+      "division": "hedge/opportunity",
+      "ui_kind": "Reader",
+      "idea": "When this venue's YES mid is rich (cheap) against the other venue by more than half-spread + fee + entry, buy NO (YES) here and exit when the gap closes; stop if the gap flips through the entry threshold",
+      "event_classes": [
+        "macro_fed",
+        "elections",
+        "tariffs_trade",
+        "geopolitics_energy",
+        "housing",
+        "fig",
+        "tech_regulation",
+        "crypto",
+        "corporate_8k",
+        "company_specific"
+      ],
+      "instruments": [
+        "pred_yes",
+        "pred_no"
+      ],
+      "blocks": [
+        {
+          "kind": "signals",
+          "name": "CrossVenueGap",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "gates",
+          "name": "Staleness",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "gates",
+          "name": "Spread",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "risk",
+          "name": "PositionCap",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "risk",
+          "name": "GapFlipKill",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "execution",
+          "name": "FeeGate",
+          "ui_kind": "Execution"
+        }
+      ],
+      "ui_kinds": [
+        "Execution",
+        "Gate",
+        "Reader"
+      ],
+      "params": [
+        {
+          "name": "entry_gap",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.02,
+          "grid": [
+            0.01,
+            0.02,
+            0.04
+          ],
+          "tuned": true,
+          "help": "net edge (gap - half-spread - fee) to enter"
+        },
+        {
+          "name": "exit_gap",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.005,
+          "grid": [
+            0.0,
+            0.005,
+            0.01
+          ],
+          "tuned": true,
+          "help": "exit once the gap on the entry side is <= this"
+        },
+        {
+          "name": "size",
+          "min": 1.0,
+          "max": 10000000.0,
+          "default": 500.0,
+          "grid": [
+            100.0,
+            500.0,
+            1000.0
+          ],
+          "tuned": true,
+          "help": "contracts per entry (one clip, no pyramiding)"
+        },
+        {
+          "name": "max_spread",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.03,
+          "grid": [
+            0.03,
+            0.05,
+            0.08
+          ],
+          "tuned": true,
+          "help": "skip entries when this venue's YES spread is wider"
+        }
+      ],
+      "grid": {
+        "entry_gap": [
+          0.01,
+          0.02,
+          0.04
+        ],
+        "exit_gap": [
+          0.0,
+          0.005,
+          0.01
+        ],
+        "size": [
+          100.0,
+          500.0,
+          1000.0
+        ],
+        "max_spread": [
+          0.03,
+          0.05,
+          0.08
+        ]
+      },
+      "preset_count": 81
+    },
+    {
+      "id": "no_bid_seller",
+      "division": "opportunity",
+      "ui_kind": "Routing",
+      "idea": "Sell NO into bids that are rich against a fair value (other venue, EWMA, or option-implied), Kelly-sized, routed to the venue with the best all-in price, never showing more than a fraction of displayed size",
+      "event_classes": [
+        "macro_fed",
+        "elections",
+        "tariffs_trade",
+        "geopolitics_energy",
+        "housing",
+        "fig",
+        "tech_regulation",
+        "crypto",
+        "corporate_8k",
+        "company_specific"
+      ],
+      "instruments": [
+        "pred_no"
+      ],
+      "blocks": [
+        {
+          "kind": "signals",
+          "name": "PMid",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "signals",
+          "name": "MeanRevertZ",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "signals",
+          "name": "OptionImpliedProb",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "gates",
+          "name": "Staleness",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "sizers",
+          "name": "KellyCapped",
+          "ui_kind": "Impact"
+        },
+        {
+          "kind": "risk",
+          "name": "NotionalCap",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "risk",
+          "name": "DailyLossCap",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "execution",
+          "name": "IcebergCap",
+          "ui_kind": "Execution"
+        },
+        {
+          "kind": "routing",
+          "name": "VenueRouter",
+          "ui_kind": "Routing"
+        }
+      ],
+      "ui_kinds": [
+        "Execution",
+        "Gate",
+        "Impact",
+        "Reader",
+        "Routing"
+      ],
+      "params": [
+        {
+          "name": "edge",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.02,
+          "grid": [
+            0.01,
+            0.02,
+            0.04
+          ],
+          "tuned": true,
+          "help": "all-in NO bid minus fair NO needed to sell"
+        },
+        {
+          "name": "kelly_cap",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.1,
+          "grid": [
+            0.05,
+            0.1,
+            0.25
+          ],
+          "tuned": true,
+          "help": "cap on the Kelly fraction of bankroll"
+        },
+        {
+          "name": "fair_source",
+          "min": 0.0,
+          "max": 2.0,
+          "default": 0.0,
+          "grid": [
+            0.0,
+            1.0,
+            2.0
+          ],
+          "tuned": true,
+          "help": "fair YES from 0 other venue, 1 EWMA of mid, 2 options"
+        },
+        {
+          "name": "iceberg_frac",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.5,
+          "grid": [
+            0.25,
+            0.5,
+            1.0
+          ],
+          "tuned": true,
+          "help": "max fraction of displayed size per order"
+        },
+        {
+          "name": "bankroll",
+          "min": 1.0,
+          "max": 1000000000.0,
+          "default": 10000.0,
+          "grid": [
+            10000.0
+          ],
+          "tuned": false,
+          "help": "$ at risk for Kelly sizing"
+        },
+        {
+          "name": "max_notional",
+          "min": 0.0,
+          "max": 1000000000.0,
+          "default": 5000.0,
+          "grid": [
+            5000.0
+          ],
+          "tuned": false,
+          "help": "cap on short NO $ notional at the sale price (0 = off)"
+        },
+        {
+          "name": "daily_loss",
+          "min": 0.0,
+          "max": 1000000000.0,
+          "default": 1000.0,
+          "grid": [
+            1000.0
+          ],
+          "tuned": false,
+          "help": "stop new sales after losing this many $ (marked at the YES mid) since the UTC day began (0 = off)"
+        }
+      ],
+      "grid": {
+        "edge": [
+          0.01,
+          0.02,
+          0.04
+        ],
+        "kelly_cap": [
+          0.05,
+          0.1,
+          0.25
+        ],
+        "fair_source": [
+          0.0,
+          1.0,
+          2.0
+        ],
+        "iceberg_frac": [
+          0.25,
+          0.5,
+          1.0
+        ],
+        "bankroll": [
+          10000.0
+        ],
+        "max_notional": [
+          5000.0
+        ],
+        "daily_loss": [
+          1000.0
+        ]
+      },
+      "preset_count": 81
+    },
+    {
+      "id": "fig_stress",
+      "division": "hedge",
+      "ui_kind": "Impact",
+      "idea": "Bank-stress, Fed and regulation odds hedge banks/insurers convexly (p^gamma), with a drawdown kill on the hedge leg",
+      "event_classes": [
+        "fig",
+        "macro_fed"
+      ],
+      "instruments": [
+        "etf:KRE",
+        "etf:XLF",
+        "etf:KBE"
+      ],
+      "blocks": [
+        {
+          "kind": "signals",
+          "name": "ImpliedProb",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "gates",
+          "name": "Staleness",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "gates",
+          "name": "Session",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "sizers",
+          "name": "ConvexExposure",
+          "ui_kind": "Impact"
+        },
+        {
+          "kind": "risk",
+          "name": "PositionCap",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "risk",
+          "name": "DrawdownKill",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "execution",
+          "name": "NoTradeBand",
+          "ui_kind": "Execution"
+        },
+        {
+          "kind": "execution",
+          "name": "FeeGate",
+          "ui_kind": "Execution"
+        }
+      ],
+      "ui_kinds": [
+        "Execution",
+        "Gate",
+        "Impact",
+        "Reader"
+      ],
+      "params": [
+        {
+          "name": "coverage",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.75,
+          "grid": [
+            0.5,
+            0.75,
+            1.0
+          ],
+          "tuned": true,
+          "help": "c: fraction hedged at p = 1"
+        },
+        {
+          "name": "gamma",
+          "min": 0.1,
+          "max": 5.0,
+          "default": 1.0,
+          "grid": [
+            0.5,
+            1.0,
+            2.0
+          ],
+          "tuned": true,
+          "help": "convexity of the response to p"
+        },
+        {
+          "name": "band_shares",
+          "min": 0.0,
+          "max": 1000000.0,
+          "default": 10.0,
+          "grid": [
+            10.0,
+            25.0,
+            50.0
+          ],
+          "tuned": true,
+          "help": "no-trade band: trade only if |h* - h| >= band"
+        },
+        {
+          "name": "dd_frac",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.05,
+          "grid": [
+            0.02,
+            0.05,
+            0.1
+          ],
+          "tuned": true,
+          "help": "kill the hedge leg after losing this fraction of N * price"
+        },
+        {
+          "name": "impact",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.03,
+          "grid": [
+            0.03
+          ],
+          "tuned": false,
+          "help": "expected fractional stock move if the adverse event resolves (from the impact model); prices the fee gate's benefit; 0 disables the fee gate"
+        },
+        {
+          "name": "session",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "grid": [
+            0.0
+          ],
+          "tuned": false,
+          "help": "1 = trade only in US equity regular hours (live bridges)"
+        },
+        {
+          "name": "wash_guard",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "grid": [
+            0.0
+          ],
+          "tuned": false,
+          "help": "1 = block re-shorting within 30 days of a loss cover (wash sale)"
+        }
+      ],
+      "grid": {
+        "coverage": [
+          0.5,
+          0.75,
+          1.0
+        ],
+        "gamma": [
+          0.5,
+          1.0,
+          2.0
+        ],
+        "band_shares": [
+          10.0,
+          25.0,
+          50.0
+        ],
+        "dd_frac": [
+          0.02,
+          0.05,
+          0.1
+        ],
+        "impact": [
+          0.03
+        ],
+        "session": [
+          0.0
+        ],
+        "wash_guard": [
+          0.0
+        ]
+      },
+      "preset_count": 81
+    },
+    {
+      "id": "housing_rates",
+      "division": "hedge",
+      "ui_kind": "Impact",
+      "idea": "Mortgage-rate and home-price odds hedge rate-sensitive homebuilder/REIT ETFs with a linear rate beta",
+      "event_classes": [
+        "housing"
+      ],
+      "instruments": [
+        "etf:ITB",
+        "etf:XHB",
+        "etf:VNQ"
+      ],
+      "blocks": [
+        {
+          "kind": "signals",
+          "name": "ImpliedProb",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "signals",
+          "name": "EwmaVol",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "gates",
+          "name": "Staleness",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "gates",
+          "name": "Session",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "gates",
+          "name": "Sigma",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "sizers",
+          "name": "LinearExposure",
+          "ui_kind": "Impact"
+        },
+        {
+          "kind": "risk",
+          "name": "PositionCap",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "execution",
+          "name": "NoTradeBand",
+          "ui_kind": "Execution"
+        },
+        {
+          "kind": "execution",
+          "name": "FeeGate",
+          "ui_kind": "Execution"
+        }
+      ],
+      "ui_kinds": [
+        "Execution",
+        "Gate",
+        "Impact",
+        "Reader"
+      ],
+      "params": [
+        {
+          "name": "beta",
+          "min": 0.0,
+          "max": 5.0,
+          "default": 1.0,
+          "grid": [
+            0.5,
+            1.0,
+            1.5
+          ],
+          "tuned": true,
+          "help": "hedge fraction per unit of adverse probability"
+        },
+        {
+          "name": "max_cov",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 1.0,
+          "grid": [
+            0.5,
+            0.75,
+            1.0
+          ],
+          "tuned": true,
+          "help": "maximum hedged fraction"
+        },
+        {
+          "name": "band_shares",
+          "min": 0.0,
+          "max": 1000000.0,
+          "default": 10.0,
+          "grid": [
+            10.0,
+            25.0,
+            50.0
+          ],
+          "tuned": true,
+          "help": "no-trade band: trade only if |h* - h| >= band"
+        },
+        {
+          "name": "sigma_k",
+          "min": 0.0,
+          "max": 10.0,
+          "default": 1.0,
+          "grid": [
+            0.0,
+            1.0,
+            2.0
+          ],
+          "tuned": true,
+          "help": "trade only when |dp| >= k * EWMA sigma of dp (0 = off)"
+        },
+        {
+          "name": "impact",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.03,
+          "grid": [
+            0.03
+          ],
+          "tuned": false,
+          "help": "expected fractional stock move if the adverse event resolves (from the impact model); prices the fee gate's benefit; 0 disables the fee gate"
+        },
+        {
+          "name": "session",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "grid": [
+            0.0
+          ],
+          "tuned": false,
+          "help": "1 = trade only in US equity regular hours (live bridges)"
+        },
+        {
+          "name": "wash_guard",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "grid": [
+            0.0
+          ],
+          "tuned": false,
+          "help": "1 = block re-shorting within 30 days of a loss cover (wash sale)"
+        }
+      ],
+      "grid": {
+        "beta": [
+          0.5,
+          1.0,
+          1.5
+        ],
+        "max_cov": [
+          0.5,
+          0.75,
+          1.0
+        ],
+        "band_shares": [
+          10.0,
+          25.0,
+          50.0
+        ],
+        "sigma_k": [
+          0.0,
+          1.0,
+          2.0
+        ],
+        "impact": [
+          0.03
+        ],
+        "session": [
+          0.0
+        ],
+        "wash_guard": [
+          0.0
+        ]
+      },
+      "preset_count": 81
+    },
+    {
+      "id": "macro_fed_hedge",
+      "division": "hedge",
+      "ui_kind": "Reader",
+      "idea": "Fed/CPI/recession odds hedge index proxies; the hedge only grows when probability momentum confirms and only shrinks when it reverses, with a cooldown between orders",
+      "event_classes": [
+        "macro_fed"
+      ],
+      "instruments": [
+        "etf:SPY",
+        "etf:IWM",
+        "etf:TLT"
+      ],
+      "blocks": [
+        {
+          "kind": "signals",
+          "name": "ImpliedProb",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "signals",
+          "name": "Momentum",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "gates",
+          "name": "Staleness",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "gates",
+          "name": "Session",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "gates",
+          "name": "Cooldown",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "sizers",
+          "name": "DeltaBridge",
+          "ui_kind": "Impact"
+        },
+        {
+          "kind": "risk",
+          "name": "PositionCap",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "execution",
+          "name": "NoTradeBand",
+          "ui_kind": "Execution"
+        },
+        {
+          "kind": "execution",
+          "name": "FeeGate",
+          "ui_kind": "Execution"
+        }
+      ],
+      "ui_kinds": [
+        "Execution",
+        "Gate",
+        "Impact",
+        "Reader"
+      ],
+      "params": [
+        {
+          "name": "coverage",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.5,
+          "grid": [
+            0.25,
+            0.5,
+            1.0
+          ],
+          "tuned": true,
+          "help": "c: fraction hedged at p = 1"
+        },
+        {
+          "name": "mom_alpha",
+          "min": 0.01,
+          "max": 1.0,
+          "default": 0.3,
+          "grid": [
+            0.1,
+            0.3,
+            0.6
+          ],
+          "tuned": true,
+          "help": "EWMA weight of the momentum signal"
+        },
+        {
+          "name": "cooldown_s",
+          "min": 0.0,
+          "max": 86400.0,
+          "default": 60.0,
+          "grid": [
+            0.0,
+            60.0,
+            300.0
+          ],
+          "tuned": true,
+          "help": "minimum seconds between orders"
+        },
+        {
+          "name": "band_shares",
+          "min": 0.0,
+          "max": 1000000.0,
+          "default": 10.0,
+          "grid": [
+            10.0,
+            25.0,
+            50.0
+          ],
+          "tuned": true,
+          "help": "no-trade band: trade only if |h* - h| >= band"
+        },
+        {
+          "name": "impact",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.03,
+          "grid": [
+            0.03
+          ],
+          "tuned": false,
+          "help": "expected fractional stock move if the adverse event resolves (from the impact model); prices the fee gate's benefit; 0 disables the fee gate"
+        },
+        {
+          "name": "session",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "grid": [
+            0.0
+          ],
+          "tuned": false,
+          "help": "1 = trade only in US equity regular hours (live bridges)"
+        },
+        {
+          "name": "wash_guard",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "grid": [
+            0.0
+          ],
+          "tuned": false,
+          "help": "1 = block re-shorting within 30 days of a loss cover (wash sale)"
+        }
+      ],
+      "grid": {
+        "coverage": [
+          0.25,
+          0.5,
+          1.0
+        ],
+        "mom_alpha": [
+          0.1,
+          0.3,
+          0.6
+        ],
+        "cooldown_s": [
+          0.0,
+          60.0,
+          300.0
+        ],
+        "band_shares": [
+          10.0,
+          25.0,
+          50.0
+        ],
+        "impact": [
+          0.03
+        ],
+        "session": [
+          0.0
+        ],
+        "wash_guard": [
+          0.0
+        ]
+      },
+      "preset_count": 81
+    },
+    {
+      "id": "election_hedge",
+      "division": "hedge",
+      "ui_kind": "Impact",
+      "idea": "Election odds above a neutral level tilt a hedge on the sector ETF the outcome hurts, linear in the excess probability",
+      "event_classes": [
+        "elections"
+      ],
+      "instruments": [
+        "etf:sector"
+      ],
+      "blocks": [
+        {
+          "kind": "signals",
+          "name": "ImpliedProb",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "signals",
+          "name": "EwmaVol",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "gates",
+          "name": "Staleness",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "gates",
+          "name": "Session",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "gates",
+          "name": "Sigma",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "sizers",
+          "name": "LinearExposure",
+          "ui_kind": "Impact"
+        },
+        {
+          "kind": "risk",
+          "name": "PositionCap",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "execution",
+          "name": "NoTradeBand",
+          "ui_kind": "Execution"
+        },
+        {
+          "kind": "execution",
+          "name": "FeeGate",
+          "ui_kind": "Execution"
+        }
+      ],
+      "ui_kinds": [
+        "Execution",
+        "Gate",
+        "Impact",
+        "Reader"
+      ],
+      "params": [
+        {
+          "name": "beta",
+          "min": 0.0,
+          "max": 10.0,
+          "default": 1.0,
+          "grid": [
+            0.5,
+            1.0,
+            2.0
+          ],
+          "tuned": true,
+          "help": "hedge fraction per unit of probability above neutral"
+        },
+        {
+          "name": "p_neutral",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.5,
+          "grid": [
+            0.3,
+            0.4,
+            0.5
+          ],
+          "tuned": true,
+          "help": "probability at which no hedge is held"
+        },
+        {
+          "name": "band_shares",
+          "min": 0.0,
+          "max": 1000000.0,
+          "default": 10.0,
+          "grid": [
+            10.0,
+            25.0,
+            50.0
+          ],
+          "tuned": true,
+          "help": "no-trade band: trade only if |h* - h| >= band"
+        },
+        {
+          "name": "sigma_k",
+          "min": 0.0,
+          "max": 10.0,
+          "default": 1.0,
+          "grid": [
+            0.0,
+            1.0,
+            2.0
+          ],
+          "tuned": true,
+          "help": "trade only when |dp| >= k * EWMA sigma of dp (0 = off)"
+        },
+        {
+          "name": "impact",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.03,
+          "grid": [
+            0.03
+          ],
+          "tuned": false,
+          "help": "expected fractional stock move if the adverse event resolves (from the impact model); prices the fee gate's benefit; 0 disables the fee gate"
+        },
+        {
+          "name": "session",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "grid": [
+            0.0
+          ],
+          "tuned": false,
+          "help": "1 = trade only in US equity regular hours (live bridges)"
+        },
+        {
+          "name": "wash_guard",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "grid": [
+            0.0
+          ],
+          "tuned": false,
+          "help": "1 = block re-shorting within 30 days of a loss cover (wash sale)"
+        }
+      ],
+      "grid": {
+        "beta": [
+          0.5,
+          1.0,
+          2.0
+        ],
+        "p_neutral": [
+          0.3,
+          0.4,
+          0.5
+        ],
+        "band_shares": [
+          10.0,
+          25.0,
+          50.0
+        ],
+        "sigma_k": [
+          0.0,
+          1.0,
+          2.0
+        ],
+        "impact": [
+          0.03
+        ],
+        "session": [
+          0.0
+        ],
+        "wash_guard": [
+          0.0
+        ]
+      },
+      "preset_count": 81
+    },
+    {
+      "id": "tariff_trade_hedge",
+      "division": "hedge",
+      "ui_kind": "Reader",
+      "idea": "Tariff odds hedge trade-exposed equities convexly; the hedge grows only on z-score breakouts above the EWMA mean and shrinks only on breakdowns",
+      "event_classes": [
+        "tariffs_trade"
+      ],
+      "instruments": [
+        "etf:importers",
+        "etf:exporters"
+      ],
+      "blocks": [
+        {
+          "kind": "signals",
+          "name": "ImpliedProb",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "signals",
+          "name": "MeanRevertZ",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "gates",
+          "name": "Staleness",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "gates",
+          "name": "Session",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "sizers",
+          "name": "ConvexExposure",
+          "ui_kind": "Impact"
+        },
+        {
+          "kind": "risk",
+          "name": "PositionCap",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "execution",
+          "name": "NoTradeBand",
+          "ui_kind": "Execution"
+        },
+        {
+          "kind": "execution",
+          "name": "FeeGate",
+          "ui_kind": "Execution"
+        }
+      ],
+      "ui_kinds": [
+        "Execution",
+        "Gate",
+        "Impact",
+        "Reader"
+      ],
+      "params": [
+        {
+          "name": "coverage",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.75,
+          "grid": [
+            0.5,
+            0.75,
+            1.0
+          ],
+          "tuned": true,
+          "help": "c: fraction hedged at p = 1"
+        },
+        {
+          "name": "gamma",
+          "min": 0.1,
+          "max": 5.0,
+          "default": 1.5,
+          "grid": [
+            1.0,
+            1.5,
+            2.0
+          ],
+          "tuned": true,
+          "help": "convexity of the response to p"
+        },
+        {
+          "name": "z_entry",
+          "min": 0.0,
+          "max": 10.0,
+          "default": 1.0,
+          "grid": [
+            0.0,
+            1.0,
+            2.0
+          ],
+          "tuned": true,
+          "help": "|z| needed to grow (z >= k) or shrink (z <= -k) the hedge"
+        },
+        {
+          "name": "band_shares",
+          "min": 0.0,
+          "max": 1000000.0,
+          "default": 10.0,
+          "grid": [
+            10.0,
+            25.0,
+            50.0
+          ],
+          "tuned": true,
+          "help": "no-trade band: trade only if |h* - h| >= band"
+        },
+        {
+          "name": "impact",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.03,
+          "grid": [
+            0.03
+          ],
+          "tuned": false,
+          "help": "expected fractional stock move if the adverse event resolves (from the impact model); prices the fee gate's benefit; 0 disables the fee gate"
+        },
+        {
+          "name": "session",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "grid": [
+            0.0
+          ],
+          "tuned": false,
+          "help": "1 = trade only in US equity regular hours (live bridges)"
+        },
+        {
+          "name": "wash_guard",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "grid": [
+            0.0
+          ],
+          "tuned": false,
+          "help": "1 = block re-shorting within 30 days of a loss cover (wash sale)"
+        }
+      ],
+      "grid": {
+        "coverage": [
+          0.5,
+          0.75,
+          1.0
+        ],
+        "gamma": [
+          1.0,
+          1.5,
+          2.0
+        ],
+        "z_entry": [
+          0.0,
+          1.0,
+          2.0
+        ],
+        "band_shares": [
+          10.0,
+          25.0,
+          50.0
+        ],
+        "impact": [
+          0.03
+        ],
+        "session": [
+          0.0
+        ],
+        "wash_guard": [
+          0.0
+        ]
+      },
+      "preset_count": 81
+    },
+    {
+      "id": "energy_geo_hedge",
+      "division": "hedge",
+      "ui_kind": "Gate",
+      "idea": "Conflict/OPEC odds hedge energy proxies; ignores wide, unreliable PM quotes and crosses the spread on jumps",
+      "event_classes": [
+        "geopolitics_energy"
+      ],
+      "instruments": [
+        "etf:XLE",
+        "etf:USO"
+      ],
+      "blocks": [
+        {
+          "kind": "signals",
+          "name": "ImpliedProb",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "signals",
+          "name": "DeltaDp",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "gates",
+          "name": "Staleness",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "gates",
+          "name": "Session",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "gates",
+          "name": "Spread",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "sizers",
+          "name": "DeltaBridge",
+          "ui_kind": "Impact"
+        },
+        {
+          "kind": "risk",
+          "name": "PositionCap",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "execution",
+          "name": "NoTradeBand",
+          "ui_kind": "Execution"
+        },
+        {
+          "kind": "execution",
+          "name": "FeeGate",
+          "ui_kind": "Execution"
+        },
+        {
+          "kind": "execution",
+          "name": "PassiveAggressive",
+          "ui_kind": "Execution"
+        }
+      ],
+      "ui_kinds": [
+        "Execution",
+        "Gate",
+        "Impact",
+        "Reader"
+      ],
+      "params": [
+        {
+          "name": "coverage",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.75,
+          "grid": [
+            0.5,
+            0.75,
+            1.0
+          ],
+          "tuned": true,
+          "help": "c: fraction hedged at p = 1"
+        },
+        {
+          "name": "jump",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.04,
+          "grid": [
+            0.02,
+            0.04,
+            0.06
+          ],
+          "tuned": true,
+          "help": "one-tick |dp| treated as a jump (cross the spread)"
+        },
+        {
+          "name": "max_pm_spread",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.05,
+          "grid": [
+            0.02,
+            0.05,
+            0.1
+          ],
+          "tuned": true,
+          "help": "skip ticks whose YES spread is wider"
+        },
+        {
+          "name": "band_shares",
+          "min": 0.0,
+          "max": 1000000.0,
+          "default": 10.0,
+          "grid": [
+            10.0,
+            25.0,
+            50.0
+          ],
+          "tuned": true,
+          "help": "no-trade band: trade only if |h* - h| >= band"
+        },
+        {
+          "name": "impact",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.03,
+          "grid": [
+            0.03
+          ],
+          "tuned": false,
+          "help": "expected fractional stock move if the adverse event resolves (from the impact model); prices the fee gate's benefit; 0 disables the fee gate"
+        },
+        {
+          "name": "session",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "grid": [
+            0.0
+          ],
+          "tuned": false,
+          "help": "1 = trade only in US equity regular hours (live bridges)"
+        },
+        {
+          "name": "wash_guard",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "grid": [
+            0.0
+          ],
+          "tuned": false,
+          "help": "1 = block re-shorting within 30 days of a loss cover (wash sale)"
+        }
+      ],
+      "grid": {
+        "coverage": [
+          0.5,
+          0.75,
+          1.0
+        ],
+        "jump": [
+          0.02,
+          0.04,
+          0.06
+        ],
+        "max_pm_spread": [
+          0.02,
+          0.05,
+          0.1
+        ],
+        "band_shares": [
+          10.0,
+          25.0,
+          50.0
+        ],
+        "impact": [
+          0.03
+        ],
+        "session": [
+          0.0
+        ],
+        "wash_guard": [
+          0.0
+        ]
+      },
+      "preset_count": 81
+    },
+    {
+      "id": "crypto_reg_hedge",
+      "division": "hedge",
+      "ui_kind": "Impact",
+      "idea": "Crypto regulation/ETF odds hedge crypto equities; coverage is scaled by inverse PM volatility so noisy markets earn a smaller hedge",
+      "event_classes": [
+        "crypto"
+      ],
+      "instruments": [
+        "equity:COIN",
+        "equity:MSTR"
+      ],
+      "blocks": [
+        {
+          "kind": "signals",
+          "name": "ImpliedProb",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "signals",
+          "name": "EwmaVol",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "gates",
+          "name": "Staleness",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "gates",
+          "name": "Session",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "sizers",
+          "name": "VolTarget",
+          "ui_kind": "Impact"
+        },
+        {
+          "kind": "sizers",
+          "name": "DeltaBridge",
+          "ui_kind": "Impact"
+        },
+        {
+          "kind": "risk",
+          "name": "PositionCap",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "execution",
+          "name": "NoTradeBand",
+          "ui_kind": "Execution"
+        },
+        {
+          "kind": "execution",
+          "name": "FeeGate",
+          "ui_kind": "Execution"
+        }
+      ],
+      "ui_kinds": [
+        "Execution",
+        "Gate",
+        "Impact",
+        "Reader"
+      ],
+      "params": [
+        {
+          "name": "coverage",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.75,
+          "grid": [
+            0.5,
+            0.75,
+            1.0
+          ],
+          "tuned": true,
+          "help": "base c before the volatility scale"
+        },
+        {
+          "name": "sigma_ref",
+          "min": 0.0001,
+          "max": 1.0,
+          "default": 0.02,
+          "grid": [
+            0.01,
+            0.02,
+            0.04
+          ],
+          "tuned": true,
+          "help": "PM tick volatility at which the scale is 1"
+        },
+        {
+          "name": "max_lev",
+          "min": 0.25,
+          "max": 4.0,
+          "default": 1.5,
+          "grid": [
+            1.0,
+            1.5,
+            2.0
+          ],
+          "tuned": true,
+          "help": "upper clamp of the volatility scale"
+        },
+        {
+          "name": "band_shares",
+          "min": 0.0,
+          "max": 1000000.0,
+          "default": 10.0,
+          "grid": [
+            10.0,
+            25.0,
+            50.0
+          ],
+          "tuned": true,
+          "help": "no-trade band: trade only if |h* - h| >= band"
+        },
+        {
+          "name": "impact",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.03,
+          "grid": [
+            0.03
+          ],
+          "tuned": false,
+          "help": "expected fractional stock move if the adverse event resolves (from the impact model); prices the fee gate's benefit; 0 disables the fee gate"
+        },
+        {
+          "name": "session",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "grid": [
+            0.0
+          ],
+          "tuned": false,
+          "help": "1 = trade only in US equity regular hours (live bridges)"
+        },
+        {
+          "name": "wash_guard",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "grid": [
+            0.0
+          ],
+          "tuned": false,
+          "help": "1 = block re-shorting within 30 days of a loss cover (wash sale)"
+        }
+      ],
+      "grid": {
+        "coverage": [
+          0.5,
+          0.75,
+          1.0
+        ],
+        "sigma_ref": [
+          0.01,
+          0.02,
+          0.04
+        ],
+        "max_lev": [
+          1.0,
+          1.5,
+          2.0
+        ],
+        "band_shares": [
+          10.0,
+          25.0,
+          50.0
+        ],
+        "impact": [
+          0.03
+        ],
+        "session": [
+          0.0
+        ],
+        "wash_guard": [
+          0.0
+        ]
+      },
+      "preset_count": 81
+    },
+    {
+      "id": "tech_reg_hedge",
+      "division": "hedge",
+      "ui_kind": "Execution",
+      "idea": "Antitrust/AI-regulation odds hedge mega-cap names on the PM microprice, worked in child slices to limit impact in large positions",
+      "event_classes": [
+        "tech_regulation",
+        "company_specific"
+      ],
+      "instruments": [
+        "equity:megacap_tech"
+      ],
+      "blocks": [
+        {
+          "kind": "signals",
+          "name": "Microprice",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "signals",
+          "name": "PMid",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "gates",
+          "name": "Staleness",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "gates",
+          "name": "Session",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "sizers",
+          "name": "DeltaBridge",
+          "ui_kind": "Impact"
+        },
+        {
+          "kind": "risk",
+          "name": "PositionCap",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "execution",
+          "name": "NoTradeBand",
+          "ui_kind": "Execution"
+        },
+        {
+          "kind": "execution",
+          "name": "FeeGate",
+          "ui_kind": "Execution"
+        },
+        {
+          "kind": "execution",
+          "name": "Slicer",
+          "ui_kind": "Execution"
+        }
+      ],
+      "ui_kinds": [
+        "Execution",
+        "Gate",
+        "Impact",
+        "Reader"
+      ],
+      "params": [
+        {
+          "name": "coverage",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.5,
+          "grid": [
+            0.25,
+            0.5,
+            1.0
+          ],
+          "tuned": true,
+          "help": "c: fraction hedged at p = 1"
+        },
+        {
+          "name": "child_max",
+          "min": 0.0,
+          "max": 10000000.0,
+          "default": 200.0,
+          "grid": [
+            50.0,
+            200.0,
+            1000.0
+          ],
+          "tuned": true,
+          "help": "child order cap in shares"
+        },
+        {
+          "name": "band_shares",
+          "min": 0.0,
+          "max": 1000000.0,
+          "default": 10.0,
+          "grid": [
+            10.0,
+            25.0,
+            50.0
+          ],
+          "tuned": true,
+          "help": "no-trade band: trade only if |h* - h| >= band"
+        },
+        {
+          "name": "fee_ratio",
+          "min": 0.0,
+          "max": 100.0,
+          "default": 1.0,
+          "grid": [
+            0.5,
+            1.0,
+            2.0
+          ],
+          "tuned": true,
+          "help": "trade only if benefit >= ratio * cost"
+        },
+        {
+          "name": "impact",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.03,
+          "grid": [
+            0.03
+          ],
+          "tuned": false,
+          "help": "expected fractional stock move if the adverse event resolves (from the impact model); prices the fee gate's benefit; 0 disables the fee gate"
+        },
+        {
+          "name": "session",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "grid": [
+            0.0
+          ],
+          "tuned": false,
+          "help": "1 = trade only in US equity regular hours (live bridges)"
+        },
+        {
+          "name": "wash_guard",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "grid": [
+            0.0
+          ],
+          "tuned": false,
+          "help": "1 = block re-shorting within 30 days of a loss cover (wash sale)"
+        }
+      ],
+      "grid": {
+        "coverage": [
+          0.25,
+          0.5,
+          1.0
+        ],
+        "child_max": [
+          50.0,
+          200.0,
+          1000.0
+        ],
+        "band_shares": [
+          10.0,
+          25.0,
+          50.0
+        ],
+        "fee_ratio": [
+          0.5,
+          1.0,
+          2.0
+        ],
+        "impact": [
+          0.03
+        ],
+        "session": [
+          0.0
+        ],
+        "wash_guard": [
+          0.0
+        ]
+      },
+      "preset_count": 81
+    },
+    {
+      "id": "binary_vs_spread_arb",
+      "division": "opportunity",
+      "ui_kind": "Reader",
+      "idea": "Buy (sell) the call spread when the PM probability of the same threshold exceeds (trails) the option-implied probability by the entry gap; exit when the gap closes",
+      "event_classes": [
+        "macro_fed",
+        "elections",
+        "tariffs_trade",
+        "geopolitics_energy",
+        "housing",
+        "fig",
+        "tech_regulation",
+        "crypto",
+        "corporate_8k",
+        "company_specific"
+      ],
+      "instruments": [
+        "option:call_spread",
+        "option:put_spread"
+      ],
+      "blocks": [
+        {
+          "kind": "signals",
+          "name": "ImpliedProb",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "signals",
+          "name": "OptionImpliedProb",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "signals",
+          "name": "PMvsOptionGap",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "gates",
+          "name": "Staleness",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "risk",
+          "name": "PositionCap",
+          "ui_kind": "Gate"
+        }
+      ],
+      "ui_kinds": [
+        "Gate",
+        "Reader"
+      ],
+      "params": [
+        {
+          "name": "entry_gap",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.05,
+          "grid": [
+            0.03,
+            0.05,
+            0.08,
+            0.12
+          ],
+          "tuned": true,
+          "help": "|PM - option prob| to enter"
+        },
+        {
+          "name": "exit_gap",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.01,
+          "grid": [
+            0.0,
+            0.01,
+            0.02
+          ],
+          "tuned": true,
+          "help": "exit once the gap on the entry side is <= this"
+        },
+        {
+          "name": "contracts",
+          "min": 1.0,
+          "max": 100000.0,
+          "default": 5.0,
+          "grid": [
+            1.0,
+            5.0,
+            10.0
+          ],
+          "tuned": true,
+          "help": "spreads per entry"
+        }
+      ],
+      "grid": {
+        "entry_gap": [
+          0.03,
+          0.05,
+          0.08,
+          0.12
+        ],
+        "exit_gap": [
+          0.0,
+          0.01,
+          0.02
+        ],
+        "contracts": [
+          1.0,
+          5.0,
+          10.0
+        ]
+      },
+      "preset_count": 36
+    },
+    {
+      "id": "vol_vs_pm_move",
+      "division": "opportunity",
+      "ui_kind": "Reader",
+      "idea": "PM reprices but implied vol has not moved: buy the straddle. IV spikes while the PM is quiet: sell it. Exit when IV catches up or after max_hold ticks",
+      "event_classes": [
+        "macro_fed",
+        "elections",
+        "tariffs_trade",
+        "geopolitics_energy",
+        "housing",
+        "fig",
+        "tech_regulation",
+        "crypto",
+        "corporate_8k",
+        "company_specific"
+      ],
+      "instruments": [
+        "option:straddle",
+        "option:strangle"
+      ],
+      "blocks": [
+        {
+          "kind": "signals",
+          "name": "PMid",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "signals",
+          "name": "DeltaDp",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "gates",
+          "name": "Staleness",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "risk",
+          "name": "PositionCap",
+          "ui_kind": "Gate"
+        }
+      ],
+      "ui_kinds": [
+        "Gate",
+        "Reader"
+      ],
+      "params": [
+        {
+          "name": "window",
+          "min": 1.0,
+          "max": 64.0,
+          "default": 5.0,
+          "grid": [
+            3.0,
+            5.0,
+            10.0
+          ],
+          "tuned": true,
+          "help": "ticks over which PM and IV changes are measured"
+        },
+        {
+          "name": "pm_move",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.04,
+          "grid": [
+            0.02,
+            0.04,
+            0.06
+          ],
+          "tuned": true,
+          "help": "|dp| that counts as a PM repricing"
+        },
+        {
+          "name": "iv_still",
+          "min": 0.0,
+          "max": 5.0,
+          "default": 0.01,
+          "grid": [
+            0.005,
+            0.01,
+            0.02
+          ],
+          "tuned": true,
+          "help": "|d iv| below which IV has not moved"
+        },
+        {
+          "name": "contracts",
+          "min": 1.0,
+          "max": 100000.0,
+          "default": 5.0,
+          "grid": [
+            1.0,
+            5.0,
+            10.0
+          ],
+          "tuned": true,
+          "help": "straddles per entry"
+        },
+        {
+          "name": "max_hold",
+          "min": 1.0,
+          "max": 1000000.0,
+          "default": 60.0,
+          "grid": [
+            60.0
+          ],
+          "tuned": false,
+          "help": "ticks before a forced exit"
+        }
+      ],
+      "grid": {
+        "window": [
+          3.0,
+          5.0,
+          10.0
+        ],
+        "pm_move": [
+          0.02,
+          0.04,
+          0.06
+        ],
+        "iv_still": [
+          0.005,
+          0.01,
+          0.02
+        ],
+        "contracts": [
+          1.0,
+          5.0,
+          10.0
+        ],
+        "max_hold": [
+          60.0
+        ]
+      },
+      "preset_count": 81
+    },
+    {
+      "id": "eightk_opportunity",
+      "division": "opportunity",
+      "ui_kind": "Gate",
+      "idea": "A strong 8-K tag opens an event window; if the PM adverse probability confirms (falls after a bullish tag, rises after a bearish one) sell a cash-secured put or buy a put spread; close when the window ends",
+      "event_classes": [
+        "corporate_8k",
+        "company_specific"
+      ],
+      "instruments": [
+        "option:cash_secured_put",
+        "option:put_spread"
+      ],
+      "blocks": [
+        {
+          "kind": "signals",
+          "name": "EightKScore",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "signals",
+          "name": "ImpliedProb",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "signals",
+          "name": "DeltaDp",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "gates",
+          "name": "Staleness",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "gates",
+          "name": "EventWindow",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "risk",
+          "name": "PositionCap",
+          "ui_kind": "Gate"
+        }
+      ],
+      "ui_kinds": [
+        "Gate",
+        "Reader"
+      ],
+      "params": [
+        {
+          "name": "window_h",
+          "min": 0.1,
+          "max": 720.0,
+          "default": 24.0,
+          "grid": [
+            1.0,
+            24.0,
+            72.0
+          ],
+          "tuned": true,
+          "help": "hours the event window stays open after a tag"
+        },
+        {
+          "name": "score_thr",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.5,
+          "grid": [
+            0.3,
+            0.5,
+            0.7
+          ],
+          "tuned": true,
+          "help": "|8-K score| that opens the window"
+        },
+        {
+          "name": "pm_confirm",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.01,
+          "grid": [
+            0.0,
+            0.01,
+            0.02
+          ],
+          "tuned": true,
+          "help": "PM move (5 ticks) in the tag's direction required"
+        },
+        {
+          "name": "contracts",
+          "min": 1.0,
+          "max": 100000.0,
+          "default": 1.0,
+          "grid": [
+            1.0,
+            3.0,
+            5.0
+          ],
+          "tuned": true,
+          "help": "contracts per entry"
+        }
+      ],
+      "grid": {
+        "window_h": [
+          1.0,
+          24.0,
+          72.0
+        ],
+        "score_thr": [
+          0.3,
+          0.5,
+          0.7
+        ],
+        "pm_confirm": [
+          0.0,
+          0.01,
+          0.02
+        ],
+        "contracts": [
+          1.0,
+          3.0,
+          5.0
+        ]
+      },
+      "preset_count": 81
+    },
+    {
+      "id": "closed_session_hedge",
+      "division": "hedge",
+      "ui_kind": "Impact",
+      "idea": "While the stock market is closed, buy the adverse YES contract sized so a 1 pp PM move offsets the expected equity move (rate bp per pp); at the open unwind the PM leg and hand the hedge to the equity",
+      "event_classes": [
+        "macro_fed",
+        "elections",
+        "tariffs_trade",
+        "geopolitics_energy",
+        "housing",
+        "fig",
+        "tech_regulation",
+        "crypto",
+        "corporate_8k",
+        "company_specific"
+      ],
+      "instruments": [
+        "pred_yes",
+        "equity"
+      ],
+      "blocks": [
+        {
+          "kind": "signals",
+          "name": "ImpliedProb",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "gates",
+          "name": "Staleness",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "gates",
+          "name": "Session",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "sizers",
+          "name": "DeltaBridge",
+          "ui_kind": "Impact"
+        },
+        {
+          "kind": "risk",
+          "name": "PositionCap",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "risk",
+          "name": "NotionalCap",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "execution",
+          "name": "NoTradeBand",
+          "ui_kind": "Execution"
+        },
+        {
+          "kind": "execution",
+          "name": "FeeGate",
+          "ui_kind": "Execution"
+        }
+      ],
+      "ui_kinds": [
+        "Execution",
+        "Gate",
+        "Impact",
+        "Reader"
+      ],
+      "params": [
+        {
+          "name": "coverage",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.5,
+          "grid": [
+            0.25,
+            0.5,
+            0.75,
+            1.0
+          ],
+          "tuned": true,
+          "help": "c: fraction of the held shares covered by the PM and equity legs combined"
+        },
+        {
+          "name": "rate_bp_per_pp",
+          "min": 0.0,
+          "max": 100.0,
+          "default": 7.52,
+          "grid": [
+            7.52
+          ],
+          "tuned": false,
+          "help": "r: bp of equity move per pp of PM move (per-market estimate, else the pooled 7.52 from 380 closures)"
+        },
+        {
+          "name": "rate_scale",
+          "min": 0.0,
+          "max": 5.0,
+          "default": 1.0,
+          "grid": [
+            0.5,
+            1.0,
+            1.5
+          ],
+          "tuned": true,
+          "help": "multiplier on r (r_eff = r * scale)"
+        },
+        {
+          "name": "band_contracts",
+          "min": 0.0,
+          "max": 10000000.0,
+          "default": 50.0,
+          "grid": [
+            10.0,
+            50.0,
+            100.0
+          ],
+          "tuned": true,
+          "help": "no-trade band on the YES leg: trade only if |target - held| >= band contracts"
+        },
+        {
+          "name": "max_notional",
+          "min": 0.0,
+          "max": 1000000000.0,
+          "default": 5000.0,
+          "grid": [
+            1000.0,
+            5000.0,
+            25000.0
+          ],
+          "tuned": true,
+          "help": "cap on YES contracts * YES price in $ (0 = off)"
+        },
+        {
+          "name": "exp_move_pp",
+          "min": 0.0,
+          "max": 100.0,
+          "default": 2.0,
+          "grid": [
+            2.0
+          ],
+          "tuned": false,
+          "help": "PM move (pp) expected over a closure; prices the fee gate's benefit; 0 disables the fee gate"
+        },
+        {
+          "name": "handoff_equity",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "grid": [
+            0.0
+          ],
+          "tuned": false,
+          "help": "1 = after unwinding the YES leg at the open, move the hedge into the equity at round(c * N * p)"
+        },
+        {
+          "name": "equity_band",
+          "min": 0.0,
+          "max": 1000000.0,
+          "default": 10.0,
+          "grid": [
+            10.0
+          ],
+          "tuned": false,
+          "help": "no-trade band in shares for the equity handoff leg"
+        }
+      ],
+      "grid": {
+        "coverage": [
+          0.25,
+          0.5,
+          0.75,
+          1.0
+        ],
+        "rate_bp_per_pp": [
+          7.52
+        ],
+        "rate_scale": [
+          0.5,
+          1.0,
+          1.5
+        ],
+        "band_contracts": [
+          10.0,
+          50.0,
+          100.0
+        ],
+        "max_notional": [
+          1000.0,
+          5000.0,
+          25000.0
+        ],
+        "exp_move_pp": [
+          2.0
+        ],
+        "handoff_equity": [
+          0.0
+        ],
+        "equity_band": [
+          10.0
+        ]
+      },
+      "preset_count": 108
+    }
+  ]
+}
