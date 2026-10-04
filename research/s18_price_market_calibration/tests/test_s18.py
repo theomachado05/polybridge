@@ -45,3 +45,14 @@ def test_capital_locked_at_one_time_counts_overlapping_trades_only():
     trades = [{"entry_epoch": 0, "result_epoch": 10, "capital": 90.0}, {"entry_epoch": 5, "result_epoch": 20, "capital": 80.0},
               {"entry_epoch": 10, "result_epoch": 30, "capital": 70.0}]
     assert s18.max_locked(trades) == pytest.approx(170.0)      # at 5 to 10: 90 + 80; at 10 the first is released before the third is locked
+
+
+def test_prints_are_read_in_yes_terms_and_weighted_by_size():
+    from s18_price_market_calibration import prints as pr
+    assert pr.yes_terms({"outcome": "Yes", "side": "SELL", "price": 0.30, "size": 10}) == (0.30, "SELL", 10.0)
+    px, side, size = pr.yes_terms({"outcome": "No", "side": "BUY", "price": 0.70, "size": 5})      # buying NO at 0.70 sells YES at 0.30
+    assert px == pytest.approx(0.30) and side == "SELL" and size == 5.0
+    assert pr.yes_terms({"outcome": "maybe", "side": "BUY", "price": 0.5}) is None
+    ps, tot, n = pr.weighted([(0.30, "SELL", 10.0), (0.40, "SELL", 30.0), (0.90, "BUY", 100.0)], "SELL")
+    assert ps == pytest.approx(0.375) and tot == 40.0 and n == 2
+    assert np.isnan(pr.weighted([(0.30, "SELL", 10.0)], "BUY")[0])

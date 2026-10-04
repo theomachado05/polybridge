@@ -92,6 +92,31 @@ and C1 holding over the whole sample. Anything else is a null or "too few observ
 
 ## Amendments
 
+**Amendment 1, 2026-10-04 03:44 UTC, after the run: the bug hunt, and the same question at traded prices.**
+
+*What the bug hunt found.* The run shows YES resolving far less often than priced in every bucket, and "sell every
+market" (V4) with a Sharpe near 3. The entry prices explain it: 232 of the 1,092 entries are within half a point of
+50% (152 are exactly 0.500), 397 are between 45% and 55%, and the markets are a median of 2.8 days old at their first
+weekend. A price of 50% on a market listed two days ago is the midpoint of a book that has not formed, not a price
+anyone could sell at. The modelled result is therefore not evidence, as in S1 and S6. It is reported as run and
+labelled so.
+
+*The same question at prices that traded.* Fixed now, before any print is pulled:
+
+- For each market with an entry, the public trade prints from its entry instant to 48 hours later (its first
+  weekend). A print on the NO token at price q is read as a YES price of 1 − q with the side reversed.
+- **Sellers' test.** Prints in which the taker **sold** YES (hit a bid): these are prices a seller could have had.
+  Per market, the size-weighted mean of those prices, `ps`. P&L per contract of selling there and holding to the
+  result: `ps` − the market's taker fee at `ps` − result. One observation per market; mean with a 95% interval
+  resampling events; in-sample and out-of-sample by the event split of section 4; by price bucket of `ps`.
+- **Buyers' test.** Prints in which the taker **bought** YES: per market the size-weighted mean `pb`, and the P&L of
+  buying there: result − `pb` − fee.
+- **Reading.** YES is overpriced at traded prices, and selling it is a trade, only if the sellers' mean P&L is above
+  zero with the interval excluding zero, above zero in-sample and out-of-sample, and above zero with the fee
+  doubled. Otherwise the calibration gap above is the artifact and nothing more.
+- A market whose first-weekend prints the data API no longer serves (it serves the latest 20,000 of a market) is
+  left out and counted. Capacity is the printed size.
+
 **Correction of wording, 2026-10-04 03:42 UTC, before the run.** Section 1 says "the 1,262 price markets ... that
 have a result". The two universes hold 1,262 markets in 137 events, and 1,232 of them have a result (384 in S9, 848
 in S15). Only those 1,232 can enter. No rule changes.
