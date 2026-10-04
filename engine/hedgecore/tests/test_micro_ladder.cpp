@@ -57,7 +57,7 @@ LadderRow row_of(const LadderTick& t, double yr, double yc, std::uint32_t pair =
 
 // (a) A nested pair's P&L at the result is never below the edge locked in at entry, in all three possible outcomes
 // (both YES; rich NO and cheap YES; both NO). Rich YES with cheap NO cannot happen for a nested pair.
-TEST(LadderPair, ProfitAtResultNeverBelowLockedEdgeInAllThreeOutcomes) {
+TEST(LadderPair, PnlAtResultNeverBelowLockedEdgeInAllThreeOutcomes) {
   const double outcomes[3][2] = {{1, 1}, {0, 1}, {0, 0}};
   std::uint64_t s = 7;
   int checked = 0;
