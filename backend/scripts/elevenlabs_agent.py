@@ -94,6 +94,8 @@ def main(argv: list[str] | None = None, transport=None, env_local: Path = ENV_LO
     el.write_env_local(env_local, res.agent_id)
     out(f"OK    agent {'created' if res.created else 'updated'}: {mask(res.agent_id)} with {len(res.tool_ids)} client "
         f"tools ({len(res.tools_created)} created, {len(res.tools_updated)} updated)")
+    out("OK    widget allowlist: " + ", ".join(el.web_hosts())
+        + ("" if os.environ.get("PUBLIC_WEB_HOST") else " (set PUBLIC_WEB_HOST=<tunnel host> for `make share`)"))
     out(f"OK    wrote {el.ENV_VAR} to {env_local.relative_to(REPO)} (gitignored). Restart `pnpm dev` so Next.js "
         "picks it up, then open http://localhost:3000.")
     return 0

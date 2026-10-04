@@ -38,6 +38,17 @@ AGENT_NAME = "PolyBridge"
 DESC_PREFIX = "PolyBridge: "
 DEFAULT_LLM = "gemini-2.5-flash"
 WEB_HOSTS = ("localhost:3000", "127.0.0.1:3000")  # widget allowlist (exact host:port match)
+
+
+def web_hosts() -> list[str]:
+    """The widget allowlist: WEB_HOSTS plus PUBLIC_WEB_HOST when set (the `make share` tunnel host, e.g.
+    abc.ngrok-free.app; a pasted https:// URL or trailing slash is reduced to the bare host)."""
+    hosts = list(WEB_HOSTS)
+    extra = (os.environ.get("PUBLIC_WEB_HOST") or "").strip().lower()
+    extra = extra.split("://", 1)[-1].split("/", 1)[0]
+    if extra and extra not in hosts:
+        hosts.append(extra)
+    return hosts
 TIMEOUT_S = 20.0
 # Seconds the agent waits for each client tool (ElevenLabs allows 1..120). fit replays history (up to ~45 s worst case).
 TOOL_TIMEOUTS = {"fit": 90, "start_bridge": 30, "search_markets": 20, "propose": 20, "approve": 20,
@@ -114,7 +125,7 @@ def agent_body(system_prompt: str, first_message: str, tool_ids: list[str], llm:
                    "stability": 0.45, "similarity_boost": 0.8, "speed": 1.0}
     return {"name": AGENT_NAME, "conversation_config": conv,
             "platform_settings": {"auth": {"enable_auth": False,
-                                           "allowlist": [{"hostname": h} for h in WEB_HOSTS]}}}
+                                           "allowlist": [{"hostname": h} for h in web_hosts()]}}}
 
 
 # ---------------------------------------------------------------- HTTP
