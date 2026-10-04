@@ -2,11 +2,9 @@
 
 Method, pre-registered before any option quote was pulled: [`research/s16_overnight_options/METHOD.md`](../../s16_overnight_options/METHOD.md) (commit `1185abb`; amendments in METHOD.md, the label is S16: amendment 3). 253 sessions, 2025-10-01 to 2026-10-02; out-of-sample is every session from 2026-06-22. Files: [`metrics.csv`](metrics.csv), [`trades.csv`](trades.csv), [`observations.csv`](observations.csv), [`speed_curve.csv`](speed_curve.csv), [`spreads.csv`](spreads.csv), [`verdicts.csv`](verdicts.csv), [`top_moves.csv`](top_moves.csv), [`equity.csv`](equity.csv), [`capacity.md`](capacity.md), [`RUN_LOG.md`](RUN_LOG.md).
 
-> **INTERIM.** The pull is still running. The main sample (tier 1) is complete and its numbers below are final; the Brazil and Fed-and-banks case files, the day volumes and variant V3 are not pulled yet and will change.
-
 ## Answer
 
-**The overnight move is already in the option's price at the first reading of the day.** At 09:31, one minute into the session, the option that points the way the odds moved (a call if the odds said up, a put if down) was worth +33.4% more than at 15:55 the day before (95% interval [+23.2%, +45.0%], 279 ticker-days, mid prices; the interval excludes zero). The stock itself had opened +125 bp in the direction of the odds (S5 found +137 bp).
+**The overnight move is already in the option's price at the first reading of the day.** At 09:31, one minute into the session, the option that points the way the odds moved (a call if the odds said up, a put if down) was worth +33.4% more on average than at 15:55 the day before (95% interval [+23.2%, +45.0%]; median +16.8%; 279 ticker-days, mid prices; the interval excludes zero). The stock itself had opened +125 bp in the direction of the odds (S5 found +137 bp).
 
 **After that first reading there is nothing left that shows up against ordinary mornings.** Bought at the mid price at 09:31, 09:35, 09:45, 10:00 or 10:30 and held to 15:55, the options on event mornings did no better and no worse than the same options on quiet mornings of the same ticker. All ten intervals include zero. The first three:
 
@@ -30,12 +28,14 @@ Method, pre-registered before any option quote was pulled: [`research/s16_overni
 
 **Counts.** 300 event ticker-days at 10+ points on 109 dates; 285 had valid quotes at 09:35 and 15:55 (15 dropped: no valid quote at 09:35: 10, no valid quote at 15:55: 5). Controls: 241 matched, 224 with valid quotes (59 events had no quiet session within 30 trading days). Out-of-sample event trades: 52 (the pass line needs 30).
 
-**One variant gets a flag, not a claim.** After weekends and holidays (V4, 113 trades), the option in the direction of the odds returned +2.9% mid to mid [-2.5%, +8.5%] against -4.6% for the same side on quiet mornings: a difference of +7.9% [+0.5%, +15.5%] (91 pairs). In-sample +7.6% [+0.2%, +15.7%]; out-of-sample +9.0% [-11.8%, +27.6%] on 19 pairs, which includes zero. At real quotes the trade returned -16.0% [-21.4%, -10.5%]. It is one of 15 looks, its own return before costs is not distinguishable from zero, its controls are mostly weekday mornings, and it does not survive the spread.
+**One variant gets a flag, not a claim.** After weekends and holidays (V4, 113 trades), the option in the direction of the odds returned +2.9% mid to mid [-2.5%, +8.5%] against -4.6% for the same side on quiet mornings: a difference of +7.9% [+0.5%, +15.5%] (91 pairs). In-sample +7.6% [+0.2%, +15.7%]; out-of-sample +9.0% [-11.8%, +27.6%] on 19 pairs, which includes zero. At real quotes the trade returned -16.0% [-21.4%, -10.5%]. It is one of 15 looks, its own return before costs is not distinguishable from zero, its controls are mostly weekday mornings (13 of 92 follow a weekend), and it does not survive the spread.
 
 **Case files (exploratory, details below).**
 - Brazil, EWZ options, 13 of 13 mornings with a 5+ point move in a first-round question had quotes. Option in the direction of the odds: +3.4% net [-9.8%, +16.0%], +13.2% mid to mid, but the same option on quiet mornings did as well (event minus control -2.4% [-27.3%, +20.1%]). Straddle: -3.1% mid to mid against +2.7% on quiet mornings, a difference of -5.7% [-9.1%, -2.6%], an interval that excludes zero: EWZ straddles were dearer at 09:35 on those mornings than they turned out to be worth. Selling that straddle at real quotes returned -6.6% [-9.4%, -4.2%]; buying it returned -12.1%. 13 mornings, one of many looks: an observation for the forward test, not a finding.
 - Oil (USO, XLE, XOP), 123 ticker-days: directional option -18.6% net [-24.2%, -12.7%], -1.7% mid to mid [-8.1%, +4.7%]; straddle -18.2% net, -0.5% mid to mid; against controls mid to mid: directional -0.3% [-14.5%, +12.9%], straddle -0.3% [-3.8%, +2.9%].
-- Fed and banks (TLT, KRE, XLF straddles on mornings when a Fed question moved 5+ points), 9 ticker-days (incomplete pull): bought at 09:35, -6.0% net [-11.3%, -0.6%], -0.6% mid to mid [-6.0%, +4.9%]; against controls mid to mid -17.6% [n/a] (1 pairs).
+- Fed and banks (TLT, KRE, XLF straddles on mornings when a Fed question moved 5+ points), 185 ticker-days: bought at 09:35, -17.2% net [-19.5%, -15.1%], -2.3% mid to mid [-4.1%, -0.5%]; sold at 09:35, -19.0% net [-23.6%, -15.2%]; against controls mid to mid -2.5% [-5.9%, +0.9%] (102 pairs). Before costs the difference from quiet mornings is not distinguishable from zero; at real quotes neither side pays.
+
+**If there is a tilt, it points the other way from the claim.** In every sample the straddle bought at 09:35 did a little worse on event mornings than on quiet mornings, mid to mid: main sample -0.6% [-2.8%, +1.4%]; oil (part of the main sample) -0.3% [-3.8%, +2.9%]; Fed and banks -2.5% [-5.9%, +0.9%]; Brazil -5.7% [-9.1%, -2.6%]. Intervals that exclude zero: Brazil. That is options slightly too dear at 09:35 after an odds move, not too cheap, and in every sample it is a fraction of the spread a seller would have to cross.
 
 **What this does and does not say about the claim.** The claim was that the whole overnight move cannot be perfectly priced into the options in the first moments of the session. This study's first reading is at 09:31, sixty seconds in. It does not see the first second, and at 09:31 the quotes are so wide that "the price" is a band, not a number. What it does say: inside that band the options had already moved with the odds, and from 09:31 onward event mornings cannot be told apart from quiet mornings, before costs. If part of the move is still unpriced at 09:31, it is smaller than this sample can see: the interval on the directional option is [-5.6%, +8.9%] and on the straddle [-3.0%, +1.4%], against a spread of 30.5%.
 
@@ -177,22 +177,22 @@ While the market was shut (previous 15:55 to 09:31, events only, mid to mid): th
 | H-rich | ALL | mid | 281 | 108 | +0.8% | [-0.1%, +1.6%] | +0.6% | 55% | +1.3% (n 219) | -0.8% [-2.1%, +0.6%] (pairs 213) | 2.53 | 17% | -12% |
 | H-rich | ALL | 1x | 281 | 108 | -29.3% | [-34.2%, -24.9%] | -16.1% | 4% | -31.1% (n 219) | -2.2% [-8.2%, +3.4%] (pairs 213) | -6.89 | 3473% | -459% |
 
-**V3: moves of 5+ points (**incomplete**: the pull stopped before tier 5 finished; extra events with quotes: 0 of 508, not pulled: 508; a seeded random subsample).**
+**V3: moves of 5+ points (tier 5 of the pull finished).**
 
 | Trade | Segment | Costs | Trades | Dates | Mean return | 95% interval | Median | Winners | Control mean | Event minus control | Sharpe | Max DD | Worst month |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| H-dir | OOS | mid | 52 | 22 | -5.1% | [-14.4%, +3.4%] | -3.0% | 42% | +1.1% (n 53) | -6.9% [-22.6%, +7.0%] (pairs 51) | -1.82 | 113% | -69% |
-| H-dir | OOS | 1x | 52 | 22 | -23.0% | [-32.1%, -15.0%] | -21.6% | 13% | -20.3% (n 53) | -3.8% [-16.9%, +8.1%] (pairs 51) | -7.37 | 535% | -143% |
-| H-dir | ALL | mid | 285 | 109 | -1.6% | [-5.9%, +2.5%] | -2.1% | 46% | -2.7% (n 224) | +1.1% [-5.8%, +8.3%] (pairs 220) | -0.78 | 419% | -183% |
-| H-dir | ALL | 1x | 285 | 109 | -18.8% | [-22.9%, -14.7%] | -18.8% | 22% | -21.4% (n 224) | +1.6% [-4.6%, +8.0%] (pairs 220) | -6.27 | 2230% | -360% |
-| H-slow | OOS | mid | 52 | 22 | -2.2% | [-4.6%, +0.2%] | -2.5% | 31% | -2.1% (n 53) | -0.0% [-3.1%, +2.8%] (pairs 51) | -3.33 | 70% | -27% |
-| H-slow | OOS | 1x | 52 | 22 | -20.9% | [-24.4%, -17.8%] | -20.0% | 4% | -21.9% (n 53) | +0.4% [-2.2%, +2.9%] (pairs 51) | -8.58 | 489% | -192% |
-| H-slow | ALL | mid | 285 | 109 | -1.1% | [-2.3%, +0.1%] | -2.0% | 37% | -0.5% (n 224) | -0.6% [-2.8%, +1.4%] (pairs 220) | -1.51 | 170% | -57% |
-| H-slow | ALL | 1x | 285 | 109 | -18.9% | [-20.5%, -17.2%] | -16.5% | 6% | -19.2% (n 224) | -0.5% [-2.4%, +1.1%] (pairs 220) | -9.58 | 2117% | -279% |
-| H-rich | OOS | mid | 52 | 22 | +2.2% | [-0.2%, +4.6%] | +2.5% | 67% | +2.1% (n 53) | +0.0% [-2.8%, +3.1%] (pairs 51) | 3.33 | 11% | -11% |
-| H-rich | OOS | 1x | 52 | 22 | -27.2% | [-35.7%, -20.4%] | -20.1% | 4% | -35.1% (n 53) | +6.5% [-3.1%, +16.9%] (pairs 51) | -6.63 | 713% | -269% |
-| H-rich | ALL | mid | 285 | 109 | +1.1% | [-0.1%, +2.3%] | +2.0% | 62% | +0.5% (n 224) | +0.6% [-1.4%, +2.8%] (pairs 220) | 1.51 | 51% | -35% |
-| H-rich | ALL | 1x | 285 | 109 | -29.4% | [-34.6%, -24.9%] | -17.7% | 8% | -33.0% (n 224) | +1.1% [-5.1%, +7.3%] (pairs 220) | -7.00 | 3717% | -622% |
+| H-dir | OOS | mid | 115 | 37 | +5.5% | [-2.0%, +13.7%] | +1.2% | 52% | -1.9% (n 115) | +5.5% [-4.8%, +15.1%] (pairs 110) | 2.08 | 77% | -75% |
+| H-dir | OOS | 1x | 115 | 37 | -15.4% | [-22.7%, -8.2%] | -18.0% | 26% | -23.7% (n 115) | +6.2% [-3.1%, +14.5%] (pairs 110) | -5.79 | 614% | -264% |
+| H-dir | ALL | mid | 737 | 199 | +0.4% | [-2.4%, +3.3%] | -1.8% | 45% | -0.5% (n 555) | +0.9% [-4.6%, +5.9%] (pairs 544) | 0.12 | 393% | -225% |
+| H-dir | ALL | 1x | 737 | 199 | -19.7% | [-22.3%, -17.1%] | -21.2% | 23% | -21.4% (n 555) | +0.4% [-4.1%, +4.7%] (pairs 544) | -9.69 | 3922% | -558% |
+| H-slow | OOS | mid | 115 | 37 | -1.3% | [-3.4%, +1.6%] | -2.4% | 32% | -2.4% (n 115) | +0.5% [-2.3%, +3.6%] (pairs 110) | -1.16 | 72% | -34% |
+| H-slow | OOS | 1x | 115 | 37 | -21.1% | [-23.9%, -18.3%] | -19.7% | 6% | -23.7% (n 115) | +1.6% [-0.9%, +4.4%] (pairs 110) | -12.05 | 816% | -351% |
+| H-slow | ALL | mid | 737 | 199 | -0.8% | [-1.7%, +0.2%] | -2.1% | 37% | -0.3% (n 555) | -0.8% [-2.7%, +0.8%] (pairs 544) | -1.49 | 209% | -64% |
+| H-slow | ALL | 1x | 737 | 199 | -20.7% | [-22.0%, -19.4%] | -16.7% | 7% | -21.2% (n 555) | -0.8% [-2.3%, +0.5%] (pairs 544) | -17.18 | 4118% | -497% |
+| H-rich | OOS | mid | 115 | 37 | +1.3% | [-1.6%, +3.4%] | +2.4% | 67% | +2.4% (n 115) | -0.5% [-3.6%, +2.3%] (pairs 110) | 1.16 | 61% | -29% |
+| H-rich | OOS | 1x | 115 | 37 | -32.0% | [-39.6%, -26.5%] | -21.5% | 6% | -48.9% (n 115) | +16.3% [+1.4%, +41.5%] (pairs 110) | -9.97 | 1401% | -678% |
+| H-rich | ALL | mid | 737 | 199 | +0.8% | [-0.2%, +1.7%] | +2.1% | 62% | +0.3% (n 555) | +0.8% [-0.8%, +2.7%] (pairs 544) | 1.49 | 67% | -39% |
+| H-rich | ALL | 1x | 737 | 199 | -40.2% | [-45.7%, -35.2%] | -18.8% | 8% | -53.4% (n 555) | +9.8% [-2.7%, +29.2%] (pairs 544) | -11.39 | 8149% | -1375% |
 
 **V4: weekends and holidays only.**
 
@@ -272,23 +272,27 @@ Speed curve, oil only (event minus control, mid to mid, to 15:55):
 
 ### Fed and banks: straddles on TLT, KRE and XLF on mornings when a Fed question moved 5+ points
 
-Ticker-days: 186 (no opening bar: 90, not pulled: 87, ok: 9); controls: 105 (no opening bar: 39, not pulled: 62, ok: 4). **Incomplete:** the pull stopped before tier 4 finished; what is here is a seeded random subsample.
+Ticker-days: 186 (no valid quote at 09:35: 1, ok: 185); controls: 105 (no valid quote at 09:35: 2, ok: 103). Tier 4 of the pull finished.
 
 | Trade | Segment | Costs | Trades | Dates | Mean return | 95% interval | Median | Winners | Control mean | Event minus control | Sharpe | Max DD | Worst month |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| H-slow | ALL | mid | 9 | 9 | -0.6% | [-6.0%, +4.9%] | -0.4% | 44% | +4.8% (n 4) | -17.6% [n/a] (pairs 1) | -0.23 | 23% | -12% |
-| H-slow | ALL | 1x | 9 | 9 | -6.0% | [-11.3%, -0.6%] | -5.4% | 22% | -0.5% (n 4) | -17.0% [n/a] (pairs 1) | -1.76 | 54% | -27% |
-| H-slow | ALL | 2x | 9 | 9 | -11.2% | [-16.4%, -6.0%] | -10.2% | 11% | -5.6% (n 4) | -16.5% [n/a] (pairs 1) | -2.43 | 101% | -42% |
-| H-rich | ALL | mid | 9 | 9 | +0.6% | [-4.9%, +6.0%] | +0.4% | 56% | -4.8% (n 4) | +17.6% [n/a] (pairs 1) | 0.23 | 23% | -22% |
-| H-rich | ALL | 1x | 9 | 9 | -4.9% | [-10.6%, +0.5%] | -4.7% | 33% | -10.2% (n 4) | +18.1% [n/a] (pairs 1) | -1.49 | 49% | -39% |
-| H-rich | ALL | 2x | 9 | 9 | -10.5% | [-16.4%, -5.0%] | -8.7% | 11% | -15.8% (n 4) | +18.6% [n/a] (pairs 1) | -2.32 | 95% | -56% |
+| H-slow | ALL | mid | 185 | 62 | -2.3% | [-4.1%, -0.5%] | -3.4% | 32% | +0.4% (n 103) | -2.5% [-5.9%, +0.9%] (pairs 102) | -2.32 | 138% | -50% |
+| H-slow | ALL | 1x | 185 | 62 | -17.2% | [-19.5%, -15.1%] | -15.8% | 8% | -13.1% (n 103) | -3.4% [-6.3%, -0.3%] (pairs 102) | -7.74 | 1062% | -306% |
+| H-slow | ALL | 2x | 185 | 62 | -29.2% | [-32.1%, -26.6%] | -27.1% | 3% | -24.0% (n 103) | -3.9% [-7.1%, -0.7%] (pairs 102) | -8.30 | 1803% | -516% |
+| H-rich | ALL | mid | 185 | 62 | +2.3% | [+0.5%, +4.1%] | +3.4% | 67% | -0.4% (n 103) | +2.5% [-0.9%, +5.9%] (pairs 102) | 2.32 | 31% | -11% |
+| H-rich | ALL | 1x | 185 | 62 | -19.0% | [-23.6%, -15.2%] | -15.0% | 14% | -20.7% (n 103) | +0.6% [-6.1%, +6.6%] (pairs 102) | -6.39 | 1182% | -274% |
+| H-rich | ALL | 2x | 183 | 62 | -52.8% | [-76.4%, -38.4%] | -32.5% | 3% | -59.4% (n 102) | -11.4% [-53.9%, +15.9%] (pairs 100) | -4.71 | 3279% | -716% |
 
 By ticker (whole sample, 1x costs):
 
 | Ticker | Trade | Trades | Mean return | 95% interval | Control mean | Event minus control |
 |---|---|---|---|---|---|---|
-| TLT | H-slow | 9 | -6.0% | [-11.3%, -0.6%] | -0.5% (n 4) | -17.0% [n/a] |
-| TLT | H-rich | 9 | -4.9% | [-10.6%, +0.5%] | -10.2% (n 4) | +18.1% [n/a] |
+| TLT | H-slow | 62 | -9.0% | [-11.5%, -6.9%] | -3.9% (n 35) | -3.2% [-8.7%, +1.5%] |
+| TLT | H-rich | 62 | -5.3% | [-7.7%, -3.2%] | -7.0% (n 35) | +1.6% [-3.6%, +7.6%] |
+| KRE | H-slow | 61 | -23.6% | [-26.2%, -20.9%] | -21.0% (n 34) | -1.8% [-5.9%, +2.3%] |
+| KRE | H-rich | 61 | -29.2% | [-33.5%, -25.1%] | -27.9% (n 34) | +0.9% [-7.7%, +9.3%] |
+| XLF | H-slow | 62 | -19.1% | [-23.1%, -15.3%] | -14.7% (n 34) | -5.0% [-11.1%, +0.8%] |
+| XLF | H-rich | 62 | -22.8% | [-33.7%, -13.9%] | -27.5% (n 34) | -0.7% [-11.3%, +9.6%] |
 
 ### The 12 largest overnight moves since 2026-07-01 and what the options did
 
@@ -315,19 +319,22 @@ By ticker (whole sample, 1x costs):
 - Controls planned for 241 of them. Status: no valid quote at 09:35: 14, no valid quote at 15:55: 3, ok: 224.
 - Main events with valid primary quotes: in-sample 233, out-of-sample 52.
 - Dropped main events by ticker: GOOGL (no valid quote at 09:35: 1); SHY (no valid quote at 09:35: 6, no valid quote at 15:55: 3); USO (no valid quote at 15:55: 1); UUP (no valid quote at 09:35: 3, no valid quote at 15:55: 1).
-- Put-call parity check at 09:35 (call mid minus put mid, against the stock price minus the strike), as a share of the stock price: median 0.14%, 99th percentile 2.00%, largest 2.95%; 6 of 548 above 2%.
-- Pull: tiers finished []; no stop.
+- Put-call parity check at 09:35 (call mid minus put mid, against the stock price minus the strike), as a share of the stock price: median 0.13%, 99th percentile 1.97%, largest 4.21%; 16 of 1606 above 2%.
+- Pull: tiers finished [1, 2, 3, 4, 5]; no stop.
 
 ## Bug hunt (a Sharpe above 3 appeared)
 
-Rows of `metrics.csv` with a Sharpe above 3: H-rich V0 OOS at mid (3.33); H-rich V1 OOS at mid (3.13); H-rich V2 IS at mid (3.02); H-rich V3 OOS at mid (3.33); H-rich V4 OOS at mid (3.68). Every one of them is **mid to mid, with no cost**: selling a straddle at the mid price and buying it back at the mid price, which nobody can do. The primary one: +2.2% a trade out-of-sample [-0.2%, +4.6%], and control mornings show the same (+2.1%). That is one day of ordinary time decay with little variance, on 22 days of trades among 73 sessions; it is not specific to events (event minus control +0.0% [-2.8%, +3.1%]). At real quotes the same trade's Sharpe is -6.63. Checked anyway: every entry quote is stamped at or after 09:30:00 and at or before its instant (enforced in code and in the tests); the strike uses only the 09:30 price; entry and exit are at opposite sides of the quote; put-call parity at 09:35 holds to a median of 0.14% of the stock price, with 6 of 548 above 2% (GLXY, JETS): mornings with a very wide quote or a stock that moved several percent in its first five minutes, none a wrong contract. No bug was found.
+Rows of `metrics.csv` with a Sharpe above 3: H-rich V0 OOS at mid (3.33); H-rich V1 OOS at mid (3.13); H-rich V2 IS at mid (3.02); H-rich V4 OOS at mid (3.68). Every one of them is **mid to mid, with no cost**: selling a straddle at the mid price and buying it back at the mid price, which nobody can do. The primary one: +2.2% a trade out-of-sample [-0.2%, +4.6%], and control mornings show the same (+2.1%). That is one day of ordinary time decay with little variance, on 22 days of trades among 73 sessions; it is not specific to events (event minus control +0.0% [-2.8%, +3.1%]). At real quotes the same trade's Sharpe is -6.63. Checked anyway: every entry quote is stamped at or after 09:30:00 and at or before its instant (enforced in code and in the tests); the strike uses only the 09:30 price; entry and exit are at opposite sides of the quote; put-call parity at 09:35 holds to a median of 0.13% of the stock price, with 16 of 1606 above 2% (EWU, FRO, GLXY, JETS, ZIM): mornings with a very wide quote or a stock that moved several percent in its first five minutes. In each of them the strike is the listed one nearest the opening price, so none is a wrong contract. No bug was found.
 
 ## Every event-minus-control interval that excludes zero, anywhere in the result files
 
-`metrics.csv` holds 189 event-minus-control comparisons with an interval (trades, variants, segments, cost levels, case files; many of them overlap); 23 exclude zero. `speed_curve.csv` holds 90; 15 exclude zero. At a 95% level about one in twenty would do so by chance if nothing were there. The list:
+`metrics.csv` holds 261 event-minus-control comparisons with an interval (trades, variants, segments, cost levels, case files; many of them overlap); 32 exclude zero. `speed_curve.csv` holds 90; 15 exclude zero. At a 95% level about one in twenty would do so by chance if nothing were there. The list:
 
 - main, V1, H-rich, OOS, 2x: +112.5% [+6.2%, +229.1%] (49 pairs)
 - main, V2, H-dir, OOS, mid: -9.1% [-18.5%, -0.0%] (50 pairs)
+- main, V3, H-slow, IS, 1x: -1.5% [-3.2%, -0.0%] (434 pairs)
+- main, V3, H-slow, IS, 2x: -1.5% [-3.1%, -0.0%] (434 pairs)
+- main, V3, H-rich, OOS, 1x: +16.3% [+1.4%, +41.5%] (110 pairs)
 - main, V4, H-dir, IS, mid: +7.6% [+0.2%, +15.7%] (72 pairs)
 - main, V4, H-dir, IS, 1x: +7.2% [+1.0%, +13.9%] (72 pairs)
 - main, V4, H-dir, IS, 2x: +7.6% [+1.7%, +13.8%] (72 pairs)
@@ -349,6 +356,12 @@ Rows of `metrics.csv` with a Sharpe above 3: H-rich V0 OOS at mid (3.33); H-rich
 - case: brazil, V0, H-rich, OOS, 2x: +6.7% [+0.3%, +14.8%] (5 pairs)
 - case: brazil, V0, H-rich, ALL, mid: +5.7% [+2.6%, +9.1%] (13 pairs)
 - case: brazil, V0, H-rich, ALL, 1x: +5.6% [+1.7%, +10.2%] (13 pairs)
+- case: fed, V0, H-slow, OOS, mid: -4.4% [-9.0%, -0.3%] (29 pairs)
+- case: fed, V0, H-slow, OOS, 1x: -6.0% [-9.5%, -2.2%] (29 pairs)
+- case: fed, V0, H-slow, OOS, 2x: -7.4% [-11.5%, -2.7%] (29 pairs)
+- case: fed, V0, H-slow, ALL, 1x: -3.4% [-6.3%, -0.3%] (102 pairs)
+- case: fed, V0, H-slow, ALL, 2x: -3.9% [-7.1%, -0.7%] (102 pairs)
+- case: fed, V0, H-rich, OOS, mid: +4.4% [+0.3%, +9.0%] (29 pairs)
 - speed curve, brazil, IS, straddle, from 09:31: -5.7% [-10.4%, -1.4%] (8 pairs)
 - speed curve, brazil, IS, straddle, from 09:35: -5.7% [-10.1%, -1.7%] (8 pairs)
 - speed curve, brazil, IS, straddle, from 09:45: -4.4% [-9.3%, -0.1%] (8 pairs)

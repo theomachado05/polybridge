@@ -6,6 +6,7 @@ All times New York (EDT) unless marked Z (UTC). The label was S16, then S17 for 
 
 | Hash | Time | Message |
 |---|---|---|
+| `25abd7e` | 2026-10-04 00:44 | S16 (overnight options): INTERIM result, main sample complete (285 of 300 event ticker-days, 52 out-of-sample): all three pre-registered trades fail a |
 | `5e6a5ca` | 2026-10-03 23:46 | S16 (overnight options): amendment 3, the label is S16 again (label only, no rule changed); a spread split marked as not pre-registered |
 | `b8c53ac` | 2026-10-03 23:45 | S17 (overnight odds against options): analysis runner, report generator and tests (21 pass), written while the pull runs; no rule changed |
 | `d80ff94` | 2026-10-03 23:39 | S17 (overnight odds against options): amendment 2, the label changes from S16 to S17 because of a clash; folders unchanged, no rule changed |
@@ -17,40 +18,23 @@ All times New York (EDT) unless marked Z (UTC). The label was S16, then S17 for 
 - Odds: the one-minute Polymarket caches of S5 and S4 on disk and `results/s8_open_referee/mornings.csv`. **No call to Polymarket or Kalshi.**
 - Underlying prices: cached five-minute bars (`eq_<TICKER>.npz` of S5 and S4); KRE and XLF bars pulled from Massive (amendment 1).
 - Options: Massive `/v3/reference/options/contracts` (one listing request per ticker-day), `/v3/quotes/<contract>` (the last NBBO at or before each instant, one request per leg and instant), `/v2/aggs/ticker/<contract>/range/1/day` (day volume). No modelled price anywhere.
-- Cache: `research/s16_overnight_options/.cache/cache.jsonl`, 7,637 lines (not committed).
+- Cache: `research/s16_overnight_options/.cache/cache.jsonl`, 13,652 lines (not committed).
 
 ## The pull
 
+- Run 1: 13683 requests in 6935.3 s; tiers finished [1, 2, 3, 4, 5]; stopped: no (ran to the end); failed requests 0; final rate 2.0 a second; recorder `fetch failed` lines before 51, after 51; ended 2026-10-04T05:34:01Z.
 
 Lines of the pull's own log (UTC):
 
 ```
 2026-10-04T03:38:25Z pull start: 1738 plan items {"1": 541, "2": 26, "4": 291, "5": 880}
 2026-10-04T03:38:25Z recorder `fetch failed` lines before the pull: 51
-2026-10-04T03:41:20Z tier 1: 25/541 items, 347 requests, 175s, rps 2.0, recorder 51
-2026-10-04T03:43:50Z tier 1: 50/541 items, 642 requests, 325s, rps 2.0, recorder 51
-2026-10-04T03:46:14Z tier 1: 75/541 items, 927 requests, 469s, rps 2.0, recorder 51
-2026-10-04T03:49:09Z tier 1: 100/541 items, 1274 requests, 644s, rps 2.0, recorder 51
-2026-10-04T03:52:05Z tier 1: 125/541 items, 1623 requests, 819s, rps 2.0, recorder 51
-2026-10-04T03:54:23Z tier 1: 150/541 items, 1896 requests, 958s, rps 2.0, recorder 51
-2026-10-04T03:56:59Z tier 1: 175/541 items, 2205 requests, 1114s, rps 2.0, recorder 51
-2026-10-04T03:59:54Z tier 1: 200/541 items, 2552 requests, 1289s, rps 2.0, recorder 51
-2026-10-04T04:02:52Z tier 1: 225/541 items, 2903 requests, 1467s, rps 2.0, recorder 51
-2026-10-04T04:05:31Z tier 1: 250/541 items, 3218 requests, 1626s, rps 2.0, recorder 51
-2026-10-04T04:08:21Z tier 1: 275/541 items, 3553 requests, 1796s, rps 2.0, recorder 51
-2026-10-04T04:11:25Z tier 1: 300/541 items, 3918 requests, 1980s, rps 2.0, recorder 51
-2026-10-04T04:14:29Z tier 1: 325/541 items, 4279 requests, 2164s, rps 2.0, recorder 51
-2026-10-04T04:17:39Z tier 1: 350/541 items, 4634 requests, 2353s, rps 2.0, recorder 51
-2026-10-04T04:20:35Z tier 1: 375/541 items, 4983 requests, 2529s, rps 2.0, recorder 51
-2026-10-04T04:23:33Z tier 1: 400/541 items, 5336 requests, 2708s, rps 2.0, recorder 51
-2026-10-04T04:26:28Z tier 1: 425/541 items, 5683 requests, 2883s, rps 2.0, recorder 51
-2026-10-04T04:29:25Z tier 1: 450/541 items, 6032 requests, 3060s, rps 2.0, recorder 51
-2026-10-04T04:32:11Z tier 1: 475/541 items, 6359 requests, 3225s, rps 2.0, recorder 51
-2026-10-04T04:35:09Z tier 1: 500/541 items, 6710 requests, 3404s, rps 2.0, recorder 51
-2026-10-04T04:37:59Z tier 1: 525/541 items, 7047 requests, 3574s, rps 2.0, recorder 51
 2026-10-04T04:39:52Z tier 1 finished: 541 items, 7271 requests so far
-2026-10-04T04:42:47Z tier 2: 25/26 items, 7616 requests, 3862s, rps 2.0, recorder 51
 2026-10-04T04:42:54Z tier 2 finished: 26 items, 7629 requests so far
+2026-10-04T04:47:43Z tier 3 finished: 285 events, 8199 requests so far
+2026-10-04T04:59:37Z tier 4 finished: 291 items, 9609 requests so far
+2026-10-04T05:34:01Z tier 5 finished: 880 items, 13683 requests so far
+2026-10-04T05:34:01Z pull end {"finished_tiers": [1, 2, 3, 4, 5], "stopped": null, "requests": 13683, "errors": 0, "recorder_before": 51, "recorder_after": 51}
 ```
 
 ## Notes, and anything that went wrong
@@ -62,5 +46,7 @@ Lines of the pull's own log (UTC):
 - The label changed twice at the coordinating session's request (S16, S17, S16). Commits `d80ff94` and `b8c53ac` carry the S17 label in their message; they belong to this study.
 - The analysis and report code were run on the partial cache while the pull ran, to catch code errors. No rule was changed after any result was seen. One addition was made after the first 16 events were visible: the median spread split, which is reported under "Looked at after the run" and enters no verdict.
 - Tests: `cd research && .venv/bin/python -m pytest s16_overnight_options/tests -q` gave 21 passed, exit code 0.
-- Pull tiers finished: [].
+- An interim result was committed and pushed at 00:44 (`25abd7e`) when the main sample was complete and the case tiers were still pulling; its SUMMARY.md carried an INTERIM banner. The main-sample numbers did not change between that commit and the final one.
+- The pull ended at 01:34 New York time, before the 01:50 hard stop of METHOD.md section 10, so no tier was cut. It ran at 2 requests a second throughout; the recorder's `fetch failed` count was 51 before, at every check during, and after the pull, so the rate was never lowered.
+- Pull tiers finished: [1, 2, 3, 4, 5].
 - Could not verify: the election date itself (the metadata on disk gives only the questions' end date, 2026-10-05T03:59Z); whether a strike listed today for an expired expiry was already listed on the event morning (if it was not, there is no quote and the ticker-day is dropped, so no fill is invented); dividends inside the put-call parity check (the check is a screen for a wrong contract, not a pricing test).
