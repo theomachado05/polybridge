@@ -47,7 +47,7 @@ export function OpportunityBridge({ id, summary, st, question, sourceTag }: {
         <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
           <Label>01 · OPPORTUNITY · {summary?.ticker ?? ""}</Label>
           <span style={{ display: "inline-flex", gap: 6, flexWrap: "wrap" }}>{sourceTag}{dataTag}{simTag}
-            {algo && <Tag tone="ai" title="The options family approved with the proposal (AI fit)">Running {prettyId(algo.family)} · preset {algo.preset_index ?? "custom"}</Tag>}
+            {algo && <Tag tone="ai" title="The options family approved with the proposal (the fit picked it by replaying presets)">Running {prettyId(algo.family)} · preset {algo.preset_index ?? "custom"}</Tag>}
             {(() => { const b = evidenceLabelBadge(summary?.evidence_label); return b ? <Tag tone={b.tone} title={summary?.evidence?.evidence ?? b.title}>{b.text}</Tag> : null; })()}
           </span>
         </div>

@@ -73,7 +73,7 @@ export function WeekendExposurePanel({ holdings, bridgeIds, session, onOpen }: {
         </span>
       </div>
       {!closedNow && <div style={{ fontSize: 12.5, color: "#5A627A", marginTop: 10 }}>{session?.label ?? "Market open"}: the expected open gap applies only while US equities are closed{list?.length ? "; bridges below show their last closure" : ""}.</div>}
-      {closedNow && !holdings && <div style={{ fontSize: 12.5, color: "#5A627A", marginTop: 10 }}>Sample holdings have no mapped market, so there is no expected gap to show. Bridges started this session appear here.</div>}
+      {closedNow && !holdings && <div style={{ fontSize: 12.5, color: "#5A627A", marginTop: 10 }}>Holdings are unavailable (GET /portfolio), so there is no expected gap to show for them. Bridges started this session appear here.</div>}
       {rows?.error && <div style={{ fontSize: 12.5, color: "#5A627A", marginTop: 10 }}>Weekend exposure unavailable: {rows.error}</div>}
       {list == null && (closedNow || bridgeIds.length > 0) && <div style={{ fontSize: 12.5, color: "#5A627A", marginTop: 10 }}>Reading expected gaps…</div>}
       {list && list.length > 0 && (

@@ -1,4 +1,4 @@
-// Pure formatting helpers shared by the screens, the demo simulator and the offline tests.
+// Pure formatting helpers shared by the screens and the offline tests.
 // Kept dependency-free so `node --test` can import it directly.
 
 export const MINUS = "−";
@@ -17,7 +17,7 @@ export const fmtInt = (n: number) => Math.round(n).toLocaleString("en-US");
 export const fmtNs = (ns: number | null | undefined) =>
   ns == null || !Number.isFinite(ns) ? "n/a" : ns >= 1e6 ? (ns / 1e6).toFixed(1) + " ms" : ns >= 1e3 ? (ns / 1e3).toFixed(1) + " µs" : Math.round(ns) + " ns";
 
-/** SVG path for a sparkline in a w×h box (the prototype's `path`). */
+/** SVG path for a sparkline in a w×h box. */
 export function sparkPath(arr: number[], w: number, h: number): string {
   if (arr.length < 2) return "";
   const min = Math.min(...arr), max = Math.max(...arr), span = Math.max(1e-6, max - min);

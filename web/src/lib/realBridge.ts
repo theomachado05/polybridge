@@ -2,8 +2,8 @@
 // Pure (API injected) so it is unit-tested offline. Callers must only invoke it on an explicit user action.
 import * as http from "./api.ts";
 import type { Direction, FitOut, Proposal } from "./api";
-import type { EquityPick, Question } from "./demo";
-import { isRecordedOnly } from "./demo.ts";
+import type { EquityPick, Question } from "./markets";
+import { isRecordedOnly } from "./markets.ts";
 import { prettyId } from "./fmt.ts";
 import { isEvidenceError } from "./risk.ts";
 
@@ -20,11 +20,11 @@ export const gapPerShare = (spot: number | null | undefined, move: number | null
   spot && move ? (spot * Math.abs(move)) / 100 : 0;
 
 /** True when a live bridge for this pick would start with the engine's fee gate off (contracts.md). `gap_per_share`
- *  applies only to the legacy Engine: a bridge that runs a hedgecore algo (a runnable AI fit) prices orders with its
+ *  applies only to the legacy Engine: a bridge that runs a hedgecore algo (a runnable fit) prices orders with its
  *  own FeeGate from the tick's `under_px` (a replay supplies it from recorded bars), so its gate is never "off" for
  *  want of a quote here. Pass the fit approval will send (`runnableFit`), or null when the default spec runs. */
-export const feeGateOff = (q: Question, eq: EquityPick, fit: AppliedFit | null = null) =>
-  !!q.real && !fit && gapPerShare(eq.px, eq.move) === 0;
+export const feeGateOff = (_q: Question, eq: EquityPick, fit: AppliedFit | null = null) =>
+  !fit && gapPerShare(eq.px, eq.move) === 0;
 
 /** The Bridge screen's "fee gate off" tag: only a bridge on the legacy Engine (no algo running) started with
  *  gap_per_share = 0. `running` is the algo the bridge runs (null on the legacy Engine); `gap` is what it was
@@ -40,9 +40,9 @@ export function reusableBridge<B extends { kind: string; mode?: string; q?: { id
     && (b.pmHedge === true) === closedPmHedge && (b.override === true) === actOnUnvalidated);
 }
 
-const sameMarket = (p: Proposal, m: NonNullable<Question["real"]>) => p.market?.source === m.source && p.market?.id === m.id;
+const sameMarket = (p: Proposal, m: Question["real"]) => p.market?.source === m.source && p.market?.id === m.id;
 
-/** The algo a bridge runs: a catalog family plus the preset the AI fit picked. */
+/** The algo a bridge runs: a catalog family plus the preset the fit picked. */
 export interface AppliedFit { family: string; preset_index: number | null }
 
 /** The fit a bridge can run, or null: only a hedge-division family with a preset runs on a bridge (the backend
@@ -52,13 +52,13 @@ export function runnableFit(fit: Pick<FitOut, "family" | "preset_index" | "divis
   return { family: fit.family, preset_index: fit.preset_index };
 }
 
-/** What a hedge bridge runs, in words: the AI-fit family and preset (hedgecore.Algo), or, with no runnable fit, the
- *  engine's default delta-bridge spec. `node` is the Bridge screen's centre label; `sentence` reads in running text. */
+/** What a hedge bridge runs, in words: the fitted family and preset (hedgecore.Algo; picked by replaying presets in
+ *  the C++ engine, whether or not an LLM classified the event), or, with no runnable fit, the engine's default spec. `node` is the Bridge screen's centre label; `sentence` reads in running text. */
 export function algoRunLabel(fit: AppliedFit | null): { node: string; sentence: string } {
   if (!fit) return { node: "02 · ENGINE · DEFAULT DELTA-BRIDGE SPEC", sentence: "the engine's default delta-bridge spec" };
   const fam = prettyId(fit.family);
   const preset = fit.preset_index != null ? `preset #${fit.preset_index}` : "custom params";
-  return { node: `02 · AI FIT · ${fam.toUpperCase()} · ${preset.toUpperCase()}`, sentence: `the AI-fit ${fam} algo (${preset})` };
+  return { node: `02 · FITTED · ${fam.toUpperCase()} · ${preset.toUpperCase()}`, sentence: `the fitted ${fam} algo (${preset})` };
 }
 
 /** A proposal is reusable only when it was approved for exactly this algo (or both have none): a bridge runs what
@@ -68,13 +68,11 @@ const sameAlgo = (p: Proposal, want: AppliedFit | null) =>
 
 const sameNum = (a: number | null | undefined, b: number) => typeof a === "number" && Math.abs(a - b) < 1e-9;
 
-/** The direction a hedge fit may be oriented with, or null when it is unknown. On a live market only the mapping
- *  says which outcome hurts the stock; guessing from a zero move would tune the hedge against an arbitrary side.
- *  Demo markets keep the prototype's sign-of-move rule. */
-export function fitDirection(q: Pick<Question, "real">, eq: Pick<EquityPick, "direction" | "move">): Direction | null {
-  if (eq.direction) return eq.direction;
-  if (q.real) return null;
-  return eq.move < 0 ? "down_on_yes" : "up_on_yes";
+/** The direction a hedge fit may be oriented with, or null when it is unknown. Only the mapping, the user's own answer
+ *  or a recording's sidecar says which outcome hurts the stock; guessing from a zero move would tune the hedge against
+ *  an arbitrary side. */
+export function fitDirection(_q: unknown, eq: Pick<EquityPick, "direction">): Direction | null {
+  return eq.direction ?? null;
 }
 
 /** The exact terms a hedge proposal is created (or reused) with: the bridge runs what was approved, so the approval
@@ -87,8 +85,7 @@ export interface HedgeOpts { closedPmHedge?: boolean; actOnUnvalidated?: boolean
 
 export function hedgeTerms(q: Question, eq: EquityPick, maxHedge: string, fit: AppliedFit | null = null, opts: HedgeOpts = {}): HedgeTerms {
   const m = q.real;
-  if (!m) throw new Error("this market is from the demo set, not the live search");
-  if (!eq.direction) throw new Error(`${eq.t} is not in this market's mapping, so the adverse outcome is unknown`);
+  if (!eq.direction) throw new Error(`${eq.t} is not in this market's mapping, so the adverse outcome is unknown: say which outcome hurts it`);
   const cap = Math.min(1, (parseInt(maxHedge, 10) || 100) / 100);
   // With a fit, target_coverage is the user's Max hedge: the backend caps the algo's coverage at it and clips every
   // sell beyond it (contracts.md), so the approved proposal bounds what is hedged. Without a fit the default Engine
@@ -193,7 +190,6 @@ export const DEFAULT_OPP_CAPS: OpportunityCaps = { max_contracts: 10, max_notion
 export async function prepareOpportunityProposal(q: Question, ticker: string, fit: AppliedFit,
   api: Pick<BridgeApi, "createProposal" | "listProposals"> = defaultApi, caps: OpportunityCaps = DEFAULT_OPP_CAPS): Promise<Proposal> {
   const m = q.real;
-  if (!m) throw new Error("this market is from the demo set, not the live search");
   const market = { source: m.source, id: m.id, token_id: m.token_id };
   const mine = (await api.listProposals().catch(() => [] as Proposal[]))
     .filter((p) => p.ticker === ticker && p.family === "opportunity" && sameMarket(p, m) && sameAlgo(p, fit)
@@ -209,7 +205,6 @@ export async function startOpportunityBridge(q: Question, ticker: string, fit: A
   caps: OpportunityCaps = DEFAULT_OPP_CAPS, opts: { ackUnvalidated?: boolean } = {}): Promise<{ bridgeId: string; applied: AppliedFit }> {
   const { approveProposal, startBridge } = api;
   const m = q.real;
-  if (!m) throw new Error("this market is from the demo set, not the live search");
   const market = { source: m.source, id: m.id, token_id: m.token_id };
   const prop = await prepareOpportunityProposal(q, ticker, fit, api, caps);
   const ok = prop.status === "approved" ? prop : await approveProposal(prop.id, opts.ackUnvalidated === true);

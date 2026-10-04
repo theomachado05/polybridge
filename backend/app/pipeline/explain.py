@@ -17,14 +17,17 @@ def facts(result: dict) -> dict:
     return out
 
 
-async def explain(result: dict, provider: LLMProvider) -> tuple[str, bool]:
-    """(rationale, written_by_llm)."""
+async def explain(result: dict, provider: LLMProvider, trace: dict | None = None) -> tuple[str, bool]:
+    """(rationale, written_by_llm). ``trace`` (optional) receives ``error`` when Gemini was tried and failed."""
     f = facts(result)
     if not isinstance(provider, RulesProvider):
         try:
             text = await provider.explain(f)
             if text:
                 return text, True
-        except Exception:
-            pass
+            err = "Gemini returned an empty rationale"
+        except Exception as e:
+            err = str(e) if str(e).startswith("Gemini") else f"provider error: {type(e).__name__}"
+        if trace is not None:
+            trace["error"] = err
     return template_rationale(f), False

@@ -2,7 +2,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { algoRunLabel, bridgeFeeGateOff, feeGateOff, gapPerShare, runnableFit, startRealBridge, type BridgeApi } from "../src/lib/realBridge.ts";
-import { QUESTIONS, REAL_INSTRUMENTS, questionFromMarket, type EquityPick } from "../src/lib/demo.ts";
+import { HEDGE_INSTRUMENTS, questionFromMarket, type EquityPick } from "../src/lib/markets.ts";
 import type { Proposal } from "../src/lib/api.ts";
 import { init, reduce, sandboxFills } from "../src/lib/bridgeStream.ts";
 import { blockUi } from "../src/lib/library.ts";
@@ -64,9 +64,9 @@ describe("startRealBridge", () => {
     await assert.rejects(startRealBridge(q, eq, "100%", api), /proposal new stays approved and is reused/);
     assert.deepEqual(calls.filter((c) => c.startsWith("bridge")), ["bridge:new:replay:3.9", "bridge:new:live:3.9"]);
   });
-  it("never touches the backend for a demo market", async () => {
+  it("never touches the backend for a ticker whose adverse outcome is unknown", async () => {
     const { api, calls } = fakeApi([]);
-    await assert.rejects(startRealBridge(QUESTIONS[0], eq, "100%", api), /demo set/);
+    await assert.rejects(startRealBridge(q, { ...eq, direction: undefined }, "100%", api), /say which outcome hurts it/);
     assert.deepEqual(calls, []);
   });
 });
@@ -138,9 +138,8 @@ describe("fee gate and real hedge menu", () => {
     assert.equal(gapPerShare(100, 0), 0);
     assert.equal(feeGateOff(q, { ...eq, px: null }), true);
     assert.equal(feeGateOff(q, eq), false);
-    assert.equal(feeGateOff(QUESTIONS[0], { ...eq, px: null }), false); // demo markets never reach the engine
   });
-  it("never flags an AI-fit algo bridge: gap_per_share applies only to the legacy Engine (contracts.md)", () => {
+  it("never flags a fitted algo bridge: gap_per_share applies only to the legacy Engine (contracts.md)", () => {
     // No spot quote (Wi-Fi off, no Massive key): the algo's FeeGate still prices orders from the tick's under_px.
     const fit = runnableFit({ family: "equity_delta_bridge", preset_index: 75, division: "hedge" });
     assert.equal(feeGateOff(q, { ...eq, px: null }, fit), false);
@@ -159,11 +158,11 @@ describe("fee gate and real hedge menu", () => {
     assert.equal(bridgeFeeGateOff(undefined, null), false);
   });
   it("offers only the engine's hedge on live markets, with no invented prices", () => {
-    const menu = REAL_INSTRUMENTS(null);
+    const menu = HEDGE_INSTRUMENTS(null);
     assert.deepEqual(menu.map((i) => i.id), ["shares"]);
     assert.equal(menu[0].cost, "quote unavailable");
     assert.equal(menu[0].rec, false);
-    assert.equal(REAL_INSTRUMENTS(131.5)[0].cost, "last quote $131.50");
+    assert.equal(HEDGE_INSTRUMENTS(131.5)[0].cost, "last quote $131.50");
   });
 });
 
@@ -233,12 +232,13 @@ describe("replay sandbox fills", () => {
 });
 
 describe("what a bridge runs, in words", () => {
-  it("names the AI-fit family and preset, or the default spec with no fit", () => {
+  it("names the fitted family and preset (no AI claim: the replay picks it), or the default spec with no fit", () => {
     assert.equal(algoRunLabel(null).node, "02 · ENGINE · DEFAULT DELTA-BRIDGE SPEC");
     assert.match(algoRunLabel(null).sentence, /default delta-bridge spec/);
     const l = algoRunLabel({ family: "macro_fed_hedge", preset_index: 14 });
-    assert.equal(l.node, "02 · AI FIT · MACRO FED HEDGE · PRESET #14");
-    assert.equal(l.sentence, "the AI-fit Macro Fed Hedge algo (preset #14)");
+    assert.equal(l.node, "02 · FITTED · MACRO FED HEDGE · PRESET #14");
+    assert.equal(l.sentence, "the fitted Macro Fed Hedge algo (preset #14)");
+    assert.doesNotMatch(l.node + l.sentence, /\bAI\b/);
     assert.doesNotMatch(l.node + l.sentence, /default/i);
     assert.match(algoRunLabel({ family: "x_y", preset_index: null }).sentence, /custom params/);
   });

@@ -22,6 +22,24 @@ def _isolated_broker(tmp_path, monkeypatch):
     broker.reset_default_broker()
 
 
+@pytest.fixture(autouse=True)
+def _no_llm_keys(monkeypatch):
+    """Hermetic AI: GEMINI_API_KEY / ELEVENLABS_API_KEY in the shared .env must never reach the network from a test.
+    ``gemini_key()`` reads .env when the variable is empty, so it is patched too; tests that exercise Gemini build a
+    GeminiProvider over mocked HTTP themselves."""
+    from app.pipeline import llm
+
+    monkeypatch.setenv("GEMINI_API_KEY", "")
+    monkeypatch.setenv("ELEVENLABS_API_KEY", "")
+    monkeypatch.delenv("GEMINI_MODEL", raising=False)
+    monkeypatch.setattr(llm, "gemini_key", lambda: None)
+    llm._models_cache.clear()
+    llm._resolved.clear()
+    yield
+    llm._models_cache.clear()
+    llm._resolved.clear()
+
+
 def pytest_configure(config):
     config.addinivalue_line("markers", "real_twins: read the committed twin map (app/data/kalshi_twins.json) "
                                        "instead of the empty map every other test gets")
@@ -82,3 +100,18 @@ def roomy_capital(monkeypatch):
                 "cash": 1e7, "buying_power": 1e7, "short_notional": 0.0, "age_s": 0.0}
     monkeypatch.setattr(service, "account_snapshot", snap)
     yield
+
+
+@pytest.fixture(autouse=True)
+def _no_gemini_retry_sleep(monkeypatch):
+    """Tests mock Gemini failures and expect them immediately: one attempt, no backoff (retry is tested on its own)."""
+    from app.pipeline import llm
+    monkeypatch.setattr(llm, "RETRY_ATTEMPTS", 1)
+
+
+@pytest.fixture(autouse=True)
+def _hermetic_gemini_model(monkeypatch):
+    """Tests never read the developer's GEMINI_MODEL from .env; they pin the model their assertions name."""
+    from app.pipeline import llm
+    monkeypatch.delenv("GEMINI_MODEL", raising=False)
+    monkeypatch.setattr(llm, "DEFAULT_MODEL", "gemini-2.5-flash")

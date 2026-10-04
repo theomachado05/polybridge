@@ -1,44 +1,43 @@
 "use client";
 
 // One client-side store for the whole flow (the prototype's single component state, split per screen by
-// route). It lives in the root layout, so it survives client navigation between screens.
+// route). It lives in the root layout, so it survives client navigation between screens. Everything in it comes
+// from the backend; a failed read is kept as an error the screen shows with a retry, never replaced by sample data.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
-import { getAccount, getLibrary, getPortfolio, getSession, postFit, type AccountOut, type FitOut, type PortfolioOut } from "./api";
+import { getAccount, getEquity, getHealth, getLibrary, getPortfolio, getSession, postFit, searchMarkets, type AccountOut, type Direction, type FitOut, type PortfolioOut } from "./api";
+import { aiStatus, NO_AI, type AiStatus } from "./ai.ts";
 import type { SessionView } from "./closed";
-import { EQ, QUESTIONS, demoImpacts, type EquityPick, type Question } from "./demo";
+import { WEEKEND_REPLAY, weekendPick, weekendQuestion, type EquityPick, type Question } from "./markets.ts";
 import { parseLibrary, type Library } from "./library";
-import { initSim, stepSim, type Sim } from "./sim";
 import { fitDirection, opportunityFit, reusableBridge, runnableFit, startOpportunityBridge, startRealBridge, type AppliedFit, type Settings } from "./realBridge.ts";
-import { isEvidenceError } from "./risk.ts";
 
 export { algoRunLabel, bridgeFeeGateOff, feeGateOff, gapPerShare, runnableFit } from "./realBridge.ts";
 
 export type { AppliedFit, Settings };
-export type BridgeEntry =
-  | { id: string; kind: "demo"; q: Question; eq: EquityPick; inst: string; sim: Sim }
-  | {
-      id: string; kind: "live"; bridgeId: string; q: Question | null; eq: EquityPick | null; inst: string;
-      /** The AI fit this bridge was started with (sent with the proposal and POST /bridges, so hedgecore.Algo runs
-       *  that family and preset). null: no runnable fit, the engine runs its default delta-bridge spec. */
-      fit: AppliedFit | null;
-      /** A fit that exists for this pick but cannot run on a bridge (e.g. an opportunity-division family). */
-      unapplied?: { family: string; preset_index: number | null; why: string } | null;
-      /** $/share per unit of probability sent to the engine; 0 means its fee gate is off. null: unknown (re-attached). */
-      gap: number | null;
-      /** "opportunity": an options bridge (Opportunity-division family, simulated option fills). Default hedge. */
-      mode?: "hedge" | "opportunity";
-      /** True when the proposal opted in to hedge A (closed_pm_hedge): reuse only matches the same choice. */
-      pmHedge?: boolean;
-      /** True when the proposal set the closed-market override (act_on_unvalidated): reuse only matches the same choice. */
-      override?: boolean;
-    };
+/** A backend bridge this session opened (or re-attached to). */
+export interface BridgeEntry {
+  id: string; kind: "live"; bridgeId: string; q: Question | null; eq: EquityPick | null; inst: string;
+  /** The fit this bridge was started with (sent with the proposal and POST /bridges, so hedgecore.Algo runs that
+   *  family and preset). null: no runnable fit, the engine runs its default delta-bridge spec. */
+  fit: AppliedFit | null;
+  /** A fit that exists for this pick but cannot run on a bridge (e.g. an opportunity-division family). */
+  unapplied?: { family: string; preset_index: number | null; why: string } | null;
+  /** $/share per unit of probability sent to the engine; 0 means its fee gate is off. null: unknown (re-attached). */
+  gap: number | null;
+  /** "opportunity": an options bridge (Opportunity-division family, simulated option fills). Default hedge. */
+  mode?: "hedge" | "opportunity";
+  /** True when the proposal opted in to hedge A (closed_pm_hedge): reuse only matches the same choice. */
+  pmHedge?: boolean;
+  /** True when the proposal set the closed-market override (act_on_unvalidated): reuse only matches the same choice. */
+  override?: boolean;
+}
 
 export interface Remote<T> { status: "loading" | "ok" | "error"; data: T | null; error: string | null }
 export interface FitState extends Remote<FitOut> {
   key: string;
   /** Set when no hedge fit was requested because the adverse outcome is unknown (a ticker outside the market's
-   *  mapping): the card says so instead of showing a score tuned against a guessed side. */
+   *  mapping, and the user has not said which outcome hurts it): the card asks instead of guessing a side. */
   noDirection?: boolean;
 }
 
@@ -47,28 +46,10 @@ const DEFAULT_SETTINGS: Settings = {
   broker: "webull", conns: ["webull"], account: "Taxable", rate: "32%", taxState: "CA", maxHedge: "100%",
   markets: { Polymarket: true, Kalshi: true }, guards: { edge: true, wash: true, auto: false },
 };
-export const TICK_MS = 900;
 /** GET /session refresh (the nav pill, Build's Weekend mode and Portfolio's weekend exposure read it). */
 export const SESSION_MS = 60_000;
-
-/** The prototype's default pick (ca-str / ABNB) when a screen is opened without a wizard selection. */
-export function defaultPick(): { q: Question; eq: EquityPick } {
-  const q = QUESTIONS[0], imp = demoImpacts(q)[0], e = EQ[imp.t];
-  return { q, eq: { ...imp, name: e.name, px: e.px, held: e.held } };
-}
-export function demoPick(qId: string, t: string): { q: Question; eq: EquityPick } {
-  const q = QUESTIONS.find((x) => x.id === qId) ?? QUESTIONS[0];
-  const imp = demoImpacts(q).find((i) => i.t === t) ?? { t, move: -1.2, rev: -0.6, brand: -1.5, why: "" };
-  const e = EQ[t] ?? { name: t, px: 100, held: 0 };
-  return { q, eq: { ...imp, name: e.name, px: e.px, held: e.held } };
-}
-
-function makeDemo(q: Question, eq: EquityPick, inst: string): BridgeEntry {
-  return {
-    id: `demo:${q.id}:${eq.t}`, kind: "demo", q, eq, inst,
-    sim: initSim({ ticker: eq.t, px: eq.px ?? EQ[eq.t]?.px ?? 100, held: eq.held, yesCents: q.yes, volN: q.volN, movePct: eq.move }),
-  };
-}
+/** How long the weekend replay waits for the market's own search row before using the recording's identity. */
+const WEEKEND_SEARCH_MS = 4000;
 
 interface Store {
   question: Question | null; equity: EquityPick | null; inst: string | null; query: string; thinking: boolean;
@@ -77,25 +58,33 @@ interface Store {
   patchEquity: (t: string, patch: Partial<EquityPick>) => void;
   setInst: (id: string | null) => void;
   setQuery: (q: string) => void;
+  /** The user's answer to "which outcome hurts this stock?" for a ticker outside the market's mapping; refits. */
+  chooseDirection: (direction: Direction) => void;
+  /** Build preselected on the validated recession-market weekend (US recession in 2025 → SPY, recorded replay). */
+  openWeekendReplay: () => Promise<void>;
   settings: Settings;
   updateSettings: (p: Partial<Settings>) => void;
-  bridges: BridgeEntry[]; activeId: string | null; bridgeNote: string | null;
+  bridges: BridgeEntry[]; activeId: string | null;
   setActive: (id: string) => void;
-  addDemoBridge: (q: Question, eq: EquityPick, inst: string) => string;
-  seedDemo: () => void;
   /** Explicit user action only (a click, or the pipeline when settings.guards.auto is on): approves a proposal.
-   *  `ackUnvalidated` is the user's ticked acknowledgement of an unvalidated market (the evidence gate). An evidence
-   *  refusal (409 EVIDENCE_UNVALIDATED) is thrown, never hidden behind a demo bridge. */
+   *  `ackUnvalidated` is the user's ticked acknowledgement of an unvalidated market (the evidence gate). Every
+   *  failure is thrown to the caller, which shows it: there is no simulator to fall back on. */
   openBridge: (q: Question, eq: EquityPick, inst: string, opts?: { ackUnvalidated?: boolean }) => Promise<string>;
   fit: FitState | null;
   runFit: (q: Question, eq: EquityPick) => void;
+  /** Re-run the fit for this pick after a failure. */
+  retryFit: (q: Question, eq: EquityPick) => void;
   /** The Opportunity-division fit for the same pick (POST /pipeline/fit with division "opportunity"). */
   oppFit: FitState | null;
   /** Explicit user action only: proposes, approves and starts an options bridge for the opportunity fit. */
   openOpportunity: (q: Question, eq: EquityPick, opts?: { ackUnvalidated?: boolean }) => Promise<string>;
   library: Remote<Library>;
+  reloadLibrary: () => void;
   account: Remote<AccountOut>;
   portfolio: Remote<PortfolioOut>;
+  refreshAccount: () => void;
+  /** Whether an LLM is answering (GET /health `ai`, updated by every fit's `llm`). Unknown → not live: no "AI" claim. */
+  ai: AiStatus;
   /** The NYSE session now (GET /session, wall clock). A replay bridge's own session comes from its ticks instead. */
   session: Remote<SessionView>;
   /** Hedge A opt-in for the next hedge proposal (closed-market mode). Off by default; reset on every new pick. */
@@ -116,6 +105,8 @@ export function useStore(): Store {
 }
 
 const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e));
+const withTimeout = <T,>(p: Promise<T>, ms: number): Promise<T | null> =>
+  Promise.race([p.catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), ms))]);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [question, setQuestionS] = useState<Question | null>(null);
@@ -126,7 +117,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [bridges, setBridges] = useState<BridgeEntry[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [bridgeNote, setBridgeNote] = useState<string | null>(null);
   const [fit, setFit] = useState<FitState | null>(null);
   const [oppFit, setOppFit] = useState<FitState | null>(null);
   const oppKey = useRef<string | null>(null);
@@ -134,6 +124,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [account, setAccount] = useState<Remote<AccountOut>>(LOADING);
   const [portfolio, setPortfolio] = useState<Remote<PortfolioOut>>(LOADING);
   const [session, setSession] = useState<Remote<SessionView>>(LOADING);
+  const [ai, setAi] = useState<AiStatus>(NO_AI);
   const [closedPmHedge, setClosedPmHedge] = useState(false);
   const [actOnUnvalidated, setActOnUnvalidated] = useState(false);
   const thinkTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -141,14 +132,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const opening = useRef<Map<string, Promise<string>>>(new Map());
   const pathname = usePathname();
 
+  const loadLibrary = useCallback(() => getLibrary().then(
+    (raw) => { const lib = parseLibrary(raw); setLibrary(lib ? { status: "ok", data: lib, error: null } : { status: "error", data: null, error: "the catalog is empty" }); },
+    (e) => setLibrary({ status: "error", data: null, error: errMsg(e) }),
+  ), []);
+  const reloadLibrary = useCallback(() => { setLibrary(LOADING); void loadLibrary(); }, [loadLibrary]);
+
   useEffect(() => {
-    let alive = true;
-    getLibrary().then(
-      (raw) => { if (!alive) return; const lib = parseLibrary(raw); setLibrary(lib ? { status: "ok", data: lib, error: null } : { status: "error", data: null, error: "empty catalog" }); },
-      (e) => alive && setLibrary({ status: "error", data: null, error: errMsg(e) }),
-    );
-    return () => { alive = false; clearTimeout(thinkTimer.current); };
-  }, []);
+    void loadLibrary();
+    // GET /health may carry the LLM status ({ai: {live, model}}); without it nothing claims AI until a fit says so.
+    getHealth().then((h) => { if (h && typeof h === "object" && "ai" in h) setAi(aiStatus(h)); }, () => {});
+    return () => clearTimeout(thinkTimer.current);
+  }, [loadLibrary]);
 
   useEffect(() => {
     let alive = true;
@@ -174,56 +169,30 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     firstLoad.current = false;
   }, [onPortfolio, refreshAccount]);
 
-  // One interval steps every demo bridge while the Bridge or Portfolio screen is open (prototype tickLive).
-  const hasDemo = bridges.some((b) => b.kind === "demo");
-  const liveScreen = pathname.startsWith("/bridge") || pathname.startsWith("/portfolio");
-  useEffect(() => {
-    if (!hasDemo || !liveScreen) return;
-    const t = setInterval(() => setBridges((bs) => bs.map((b) => (b.kind === "demo" ? { ...b, sim: stepSim(b.sim) } : b))), TICK_MS);
-    return () => clearInterval(t);
-  }, [hasDemo, liveScreen]);
-
   const think = useCallback(() => {
     clearTimeout(thinkTimer.current);
     setThinking(true);
     thinkTimer.current = setTimeout(() => setThinking(false), 900);
   }, []);
 
-  const setQuestion = useCallback((q: Question | null) => { setQuestionS(q); setEquityS(null); setInstS(null); setQuery(""); setClosedPmHedge(false); setActOnUnvalidated(false); if (q) think(); else setThinking(false); }, [think]);
-  const setEquity = useCallback((e: EquityPick | null) => { setEquityS(e); setInstS(null); setQuery(""); setClosedPmHedge(false); setActOnUnvalidated(false); if (e) think(); else setThinking(false); }, [think]);
+  const resetToggles = useCallback(() => { setClosedPmHedge(false); setActOnUnvalidated(false); }, []);
+  const setQuestion = useCallback((q: Question | null) => { setQuestionS(q); setEquityS(null); setInstS(null); setQuery(""); resetToggles(); if (q) think(); else setThinking(false); }, [think, resetToggles]);
+  const setEquity = useCallback((e: EquityPick | null) => { setEquityS(e); setInstS(null); setQuery(""); resetToggles(); if (e) think(); else setThinking(false); }, [think, resetToggles]);
   const patchEquity = useCallback((t: string, patch: Partial<EquityPick>) => setEquityS((e) => (e && e.t === t ? { ...e, ...patch } : e)), []);
   const setInst = useCallback((id: string | null) => { setInstS(id); setQuery(""); if (id) think(); else setThinking(false); }, [think]);
   const updateSettings = useCallback((p: Partial<Settings>) => setSettings((s) => ({ ...s, ...p })), []);
-
-  const addDemoBridge = useCallback((q: Question, eq: EquityPick, instId: string) => {
-    const entry = makeDemo(q, eq, instId);
-    setBridges((bs) => (bs.some((b) => b.id === entry.id) ? bs : [...bs, entry]));
-    setActiveId(entry.id);
-    return entry.id;
-  }, []);
-
-  const seedDemo = useCallback(() => {
-    const seeds: [string, string][] = [["ca-str", "ABNB"], ["chips", "NVDA"], ["fed-dec", "JPM"]];
-    const fresh = seeds.map(([qId, t]) => { const { q, eq } = demoPick(qId, t); return makeDemo(q, eq, "shares"); });
-    setBridges((bs) => [...bs, ...fresh.filter((f) => !bs.some((b) => b.id === f.id))]);
-    setActiveId(fresh[0].id);
-    const first = demoPick("ca-str", "ABNB");
-    setQuestionS(first.q); setEquityS(first.eq); setInstS("shares");
-    setSettings((s) => ({ ...s, broker: s.broker ?? "webull", conns: s.conns.includes("webull") ? s.conns : [...s.conns, "webull"] }));
-    setBridgeNote(null);
-  }, []);
 
   const openBridge = useCallback((q: Question, eq: EquityPick, instId: string, opts: { ackUnvalidated?: boolean } = {}): Promise<string> => {
     const key = `${q.id}|${eq.t}`;
     const openKey = `${key}|${closedPmHedge ? "pmHedge" : "plain"}|${actOnUnvalidated ? "override" : ""}`;
     // Reuse a live bridge already open for this market and ticker, started under the same hedge A / override choices.
     const existing = reusableBridge(bridges, q.id, eq.t, closedPmHedge, actOnUnvalidated);
-    if (existing) { setActiveId(existing.id); setBridgeNote(null); return Promise.resolve(existing.id); }
+    if (existing) { setActiveId(existing.id); return Promise.resolve(existing.id); }
     const inflight = opening.current.get(openKey);
     if (inflight) return inflight;
     const run = (async () => {
       try {
-        if (q.real && instId !== "shares") throw new Error("the engine runs only the dynamic short-shares hedge; option and contract hedges are demo-only");
+        if (instId !== "shares") throw new Error("the engine runs only the dynamic short-shares hedge");
         const mine = fit && fit.key === key && fit.status === "ok" ? fit.data : null;
         const want = runnableFit(mine);
         const { bridgeId, gap, applied } = await startRealBridge(q, eq, settings.maxHedge, undefined, want, { closedPmHedge, actOnUnvalidated, ackUnvalidated: opts.ackUnvalidated });
@@ -233,28 +202,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const entry: BridgeEntry = { id: `live:${bridgeId}`, kind: "live", bridgeId, q, eq, inst: instId, fit: applied, unapplied, gap, pmHedge: closedPmHedge, override: actOnUnvalidated };
         setBridges((bs) => (bs.some((b) => b.id === entry.id) ? bs : [...bs, entry]));
         setActiveId(entry.id);
-        setBridgeNote(null);
         refreshAccount();
         return entry.id;
-      } catch (e) {
-        // The evidence gate refused: the caller shows why; a simulator bridge would hide the refusal.
-        if (isEvidenceError(e)) throw e;
-        setBridgeNote(`No engine bridge on the backend (${errMsg(e)}). This bridge runs the prototype's simulator.`);
-        return addDemoBridge(q, eq, instId);
       } finally {
         opening.current.delete(openKey);
       }
     })();
     opening.current.set(openKey, run);
     return run;
-  }, [bridges, settings, fit, closedPmHedge, actOnUnvalidated, addDemoBridge, refreshAccount]);
+  }, [bridges, settings, fit, closedPmHedge, actOnUnvalidated, refreshAccount]);
 
   const runFit = useCallback((q: Question, eq: EquityPick) => {
     const key = `${q.id}|${eq.t}`;
     if (fitKey.current === key) return;
     fitKey.current = key;
     setFit({ key, ...LOADING });
-    if (q.real && oppKey.current !== key) {  // the Opportunity division, fitted alongside (offered only when scored)
+    if (oppKey.current !== key) {  // the Opportunity division, fitted alongside (offered only when scored)
       oppKey.current = key;
       setOppFit({ key, ...LOADING });
       postFit({ market: { source: q.real.source, id: q.real.id }, question: q.q, ticker: eq.t, shares_held: 0,
@@ -264,18 +227,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       );
     }
     // A hedge fit is tuned on the series oriented to the outcome that hurts the stock. With no mapping for this
-    // ticker that outcome is unknown, so no hedge fit is requested (the opportunity fit above needs no direction).
+    // ticker (and no answer from the user) that outcome is unknown, so no hedge fit is requested.
     const direction = fitDirection(q, eq);
     if (!direction) {
+      fitKey.current = null;  // a later direction choice refits this pick
       setFit({ key, status: "error", data: null, noDirection: true,
-        error: `${eq.t} is not in this market's mapping, so the outcome that hurts it is unknown; no hedge was fitted` });
+        error: `${eq.t} is not in this market's mapping, so the outcome that hurts it is unknown; say which one does to fit a hedge` });
       return;
     }
     postFit({
-      market: q.real ? { source: q.real.source, id: q.real.id } : undefined,
+      market: { source: q.real.source, id: q.real.id },
       question: q.q, ticker: eq.t, direction, shares_held: eq.held || 500,
     }).then(
-      (data) => { if (fitKey.current === key) setFit({ key, status: "ok", data, error: null }); },
+      (data) => { if (fitKey.current === key) { setFit({ key, status: "ok", data, error: null }); setAi(aiStatus(data)); } },
       (e) => {
         if (fitKey.current !== key) return;
         fitKey.current = null; // let a later visit retry this pick
@@ -284,9 +248,34 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const retryFit = useCallback((q: Question, eq: EquityPick) => {
+    fitKey.current = null;
+    runFit(q, eq);
+  }, [runFit]);
+
+  const chooseDirection = useCallback((direction: Direction) => {
+    if (!question || !equity) return;
+    const next: EquityPick = { ...equity, direction, directionSource: "user" };
+    setEquityS(next);
+    fitKey.current = null;
+    runFit(question, next);
+  }, [question, equity, runFit]);
+
+  const openWeekendReplay = useCallback(async () => {
+    // The market's own search row when the backend returns it in time (final price, dates), else the recording's identity.
+    const rows = await withTimeout(searchMarkets(WEEKEND_REPLAY.query).then((r) => r.markets), WEEKEND_SEARCH_MS);
+    const q = weekendQuestion(rows);
+    const holding = (portfolio.data?.holdings ?? []).find((h) => h.ticker === WEEKEND_REPLAY.ticker) ?? null;
+    const eq = weekendPick(holding);
+    setQuestionS(q); setEquityS(eq); setInstS("shares"); setQuery(""); resetToggles();
+    fitKey.current = null;
+    runFit(q, eq);
+    if (eq.px == null) getEquity(eq.t).then((card) => setEquityS((e) => (e && e.t === eq.t ? { ...e, name: card.name ?? e.name, px: card.implied_move?.spot ?? null } : e)), () => {});
+  }, [portfolio.data, runFit, resetToggles]);
+
   const openOpportunity = useCallback(async (q: Question, eq: EquityPick, opts: { ackUnvalidated?: boolean } = {}): Promise<string> => {
     const key = `${q.id}|${eq.t}`;
-    const existing = bridges.find((b) => b.kind === "live" && b.mode === "opportunity" && b.q?.id === q.id && b.eq?.t === eq.t);
+    const existing = bridges.find((b) => b.mode === "opportunity" && b.q?.id === q.id && b.eq?.t === eq.t);
     if (existing) { setActiveId(existing.id); return existing.id; }
     const want = opportunityFit(oppFit && oppFit.key === key && oppFit.status === "ok" ? oppFit.data : null);
     if (!want) throw new Error("no scored opportunity fit for this pick");
@@ -294,24 +283,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const entry: BridgeEntry = { id: `live:${bridgeId}`, kind: "live", bridgeId, q, eq, inst: "options", fit: applied, gap: null, mode: "opportunity" };
     setBridges((bs) => (bs.some((b) => b.id === entry.id) ? bs : [...bs, entry]));
     setActiveId(entry.id);
-    setBridgeNote(null);
     refreshAccount();
     return entry.id;
   }, [bridges, oppFit, refreshAccount]);
 
   const value = useMemo<Store>(() => ({
-    question, equity, inst, query, thinking, setQuestion, setEquity, patchEquity, setInst, setQuery,
-    settings, updateSettings, bridges, activeId, bridgeNote, setActive: setActiveId, addDemoBridge, seedDemo, openBridge,
-    fit, runFit, oppFit, openOpportunity, library, account, portfolio, session, closedPmHedge, setClosedPmHedge,
-    actOnUnvalidated, setActOnUnvalidated,
-  }), [question, equity, inst, query, thinking, setQuestion, setEquity, patchEquity, setInst, settings, updateSettings, bridges, activeId, bridgeNote, addDemoBridge, seedDemo, openBridge, fit, runFit, oppFit, openOpportunity, library, account, portfolio, session, closedPmHedge, actOnUnvalidated]);
+    question, equity, inst, query, thinking, setQuestion, setEquity, patchEquity, setInst, setQuery, chooseDirection, openWeekendReplay,
+    settings, updateSettings, bridges, activeId, setActive: setActiveId, openBridge,
+    fit, runFit, retryFit, oppFit, openOpportunity, library, reloadLibrary, account, portfolio, refreshAccount, ai, session,
+    closedPmHedge, setClosedPmHedge, actOnUnvalidated, setActOnUnvalidated,
+  }), [question, equity, inst, query, thinking, setQuestion, setEquity, patchEquity, setInst, chooseDirection, openWeekendReplay, settings, updateSettings, bridges, activeId, openBridge, fit, runFit, retryFit, oppFit, openOpportunity, library, reloadLibrary, account, portfolio, refreshAccount, ai, session, closedPmHedge, actOnUnvalidated]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
-/** "sim" | "webull-paper" from GET /account, as a label. */
+/** "sim" | "webull-paper" from GET /account, as a label; "Account unavailable" when it cannot be read. */
 export function brokerLabel(a: Remote<AccountOut>): { name: string; tone: "sim" | "paper" | "demo" } {
-  if (a.status !== "ok" || !a.data) return { name: "Demo account", tone: "demo" };
+  if (a.status !== "ok" || !a.data) return { name: a.status === "loading" ? "Reading account…" : "Account unavailable", tone: "demo" };
   const b = (a.data.broker ?? "sim").toLowerCase();
   return b.includes("webull") ? { name: "Webull paper", tone: "paper" } : { name: "Simulated account", tone: "sim" };
 }

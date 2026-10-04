@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export interface Async<T> { data: T | null; error: string | null; loading: boolean }
 
@@ -20,6 +20,12 @@ export function useAsync<T>(key: string | null, fn: () => Promise<T>): Async<T> 
   if (key === null) return { data: null, error: null, loading: false };
   const fresh = s.key === key;
   return { data: fresh ? s.data : null, error: fresh ? s.error : null, loading: !fresh };
+}
+
+/** A retry counter for useAsync keys: put `n` in the key, call `retry()` to fetch again after a failure. */
+export function useRetry(): [number, () => void] {
+  const [n, setN] = useState(0);
+  return [n, useCallback(() => setN((x) => x + 1), [])];
 }
 
 export const money = (x: number | null | undefined) =>

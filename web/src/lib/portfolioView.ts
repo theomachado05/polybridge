@@ -5,8 +5,8 @@ interface HoldingHedge { ticker: string; hedge: { status: string; bridge_id?: st
 
 /** The engine bridge hedging this holding: the backend's word (GET /portfolio hedge.status "bridging") first, else a
  *  live hedge bridge this session opened for the ticker on a real market. GET /portfolio is re-read on each visit,
- *  but the session's own bridge keeps the row honest while that refresh is in flight. Options bridges and demo
- *  (simulator) bridges are not hedges of the real holding. */
+ *  but the session's own bridge keeps the row honest while that refresh is in flight. Options bridges are not hedges
+ *  of the holding. */
 export function engineBridgeFor(h: HoldingHedge, bridges: readonly SessionBridge[]): string | null {
   if (h.hedge.status === "bridging" && h.hedge.bridge_id) return h.hedge.bridge_id;
   const mine = bridges.find((b) => b.kind === "live" && b.mode !== "opportunity" && !!b.q?.real && b.eq?.t === h.ticker && !!b.bridgeId);

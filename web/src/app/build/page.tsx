@@ -8,13 +8,14 @@ import { DEFAULT_OPP_CAPS, opportunityFit, prepareOpportunityProposal, runnableF
 import { OVERRIDE_COPY, ackCopy, capacityFromLiquidity, capitalFitView, evidenceGate, isEvidenceError } from "@/lib/risk";
 import { BadgeTag, CapacityCard, EvidenceGateBox } from "@/components/risk/RiskBits";
 import { HedgeCompareCard, OptionChainCard } from "@/components/options/OptionsCards";
-import { EQ, INSTRUMENTS, QUESTIONS, REAL_INSTRUMENTS, demoFirst, demoImpacts, isDemoMarket, isListedMarket, isOpenMarket, isRecordedOnly, questionFromMarket, topImpact, type EquityPick, type Impact, type Question } from "@/lib/demo";
+import { HEDGE_INSTRUMENTS, WEEKEND_REPLAY, featuredFirst, isFeaturedReplay, isListedMarket, isOpenMarket, isRecordedOnly, isWeekendReplay, questionFromMarket, topImpact, type EquityPick, type Impact, type Question } from "@/lib/markets";
+import { aiLabel, aiStatus, aiTitle, mappingLabel } from "@/lib/ai";
 import { fmtPct, prettyId } from "@/lib/fmt";
 import { fitScoreView, IN_SAMPLE_NOTE } from "@/lib/pipeline";
-import { useAsync } from "@/lib/hooks";
+import { useAsync, useRetry } from "@/lib/hooks";
 import { OPP_REPLAY_NOTE, libraryIdea, optionFamilyIdea } from "@/lib/opportunity";
 import { useStore } from "@/lib/store";
-import { DemoTag, Orb, Switch, Tag } from "@/components/pb";
+import { Orb, Switch, Tag, Unavailable } from "@/components/pb";
 
 const optsBox = { marginTop: 14, padding: 6, borderRadius: 22, display: "flex", flexDirection: "column" as const };
 const rowStyle = { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20, padding: "12px 14px", borderRadius: 16, cursor: "pointer", textAlign: "left" as const, width: "100%", background: "transparent", border: 0 };
@@ -67,7 +68,7 @@ function portfolioQuestions(holdings: Holding[]): Question[] {
 
 function mapImpacts(map: MapOut | null, q: Question): Impact[] {
   if (map && map.items.length) {
-    return map.items.map((i) => ({ t: i.ticker.toUpperCase(), move: signedImpact(i.impact_pct, i.direction), rev: null, brand: null, why: i.rationale ?? "", direction: i.direction === "up_on_yes" ? "up_on_yes" : "down_on_yes", real: true }));
+    return map.items.map((i) => ({ t: i.ticker.toUpperCase(), move: signedImpact(i.impact_pct, i.direction), rev: null, brand: null, why: i.rationale ?? "", direction: i.direction === "up_on_yes" ? "up_on_yes" : "down_on_yes", directionSource: "mapping", real: true }));
   }
   return q.touches.map((t) => ({ t, move: 0, rev: null, brand: null, why: "Not in the precomputed mapping yet, so the impact is unknown.", real: true }));
 }
@@ -75,9 +76,9 @@ function mapImpacts(map: MapOut | null, q: Question): Impact[] {
 export default function Build() {
   const router = useRouter();
   const s = useStore();
-  const { question: q, equity: e, inst, query, thinking, settings, portfolio } = s;
+  const { question: q, equity: e, inst, query, thinking, portfolio } = s;
   const step = !q ? 1 : !e ? 2 : 3;
-  const real = !!q?.real;
+  const real = !!q;
   // After the equity step: "Hedge" (the existing path) vs "Opportunity" (an options family with a real replay score).
   const [mode, setMode] = useState<{ key: string; m: "hedge" | "opportunity" } | null>(null);
   const pickKey = q && e ? `${q.id}|${e.t}` : null;
@@ -94,12 +95,14 @@ export default function Build() {
     const t = setTimeout(() => setDebounced(step === 1 ? query.trim() : ""), 350);
     return () => clearTimeout(t);
   }, [query, step]);
-  const search = useAsync(debounced ? `s:${debounced}` : null, () => searchMarkets(debounced));
-  const map = useAsync(q?.real ? `m:${q.id}` : null, () => mapEvent({ question: q!.q, source: q!.real!.source, market_id: q!.real!.id }));
+  const [searchTry, retrySearch] = useRetry();
+  const [mapTry, retryMap] = useRetry();
+  const search = useAsync(debounced ? `s:${searchTry}:${debounced}` : null, () => searchMarkets(debounced));
+  const map = useAsync(q ? `m:${mapTry}:${q.id}` : null, () => mapEvent({ question: q!.q, source: q!.real.source, market_id: q!.real.id }));
 
   const holdings = useMemo(() => (portfolio.status === "ok" && portfolio.data ? portfolio.data.holdings : []), [portfolio]);
   const holdingOf = (t: string) => holdings.find((h) => h.ticker === t) ?? null;
-  const heldOf = (qq: Question, t: string) => (qq.real ? holdingOf(t)?.shares ?? 0 : EQ[t]?.held ?? 0);
+  const heldOf = (_qq: Question, t: string) => holdingOf(t)?.shares ?? 0;
 
   useEffect(() => {
     requestAnimationFrame(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" }));
@@ -107,42 +110,36 @@ export default function Build() {
 
   // ---- step 1 rows
   const ql = query.trim().toLowerCase();
-  // Held-market rows, the demo market (the one `make dev` replays) first so it is one click away.
-  const realBase = useMemo(() => demoFirst(portfolioQuestions(holdings)), [holdings]);
+  // Held-market rows, the featured TLT replay market first so it is one click away.
+  const realBase = useMemo(() => featuredFirst(portfolioQuestions(holdings)), [holdings]);
   const searchRows = useMemo(() => (search.data?.markets ?? []).filter((m) => isListedMarket(m)).map((m) => {
     const known = realBase.find((x) => x.id === `${m.source}:${m.id}`);
     return known ?? questionFromMarket(m);
   }), [search.data, realBase]);
-  const demoHeld = (x: Question) => x.touches.some((t) => EQ[t]?.held);
-  const demoRows = QUESTIONS.filter((x) => !ql || x.q.toLowerCase().includes(ql) || x.ev.toLowerCase().includes(ql) || x.touches.some((t) => t.toLowerCase().includes(ql)))
-    .sort((a, b) => Number(demoHeld(b)) - Number(demoHeld(a)));
-  const realFiltered = ql ? searchRows : realBase.slice(0, 3);
-  const all = [...realFiltered, ...demoRows];
+  const all = ql ? searchRows : realBase;
   const shown = ql ? all.slice(0, 10) : all.slice(0, 5);
   const more = all.length - shown.length;
 
   // ---- step 2 rows
-  const impacts: Impact[] = !q ? [] : real ? mapImpacts(map.data, q) : demoImpacts(q);
+  // The weekend replay's SPY pick carries its direction from the recording; keep it listed when the mapping has none.
+  const impacts: Impact[] = !q ? [] : [...mapImpacts(map.data, q), ...(e && e.directionSource === "recording" && !map.data?.items.some((i) => i.ticker.toUpperCase() === e.t) ? [e] : [])];
   let elist = impacts;
   if (q && ql && step === 2) {
     const u = ql.toUpperCase();
-    const universe = new Set([...Object.keys(EQ), ...holdings.map((h) => h.ticker), ...impacts.map((i) => i.t)]);
-    elist = [...universe].filter((t) => t.includes(u) || (EQ[t]?.name ?? holdingOf(t)?.name ?? "").toUpperCase().includes(u))
-      .map((t) => impacts.find((i) => i.t === t) ?? (real ? { t, move: 0, rev: null, brand: null, why: "Not in this market's mapping, so the impact is unknown.", real: true } : { t, move: -1.2, rev: -0.6, brand: -1.5, why: "" }));
-    if (/^[A-Z]{1,5}$/.test(u) && !elist.some((i) => i.t === u)) elist.push({ t: u, move: 0, rev: null, brand: null, why: "Not in this market's mapping, so the impact is unknown.", real });
+    const universe = new Set([...holdings.map((h) => h.ticker), ...impacts.map((i) => i.t)]);
+    elist = [...universe].filter((t) => t.includes(u) || (holdingOf(t)?.name ?? "").toUpperCase().includes(u))
+      .map((t) => impacts.find((i) => i.t === t) ?? { t, move: 0, rev: null, brand: null, why: "Not in this market's mapping, so the impact is unknown.", real: true });
+    if (/^[A-Z]{1,5}$/.test(u) && !elist.some((i) => i.t === u)) elist.push({ t: u, move: 0, rev: null, brand: null, why: "Not in this market's mapping, so the impact is unknown.", real: true });
   }
   elist = q ? [...elist].sort((a, b) => Number(heldOf(q, b.t) > 0) - Number(heldOf(q, a.t) > 0) || Math.abs(b.move) - Math.abs(a.move)) : [];
   const toPick = (i: Impact): EquityPick => {
-    const h = holdingOf(i.t), d = EQ[i.t];
-    return real
-      ? { ...i, name: h?.name ?? d?.name ?? i.t, px: h?.spot ?? null, held: h?.shares ?? 0 }
-      : { ...i, name: d?.name ?? i.t, px: d?.px ?? 100, held: d?.held ?? 0 };
+    const h = holdingOf(i.t);
+    return { ...i, name: h?.name ?? i.t, px: h?.spot ?? null, held: h?.shares ?? 0 };
   };
 
   // ---- step 3 rows
-  // Real markets: only the hedge the engine actually runs, priced from a real quote or not at all.
-  // Sample markets: the prototype's menu (sample prices from the demo equity table), labelled as such.
-  const instruments = !e ? [] : real ? REAL_INSTRUMENTS(e.px) : INSTRUMENTS(e.px ?? EQ[e.t]?.px ?? 100, settings.account);
+  // Only the hedge the engine actually runs, priced from a real quote or not at all.
+  const instruments = !e ? [] : HEDGE_INSTRUMENTS(e.px);
   const chosen = instruments.find((i) => i.id === inst) ?? null;
   const ilist = q && e && !inst && ql && showHedge ? instruments.filter((i) => (i.name + " " + i.kind + " " + i.phrase).toLowerCase().includes(ql)) : instruments;
 
@@ -152,9 +149,7 @@ export default function Build() {
     const pick = toPick(i);
     s.setEquity(pick);
     if (q) s.runFit(q, pick);
-    if (pick.px == null || real) {
-      getEquity(pick.t).then((card) => s.patchEquity(pick.t, { name: card.name ?? pick.name, px: pick.px ?? card.implied_move?.spot ?? null }), () => {});
-    }
+    getEquity(pick.t).then((card) => s.patchEquity(pick.t, { name: card.name ?? pick.name, px: pick.px ?? card.implied_move?.spot ?? null }), () => {});
   };
   const toConnect = () => { if (q && e && inst) router.push("/connect"); };
   const submit = () => {
@@ -171,18 +166,26 @@ export default function Build() {
   const top = q ? topImpact(impacts, (t) => heldOf(q, t) > 0) : undefined;
   const heldQ = q ? q.touches.find((t) => heldOf(q, t) > 0) ?? impacts.find((i) => heldOf(q, i.t) > 0)?.t : null;
   const ai1 = `What are you worried about? I’m watching markets on Polymarket and Kalshi — pick one below, or describe it.`;
-  const ai2 = !q ? "" : `That market is at ${q.yes}¢ YES on ${q.venues.join(" and ")}, with ${q.vol} traded in the last 24 hours. ` + (top && top.move
-    ? `It moves ${top.t} most — ${fmtPct(top.move)} if YES resolves${heldQ ? ", and you hold " + heldQ : ""}. Which position should I protect?`
-    : real && map.loading ? "Mapping which stocks it moves…" : "I have no precomputed mapping for it yet — type any ticker and I’ll treat its impact as unknown.");
+  const weekend = isWeekendReplay(q?.real);
+  const priceLine = !q ? "" : weekend
+    ? `This is the recorded weekend of that market: Friday 4 April to Monday 7 April 2025, the tariff weekend, replayed from the backend’s recording (${WEEKEND_REPLAY.recorded}). `
+    : q.real.yes_price == null
+      ? `${q.real.recorded ? "That market has resolved; the bridge replays its recording" : "The backend reports no current price for that market"}. `
+      : `That market is at ${q.yes}¢ YES on ${q.venues.join(" and ")}, with ${q.vol} traded in the last 24 hours. `;
+  const ai2 = !q ? "" : priceLine + (top && top.move
+    ? `The mapping says it moves ${top.t} most — ${fmtPct(top.move)} if YES resolves${heldQ ? ", and you hold " + heldQ : ""}. Which position should I protect?`
+    : map.loading ? "Mapping which stocks it moves…"
+    : weekend ? "The recording hedges SPY: a recession YES is adverse for it. Which position should I protect?"
+    : "There is no mapping for it yet — type any ticker; its impact stays unknown and you say which outcome hurts it.");
   const ai3 = !e ? "" : (e.held
-    ? (real ? `You hold ${e.held.toLocaleString("en-US")} shares of ${e.t}. ` : `You hold ${e.held.toLocaleString("en-US")} shares of ${e.t} across three lots, two of them long-term. `)
+    ? `You hold ${e.held.toLocaleString("en-US")} shares of ${e.t}. `
     : `You don’t hold ${e.t} yet, so I’ll size the hedge to a 500-share notional. `)
-    + (e.move ? `${real ? "The mapping" : "Delta-Bridge"} expects ${fmtPct(e.move)} on YES${e.why ? ": " + e.why : "."} How should I hedge it?` : `I don’t have an impact estimate for ${e.t} on this market, so the engine can’t size from it yet. How should I hedge it?`);
-  const ai4 = !chosen ? "" : real
-    ? `${chosen.fit} Next I’ll check where orders go, then fit an algo family to this event on its price history. You approve before anything trades.`
-    : `${chosen.fit} Next I’ll connect your brokerage, then compose the chain from the algo library and tune it to your fees and ${settings.rate} tax rate.`;
-  const thinkingText = !q ? "Reading the order books…" : !e ? `Mapping exposure across ${real ? (map.data?.items.length ?? "the") : 23} equities…` : !inst ? `Pricing hedges for your ${settings.account} account…` : "Checking fees and lot ages…";
-  const busy = thinking || (step === 2 && real && map.loading);
+    + (e.move ? `The mapping expects ${fmtPct(e.move)} on YES${e.why ? ": " + e.why : "."} How should I hedge it?`
+      : e.directionSource === "recording" ? `${e.why} How should I hedge it?`
+      : `I don’t have an impact estimate for ${e.t} on this market, so the engine can’t size from it yet. How should I hedge it?`);
+  const ai4 = !chosen ? "" : `${chosen.fit} Next I’ll check where orders go, then replay the matching algo families on this market’s history to fit one. You approve before anything trades.`;
+  const thinkingText = !q ? "Reading the order books…" : !e ? `Mapping exposure across ${map.data?.items.length ?? "the"} equities…` : !inst ? "Pricing the hedge…" : "Checking fees and the quote…";
+  const busy = thinking || (step === 2 && map.loading);
 
   const hdr = (n: number, filled: boolean, active: boolean) => ({ color: active ? "#2B57D6" : filled ? "#0F1626" : "#8A92A8", fg: filled ? "#0F1626" : "#8A92A8" });
   const slots = [
@@ -209,30 +212,42 @@ export default function Build() {
           {step === 1 && !busy && (
             <div className="pb-glass" style={optsBox}>
               {ql && search.loading && <div className="pb-mono" style={{ padding: "10px 14px 4px", fontSize: 11, color: "#5A627A" }}>Searching Polymarket and Kalshi…</div>}
-              {ql && search.error && <div style={{ padding: "8px 14px 4px", fontSize: 12, color: "#5A627A" }}>Live search unavailable ({search.error}). <DemoTag what="showing samples" /></div>}
+              {ql && search.error && <Unavailable what="Market search" error={search.error} onRetry={retrySearch} compact style={{ padding: "8px 14px 4px" }} />}
+              {ql && search.data && !search.loading && shown.length === 0 && <div style={{ padding: "10px 14px", fontSize: 12.5, color: "#5A627A" }}>No open market matches “{query.trim()}”.</div>}
+              {!ql && portfolio.status === "error" && <Unavailable what="Your holdings’ markets (GET /portfolio)" error={portfolio.error} onRetry={s.refreshAccount} compact style={{ padding: "8px 14px 4px" }} />}
+              {!ql && portfolio.status === "ok" && shown.length === 0 && <div style={{ padding: "10px 14px", fontSize: 12.5, color: "#5A627A" }}>None of your holdings has an open market yet. Type an event to search Polymarket and Kalshi.</div>}
               {search.data?.stale && ql && <div style={{ padding: "8px 14px 4px" }}><Tag tone="sim" title={search.data.note ?? "Live source failed; cached result"}>cached results</Tag></div>}
               {shown.map((x) => {
-                const held = x.real ? x.touches.find((t) => holdingOf(t)) : x.touches.find((t) => EQ[t]?.held);
+                const held = x.touches.find((t) => holdingOf(t));
                 return (
                   <button key={x.id} type="button" className="pb-row" style={rowStyle} onClick={() => pickQuestion(x)}>
                     <div style={{ minWidth: 0 }}>
                       <div className="pb-pretty" style={{ fontSize: 14.5, fontWeight: 500, letterSpacing: "-.01em", lineHeight: 1.35 }}>{x.q}</div>
                       <div style={{ fontSize: 12, color: "#5A627A", marginTop: 3 }}>
                         {x.venues.join(" + ")}{x.touches.length ? " · moves " + x.touches.slice(0, 3).join(", ") : ""}{held ? " · you hold " + held : ""}{" "}
-                        {x.real ? (isRecordedOnly(x.real)
+                        {isRecordedOnly(x.real)
                           ? <Tag tone="replay" title={`This market has resolved; it is listed because the backend has its recorded history (${x.real.recorded}), which the bridge replays`}>resolved · recorded replay</Tag>
-                          : <Tag tone="live" title="From GET /markets/search or your portfolio's markets">live market</Tag>) : <DemoTag what="sample" />}
-                        {x.real && isDemoMarket(x) && <>{" "}<Tag tone="replay" title="The demo market: make dev replays this market's own recorded Polymarket history (time-compressed) on the bridge">demo market</Tag></>}
+                          : <Tag tone="live" title="From GET /markets/search or your portfolio's markets">live market</Tag>}
+                        {isFeaturedReplay(x) && <>{" "}<Tag tone="replay" title="A bridge on this market replays its own recorded Polymarket history (time-compressed)">recorded replay</Tag></>}
                       </div>
                     </div>
                     <div style={{ textAlign: "right", flex: "none" }}>
-                      <div className="pb-tab" style={{ fontSize: 17, fontWeight: 600, letterSpacing: "-.03em" }}>{x.real && x.real.yes_price == null ? "—" : x.yes + "¢"}</div>
+                      <div className="pb-tab" style={{ fontSize: 17, fontWeight: 600, letterSpacing: "-.03em" }}>{x.real.yes_price == null ? "—" : x.yes + "¢"}</div>
                       <div style={{ fontSize: 11, color: "#5A627A", marginTop: 2, whiteSpace: "nowrap" }}>YES · {x.vol} vol</div>
                     </div>
                   </button>
                 );
               })}
               {more > 0 && <div className="pb-mono" style={{ padding: "10px 14px 8px", fontSize: 11, color: "#5A627A", letterSpacing: ".04em" }}>{more} more markets — type to search</div>}
+              {!ql && (
+                <button type="button" className="pb-row" style={rowStyle} onClick={() => void s.openWeekendReplay()}>
+                  <div style={{ minWidth: 0 }}>
+                    <div className="pb-pretty" style={{ fontSize: 14.5, fontWeight: 500, letterSpacing: "-.01em", lineHeight: 1.35 }}>{WEEKEND_REPLAY.question} · the April 2025 tariff weekend</div>
+                    <div style={{ fontSize: 12, color: "#5A627A", marginTop: 3 }}>Polymarket · hedges {WEEKEND_REPLAY.ticker}{" "}<Tag tone="replay" title={`The backend replays its recording, ${WEEKEND_REPLAY.recorded}: Friday 15:30 ET to Monday 10:00 ET`}>recorded weekend</Tag></div>
+                  </div>
+                  <div style={{ fontSize: 11, color: "#5A627A", whiteSpace: "nowrap" }}>replay</div>
+                </button>
+              )}
             </div>
           )}
         </Ai>
@@ -242,18 +257,21 @@ export default function Build() {
             <User text={`If ${q.ev}.`} onClick={toStep1} />
             {!(busy && !e) && (
               <Ai orb="working" text={ai2}>
-                {real && map.data && map.data.items.length > 0 && (
-                  <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-                    <Tag tone="ai" title={map.data.label}>AI estimate</Tag>
-                    {map.data.match_type === "fuzzy" && <span style={{ fontSize: 12, color: "#5A627A" }}>closest mapped question: “{map.data.matched_question}”</span>}
-                  </div>
-                )}
-                {real && map.error && <div style={{ marginTop: 8, fontSize: 12, color: "#5A627A" }}>Mapping unavailable: {map.error}</div>}
-                {!real && <div style={{ marginTop: 8 }}><DemoTag what="sample impact model" /></div>}
+                {map.data && map.data.items.length > 0 && (() => {
+                  const ml = mappingLabel(map.data.source);
+                  return (
+                    <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                      {ml && <Tag tone="ai" title={`${ml.title} ${map.data.label}`}>{ml.text}</Tag>}
+                      {map.data.match_type === "fuzzy" && <span style={{ fontSize: 12, color: "#5A627A" }}>closest mapped question: “{map.data.matched_question}”</span>}
+                    </div>
+                  );
+                })()}
+                {map.error && <Unavailable what="Stock mapping (POST /map)" error={map.error} onRetry={retryMap} compact style={{ marginTop: 8 }} />}
+                {map.data && map.data.items.length === 0 && map.data.note && <div style={{ marginTop: 8, fontSize: 12, color: "#5A627A" }}>No mapping: {map.data.note}.</div>}
                 {step === 2 && !busy && elist.length > 0 && (
                   <div className="pb-glass" style={optsBox}>
                     {elist.map((i) => {
-                      const held = heldOf(q, i.t), name = EQ[i.t]?.name ?? holdingOf(i.t)?.name ?? "";
+                      const held = heldOf(q, i.t), name = holdingOf(i.t)?.name ?? (e?.t === i.t ? e.name : "");
                       return (
                         <button key={i.t} type="button" className="pb-row" style={rowStyle} onClick={() => pickEquity(i)}>
                           <div style={{ minWidth: 0 }}>
@@ -296,7 +314,7 @@ export default function Build() {
                       <div style={{ minWidth: 0 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                           <span style={{ fontSize: 14.5, fontWeight: 500 }}>Opportunity</span>
-                          <Tag tone="ai" title={`Replay score from POST /pipeline/fit (division opportunity): net P&L per unit risk on this market's history, scored only when the preset traded. ${OPP_REPLAY_NOTE} A replay estimate, not a forecast.`}>AI fit · replay score {opp.score.toFixed(3)} (estimate)</Tag>
+                          <Tag tone="ai" title={`${aiTitle(aiStatus(oppData))} Replay score from POST /pipeline/fit (division opportunity): net P&L per unit risk on this market's history, scored only when the preset traded. ${OPP_REPLAY_NOTE} A replay estimate, not a forecast.`}>{aiLabel(aiStatus(oppData))} · replay score {opp.score.toFixed(3)} (estimate)</Tag>
                         </div>
                         <div className="pb-pretty" style={{ fontSize: 12, color: "#5A627A", marginTop: 3 }}>{prettyId(opp.family)} (preset #{opp.preset_index}): {oppIdea} Replay option prices are estimates from bar closes; option fills are simulated.{opp.score < 0 ? " It lost money on this replay." : ""}</div>
                       </div>
@@ -309,8 +327,17 @@ export default function Build() {
                     onStart={async (ack) => { const id = await s.openOpportunity(q, e, { ackUnvalidated: ack }); router.push(`/bridge/${id.replace(/^live:/, "")}`); }} />
                 )}
                 {step === 3 && !inst && !busy && showHedge && (
-                  <div style={{ marginTop: 8, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", fontSize: 12, color: "#5A627A" }}>
-                    {real ? "Option and contract hedges are demo-only for now; pick a sample market to see them on the simulator." : <DemoTag what="sample hedge menu" title="Strikes, costs and tax notes are the prototype's illustrative numbers, not quotes." />}
+                  <div style={{ marginTop: 8, fontSize: 12, color: "#5A627A" }}>
+                    The bridge runs the dynamic short hedge. Option structures (puts, collars, spreads) are priced from real quotes in the next step, for comparison.
+                  </div>
+                )}
+                {!e.direction && real && (
+                  <DirectionAsk ticker={e.t} onPick={s.chooseDirection} />
+                )}
+                {e.directionSource === "user" && e.direction && (
+                  <div style={{ marginTop: 8, fontSize: 12, color: "#5A627A" }}>
+                    You said {e.direction === "down_on_yes" ? "YES" : "NO"} hurts {e.t}; the hedge is oriented to that.{" "}
+                    <button type="button" className="pb-chip pb-chip-sm" data-on={false} onClick={() => s.chooseDirection(e.direction === "down_on_yes" ? "up_on_yes" : "down_on_yes")}>Switch</button>
                   </div>
                 )}
                 {step === 3 && !inst && !busy && showHedge && (
@@ -320,7 +347,6 @@ export default function Build() {
                         <div style={{ minWidth: 0 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                             <span style={{ fontSize: 14.5, fontWeight: 500, letterSpacing: "-.01em" }}>{i.name}</span>
-                            {i.rec && <span style={{ padding: "2px 8px", borderRadius: 999, fontSize: 11, fontWeight: 600, background: "rgba(59,108,246,.12)", color: "#2B57D6" }}>AI pick</span>}
                           </div>
                           <div className="pb-pretty" style={{ fontSize: 12, color: "#5A627A", marginTop: 3, lineHeight: 1.4 }}>{i.fit} · {i.tax}</div>
                         </div>
@@ -342,13 +368,13 @@ export default function Build() {
             <User text={`With ${chosen.phrase}.`} onClick={toStep3} />
             {!busy && (
               <Ai orb="breathing" text={ai4}>
-                <FitCard fit={fit} />
+                <FitCard fit={fit} onRetry={q && e ? () => s.retryFit(q, e) : undefined} />
                 {/* Shown while closed, and whenever hedge A or the override is on (so they can always be turned off). */}
-                {real && q?.real && (sessionClosed(s.session.data) || s.closedPmHedge || s.actOnUnvalidated) && (
+                {q && (sessionClosed(s.session.data) || s.closedPmHedge || s.actOnUnvalidated || isWeekendReplay(q.real)) && (
                   <WeekendModeCard market={q.real} ticker={e?.t ?? ""} session={s.session.data} pmHedge={s.closedPmHedge} onPmHedge={s.setClosedPmHedge}
                     override={s.actOnUnvalidated} onOverride={s.setActOnUnvalidated} />
                 )}
-                {real && e && <RiskPreview ticker={e.t} held={e.held || 500} maxHedge={s.settings.maxHedge} notional={!e.held} fitRuns={!!runnableFit(fit?.status === "ok" ? fit.data : null)} />}
+                {e && <RiskPreview ticker={e.t} held={e.held || 500} maxHedge={s.settings.maxHedge} notional={!e.held} fitRuns={!!runnableFit(fit?.status === "ok" ? fit.data : null)} />}
                 <div style={{ marginTop: 18, display: "flex", gap: 10, flexWrap: "wrap" }}>
                   <button type="button" className="pb-btn pb-btn-primary" style={{ height: 48, padding: "0 22px" }} onClick={toConnect}>Connect brokerage <span className="pb-arrow">→</span></button>
                   <button type="button" className="pb-btn pb-btn-secondary" style={{ height: 48, padding: "0 18px", fontSize: 14, boxShadow: "none" }} onClick={toStep1}>Start over</button>
@@ -448,21 +474,35 @@ function OpportunityCard({ q, ticker, fit, opp, idea, onStart, onBack }: { q: No
   );
 }
 
-/** Spec §7: the AI fit card (event class, chosen algo, replay score, rationale, alternatives). */
-function FitCard({ fit }: { fit: ReturnType<typeof useStore>["fit"] }) {
+/** Which outcome hurts a ticker the mapping does not cover: the user says, so the hedge is never oriented by a guess. */
+function DirectionAsk({ ticker, onPick }: { ticker: string; onPick: (d: "down_on_yes" | "up_on_yes") => void }) {
+  return (
+    <div data-testid="direction-ask" style={{ marginTop: 12, padding: "12px 14px", borderRadius: 16, background: "rgba(255,255,255,.7)", border: "1px solid rgba(255,255,255,.9)" }}>
+      <div style={{ fontSize: 13, color: "#3C4458", lineHeight: 1.45 }}>{ticker} is not in this market’s mapping. Which outcome hurts {ticker}? The hedge is oriented to your answer.</div>
+      <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+        <button type="button" className="pb-chip pb-chip-sm" data-on={false} onClick={() => onPick("down_on_yes")}>YES hurts {ticker}</button>
+        <button type="button" className="pb-chip pb-chip-sm" data-on={false} onClick={() => onPick("up_on_yes")}>NO hurts {ticker}</button>
+      </div>
+    </div>
+  );
+}
+
+/** Spec §7: the fit card (event class, chosen algo, replay score, rationale, alternatives). "AI" only when an LLM answered. */
+function FitCard({ fit, onRetry }: { fit: ReturnType<typeof useStore>["fit"]; onRetry?: () => void }) {
   if (!fit) return null;
   const box = { marginTop: 16, padding: "14px 16px", borderRadius: 18, background: "rgba(255,255,255,.7)", border: "1px solid rgba(255,255,255,.9)", fontFamily: "var(--sans)" };
-  if (fit.status === "loading") return <div style={{ ...box, display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "#3C4458" }}><Orb state="working" size={20} />Fitting an algo to this event on its price history…</div>;
-  if (fit.noDirection) return <div style={{ ...box, fontSize: 12.5, color: "#5A627A", display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}><Tag tone="neutral" title={fit.error ?? undefined}>direction unknown</Tag>No hedge fit: {fit.error}.</div>;
-  if (fit.status === "error" || !fit.data) return <div style={{ ...box, fontSize: 12.5, color: "#5A627A" }}>AI fit unavailable ({fit.error}). The pipeline will run the prototype’s scripted steps. <DemoTag /></div>;
+  if (fit.status === "loading") return <div style={{ ...box, display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "#3C4458" }}><Orb state="working" size={20} />Replaying the matching algo families on this market’s history…</div>;
+  if (fit.noDirection) return <div style={{ ...box, fontSize: 12.5, color: "#5A627A", display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}><Tag tone="neutral" title={fit.error ?? undefined}>direction unknown</Tag>No hedge fit yet: say which outcome hurts this stock above.</div>;
+  if (fit.status === "error" || !fit.data) return <div style={box}><Unavailable what="The fit (POST /pipeline/fit)" error={fit.error} onRetry={onRetry} compact /><div style={{ fontSize: 12, color: "#5A627A", marginTop: 6 }}>Without a fit, approving runs the engine’s default delta-bridge spec.</div></div>;
   const f = fit.data;
   const sv = fitScoreView(f);
+  const ai = aiStatus(f);
   return (
     <div style={box}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-        <span className="pb-label">AI FIT · {prettyId(String(f.event_class)).toUpperCase()}</span>
+        <span className="pb-label">{ai.live ? "AI FIT" : "FIT"} · {prettyId(String(f.event_class)).toUpperCase()}</span>
         <span style={{ display: "inline-flex", gap: 6 }}>
-          <Tag tone="ai" title={f.llm === "gemini" ? "Classified and explained by Gemini" : "Keyword rules (no LLM key)"}>{f.llm === "gemini" ? "AI estimate" : "rules"}</Tag>
+          <Tag tone={ai.live ? "ai" : "neutral"} title={aiTitle(ai)}>{aiLabel(ai)}</Tag>
           <Tag tone={f.ticks_source === "live_history" || f.ticks_source === "replay" ? "replay" : "neutral"} title={f.ticks_source === "none" ? undefined : IN_SAMPLE_NOTE}>{f.ticks_source === "live_history" ? `${f.n_ticks} ticks history` : f.ticks_source === "replay" ? "replay ticks" : "no history"}</Tag>
         </span>
       </div>
@@ -534,7 +574,7 @@ function WeekendModeCard({ market, ticker, session, pmHedge, onPmHedge, override
 /** Before connecting: can the market absorb the hedge (GET /liquidity), what each hedge instrument costs
  *  (GET /options/hedge-quote), and the strike ladder on demand (GET /options/chain/{ticker}). */
 function RiskPreview({ ticker, held, maxHedge, notional, fitRuns }: { ticker: string; held: number; maxHedge: string; notional: boolean; fitRuns: boolean }) {
-  // Same coverage the proposal will carry (realBridge.hedgeTerms): Max hedge with a runnable AI fit, else at most 50%.
+  // Same coverage the proposal will carry (realBridge.hedgeTerms): Max hedge with a runnable fit, else at most 50%.
   const cap = Math.min(1, (parseInt(maxHedge, 10) || 100) / 100);
   const coverage = fitRuns ? cap : Math.min(0.5, cap);
   const hedge = Math.floor(coverage * held);

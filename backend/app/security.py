@@ -18,6 +18,9 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
+# The web app's origins: the CORS allowlist, and the only browser pages whose local voice-agent client tools may call
+# /agent/tool/* without the secret (the browser cannot hold a secret; see app.agent.router).
+WEB_ORIGINS = ("http://localhost:3000", "http://127.0.0.1:3000")
 LOCAL_CLIENTS = {"127.0.0.1", "::1", "localhost", "testclient"}  # "testclient": Starlette's TestClient
 LOCAL_HOSTS = {"127.0.0.1", "::1", "[::1]", "localhost", "testserver"}
 FORWARD_HEADERS = ("x-forwarded-for", "x-forwarded-host", "forwarded", "x-real-ip", "cf-connecting-ip",
@@ -38,6 +41,14 @@ def is_local(request: Request) -> bool:
     if any(h in request.headers for h in FORWARD_HEADERS):
         return False
     return _host_name(request.headers.get("host", "")) in LOCAL_HOSTS
+
+
+def is_local_web_app(request: Request) -> bool:
+    """A local request sent by the web app's own page (its Origin is in WEB_ORIGINS). Browsers set Origin themselves
+    and CORS keeps any other site's JSON POST from being sent, so this is the voice widget's client tools on
+    localhost. A local non-browser process could forge the header, but such a process can already call every other
+    write route locally without a secret."""
+    return is_local(request) and request.headers.get("origin", "") in WEB_ORIGINS
 
 
 async def guard_remote_writes(request: Request, call_next):
