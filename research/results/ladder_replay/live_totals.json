@@ -1,0 +1,13 @@
+{
+ "snapshot_utc": "2026-10-04T05:57:37.186340+00:00",
+ "events_read": 1008,
+ "date_ladders": 34,
+ "pairs": 61,
+ "pairs_with_books": 60,
+ "nested_pairs": 3,
+ "violations_net_of_fees": 0,
+ "violations_nested": 0,
+ "locked_usd": 0,
+ "locked_usd_nested": 0,
+ "median_gap_points_to_arb": 10.520380000000001
+}

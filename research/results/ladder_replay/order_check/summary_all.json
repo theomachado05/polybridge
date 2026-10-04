@@ -1,0 +1,846 @@
+{
+ "s11": {
+  "pairs": 918,
+  "nested": 720,
+  "reasons": {
+   "window starts at creation and the cheap rung was created later": 102,
+   "nested": 720,
+   "descriptions differ": 73,
+   "rung order wrong once each deadline's year is re-derived": 23
+  },
+  "metrics": {
+   "all": {
+    "trades": 575,
+    "pairs": 228,
+    "dates": 189,
+    "pnl_points_mean": 9.40230691380663,
+    "ci_lo": 6.534936479642889,
+    "ci_hi": 12.480508617484446,
+    "pnl_usd": 1818.4029538865636,
+    "capital_usd": 21684.750327113437,
+    "cap_weighted_return": 0.08385630115431539,
+    "ann_return_locked": 0.8293953771016973,
+    "sharpe_monthly": 3.8489083318972694,
+    "months": 16,
+    "max_dd_usd": 0.0,
+    "peak_capital_locked": 6010.737532223485,
+    "max_dd_over_peak_capital": 0.0,
+    "losers": 0,
+    "winners": 570,
+    "unsettled": 53,
+    "median_size": 25.0,
+    "size_under_5": 49,
+    "median_lock_days": 10.185925925925925,
+    "pnl_usd_uncapped": 5631.677196710012
+   },
+   "date": {
+    "trades": 385,
+    "pairs": 137,
+    "dates": 114,
+    "pnl_points_mean": 9.362809472401322,
+    "ci_lo": 6.039688624376151,
+    "ci_hi": 13.815578834707706,
+    "pnl_usd": 1071.3171628953676,
+    "capital_usd": 12619.194878104632,
+    "cap_weighted_return": 0.08489584107732524,
+    "ann_return_locked": 1.8045954904974815,
+    "sharpe_monthly": 3.0767550762247713,
+    "months": 15,
+    "max_dd_usd": 0.0,
+    "peak_capital_locked": 4190.29380779221,
+    "max_dd_over_peak_capital": 0.0,
+    "losers": 0,
+    "winners": 383,
+    "unsettled": 15,
+    "median_size": 19.307691,
+    "size_under_5": 44,
+    "median_lock_days": 7.214108796296296,
+    "pnl_usd_uncapped": 1278.9272863812148
+   },
+   "strike": {
+    "trades": 190,
+    "pairs": 91,
+    "dates": 111,
+    "pnl_points_mean": 9.482341202970018,
+    "ci_lo": 5.705501737366506,
+    "ci_hi": 13.647461449754053,
+    "pnl_usd": 747.0857909911961,
+    "capital_usd": 9065.555449008803,
+    "cap_weighted_return": 0.08240926826749263,
+    "ann_return_locked": 0.46728390504165707,
+    "sharpe_monthly": 2.553810933120863,
+    "months": 15,
+    "max_dd_usd": 0.0,
+    "peak_capital_locked": 3318.102309425436,
+    "max_dd_over_peak_capital": 0.0,
+    "losers": 0,
+    "winners": 187,
+    "unsettled": 38,
+    "median_size": 44.462643,
+    "size_under_5": 5,
+    "median_lock_days": 39.544513888888886,
+    "pnl_usd_uncapped": 4352.749910328797
+   },
+   "s11_IS": {
+    "trades": 527,
+    "pairs": 217,
+    "dates": 157,
+    "pnl_points_mean": 9.505520208994545,
+    "ci_lo": 6.39072974523101,
+    "ci_hi": 13.088237796032264,
+    "pnl_usd": 1711.785862527437,
+    "capital_usd": 19615.358511472565,
+    "cap_weighted_return": 0.08726763069490948,
+    "ann_return_locked": 1.0597156395298775,
+    "sharpe_monthly": 4.029806737742958,
+    "months": 16,
+    "max_dd_usd": 0.0,
+    "peak_capital_locked": 6010.737532223485,
+    "max_dd_over_peak_capital": 0.0,
+    "losers": 0,
+    "winners": 522,
+    "unsettled": 19,
+    "median_size": 23.734692,
+    "size_under_5": 47,
+    "median_lock_days": 9.479166666666666,
+    "pnl_usd_uncapped": 5516.0108026609505
+   },
+   "s11_OOS": {
+    "trades": 48,
+    "pairs": 16,
+    "dates": 32,
+    "pnl_points_mean": 8.269110943722627,
+    "ci_lo": 1.883697206773224,
+    "ci_hi": 16.766174108900476,
+    "pnl_usd": 106.6170913591264,
+    "capital_usd": 2069.3918156408736,
+    "cap_weighted_return": 0.05152097855673986,
+    "ann_return_locked": 0.1847404173599076,
+    "sharpe_monthly": 2.5917868785765994,
+    "months": 6,
+    "max_dd_usd": 0.0,
+    "peak_capital_locked": 1672.0000249704676,
+    "max_dd_over_peak_capital": 0.0,
+    "losers": 0,
+    "winners": 48,
+    "unsettled": 34,
+    "median_size": 36.560092999999995,
+    "size_under_5": 2,
+    "median_lock_days": 102.0895949074074,
+    "pnl_usd_uncapped": 115.66639404906083
+   }
+  },
+  "sensitivity_with_creation_pairs": {
+   "all": {
+    "trades": 608,
+    "pairs": 247,
+    "dates": 192,
+    "pnl_points_mean": 9.20679099855532,
+    "ci_lo": 6.562337972098116,
+    "ci_hi": 12.218516295559732,
+    "pnl_usd": 1944.7999918440794,
+    "capital_usd": 22783.25209215592,
+    "cap_weighted_return": 0.08536094776889457,
+    "ann_return_locked": 0.8586568009833828,
+    "sharpe_monthly": 3.9630159551931348,
+    "months": 16,
+    "max_dd_usd": 0.0,
+    "peak_capital_locked": 6131.826722996167,
+    "max_dd_over_peak_capital": 0.0,
+    "losers": 0,
+    "winners": 603,
+    "unsettled": 56,
+    "median_size": 24.985,
+    "size_under_5": 57,
+    "median_lock_days": 10.365063657407408,
+    "pnl_usd_uncapped": 5770.713618776028
+   },
+   "creation_pairs_only": {
+    "trades": 44,
+    "pairs": 21,
+    "dates": 33,
+    "pnl_points_mean": 5.274391000064129,
+    "ci_lo": 1.9113934145749962,
+    "ci_hi": 11.477059778853873,
+    "pnl_usd": 139.0490833440241,
+    "capital_usd": 1420.204646655976,
+    "cap_weighted_return": 0.09790777946786054,
+    "ann_return_locked": 1.78902765097553,
+    "sharpe_monthly": 2.113592454952178,
+    "months": 12,
+    "max_dd_usd": 0.0,
+    "peak_capital_locked": 575.718707745149,
+    "max_dd_over_peak_capital": 0.0,
+    "losers": 0,
+    "winners": 44,
+    "unsettled": 3,
+    "median_size": 13.544941000000001,
+    "size_under_5": 9,
+    "median_lock_days": 13.784166666666668,
+    "pnl_usd_uncapped": 151.7304674525241
+   }
+  },
+  "survival": {
+   "s11_verified_monotone": 98,
+   "pair_not_nested": 14,
+   "no_prints": 0,
+   "survive": 65,
+   "fail": 19,
+   "detail": [
+    [
+     "666497>666496",
+     "2025-11-25",
+     "survives"
+    ],
+    [
+     "675030>676385",
+     "2025-11-25",
+     "survives"
+    ],
+    [
+     "601577>666646",
+     "2025-12-07",
+     "survives"
+    ],
+    [
+     "716633>716632",
+     "2025-12-10",
+     "survives"
+    ],
+    [
+     "822859>689649",
+     "2025-12-14",
+     "fails"
+    ],
+    [
+     "941427>896328",
+     "2025-12-16",
+     "survives"
+    ],
+    [
+     "588775>916438",
+     "2025-12-25",
+     "not nested"
+    ],
+    [
+     "556033>686122",
+     "2025-12-29",
+     "survives"
+    ],
+    [
+     "916438>916439",
+     "2026-01-03",
+     "survives"
+    ],
+    [
+     "916439>664747",
+     "2026-01-03",
+     "not nested"
+    ],
+    [
+     "916440>965255",
+     "2026-01-03",
+     "not nested"
+    ],
+    [
+     "956631>956632",
+     "2026-01-03",
+     "survives"
+    ],
+    [
+     "956450>663544",
+     "2026-01-03",
+     "not nested"
+    ],
+    [
+     "1092481>1092482",
+     "2026-01-11",
+     "survives"
+    ],
+    [
+     "1175524>1157513",
+     "2026-01-14",
+     "survives"
+    ],
+    [
+     "1175547>1175548",
+     "2026-01-14",
+     "survives"
+    ],
+    [
+     "1175548>1168862",
+     "2026-01-15",
+     "survives"
+    ],
+    [
+     "1272525>1272524",
+     "2026-01-30",
+     "survives"
+    ],
+    [
+     "1272493>1032336",
+     "2026-01-30",
+     "fails"
+    ],
+    [
+     "1278382>1272517",
+     "2026-02-02",
+     "survives"
+    ],
+    [
+     "1242318>1235499",
+     "2026-02-02",
+     "survives"
+    ],
+    [
+     "1294627>1294628",
+     "2026-02-03",
+     "survives"
+    ],
+    [
+     "1124168>1320797",
+     "2026-02-04",
+     "not nested"
+    ],
+    [
+     "1335518>1335519",
+     "2026-02-05",
+     "fails"
+    ],
+    [
+     "556063>636111",
+     "2026-02-06",
+     "survives"
+    ],
+    [
+     "1295945>1295944",
+     "2026-02-06",
+     "survives"
+    ],
+    [
+     "1278412>1278409",
+     "2026-02-08",
+     "survives"
+    ],
+    [
+     "1320793>1386650",
+     "2026-02-17",
+     "not nested"
+    ],
+    [
+     "1386659>1386661",
+     "2026-02-18",
+     "survives"
+    ],
+    [
+     "1386661>1386662",
+     "2026-02-18",
+     "survives"
+    ],
+    [
+     "1145511>1145510",
+     "2026-02-24",
+     "survives"
+    ],
+    [
+     "1007260>1320800",
+     "2026-02-25",
+     "survives"
+    ],
+    [
+     "1437691>1437693",
+     "2026-02-26",
+     "survives"
+    ],
+    [
+     "1399065>1399066",
+     "2026-02-28",
+     "survives"
+    ],
+    [
+     "1198523>1323373",
+     "2026-02-28",
+     "not nested"
+    ],
+    [
+     "666696>958427",
+     "2026-02-28",
+     "survives"
+    ],
+    [
+     "1272493>1032336",
+     "2026-03-01",
+     "survives"
+    ],
+    [
+     "666497>666496",
+     "2026-03-10",
+     "fails"
+    ],
+    [
+     "915770>915771",
+     "2026-03-15",
+     "fails"
+    ],
+    [
+     "1538078>1538079",
+     "2026-03-16",
+     "not nested"
+    ],
+    [
+     "1538069>1538078",
+     "2026-03-18",
+     "not nested"
+    ],
+    [
+     "1538069>1538078",
+     "2026-03-18",
+     "not nested"
+    ],
+    [
+     "1467771>1538069",
+     "2026-03-22",
+     "not nested"
+    ],
+    [
+     "1467763>1467765",
+     "2026-03-23",
+     "survives"
+    ],
+    [
+     "1538069>1538078",
+     "2026-03-23",
+     "not nested"
+    ],
+    [
+     "1515806>1467763",
+     "2026-03-23",
+     "fails"
+    ],
+    [
+     "909467>909468",
+     "2026-03-25",
+     "survives"
+    ],
+    [
+     "1611527>1611577",
+     "2026-03-25",
+     "survives"
+    ],
+    [
+     "666494>1515617",
+     "2026-03-31",
+     "fails"
+    ],
+    [
+     "1535972>1708132",
+     "2026-04-12",
+     "not nested"
+    ],
+    [
+     "1032345>1032344",
+     "2026-04-14",
+     "survives"
+    ],
+    [
+     "1982153>1959318",
+     "2026-04-14",
+     "fails"
+    ],
+    [
+     "1961412>1961413",
+     "2026-04-15",
+     "survives"
+    ],
+    [
+     "1982153>1959318",
+     "2026-04-15",
+     "survives"
+    ],
+    [
+     "2002698>1959319",
+     "2026-04-18",
+     "survives"
+    ],
+    [
+     "2047411>2047412",
+     "2026-04-24",
+     "survives"
+    ],
+    [
+     "2047411>2047412",
+     "2026-04-24",
+     "fails"
+    ],
+    [
+     "2047412>1959320",
+     "2026-04-25",
+     "fails"
+    ],
+    [
+     "1608448>1609209",
+     "2026-05-01",
+     "survives"
+    ],
+    [
+     "1895140>1517836",
+     "2026-05-01",
+     "survives"
+    ],
+    [
+     "2074178>2074177",
+     "2026-05-02",
+     "fails"
+    ],
+    [
+     "2097821>2119227",
+     "2026-05-06",
+     "fails"
+    ],
+    [
+     "2241871>2241872",
+     "2026-05-13",
+     "survives"
+    ],
+    [
+     "2241871>2241872",
+     "2026-05-15",
+     "survives"
+    ],
+    [
+     "2264327>2264328",
+     "2026-05-17",
+     "survives"
+    ],
+    [
+     "1796338>1796381",
+     "2026-05-20",
+     "survives"
+    ],
+    [
+     "2308005>2308006",
+     "2026-05-20",
+     "fails"
+    ],
+    [
+     "2241873>2296135",
+     "2026-05-22",
+     "survives"
+    ],
+    [
+     "2308005>2308006",
+     "2026-05-24",
+     "survives"
+    ],
+    [
+     "909468>909466",
+     "2026-05-26",
+     "survives"
+    ],
+    [
+     "2126542>1731345",
+     "2026-05-31",
+     "survives"
+    ],
+    [
+     "2413534>2413535",
+     "2026-06-02",
+     "fails"
+    ],
+    [
+     "2429034>2296150",
+     "2026-06-07",
+     "survives"
+    ],
+    [
+     "2466411>2466412",
+     "2026-06-07",
+     "survives"
+    ],
+    [
+     "2466417>2296152",
+     "2026-06-10",
+     "survives"
+    ],
+    [
+     "2308008>1326787",
+     "2026-06-11",
+     "survives"
+    ],
+    [
+     "2535421>2535422",
+     "2026-06-14",
+     "survives"
+    ],
+    [
+     "2535422>2155023",
+     "2026-06-14",
+     "survives"
+    ],
+    [
+     "2511144>2413560",
+     "2026-06-14",
+     "survives"
+    ],
+    [
+     "1293941>1272496",
+     "2026-06-18",
+     "survives"
+    ],
+    [
+     "2646848>2646849",
+     "2026-06-24",
+     "fails"
+    ],
+    [
+     "2646848>2646849",
+     "2026-06-26",
+     "fails"
+    ],
+    [
+     "2633430>2696746",
+     "2026-06-26",
+     "survives"
+    ],
+    [
+     "2646848>2646849",
+     "2026-06-29",
+     "survives"
+    ],
+    [
+     "2646849>2685911",
+     "2026-06-29",
+     "survives"
+    ],
+    [
+     "2744616>2744060",
+     "2026-07-08",
+     "survives"
+    ],
+    [
+     "2853044>2853059",
+     "2026-07-11",
+     "fails"
+    ],
+    [
+     "2977247>2730712",
+     "2026-07-19",
+     "survives"
+    ],
+    [
+     "665532>665531",
+     "2026-08-15",
+     "survives"
+    ],
+    [
+     "665532>665531",
+     "2026-08-17",
+     "survives"
+    ],
+    [
+     "2853652>2159718",
+     "2026-08-18",
+     "survives"
+    ],
+    [
+     "2243896>2243897",
+     "2026-09-04",
+     "survives"
+    ],
+    [
+     "4319439>4319441",
+     "2026-09-11",
+     "fails"
+    ],
+    [
+     "4319441>2413330",
+     "2026-09-18",
+     "fails"
+    ],
+    [
+     "3247642>4117193",
+     "2026-09-22",
+     "survives"
+    ],
+    [
+     "2510767>3670499",
+     "2026-09-22",
+     "not nested"
+    ],
+    [
+     "3247642>4117193",
+     "2026-09-22",
+     "survives"
+    ],
+    [
+     "3399473>2757806",
+     "2026-09-29",
+     "survives"
+    ]
+   ]
+  }
+ },
+ "fresh": {
+  "pairs": 861,
+  "nested": 676,
+  "reasons": {
+   "nested": 676,
+   "rung order wrong once each deadline's year is re-derived": 47,
+   "descriptions differ": 66,
+   "no gamma record": 2,
+   "window starts at creation and the cheap rung was created later": 70
+  },
+  "metrics": {
+   "all": {
+    "trades": 562,
+    "pairs": 270,
+    "dates": 211,
+    "pnl_points_mean": 8.823462356318881,
+    "ci_lo": 6.730697776488166,
+    "ci_hi": 11.128630693584126,
+    "pnl_usd": 1479.571417784762,
+    "capital_usd": 17460.269310215237,
+    "cap_weighted_return": 0.08473932397589821,
+    "ann_return_locked": 1.1072697057471594,
+    "sharpe_monthly": 4.203896957148301,
+    "months": 16,
+    "max_dd_usd": 0.0,
+    "peak_capital_locked": 2969.67912161152,
+    "max_dd_over_peak_capital": 0.0,
+    "losers": 0,
+    "winners": 562,
+    "unsettled": 39,
+    "median_size": 19.0,
+    "size_under_5": 58,
+    "median_lock_days": 5.635451388888889,
+    "pnl_usd_uncapped": 1704.0692501219708
+   },
+   "date": {
+    "trades": 562,
+    "pairs": 270,
+    "dates": 211,
+    "pnl_points_mean": 8.823462356318881,
+    "ci_lo": 6.730697776488166,
+    "ci_hi": 11.128630693584126,
+    "pnl_usd": 1479.571417784762,
+    "capital_usd": 17460.269310215237,
+    "cap_weighted_return": 0.08473932397589821,
+    "ann_return_locked": 1.1072697057471594,
+    "sharpe_monthly": 4.203896957148301,
+    "months": 16,
+    "max_dd_usd": 0.0,
+    "peak_capital_locked": 2969.67912161152,
+    "max_dd_over_peak_capital": 0.0,
+    "losers": 0,
+    "winners": 562,
+    "unsettled": 39,
+    "median_size": 19.0,
+    "size_under_5": 58,
+    "median_lock_days": 5.635451388888889,
+    "pnl_usd_uncapped": 1704.0692501219708
+   },
+   "strike": {
+    "trades": 0
+   },
+   "s11_IS": {
+    "trades": 460,
+    "pairs": 209,
+    "dates": 170,
+    "pnl_points_mean": 8.73900031628052,
+    "ci_lo": 6.512377119384412,
+    "ci_hi": 11.446699194979033,
+    "pnl_usd": 1234.4836511651888,
+    "capital_usd": 15092.540627834811,
+    "cap_weighted_return": 0.0817942904118118,
+    "ann_return_locked": 0.9906526223917662,
+    "sharpe_monthly": 3.6787344988989843,
+    "months": 16,
+    "max_dd_usd": 0.0,
+    "peak_capital_locked": 2969.67912161152,
+    "max_dd_over_peak_capital": 0.0,
+    "losers": 0,
+    "winners": 460,
+    "unsettled": 28,
+    "median_size": 20.0,
+    "size_under_5": 41,
+    "median_lock_days": 6.790734953703703,
+    "pnl_usd_uncapped": 1449.0921419130982
+   },
+   "s11_OOS": {
+    "trades": 102,
+    "pairs": 65,
+    "dates": 41,
+    "pnl_points_mean": 9.20436959570756,
+    "ci_lo": 4.861470901353416,
+    "ci_hi": 14.00587819293185,
+    "pnl_usd": 245.08776661957322,
+    "capital_usd": 2367.728682380427,
+    "cap_weighted_return": 0.10351176147985462,
+    "ann_return_locked": 2.7201062802081992,
+    "sharpe_monthly": 2.8632038839110603,
+    "months": 6,
+    "max_dd_usd": 0.0,
+    "peak_capital_locked": 572.4527227491853,
+    "max_dd_over_peak_capital": 0.0,
+    "losers": 0,
+    "winners": 102,
+    "unsettled": 11,
+    "median_size": 10.0,
+    "size_under_5": 17,
+    "median_lock_days": 2.9997395833333336,
+    "pnl_usd_uncapped": 254.97710820887247
+   }
+  },
+  "sensitivity_with_creation_pairs": {
+   "all": {
+    "trades": 619,
+    "pairs": 285,
+    "dates": 218,
+    "pnl_points_mean": 8.242154941659091,
+    "ci_lo": 6.28166681453227,
+    "ci_hi": 10.386246254868245,
+    "pnl_usd": 1515.9033991448935,
+    "capital_usd": 19427.068053855106,
+    "cap_weighted_return": 0.07803047762753257,
+    "ann_return_locked": 1.0790598126239144,
+    "sharpe_monthly": 4.205589108880637,
+    "months": 16,
+    "max_dd_usd": 0.0,
+    "peak_capital_locked": 3106.292396576332,
+    "max_dd_over_peak_capital": 0.0,
+    "losers": 0,
+    "winners": 619,
+    "unsettled": 42,
+    "median_size": 19.0,
+    "size_under_5": 70,
+    "median_lock_days": 6.186030092592593,
+    "pnl_usd_uncapped": 1770.149825782289
+   },
+   "creation_pairs_only": {
+    "trades": 60,
+    "pairs": 15,
+    "dates": 28,
+    "pnl_points_mean": 2.499158717596103,
+    "ci_lo": 1.672363475547901,
+    "ci_hi": 3.848908673091923,
+    "pnl_usd": 38.399071360775416,
+    "capital_usd": 2044.0816536392247,
+    "cap_weighted_return": 0.018785487992816142,
+    "ann_return_locked": 0.5453194288599322,
+    "sharpe_monthly": 3.440480787098851,
+    "months": 9,
+    "max_dd_usd": 0.0,
+    "peak_capital_locked": 1205.5739495233165,
+    "max_dd_over_peak_capital": 0.0,
+    "losers": 0,
+    "winners": 60,
+    "unsettled": 3,
+    "median_size": 19.21,
+    "size_under_5": 12,
+    "median_lock_days": 6.967366898148148,
+    "pnl_usd_uncapped": 68.1476656609623
+   }
+  },
+  "verdict": "PASS"
+ }
+}

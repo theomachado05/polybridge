@@ -1,0 +1,20 @@
+{
+ "universe": 142,
+ "status": {
+  "ok": 141,
+  "no usable pair of leg quotes (stale, or no offer)": 1
+ },
+ "anchored": 141,
+ "with_taker_sale": 39,
+ "in_band": 52,
+ "with_result": 142,
+ "base": 38,
+ "base_events": 28,
+ "B0": 7,
+ "B0_events": 7,
+ "forward_start_in_base": 31,
+ "hedge_available_in_B0": 7,
+ "zero_bid_leg_in_base": 1,
+ "max_leg_age_s": 297.5518891811371,
+ "median_days_expiry_minus_end": 0.0
+}
