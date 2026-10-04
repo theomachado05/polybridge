@@ -117,7 +117,7 @@ P1. The labelling models' knowledge ends in June 2026. So:
 S4 is less exposed (its markets were open and unresolved when linked), but not immune: the same models may know how
 those equities moved with the news before June 2026.
 
-**Amendment 2, 2026-10-04 01:00 UTC, after the S5 run: an exploratory follow-up on who moves first inside the session
+**Amendment 2, 2026-10-04 00:59 UTC, after the S5 run: an exploratory follow-up on who moves first inside the session
 (S5b).** S5 showed that by the open the equity has absorbed the overnight move in odds. That leaves one question the
 closure tests cannot answer: when both trade at the same time, which one moves first, and by how many minutes? S5b
 was designed after seeing S5, so it is **exploratory** and outside the success criterion. Its rules, fixed before
@@ -134,3 +134,14 @@ anything is computed:
   costs as section 5. One position per ticker at a time.
 - The equity-first direction is reported in points of odds and set against what a Polymarket round trip costs. It is
   not turned into a P&L.
+
+**Amendment 3, 2026-10-04 01:03 UTC, after S5 and S5b: one more exploratory check, on the prediction market itself.**
+The equity is efficient to the odds at every horizon tested. An earlier study (R3) saw Polymarket give back part of
+its weekend move after the stock market opened. If the odds overshoot while equities are closed, the trade is on the
+odds, not the equity. Rules, fixed before computing:
+- The 93 S5 markets, odds only. `x` = the change in the YES price from the previous close to 09:29, in points. `y` =
+  the change from 09:29 to the close of the same session, and to the next 09:29.
+- Reported: the through-origin slope of `y` on `x` (a negative slope is a give-back), errors clustered by date; and
+  the mean of `y` signed by `x` after moves of 5 points or more and of 10 points or more, all closures and weekends.
+- Not a P&L: historical Polymarket prices are not executable. The result is set against a round-trip cost of about
+  2 to 4 points on liquid markets (two half-spreads plus the 0.04 × P × (1 − P) fee each way).
