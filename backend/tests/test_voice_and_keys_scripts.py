@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import elevenlabs_agent  # noqa: E402
 import gemini_check  # noqa: E402
 import keys_check  # noqa: E402
+import openai_check  # noqa: E402
 
 from app.agent import elevenlabs as el  # noqa: E402
 from app.agent.tools import TOOLS  # noqa: E402
@@ -89,7 +90,7 @@ def env_local(tmp_path, monkeypatch):
 def _keys(monkeypatch, **present):
     def fake(name):
         return present.get(name)
-    for mod in (elevenlabs_agent, keys_check, gemini_check):
+    for mod in (elevenlabs_agent, keys_check, gemini_check, openai_check):
         monkeypatch.setattr(mod, "env_key", fake)
 
 
@@ -243,6 +244,15 @@ def test_keys_check_runs_gemini_check_when_present(env_local, monkeypatch):
     lines: list[str] = []
     assert keys_check.main(gemini_run=lambda: 1, out=lines.append, env_local=env_local) == 1
     assert "== Gemini" in "\n".join(lines) and "skipped (no ELEVENLABS_API_KEY" in "\n".join(lines)
+
+
+def test_keys_check_runs_openai_check_when_present(env_local, monkeypatch):
+    _keys(monkeypatch, OPENAI_API_KEY="sk-test-sekrit")
+    lines: list[str] = []
+    assert keys_check.main(openai_run=lambda: 1, gemini_run=lambda: 0, out=lines.append, env_local=env_local) == 1
+    out = "\n".join(lines)
+    assert "present  OPENAI_API_KEY" in out and "== OpenAI" in out and "sk-test-sekrit" not in out
+    assert "== Gemini: skipped" in out
 
 
 # ---------------------------------------------------------------- make gemini-check

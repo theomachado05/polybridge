@@ -3,10 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Btn } from "@/components/pb";
-import { classifiedByGemini } from "@/lib/ai";
+import { StatusTag, useRegistry } from "@/components/micro/parts";
+import { mechanismById } from "@/lib/micro";
 import { useStore } from "@/lib/store";
 
 const body = { margin: 0, fontSize: 16, lineHeight: 1.5, color: "var(--text-2)" } as const;
+
+// What PolyBridge does, one registry entry per line (name, claim and status words all come from
+// GET /evidence/mechanisms): the two mechanisms, the watch-only market, the generic fit, and everything else.
+const MECHANISM_LINES = ["ladders", "touch", "btc_15min", "generic_ai_fit", "other"] as const;
 
 const BRIER = { poly: 0.0938, options: 0.0831, diff: 0.0108, lo: 0.0064, hi: 0.0158 };
 
@@ -87,19 +92,10 @@ function BrierFigure() {
 export default function Landing() {
   const router = useRouter();
   const s = useStore();
+  const reg = useRegistry();
   const [opening, setOpening] = useState(false);
-  const presets = s.library.status === "ok" && s.library.data ? s.library.data.total : null;
-  const count = presets != null ? presets.toLocaleString("en-US") : null;
-  const classify = classifiedByGemini(s.ai) ? "Gemini classifies the event."
-    : s.ai.live ? "Gemini helps to classify the event. Keyword rules do each step that Gemini does not do."
-    : "Keyword rules classify the event.";
-  const steps = [
-    "PolyBridge finds the stocks in your portfolio that the event can change.",
-    `${classify} Then the C++ engine replays the applicable presets${count != null ? ` from a library of ${count}` : ""} on the history of that market.`,
-    "It selects the preset with the best in-sample result and makes a hedge from it.",
-    "A fee gate stops each order that costs more than its expected benefit. Tax-lot and wash-sale rules are in the library, but live bridges do not use them yet.",
-    "No order goes to your broker until you approve it.",
-  ];
+  const mechs = MECHANISM_LINES.map((id) => mechanismById(reg.data, id)).filter((m) => m != null);
+  const fit = mechanismById(reg.data, "generic_ai_fit");
   const watchWeekend = async () => {
     if (opening) return;
     setOpening(true);
@@ -109,21 +105,33 @@ export default function Landing() {
   return (
     <main className="pb-page" style={{ paddingTop: 80, paddingBottom: 96 }}>
       <header style={{ maxWidth: 820 }}>
-        <h1 className="pb-h1 pb-balance">Hedge your stocks before an event changes their price.</h1>
+        <h1 className="pb-h1 pb-balance">Check thin prediction-market books against their own logic and the options chain.</h1>
         <p className="pb-pretty" style={{ ...body, marginTop: 24, fontSize: 20, lineHeight: 1.5, maxWidth: 640 }}>
-          PolyBridge is a hedge tool for the stocks you hold. It reads the probability of an event, such as a recession, from prediction markets and options.
+          PolyBridge watches Polymarket date ladders and &ldquo;will it hit&rdquo; stock tickets. It compares each one with its own date logic or with listed options, and drafts proposals for your approval. Every line below carries the status of its own test.
         </p>
       </header>
 
       <section className="pb-split" style={{ marginTop: 96 }}>
-        <h2 className="pb-h3 pb-balance" style={{ maxWidth: 400 }}>What PolyBridge does with your stocks</h2>
-        <ol style={{ margin: 0, padding: 0, listStyle: "none", borderTop: "1px solid var(--border-strong)" }}>
-          {steps.map((t, i) => (
-            <li key={t} style={{ display: "grid", gridTemplateColumns: "40px minmax(0,1fr)", gap: 8, padding: "16px 0", borderBottom: "1px solid var(--border)" }}>
+        <h2 className="pb-h3 pb-balance" style={{ maxWidth: 400 }}>What PolyBridge acts on, and how far each was tested</h2>
+        <ol data-testid="landing-mechanisms" style={{ margin: 0, padding: 0, listStyle: "none", borderTop: "1px solid var(--border-strong)" }}>
+          {reg.loading && <li className="pb-small" style={{ padding: "16px 0" }}>Reading the evidence registry…</li>}
+          {!reg.loading && !mechs.length && <li className="pb-small" style={{ padding: "16px 0" }}>The evidence registry (GET /evidence/mechanisms) did not answer, so no status is shown. See What we tested.</li>}
+          {mechs.map((m, i) => (
+            <li key={m.id} style={{ display: "grid", gridTemplateColumns: "40px minmax(0,1fr)", gap: 8, padding: "16px 0", borderBottom: "1px solid var(--border)" }}>
               <span className="pb-serif" style={{ fontSize: 20, lineHeight: 1.2, color: "var(--faint)", fontVariantNumeric: "lining-nums" }}>{i + 1}</span>
-              <span className="pb-pretty" style={{ ...body, fontSize: 16, color: "var(--ink)" }}>{t}</span>
+              <span style={{ display: "grid", gap: 6, minWidth: 0 }}>
+                <span style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                  <span style={{ ...body, fontSize: 16, fontWeight: 600, color: "var(--ink)" }}>{m.name}</span>
+                  <StatusTag m={m} />
+                </span>
+                <span className="pb-pretty" style={{ ...body, fontSize: 15 }}>{m.claim} {m.actions_allowed.text}</span>
+              </span>
             </li>
           ))}
+          <li style={{ display: "grid", gridTemplateColumns: "40px minmax(0,1fr)", gap: 8, padding: "16px 0", borderBottom: "1px solid var(--border)" }}>
+            <span />
+            <span className="pb-pretty" style={{ ...body, fontSize: 16, color: "var(--ink)" }}>No order goes to your broker until you approve it.</span>
+          </li>
         </ol>
       </section>
 
@@ -147,12 +155,24 @@ export default function Landing() {
         <h2 className="pb-h3">What you can do now</h2>
         <div className="pb-split" style={{ marginTop: 24 }}>
           <div style={{ display: "grid", gap: 12, justifyItems: "start" }}>
-            <Btn href="/build">Build a bridge</Btn>
-            <p className="pb-pretty" style={{ ...body, fontSize: 14 }}>Select a market and a stock. PolyBridge makes a hedge for your approval.</p>
+            <Btn href="/pipeline">Open the ladder board</Btn>
+            <p className="pb-pretty" style={{ ...body, fontSize: 14 }}>Polymarket date ladders in date order, with the nesting checks and any violation after fees.</p>
+          </div>
+          <div style={{ display: "grid", gap: 12, justifyItems: "start" }}>
+            <Btn href="/bridge" kind="secondary">Open the ticket board</Btn>
+            <p className="pb-pretty" style={{ ...body, fontSize: 14 }}>&ldquo;Will it hit&rdquo; tickets linked to an option expiry and its two bracketing strikes, against the options reference.</p>
+          </div>
+          <div style={{ display: "grid", gap: 12, justifyItems: "start" }}>
+            <Btn href="/tested" kind="secondary">What we tested</Btn>
+            <p className="pb-pretty" style={{ ...body, fontSize: 14 }}>Every mechanism, its status, and each number with its range and sample.</p>
+          </div>
+          <div style={{ display: "grid", gap: 12, justifyItems: "start" }}>
+            <Btn href="/build" kind="secondary">Build a bridge (generic AI fit)</Btn>
+            <p className="pb-pretty" style={{ ...body, fontSize: 14 }}>Select a market and a stock. PolyBridge makes a hedge for your approval, behind the acknowledgement. <StatusTag m={fit} /></p>
           </div>
           <div style={{ display: "grid", gap: 12, justifyItems: "start" }}>
             <Btn kind={opening ? "disabled" : "secondary"} onClick={() => void watchWeekend()}
-              title="This market passed the out-of-sample test for the expected gap. No order goes to the broker until you approve it.">
+              title={`A recorded replay of the generic AI fit${fit ? ` (${fit.status_label})` : ""}. No order goes to the broker until you approve it.`}>
               {opening ? "Wait for the replay" : "Watch the weekend replay"}
             </Btn>
             <p className="pb-pretty" style={{ ...body, fontSize: 14 }}>See a recorded bridge for the April 2025 tariff weekend. It connects the market for a US recession in 2025 to SPY.</p>

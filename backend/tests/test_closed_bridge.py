@@ -564,3 +564,41 @@ def test_the_default_demo_replay_trades_only_in_regular_hours(tmp_path):
     assert closed and all(not c["expected_gap"]["active"] and c["closure"]["status"] == "NO_CLOSE_PRICE"
                           for c in closed)
     assert all(c["expected_gap"]["status"] == "unvalidated estimate" for c in closed)
+
+
+def test_generic_fit_needs_the_acknowledgement_even_on_a_validated_market(tmp_path):
+    """The registry's generic AI fit is unvalidated (walk-forward test failed): a proposal whose algo it chose is
+    approved, and its bridge started, only with ack_unvalidated, even on the validated recession market on SPY."""
+    rec = {"source": "polymarket", "id": "516710", "token_id": RECESSION_TOKEN}
+    with make_client(tmp_path, None) as c:
+        def propose(source):
+            r = c.post("/proposals", json={"ticker": "SPY", "market": rec, "direction": "down_on_yes", "shares_held": 1000,
+                                           "target_coverage": 0.5, "algo": {**EDB, "source": source}})
+            assert r.status_code == 201, r.text
+            assert r.json()["evidence"]["validated"] is True
+            return r.json()["id"]
+
+        pid = propose("ai_fit")
+        r = c.post(f"/proposals/{pid}/approve")
+        assert r.status_code == 409 and "GENERIC_FIT_UNVALIDATED" in r.json()["detail"]
+        assert "ack_unvalidated" in r.json()["detail"] and "walk-forward" in r.json()["detail"]
+        r = c.post(f"/proposals/{pid}/approve", json={"ack_unvalidated": True})
+        assert r.status_code == 200 and r.json()["ack_unvalidated"] is True
+        # a user-chosen algo on the validated market keeps the old gate: no acknowledgement needed
+        uid = propose("user")
+        r = c.post(f"/proposals/{uid}/approve")
+        assert r.status_code == 200 and r.json()["ack_unvalidated"] is False
+
+
+def test_bridge_start_refuses_a_generic_fit_proposal_approved_without_ack(tmp_path):
+    rec = {"source": "polymarket", "id": "516710", "token_id": RECESSION_TOKEN}
+    with make_client(tmp_path, WEEKEND) as c:
+        r = c.post("/proposals", json={"ticker": "SPY", "market": rec, "direction": "down_on_yes", "shares_held": 1000,
+                                       "target_coverage": 0.5, "algo": {**EDB, "source": "ai_fit"}})
+        pid = r.json()["id"]
+        # an approval stored without the acknowledgement (e.g. from before this gate) is refused at bridge start
+        from app.routes import _store
+        req = type("R", (), {"app": c.app})()
+        _store(req).approve(pid, ack_unvalidated=False)
+        b = c.post("/bridges", json={"proposal_id": pid, "source": "replay", "market": rec})
+        assert b.status_code == 409 and "GENERIC_FIT_UNVALIDATED" in b.json()["detail"], b.text

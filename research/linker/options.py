@@ -1,6 +1,20 @@
-"""From a link to an option contract: which listed option carries a question's risk.
+"""From a ticket to its exact option contracts, and (legacy) from a link to an at-the-money option.
 
-A link says "this question moves this ticker, this way". The option that carries it is fixed by three rules:
+**Exact contract link (what the product serves).** A "will it hit" or "close above" ticket names a ticker, a level, a
+direction and a window end. S21's rules (`research/s21_options_anchor/METHOD.md` section 3, imported unchanged from
+`s21_options_anchor.engine` and `.config`) turn it into contracts:
+    end session day  the last weekday on or before the window end
+    expiry           the listed expiry nearest on or after the end session day, at most 45 calendar days later; up to
+                     three listed expiries are tried, in order (the first with two bracketing strikes listed is the
+                     link; quote usability is checked by the options reference service, not here)
+    strikes          the two listed strikes that bracket the level (`arbscan.implied.bracket_indices`): the level's
+                     two neighbours when it is itself listed, else the strikes just below and just above
+    legs             up: the call spread, long the lower strike; down: the put spread, long the higher strike
+    underlying       the ticker itself; S&P 500 index questions (SPX) use the PM-settled index options (root SPXW)
+Every failure returns an explicit reason; nothing is linked silently.
+
+**Legacy (`resolve`).** A link says "this question moves this ticker, this way". The option that carries it is fixed by
+three rules:
     underlying   the linked ticker
     expiry       the first listed expiry on or after the day the question resolves (so the option is alive when the
                  news lands and expires soon after)
@@ -18,8 +32,8 @@ import sys
 from datetime import date
 
 from s4_linked_assets import data as d4
-
-from .benchmark import OUT
+from s21_options_anchor import config as s21cfg
+from s21_options_anchor import engine as s21
 
 # (question, ticker, direction, the day the question resolves)
 EXAMPLES = (
@@ -61,7 +75,64 @@ def resolve(s, base: str, ticker: str, direction: str, resolves: str, as_of: str
             "strikes_listed": len({float(r["strike_price"]) for r in chain})}
 
 
+def option_root(ticker: str) -> str:
+    """The OCC root prefix of the options that carry a ticket on `ticker` (S21: SPX questions use SPXW)."""
+    return s21cfg.INDEX_ROOT.get(ticker.upper(), f"O:{ticker.upper()}")
+
+
+def exact_ticket_link(rows: list[dict], ticker: str, level: float, direction: str, window_end: str) -> dict:
+    """The exact contracts of one ticket from listed contract rows (Massive reference format: expiration_date,
+    strike_price, contract_type, ticker). `direction` is "up" or "down". Returns a dict with `ok` and, when not ok,
+    `reason`; never guesses."""
+    out: dict = {"ok": False, "underlying": ticker.upper(), "option_root": option_root(ticker), "level": level,
+                 "direction": direction, "window_end": window_end, "rule": "research/s21_options_anchor/METHOD.md section 3"}
+    if direction not in ("up", "down"):
+        return {**out, "reason": "no direction: a ticket needs up or down to choose calls or puts"}
+    try:
+        end = date.fromisoformat(str(window_end)[:10])
+    except ValueError:
+        return {**out, "reason": "no window end"}
+    end_session = s21.last_weekday(end)
+    hi = date.fromordinal(end_session.toordinal() + s21cfg.MAX_EXPIRY_GAP_DAYS)
+    out["end_session"] = end_session.isoformat()
+    kind = "call" if direction == "up" else "put"
+    root = out["option_root"]
+    chain = [r for r in rows if r.get("contract_type") == kind and str(r.get("ticker", "")).startswith(root)
+             and float(r.get("shares_per_contract", 100) or 100) == 100]
+    expiries = sorted({str(r["expiration_date"])[:10] for r in chain
+                       if end_session.isoformat() <= str(r["expiration_date"])[:10] <= hi.isoformat()})
+    if not expiries:
+        return {**out, "reason": f"no listed {kind} expiry from {end_session.isoformat()} to {hi.isoformat()} (45 days)"}
+    tried = []
+    for exp in expiries[:s21cfg.MAX_EXPIRY_TRIES]:
+        legs = {float(r["strike_price"]): r["ticker"] for r in chain if str(r["expiration_date"])[:10] == exp}
+        strikes = sorted(legs)
+        ij = s21.bracket_indices(strikes, float(level))
+        tried.append(exp)
+        if ij is None:
+            continue
+        k_lo, k_hi = strikes[ij[0]], strikes[ij[1]]
+        long_k, short_k = (k_lo, k_hi) if direction == "up" else (k_hi, k_lo)
+        return {**out, "ok": True, "reason": "", "expiry": exp, "expiries_tried": tried, "option_type": kind,
+                "lower_strike": k_lo, "upper_strike": k_hi, "strike_width": k_hi - k_lo,
+                "long_leg": legs[long_k], "short_leg": legs[short_k], "long_strike": long_k, "short_strike": short_k,
+                "strikes_listed": len(strikes)}
+    return {**out, "expiries_tried": tried, "reason": f"the level {level:g} has no two bracketing listed strikes in the "
+                                                      f"first {len(tried)} expiries"}
+
+
+def resolve_exact(s, base: str, ticker: str, level: float, direction: str, window_end: str) -> dict:
+    """`exact_ticket_link` on the contracts Massive lists for the ticket's underlying."""
+    try:
+        end_session = s21.last_weekday(date.fromisoformat(str(window_end)[:10])).isoformat()
+    except ValueError:
+        return exact_ticket_link([], ticker, level, direction, window_end)
+    underlying = "SPX" if ticker.upper() == "SPX" else ticker.upper()
+    return exact_ticket_link(contracts(s, base, underlying, end_session, s21cfg.MAX_EXPIRY_GAP_DAYS), ticker, level, direction, window_end)
+
+
 def main() -> int:
+    from .benchmark import OUT
     s, base = d4._massive_session()
     as_of = "2026-10-02"
     out = []

@@ -6,6 +6,7 @@ import type {
   AccountOut, BrokerOrder, BrokerPosition, Capacity, CapitalLimits, CapitalOut, EvidenceStatus, Freshness, LiquidityEquity, ReconcileStatus,
 } from "./api.ts";
 import type { SessionView } from "./closed.ts";
+import type { Mechanism } from "./micro.ts";
 
 export type Tone = "measured" | "caution" | "neutral" | "sim" | "paper" | "live" | "replay" | "ai" | "demo";
 export interface Badge { tone: Tone; text: string; title?: string }
@@ -58,6 +59,28 @@ export function ackCopy(ticker: string, kind: "hedge" | "opportunity" = "hedge",
   const base = `I understand that the signal of this market has not passed its out-of-sample test for ${ticker}. It is an unvalidated estimate, but ${runs}. The app will label each decision and fill “unvalidated (acknowledged)”.`;
   // The backend: approving a proposal that sets act_on_unvalidated with the acknowledgement also confirms the override.
   return opts.override && kind === "hedge" ? `${base} ${OVERRIDE_ACK_COPY}` : base;
+}
+
+/** The gate of the generic AI fit flow (/build/fit). The fit itself is unvalidated (registry entry generic_ai_fit: its
+ *  walk-forward test failed), so the acknowledgement is always needed, whatever the market's own closed-gap evidence
+ *  says; a "validated" market badge is never shown as the fit's status. The badge words are the registry's. */
+export function fitEvidenceGate(market: EvidenceGateView | null | undefined, fit: Mechanism | null | undefined): EvidenceGateView {
+  const fitWhy = fit ? `${fit.name}: ${fit.claim}` : "The evidence registry was not read, so the generic AI fit is treated as unvalidated.";
+  const mkt = market?.known
+    ? ` This market's own closed-gap evidence (${market.badge.text}) is about the expected gap at a closure, not about this fit.`
+    : "";
+  return {
+    known: true, validated: false, needsAck: true, reason: `${fitWhy}${mkt}`,
+    badge: { tone: "caution", text: fit?.status_label || "unvalidated", title: fit?.actions_allowed.text ?? fitWhy },
+  };
+}
+
+/** The acknowledgement for the generic AI fit: the fit's own status first, then the market's (when it is unvalidated
+ *  too, the backend's own acknowledgement is part of the same tick). */
+export function fitAckCopy(ticker: string, fit: Mechanism | null | undefined, market: EvidenceGateView | null | undefined,
+  opts: { override?: boolean } = {}): string {
+  const fitLine = `I understand that the generic AI fit is not validated (${fit?.status_label || "unvalidated"}) and that the ${ticker} hedge will use it anyway.`;
+  return market?.needsAck ? `${fitLine} ${ackCopy(ticker, "hedge", opts)}` : opts.override ? `${fitLine} ${OVERRIDE_ACK_COPY}` : fitLine;
 }
 
 /** What the acknowledgement also confirms when the Weekend-mode override is on (POST /proposals/{id}/approve 409 text). */

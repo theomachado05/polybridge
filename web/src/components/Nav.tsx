@@ -13,7 +13,7 @@ export function Nav() {
   const router = useRouter();
   const s = useStore();
   const on = (p: string) => path === p || path.startsWith(p + "/");
-  const build = on("/build") || on("/connect") || on("/pipeline");
+  const build = on("/build") || on("/connect");
   const step = !s.question ? 1 : !s.equity ? 2 : 3;
   const routeBridge = path.startsWith("/bridge/") && !s.bridges.some((b) => path.endsWith("/" + b.bridgeId)) ? 1 : 0;
   const n = s.bridges.length + routeBridge;
@@ -22,7 +22,9 @@ export function Nav() {
   const label = live ? (n ? `${n} active ${n === 1 ? "bridge" : "bridges"}` : "No active bridges")
     : on("/library") ? lib
     : on("/profile") ? `${s.settings.conns.length} connection${s.settings.conns.length === 1 ? "" : "s"}`
-    : on("/pipeline") ? "Bridge setup"
+    : on("/pipeline") ? "Ladder board"
+    : on("/tested") ? "What we tested"
+    : on("/build/fit") ? "Generic AI fit"
     : on("/build") ? `Step ${step} of 3`
     : on("/connect") ? "Brokerage connection"
     : s.account.status === "ok" ? accountPill(s.account.data, s.session.data).text : brokerLabel(s.account).name;
@@ -36,8 +38,10 @@ export function Nav() {
       <div className="pb-nav-inner">
         <Link href="/" className="pb-wordmark">PolyBridge</Link>
         <nav className="pb-navtabs" aria-label="Main">
+          <Link href="/pipeline" className="pb-navtab" aria-current={cur(on("/pipeline"))}>Ladders</Link>
+          <button type="button" onClick={goBridge} className="pb-navtab" aria-current={cur(on("/bridge"))}>Tickets</button>
+          <Link href="/tested" className="pb-navtab" aria-current={cur(on("/tested"))}>Tested</Link>
           <Link href="/build" className="pb-navtab" aria-current={cur(build)}>Build</Link>
-          <button type="button" onClick={goBridge} className="pb-navtab" aria-current={cur(on("/bridge"))}>Bridge</button>
           <Link href="/library" className="pb-navtab" aria-current={cur(on("/library"))}>Library</Link>
           <Link href="/portfolio" className="pb-navtab" aria-current={cur(on("/portfolio"))}>Portfolio</Link>
         </nav>

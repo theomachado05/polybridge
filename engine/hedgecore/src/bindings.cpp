@@ -7,11 +7,13 @@
 #include <set>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
 #include "hedgecore/engine.hpp"
 #include "hedgecore/library.hpp"
+#include "hedgecore/micro.hpp"
 #include "hedgecore/replay.hpp"
 
 namespace py = pybind11;
@@ -245,6 +247,8 @@ py::dict stats_dict(const ReplayStats& s) {
   return d;
 }
 
+py::list micro_families_list();
+
 py::dict catalog_dict() {
   const Catalog& c = catalog();
   py::list fams;
@@ -311,6 +315,18 @@ py::dict catalog_dict() {
   out["block_kinds"] = block_kinds;
   out["reasons"] = reasons;
   out["families"] = fams;
+  // The micro families take their own ticks and are not in the AnyAlgo library above; listed separately so the keys
+  // above are unchanged.
+  out["micro_families"] = micro_families_list();
+  out["micro_total"] = micro_catalog().total;
+  py::dict micro_reasons;
+  for (Rc r : kMicroReasons) {
+    py::dict rd;
+    rd["name"] = to_string(r);
+    rd["block"] = reason_block(code(r));
+    micro_reasons[py::str(std::to_string(code(r)))] = rd;
+  }
+  out["micro_reasons"] = micro_reasons;
   return out;
 }
 
@@ -341,10 +357,298 @@ std::vector<MarketTick> prepared_ticks(const py::dict& ticks, bool flip) {
   return v;
 }
 
+// ---- micro families (ladder_pair, touch_ticket_reference) ----
+
+const MicroFamilyInfo& micro_or_throw(const std::string& id) {
+  for (const auto& f : micro_catalog().families)
+    if (id == f.id) return f;
+  throw py::value_error("unknown micro family: " + id);
+}
+
+Params micro_params_from(const MicroFamilyInfo& f, const py::dict& d) {
+  Params p = f.spec.defaults();
+  for (auto kv : d) {
+    const auto name = py::cast<std::string>(kv.first);
+    const int i = f.spec.index_of(name);
+    if (i < 0) throw py::key_error("family " + std::string(f.id) + " has no param '" + name + "'");
+    p.v[static_cast<std::size_t>(i)] = py::cast<double>(kv.second);
+  }
+  return p;
+}
+
+py::dict micro_params_dict(const MicroFamilyInfo& f, const Params& p) {
+  py::dict d;
+  for (int i = 0; i < f.spec.n; ++i)
+    d[f.spec.defs[static_cast<std::size_t>(i)].name] = p.v[static_cast<std::size_t>(i)];
+  return d;
+}
+
+Tri tri_from(const py::handle& h) {
+  if (h.is_none()) return Tri::Missing;
+  return py::cast<bool>(h) ? Tri::True : Tri::False;
+}
+std::int64_t time_from(const py::handle& h) { return h.is_none() ? kNoTime : py::cast<std::int64_t>(h); }
+
+Leg leg_from(const std::string& s) {
+  if (s == "rich") return Leg::Rich;
+  if (s == "cheap") return Leg::Cheap;
+  throw py::value_error("leg must be 'rich' or 'cheap'");
+}
+
+const char* micro_action_name(MicroAction a) {
+  switch (a) {
+    case MicroAction::Hold: return "hold";
+    case MicroAction::Order: return "order";
+    case MicroAction::Propose: return "propose";
+    case MicroAction::Cancel: return "cancel";
+    case MicroAction::Unwind: return "unwind";
+  }
+  return "unknown";
+}
+
+LadderTick ladder_tick_from(const py::dict& d) {
+  LadderTick t;
+  for (auto kv : d) {
+    const auto k = py::cast<std::string>(kv.first);
+    const py::handle v = kv.second;
+    if (k == "ts_ns") t.ts_ns = py::cast<std::int64_t>(v);
+    else if (k == "bid_rich") t.bid_rich = to_double_or_nan(v);
+    else if (k == "bid_rich_qty") t.bid_rich_qty = to_double_or_nan(v);
+    else if (k == "ask_cheap") t.ask_cheap = to_double_or_nan(v);
+    else if (k == "ask_cheap_qty") t.ask_cheap_qty = to_double_or_nan(v);
+    else if (k == "fee_rate_rich") t.fee_rate_rich = to_double_or_nan(v);
+    else if (k == "fee_rate_cheap") t.fee_rate_cheap = to_double_or_nan(v);
+    else if (k == "tick") t.tick = to_double_or_nan(v);
+    else if (k == "ts_rich_ns") t.ts_rich_ns = time_from(v);
+    else if (k == "ts_cheap_ns") t.ts_cheap_ns = time_from(v);
+    else if (k == "nested") t.nested = tri_from(v);
+    else if (k == "event_held") t.event_held = to_double_or_nan(v);
+    else throw py::key_error("unknown ladder tick field '" + k + "'");
+  }
+  return t;
+}
+
+TicketTick ticket_tick_from(const py::dict& d) {
+  TicketTick t;
+  for (auto kv : d) {
+    const auto k = py::cast<std::string>(kv.first);
+    const py::handle v = kv.second;
+    if (k == "ts_ns") t.ts_ns = py::cast<std::int64_t>(v);
+    else if (k == "bid") t.bid = to_double_or_nan(v);
+    else if (k == "bid_qty") t.bid_qty = to_double_or_nan(v);
+    else if (k == "ask") t.ask = to_double_or_nan(v);
+    else if (k == "ref_lower") t.ref_lower = to_double_or_nan(v);
+    else if (k == "ref_central") t.ref_central = to_double_or_nan(v);
+    else if (k == "validated") t.validated = tri_from(v);
+    else if (k == "underlying_short") t.underlying_short = to_double_or_nan(v);
+    else if (k == "event_short") t.event_short = to_double_or_nan(v);
+    else throw py::key_error("unknown ticket tick field '" + k + "'");
+  }
+  return t;
+}
+
+py::dict leg_dict(const LegOrder& l) {
+  py::dict d;
+  d["side"] = l.side;
+  d["qty"] = l.qty;
+  d["limit_px"] = nan_none(l.limit_px);
+  return d;
+}
+
+py::dict pair_intent_dict(const PairIntent& i) {
+  py::dict d;
+  d["action"] = micro_action_name(i.action);
+  d["rich"] = leg_dict(i.rich);
+  d["cheap"] = leg_dict(i.cheap);
+  d["cancel"] = i.action == MicroAction::Cancel ? py::object(py::str(i.cancel == Leg::Rich ? "rich" : "cheap"))
+                                                : py::object(py::none());
+  d["reason"] = reason_name(i.reason);
+  d["reason_code"] = i.reason;
+  d["reason_block"] = reason_block(i.reason);
+  d["signal"] = nan_none(i.signal);
+  d["latency_ns"] = i.latency_ns;
+  return d;
+}
+
+py::dict ticket_intent_dict(const TicketIntent& i) {
+  py::dict d;
+  d["action"] = micro_action_name(i.action);
+  d["side"] = i.side;
+  d["qty"] = i.qty;
+  d["limit_px"] = nan_none(i.limit_px);
+  d["reason"] = reason_name(i.reason);
+  d["reason_code"] = i.reason;
+  d["reason_block"] = reason_block(i.reason);
+  d["signal"] = nan_none(i.signal);
+  d["latency_ns"] = i.latency_ns;
+  return d;
+}
+
+// Columns of equal length; `nested` / `validated` columns hold True, False or None.
+template <class T>
+std::vector<T> col(const py::dict& d, const char* k, std::size_t n, T missing) {
+  std::vector<T> v(n, missing);
+  if (!d.contains(k)) return v;
+  const py::sequence s = py::cast<py::sequence>(d[k]);
+  if (static_cast<std::size_t>(py::len(s)) != n) throw py::value_error(std::string("rows['") + k + "'] length differs");
+  for (std::size_t i = 0; i < n; ++i) {
+    const py::handle h = s[i];
+    if constexpr (std::is_same_v<T, double>) v[i] = to_double_or_nan(h);
+    else if constexpr (std::is_same_v<T, Tri>) v[i] = tri_from(h);
+    else if constexpr (std::is_same_v<T, std::int64_t>) v[i] = time_from(h);
+    else v[i] = py::cast<T>(h);
+  }
+  return v;
+}
+
+std::size_t rows_len(const py::dict& d, const char* key) {
+  if (!d.contains(key)) throw py::key_error(std::string("rows need a '") + key + "' column");
+  return static_cast<std::size_t>(py::len(d[key]));
+}
+
+std::vector<LadderRow> ladder_rows_from(const py::dict& d) {
+  const std::size_t n = rows_len(d, "now_ns");
+  const auto now = col<std::int64_t>(d, "now_ns", n, kNoTime);
+  const auto br = col<double>(d, "bid_rich", n, kNaN), brq = col<double>(d, "bid_rich_qty", n, kNaN);
+  const auto ac = col<double>(d, "ask_cheap", n, kNaN), acq = col<double>(d, "ask_cheap_qty", n, kNaN);
+  const auto fr = col<double>(d, "fee_rate_rich", n, kNaN), fc = col<double>(d, "fee_rate_cheap", n, kNaN);
+  const auto tk = col<double>(d, "tick", n, kNaN);
+  const auto tr = col<std::int64_t>(d, "ts_rich_ns", n, kNoTime), tc = col<std::int64_t>(d, "ts_cheap_ns", n, kNoTime);
+  const auto ne = col<Tri>(d, "nested", n, Tri::Missing);
+  const auto pr = col<std::int64_t>(d, "pair", n, 0), ev = col<std::int64_t>(d, "event", n, 0);
+  const auto yr = col<double>(d, "result_rich", n, kNaN), yc = col<double>(d, "result_cheap", n, kNaN);
+  std::vector<LadderRow> v(n);
+  for (std::size_t i = 0; i < n; ++i) {
+    LadderRow& r = v[i];
+    r.now_ns = now[i];
+    r.tick.ts_ns = now[i];
+    r.tick.bid_rich = br[i];
+    r.tick.bid_rich_qty = brq[i];
+    r.tick.ask_cheap = ac[i];
+    r.tick.ask_cheap_qty = acq[i];
+    r.tick.fee_rate_rich = fr[i];
+    r.tick.fee_rate_cheap = fc[i];
+    r.tick.tick = tk[i];
+    r.tick.ts_rich_ns = tr[i];
+    r.tick.ts_cheap_ns = tc[i];
+    r.tick.nested = ne[i];
+    r.pair = static_cast<std::uint32_t>(pr[i]);
+    r.event = static_cast<std::uint32_t>(ev[i]);
+    r.result_rich = yr[i];
+    r.result_cheap = yc[i];
+  }
+  return v;
+}
+
+std::vector<TicketRow> ticket_rows_from(const py::dict& d) {
+  const std::size_t n = rows_len(d, "now_ns");
+  const auto now = col<std::int64_t>(d, "now_ns", n, kNoTime);
+  const auto ts = d.contains("ts_ns") ? col<std::int64_t>(d, "ts_ns", n, kNoTime) : now;
+  const auto bid = col<double>(d, "bid", n, kNaN), bq = col<double>(d, "bid_qty", n, kNaN);
+  const auto ask = col<double>(d, "ask", n, kNaN);
+  const auto lo = col<double>(d, "ref_lower", n, kNaN), ce = col<double>(d, "ref_central", n, kNaN);
+  const auto va = col<Tri>(d, "validated", n, Tri::Missing);
+  const auto tid = col<std::int64_t>(d, "ticket", n, 0), un = col<std::int64_t>(d, "underlying", n, 0);
+  const auto ev = col<std::int64_t>(d, "event", n, 0);
+  const auto out = col<double>(d, "outcome", n, kNaN);
+  std::vector<TicketRow> v(n);
+  for (std::size_t i = 0; i < n; ++i) {
+    TicketRow& r = v[i];
+    r.now_ns = now[i];
+    r.tick.ts_ns = ts[i];
+    r.tick.bid = bid[i];
+    r.tick.bid_qty = bq[i];
+    r.tick.ask = ask[i];
+    r.tick.ref_lower = lo[i];
+    r.tick.ref_central = ce[i];
+    r.tick.validated = va[i];
+    r.ticket = static_cast<std::uint32_t>(tid[i]);
+    r.underlying = static_cast<std::uint32_t>(un[i]);
+    r.event = static_cast<std::uint32_t>(ev[i]);
+    r.outcome = out[i];
+  }
+  return v;
+}
+
+py::list micro_families_list() {
+  py::list fams;
+  for (const auto& f : micro_catalog().families) {
+    py::dict fd;
+    fd["id"] = f.id;
+    fd["division"] = f.division;
+    fd["ui_kind"] = f.ui_kind;
+    fd["status"] = f.status;
+    fd["idea"] = f.idea;
+    py::list ev, ins, blocks, inputs;
+    for (const char* e : f.event_classes) ev.append(e);
+    for (const char* e : f.instruments) ins.append(e);
+    for (const char* e : f.inputs) inputs.append(e);
+    std::set<std::string> kinds;
+    for (const auto& b : f.blocks) {
+      py::dict bd;
+      bd["kind"] = b.kind;
+      bd["name"] = b.name;
+      bd["ui_kind"] = ui_kind_of(b.kind);
+      blocks.append(bd);
+      kinds.insert(ui_kind_of(b.kind));
+    }
+    fd["event_classes"] = ev;
+    fd["instruments"] = ins;
+    fd["inputs"] = inputs;
+    fd["blocks"] = blocks;
+    fd["ui_kinds"] = std::vector<std::string>(kinds.begin(), kinds.end());
+    py::list params;
+    py::dict grid;
+    for (int i = 0; i < f.spec.n; ++i) {
+      const auto& pd = f.spec.defs[static_cast<std::size_t>(i)];
+      std::vector<double> g(pd.grid.begin(), pd.grid.begin() + pd.n_grid);
+      py::dict pdict;
+      pdict["name"] = pd.name;
+      pdict["min"] = pd.min;
+      pdict["max"] = pd.max;
+      pdict["default"] = pd.def;
+      pdict["grid"] = g;
+      pdict["tuned"] = pd.n_grid > 1;
+      pdict["help"] = pd.help;
+      params.append(pdict);
+      grid[pd.name] = g;
+    }
+    fd["params"] = params;
+    fd["grid"] = grid;
+    fd["preset_count"] = f.preset_count;
+    fams.append(fd);
+  }
+  return fams;
+}
+
+struct PyLadderPair {
+  const MicroFamilyInfo* info;
+  Params params;
+  algos::LadderPair algo;
+  explicit PyLadderPair(const py::dict& p)
+      : info(&micro_or_throw("ladder_pair")), params(micro_params_from(*info, p)), algo(params, Position{}) {}
+  py::dict tick(const py::dict& t, std::optional<std::int64_t> now_ns) {
+    const LadderTick lt = ladder_tick_from(t);
+    return pair_intent_dict(algo.on_tick(lt, now_ns.value_or(lt.ts_ns)));
+  }
+};
+
+struct PyTouchTicket {
+  const MicroFamilyInfo* info;
+  Params params;
+  algos::TouchTicketReference algo;
+  explicit PyTouchTicket(const py::dict& p)
+      : info(&micro_or_throw("touch_ticket_reference")), params(micro_params_from(*info, p)), algo(params, Position{}) {}
+  py::dict tick(const py::dict& t, std::optional<std::int64_t> now_ns) {
+    const TicketTick tt = ticket_tick_from(t);
+    return ticket_intent_dict(algo.on_tick(tt, now_ns.value_or(tt.ts_ns)));
+  }
+};
+
 }  // namespace
 
 PYBIND11_MODULE(hedgecore, m) {
-  m.doc() = "PolyBridge hedgecore: the C++20 algo library (17 families) and the legacy Engine";
+  m.doc() = "PolyBridge hedgecore: the C++20 algo library (17 families), the micro families (ladder_pair, touch_ticket_reference) and the legacy Engine";
 
   py::class_<HedgeSpec>(m, "HedgeSpec")
       .def(py::init([](std::string ticker, double shares_held, double target_coverage, double band_shares,
@@ -452,4 +756,120 @@ PYBIND11_MODULE(hedgecore, m) {
       },
       py::arg("family"), py::arg("position"), py::arg("ticks"), py::arg("fees") = py::none(),
       py::arg("direction") = "down_on_yes");
+
+  // ---- micro families ----
+  py::class_<PyLadderPair>(m, "LadderPair")
+      .def(py::init<const py::dict&>(), py::arg("params") = py::dict())
+      .def("on_tick", &PyLadderPair::tick, py::arg("tick"), py::arg("now_ns") = py::none(),
+           "tick: dict of LadderTick fields (absent or None = missing; nested None = missing). now_ns defaults to ts_ns.")
+      .def("on_fill", [](PyLadderPair& a, const std::string& leg, double qty, double px) {
+             a.algo.on_fill(leg_from(leg), qty, px);
+           }, py::arg("leg"), py::arg("qty"), py::arg("px"), "leg: 'rich' | 'cheap'; qty: absolute quantity filled")
+      .def("on_reject", [](PyLadderPair& a, const std::string& leg) { a.algo.on_reject(leg_from(leg)); },
+           py::arg("leg"), "the leg's remaining quantity is dead (rejected, expired or cancelled)")
+      .def_property_readonly("held", [](const PyLadderPair& a) { return a.algo.held; })
+      .def_property_readonly("capital_locked", [](const PyLadderPair& a) { return a.algo.capital.locked; })
+      .def_property_readonly("leg_risk_flagged", [](const PyLadderPair& a) { return a.algo.flagged; })
+      .def_property_readonly("params", [](const PyLadderPair& a) { return micro_params_dict(*a.info, a.params); });
+
+  py::class_<PyTouchTicket>(m, "TouchTicketReference")
+      .def(py::init<const py::dict&>(), py::arg("params") = py::dict())
+      .def("on_tick", &PyTouchTicket::tick, py::arg("tick"), py::arg("now_ns") = py::none(),
+           "tick: dict of TicketTick fields. validated must be True for a live order; False or None gives proposals.")
+      .def("on_fill", [](PyTouchTicket& a, double qty, double px) { a.algo.on_fill(qty, px); }, py::arg("qty"),
+           py::arg("px"), "qty: absolute quantity sold")
+      .def_property_readonly("sold", [](const PyTouchTicket& a) { return a.algo.sold; })
+      .def_property_readonly("params", [](const PyTouchTicket& a) { return micro_params_dict(*a.info, a.params); });
+
+  m.def(
+      "replay_ladder",
+      [](const py::dict& params, const py::dict& rows) {
+        const MicroFamilyInfo& f = micro_or_throw("ladder_pair");
+        const Params p = micro_params_from(f, params);
+        const std::vector<LadderRow> v = ladder_rows_from(rows);
+        LadderReplayStats s;
+        {
+          py::gil_scoped_release nogil;
+          s = replay_ladder(p, v);
+        }
+        py::dict d;
+        d["n_rows"] = s.n_rows;
+        d["n_orders"] = s.n_orders;
+        d["n_trades"] = s.n_trades;
+        d["n_leg_rejects"] = s.n_leg_rejects;
+        d["n_leg_risk"] = s.n_leg_risk;
+        d["mean_pnl_points"] = nan_none(s.mean_pnl_points);
+        d["total_pnl_usd"] = s.total_pnl_usd;
+        d["total_capital_usd"] = s.total_capital_usd;
+        d["min_pnl_minus_edge"] = nan_none(s.min_pnl_minus_edge);
+        d["p50_ns"] = s.p50_ns;
+        d["p99_ns"] = s.p99_ns;
+        d["params"] = micro_params_dict(f, p);
+        py::list trades;
+        for (const auto& t : s.trades) {
+          py::dict td;
+          td["row"] = t.row;
+          td["pair"] = t.pair;
+          td["event"] = t.event;
+          td["t_entry_ns"] = t.t_entry_ns;
+          td["qty"] = t.qty;
+          td["px_rich"] = t.px_rich;
+          td["px_cheap"] = t.px_cheap;
+          td["fee_rich"] = t.fee_rich;
+          td["fee_cheap"] = t.fee_cheap;
+          td["edge_locked"] = t.edge_locked;
+          td["payoff"] = t.payoff;
+          td["settled"] = t.settled;
+          td["pnl_points"] = t.pnl_points;
+          td["pnl_usd"] = t.pnl_usd;
+          td["capital_usd"] = t.capital_usd;
+          trades.append(td);
+        }
+        d["trades"] = trades;
+        return d;
+      },
+      py::arg("params"), py::arg("rows"),
+      "rows: dict of equal-length columns (now_ns, bid_rich, bid_rich_qty, ask_cheap, ask_cheap_qty, fee_rate_rich, "
+      "fee_rate_cheap, tick, ts_rich_ns, ts_cheap_ns, nested, pair, event, result_rich, result_cheap). Fills only at "
+      "the quoted bid/ask up to the quoted size.");
+
+  m.def(
+      "replay_tickets",
+      [](const py::dict& params, const py::dict& rows) {
+        const MicroFamilyInfo& f = micro_or_throw("touch_ticket_reference");
+        const Params p = micro_params_from(f, params);
+        const std::vector<TicketRow> v = ticket_rows_from(rows);
+        TicketReplayStats s;
+        {
+          py::gil_scoped_release nogil;
+          s = replay_tickets(p, v);
+        }
+        py::dict d;
+        d["n_rows"] = s.n_rows;
+        d["n_proposals"] = s.n_proposals;
+        d["n_orders"] = s.n_orders;
+        d["n_fills"] = s.n_fills;
+        d["p50_ns"] = s.p50_ns;
+        d["p99_ns"] = s.p99_ns;
+        d["params"] = micro_params_dict(f, p);
+        py::list decs;
+        for (const auto& x : s.decisions) {
+          py::dict dd;
+          dd["row"] = x.row;
+          dd["ticket"] = x.ticket;
+          dd["action"] = micro_action_name(x.action);
+          dd["qty"] = x.qty;
+          dd["px"] = nan_none(x.px);
+          dd["signal"] = nan_none(x.signal);
+          dd["reason"] = reason_name(x.reason);
+          dd["filled"] = x.filled;
+          dd["pnl_points"] = nan_none(x.pnl_points);
+          decs.append(dd);
+        }
+        d["decisions"] = decs;
+        return d;
+      },
+      py::arg("params"), py::arg("rows"),
+      "rows: dict of equal-length columns (now_ns, ts_ns, bid, bid_qty, ask, ref_lower, ref_central, validated, ticket, "
+      "underlying, event, outcome). With validated False or None every decision is a proposal.");
 }

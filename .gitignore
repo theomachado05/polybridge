@@ -71,3 +71,7 @@ research/results/forward_monday/.cache/
 *.aux
 *.log
 *.out
+# forward tests (backend/app/forward): raw books, pair CSVs and caches are not committed; summaries and the frozen runner's log are
+backend/data_forward/ladders/raw/
+backend/data_forward/touch/raw/
+backend/data_forward/touch/.cache_forward/

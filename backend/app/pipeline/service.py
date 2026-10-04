@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field, PrivateAttr, field_validator, model_valid
 from .classify import classify
 from .engine_adapter import EngineAdapter
 from .explain import explain
-from .llm import NO_KEY_REASON, LLMProvider, RulesProvider, rules_classify, rules_info
+from .llm import LLMProvider, RulesProvider, no_llm_reason, rules_classify, rules_info
 from .shortlist import shortlist, unmet_requirements
 from .options_join import join_options
 from .ticks import (TickSet, _universe_entry, available_requirements, build_ticks, kalshi_series, orient_for_family,
@@ -71,14 +71,15 @@ class Alternative(BaseModel):
 class AIInfo(BaseModel):
     """Who wrote the AI parts of this answer, truthfully.
 
-    provider: "gemini" when Gemini produced the event class or the rationale in this response, else "rules".
-    model: the Gemini model that answered (after any 404 fallback); null for rules.
-    live: Gemini answered during the request that produced this response (false for rules).
-    cached: this response was served from the fit cache (its Gemini call, if any, happened earlier, within 5 min).
-    steps: what produced each step: classify "gemini" | "rules", explain "gemini" | "template".
-    fell_back_reason: why rules/templates were used where Gemini was expected (no key, an error), or why the
-        configured model was replaced (it returned 404); null when nothing fell back."""
-    provider: Literal["gemini", "rules"]
+    provider: "openai" or "gemini" when that LLM produced the event class or the rationale in this response (the
+        one that answered last), else "rules". The LLM never selects the family or preset; the C++ replay does.
+    model: the model that answered (after any fallback); null for rules.
+    live: an LLM answered during the request that produced this response (false for rules).
+    cached: this response was served from the fit cache (its LLM call, if any, happened earlier, within 5 min).
+    steps: what produced each step: classify "openai" | "gemini" | "rules", explain "openai" | "gemini" | "template".
+    fell_back_reason: why rules/templates (or the next provider) were used where an LLM was expected (no key, an
+        error, OPENAI_MODEL not listed), or why the configured model was replaced; null when nothing fell back."""
+    provider: Literal["openai", "gemini", "rules"]
     model: str | None = None
     live: bool = False
     cached: bool = False
@@ -95,8 +96,8 @@ class FitResponse(BaseModel):
     score: float | None
     alternatives: list[Alternative]
     rationale: str
-    # "gemini:<model>" when Gemini classified the market, else "rules" (the keyword classifier).
-    llm: str = Field(pattern=r"^(rules|gemini:[A-Za-z0-9._\-]+)$")
+    # "openai:<model>" / "gemini:<model>" when that LLM classified the market, else "rules" (the keyword classifier).
+    llm: str = Field(pattern=r"^(rules|(openai|gemini):[A-Za-z0-9._\-]+)$")
     ticks_source: Literal["live_history", "replay", "none"]
     n_ticks: int
     # The spec §4 keys above, plus what `score` means. An unscored (rules) pick is visible as score == null;
@@ -128,20 +129,26 @@ class FitResponse(BaseModel):
 
 def ai_block(provider: LLMProvider, classify_by: str, explain_by_llm: bool, errors: list[str]) -> dict:
     """The response's `ai` block from what actually answered."""
-    steps = {"classify": "gemini" if classify_by.startswith("gemini") else "rules",
-             "explain": "gemini" if explain_by_llm else "template"}
+    by = classify_by.split(":", 1)[0]
+    name = getattr(provider, "name", "gemini")
+    name = name if name in ("openai", "gemini") else "gemini"  # test doubles and legacy providers
+    steps = {"classify": by if by in ("openai", "gemini") else "rules",
+             "explain": name if explain_by_llm else "template"}
     if isinstance(provider, RulesProvider):
-        return {**rules_info(NO_KEY_REASON), "steps": steps}
-    used = steps["classify"] == "gemini" or explain_by_llm
+        return {**rules_info(no_llm_reason(provider)), "steps": steps}
+    used = steps["classify"] != "rules" or explain_by_llm
     reasons = [e for e in errors if e]
     fb = getattr(provider, "fell_back_reason", None)
     if fb:
         reasons.insert(0, fb)
     reason = "; ".join(dict.fromkeys(reasons)) or None
     if not used:
-        return {**rules_info(f"Gemini did not answer ({reason or 'unknown error'}); keyword rules and template used"),
+        who = getattr(provider, "display", None) or "Gemini"
+        return {**rules_info(f"{who} did not answer ({reason or 'unknown error'}); keyword rules and template used"),
                 "steps": steps}
-    return {"provider": "gemini", "model": getattr(provider, "model", None), "live": True, "steps": steps,
+    if not explain_by_llm:  # only classify answered: report the provider that classified
+        name = steps["classify"]
+    return {"provider": name, "model": getattr(provider, "model", None), "live": True, "steps": steps,
             "fell_back_reason": reason}
 
 

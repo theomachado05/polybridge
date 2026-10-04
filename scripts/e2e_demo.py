@@ -261,12 +261,14 @@ def approve_gated(base: str, prop: dict) -> dict:
     capital = cap.get("capital") or {}
     say(f"     capital: fits={capital.get('fits')} {[b.get('kind') for b in capital.get('breaches') or []]}")
     check("the proposal carries a capacity block before approval", bool(cap) and "caps" in cap, "")
-    if ev.get("validated"):
+    fit = (prop.get("algo") or {}).get("source") == "ai_fit"   # the generic AI fit is unvalidated: always behind the ack
+    if ev.get("validated") and not fit:
         s, out = call(base, "POST", f"/proposals/{prop['id']}/approve")
     else:
+        code = "EVIDENCE_UNVALIDATED" if not ev.get("validated") else "GENERIC_FIT_UNVALIDATED"
         s0, refused = call(base, "POST", f"/proposals/{prop['id']}/approve")
-        check("approval without the acknowledgement is refused (409 EVIDENCE_UNVALIDATED)",
-              s0 == 409 and "EVIDENCE_UNVALIDATED" in str(refused), f"{s0}")
+        check(f"approval without the acknowledgement is refused (409 {code})",
+              s0 == 409 and code in str(refused), f"{s0}")
         s, out = call(base, "POST", f"/proposals/{prop['id']}/approve", {"ack_unvalidated": True})
     check("approve", s == 200 and out["status"] == "approved", f"{s}")
     return out
