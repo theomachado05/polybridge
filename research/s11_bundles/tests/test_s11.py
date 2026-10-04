@@ -122,3 +122,32 @@ def test_year_from_an_end_date_just_past_new_year_utc():
     ms = [mk(1, "Change by December 31?", end="2027-01-01T04:59:00Z"), mk(2, "Change by June 30, 2027?", end="2027-07-01T03:59:00Z"),
           mk(3, "Change by November 30?", end="2026-12-01T04:59:00Z")]
     assert uni.date_ladders("e", ms)[0]["legs"] == ["3", "1", "2"]
+
+
+def _fake(monkeypatch, data):
+    from s11_bundles import run as R
+    monkeypatch.setattr(R, "series", lambda mid, src: data.get(mid))
+    return R
+
+
+def test_pair_episode_trade_closes_at_gap_close(monkeypatch):
+    t = np.arange(1_780_000_020, 1_780_000_020 + 300 * 60, 60, dtype=np.int64)
+    a = np.full(len(t), 0.40)
+    b = np.full(len(t), 0.45)
+    a[100:120] = 0.60                            # the earlier date trades 15 points above the later one for 20 minutes
+    R = _fake(monkeypatch, {"A": (t, a), "B": (t, b)})
+    M = {"A": {"question": "x by May?", "fee_rate": 0.0, "fee_exponent": 1.0}, "B": {"question": "x by June?", "fee_rate": 0.0, "fee_exponent": 1.0}}
+    recs, x = R.pair_episodes({"kind": "date", "source": "s5", "event": "e", "template": "x"}, "A", "B", M, {"A": 0.0, "B": 1.0}, 0.01)
+    r = [r for r in recs if r["cost_mult"] == 1.0][0]
+    assert math.isclose(r["edge"], 0.59 - 0.46) and r["minutes_beyond_cost"] == 20 and r["minutes_to_gap_close"] == 20
+    assert math.isclose(r["pnl_close"], 0.13 + (0.45 - 0.01) - (0.40 + 0.01))      # unwind at the gap close
+    assert math.isclose(r["pnl_hold"], 0.13 + 1.0 - 0.0) and r["settled_by"] == "result" and not r["broken"]
+
+
+def test_cap_one_open_trade_per_bundle_and_daily_limit():
+    import pandas as pd
+    from s11_bundles import run as R
+    df = pd.DataFrame({"date": ["d"] * 12 + ["e"], "bundle": ["x"] * 2 + [f"b{i}" for i in range(10)] + ["x"],
+                       "t_entry": list(range(12)) + [100], "edge": [5, 4] + [1] * 10 + [1], "t_exit": [50, 60] + [None] * 10 + [None]})
+    k = R.cap(df, "edge", "t_exit")
+    assert len(k[k.date == "d"]) == 10 and (k[k.date == "d"].bundle == "x").sum() == 1 and (k.date == "e").sum() == 1
