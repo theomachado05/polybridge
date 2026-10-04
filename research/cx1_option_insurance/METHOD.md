@@ -162,3 +162,24 @@ expanded. Quotes had always been requested/validated against the separately comp
 ages, signals and P&L were unaffected. Preserve scheduled times in `entry_timestamp`, `exit_timestamp` and the explicit
 `entry_decision_timestamp`, `exit_decision_timestamp` columns; store SIP times separately as `entry_quote_timestamp`
 and `exit_quote_timestamp`. This is an output-label correction, not an execution-rule change.
+
+**Amendment 5 (2026-10-04 04:04 UTC, after initial outcomes, BUG_CORRECTION): same-session cash accounting.** Independent
+read-only review found that 2026-01-02 contains the morning exit of the December 31 position and the afternoon entry
+of the January 2 position. The initial code added their daily returns instead of compounding them, sized the new
+position before the morning exit's P&L, and overwrote that day's turnover. A failing synthetic rollover regression
+reproduced this financial invariant violation before the fix. Process the morning exit then afternoon entry at updated
+NAV, multiply the within-day return factors, and add both turnover flows. The original event-level fixed-unit P&L,
+fills, gate, instrument and split are unchanged. The initial V0 1x full-period return was overstated by 0.001806 bp
+and 2x by 0.003384 bp; 1x premium turnover should have been 0.6938116 rather than 0.6902899 per initial cash. Additional
+rollover dates November 28 and December 26 become relevant if their quotes are completed. Preserve the initial archive,
+require full-book daily/event factor reconciliation, and commit this correction before the final run. This is a cash
+accounting repair, not parameter selection or a new variant.
+
+**Amendment 6 (2026-10-04 04:07 UTC, after outcomes): reference-chain limitation.** Independent review noted that the
+reused Massive reference requests include expiry and `expired=true` but omit an entry-date `as_of` parameter. The actual
+entry NBBO proves that the selected put existed and traded before its decision instant; it does not establish that
+the cached listing was the exact historical nearest-expiry/nearest-strike chain. This limitation is disclosed in the
+results. The frozen cached-listing request and selection rule are not silently replaced after outcomes. Full-sized
+V1 also needs two integer contracts to express the half/full rule, and a historical full-exposure date with only one
+displayed contract cannot support that integer book; normalized fractional curves are not an all-date executable
+integer-capital simulation.
