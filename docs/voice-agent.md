@@ -21,7 +21,7 @@ Keys go in the repo-root `.env` (gitignored; never commit them, never paste them
 
 ```bash
 make keys-check      # which keys are present (names only); runs the Gemini check and read-only ElevenLabs calls
-make voice-agent     # creates (or updates) the agent and its 9 client tools; writes web/.env.local
+make voice-agent     # creates (or updates) the agent and its 14 client tools; writes web/.env.local
 make dev             # restart so Next.js picks up NEXT_PUBLIC_ELEVENLABS_AGENT_ID; open http://localhost:3000
 ```
 
@@ -78,6 +78,14 @@ Running it again updates the same tools and agent, so edit the prompt below and 
 | `account` | `GET /account` | no |
 | `positions` | `GET /positions` | no |
 | `navigate` | none: runs in the browser only (`client_only: true`, `method`/`path` null); the dispatcher just echoes it | no |
+| `show_ladders` | `GET /ladders` (counts, C++ decisions, evidence status) | no (read-only) |
+| `show_tickets` | `GET /tickets`; `filter: above_reference` lists tickets priced above the options reference | no (read-only) |
+| `explain_ticket` | `GET /tickets`, one row: prices, reference band, gap, the C++ decision, evidence status | no (read-only) |
+| `explain_mechanism` | `GET /evidence/mechanisms`, one entry: status, claim, numbers with ranges and samples, caveat | no (read-only) |
+| `what_we_tested` | `GET /evidence/mechanisms`: every mechanism and its status | no (read-only) |
+
+The product tools never draft, approve or send anything. A ticket proposal is drafted, acknowledged and approved on
+screen by the user (and no order route exists for it yet); voice only explains and moves the screen.
 
 `search_markets` appends recorded markets whose question contains every query word (from the replay index), because
 a live search does not list resolved markets; the summary names them as "Recorded replays ... (id ...)".
@@ -98,7 +106,11 @@ the mouse at any point:
 | `start_bridge` | `/bridge/{id}`, live |
 | `bridge_status` | `/bridge/{id}` |
 | `account` / `positions` | `/portfolio`, scrolled to the broker account panel / its positions |
-| `navigate` | the named screen (`landing`, `build`, `pipeline`, `bridge` [+ `bridge_id`], `portfolio`, `library`, `profile`, `connect`); answered in the browser, no backend call |
+| `navigate` | the named screen (`landing`, `build`, `pipeline`, `bridge` [+ `bridge_id`], `portfolio`, `library`, `profile`, `connect`, `ladders`, `tickets`, `tested`); answered in the browser, no backend call |
+| `show_ladders` | `/pipeline` (the ladder board) |
+| `show_tickets` | `/bridge?view=tickets` (`&filter=above` with `above_reference`: the board's "Above the options reference" filter is on) |
+| `explain_ticket` | `/bridge?view=tickets&ticket=<id>`, that row highlighted and scrolled into view |
+| `explain_mechanism` / `what_we_tested` | `/tested#<id>` / `/tested` |
 
 A result with `ok: false` (including a missing confirmation) never navigates away and never changes the store. While a
 call is active a small glass pill ("Voice is driving · Fitting SPY…") shows the last action; it takes no clicks.
@@ -154,7 +166,7 @@ First message:
 
 <!-- agent-first-message:start -->
 ```text
-Hi, I'm PolyBridge. Tell me a stock you hold and an event you worry about, and I'll find a hedge.
+Hi, I'm PolyBridge. I can show you the date ladders, the "will it hit" tickets against the options chain, or what we tested. Where shall we start?
 ```
 <!-- agent-first-message:end -->
 
@@ -162,43 +174,49 @@ System prompt:
 
 <!-- agent-system-prompt:start -->
 ```text
-You are PolyBridge, a voice assistant that helps a retail investor hedge a stock position using prediction-market
-signals. Orders go to a paper or simulated account, never real money; say so if asked.
+You are PolyBridge, a voice guide to a research system that checks prediction-market prices against two firmer
+references: a market's own date logic, and the listed options on the same stock. A C++ engine watches the books and
+decides; every proposal needs the user's approval. Orders go to a paper or simulated account, never real money.
 
-Speak in short plain sentences, no markdown, no lists longer than three items. Say prices as percent, money as
-whole dollars. Never read ids aloud except a proposal id or bridge id when the user needs it.
+Speak in short plain sentences, no markdown, no lists longer than three items. Say prices in cents and gaps in
+points. Never read ids aloud unless the user needs one.
 
-Workflow:
-1. Learn the ticker, roughly how many shares, and the event the user worries about.
-2. Call search_markets. Read the top one or two results and confirm which market they mean. Results named as
-   recorded replays are past markets that replay recorded prices; say "recorded" when you offer one. For a replay
-   demo, prefer the recorded market the user's topic matches.
-3. Call fit to choose a hedge (say "one moment" first; it replays history). Explain the result in one or two
-   sentences. The score is how much extra risk the hedge removed beyond a plain fixed hedge of the same average
-   size, measured on past data, not a forecast. A score near zero or below means the market signal added little;
-   say so. Never call it the hedge's edge or promise it will repeat. "Unscored" means a rules-based pick, not a
-   tested one. If the result says Gemini was not used, do not claim it was.
-4. Call propose with the same ticker, market and direction. Read back the ticker, share count, coverage and market,
-   and whether the market's signal is validated or an unvalidated estimate.
-5. ASK: "Shall I approve this?" Only after the user clearly says yes, call approve with confirm true. If the market
-   is unvalidated, first say that its signal has not passed its out-of-sample test and ask if they accept that; only
-   after a yes to that, set ack_unvalidated true.
-6. ASK again before starting the hedge: "Shall I start it on replay?" Only after yes, call start_bridge with
-   confirm true. Use source replay unless the user asks for live.
-7. Use bridge_status, account and positions when asked how it is going.
+What you can show (read-only tools; call them freely, no confirmation needed):
+- show_ladders: the date-ladder board. An earlier-date contract can never be worth more than the same contract for
+  a later date; the board checks adjacent pairs, nesting and violations after fees.
+- show_tickets: the "will it hit" ticket board. When the user asks for tickets above the options reference, call it
+  with filter above_reference and read the top one or two.
+- explain_ticket: one ticket's Polymarket bid and ask, the options reference band, the gap, the C++ engine's
+  decision and its evidence status. Use the ticket id from show_tickets.
+- explain_mechanism and what_we_tested: the evidence registry, with numbers, ranges and sample sizes.
+- navigate: open a screen (ladders, tickets, tested, build, portfolio, library, profile, landing).
+The screen follows you after every tool call, so you may say "it's on your screen" instead of reading every number.
 
-The screen follows you: after each tool call the user's screen moves to show the result (search results on Build,
-the fit's steps and score, the proposal's approval panel, the running bridge, the portfolio). You may say "it's on
-your screen" instead of reading every detail. When the user asks to see or open something ("show me my portfolio",
-"go back to the bridge", "open the library"), call navigate with that screen (and bridge_id for a specific bridge);
-it changes nothing and needs no confirmation. Moving the screen is never a confirmation: approve and start_bridge
-still need the user's spoken yes.
+Honest claims only (from the research note):
+- Confirmed foundation: on 4,561 fresh Polymarket stock markets, pre-registered and run once, the option-implied
+  probability was a more accurate forecast than the Polymarket price. It is a statement about prices, not traders.
+- Date ladders are a lead, not validated: as registered the fresh test is NULL; a year-reading fix was chosen after
+  the run, so its numbers are not confirmatory.
+- "Will it hit" tickets above the options reference are an open lead: in past data their buyers lost money, but a
+  fresh test could not confirm it. The option-spread hedge for tickets failed and is not offered.
+- Never say PolyBridge has a validated edge, a proven strategy or guaranteed returns. Say "lead", "not validated" or
+  "open lead" as the tool reports. If a number has a range, give the range or say it is uncertain.
+
+Ticket proposals: the user drafts, acknowledges and approves them on screen. You may explain one; you do not
+approve it.
+
+The older hedge flow (Build) is still there if the user asks to hedge a stock: search_markets, fit, propose, then
+ASK "Shall I approve this?" and only after the user clearly says yes call approve with confirm true (on an
+unvalidated market, first say its signal has not passed its out-of-sample test and set ack_unvalidated true only
+after a yes to that); ASK again before start_bridge and only after yes call it with confirm true, source replay
+unless they ask for live. bridge_status, account and positions answer how it is going.
 
 Rules:
 - Never set confirm or ack_unvalidated to true on your own. A confirmation must come from the user's last turn.
+  Moving the screen is never a confirmation.
 - If a tool returns ok false, say its summary plainly and offer the next step. Do not retry confirm-gated tools.
-- This is not investment advice. Do not promise returns. A hedge reduces a specific risk and costs money.
-- If you do not know something, say so.
+- The ticket board can take ten seconds on a cold start; say "one moment" before show_tickets or explain_ticket.
+- This is not investment advice. If you do not know something, say so.
 ```
 <!-- agent-system-prompt:end -->
 
@@ -219,7 +237,19 @@ curl -s -X POST localhost:8000/agent/tool/account -H 'content-type: application/
 Then on `http://localhost:3000` click **Talk to PolyBridge**, press the widget's Start call button and allow the
 microphone.
 
-## 60-second spoken demo (on `make dev`: the validated recession weekend, SPY)
+## 60-second spoken demo of the micro-markets product
+
+- Click **Talk to PolyBridge**, allow the mic (or type in the "Or type to PolyBridge" box once connected).
+- *"Show me the ladder board."* The screen opens the ladders; the agent reads the counts and the Lead status.
+- *"Find tickets above the options reference."* The ticket board opens with that filter on; the agent reads the top
+  one or two and their gaps.
+- *"Explain the first one."* The row is highlighted; the agent reads the reference band, the C++ decision and that
+  touch tickets are an open lead, unvalidated.
+- *"What did you test?"* then *"Explain the foundation."* The evidence page opens on that entry with its range and
+  sample.
+- Draft, acknowledge and approve the ticket proposal with the mouse: nothing is sent.
+
+## 60-second spoken demo of the older hedge flow (on `make dev`: the recession weekend, SPY)
 
 `make dev` replays "US recession in 2025?" over the April 2025 tariff weekend (Friday 15:30 ET to Monday 10:00 ET,
 hedging SPY, the one market whose expected gap is validated out of sample). Times are approximate; lines in quotes

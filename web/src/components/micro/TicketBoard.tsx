@@ -5,7 +5,7 @@ import Link from "next/link";
 import { getTickets } from "@/lib/api";
 import { useAsync, useRetry } from "@/lib/hooks";
 import {
-  fmtSigned, mechanismById, mechanismFor, pct, referenceClosed, ticketActions, ticketField, ticketGap, ticketReference,
+  fmtSigned, mechanismById, sortTickets, mechanismFor, pct, referenceClosed, ticketActions, ticketField, ticketGap, ticketReference,
   ticketStrikes, touchProposal, engineLine, type Band, type Mechanism, type Registry, type Ticket,
 } from "@/lib/micro";
 import { Unavailable } from "@/components/pb";
@@ -16,14 +16,19 @@ const band = (b: Band | null | undefined) => (b && b.mid != null ? `${pct(b.mid)
 /** Ticket board: touch and close-above tickets, linked to an option expiry and the two bracketing strikes, priced
  *  against the options reference. No hedge is offered for a ticket (S25 failed). Close-above tickets are "no tested
  *  mechanism": their finish-beyond reference is shown for information only, linked to the entry that explains it. */
-export function TicketBoard({ reg }: { reg: Registry | null }) {
+export function TicketBoard({ reg, above = false, focus = null }: { reg: Registry | null; above?: boolean; focus?: string | null }) {
   const [n, retry] = useRetry();
   const t = useAsync(`tickets:${n}`, getTickets);
   const d = t.data;
+  // The user's toggle wins until the URL's filter changes (voice: "find tickets above the options reference").
+  const [pickAbove, setPickAbove] = useState<{ from: boolean; on: boolean } | null>(null);
+  const onlyAbove = pickAbove && pickAbove.from === above ? pickAbove.on : above;
   const touch = mechanismFor(reg, "touch_ticket");
   const close = mechanismFor(reg, "close_above_ticket");
   const closeRef = mechanismById(reg, reg?.reference_for?.close_above_ticket ?? "");
-  const rows = d?.ok ? [...d.tickets].sort((a, b) => Number(b.linkable) - Number(a.linkable) || (a.type < b.type ? 1 : -1)) : [];
+  // What can be read first: the engine's proposals, then priced rows by gap, then linked, then the rest.
+  const all = d?.ok ? sortTickets(d.tickets) : [];
+  const rows = onlyAbove ? all.filter((r) => (ticketGap(r)?.mid ?? -Infinity) > 0 || r.id === focus) : all;
   const touchRows = rows.filter((r) => r.type === "touch_ticket");
   const closeRows = rows.filter((r) => r.type !== "touch_ticket");
 
@@ -37,22 +42,24 @@ export function TicketBoard({ reg }: { reg: Registry | null }) {
           <span>{d.counts?.tickets ?? rows.length} tickets</span>
           <span>{d.counts?.linked ?? 0} linked to option contracts</span>
           {d.as_of && <span>as of {d.as_of.replace("T", " ").slice(0, 19)} UTC{d.stale ? " (cached)" : ""}</span>}
+          <span>{all.filter((r) => ticketGap(r)).length} priced against the options reference</span>
+          <button type="button" className="pb-chip pb-chip-sm" data-on={onlyAbove} aria-pressed={onlyAbove} onClick={() => setPickAbove({ from: above, on: !onlyAbove })}>Above the options reference</button>
           <button type="button" className="pb-chip pb-chip-sm" data-on={false} onClick={retry}>Refresh</button>
         </div>
       )}
       {d?.ok && d.hedge && <div className="pb-small" data-testid="no-hedge" style={{ color: "var(--text-2)" }}>Hedge: {d.hedge}.</div>}
       {d?.ok && (
         <>
-          <Section title="Touch tickets" mech={touch} rows={touchRows} reg={reg} />
-          <Section title="Close-above tickets" mech={close} rows={closeRows} reg={reg} refOnly={closeRef} />
+          <Section title="Touch tickets" mech={touch} rows={touchRows} reg={reg} focus={focus} />
+          <Section title="Close-above tickets" mech={close} rows={closeRows} reg={reg} refOnly={closeRef} focus={focus} />
         </>
       )}
     </div>
   );
 }
 
-function Section({ title, mech, rows, reg, refOnly }: {
-  title: string; mech: Mechanism | null; rows: Ticket[]; reg: Registry | null; refOnly?: Mechanism | null;
+function Section({ title, mech, rows, reg, refOnly, focus }: {
+  title: string; mech: Mechanism | null; rows: Ticket[]; reg: Registry | null; refOnly?: Mechanism | null; focus?: string | null;
 }) {
   return (
     <section className="pb-card" style={{ overflow: "hidden" }} aria-label={title}>
@@ -73,13 +80,13 @@ function Section({ title, mech, rows, reg, refOnly }: {
           <span>Ticket · linked contracts</span><span>Polymarket bid / ask</span><span>Options reference</span><span style={{ textAlign: "right" }}>Gap</span>
         </div>
         {!rows.length && <div className="pb-list-note">No open ticket of this type right now.</div>}
-        {rows.map((r) => <TicketRow key={r.id} t={r} reg={reg} />)}
+        {rows.map((r) => <TicketRow key={r.id} t={r} reg={reg} focused={r.id === focus} />)}
       </div>
     </section>
   );
 }
 
-function TicketRow({ t, reg }: { t: Ticket; reg: Registry | null }) {
+function TicketRow({ t, reg, focused = false }: { t: Ticket; reg: Registry | null; focused?: boolean }) {
   const [open, setOpen] = useState(false);
   const { plan, mechanism } = ticketActions(t, reg);
   const ref = t.reference;
@@ -92,7 +99,8 @@ function TicketRow({ t, reg }: { t: Ticket; reg: Registry | null }) {
   const dir = ticketField(t, "direction");
   const end = ticketField(t, "window_end");
   return (
-    <div data-testid={`ticket-${t.type}`}>
+    <div data-testid={`ticket-${t.type}`} id={`ticket-row-${t.id}`} data-focused={focused || undefined}
+      style={focused ? { boxShadow: "inset 3px 0 0 var(--accent)", scrollMarginTop: 90 } : { scrollMarginTop: 90 }}>
       <div className="pb-mm-row pb-mm-ticket">
         <div style={{ minWidth: 0 }}>
           <div className="pb-pretty" style={{ fontSize: "var(--fs-13)", fontWeight: 500 }}>{t.question}</div>

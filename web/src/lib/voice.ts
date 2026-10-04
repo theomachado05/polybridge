@@ -10,7 +10,10 @@
 import { API_URL } from "./api.ts";
 import { navigateReply } from "./voiceDrive.ts";
 
-export const VOICE_TOOLS = ["search_markets", "fit", "propose", "approve", "start_bridge", "bridge_status", "account", "positions", "navigate"] as const;
+export const VOICE_TOOLS = ["search_markets", "fit", "propose", "approve", "start_bridge", "bridge_status", "account", "positions", "navigate",
+  "show_ladders", "show_tickets", "explain_ticket", "explain_mechanism", "what_we_tested"] as const;
+/** Read-only tools for the micro-markets product (ladders, tickets, evidence): no confirmation, nothing is written. */
+export const READ_ONLY_TOOLS: readonly VoiceToolName[] = ["show_ladders", "show_tickets", "explain_ticket", "explain_mechanism", "what_we_tested", "navigate", "bridge_status", "account", "positions", "search_markets", "fit"];
 /** Tools the page answers itself, with no backend call (navigate: the screen moves, nothing is written). */
 export const BROWSER_TOOLS: readonly VoiceToolName[] = ["navigate"];
 export type VoiceToolName = (typeof VOICE_TOOLS)[number];
@@ -56,7 +59,7 @@ export async function callAgentTool(name: string, params: Record<string, unknown
 }
 
 const MAX_REPLY = 6000;
-const IDS = ["id", "proposal_id", "bridge_id", "status", "source", "ticker", "family", "preset_index", "event_class", "score", "llm"];
+const IDS = ["filter", "above", "ticket", "mechanisms", "id", "proposal_id", "bridge_id", "status", "source", "ticker", "family", "preset_index", "event_class", "score", "llm"];
 
 /** What the agent reads back: ok, the summary it speaks, and the data its next call needs (market ids from a search,
  *  the proposal id, the bridge id), marked as not for reading aloud. Search results are cut to the top five; any

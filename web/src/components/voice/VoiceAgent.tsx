@@ -41,7 +41,7 @@ function driveScreen(name: VoiceToolName, params: Record<string, unknown>, reply
   if (name === "search_markets" && reply.ok) live.markets = searchedMarkets(reply);
   void (async () => {
     if (d.storeUpdate && live.store) await live.store.applyVoice(d.storeUpdate).catch(() => {});
-    if (d.route && window.location.pathname !== d.route) push(d.route);
+    if (d.route && window.location.pathname + window.location.search + window.location.hash !== d.route) push(d.route);
     if (d.scrollTo) scrollWhenReady(d.scrollTo);
   })();
   return d.announcement;
@@ -109,6 +109,15 @@ function VoicePill({ toolBusy, note, setNote, drive, setDrive }: {
   }, [askingMic, active, convo, setNote]);
 
   const stop = useCallback(() => { convo.endSession(); setNote(null); setDrive(null); }, [convo, setNote, setDrive]);
+  // Typing instead of speaking (a loud demo room, no mic): the same agent, the same tools, the same spoken-yes rule.
+  const [typed, setTyped] = useState("");
+  const send = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    const text = typed.trim();
+    if (!text || convo.status !== "connected") return;
+    convo.sendUserMessage(text);
+    setTyped("");
+  }, [typed, convo]);
 
   const label = PHASE_LABEL[phase];
   return (
@@ -122,6 +131,12 @@ function VoicePill({ toolBusy, note, setNote, drive, setDrive }: {
       )}
       {askingMic && <div className="pb-voice-note" role="status">Click Allow in the browser to talk to PolyBridge. The app uses audio only during the call.</div>}
       {note && <div className="pb-voice-note" data-tone={note.tone} role={note.tone === "error" ? "alert" : "status"}>{note.text}</div>}
+      {convo.status === "connected" && (
+        <form className="pb-voice-type" onSubmit={send}>
+          <input aria-label="Type to PolyBridge" placeholder="Or type to PolyBridge" value={typed} onChange={(e) => setTyped(e.target.value)}
+            style={{ height: 32, padding: "0 10px", borderRadius: 8, border: "1px solid var(--hairline)", background: "var(--surface)", color: "var(--ink)", font: "400 12.5px var(--sans)", width: 220 }} />
+        </form>
+      )}
       {active && <button type="button" className="pb-voice-end" onClick={stop}>End call</button>}
       <button type="button" className="pb-voice-pill pb-navpill" onClick={active ? stop : () => void start()} aria-pressed={active} aria-label={active ? `${label}. End the call` : label}>
         <Orb state={ORB_FOR[phase]} size={24} />

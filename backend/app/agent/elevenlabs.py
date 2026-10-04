@@ -44,15 +44,18 @@ def web_hosts() -> list[str]:
     """The widget allowlist: WEB_HOSTS plus PUBLIC_WEB_HOST when set (the `make share` tunnel host, e.g.
     abc.ngrok-free.app; a pasted https:// URL or trailing slash is reduced to the bare host)."""
     hosts = list(WEB_HOSTS)
-    extra = (os.environ.get("PUBLIC_WEB_HOST") or "").strip().lower()
-    extra = extra.split("://", 1)[-1].split("/", 1)[0]
-    if extra and extra not in hosts:
-        hosts.append(extra)
+    for raw in (os.environ.get("PUBLIC_WEB_HOST") or "").split(","):  # comma-separated: several hosts at once
+        extra = raw.strip().lower().split("://", 1)[-1].split("/", 1)[0]
+        if extra and extra not in hosts:
+            hosts.append(extra)
     return hosts
 TIMEOUT_S = 20.0
 # Seconds the agent waits for each client tool (ElevenLabs allows 1..120). fit replays history (up to ~45 s worst case).
 TOOL_TIMEOUTS = {"fit": 90, "start_bridge": 30, "search_markets": 20, "propose": 20, "approve": 20,
-                 "bridge_status": 15, "account": 15, "positions": 15, "navigate": 5}
+                 "bridge_status": 15, "account": 15, "positions": 15, "navigate": 5,
+                 # GET /tickets cold reads ~1,000 books and prices the options reference (~12 s); later reads cache.
+                 "show_tickets": 45, "explain_ticket": 45, "show_ladders": 20, "explain_mechanism": 10,
+                 "what_we_tested": 10}
 CONFIRM_NOTE = (" Only set confirm true after the user has said yes, out loud, in their last message; never on your "
                 "own initiative.")
 
