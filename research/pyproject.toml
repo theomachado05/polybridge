@@ -17,4 +17,4 @@ include = ["polybridge_research*"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
-testpaths = ["tests", "leadlag/tests", "leadlag_closed/tests", "leadlag_replication/tests", "arb/tests", "gap_model/tests", "open_options/tests", "closed_hedge/tests", "overshoot/tests", "pm_vs_premarket/tests", "strategy_backtest/tests", "fresh_accuracy/tests", "pm_taker/tests", "macro_panel/tests"]
+testpaths = ["tests", "leadlag/tests", "leadlag_closed/tests", "leadlag_replication/tests", "arb/tests", "gap_model/tests", "open_options/tests", "closed_hedge/tests", "overshoot/tests", "pm_vs_premarket/tests", "strategy_backtest/tests", "fresh_accuracy/tests", "pm_taker/tests", "pm_taker_v2/tests", "macro_panel/tests"]
