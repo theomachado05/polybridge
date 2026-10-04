@@ -18,43 +18,64 @@ def code(text):
 
 def reuse(i):
     c = json.loads(json.dumps(cells[i]))
-    c["outputs"], c["execution_count"] = [], None
+    if c["cell_type"] == "code":
+        c["outputs"], c["execution_count"] = [], None
     return c
 
 
 INTRO = r"""
-# Trade the 8-K · PolyBridge (Jacob Crainic, Theo Machado)
+# Trade the 8-K · Does the option chain bend after a corporate headline?
 
-**Gator Quant Hacks 2026 · Massive Challenge.** Built on the Massive starter notebook: the same endpoints, calendar,
-put-call-parity spot, five-strategy P&L engine, fixed horizons, expiry buckets and placebo. The starter's code lives in
-`polybridge_research/` (each module names the starter section it comes from) so that it is unit-tested.
+**PolyBridge · Jacob Crainic and Theo Machado · Gator Quant Hacks 2026, Massive Challenge.** Built on the Massive starter
+notebook: same endpoints, calendar, put-call-parity spot, five-strategy P&L engine, fixed horizons, expiry buckets and
+placebo. The starter's code lives in `polybridge_research/` (each module names the starter section it comes from) so it is
+unit-tested.
+
+## Our thesis
+
+PolyBridge starts from one premise: **the listed option chain is the professional price of an event.** In our main-track
+study, on 4,561 fresh Polymarket stock markets, pre-registered and run once, the option-implied probability was a more
+accurate forecast than the Polymarket price (Brier difference +0.0108, 95% CI +0.0064 to +0.0158), and the gap vanished
+where professionals quote both sides. Thin retail books drift from the chain; a deep, dealer-quoted chain should not.
+
+So we use the chain as the ruler, and a market maker's question follows: **where could the ruler itself bend?** Dealers
+price an event from what they can see and hedge. Two kinds of 8-K break one of those:
+
+- **H1 · risk that resolves slowly → protective put.** After `material_litigation`, `class_action_filing`,
+  `regulatory_investigation`, `cybersecurity_incident`, `goodwill_impairment`, `asset_impairment` or
+  `investment_impairment`, dealers mark implied volatility down once the headline passes, but the legal or accounting
+  damage resolves over weeks. The chain should over-price the first day and under-price the follow-through, so a put
+  bought after the filing is cheap.
+- **H2 · demand that is one-sided → cash-secured put.** After `restructuring_plan`, `workforce_reduction`,
+  `facility_closure` or `business_line_exit`, holders who must sit through the event buy puts, and dealers charge for
+  demand they cannot offset (Gârleanu, Pedersen and Poteshman, 2009). Puts should be over-priced, so selling one earns
+  more than on an ordinary day.
+
+Each makes two predictions: a P&L edge for its strategy, and a sign on the parity ratio *R* = |realized move| ÷ implied
+move (H1 above ordinary days, H2 below). Requiring both rules out a strategy that is merely long or short volatility in a
+busy or calm year. **If the ruler is straight, both come back null with tight bounds**, and a holder can buy or sell
+protection at the next close without paying for the headline. If either passes, the chain bends in a predictable place
+and the strategy collects it.
 
 **Pre-registration.** [HYPOTHESIS.md](HYPOTHESIS.md) and [HYPOTHESIS_TAGS.md](HYPOTHESIS_TAGS.md) were committed on
 2 October 2026 before any 8-K event or option price was fetched. The out-of-sample window was run once after the method
-freeze (git tag `method-freeze`). Our forecast for the out-of-sample and sealed windows, [FORECAST.md](FORECAST.md), was
-committed before either was run.
-
-- **H1 · protective put** after slow-burning bad news: `material_litigation`, `class_action_filing`,
-  `regulatory_investigation`, `cybersecurity_incident`, `goodwill_impairment`, `asset_impairment`,
-  `investment_impairment`. The stock keeps moving by more than the chain priced, because implied volatility is marked
-  down once the headline passes while the damage resolves over weeks.
-- **H2 · cash-secured put** after restructurings: `restructuring_plan`, `workforce_reduction`, `facility_closure`,
-  `business_line_exit`. Holders who must sit through the event buy puts and dealers charge for that one-sided demand
-  (Gârleanu, Pedersen and Poteshman, 2009), so the put is overpriced.
+freeze (git tag `method-freeze`). [FORECAST.md](FORECAST.md), our prediction for the out-of-sample and sealed windows,
+was committed before either was run.
 
 **Pass rule (fixed before results).** The 97.5% interval of the P&L edge (events minus ordinary days for the same names)
-lies above zero at 2 or more of 21 sessions, 42 sessions and expiry, and the parity ratio (realized ÷ implied move)
-points the predicted way at those horizons. Fewer than 2 testable headline horizons is reported as INSUFFICIENT.
+lies above zero at 2 or more of 21 sessions, 42 sessions and expiry, and *R* points the predicted way at those horizons.
+Fewer than 2 testable headline horizons is reported as INSUFFICIENT. Entry is conservative: every filing is treated as
+public after the close, so the trade enters at the close of the next session.
 
 ## How to run (judges)
 
 1. Put `MASSIVE_API_KEY` in the environment or a `.env` file in this folder or a parent. Nothing else is needed.
 2. `pip install -r requirements.txt` from this folder (it installs `polybridge_research` in editable mode).
 3. **Sealed window:** set `HOLDOUT_START`, `HOLDOUT_END` and `RUN_HOLDOUT = True` in the configuration cell, as in the
-   starter, then run all cells. The last section runs the whole pipeline on that window, both families, with placebo,
-   pass check, all fixed horizons and the parity decay, and prints our committed forecast for a window of that length.
+   starter, then run all cells. The last section runs the frozen pipeline on that window for both families and prints our
+   committed forecast beside the verdict.
 
-A run from an empty cache takes roughly 15 to 25 minutes (both families plus their placebos); a warm cache takes about a minute.
+From an empty cache a full run takes about 3 to 4 minutes; from a warm cache under a minute.
 """
 
 CONFIG = r'''
@@ -92,7 +113,7 @@ assert STUDY_START < STUDY_END and OOS_START < OOS_END and HOLDOUT_START < HOLDO
 cfg = StudyConfig(study_start=STUDY_START, study_end=STUDY_END, oos_start=OOS_START, oos_end=OOS_END)
 cfg.validate()
 START, END = STUDY_START, STUDY_END
-LAST_SESSION = None      # None = the last completed session
+LAST_SESSION = "2026-10-02"   # exits pinned at the method freeze, so a later run reproduces these tables
 '''
 
 OOS = r'''
@@ -119,6 +140,62 @@ if RUN_OOS:
 else:
     print("Out-of-sample not run (RUN_OOS = False). The committed single run is in results/oos/SUMMARY.md.")
 '''
+
+
+R_PASS = r"""
+**Reading, in-sample 2024–2025 (the committed run; a judge's window prints its own numbers above).** Both hypotheses are
+**NULL**. No headline interval excludes zero: H1's protective-put edge is +0.07% of the stock price at 21 sessions
+[−2.70, +2.91], +0.49% at 42 and +3.33% at expiry; H2's cash-secured-put edge is +0.09% [−0.68, +0.89], +0.21% and +0.92%.
+*R* did move the predicted way at all three headline horizons for H1 and at 21 and 42 for H2, so the direction of each
+mechanism shows up, but not its size. **What the nulls bound:** the chain did not under-price post-headline protection by
+more than about 3% of the stock price (H1), nor over-price restructuring puts by more than about 0.9% (H2).
+"""
+
+R_DECAY = r"""
+**Reading: the shape of the ruler.** For H1 the chain priced the first session generously and the follow-through cheaply,
+as H1 says: *R* is 0.68 one session after the filing against 0.99 on ordinary days, and 1.36 at 42 sessions against 1.15.
+Both gaps sit inside the events' 95% band, so with about 30 events the bend is not distinguishable from a straight ruler.
+H2 hugs the ordinary-day line at every horizon (0.77 to 1.11 against 0.86 to 1.01).
+"""
+
+R_SENS = r"""
+**Reading.** At 21 sessions with the tradeable entry, the H2 edge is positive in 9 of 9 cells of expiry bucket × OTM
+distance (+0.08% to +1.24%) and H1 in 7 of 9 (−0.67% to +0.68%). The cells share events, so this shows a stable sign, not
+nine results. By category (the exploratory per-tag atlas, at most 15 events a tag against a shared placebo), no H1 tag has
+an interval above zero; `restructuring_plan` × cash-secured put is positive at 21, 42 sessions and expiry (+2.57%
+[+0.95, +4.51] at expiry, 14 events, q = 0.014). That is a lead for a new pre-registered test, not a result.
+"""
+
+R_COST = r"""
+**Reading, in basis points.** A 5% premium haircut each way costs 28–29 bp of the stock price at 21 sessions; real
+half-spreads where quotes exist are 26–29 bp. Net of the haircut the edge over ordinary days is about +11 bp for both
+families, inside the noise. The median put traded 34 (H1) and 49 (H2) contracts on the entry day: at 10% participation a
+desk fills 3 to 5 contracts an event, about $0.1 million of stock notional, on roughly 1.3 H1 and 1.0 H2 events a month.
+Even a real edge would be a cost statement for a hedger, not a strategy with capacity.
+"""
+
+R_OOS = r"""
+**Reading, out-of-sample January–August 2026.** H1 is **INSUFFICIENT** (3 events). H2 is **NULL with its sign reversed**:
+−2.15% [−7.59, +2.03] at 21 sessions and −1.38% at 42, against +0.09% and +0.21% in-sample. The decay table shows why:
+in 2026 restructuring filings moved 2.2 to 2.5 times the implied move in the first week (interval above 1 at 3 and 5
+sessions, 7 events). That is the one place the ruler visibly bent, and it bent the opposite way to H2: the chain
+under-priced the first week. Our forecast had "no pass" and the H2 count right, and missed the H1 count, the interval
+widths and all three signs it could score.
+"""
+
+CONCLUSION = r"""
+## What this says about the thesis
+
+**The ruler held.** After slow-burning bad news and after restructurings, the option chain at the 100 largest US stocks
+priced the move about right: within roughly 3% of the stock price for post-headline protection and 0.9% for restructuring
+puts over 2024–2025, and too few or too noisy events since. The mechanisms left traces in the right direction (H1's decay
+shape, H2's stable sensitivity sign), but not edges a desk could trade after costs and at this capacity.
+
+That is the result PolyBridge's premise needs. We use the chain as the reference price for thinner markets, and this study
+finds no headline-driven bend large enough to matter. The one bend we saw, restructurings in 2026 moving far more than
+priced in their first week, is the next pre-registered test, together with `restructuring_plan` alone and H2 entry a few
+sessions after the filing, on a window with the power to detect a 0.5% edge.
+"""
 
 HOLDOUT_MD = r"""
 ## Sealed window · judges only
@@ -188,18 +265,21 @@ new = [md(INTRO), code(CONFIG), reuse(2),
        md("## 2 · Scoreboards and the placebo gap at every fixed horizon\n\nAll five strategies for events and for ordinary days, then the event-minus-placebo edge with its interval."),
        reuse(4),
        md("## 3 · The pre-registered pass check"), reuse(5),
+       md(R_PASS),
        md("## 4 · Robustness (reported next to the pass rule, never instead of it)"), reuse(6),
        md("## 5 · The yardstick: parity decay (|realized| ÷ implied move)\n\nEntry on the pre-event session, so this is a statement about pricing, not a trade."),
-       reuse(7),
+       reuse(7), md(R_DECAY),
        md("## 6 · Parameter sensitivity\n\nThe starter's grid: expiry bucket × entry session × OTM distance, at 21 sessions."),
-       reuse(8),
+       reuse(8), md(R_SENS),
        md("## 7 · Trade specification: costs, liquidity, capacity\n\nA 5% premium haircut each way at 1× and 2×, and real half-spreads where quotes exist; median leg volume on the entry day."),
-       reuse(9),
+       reuse(9), md(R_COST),
        md("## 8 · Out-of-sample, 2026-01-01 to 2026-08-31\n\nThe frozen pipeline, exits pinned to 2 October 2026 as in the single committed run (`results/oos/`)."),
-       code(OOS),
+       code(OOS), md(R_OOS),
        md(HOLDOUT_MD), code(HOLDOUT),
-       reuse(14)]
+       md(CONCLUSION), reuse(14)]
 
+for k, c in enumerate(new):
+    c.setdefault("id", f"m8k-{k:02d}")
 nb = {"cells": new, "metadata": src["metadata"], "nbformat": src["nbformat"], "nbformat_minor": src["nbformat_minor"]}
 (R / "massive_8k.ipynb").write_text(json.dumps(nb, indent=1, ensure_ascii=False) + "\n")
 print("cells:", len(new))
