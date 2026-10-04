@@ -6,7 +6,7 @@ import { getTickets } from "@/lib/api";
 import { useAsync, useRetry } from "@/lib/hooks";
 import {
   fmtSigned, mechanismById, mechanismFor, pct, referenceClosed, ticketActions, ticketField, ticketGap, ticketReference,
-  ticketStrikes, touchProposal, type Band, type Mechanism, type Registry, type Ticket,
+  ticketStrikes, touchProposal, engineLine, type Band, type Mechanism, type Registry, type Ticket,
 } from "@/lib/micro";
 import { Unavailable } from "@/components/pb";
 import { ProposalPanel, StatusTag } from "./parts";
@@ -122,6 +122,7 @@ function TicketRow({ t, reg }: { t: Ticket; reg: Registry | null }) {
               <span className="pb-small pb-num">[{fmtSigned(gap.lo, 1)}, {fmtSigned(gap.hi, 1)}]</span>
             </>
           ) : <span className="pb-small">—</span>}
+          {t.engine && <span className="pb-small" data-testid="ticket-engine" style={{ color: t.engine.source === "engine" ? undefined : "var(--warn)" }}>{engineLine(t.engine, mechanism)}</span>}
           {prop && !open && (
             <button type="button" className="pb-btn pb-btn-sm pb-btn-secondary" onClick={() => setOpen(true)}>Draft proposal (Sell YES)</button>
           )}

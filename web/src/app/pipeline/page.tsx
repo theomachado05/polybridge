@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { getLadders } from "@/lib/api";
 import { useAsync, useRetry } from "@/lib/hooks";
-import { actionPlan, mechanismFor, pairGapText, pairState, pct, rungsInOrder, sortLadders, type Ladder, type LadderPair, type Mechanism } from "@/lib/micro";
+import { actionPlan, engineLine, mechanismFor, pairGapText, pairState, pct, rungsInOrder, sortLadders, type Ladder, type LadderPair, type Mechanism } from "@/lib/micro";
 import { Unavailable } from "@/components/pb";
 import { PageHead, ProposalPanel, StatusTag, useRegistry } from "@/components/micro/parts";
 
@@ -111,6 +111,7 @@ function PairRow({ p, valid, mech, richQ, cheapQ }: { p: LadderPair; valid: bool
         <div className="pb-num" style={{ fontSize: "var(--fs-13)" }}>
           bid {pct(p.bid_rich)} / ask {pct(p.ask_cheap)}
           <div className="pb-small">{pairGapText(p)}</div>
+          {p.engine && <div className="pb-small" data-testid="pair-engine" style={{ color: p.engine.source === "engine" ? undefined : "var(--warn)" }}>{engineLine(p.engine, mech)}</div>}
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
           <span className={`pb-tag pb-tag-${tag.tone}`}>{tag.text}</span>
@@ -130,6 +131,8 @@ function PairRow({ p, valid, mech, richQ, cheapQ }: { p: LadderPair; valid: bool
             `Sell YES on the earlier rung at ${pct(p.bid_rich)}: ${richQ}`,
             `Buy YES on the later rung at ${pct(p.ask_cheap)}: ${cheapQ}`,
             `Edge after one tick and both fees: ${pairGapText(p)}. Held to resolution.`,
+            ...(p.engine?.sizes ? [`Size per leg (C++ ladder_pair): ${p.engine.sizes.rich} / ${p.engine.sizes.cheap} contracts.`] : []),
+            ...(p.engine ? [engineLine(p.engine, mech)!] : []),
           ]} />
         </div>
       )}

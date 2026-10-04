@@ -27,6 +27,28 @@ export interface Registry {
   reference_for?: Record<string, string>;
   /** S21 book B0 / touch_fresh FORWARD.md: sell YES only when the bid is this many points above the touch reference */
   touch_sell_threshold_points?: number;
+  /** engine/hedgecore/BENCH.md micro section: on_tick latency per family, with its sample and tape */
+  micro_bench?: MicroBench[];
+}
+
+export interface MicroBench { family: string; mean_ns: number; step_mean_ns: number; p50_ns: number; p99_ns: number; p999_ns: number; sample: string; tape: string; result_file: string; note?: string }
+
+/** The decision block on a ladder pair or touch ticket: the C++ micro family that decided it (source "engine"), or the
+ *  previous Python rule when the compiled module lacks the micro families (source "python_fallback"). */
+export interface EngineDecision {
+  family: string; source: "engine" | "python_fallback" | string; preset?: number; action: string; reason: string;
+  latency_ns?: number; signal_points?: number | null; sizes?: { rich: number; cheap: number }; limit_prices?: { rich: number | null; cheap: number | null };
+  qty?: number; limit_px?: number | null;
+}
+
+/** "decided by C++ · ladder_pair #4 · entry · 42 ns · Lead" (status words from the registry entry), or the fallback
+ *  said plainly. Null without a block: nothing is claimed. */
+export function engineLine(e: EngineDecision | null | undefined, m: Mechanism | null | undefined): string | null {
+  if (!e) return null;
+  const status = m?.status_label ? ` · ${m.status_label}` : "";
+  if (e.source !== "engine") return `decided by the Python fallback (C++ micro families not compiled) · ${e.family} · ${e.reason}${status}`;
+  const lat = typeof e.latency_ns === "number" ? ` · ${e.latency_ns.toLocaleString("en-US")} ns` : "";
+  return `decided by C++ · ${e.family} #${e.preset ?? "?"} · ${e.reason}${lat}${status}`;
 }
 
 export type Tone = "up" | "warn" | "down" | "neutral";
@@ -132,6 +154,7 @@ export interface Rung {
 export interface LadderPair {
   rich: string; cheap: string; rich_date: string | null; cheap_date: string | null; nested: boolean; checks: Check[]; reasons: string[];
   bid_rich: number | null; ask_cheap: number | null; edge_points: number | null; violation: boolean; actionable: boolean;
+  engine?: EngineDecision;
 }
 export interface Ladder {
   ladder_id: string; event?: string; event_title: string; template?: string; valid: boolean; reasons: string[];
@@ -189,6 +212,8 @@ export interface Ticket {
   best_bid: number | null; best_ask: number | null; contract?: TicketContract; reference?: OptionsReference | null;
   /** close-above rows: the reference is shown for information, explained by the registry entry `evidence_id` */
   reference_only?: boolean; evidence_id?: string | null;
+  /** the touch_ticket_reference decision (only on touch tickets with a reference) */
+  engine?: EngineDecision; propose?: boolean;
 }
 export interface TicketsOut {
   ok: boolean; stale?: boolean; error: string | null; as_of?: string; tickets: Ticket[]; counts?: { tickets: number; linked: number };
@@ -234,9 +259,12 @@ export function touchProposal(t: Ticket, reg: Registry | null | undefined): { si
   const th = entry?.actions_allowed.sell_threshold_points ?? reg?.touch_sell_threshold_points;
   const plan = actionPlan(entry);
   if (t.type !== "touch_ticket" || !t.linkable || !fin(th) || !plan.propose || !plan.acknowledge) return null;
+  // The decision is the backend's touch_ticket_reference family (or its labelled Python fallback): no block, no draft.
+  if (t.engine?.action !== "propose") return null;
   const b = ticketReference(t);
   if (!b || !fin(t.best_bid)) return null;
   const gapPoints = 100 * (t.best_bid - b.mid!);
+  // Registry threshold re-checked: if the backend's family and the registry ever disagree, fail closed.
   return gapPoints >= th - 1e-9 ? { side: "sell_yes", price: t.best_bid, gapPoints, threshold: th } : null;
 }
 

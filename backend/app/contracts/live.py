@@ -16,7 +16,7 @@ from typing import Any
 import httpx
 
 from ..cache import TTLCache
-from . import research
+from . import engine, research
 from .classify import rules_classify
 
 GAMMA = "https://gamma-api.polymarket.com"
@@ -99,6 +99,24 @@ def best(book: dict | None, side: str) -> float | None:
     return max(lv) if side == "bids" else min(lv)
 
 
+def best_size(book: dict | None, side: str) -> float | None:
+    """Size shown at the best level of one side (summed over entries at that price)."""
+    px = best(book, side)
+    if px is None:
+        return None
+    return sum(float(x.get("size") or 0) for x in (book or {}).get(side) or []
+               if x.get("price") is not None and float(x["price"]) == px)
+
+
+def book_ts_ns(book: dict | None) -> int | None:
+    """The book's own timestamp (CLOB gives milliseconds), or None."""
+    try:
+        t = int(float((book or {}).get("timestamp")))
+    except (TypeError, ValueError):
+        return None
+    return t * 1_000_000 if t > 0 else None
+
+
 def token_and_fees(m: dict) -> dict:
     """YES token, taker fee rate and exponent, tick: the S11 catalogue fields (fees off unless enabled with a schedule)."""
     toks = m.get("clobTokenIds")
@@ -157,19 +175,36 @@ def build_ladders(events: list[dict]) -> list[dict]:
     return out
 
 
-def price_ladders(ladders: list[dict], bk: dict[str, dict]) -> None:
+def price_ladders(ladders: list[dict], bk: dict[str, dict], now_ns: int | None = None) -> None:
+    """Quotes on every rung, then the decision on every pair: the C++ ``ladder_pair`` family with the registry's
+    preset when the compiled module has it, else the previous Python rule (``pair_edge`` > 0, nested, valid ladder),
+    labelled ``source: "python_fallback"``. ``edge_points`` / ``violation`` stay as the descriptive Python measure of
+    ladder_replay step 2 (each leg one tick worse); ``actionable`` is the deciding family's verdict."""
+    now_ns = now_ns or engine._now_ns()
     for lad in ladders:
         rid = {r["id"]: r for r in lad["rungs"]}
         for r in lad["rungs"]:
             b = bk.get(r.get("token") or "")
             r["best_bid"], r["best_ask"] = best(b, "bids"), best(b, "asks")
+            r["bid_size"], r["ask_size"] = best_size(b, "bids"), best_size(b, "asks")
+            r["book_ts_ns"] = book_ts_ns(b)
         for p in lad["pairs"]:
             a, b = rid[p["rich"]], rid[p["cheap"]]
             e = pair_edge(a.get("best_bid"), b.get("best_ask"), a, b)
             p["bid_rich"], p["ask_cheap"] = a.get("best_bid"), b.get("best_ask")
             p["edge_points"] = None if e is None else round(e, 3)
             p["violation"] = bool(e is not None and e > 0)
-            p["actionable"] = p["violation"] and p["nested"] and lad["valid"]
+            nested = None if p.get("nested") is None else bool(p["nested"] and lad.get("valid"))
+            eng = engine.decide_ladder(engine.ladder_tick(p, a, b, nested, now_ns), now_ns)
+            if eng is None:
+                p["actionable"] = p["violation"] and bool(p["nested"]) and bool(lad["valid"])
+                p["engine"] = {"family": engine.LADDER, "source": "python_fallback",
+                               "action": "order" if p["actionable"] else "hold",
+                               "reason": "python: edge after fees and a tick per leg > 0, nested" if p["actionable"]
+                               else "python: no violation, or not nested"}
+            else:
+                p["actionable"] = eng.pop("actionable")
+                p["engine"] = eng
 
 
 async def ladders_board(http: httpx.AsyncClient | None = None) -> dict:
@@ -190,7 +225,36 @@ async def ladders_board(http: httpx.AsyncClient | None = None) -> dict:
         "ladders": len(d.get("ladders", [])), "pairs": sum(len(x["pairs"]) for x in d.get("ladders", [])),
         "nested_pairs": sum(p["nested"] for x in d.get("ladders", []) for p in x["pairs"]),
         "violations": sum(bool(p.get("violation")) for x in d.get("ladders", []) for p in x["pairs"]),
-        "actionable": sum(bool(p.get("actionable")) for x in d.get("ladders", []) for p in x["pairs"])})
+        "actionable": sum(bool(p.get("actionable")) for x in d.get("ladders", []) for p in x["pairs"]),
+        "decided_by": engine_source(p for x in d.get("ladders", []) for p in x["pairs"])})
+
+
+def engine_source(rows) -> str | None:
+    """"engine" / "python_fallback" / "mixed" over the rows that carry an engine block (None when none does)."""
+    srcs = {(r.get("engine") or {}).get("source") for r in rows if r.get("engine")}
+    return None if not srcs else srcs.pop() if len(srcs) == 1 else "mixed"
+
+
+def decide_ticket(r: dict, threshold: float, now_ns: int) -> None:
+    """The decision on one touch ticket with an options reference: the C++ ``touch_ticket_reference`` family
+    (validated False: proposals only) when compiled, else the previous Python rule (bid at least ``threshold``
+    points above the central reference mid), labelled ``source: "python_fallback"``."""
+    ref = r.get("reference") or {}
+    if r.get("type") != "touch_ticket" or not r.get("linkable") or not ref.get("available") \
+            or ref.get("ok") is False:
+        return
+    eng = engine.decide_ticket(engine.ticket_tick(r, ref, now_ns), now_ns)
+    if eng is None:
+        central = (ref.get("central") or ref.get("touch") or {}).get("mid")
+        bid = r.get("best_bid")
+        ok = bid is not None and central is not None and 100.0 * (bid - central) >= threshold - 1e-9
+        r["engine"] = {"family": engine.TICKET, "source": "python_fallback", "action": "propose" if ok else "hold",
+                       "reason": f"python: bid {threshold:g}+ points above the central reference" if ok
+                       else f"python: bid less than {threshold:g} points above the central reference, or no quote"}
+        r["propose"] = ok
+    else:
+        r["propose"] = eng.pop("propose")
+        r["engine"] = eng
 
 
 def chain_rows(chain: Any) -> list[dict]:
@@ -241,6 +305,15 @@ def ticket_rows(events: list[dict]) -> list[dict]:
                         "fields": c["fields"], "checks": c["checks"], "linkable": c["linkable"], "reasons": c["reasons"],
                         **token_and_fees(m)})
     return out
+
+
+def touch_threshold() -> float:
+    """The registry's touch sell threshold (S21 book B0), 5 points when the registry is absent."""
+    try:
+        from ..closed import evidence as ev
+        return float(ev.TOUCH_SELL_THRESHOLD_POINTS)
+    except Exception:
+        return 5.0
 
 
 def _no_reference(reason: str) -> dict:
@@ -405,11 +478,15 @@ async def tickets_board(http: httpx.AsyncClient | None = None) -> dict:
         for r in rows:
             b = bk.get(r.get("token") or "")
             r["best_bid"], r["best_ask"] = best(b, "bids"), best(b, "asks")
+            r["bid_size"], r["book_ts_ns"] = best_size(b, "bids"), book_ts_ns(b)
             if not r["linkable"]:
                 r["contract"] = {"ok": False, "reason": "; ".join(r["reasons"])}
             if r["type"] == "close_above_ticket" and ref_only:
                 r.update(ref_only)
         pending = await link_and_price(rows, t0 + DEADLINE_S - TICKET_MARGIN_S)
+        th, now_ns = touch_threshold(), engine._now_ns()
+        for r in rows:
+            decide_ticket(r, th, now_ns)
         return {"as_of": dt.datetime.now(dt.timezone.utc).isoformat(), "events_read": len(evs), "tickets": rows,
                 "partial": bool(pending["listing"] or pending["reference"]), "pending": pending,
                 "hedge": "not offered: the option-spread hedge for tickets was tested (S25) and raised risk",
@@ -419,7 +496,9 @@ async def tickets_board(http: httpx.AsyncClient | None = None) -> dict:
                                            for t in rows)}}
 
     out = await _served("tickets", build, None, lambda d: {
-        "tickets": len(d.get("tickets", [])), "linked": sum(bool((t.get("contract") or {}).get("ok")) for t in d.get("tickets", []))},
+        "tickets": len(d.get("tickets", [])), "linked": sum(bool((t.get("contract") or {}).get("ok")) for t in d.get("tickets", [])),
+        "proposals": sum(bool(t.get("propose")) for t in d.get("tickets", [])),
+        "decided_by": engine_source(d.get("tickets", []))},
         timeout=DEADLINE_S + 5.0)
     if out.get("partial") and not out.get("stale"):
         CACHE._data.pop("tickets", None)                  # a partial board is served, not kept: the next call rebuilds warm

@@ -323,6 +323,15 @@ MECHANISMS: tuple[dict, ...] = (
         ],
         "forward_test": {"file": "research/ladder_replay/live.py", "starts": FORWARD_START,
                          "method": "research/ladder_replay/METHOD.md"},
+        # The C++ family and preset that decide every ladder pair on the board (backend/app/contracts/engine.py).
+        # METHOD.md: quotes at most 60 s apart, edge after both taker fees and one tick PER LEG > 0. ladder_pair charges
+        # one tick in total plus min_edge, so min_edge 1 point stands in for the second 1-cent tick: preset #4 of the
+        # 18 (min_edge 1, max_age_s 60, cap 100; last parameter fastest) is the closest grid point.
+        "engine_preset": {"family": "ladder_pair", "index": 4,
+                          "params": {"min_edge": 1.0, "max_age_s": 60.0, "cap": 100.0},
+                          "why": ("METHOD.md: 60 s max age; one tick per leg plus both taker fees. ladder_pair counts "
+                                  "one tick, so min_edge 1 point stands in for the second tick; cap 100 is the "
+                                  "replay's contract cap.")},
     },
     {
         "id": "touch",
@@ -336,6 +345,10 @@ MECHANISMS: tuple[dict, ...] = (
                             "hedge_offered": False,
                             "text": ("Proposals only, behind the acknowledgement gate: unvalidated. No option-spread "
                                      "hedge is offered (tested in S25, it raised risk).")},
+        # touch_ticket_reference's single preset: threshold 5 points = sell_threshold_points above (S21 book B0).
+        # validated is always False on the board, so the family can only propose.
+        "engine_preset": {"family": "touch_ticket_reference", "index": 0, "params": {"threshold": 5.0},
+                          "why": "threshold 5 points = S21 book B0; validated False (unvalidated): proposals only."},
         "numbers": [
             _n("Seen data (S21): YES buyers paying 10+ points above the central reference", -29.76, -40.10, -18.29,
                CI95_EVENT, 53, "markets", S21, confirmatory=False, unit=PTS, also=((29, "events"),),
@@ -451,6 +464,19 @@ SYSTEM_NUMBERS: tuple[dict, ...] = (
        ref=LATENCY_REF),
 )
 
+# engine/hedgecore/BENCH.md, "Micro families" section (run 2026-10-04 03:21 ET): on_tick per call in nanoseconds,
+# including its own latency stamp, on a synthetic deterministic tape (LCG seed 42, 1,000,000 ticks per family,
+# default preset). The engine strip shows these only with the sample and tape stated.
+MICRO_BENCH: tuple[dict, ...] = tuple(
+    {"family": fam, "mean_ns": mean, "step_mean_ns": step, "p50_ns": 42, "p99_ns": 42, "p999_ns": 84,
+     "sample": "1,000,000 ticks, one run, one thread", "tape": tape, "result_file": "engine/hedgecore/BENCH.md",
+     "note": "Synthetic tape, not recorded market data; on_tick only (no network, no Python bridge)."}
+    for fam, mean, step, tape in (
+        ("ladder_pair", 26.5, 5.5, "synthetic ladder tape (LCG seed 42): rich bid 0.50 + 0.08 z vs cheap ask 0.47, "
+                                   "fee rate 0.02, tick 0.01, quote age 0 to 89 s"),
+        ("touch_ticket_reference", 26.3, 3.5, "synthetic ticket tape (LCG seed 42): bid 0.30 + 0.10 z, central "
+                                              "reference 0.28, validated on every other tick")))
+
 # classifier contract types -> mechanism id (and whether that mechanism may trade). The brief acts on ladders, touch
 # tickets and (watch only) 15-minute Bitcoin markets; everything else, close-above tickets included, is "no tested
 # mechanism". A close-above row may still show the finish-beyond reference, labelled reference only (``REFERENCE_FOR``).
@@ -519,4 +545,5 @@ def registry() -> dict:
     return {"source_of_truth": "note/NOTE.md", "statuses": dict(STATUS_LABELS), "mechanisms": mechanisms(),
             "system": system_numbers(), "contract_types": dict(CONTRACT_MECHANISM),
             "reference_for": dict(REFERENCE_FOR), "touch_sell_threshold_points": TOUCH_SELL_THRESHOLD_POINTS,
+            "micro_bench": [dict(b) for b in MICRO_BENCH],
             "forward_tests_start": FORWARD_START}

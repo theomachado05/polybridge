@@ -183,7 +183,7 @@ def test_get_tickets_offline(client, monkeypatch):
     monkeypatch.setattr(live, "listed_rows", listed)
     monkeypatch.setattr(live, "reference", reference)
     d = client.get("/tickets").json()
-    assert d["ok"] and d["counts"] == {"tickets": 2, "linked": 1}
+    assert d["ok"] and {k: d["counts"][k] for k in ("tickets", "linked")} == {"tickets": 2, "linked": 1}
     t = {x["id"]: x for x in d["tickets"]}
     assert t["9"]["contract"]["expiry"] == "2026-10-30" and t["9"]["best_ask"] == 0.23 and t["9"]["reference"]["kind"] == "touch_ticket"
     assert not t["10"]["contract"]["ok"] and "direction" in t["10"]["contract"]["reason"]
