@@ -274,19 +274,19 @@ def _gemini_http(models_status=200, generate=None):
     return httpx.AsyncClient(transport=httpx.MockTransport(handler)), seen
 
 
-def test_gemini_check_lists_models_picks_newest_flash_and_runs_the_app_provider():
+def test_gemini_check_lists_models_and_runs_the_configured_model_through_the_app_provider():
     http, seen = _gemini_http()
     lines: list[str] = []
     code = asyncio.run(gemini_check.run(GEM_KEY, http, out=lines.append))
     out = "\n".join(lines)
     assert code == 0, out
     assert "newest flash: gemini-3-flash" in out and "configured model: gemini-2.5-flash (listed)" in out
-    assert "classify  model=gemini-3-flash" in out and "-> macro_fed" in out
-    assert "explain   model=gemini-3-flash" in out and "Chosen on replay." in out
-    assert "map       model=gemini-3-flash" in out and "ABNB" in out and "dropped: FAKE" in out
+    assert "classify  model=gemini-2.5-flash" in out and "-> macro_fed" in out
+    assert "explain   model=gemini-2.5-flash" in out and "Chosen on replay." in out
+    assert "map       model=gemini-2.5-flash" in out and "ABNB" in out and "dropped: FAKE" in out
     assert GEM_KEY not in out
     gens = [r for r in seen if r.url.path.endswith(":generateContent")]
-    assert len(gens) == 3 and all("gemini-3-flash:" in r.url.path for r in gens)
+    assert len(gens) == 3 and all("gemini-2.5-flash:" in r.url.path for r in gens)
     assert all(r.headers["x-goog-api-key"] == GEM_KEY and GEM_KEY not in str(r.url) for r in seen)
 
 

@@ -76,7 +76,7 @@ async def run(key: str, http: httpx.AsyncClient | None = None, out=print) -> int
         out(f"      newest flash: {newest}; configured model: {configured} "
             + ("(listed)" if listed else "(NOT listed: the app falls back to the newest flash model on its first 404)"))
 
-        p = llm.GeminiProvider(key, model=newest, http=http)
+        p = llm.GeminiProvider(key, model=configured if listed else newest, http=http)
         failures = 0
 
         t = time.perf_counter()
@@ -118,7 +118,7 @@ async def run(key: str, http: httpx.AsyncClient | None = None, out=print) -> int
         if failures:
             out(f"FAIL  {failures} of 3 Gemini calls failed")
             return 1
-        out(f"OK    Gemini is live: fit responses will report llm \"gemini:{configured if listed else newest}\"")
+        out(f"OK    Gemini is live: fit responses will report llm \"gemini:{p.model}\"")
         return 0
     finally:
         if own:

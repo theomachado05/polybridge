@@ -100,3 +100,10 @@ def roomy_capital(monkeypatch):
                 "cash": 1e7, "buying_power": 1e7, "short_notional": 0.0, "age_s": 0.0}
     monkeypatch.setattr(service, "account_snapshot", snap)
     yield
+
+
+@pytest.fixture(autouse=True)
+def _no_gemini_retry_sleep(monkeypatch):
+    """Tests mock Gemini failures and expect them immediately: one attempt, no backoff (retry is tested on its own)."""
+    from app.pipeline import llm
+    monkeypatch.setattr(llm, "RETRY_ATTEMPTS", 1)

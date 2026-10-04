@@ -6,6 +6,7 @@ callers then fall back to ``RulesProvider``.
 """
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
 import logging
@@ -19,7 +20,11 @@ import httpx
 
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 MODELS_URL = "https://generativelanguage.googleapis.com/v1beta/models"
-DEFAULT_MODEL = "gemini-2.5-flash"
+DEFAULT_MODEL = "gemini-flash-lite-latest"  # fast alias; 2.5-flash is listed but retired (404) as of 2026-10
+RETRY_ATTEMPTS = 3  # 429 / 503 / timeouts: up to 2 retries with backoff
+RETRY_STATUS = {429, 500, 502, 503, 504}
+RETRY_BASE_S = 1.5
+RETRY_MAX_WAIT_S = 4.0
 TIMEOUT_S = 8.0
 MODELS_TTL_S = 3600.0
 BACKEND = Path(__file__).resolve().parents[2]
@@ -303,14 +308,31 @@ class GeminiProvider:
         headers = {"x-goog-api-key": self.api_key, "content-type": "application/json"}
         http = self._http or httpx.AsyncClient()
         try:
-            for attempt in range(2):
-                r = await http.post(GEMINI_URL.format(model=self.model), json=body, headers=headers,
-                                    timeout=httpx.Timeout(self.timeout_s))
-                if r.status_code == 404 and attempt == 0 and await self._fallback_model(http):
-                    continue  # retried once on the newest flash model
+            fell_back, retries = False, 0
+            while True:
+                try:
+                    r = await http.post(GEMINI_URL.format(model=self.model), json=body, headers=headers,
+                                        timeout=httpx.Timeout(self.timeout_s))
+                except (httpx.TimeoutException, httpx.TransportError):
+                    if retries + 1 < RETRY_ATTEMPTS:
+                        retries += 1
+                        await asyncio.sleep(RETRY_BASE_S * retries)
+                        continue
+                    raise
+                if r.status_code == 404 and not fell_back and await self._fallback_model(http):
+                    fell_back = True
+                    continue  # retried once on the newest flash model (not counted as a retry)
+                if r.status_code in RETRY_STATUS and retries + 1 < RETRY_ATTEMPTS:
+                    # Rate limited (429) or overloaded (503): back off, honouring Retry-After but never stalling the UI.
+                    retries += 1
+                    try:
+                        wait = float(r.headers.get("retry-after", ""))
+                    except ValueError:
+                        wait = RETRY_BASE_S * retries
+                    await asyncio.sleep(min(max(wait, 0.5), RETRY_MAX_WAIT_S))
+                    continue
                 r.raise_for_status()
                 return parse_json_text(_response_text(r.json()))
-            raise LLMError("Gemini call failed: model not found")  # not reached: attempt 1 returns or raises
         except LLMError:
             raise
         except httpx.HTTPStatusError as e:
