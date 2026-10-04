@@ -470,9 +470,9 @@ Polymarket spread manufactures, and its Sharpe ratio is an artifact. No pair has
 
 
 WS_MD = """\
-## Weekend and linked-asset studies (S3 to S9, S14)
+## Weekend and linked-asset studies (S3 to S15)
 
-Eight more pre-registered studies ask where the prediction-market signal can be traded while stocks and options are shut.
+Eleven more pre-registered studies ask where the prediction-market signal can be traded while stocks and options are shut.
 Each method was committed before its data was pulled; each summary is under `results/<study>/SUMMARY.md`.
 
 **Reproducible offline.** The cells below read only committed result files. For every study with a trade list, the number

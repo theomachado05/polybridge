@@ -27,6 +27,10 @@ STUDIES = {
                         "segments": {"IS": "IS", "OOS": "OOS", "ALL": None}},
     "S9 weekend price markets": {"dir": "s9_weekend_price_markets", "value": "net_points", "metric": "mean_net_points",
                                  "unit": "points per trade", "segments": {"IS": "IS", "OOS": "OOS", "ALL": None}},
+    "S10 weekend lag": {"dir": "s10_weekend_lag", "value": "net_points", "metric": "mean_net_points", "unit": "points per trade",
+                        "segments": {"IS": "IS", "OOS": "OOS", "ALL": None}},
+    "S15 weekend scare": {"dir": "s15_weekend_scare", "value": "net_points", "metric": "mean_net_points", "unit": "points per trade",
+                          "segments": {"IS": "IS", "OOS": "OOS", "ALL": None}},
 }
 PRIMARY = "V0"
 
@@ -133,6 +137,29 @@ def findings(results: Path | str = RESULTS) -> pd.DataFrame:
         add("S9", "Give-back by Monday of a weekend move of 5+ points, and the fade after costs",
             f"{g['mean']:+.2f} points [{g.ci_lo:+.2f}, {g.ci_hi:+.2f}]; fade {a.mean_net_points:+.2f} per trade [{a.ci_lo:+.2f}, {a.ci_hi:+.2f}], "
             f"out-of-sample {o.mean_net_points:+.2f}", "not a pass")
+    f = R / "s10_weekend_lag" / "leadlag.csv"
+    if f.exists():
+        l = pd.read_csv(f)
+        e, pr = _row(l, **{"class": "crude", "direction": "event first", "horizon_min": 30}), _row(l, **{"class": "crude", "direction": "price first", "horizon_min": 30})
+        m = _row(pd.read_csv(R / "s10_weekend_lag" / "metrics.csv"), variant="V0", segment="IS", cost_mult=1.0)
+        add("S10", "Inside the weekend: oil price markets' move over the next 30 minutes per point of event odds, and the reverse",
+            f"{e.slope:+.3f} (t = {e.t:.2f}) against {pr.slope:+.3f} (t = {pr.t:.2f}); the trade nets {m.mean_net_points:+.2f} points in-sample "
+            f"[{m.ci_lo:+.2f}, {m.ci_hi:+.2f}]", "event questions lead by minutes; not a pass")
+    f = R / "s12_resting_orders" / "metrics.csv"
+    if f.exists():
+        m = pd.read_csv(f)
+        a, o = (_row(m, sample="S9", variant="R0", cost_mult=1, segment="ALL"), _row(m, sample="S9", variant="R0", cost_mult=1, segment="OOS"))
+        add("S12", "Resting orders on S9's fades: net per filled order, and filled against unfilled at mid out-of-sample",
+            f"{a.net_per_filled:+.2f} points [{a.net_lo:+.2f}, {a.net_hi:+.2f}] on {int(a.filled)} of {int(a.reachable)} orders; "
+            f"out-of-sample difference {o.adverse_diff:+.2f} [{o.adverse_lo:+.2f}, {o.adverse_hi:+.2f}]", "adverse selection; not a pass")
+    f = R / "s15_weekend_scare" / "tests.csv"
+    if f.exists():
+        r = _row(pd.read_csv(f), threshold=5.0, scope="all fresh markets", side="risers")
+        m = _row(pd.read_csv(R / "s15_weekend_scare" / "metrics.csv"), variant="V0", segment="ALL", cost_mult=1.0)
+        add("S15", "871 fresh price markets: change by Monday after a weekend rise of 5+ points, and against quiet markets",
+            f"{r.mean_y:+.2f} points [{r.ci_lo:+.2f}, {r.ci_hi:+.2f}]; {r.diff_vs_quiet:+.2f} [{r.diff_ci_lo:+.2f}, {r.diff_ci_hi:+.2f}]; selling it nets "
+            f"{m.mean_net_points:+.2f} [{m.ci_lo:+.2f}, {m.ci_hi:+.2f}]; {int(m.verified_trades)} of {int(m.checkable_trades)} entries print-verified",
+            "replicates in quoted prices only; not a pass")
     f = R / "s14_link_ceiling" / "tests.csv"
     if f.exists():
         t = pd.read_csv(f)

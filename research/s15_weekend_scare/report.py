@@ -94,6 +94,10 @@ def main() -> int:
         ("In-sample above zero at 1× costs", i1.mean_net_points > 0, f"{pts(i1.mean_net_points)} points {ci(i1.ci_lo, i1.ci_hi)} on {int(i1.trades)} trades"),
     ]
     passed = all(bool(c[1]) for c in crit)
+    thin = a1.checkable_trades > 0 and a1.verified_trades / a1.checkable_trades < cfg.MIN_VERIFIED_SHARE
+    headline = ("No." if not replicates else "Yes." if not thin else
+                f"In quoted mid prices, yes. In prices someone traded at, it cannot be shown: {int(a1.verified_trades)} of the "
+                f"{int(a1.checkable_trades)} entries that can be checked have a print.")
     verdict = "pass" if passed else "not a pass"
     if passed and a1.verified_share < cfg.MIN_VERIFIED_SHARE:
         verdict = "passes on modelled prices, not verified"
@@ -125,7 +129,7 @@ def main() -> int:
          "Files: [`tests.csv`](tests.csv), [`metrics.csv`](metrics.csv), [`trades.csv`](trades.csv), [`weekends.csv`](weekends.csv), "
          "[`capacity.md`](capacity.md), [`RUN_LOG.md`](RUN_LOG.md).", "",
          "## Answer", "",
-         f"**Does the pattern replicate on fresh markets? {'Yes' if replicates else 'No'}.** S9's markets that rose over a weekend fell 4.90 "
+         f"**Does the pattern replicate on fresh markets? {headline}** S9's markets that rose over a weekend fell 4.90 "
          f"points by Monday. On {int(r5.n)} fresh market-weekends with a rise of 5 points or more ({int(r5.weekends)} weekends), the change to the "
          f"next session's 09:40 is {pts(r5.mean_y)} points, weekend-bootstrap 95% interval {ci(r5.ci_lo, r5.ci_hi)} (H1: "
          f"{'holds' if h1 else 'does not hold'}). Quiet markets drift {pts(r5.quiet_mean_y)} over the same window; risers minus quiet markets: "
@@ -135,7 +139,8 @@ def main() -> int:
          f"markets, the group that fell 7.85 points in S9: {pts(oil5.mean_y)} {ci(oil5.ci_lo, oil5.ci_hi)} on {int(oil5.n)}. After a rise of 10 "
          f"points or more: {pts(r10.mean_y)} {ci(r10.ci_lo, r10.ci_hi)} on {int(r10.n)}.", "",
          f"**The other side.** Markets that fell 5 points or more change by {pts(f5.mean_y)} {ci(f5.ci_lo, f5.ci_hi)} on {int(f5.n)} "
-         f"market-weekends; against quiet markets {pts(f5.diff_vs_quiet)} {ci(f5.diff_ci_lo, f5.diff_ci_hi)}.", "",
+         f"market-weekends; against quiet markets {pts(f5.diff_vs_quiet)} {ci(f5.diff_ci_lo, f5.diff_ci_hi)}. Once the drift is "
+         "removed the reversal is the same size on both sides. It is S9's give-back again, not something special to rises.", "",
          f"**Selling the rise (the trade): {verdict}.** {pts(a1.mean_gross_points)} points per trade before costs, {pts(a1.mean_net_points)} after "
          f"{ci(a1.ci_lo, a1.ci_hi)} on {int(a1.trades)} trades; {pts(a2.mean_net_points)} at doubled costs. In-sample {pts(i1.mean_net_points)} "
          f"{ci(i1.ci_lo, i1.ci_hi)}; out-of-sample ({meta['oos_weekends']} weekends from {meta['oos_from']}) {pts(o1.mean_net_points)} "

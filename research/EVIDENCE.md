@@ -52,6 +52,7 @@ Notes on the rows:
 - **S9 weekend price markets: not a pass.** Selling a weekend move of 5 points or more in Polymarket's oil, gold and stock price markets nets -0.01 points per trade after costs and -3.77 out-of-sample (section 9; `research/results/s9_weekend_price_markets/SUMMARY.md`).
 - **S10 weekend lag: not a pass.** The oil event questions lead the oil price markets by minutes inside the weekend, but the follow-through is 0.05 points and the trade loses 2.60 points after costs (section 9; `research/results/s10_weekend_lag/SUMMARY.md`).
 - **S12 resting orders: not a pass.** Resting orders cut the cost by two thirds, but out-of-sample the orders that fill lose 11.02 points more than the ones that do not [-20.79, -5.16] (section 9; `research/results/s12_resting_orders/SUMMARY.md`).
+- **S15 selling weekend rises on fresh price markets: not a pass.** -1.21 points per trade after costs [-3.01, +0.73]; the reversal is there in quoted prices (-3.20 points) but 9 of 201 checkable entries have a print (section 9; `research/results/s15_weekend_scare/SUMMARY.md`).
 - **S3 three-way consistency: no trade.** The primary rule fired 0 times in 60 matched sets on 33 dates (section 9; `research/results/s3_three_way/SUMMARY.md`).
 - Also in the table above: the replication, the fit walk-forward, the 8-K out-of-sample run, R1 hedge A and R3's net residual gap all failed or were NULL.
 
@@ -196,7 +197,7 @@ For the note's "Liquidity and capital" and "Risk management" criteria. This is w
 
 ---
 
-## 9. Weekend and cross-venue alpha: S1 twin spread, S3 three-way, S4 linked assets, S5 replication, S6 Monday fade, S7 weekend straddles, S8 open referee, S9 weekend price markets, S10 weekend lag, S12 resting orders, S14 link diagnostic (pre-registered; forward tests pending)
+## 9. Weekend and cross-venue alpha: S1 twin spread, S3 three-way, S4 linked assets, S5 replication, S6 Monday fade, S7 weekend straddles, S8 open referee, S9 weekend price markets, S10 weekend lag, S12 resting orders, S14 link diagnostic, S15 weekend rises (pre-registered; forward tests pending)
 
 Added 2026-10-03 evening. Brief: `research/ALPHA_BRIEF.md`. Both methods were committed before any data was pulled for them (`research/s1_twin_spread/METHOD.md`, commit `8260548`; `research/s3_three_way/METHOD.md`, commit `83ce137`; amendments are dated in each file). Sources: `research/results/s1_twin_spread/SUMMARY.md`, `metrics.csv`, `trades.csv`, `RUN_LOG.md`; `research/results/s3_three_way/SUMMARY.md`, `metrics.csv`, `sets.csv`.
 
@@ -268,6 +269,12 @@ Added 2026-10-03 evening. Brief: `research/ALPHA_BRIEF.md`. Both methods were co
 - **Links picked with hindsight do not keep working:** the 24 links with the strongest after-open relation in the first 80% of sessions (+5.50 bp per point, t = 3.38) give -2.04 (t = -0.59) on the last 20%.
 - **One pre-registered line was crossed:** more links show an extreme after-open t than shuffling produces (15.1% against 10.5%; 3.4% of shuffles reach it). The extreme ones split 12 positive and 15 negative, and the three largest each rest on one event day; they do not persist.
 
+**S15, do price markets that rise over the weekend fall back on Monday? A test on markets S9 did not use.** S9 showed, after its run, that the give-back sat on the markets that rose. S15 pre-registers that and tests it on 871 price markets S9 never touched (2,158 market-weekends, 48 weekends). Source: `research/results/s15_weekend_scare/SUMMARY.md`; method commit `c1a41ea`.
+
+- **In quoted mid prices the pattern replicates.** After a weekend rise of 5 points or more: -3.20 points by the next session's 09:40 [-5.13, -1.51] on 256 market-weekends; -2.31 [-4.41, -0.37] against quiet markets, which drift -0.89. In events S9 did not use at all: -3.87 [-5.82, -2.15]. Markets that fell recover by the same amount against the drift (+2.21 [+0.74, +3.65]), so this is S9's give-back on both sides, not something special to rises.
+- **In prices someone traded at it cannot be shown:** 9 of the 201 entries that can be checked have a print at the assumed price.
+- **The trade: not a pass.** Selling the rise earns +3.40 points before costs and -1.21 after [-3.01, +0.73] on 235 trades; -5.82 at 2x costs. These markets are thin and a round trip costs 4.62 points.
+
 **Forward tests.** Live order books of the 33 twin pairs (every 15 s) and of 660 threshold markets (every 30 s) have been recorded since Sat 2026-10-03 19:09:48 ET (`research/forward/README.md`). S1 and S3 are run on them as paper tests with rules frozen before the window (Sat 20:00 ET to Sun 07:00 ET); results go into the two SUMMARY files.
 
 ---
@@ -287,7 +294,7 @@ Added 2026-10-03 evening. Brief: `research/ALPHA_BRIEF.md`. Both methods were co
 
 10. **Linked equities do respond to prediction-market odds while they are closed, and the finding replicated on fresh markets.** S4: +4.69 bp of excess opening gap per point of overnight odds move (t = 4.01). S5, 93 markets S4 never used: +6.88 bp per point (t = 6.01), +137 bp after moves of 10 points or more. The response is complete by the open (after the open: -0.55 bp per point, t = -0.74), so it is information, not a trade.
 
-11. **Polymarket gives back part of a large overnight move once the stock market is open, on two separate sets of markets** (S5 amendment 3 and S8): 2.63 points after a move of 10 points or more [-3.90, -1.47]. A round trip across the spread costs the same 2.6 points, so nothing is left for someone who takes prices. Whether resting orders could earn it is untested.
+11. **Polymarket gives back part of a large move, and the give-back is the size of the cost of trading it. Four samples agree.** Event markets after an overnight move of 10 points or more: 2.63 points [-3.90, -1.47] (S5 amendment 3 and S8, two sets of markets). Price markets after a weekend move of 5 points or more: 2.94 points [-4.66, -1.14] (S9), and 3.20 points [-5.13, -1.51] after a rise on 871 markets S9 did not use (S15, quoted prices). A round trip across the spread costs 2.6 to 4.6 points. Resting orders cut that cost and then lose to adverse selection out-of-sample (S12).
 
 12. **The link between an event question and an asset holds inside the weekend, in a market that is open** (S9): Polymarket's oil price markets move 0.86 points per point of oil-linked event odds while oil futures are shut (t = 5.85). It is co-movement over the same weekend, not a lead, and the fade of the weekend move does not pay after costs.
 
