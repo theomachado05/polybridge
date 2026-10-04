@@ -107,3 +107,11 @@ def _no_gemini_retry_sleep(monkeypatch):
     """Tests mock Gemini failures and expect them immediately: one attempt, no backoff (retry is tested on its own)."""
     from app.pipeline import llm
     monkeypatch.setattr(llm, "RETRY_ATTEMPTS", 1)
+
+
+@pytest.fixture(autouse=True)
+def _hermetic_gemini_model(monkeypatch):
+    """Tests never read the developer's GEMINI_MODEL from .env; they pin the model their assertions name."""
+    from app.pipeline import llm
+    monkeypatch.delenv("GEMINI_MODEL", raising=False)
+    monkeypatch.setattr(llm, "DEFAULT_MODEL", "gemini-2.5-flash")
