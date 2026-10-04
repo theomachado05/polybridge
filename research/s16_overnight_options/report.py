@@ -93,7 +93,8 @@ def chart_speed(sc: pd.DataFrame) -> None:
         ax.errorbar(xs, y, yerr=[y - 100 * d.diff_ci_lo.to_numpy(), 100 * d.diff_ci_hi.to_numpy() - y], color=INK, linewidth=2, marker="o",
                     markersize=6, elinewidth=1, capsize=0)
         for x_, v in zip(xs, y):
-            ax.annotate(f"{v:+.1f}", (x_, v), xytext=(7, 7), textcoords="offset points", color=INK2, fontsize=9)
+            ax.annotate(f"{v:+.1f}", (x_, v), xytext=(9, 9), textcoords="offset points", color=INK2, fontsize=9,
+                        bbox={"facecolor": SURFACE, "edgecolor": "none", "pad": 1.0})
         ax.axhline(0, color=INK2, linewidth=0.8)
         ax.set_ylabel("event minus control (points)", color=INK2, fontsize=9)
         ax.set_xticks(xs)
@@ -223,7 +224,11 @@ def summary(r: R, answer: list[str], after: list[str]) -> str:
           f"{meta['sessions']} sessions, {meta['first_session']} to {meta['last_session']}; out-of-sample is every session from {meta['oos_from']}. "
           "Files: [`metrics.csv`](metrics.csv), [`trades.csv`](trades.csv), [`observations.csv`](observations.csv), [`speed_curve.csv`](speed_curve.csv), "
           "[`spreads.csv`](spreads.csv), [`verdicts.csv`](verdicts.csv), [`top_moves.csv`](top_moves.csv), [`equity.csv`](equity.csv), "
-          "[`capacity.md`](capacity.md), [`RUN_LOG.md`](RUN_LOG.md).", "", "## Answer", ""]
+          "[`capacity.md`](capacity.md), [`RUN_LOG.md`](RUN_LOG.md).", ""]
+    if not meta.get("pull_runs"):
+        L += ["> **INTERIM.** The pull is still running. The main sample (tier 1) is complete and its numbers below are final; the Brazil and "
+              "Fed-and-banks case files, the day volumes and variant V3 are not pulled yet and will change.", ""]
+    L += ["## Answer", ""]
     L += answer
     L += ["", "![Speed curve](speed_curve.png)", "", "## The pre-registered pass line, hypothesis by hypothesis", ""]
     for hyp in cfg.HYPOTHESES:
@@ -364,18 +369,51 @@ def capacity(r: R) -> str:
     return "\n".join(L)
 
 
+def run_log(r: R, notes: list[str]) -> str:
+    import subprocess
+    from .plan import CACHE, RESEARCH
+    git = subprocess.run(["git", "log", "--date=format-local:%Y-%m-%d %H:%M", "--format=%h | %ad | %s", "--",
+                          "research/s16_overnight_options", "research/results/s16_overnight_options"],
+                         cwd=RESEARCH.parent, capture_output=True, text=True, env={"TZ": "America/New_York", "PATH": "/usr/bin:/bin:/opt/homebrew/bin"}).stdout.strip().splitlines()
+    log = (CACHE / "pull.log").read_text().splitlines() if (CACHE / "pull.log").exists() else []
+    keep = [x for x in log if any(k in x for k in ("pull start", "recorder", "finished", "hard stop", "pull end", "request failed", "in a row"))]
+    fin, stopped = tier_state(r.meta)
+    runs = r.meta.get("pull_runs", [])
+    L = ["# S16 (overnight options): run log", "",
+         "All times New York (EDT) unless marked Z (UTC). The label was S16, then S17 for a few minutes, then S16 again (METHOD.md amendments 2 and 3); "
+         "the folder never changed.", "", "## Commits (read from `git log`, newest first; the commit that adds this file is the one after these)", "",
+         "| Hash | Time | Message |", "|---|---|---|"]
+    L += [f"| `{a.strip()}` | {b.strip()} | {c.strip()[:150]} |" for a, b, c in (x.split(" | ", 2) for x in git)]
+    L += ["", "## Data sources", "",
+          "- Odds: the one-minute Polymarket caches of S5 and S4 on disk and `results/s8_open_referee/mornings.csv`. **No call to Polymarket or Kalshi.**",
+          "- Underlying prices: cached five-minute bars (`eq_<TICKER>.npz` of S5 and S4); KRE and XLF bars pulled from Massive (amendment 1).",
+          "- Options: Massive `/v3/reference/options/contracts` (one listing request per ticker-day), `/v3/quotes/<contract>` (the last NBBO at or before "
+          "each instant, one request per leg and instant), `/v2/aggs/ticker/<contract>/range/1/day` (day volume). No modelled price anywhere.",
+          f"- Cache: `research/s16_overnight_options/.cache/cache.jsonl`, {r.meta['cache_lines']:,} lines (not committed).", "",
+          "## The pull", ""]
+    for i, st in enumerate(runs, 1):
+        L.append(f"- Run {i}: {st.get('requests')} requests in {st.get('seconds')} s; tiers finished {st.get('finished_tiers')}; "
+                 f"stopped: {st.get('stopped') or 'no (ran to the end)'}; failed requests {st.get('errors')}; final rate {st.get('final_rps')} a second; "
+                 f"recorder `fetch failed` lines before {st.get('recorder_before')}, after {st.get('recorder_after')}; ended {st.get('ended_utc')}.")
+    L += ["", "Lines of the pull's own log (UTC):", "", "```"] + keep + ["```", "", "## Notes, and anything that went wrong", ""]
+    L += [f"- {n}" for n in notes]
+    return "\n".join(L) + "\n"
+
+
 def main(answer: list[str] | None = None, after: list[str] | None = None) -> int:
     r = R()
     chart_speed(r.sc)
     chart_equity(r.eq)
+    notes: list[str] = []
     try:
         from .answer import answer as ans_fn
-        answer, after = ans_fn(r)
-    except ImportError:
+        answer, after, notes = ans_fn(r)
+    except ModuleNotFoundError:
         answer, after = answer or ["(answer not written yet)"], after or []
     (RESULTS / "SUMMARY.md").write_text(summary(r, answer, after))
     (RESULTS / "capacity.md").write_text(capacity(r))
-    print("wrote SUMMARY.md, capacity.md, speed_curve.png, equity_curve.png, drawdown.png")
+    (RESULTS / "RUN_LOG.md").write_text(run_log(r, notes))
+    print("wrote SUMMARY.md, capacity.md, RUN_LOG.md, speed_curve.png, equity_curve.png, drawdown.png")
     return 0
 
 
