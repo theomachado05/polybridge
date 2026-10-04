@@ -88,6 +88,46 @@ def charts(eq: pd.DataFrame, oos_start: str) -> None:
         plt.close(fig)
 
 
+def size_section() -> list[str]:
+    """How big the opening-gap relation is (descriptive, same sample): empty until `python -m s4_linked_assets.size` has run."""
+    if not (R / "size.json").exists():
+        return []
+    z = json.loads((R / "size.json").read_text())
+    b, tk = pd.read_csv(R / "size_buckets.csv"), pd.read_csv(R / "size_tickers.csv")
+    sh = z["share_abs_move"]
+    bt = b.assign(SC=b.scope, M=b.odds_move_pp + " points", N=b.link_days.astype(int), D=b.dates.astype(int),
+                  G=b.apply(lambda r: f"{r.signed_gap_bp:+.0f} bp [{r.gap_ci_lo:+.0f}, {r.gap_ci_hi:+.0f}]", axis=1),
+                  S=b.gap_same_sign.map(lambda x: f"{100 * x:.0f}%"),
+                  A=b.apply(lambda r: f"{r.signed_after_open_bp:+.0f} bp [{r.after_ci_lo:+.0f}, {r.after_ci_hi:+.0f}]", axis=1))
+    top = tk.head(8)
+    tt = top.assign(T=top.ticker, W=top.weight.map(lambda x: f"{100 * x:.0f}%"), S=top.slope_bp_per_pp.map(lambda x: f"{x:+.1f}"),
+                    TT=top.t.map(lambda x: f"{x:+.1f}"), N=top.link_days.astype(int), E=top.example)
+    big = b[(b.scope == "all closures") & (b.odds_move_pp == "10 or more")].iloc[0]
+    nc, h1, h3, bn = z["without_crypto_equities"], z["without_heaviest_market"], z["without_three_heaviest_markets"], z["moves_10pp_plus_without_crypto"]
+    return ["## How big is it (descriptive, same sample)", "",
+            f"Agreed event links: {z['link_days']:,} link-days, {z['links']} links, {z['tickers']} tickers, {z['dates']} dates. "
+            f"The equity's excess gap has a standard deviation of {z['gap_sd_bp']:.0f} bp.", "",
+            f"- **Most nights the odds barely move.** {100 * sh['under 2']:.0f}% of link-days have an overnight move under 2 points; "
+            f"{100 * sh['2 to 5']:.0f}% between 2 and 5; {100 * sh['5 to 10']:.0f}% between 5 and 10; {100 * sh['10 or more']:.0f}% of 10 or more.",
+            f"- **On the big nights the gap is large.** After a move of 10 points or more the linked equity opens "
+            f"{big.signed_gap_bp:+.0f} bp in the direction of the odds (95% interval {big.gap_ci_lo:+.0f} to {big.gap_ci_hi:+.0f}; "
+            f"{int(big.link_days)} link-days on {int(big.dates)} dates; same sign {100 * big.gap_same_sign:.0f}%). Without the crypto-linked "
+            f"equities: {bn['signed_gap_bp']:+.0f} bp [{bn['ci_lo']:+.0f}, {bn['ci_hi']:+.0f}] on {bn['link_days']} link-days.",
+            f"- **It explains little of an ordinary night.** Variance of the gap explained: {100 * z['r2_all']:.1f}% overall; "
+            f"{100 * z['r2_oos_with_is_slope']:.1f}% out-of-sample with the in-sample slope; {100 * z['r2_moves_5pp_plus']:.0f}% on nights "
+            "with a move of 5 points or more.",
+            f"- **It does not rest on one market.** One market (the Clarity Act, linked to three crypto equities) carries "
+            f"{100 * z['heaviest_markets'][0]['weight']:.0f}% of the weight. Without it: {h1['slope']:+.2f} bp per point (t = {h1['t']:.1f}). "
+            f"Without the three heaviest markets: {h3['slope']:+.2f} (t = {h3['t']:.1f}). Without any crypto-linked equity: in-sample "
+            f"{nc['IS']['slope']:+.2f} (t = {nc['IS']['t']:.1f}), out-of-sample {nc['OOS']['slope']:+.2f} (t = {nc['OOS']['t']:.1f}). "
+            f"One observation per ticker and day: {z['ticker_day']['slope']:+.2f} (t = {z['ticker_day']['t']:.1f}).", "",
+            md_table(bt, {"SC": "Closures", "M": "Overnight odds move", "N": "Link-days", "D": "Dates", "G": "Gap, signed by the odds move",
+                          "S": "Same sign", "A": "After the open, to the close"}), "",
+            "The last column is the part a trade at the open could earn. No interval there excludes zero.", "",
+            "Tickers by weight in the estimate:", "",
+            md_table(tt, {"T": "Ticker", "W": "Weight", "S": "bp per point", "TT": "t", "N": "Link-days", "E": "Example question"}), ""]
+
+
 def premarket_section() -> list[str]:
     """Exploratory follow-up S4c (amendment 2): empty until `python -m s4_linked_assets.premarket` has been run."""
     if not (R / "premarket_regressions.csv").exists():
@@ -239,6 +279,7 @@ def main() -> int:
           "open (row 1, not tradable, the move is already in the opening price) and after it (row 2, the trade). Rows 3 and 4 ask "
           "the reverse: whether the odds follow the equity's session move. The Brazil column is the motivating example and is not "
           "part of any test.", "",
+          *size_section(),
           *premarket_section(),
           "## Costs, in bp of the position", "",
           f"Round trip on the primary's trades: {num(o1.mean_cost_bp, 1)} bp at 1×, {num(o2.mean_cost_bp, 1)} bp at 2×. Per side: SPY hedge "

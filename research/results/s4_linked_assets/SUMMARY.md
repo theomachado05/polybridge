@@ -68,6 +68,39 @@ A $100,000 book; $10,000 per position against a beta-weighted SPY hedge; entry a
 
 Slopes are through the origin with errors clustered by date. Rows 1 and 2 ask whether the equity follows the odds: at the open (row 1, not tradable, the move is already in the opening price) and after it (row 2, the trade). Rows 3 and 4 ask the reverse: whether the odds follow the equity's session move. The Brazil column is the motivating example and is not part of any test.
 
+## How big is it (descriptive, same sample)
+
+Agreed event links: 3,504 link-days, 55 links, 34 tickers, 188 dates. The equity's excess gap has a standard deviation of 127 bp.
+
+- **Most nights the odds barely move.** 83% of link-days have an overnight move under 2 points; 11% between 2 and 5; 4% between 5 and 10; 2% of 10 or more.
+- **On the big nights the gap is large.** After a move of 10 points or more the linked equity opens +91 bp in the direction of the odds (95% interval +40 to +145; 70 link-days on 30 dates; same sign 66%). Without the crypto-linked equities: +81 bp [+34, +156] on 25 link-days.
+- **It explains little of an ordinary night.** Variance of the gap explained: 1.3% overall; -0.1% out-of-sample with the in-sample slope; 10% on nights with a move of 5 points or more.
+- **It does not rest on one market.** One market (the Clarity Act, linked to three crypto equities) carries 46% of the weight. Without it: +3.79 bp per point (t = 3.1). Without the three heaviest markets: +5.09 (t = 2.9). Without any crypto-linked equity: in-sample +6.25 (t = 2.7), out-of-sample +1.87 (t = 2.2). One observation per ticker and day: +5.31 (t = 3.8).
+
+| Closures | Overnight odds move | Link-days | Dates | Gap, signed by the odds move | Same sign | After the open, to the close |
+|---|---|---|---|---|---|---|
+| all closures | 2 to 5 points | 372 | 129 | +16 bp [-5, +38] | 54% | +7 bp [-25, +38] |
+| all closures | 5 to 10 points | 144 | 57 | +31 bp [-6, +74] | 56% | +3 bp [-69, +70] |
+| all closures | 10 or more points | 70 | 30 | +91 bp [+40, +145] | 66% | +39 bp [-50, +122] |
+| weekends only | 2 to 5 points | 121 | 34 | -3 bp [-30, +30] | 46% | -15 bp [-64, +33] |
+| weekends only | 5 to 10 points | 57 | 21 | +62 bp [+10, +124] | 68% | -47 bp [-167, +33] |
+| weekends only | 10 or more points | 29 | 12 | +92 bp [+3, +168] | 72% | +82 bp [-82, +216] |
+
+The last column is the part a trade at the open could earn. No interval there excludes zero.
+
+Tickers by weight in the estimate:
+
+| Ticker | Weight | bp per point | t | Link-days | Example question |
+|---|---|---|---|---|---|
+| COIN | 15% | +7.1 | +2.3 | 182 | Clarity Act (H.R.3633) signed into law in 2026? |
+| GLXY | 15% | +7.4 | +2.4 | 182 | Clarity Act (H.R.3633) signed into law in 2026? |
+| HOOD | 15% | +2.7 | +1.4 | 182 | Clarity Act (H.R.3633) signed into law in 2026? |
+| GOOGL | 13% | +3.2 | +3.7 | 80 | Will Anthropic announce bankruptcy by December 31, 2027? |
+| JETS | 12% | +13.5 | +6.6 | 305 | Will the U.S. invade Iran before 2027? |
+| ITA | 8% | +0.0 | +0.1 | 190 | Russia military action against an EU country by December 31, 2026? |
+| SPY | 3% | +0.0 | +1.0 | 191 | Will the Fed increase interest rates by 25 bps after the October 2026  |
+| IWM | 3% | -0.9 | -0.8 | 219 | Will the Fed increase interest rates by 25 bps after the October 2026  |
+
 ## Exploratory follow-up: is the lag in the pre-market? (S4c)
 
 Designed after the S4 run (amendment 2), so it is exploratory and outside the success criterion. Excess move of the equity in bp per 1 pp of signed odds move, errors clustered by date:

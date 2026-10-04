@@ -1,0 +1,117 @@
+{
+ "link_days": 3504,
+ "links": 55,
+ "tickers": 34,
+ "dates": 188,
+ "share_abs_move": {
+  "under 2": 0.8327625570776256,
+  "2 to 5": 0.10616438356164383,
+  "5 to 10": 0.0410958904109589,
+  "10 or more": 0.01997716894977169
+ },
+ "gap_sd_bp": 127.39152584591082,
+ "abs_move_mean_pp": 1.2929080840831166,
+ "slope_all": 4.687783328652282,
+ "slope_is": 5.692420303640423,
+ "r2_all": 0.013246834178466838,
+ "r2_oos_with_is_slope": -0.0012578655848682896,
+ "r2_moves_5pp_plus": 0.10247812269820267,
+ "ticker_day": {
+  "n": 2224,
+  "slope": 5.312923302703503,
+  "se": 1.4102190394613106,
+  "t": 3.7674454492778553,
+  "sign_agree": 0.5196078431372549,
+  "n_nonzero": 1734,
+  "clusters": 188
+ },
+ "leave_one_ticker_out": [
+  {
+   "without": "COIN",
+   "slope": 4.2549796470250305,
+   "t": 3.993189631177674,
+   "n": 3322
+  },
+  {
+   "without": "GLXY",
+   "slope": 4.192408895742475,
+   "t": 3.537701604079336,
+   "n": 3322
+  },
+  {
+   "without": "HOOD",
+   "slope": 5.047642346335637,
+   "t": 4.001928518555223,
+   "n": 3322
+  },
+  {
+   "without": "GOOGL",
+   "slope": 4.908465690232134,
+   "t": 3.767799183696345,
+   "n": 3424
+  },
+  {
+   "without": "JETS",
+   "slope": 3.4967820788303667,
+   "t": 2.969666669951944,
+   "n": 3199
+  }
+ ],
+ "heaviest_markets": [
+  {
+   "question": "Clarity Act (H.R.3633) signed into law in 2026?",
+   "weight": 0.46411278562901037
+  },
+  {
+   "question": "Will Google have the best AI model at the end of October 2026?",
+   "weight": 0.11233685179119632
+  },
+  {
+   "question": "NATO x Russia military clash by December 31, 2026?",
+   "weight": 0.08291788532937118
+  },
+  {
+   "question": "Will the U.S. invade Iran before 2027?",
+   "weight": 0.07681958946871707
+  },
+  {
+   "question": "Will the Fed increase interest rates by 25 bps after the October 2026 meeting?",
+   "weight": 0.04531415026929001
+  }
+ ],
+ "without_heaviest_market": {
+  "slope": 3.7913303109616083,
+  "t": 3.0645326345557806,
+  "n": 2958
+ },
+ "without_three_heaviest_markets": {
+  "slope": 5.08710585289327,
+  "t": 2.8627679884998454,
+  "n": 2742
+ },
+ "without_crypto_equities": {
+  "all": {
+   "slope": 3.7913303109616083,
+   "t": 3.0645326345557806,
+   "n": 2958
+  },
+  "IS": {
+   "slope": 6.254994297357853,
+   "t": 2.69428039601538,
+   "n": 1729
+  },
+  "OOS": {
+   "slope": 1.868269036519065,
+   "t": 2.1689644391117855,
+   "n": 1229
+  }
+ },
+ "moves_10pp_plus_without_crypto": {
+  "link_days": 25,
+  "dates": 16,
+  "signed_gap_bp": 80.55233014591218,
+  "ci_lo": 33.79325667444164,
+  "ci_hi": 155.51297920483026,
+  "same_sign": 0.68
+ }
+}
