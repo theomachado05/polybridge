@@ -130,3 +130,9 @@ of 2027-01-01 04:59 UTC (midnight New York) made "December 31" into 2027-12-31, 
 no year and the date it gives falls more than 7 days after the market's end date, the year before is used. Both lists
 were rebuilt (the live list is re-read, so its events are those open at 23:00); the 22:51 snapshot is discarded
 (`.cache/live_v0/`). No history price had been read. History list: 100 date ladders (was 99), 50 strike, 83 one-of-many.
+
+**2. Sat 2026-10-03 23:20 New York time: fewer one-of-many histories.** The price-history server served about 1.3
+requests a second in the first 20 minutes (52 markets), shared with the other sessions. All 2,341 planned markets would
+take about 4 hours. The cap on new pulls is cut from 2,500 to 1,400 markets: every date and strike ladder leg (883
+markets, about 4,400 requests) is kept; one-of-many sets are pulled whole, largest event first, until the cap. The rule
+that picks the sets is unchanged. No history price had been read by the analysis.

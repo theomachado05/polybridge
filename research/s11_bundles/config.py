@@ -16,9 +16,10 @@ NEGRISK_MAX_MEMBERS = 30                # one-of-many sets larger than this are 
 # ---- history window (the same as S5's cache)
 WINDOW_START, WINDOW_END = "2025-10-01", "2026-10-03"
 OOS_START = "2026-07-22"                # the most recent 20% of the 367-day window, by date (New York)
-MAX_NEW_PULLS = 2500                    # one-minute histories pulled for this study, beyond S5's and S9's caches. Order: every
+MAX_NEW_PULLS = 1400                    # one-minute histories pulled for this study, beyond S5's and S9's caches. Order: every
                                         # date and strike ladder leg first, then one-of-many sets whole, largest event first,
-                                        # stopping before a set that would pass the cap (a set is pulled whole or not at all)
+                                        # stopping before a set that would pass the cap (a set is pulled whole or not at all).
+                                        # Amendment 2: 2500 -> 1400, the server serves about 1.3 requests a second
 PULL_RATE = 2.5                         # requests a second (the brief allows 3; the live logger takes the rest)
 PRICE_MAX_AGE_S = 1800                  # a mid older than this does not count
 
