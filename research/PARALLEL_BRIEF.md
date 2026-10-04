@@ -7,7 +7,7 @@ beats an unfinished larger one. Post the headline numbers to Theo as soon as you
 The track scores: equity curve, Sharpe, maximum drawdown, worst month, turnover; costs in bp with their source;
 capacity; in-sample against out-of-sample (the most recent 20% of the history); every variant tried, disclosed.
 
-## 1. What nine studies have established
+## 1. What the studies so far have established
 
 The signal is real. Three independent tests say that the link between a prediction-market question and an asset
 works:
