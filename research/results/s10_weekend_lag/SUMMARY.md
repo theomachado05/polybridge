@@ -7,6 +7,25 @@ session day to Sunday 17:55 New York time, while oil futures are shut. Files: [`
 [`event_summary.csv`](event_summary.csv), [`events.csv`](events.csv), [`metrics.csv`](metrics.csv),
 [`trades.csv`](trades.csv), [`robust.csv`](robust.csv), [`capacity.md`](capacity.md), [`RUN_LOG.md`](RUN_LOG.md).
 
+## Answer across all five parts (read first)
+
+**The inefficiency is real, and it is largest where the link is mechanical, but in every case it is gone before a
+taker can take it, or it is smaller than the taker's cost.**
+
+- **Bitcoin 15-minute markets (Part 3), the strongest result:** a fair value from spot predicts the result better
+  than Polymarket's own price at every minute (slope 0.94, t = 18.8, 5,756 markets). Polymarket absorbs it within the
+  minute: a taker one minute late nets −1.52 points per trade, 98% of fills print-verified. Live, the book follows
+  spot within five seconds (Part 5).
+- **Linked questions (Part 2):** they follow each other over 5 to 30 minutes (t = 5.7), but stale prices stay stale;
+  the follow-through is a few hundredths of a point against a 2.3-point round trip.
+- **Oil on weekends (Part 1):** the event questions lead the oil price markets by up to 30 minutes (t = 3.25); +0.11
+  points before costs against 2.7.
+- **Holding the stale side to the result (Part 4):** a null.
+
+Every pre-registered trade fails. The one place the gap is larger than the cost is inside the first seconds of
+the Bitcoin markets, which belongs to whoever quotes or reacts fastest; Polymarket's 0.07 taker fee on those markets
+is priced at about that size.
+
 ## Part 3, a mechanical link: 15-minute Bitcoin markets against spot (amendments 2 and 4)
 
 **What holds up: Polymarket's minute price lags spot Bitcoin, and spot predicts the result better than Polymarket
@@ -127,6 +146,23 @@ exactly those markets and finds +0.07 points before costs.
 | Question–price market | OOS | 1× | 79 | 9 | −1.71 | [−1.85, −1.57] | +0.03 | 1.74 | 976 | 2 of 67 | −1.68 |
 
 Every row, with Sharpe, drawdown, worst month and turnover, is in `mechanism/metrics.csv`.
+
+## Part 5, a live pilot at real quotes (amendment 5, recorded Sun 00:40 to 06:00 New York time)
+
+**A pilot null, and the reason is in my signal, not in the market.** 19,035 one-second snapshots of the live book of
+the current 15-minute Bitcoin market and Coinbase's price, 22 windows (21 resolved). The book follows spot inside
+the **same five seconds** (slope of the mid's change on the fair value's change 0.30, t = 5.93); nothing significant
+follows in the next 5, 15 or 30 seconds (t = 0.60, 0.96, 1.03). The pre-registered trade (fair beyond the quote by 2
+points plus the fee, filled at the next second's quote, held to the result) made **20 trades: −13.3 points each**
+[−31.3, +4.9], 30% winners, about 96 contracts filled per trade at the quoted size. At 2× costs −15.9.
+
+**Why it lost (looked at after the run).** Most signals fired at the first second allowed, 60 seconds into the
+window, with the fair value near 50% and Polymarket already well away from it (for example 0.30). Polymarket was
+right more often. My live fair value used the mean of the last 60 seconds of Coinbase prices, so it lagged the price
+that Polymarket's quoters use. I built a lag into the signal. It is not re-tuned here: 20 trades is too few, and it
+would be fitted after seeing the result. What the pilot does show is how fast the book is: it moves with spot within
+seconds. So the gap Part 3 sees in the minute history is gone before a person, or a one-second poller, can take it.
+Files: [`live/`](live/).
 
 ## Part 4, hold the stale side to the result (pre-registered in amendment 3, commit `e661545`, before any result was read)
 

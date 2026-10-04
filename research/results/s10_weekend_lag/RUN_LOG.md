@@ -75,3 +75,16 @@
 - `BTC_RATE` was lowered from 2.5 to 1.8 requests a second for the print check (operational, no rule changed).
 - Amendment 4 was written after Part 3's first run: it fixes the model's reading of the resolution rule; the proxy
   was chosen on in-sample markets only, and the pre-registered model is reported alongside.
+
+| Time (New York) | Step | Commit |
+|---|---|---|
+| Sun 00:40 to 06:00 | Live recorder: 19,061 lines (19,035 snapshots, median gap 1.0 s, 4 errors), 22 windows, 21 resolved | |
+| 06:01 | Part 5 analysis run; a missing-result guard added to `live_analyze.py` (the last window had not resolved; no rule changed) | |
+
+- **Branch incident, between Sun 01:46 and 06:00.** Another session switched the shared working tree from
+  `r/weekend-options` to `sub/massive-8k`. The checkout removed from disk the Part 3 files that exist only on
+  `r/weekend-options` (`results/s10_weekend_lag/btc/`, `btc_catchup.py`, the Part 3 sections of SUMMARY and this
+  log); they were already committed there (`38c99a2`, `daa63d8`) and nothing was lost. The Part 5 result commit
+  first landed on `sub/massive-8k` (`6f8d1e5`, touching only S10's folders). It was rebuilt on `r/weekend-options`
+  with a temporary git index, without checking anything out or changing the working tree; `6f8d1e5` was left where
+  it is on the other session's branch.
