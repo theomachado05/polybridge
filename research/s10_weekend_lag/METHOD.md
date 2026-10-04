@@ -284,3 +284,23 @@ entries (Part 2's check) above zero. Otherwise a null.
 
 *Known now.* Part 2's results. No result of any of these questions has been read for this test (S5 and S4 used
 some of these questions' prices, not their results).
+
+**Amendment 4, 2026-10-04 04:50 UTC (Sun 00:50 New York time), after Part 3's first run without prints: the model
+read the resolution rule wrongly.** The first run showed the pre-registered fair value losing to Polymarket's price on
+Brier score at every minute. Its own check at minute 15 (does the Coinbase 15-minute average against the start match
+the result?) agreed with the result in only 84% of markets. Two findings, both from the catalogue and from results
+only, not from any trade:
+1. Markets before 2026-08-06 20:00 New York time (the first 272) resolve on the price at the **end** against the start;
+   later ones say "TWAP", but the source is Chainlink's **60-second** TWAP stream, a one-minute smoothed price at each
+   instant. So every market is in effect "the price at the end against the price at the start", not a 15-minute
+   average.
+2. On **in-sample markets only** (dates before the out-of-sample cut), three end-against-start proxies were compared
+   with the results: last close vs close before start 93.4%; last open vs first open 93.4%; **the mid of the last
+   window minute vs the mid of the minute before the start 96.0%** (n = 4,608). The mid is chosen, matching a
+   60-second average.
+
+*Corrected fair value (fixed now, nothing else changes).* At minute m, X = the mid ((open + close)/2) of the minute
+ending at t, S0 = the mid of the minute before the window, n = 15 − m: fair = Φ(ln(X/S0) / (σ·√n)), σ as before.
+Variants, costs, entries, accounting, print check and success criterion are as amendment 2. Both models are reported:
+the pre-registered one as the test of amendment 2, the corrected one as this amendment's test. The out-of-sample
+dates were not used to choose the proxy.

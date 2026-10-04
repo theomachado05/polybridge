@@ -40,3 +40,11 @@ def test_yes_result():
     assert yes_result({"closed": True, "outcomes": '["No", "Yes"]', "outcomePrices": '["0", "1"]'}) == 1.0
     assert yes_result({"closed": False, "outcomes": '["Yes", "No"]', "outcomePrices": '["0.4", "0.6"]'}) is None
     assert yes_result({"closed": True, "outcomes": '["Yes", "No"]', "outcomePrices": '["0.5", "0.5"]'}) is None
+
+
+def test_fair_value_end():
+    from s10_weekend_lag.btc import fair_value_end
+    assert abs(fair_value_end(7, 100.0, 100.0, 0.001) - 0.5) < 1e-12
+    assert fair_value_end(15, 100.0, 100.01, 0.001) == 1.0
+    z = math.log(100.05 / 100.0) / (0.0008 * math.sqrt(4))
+    assert abs(fair_value_end(11, 100.0, 100.05, 0.0008) - 0.5 * (1 + math.erf(z / math.sqrt(2)))) < 1e-12
