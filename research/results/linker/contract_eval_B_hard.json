@@ -1,0 +1,461 @@
+{
+ "half": "B",
+ "tag": "hard",
+ "parser": "parser on disk at scoring time",
+ "plan": "linker/contract_eval/PLAN.md",
+ "sha256_of_parser_scored": {
+  "link_map.py": "26f260993dac64723574ef8d0e7ba6df1d4c5b3c0bd042e3ddbce44b5867e6c2",
+  "options.py": "77076e0ab719f422f7e143f86414acb48fe99b9dbc8cf0db964b60e2dd809f97",
+  "ladder_replay/replay.py": "d391425bcc190be3061fa88371430b8eb5b4f9babd76113d893214ef1108e134"
+ },
+ "sha256_at_scoring": {
+  "link_map.py": "26f260993dac64723574ef8d0e7ba6df1d4c5b3c0bd042e3ddbce44b5867e6c2",
+  "options.py": "77076e0ab719f422f7e143f86414acb48fe99b9dbc8cf0db964b60e2dd809f97",
+  "ladder_replay/replay.py": "d391425bcc190be3061fa88371430b8eb5b4f9babd76113d893214ef1108e134"
+ },
+ "sha256_at_sample": {
+  "link_map.py": "b87960029e5558526f81820552d7ce2530da44749e1ced0d99287e9a6f0412fa",
+  "options.py": "77076e0ab719f422f7e143f86414acb48fe99b9dbc8cf0db964b60e2dd809f97",
+  "ladder_replay/replay.py": "d391425bcc190be3061fa88371430b8eb5b4f9babd76113d893214ef1108e134"
+ },
+ "parser_changed_answers": {
+  "questions": 25,
+  "pairs": 0
+ },
+ "date_rule": "end session",
+ "bars": {
+  "exact_ticket_links": {
+   "k": 102,
+   "n": 102,
+   "share": 1.0,
+   "interval_95_exact": [
+    0.9644806733420905,
+    1.0
+   ],
+   "bar": 0.95,
+   "result": "pass",
+   "date_rule": "end session",
+   "excluded": {
+    "type disagreement": 2,
+    "field disagreement, every agreed field matches": 2
+   },
+   "failures_by_first_cause": {
+    "type differs": 0,
+    "ticker": 0,
+    "level": 0,
+    "direction": 0,
+    "date": 0
+   },
+   "type_differs": []
+  },
+  "rung_dates": {
+   "k": 54,
+   "n": 54,
+   "share": 1.0,
+   "interval_95_exact": [
+    0.9339684857555706,
+    1.0
+   ],
+   "bar": 0.95,
+   "result": "pass",
+   "excluded": {
+    "date disagreement": 0
+   }
+  },
+  "nested_pairs": {
+   "k": 30,
+   "n": 30,
+   "share": 1.0,
+   "interval_95_exact": [
+    0.8842966917779636,
+    1.0
+   ],
+   "bar": 0.95,
+   "result": "pass",
+   "excluded": {
+    "nested disagreement": 0
+   }
+  }
+ },
+ "type_table_parser_rows_truth_columns": {
+  "ladder_rung": {
+   "ladder_rung": 54,
+   "touch_ticket": 0,
+   "close_above_ticket": 0,
+   "other": 0
+  },
+  "touch_ticket": {
+   "ladder_rung": 0,
+   "touch_ticket": 46,
+   "close_above_ticket": 0,
+   "other": 0
+  },
+  "close_above_ticket": {
+   "ladder_rung": 0,
+   "touch_ticket": 0,
+   "close_above_ticket": 60,
+   "other": 0
+  },
+  "other": {
+   "ladder_rung": 0,
+   "touch_ticket": 0,
+   "close_above_ticket": 0,
+   "other": 42
+  }
+ },
+ "precision": {
+  "ladder_rung": {
+   "k": 54,
+   "n": 54,
+   "share": 1.0,
+   "interval_95_exact": [
+    0.9339684857555706,
+    1.0
+   ]
+  },
+  "touch_ticket": {
+   "k": 46,
+   "n": 46,
+   "share": 1.0,
+   "interval_95_exact": [
+    0.922938172948083,
+    1.0
+   ]
+  },
+  "close_above_ticket": {
+   "k": 60,
+   "n": 60,
+   "share": 1.0,
+   "interval_95_exact": [
+    0.9403705077138522,
+    1.0
+   ]
+  },
+  "other": {
+   "k": 42,
+   "n": 42,
+   "share": 1.0,
+   "interval_95_exact": [
+    0.9159161450596569,
+    1.0
+   ]
+  }
+ },
+ "recall_within_sample": {
+  "ladder_rung": {
+   "k": 54,
+   "n": 54,
+   "share": 1.0,
+   "interval_95_exact": [
+    0.9339684857555706,
+    1.0
+   ]
+  },
+  "touch_ticket": {
+   "k": 46,
+   "n": 46,
+   "share": 1.0,
+   "interval_95_exact": [
+    0.922938172948083,
+    1.0
+   ]
+  },
+  "close_above_ticket": {
+   "k": 60,
+   "n": 60,
+   "share": 1.0,
+   "interval_95_exact": [
+    0.9403705077138522,
+    1.0
+   ]
+  },
+  "other": {
+   "k": 42,
+   "n": 42,
+   "share": 1.0,
+   "interval_95_exact": [
+    0.9159161450596569,
+    1.0
+   ]
+  }
+ },
+ "recall_weighted_by_stratum": {
+  "note": "weights: stratum size / sampled in this half. Within a stratum the draw favoured some questions (price-like and same-event ones for 'other', no written year for the rest), so this is an approximate population figure.",
+  "by_type": {
+   "ladder_rung": {
+    "weighted_hits": 1578.764,
+    "weighted_truth": 1578.764,
+    "share": 1.0,
+    "questions": 54
+   },
+   "touch_ticket": {
+    "weighted_hits": 6570.473,
+    "weighted_truth": 6570.473,
+    "share": 1.0,
+    "questions": 46
+   },
+   "close_above_ticket": {
+    "weighted_hits": 4940.091,
+    "weighted_truth": 4940.091,
+    "share": 1.0,
+    "questions": 60
+   },
+   "other": {
+    "weighted_hits": 25895.236,
+    "weighted_truth": 25895.236,
+    "share": 1.0,
+    "questions": 42
+   }
+  }
+ },
+ "ticket_field_accuracy": {
+  "touch_ticket": {
+   "questions": 46,
+   "parser_other_type": 0,
+   "underlying": {
+    "k": 46,
+    "n": 46,
+    "share": 1.0,
+    "interval_95_exact": [
+     0.922938172948083,
+     1.0
+    ]
+   },
+   "level": {
+    "k": 46,
+    "n": 46,
+    "share": 1.0,
+    "interval_95_exact": [
+     0.922938172948083,
+     1.0
+    ]
+   },
+   "direction": {
+    "k": 46,
+    "n": 46,
+    "share": 1.0,
+    "interval_95_exact": [
+     0.922938172948083,
+     1.0
+    ]
+   },
+   "date": {
+    "k": 44,
+    "n": 44,
+    "share": 1.0,
+    "interval_95_exact": [
+     0.9195800602364272,
+     1.0
+    ]
+   }
+  },
+  "close_above_ticket": {
+   "questions": 60,
+   "parser_other_type": 0,
+   "underlying": {
+    "k": 60,
+    "n": 60,
+    "share": 1.0,
+    "interval_95_exact": [
+     0.9403705077138522,
+     1.0
+    ]
+   },
+   "level": {
+    "k": 60,
+    "n": 60,
+    "share": 1.0,
+    "interval_95_exact": [
+     0.9403705077138522,
+     1.0
+    ]
+   },
+   "direction": {
+    "k": 60,
+    "n": 60,
+    "share": 1.0,
+    "interval_95_exact": [
+     0.9403705077138522,
+     1.0
+    ]
+   },
+   "date": {
+    "k": 60,
+    "n": 60,
+    "share": 1.0,
+    "interval_95_exact": [
+     0.9403705077138522,
+     1.0
+    ]
+   }
+  }
+ },
+ "refused_tickets": {
+  "tickets": 2,
+  "by_reason": {
+   "the level is not above zero": 2
+  },
+  "labellers_read_in_full": 0,
+  "read_in_full_ids": []
+ },
+ "nested_pairs_missed": {
+  "k": 6,
+  "n": 36,
+  "share": 0.16666666666666666,
+  "interval_95_exact": [
+   0.0637201336083848,
+   0.328115932042918
+  ],
+  "pairs": [
+   {
+    "pair": "p059",
+    "reasons": [
+     "descriptions differ"
+    ]
+   },
+   {
+    "pair": "p062",
+    "reasons": [
+     "descriptions differ"
+    ]
+   },
+   {
+    "pair": "p065",
+    "reasons": [
+     "descriptions differ"
+    ]
+   },
+   {
+    "pair": "p068",
+    "reasons": [
+     "descriptions differ"
+    ]
+   },
+   {
+    "pair": "p072",
+    "reasons": [
+     "descriptions differ"
+    ]
+   },
+   {
+    "pair": "p075",
+    "reasons": [
+     "descriptions differ"
+    ]
+   }
+  ]
+ },
+ "pair_date_accuracy": {
+  "earlier_date": {
+   "k": 40,
+   "n": 40,
+   "share": 1.0,
+   "interval_95_exact": [
+    0.9119026971211939,
+    1.0
+   ]
+  },
+  "later_date": {
+   "k": 40,
+   "n": 40,
+   "share": 1.0,
+   "interval_95_exact": [
+    0.9119026971211939,
+    1.0
+   ]
+  }
+ },
+ "labeller_agreement": {
+  "type": {
+   "k": 202,
+   "n": 220,
+   "share": 0.9181818181818182,
+   "interval_95_exact": [
+    0.8737738442907128,
+    0.9507889612137679
+   ]
+  },
+  "ticket_underlying": {
+   "k": 106,
+   "n": 106,
+   "share": 1.0,
+   "interval_95_exact": [
+    0.9657978327236743,
+    1.0
+   ]
+  },
+  "ticket_level": {
+   "k": 106,
+   "n": 106,
+   "share": 1.0,
+   "interval_95_exact": [
+    0.9657978327236743,
+    1.0
+   ]
+  },
+  "ticket_direction": {
+   "k": 106,
+   "n": 106,
+   "share": 1.0,
+   "interval_95_exact": [
+    0.9657978327236743,
+    1.0
+   ]
+  },
+  "ticket_date": {
+   "k": 104,
+   "n": 106,
+   "share": 0.9811320754716981,
+   "interval_95_exact": [
+    0.9335018002057738,
+    0.9977067830376334
+   ]
+  },
+  "rung_date": {
+   "k": 54,
+   "n": 54,
+   "share": 1.0,
+   "interval_95_exact": [
+    0.9339684857555706,
+    1.0
+   ]
+  },
+  "pair_nested": {
+   "k": 40,
+   "n": 40,
+   "share": 1.0,
+   "interval_95_exact": [
+    0.9119026971211939,
+    1.0
+   ]
+  },
+  "pair_earlier_date": {
+   "k": 40,
+   "n": 40,
+   "share": 1.0,
+   "interval_95_exact": [
+    0.9119026971211939,
+    1.0
+   ]
+  },
+  "pair_later_date": {
+   "k": 40,
+   "n": 40,
+   "share": 1.0,
+   "interval_95_exact": [
+    0.9119026971211939,
+    1.0
+   ]
+  }
+ },
+ "disagreements_dropped": {
+  "questions": {
+   "type": 18,
+   "date": 2
+  },
+  "pairs": {}
+ },
+ "questions": 220,
+ "pairs": 40,
+ "errors": 6
+}

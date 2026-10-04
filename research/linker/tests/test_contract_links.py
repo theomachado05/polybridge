@@ -95,8 +95,9 @@ def test_fault2_weekly_close_tickets():
         mid = lm.classify("Will Google (GOOGL) finish week of October 5 above $365?", None, m | {"createdAt": f"{created}T00:00:00Z"})
         assert mid["fields"]["window_end"] == "2026-10-09" and mid["linkable"], created
     # a late-December week settling in January, created after New Year
+    # (that Friday, 2027-01-01, is New Year's Day: hardening fault 6 moves the week's close to Thursday 2026-12-31)
     nye = lm.classify("Will Amazon (AMZN) finish week of December 28 above $220?", None, {"createdAt": "2027-01-01T00:00:00Z"})
-    assert nye["fields"]["window_end"] == "2027-01-01"
+    assert nye["fields"]["window_end"] == "2026-12-31" and nye["fields"]["end_session"] == "2026-12-31"
     # bucket questions on the week's close stay "other"
     assert lm.classify("Will Micron (MU) close at $1,080-$1,100 on the final day of trading of the week of Oct 5 – Oct 9?", None,
                        {"createdAt": "2026-10-02T00:00:00Z"})["type"] == "other"
@@ -170,3 +171,156 @@ def test_end_of_february_is_the_months_last_day_not_the_next_leap_day():
     assert lm.classify("Will Apple (AAPL) close above $230 end of March?", None, {"createdAt": "2026-02-28T00:00:00Z"})["fields"]["window_end"] == "2026-03-31"
     assert lm.classify("Will Apple (AAPL) close above $230 end of December?", None, {"createdAt": "2026-12-01T00:00:00Z"})["fields"]["window_end"] == "2026-12-31"
     assert lm.classify("Will Apple (AAPL) close above $230 end of February 2028?", None, {"createdAt": "2026-01-28T00:00:00Z"})["fields"]["window_end"] == "2028-02-29"
+
+
+# ---- Hardening before submission (two independent verifiers' fault classes): one test group per class. A wrong linkable
+# answer is the dangerous kind; where the right answer is not certain the parser refuses with a reason.
+
+def _c(q, title="", created="2026-02-20", rules=None, **kw):
+    return lm.classify(q, rules, {"createdAt": f"{created}T00:00:00Z", "event_title": title, "event_id": "e", **kw})
+
+
+def test_h1_a_year_written_only_in_the_event_title_wins_over_the_creation_year():
+    eth = _c("Will Ethereum hit $10,000 by December 31?", "What price will Ethereum hit in 2025?", "2024-12-30")
+    assert eth["type"] == "ladder_rung" and eth["linkable"] and eth["fields"]["date"] == "2025-12-31"   # not 2024-12-31
+    assert eth["fields"]["year_source"] == "year from the event title"
+    aapl = _c("Will Apple (AAPL) reach $300 by December 31?", "What will Apple (AAPL) hit in 2026?", "2025-12-30")
+    assert aapl["type"] == "touch_ticket" and aapl["linkable"] and aapl["fields"]["window_end"] == "2026-12-31"
+    for title in ("What will Apple hit in December 2026?", "Apple above ___ end of December 2026?", "Apple targets 2026?"):
+        r = _c("Will Apple (AAPL) close above $300 on December 31?", title, "2025-12-30")
+        assert r["fields"]["window_end"] == "2026-12-31", title
+    # "before 2027" / "by 2027" name a deadline, not the window's year: the creation rule stands
+    assert _title_years("Will X happen before 2027?") == set() and _title_years("Will X happen by 2027?") == set()
+    # the title's year is in the past for a market created later: the two disagree, so the date is refused
+    bad = _c("Will Apple (AAPL) reach $300 by January 31?", "What will Apple (AAPL) hit in 2025?", "2025-12-10")
+    assert not bad["linkable"] and "year unclear: the event title says 2025, creation implies 2026" in bad["reasons"]
+
+
+def _title_years(t):
+    return lm._title_years(t)
+
+
+def test_h1_a_ladder_with_the_year_only_in_its_title_is_ordered_by_that_year():
+    def rung(i, q, created):
+        return {"id": str(i), "question": q, "description": "Binance ETH/USDT 1m candles.", "resolutionSource": "",
+                "startDate": f"{created}T00:00:00Z", "endDate": "2026-01-01T00:00:00Z"}
+    [lad] = lm.link_ladders([rung(1, "Will Ethereum hit $5,000 by December 31?", "2024-12-30"),
+                             rung(2, "Will Ethereum hit $5,000 by June 30?", "2025-01-05")],
+                            {"id": "eth25", "title": "What price will Ethereum hit in 2025?"})
+    assert [r["date"] for r in lad["rungs"]] == ["2025-06-30", "2025-12-31"]          # December was ordered first, a year early
+
+
+def test_h2_symbols_in_parentheses_are_tickers_only_when_they_are_stocks():
+    m = "2026-10-01"
+    # a time zone or currency in parentheses is not a ticker
+    et = _c("Will Apple close above $250 on October 9 (ET)?", created=m)
+    assert et["fields"]["underlying"] == "AAPL" and et["linkable"]
+    assert lm.ticker_of("Will the US Dollar (USD) close above $1 on October 9?")[0] is None
+    # tokens written with a symbol: never the stock of the same symbol
+    for q in ("Will Litecoin (LTC) reach $150 in October?", "Will Hyperliquid (HYPE) close above $50 on October 9?",
+              "Will Chainlink (LINK) reach $30 in October?", "Will Cardano (ADA) dip to $0.40 in October?"):
+        r = _c(q, created=m)
+        assert r["type"] not in ("touch_ticket", "close_above_ticket") and not r["linkable"], q
+    assert lm.ticker_of("Will (LINK) reach $30 in October?", "What price will LINK hit in October?")[0] is None
+    # a token's deadline question is a rung, as for "Hyperliquid" without a symbol
+    assert _c("Will Litecoin (LTC) reach $150 by December 31?", created=m)["type"] == "ladder_rung"
+    # a symbol outside the universe beside a token marker is refused, not guessed
+    d = _c("Will Circle (CRCL) reach $300 in October?", "What will Circle hit as the stablecoin bill passes?", m)
+    assert d["type"] == "touch_ticket" and not d["linkable"] and "symbol in parentheses is not a known stock" in d["reasons"]
+    # real stocks still link, including ones outside the named universe
+    for q, tk in (("Will Micron (MU) close above $960 end of October?", "MU"), ("Will SK hynix (SKHY) hit (HIGH) $228 in October?", "SKHY"),
+                  ("Will SpaceX (SPCX) close above $110 end of October?", "SPCX"), ("Will South Korea ETF (EWY) hit (LOW) $172 in October?", "EWY"),
+                  ("Will Tesla, Inc. (TSLA) hit (HIGH) $435 in October?", "TSLA"), ("Will (SHOP) reach $120 in October?", "SHOP")):
+        r = _c(q, created="2026-09-25")
+        assert r["linkable"] and r["fields"]["underlying"] == tk, q
+
+
+def test_h3_numbers_that_are_not_dollar_prices_are_not_levels():
+    for q, why in (("Will Tesla reach 500,000 deliveries by June 30?", "unit"),
+                   ("Will Netflix reach 350 million subscribers by June 30?", "unit"),
+                   ("Will Nvidia (NVDA) market cap close above $6 trillion on June 30?", "unit"),
+                   ("Will Apple (AAPL) market cap reach $5 by June 30?", "market cap"),
+                   ("Will Tesla (TSLA) reach $1.5K by June 30?", "suffix"),
+                   ("Will Netflix (NFLX) close above $0.00 end of March?", "above zero"),
+                   ("Will Netflix dip to $0 in April?", "above zero")):
+        r = _c(q, "What will Netflix (NFLX) hit in April 2026?" if "April" in q else "")
+        assert r["type"] in ("touch_ticket", "close_above_ticket") and not r["linkable"], q
+        assert any(why in x for x in r["reasons"]), (q, r["reasons"])
+    # a whole number with a suffix is not read as a level at all: a deadline question, not a ticket
+    assert _c("Will Tesla (TSLA) reach $2T by June 30?")["type"] not in ("touch_ticket", "close_above_ticket")
+    ok = _c("Will Tesla (TSLA) reach $1,500 by June 30?")
+    assert ok["linkable"] and ok["fields"]["level"] == 1500.0
+
+
+def test_h4_negated_tickets_are_not_linked_as_up():
+    why = "negated ticket: yes means the level was not reached"
+    for q in ("Will Tesla (TSLA) not reach $500 by June 30?", "Will Tesla (TSLA) fail to reach $500 by June 30?",
+              "Will Tesla (TSLA) fail to close above $500 on June 30?", "Will Tesla (TSLA) not close above $500 on June 30?",
+              "Won't Tesla (TSLA) hit $500 by June 30?"):
+        r = _c(q)
+        assert r["type"] == "other" and not r["linkable"] and r["reasons"] == [why], q
+    assert _c("Will Tesla (TSLA), not Rivian, close above $500 on June 30?")["type"] == "close_above_ticket"
+
+
+def test_h5_close_days_are_read_or_refused_never_put_on_the_months_last_day():
+    def end(q, title=""):
+        r = _c(q, title)
+        return r["fields"].get("window_end"), r["linkable"], r["reasons"]
+    assert end("Will Apple (AAPL) close above $250 on 6 March 2026?")[:2] == ("2026-03-06", True)
+    assert end("Will Apple (AAPL) close above $250 on Sept 15?")[:2] == ("2026-09-15", True)
+    assert end("Will Apple (AAPL) close above $250 on the 15th of March?")[:2] == ("2026-03-15", True)
+    w, ok, why = end("Will Apple (AAPL) close above $250 on the first trading day of March?")
+    assert w is None and not ok and "no close day in the question" in why
+    # the month-end readings that are right stay
+    assert end("Will Apple (AAPL) close above $250 end of March?")[:2] == ("2026-03-31", True)
+    assert end("Will Apple (AAPL) close over $250 on the final trading day of March 2026?")[:2] == ("2026-03-31", True)
+    assert end("Will Apple (AAPL) hit (HIGH) $300 in March?", "What will Apple (AAPL) hit in March?")[:2] == ("2026-03-31", True)
+    # "before March 13" ends on March 12; a day in the question wins over the title's month; a bare month is refused
+    assert end("Will Apple (AAPL) reach $300 before March 13?")[:2] == ("2026-03-12", True)
+    assert end("Will Apple (AAPL) reach $300 by March 15?", "What will Apple (AAPL) hit in March?")[:2] == ("2026-03-15", True)
+    assert not end("Will Apple (AAPL) reach $300 by April 15?", "What will Apple (AAPL) hit in March?")[1]
+    w, ok, why = end("Will Apple (AAPL) reach $300 by March?")
+    assert not ok and "no day in the window end" in why
+
+
+def test_h6_a_window_ending_on_a_market_holiday_lands_on_the_last_session():
+    # Good Friday 2026-04-03: the week's close is Thursday 04-02 (the option code would otherwise take the next week's expiry)
+    for q, title in (("Will Apple (AAPL) finish week of March 30 above $250?", ""),
+                     ("Will Apple (AAPL) hit (HIGH) $300 Week of March 30 2026?", "What will Apple (AAPL) hit Week of March 30 2026?"),
+                     ("Will Apple (AAPL) close above $250 on April 3, 2026?", "")):
+        f = _c(q, title, "2026-03-27")["fields"]
+        assert (f["window_end"], f["end_session"]) == ("2026-04-02", "2026-04-02"), q
+    # Memorial Day 2027-05-31 is May's last weekday: the month's touch window ends Friday 05-28
+    f = _c("Will Apple (AAPL) hit (LOW) $200 in May?", "What will Apple (AAPL) hit in May 2027?", "2027-04-25")["fields"]
+    assert (f["window_end"], f["end_session"]) == ("2027-05-28", "2027-05-28")
+    # a weekend end keeps its date; its Friday is the session
+    f = _c("Will Meta (META) close above $840 end of October?", created="2026-09-25")["fields"]
+    assert (f["window_end"], f["end_session"]) == ("2026-10-31", "2026-10-30")
+    # the repository calendar and the fallback holiday table agree for 2025-2027
+    from datetime import date, timedelta
+    assert lm._SESSIONS is not None
+    off = {date(2025, 1, 1) + timedelta(days=i) for i in range(365 * 3)}
+    off = {d for d in off if d.weekday() < 5 and d not in lm._SESSIONS}
+    assert off == lm.US_MARKET_HOLIDAYS
+
+
+def test_h7_conditional_questions_are_not_plain_tickets():
+    for q in ("Will Apple (AAPL) close above $250 on October 9 if Nvidia closes above $200?",
+              "Will the Fed cut rates by December 31 if Nvidia closes above $200?",
+              "Will Tesla (TSLA) reach $500 in October unless deliveries miss?"):
+        r = _c(q, created="2026-10-01")
+        assert r["type"] == "other" and not r["linkable"] and r["reasons"] == ["conditional question: not a plain ticket"], q
+
+
+def test_h5_a_week_with_no_named_day_is_refused_not_put_after_the_months_end():
+    # review: "week of March" and "the first / last week of March" named no day and linked to the Friday after March 31
+    for q in ("Will Tesla (TSLA) finish week of March above $500?",
+              "Will Tesla (TSLA) close above $500 at the end of the first week of March?",
+              "Will Tesla (TSLA) close above $500 in the last week of March?",
+              "Will Tesla (TSLA) close above $500 in the second week of March 2?"):
+        r = _c(q, created="2026-02-25")
+        assert r["type"] == "close_above_ticket" and not r["linkable"], q
+        assert r["fields"]["window_end"] is None and "no close day in the question" in r["reasons"], q
+    # the week of a named day still links to that week's Friday
+    f = _c("Will Tesla (TSLA) finish week of March 2 above $500?", created="2026-02-25")["fields"]
+    assert f["window_end"] == "2026-03-06"

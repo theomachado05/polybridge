@@ -64,13 +64,16 @@ A sixth was a clash between two branches: with both merged, the parser read the 
 file as its ticker table and stopped before the named stock list, so a company named without its symbol lost its
 ticker. Fixed in the same file.
 
-Left for the owners of the ladder and ticket studies, each a known limit, not a silent one:
+**After hardening** (unit tests and both halves as regression sets, reviewed by a second agent): on the 47,725
+listed markets 26 answers changed. Eleven rungs of "What price will Ethereum hit in 2025?" moved from 2024-12-31 to
+2025-12-31, because the year is written only in the event title; one ladder had been ordered on that false date.
+Fifteen tickets with a level of $0 are refused. No correctly linked stock ticket or rung lost its link.
+
+Still open, each a known limit, not a silent one:
 - the code refuses 6 of 36 pairs both readers call nested, because the two rules texts differ (safe, but it costs
-  trades);
-- a token written with a symbol in parentheses that is also a US stock symbol ("Chainlink (LINK)") still links to
-  that stock's options;
-- a negated ticket ("not close above") is still read as up;
-- one rung comes out a year early from the frozen ladder rule (a market created on 30 December for "by December 31").
+  ladder trades);
+- deadlines written "in 2026" or "before 2027", which the readers call rungs, stay "other";
+- outside Polymarket's usual forms the parser now refuses more than it reads; a refusal shows its reason.
 
 ### The generic linker under this decision
 

@@ -1,0 +1,12 @@
+id,question,field,parser,truth,parser_reasons
+2732612,Will $ANSEM dip to $0.06 before 2027?,type,other,ladder_rung,no tested mechanism
+2732599,Will $ANSEM reach $1.5 before 2027?,type,other,ladder_rung,no tested mechanism
+4936055,Will South Korea ETF (EWY) hit (LOW) $172 in October?,type,touch_ticket,other,
+665265,Will Donald Trump visit Germany in 2026?,type,other,ladder_rung,no tested mechanism
+691340,AI bubble burst in 2026?,type,other,ladder_rung,no tested mechanism
+1076131,Will Pudgy Penguins floor price reach 10 ETH before 2027?,type,other,ladder_rung,no tested mechanism
+680952,Will inflation reach more than 6% in 2026?,type,other,ladder_rung,no tested mechanism
+663583,Will the Iranian regime fall before 2027?,type,other,ladder_rung,no tested mechanism
+p018,Fed rate cut by October 2025 meeting? || Fed rate cut by December 2025 meeting?,nested,False,True,descriptions differ
+p019,Israeli parliament dissolved by July 17? || Israeli parliament dissolved by July 31?,nested,False,True,descriptions differ
+p032,US x Venezuela military engagement by December 23? || US x Venezuela military engagement by December 31?,nested,False,True,descriptions differ

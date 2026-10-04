@@ -146,3 +146,23 @@ are a weekend day against the Friday before it, the same option session. What th
 
 The parser is being hardened against those classes after this note (refuse with a reason where the answer is not
 certain). Those changes are tested by unit tests and by both halves as regression sets, not by a held-out sample.
+
+**Hardening, 2026-10-04 05:16 ET. After the result; both halves are now regression sets, not tests.** `linker/link_map.py` was
+hardened against the classes the verification found, each with unit tests that fail on the earlier code, then
+reviewed by a second agent and repaired once. The rule throughout: correct where the answer is certain, otherwise
+refuse with a reason. What changed:
+
+- a date with no year takes the year the event title states ("in 2025"), when that is consistent with the creation
+  date; if the two cannot be reconciled the question is refused;
+- a symbol in parentheses is a ticker only for a stock: time zones, currencies and tokens are not;
+- a number is a price level only as a dollar price: counts, market values, suffixes and a level of zero are refused;
+- a negated ticket and a conditional question are "other";
+- a close day the parser cannot read is refused, not replaced by the month's last day; a week with no named day is
+  refused; "before March 13" ends on March 12;
+- a window that ends on a market holiday moves to the last trading session (the repository's trading calendar).
+
+On the 47,725 listed markets the hardening changes 26 answers: 11 rungs of "What price will Ethereum hit in 2025?"
+move from 2024-12-31 to 2025-12-31 (one ladder had been ordered on that false date), and 15 tickets with a level of
+$0 are refused. No stock ticket or rung that was linked correctly lost its link. As regression figures: half A 91
+of 92 tickets, 64 of 64 rung dates, 30 of 30 pairs; half B 102 of 102 tickets (the two $0.00 tickets are now
+refused), 54 of 54 rung dates, 30 of 30 pairs.
