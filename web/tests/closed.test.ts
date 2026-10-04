@@ -59,7 +59,7 @@ describe("session (U1)", () => {
     assert.equal(etDayTime("garbage"), null);
     assert.equal(fmtEt("2025-04-07T08:05:00Z"), "Mon 04:05 ET");
     assert.equal(fmtEt("2025-04-05T18:00:05Z", true), "Sat 5 Apr 2025 14:00 ET");
-    assert.equal(fmtEt(null), "—");
+    assert.equal(fmtEt(null), "n/a");
   });
 });
 
@@ -121,7 +121,7 @@ describe("staged orders, hedge B (U2, U3)", () => {
   });
   it("hedge B is never called hedged against the gap: it trades after the gap; cancelled and skipped plans never count", () => {
     assert.equal(stagedHedgeText([]).state, "none");
-    assert.equal(stagedHedgeText([order()]).badge, "Hedge B awaiting approval");
+    assert.equal(stagedHedgeText([order()]).badge, "Hedge B waits for approval");
     const ap = stagedHedgeText([order({ status: "approved" })]);
     assert.equal(ap.state, "approved");
     assert.equal(ap.badge, "Hedge B approved · executes pre-market Mon 04:00 ET (after the gap)");
@@ -130,7 +130,7 @@ describe("staged orders, hedge B (U2, U3)", () => {
     assert.equal(stagedHedgeText([order({ status: "working" })]).badge, "Hedge B sent (after the gap)");
     const f = stagedHedgeText([order({ status: "filled", filled_qty: 222, fill_px: 488.45 })]);
     assert.equal(f.badge, "Hedge B filled (after the gap)");
-    assert.match(f.text, /cannot recover it/);
+    assert.match(f.text, /cannot remove it/);
     assert.equal(stagedHedgeText([order({ status: "cancelled" }), order({ id: "x", status: "skipped" })]).state, "none");
     for (const st of ["staged", "approved", "working", "filled"]) {
       const h = stagedHedgeText([order({ status: st })]);
@@ -149,7 +149,7 @@ describe("hedge A gating and honest copy (U2, U4)", () => {
     assert.equal(hedgeAView(null), null);
     assert.equal(hedgeAView({ enabled: false, label: "x" }), null);
     const v = hedgeAView({ enabled: true, contracts: 1200, equity_equiv_shares: 180, pnl_usd: -40 })!;
-    assert.equal(v.title, "Hedge A · estimate — not protection");
+    assert.equal(v.title, "Hedge A · estimate, not protection");
     assert.match(v.label, /not protection/);
     assert.deepEqual([v.contracts, v.equivShares, v.pnl], [1200, 180, -40]);
   });

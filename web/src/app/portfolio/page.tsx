@@ -60,9 +60,9 @@ export default function Portfolio() {
   const realCover = exposures.length
     ? Math.round((exposures.filter(isBridged).length / exposures.length) * 100) : 0;
   const stats: [string, string][] = [
-    ["Exposures bridged", exposures.length ? `${realCover}%` : "—"],
-    ["Fees (account)", orders.data ? `$${orderFees.toFixed(2)}` : "—"],
-    ["Fills (account)", orders.data ? String(filled.length) : "—"],
+    ["Bridged exposures", exposures.length ? `${realCover}%` : "n/a"],
+    ["Account fees", orders.data ? `$${orderFees.toFixed(2)}` : "n/a"],
+    ["Account fills", orders.data ? String(filled.length) : "n/a"],
   ];
 
   const fills: Fill[] = [
@@ -70,7 +70,7 @@ export default function Portfolio() {
       const when = o.filled_at ?? o.created_at;
       const ts = when ? Date.parse(when) : 0;
       const px = fillPx(o);
-      return { key: `o:${o.id}`, ts, time: ts ? fmtTime(new Date(ts)) : "—", side: o.side.toUpperCase(), color: o.side === "sell" ? "#C8323F" : "#15804F", qty: o.qty, ticker: o.symbol, px: px == null ? "mkt" : px.toFixed(2), via: o.tag ? `bridge ${o.tag}` : acct.name };
+      return { key: `o:${o.id}`, ts, time: ts ? fmtTime(new Date(ts)) : "n/a", side: o.side.toUpperCase(), color: o.side === "sell" ? "#C8323F" : "#15804F", qty: o.qty, ticker: o.symbol, px: px == null ? "market" : px.toFixed(2), via: o.tag ? `Bridge ${o.tag}` : acct.name };
     }),
   ].sort((a, b) => b.ts - a.ts).slice(0, 7);
 
@@ -81,14 +81,13 @@ export default function Portfolio() {
       <div className="pb-header">
         <div>
           <div className="pb-label" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-            PORTFOLIO · {acct.name.toUpperCase()}
+            Portfolio
             <span data-testid="account-pill"><Tag tone={pill.tone} title={pill.title}>{pill.text}</Tag></span>
-
           </div>
-          <h2 className="pb-h2">{totalValue == null ? "—" : fmtMoney(totalValue)}</h2>
+          <h2 className="pb-h2">{totalValue == null ? "n/a" : fmtMoney(totalValue)}</h2>
           <div className="pb-lede">
-            {!realHoldings ? (s.portfolio.status === "loading" ? "Reading your holdings…" : "Holdings unavailable") : totalValue == null ? "Total equity value unavailable (no quotes)" : `Total equity value${s.portfolio.data?.total_value == null ? " (priced holdings only)" : ""}`}
-            {s.account.status === "ok" && s.account.data && <> · cash {fmtMoney(s.account.data.cash)}</>}
+            {!realHoldings ? (s.portfolio.status === "loading" ? "The app reads your holdings…" : "Holdings not available.") : totalValue == null ? "Total equity value not available (no quotes)." : `Total equity value${s.portfolio.data?.total_value == null ? " (only holdings with a price)" : ""}.`}
+            {s.account.status === "ok" && s.account.data && <> Cash: {fmtMoney(s.account.data.cash)}.</>}
           </div>
         </div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -104,21 +103,21 @@ export default function Portfolio() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,420px),1fr))", gap: 16 }}>
         <Glass style={{ padding: "22px 26px", minWidth: 0 }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-            <Label>01 · HOLDINGS{holdingsLabel === "demo holdings" ? " · DEMO" : ""}</Label>
-            {holdingsLabel && <Tag tone="demo" title="These holdings are the demo seed the hedges are sized on. They are not in the broker account (05) and never add to its totals.">{holdingsLabel}</Tag>}
+            <Label>Holdings</Label>
+            {holdingsLabel && <Tag tone="demo" title="The hedges use these demo holdings to calculate their size. The broker account does not contain them, and its totals do not include them.">{holdingsLabel}</Tag>}
           </div>
           <div className="pb-table-scroll">
             <div style={{ minWidth: 640 }}>
               <div style={{ display: "grid", gridTemplateColumns: cols, gap: 14, padding: "16px 0 8px", borderBottom: "1px solid rgba(15,22,38,.14)", fontSize: 11, color: "#5A627A" }}>
-                <span>Position</span><span style={{ textAlign: "right" }}>Shares</span><span style={{ textAlign: "right" }}>Price</span><span style={{ textAlign: "right" }}>Value</span><span style={{ textAlign: "right" }}>Today</span><span>Bridge</span>
+                <span>Position</span><span style={{ textAlign: "right" }}>Shares</span><span style={{ textAlign: "right" }}>Price</span><span style={{ textAlign: "right" }}>Value</span><span style={{ textAlign: "right" }}>Day change</span><span>Bridge</span>
               </div>
-              {s.portfolio.status === "loading" && !realHoldings && <div style={{ padding: "14px 0", display: "flex", gap: 10, alignItems: "center", fontSize: 13, color: "#3C4458" }}><Orb state="working" size={20} />Reading your holdings…</div>}
-              {s.portfolio.status === "error" && !realHoldings && <Unavailable what="Holdings (GET /portfolio)" error={s.portfolio.error} onRetry={s.refreshAccount} style={{ padding: "14px 0" }} />}
-              {realHoldings && realHoldings.length === 0 && <div style={{ padding: "14px 0", fontSize: 13, color: "#5A627A" }}>No holdings.</div>}
+              {s.portfolio.status === "loading" && !realHoldings && <div style={{ padding: "14px 0", display: "flex", gap: 10, alignItems: "center", fontSize: 13, color: "#3C4458" }}><Orb state="working" size={20} />The app reads your holdings…</div>}
+              {s.portfolio.status === "error" && !realHoldings && <Unavailable what="Holdings" error={s.portfolio.error} onRetry={s.refreshAccount} style={{ padding: "14px 0" }} />}
+              {realHoldings && realHoldings.length === 0 && <div style={{ padding: "14px 0", fontSize: 13, color: "#5A627A" }}>This account has no holdings.</div>}
               {priced.map((h) => {
                 const bridged = !!h.engineBridge;
-                const brokerNote = h.brokerQty !== undefined ? `broker ${h.brokerQty == null ? "n/a" : `${h.brokerQty.toLocaleString("en-US")} sh`}${h.canShort === false ? " · not shortable" : h.canShort ? " · shortable" : ""}` : "";
-                const sub = h.engineBridge ? `engine bridge ${h.engineBridge}` : `${h.touching} ${h.touching === 1 ? "market touches" : "markets touch"} this`;
+                const brokerNote = h.brokerQty !== undefined ? `Broker: ${h.brokerQty == null ? "n/a" : `${h.brokerQty.toLocaleString("en-US")} sh`}${h.canShort === false ? ", short: no" : h.canShort ? ", short: yes" : ""}` : "";
+                const sub = h.engineBridge ? `Engine bridge ${h.engineBridge}` : `${h.touching} ${h.touching === 1 ? "market affects" : "markets affect"} it`;
                 const open = () => {
                   if (h.engineBridge) router.push(`/bridge/${h.engineBridge}`);
                   else bridgeIt(h.t);
@@ -127,14 +126,14 @@ export default function Portfolio() {
                   <div key={h.t} style={{ display: "grid", gridTemplateColumns: cols, gap: 14, alignItems: "center", padding: "13px 0", borderBottom: "1px solid rgba(15,22,38,.07)" }}>
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-.02em" }}>{h.t}</div>
-                      <div className="pb-ellipsis" style={{ fontSize: 12, color: "#5A627A" }} title={h.verdict ?? undefined}>{h.name}{h.verdict ? ` · ${h.verdict}` : ""}</div>
+                      <div className="pb-ellipsis" style={{ fontSize: 12, color: "#5A627A" }} title={h.verdict ?? undefined}>{h.name}{h.verdict ? `, ${h.verdict}` : ""}</div>
                     </div>
                     <span style={num}>{h.shares.toLocaleString("en-US")}</span>
-                    <span style={num}>{h.livePx == null ? "—" : "$" + h.livePx.toFixed(2)}</span>
-                    <span style={num}>{h.value == null ? "—" : fmtMoney(h.value)}</span>
-                    <span style={{ ...num, color: "#8A92A8" }} title="Day change is not reported by GET /portfolio">—</span>
+                    <span style={num}>{h.livePx == null ? "n/a" : "$" + h.livePx.toFixed(2)}</span>
+                    <span style={num}>{h.value == null ? "n/a" : fmtMoney(h.value)}</span>
+                    <span style={{ ...num, color: "#8A92A8" }} title="The portfolio data does not include the day change.">n/a</span>
                     <div style={{ minWidth: 0 }}>
-                      <button type="button" onClick={open} style={{ display: "inline-block", padding: "4px 10px", borderRadius: 999, fontSize: 11.5, fontWeight: 600, cursor: "pointer", border: 0, background: bridged ? "rgba(34,160,107,.12)" : "#0F1626", color: bridged ? "#15804F" : "#fff" }}>{bridged ? "Bridged" : "Bridge it"}</button>
+                      <button type="button" onClick={open} style={{ display: "inline-block", padding: "4px 10px", borderRadius: 999, fontSize: 11.5, fontWeight: 600, cursor: "pointer", border: 0, background: bridged ? "rgba(34,160,107,.12)" : "#0F1626", color: bridged ? "#15804F" : "#fff" }}>{bridged ? "Open bridge" : "Make bridge"}</button>
                       <div className="pb-ellipsis" style={{ fontSize: 11, color: "#5A627A", marginTop: 4 }}>{sub}</div>
                       {brokerNote && <div className="pb-ellipsis" style={{ fontSize: 10.5, color: h.canShort === false ? "#9A4A00" : "#8A92A8" }} title={h.shortReason ?? undefined}>{brokerNote}</div>}
                     </div>
@@ -143,42 +142,41 @@ export default function Portfolio() {
               })}
             </div>
           </div>
-          {realHoldings && <div style={{ marginTop: 14, fontSize: 12, color: "#5A627A" }}>The broker&rsquo;s own positions, balances and orders are in 05 below, apart from these holdings.</div>}
+          {realHoldings && <div style={{ marginTop: 14, fontSize: 12, color: "#5A627A" }}>The broker account section below shows the positions, balances, and orders at the broker. These holdings are not part of the broker account.</div>}
         </Glass>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 16, minWidth: 0 }}>
           <Glass style={{ padding: "22px 26px" }}>
-            <Label>02 · EXPOSURE BY EVENT</Label>
+            <Label>Exposure by event</Label>
             <div style={{ display: "flex", flexDirection: "column", gap: 14, marginTop: 16 }}>
               {(realHoldings ?? []).filter((h) => h.exposure).map((h) => (
-                <div key={`x:${h.ticker}`} role="button" tabIndex={0} onClick={() => bridgeIt(h.ticker)} style={{ cursor: "pointer" }}>
+                <button key={`x:${h.ticker}`} type="button" onClick={() => bridgeIt(h.ticker)} style={{ cursor: "pointer", display: "block", width: "100%", padding: 0, border: 0, background: "none", font: "inherit", color: "inherit", textAlign: "left" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 12, fontSize: 13 }}>
-                    <span className="pb-ellipsis" style={{ minWidth: 0 }}><span style={{ fontWeight: 600 }}>{h.ticker}</span> <span style={{ color: "#5A627A" }}>· {h.exposure!.market.question}</span></span>
+                    <span className="pb-ellipsis" style={{ minWidth: 0 }}><span style={{ fontWeight: 600 }}>{h.ticker}</span> <span style={{ color: "#5A627A" }}>{h.exposure!.market.question}</span></span>
                     <span className="pb-mono" style={{ fontSize: 12, flex: "none", color: "#C8323F" }}>{fmtMoney(-Math.abs(h.exposure!.remaining_usd))} at risk</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6, fontSize: 11, color: "#5A627A" }}>
                     {(() => { const ml = mappingLabel(h.exposure!.source ?? "precomputed"); return ml && <Tag tone="ai" title={`${ml.title} ${h.exposure!.label}`}>{ml.text}</Tag>; })()}
-                    {h.exposure!.impact_pct.toFixed(1)}% impact on {h.exposure!.direction === "up_on_yes" ? "NO" : "YES"} · {isBridged(h) ? "bridged" : "not hedged"}
+                    {h.exposure!.impact_pct.toFixed(1)}% impact on {h.exposure!.direction === "up_on_yes" ? "NO" : "YES"}. Status: {isBridged(h) ? "bridged" : "no hedge"}.
                   </div>
-                </div>
+                </button>
               ))}
-              {realHoldings && !realHoldings.some((h) => h.exposure) && <div style={{ fontSize: 13, color: "#5A627A" }}>No mapped event exposure yet. Use “Bridge it” on a holding.</div>}
-              {!realHoldings && s.portfolio.status === "error" && <div style={{ fontSize: 13, color: "#5A627A" }}>Needs the holdings above.</div>}
+              {realHoldings && !realHoldings.some((h) => h.exposure) && <div style={{ fontSize: 13, color: "#5A627A" }}>No holding has a mapped event exposure. Click “Make bridge” on a holding to make one.</div>}
+              {!realHoldings && s.portfolio.status === "error" && <div style={{ fontSize: 13, color: "#5A627A" }}>This section uses the holdings data, which is not available.</div>}
             </div>
           </Glass>
           <Glass style={{ padding: "22px 26px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-              <Label>03 · RECENT FILLS</Label>
-
+              <Label>Recent fills</Label>
             </div>
             <div style={{ display: "flex", flexDirection: "column", marginTop: 10 }}>
-              {orders.error && <Unavailable what="Orders (GET /orders)" error={orders.error} onRetry={retryOrders} compact style={{ padding: "8px 0" }} />}
-              {!orders.error && !orders.loading && fills.length === 0 && <div style={{ fontSize: 13, color: "#5A627A", padding: "8px 0" }}>No fills yet.</div>}
+              {orders.error && <Unavailable what="Orders" error={orders.error} onRetry={retryOrders} compact style={{ padding: "8px 0" }} />}
+              {!orders.error && !orders.loading && fills.length === 0 && <div style={{ fontSize: 13, color: "#5A627A", padding: "8px 0" }}>There are no fills.</div>}
               {fills.map((f) => (
                 <div key={f.key} style={{ display: "grid", gridTemplateColumns: "62px 44px minmax(0,1fr)", gap: 12, alignItems: "center", padding: "9px 0", borderBottom: "1px solid rgba(15,22,38,.07)", fontSize: 12.5 }}>
                   <span className="pb-mono" style={{ fontSize: 11.5, color: "#5A627A" }}>{f.time}</span>
                   <span style={{ fontSize: 11, fontWeight: 600, color: f.color }}>{f.side}</span>
-                  <span className="pb-ellipsis" style={{ minWidth: 0 }}>{f.qty} {f.ticker} @ {f.px} <span style={{ color: "#5A627A" }}>· {f.via}</span></span>
+                  <span className="pb-ellipsis" style={{ minWidth: 0 }}>{f.qty} {f.ticker} at {f.px} <span style={{ color: "#5A627A" }}>({f.via})</span></span>
                 </div>
               ))}
             </div>

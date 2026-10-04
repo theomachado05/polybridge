@@ -7,8 +7,8 @@ import { sessionPill } from "@/lib/closed";
 import { accountPill } from "@/lib/risk";
 
 const tabStyle = (on: boolean) => ({
-  padding: "8px 16px", borderRadius: 999, cursor: "pointer",
-  background: on ? "#fff" : "transparent", color: on ? "#0F1626" : "#5A627A", boxShadow: on ? "0 2px 8px rgba(20,30,60,.12)" : "none",
+  padding: "7px 14px", borderRadius: 6, cursor: "pointer", border: 0, font: "inherit",
+  background: on ? "var(--ink)" : "transparent", color: on ? "#fff" : "var(--muted)",
 });
 
 export function Nav() {
@@ -18,18 +18,16 @@ export function Nav() {
   const on = (p: string) => path === p || path.startsWith(p + "/");
   const build = on("/build") || on("/connect") || on("/pipeline");
   const step = !s.question ? 1 : !s.equity ? 2 : 3;
-  // A backend bridge opened by URL (/bridge/<id>) counts even before it is in the store.
   const routeBridge = path.startsWith("/bridge/") && !s.bridges.some((b) => path.endsWith("/" + b.bridgeId)) ? 1 : 0;
   const n = s.bridges.length + routeBridge;
   const live = on("/bridge") || (on("/portfolio") && n > 0);
-  const lib = s.library.status === "ok" && s.library.data ? `${s.library.data.total.toLocaleString("en-US")} presets` : "Algo library";
-  const dot = live ? "#4ADE80" : on("/pipeline") ? "#FBBF24" : "#9A7BFF";
-  const label = live ? (n ? `Running · ${n} ${n === 1 ? "bridge" : "bridges"}` : "No bridges yet")
+  const lib = s.library.status === "ok" && s.library.data ? `${s.library.data.total.toLocaleString("en-US")} presets` : "Preset library";
+  const label = live ? (n ? `${n} active ${n === 1 ? "bridge" : "bridges"}` : "No active bridges")
     : on("/library") ? lib
     : on("/profile") ? `${s.settings.conns.length} connection${s.settings.conns.length === 1 ? "" : "s"}`
-    : on("/pipeline") ? "Composing bridge"
+    : on("/pipeline") ? "Bridge setup"
     : on("/build") ? `Step ${step} of 3`
-    : on("/connect") ? "Connect brokerage"
+    : on("/connect") ? "Brokerage connection"
     : s.account.status === "ok" ? accountPill(s.account.data, s.session.data).text : brokerLabel(s.account).name;
 
   const goBridge = () => router.push("/bridge");
@@ -37,28 +35,28 @@ export function Nav() {
   const pill = sessionPill(s.session.data);
 
   return (
-    <div style={{ position: "relative", zIndex: 2, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "22px clamp(16px,4vw,40px)", flexWrap: "wrap" }}>
-      <Link href="/" className="pb-navpill" style={{ display: "flex", alignItems: "center", gap: 10, height: 44, padding: "0 18px 0 14px", borderRadius: 999, background: "rgba(255,255,255,.55)", color: "#0F1626" }}>
-        <span style={{ width: 18, height: 18, borderRadius: "50%", background: "linear-gradient(135deg,#3B6CF6,#9A7BFF)" }} />
-        <span className="pb-serif" style={{ fontWeight: 500, fontSize: 19, letterSpacing: "-.01em" }}>PolyBridge</span>
+    <div style={{ position: "relative", zIndex: 2, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "18px clamp(16px,4vw,40px)", flexWrap: "wrap", borderBottom: "1px solid var(--divider)" }}>
+      <Link href="/" style={{ display: "flex", alignItems: "center", height: 40, color: "var(--ink)" }}>
+        <span className="pb-serif" style={{ fontWeight: 500, fontSize: 22, letterSpacing: "-.01em" }}>PolyBridge</span>
       </Link>
-      <nav className="pb-navpill" style={{ display: "flex", alignItems: "center", gap: 4, height: 44, padding: "0 5px", borderRadius: 999, background: "rgba(255,255,255,.5)", fontSize: 13, fontWeight: 500 }}>
+      <nav className="pb-navpill" style={{ display: "flex", alignItems: "center", gap: 2, height: 40, padding: "0 4px", borderRadius: 8, fontSize: 13, fontWeight: 500 }}>
         <Link href="/build" style={tabStyle(build)}>Build</Link>
-        <span role="link" tabIndex={0} onClick={goBridge} onKeyDown={(e) => e.key === "Enter" && goBridge()} style={tabStyle(on("/bridge"))}>Bridge</span>
+        <button type="button" onClick={goBridge} style={tabStyle(on("/bridge"))}>Bridge</button>
         <Link href="/library" style={tabStyle(on("/library"))}>Library</Link>
         <Link href="/portfolio" style={tabStyle(on("/portfolio"))}>Portfolio</Link>
       </nav>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         {pill && (
-          <div className="pb-navpill" title={pill.title} data-testid="session-pill" style={{ display: "flex", alignItems: "center", gap: 8, height: 44, padding: "0 14px", borderRadius: 999, background: "rgba(255,255,255,.55)", color: "#0F1626", fontSize: 12.5, fontWeight: 500, whiteSpace: "nowrap" }}>
-            <span style={{ width: 7, height: 7, borderRadius: "50%", background: pill.dot }} />
-            <span className="pb-mono" style={{ fontSize: 10.5, letterSpacing: ".08em", color: "#5A627A" }}>NYSE</span>{pill.text}
+          <div title={pill.title} data-testid="session-pill" style={{ display: "flex", alignItems: "center", gap: 6, height: 40, padding: "0 4px", color: "var(--ink)", fontSize: 13, fontWeight: 500, whiteSpace: "nowrap" }}>
+            <span style={{ color: "var(--muted)" }}>NYSE</span>{pill.text}
           </div>
         )}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, height: 44, padding: "0 18px", borderRadius: 999, background: "rgba(15,22,38,.9)", color: "#fff", boxShadow: "0 8px 30px rgba(15,22,38,.25)", fontSize: 13, fontWeight: 500, whiteSpace: "nowrap" }}>
-          <span style={{ width: 8, height: 8, borderRadius: "50%", background: dot, animation: "pb-pulse 1.6s ease-in-out infinite" }} />{label}
+        <div style={{ display: "flex", alignItems: "center", height: 40, padding: "0 14px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--ink)", fontSize: 13, fontWeight: 500, whiteSpace: "nowrap" }}>
+          {label}
         </div>
-        <Link href="/profile" title="Profile" className="pb-navpill" style={{ width: 44, height: 44, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 600, letterSpacing: ".02em", background: profile ? "#0F1626" : "rgba(255,255,255,.55)", color: profile ? "#fff" : "#0F1626", border: "1px solid rgba(255,255,255,.85)" }}>JD</Link>
+        <Link href="/profile" title="Profile" aria-label="Profile" aria-current={profile ? "page" : undefined} style={{ width: 40, height: 40, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: profile ? "var(--ink)" : "var(--surface)", color: profile ? "#fff" : "var(--ink)", border: "1px solid var(--border)" }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8" /></svg>
+        </Link>
       </div>
     </div>
   );

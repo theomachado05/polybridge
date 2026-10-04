@@ -8,14 +8,24 @@ import { Label, Tag } from "@/components/pb";
 export const BadgeTag = ({ b }: { b: Badge }) => <Tag tone={b.tone} title={b.title}>{b.text}</Tag>;
 
 export const subBox: CSSProperties = { marginTop: 14, padding: "14px 16px", borderRadius: 18, background: "rgba(255,255,255,.7)", border: "1px solid rgba(255,255,255,.9)" };
-const k = { fontFamily: "var(--mono)", fontSize: 10.5, letterSpacing: ".04em", color: "#5A627A" } as const;
+const k = { fontSize: 11.5, color: "#5A627A" } as const;
+
+const KEY_LABEL: Record<string, string> = {
+  CASH: "Cash", EQUITY: "Equity", "BUYING POWER": "Buying power", "DAY BUYING POWER": "Day buying power",
+  "OPTION BUYING POWER": "Option buying power", "MARKET VALUE": "Market value", "UNREALIZED P&L": "Unrealized P&L",
+  "MAINTENANCE MARGIN": "Maintenance margin", "DAY TRADES LEFT": "Day trades left", "GROSS HEDGE NOTIONAL": "Gross hedge notional",
+  "MARGIN USED (INITIAL)": "Initial margin used", "HEDGE AT APPROVED SIZE": "Hedge at approved size", "MAX ORDER": "Maximum order",
+  "MAX POSITION / DAY": "Maximum position per day", "EST. COST": "Estimated cost", "BOOK-SIZE CAPACITY": "Book-size capacity",
+  "SESSIONS NEEDED": "Sessions necessary", ADV: "ADV", "DAILY σ": "Daily σ",
+};
+const keyLabel = (key: string) => KEY_LABEL[key] ?? key;
 
 export function MetricGrid({ rows, min = 150 }: { rows: CapacityRow[]; min?: number }) {
   return (
     <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit,minmax(min(100%,${min}px),1fr))`, gap: "12px 16px", marginTop: 12 }}>
       {rows.map((r) => (
         <div key={r.k} style={{ minWidth: 0 }}>
-          <div style={k}>{r.k}</div>
+          <div style={k}>{keyLabel(r.k)}</div>
           <div className="pb-tab" style={{ fontSize: 17, fontWeight: 600, letterSpacing: "-.02em", marginTop: 2, color: r.warn ? "#9A4A00" : "#0F1626" }}>{r.v}</div>
           {r.sub && <div className="pb-pretty" style={{ fontSize: 11, color: "#5A627A", lineHeight: 1.35, marginTop: 1 }}>{r.sub}</div>}
         </div>
@@ -34,12 +44,12 @@ export function EvidenceGateBox({ gate, ack, onAck, copy, loading, acknowledged,
   return (
     <div style={subBox} data-testid={testId}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-        <span className="pb-label">EVIDENCE GATE</span>
-        {loading || !gate ? <Tag tone="neutral">checking evidence</Tag> : <BadgeTag b={gate.badge} />}
+        <span className="pb-label">Evidence gate</span>
+        {loading || !gate ? <Tag tone="neutral">evidence not read yet</Tag> : <BadgeTag b={gate.badge} />}
       </div>
       {gate && <div className="pb-pretty" style={{ fontSize: 12.5, color: "#3C4458", lineHeight: 1.5, marginTop: 8 }}>{gate.reason}</div>}
-      {gate?.validated && <div style={{ fontSize: 12, color: "#15804F", marginTop: 6 }}>This market passed its out-of-sample test for this ticker; decisions and fills are labelled “validated”.</div>}
-      {gate?.needsAck && acknowledged && <div data-testid="evidence-acknowledged" style={{ fontSize: 12, color: "#9A4A00", marginTop: 8 }}>Already approved with your acknowledgement; decisions and fills are labelled “unvalidated (acknowledged)”.</div>}
+      {gate?.validated && <div style={{ fontSize: 12, color: "#15804F", marginTop: 6 }}>This market passed its out-of-sample test for this ticker. The app labels decisions and fills “validated”.</div>}
+      {gate?.needsAck && acknowledged && <div data-testid="evidence-acknowledged" style={{ fontSize: 12, color: "#9A4A00", marginTop: 8 }}>You approved this with your acknowledgement. The app labels decisions and fills “unvalidated (acknowledged)”.</div>}
       {gate?.needsAck && !acknowledged && (
         <label style={{ display: "grid", gridTemplateColumns: "20px minmax(0,1fr)", gap: 10, alignItems: "start", marginTop: 10, padding: "10px 12px", borderRadius: 14, background: ack ? "rgba(251,146,60,.10)" : "rgba(15,22,38,.04)", border: `1px solid ${ack ? "rgba(251,146,60,.45)" : "rgba(15,22,38,.10)"}`, cursor: "pointer" }}>
           <input type="checkbox" checked={ack} onChange={(e) => onAck(e.target.checked)} data-testid="evidence-ack" style={{ width: 16, height: 16, marginTop: 2, accentColor: "#0F1626", cursor: "pointer" }} />
@@ -59,7 +69,7 @@ export function CapacityCard({ view, title, extra, footer, tag, testId = "capaci
         <span className="pb-label">{title}</span>
         <span style={{ display: "inline-flex", gap: 6, flexWrap: "wrap" }}>
           <BadgeTag b={view.verdict} />
-          {view.stale && <Tag tone="caution" title="The last refresh failed; these are the last good numbers.">stale</Tag>}
+          {view.stale && <Tag tone="caution" title="The last refresh did not complete. These are the last good values.">stale</Tag>}
           {tag}
         </span>
       </div>
@@ -88,7 +98,7 @@ export function MeterRow({ m }: { m: Meter }) {
         <span className="pb-ellipsis" style={{ minWidth: 0, color: "#3C4458" }} title={m.k}>{m.k}</span>
         <span className="pb-mono pb-tab" style={{ fontSize: 11.5, flex: "none", color: m.warn ? "#9A4A00" : "#5A627A" }}>{m.text}</span>
       </div>
-      <div className="pb-bar" style={{ marginTop: 6 }}><div style={{ width: `${w}%`, background: m.frac != null && m.frac > 1 ? "#E0485A" : m.warn ? "linear-gradient(90deg,#FB923C,#E0485A)" : undefined }} /></div>
+      <div className="pb-bar" style={{ marginTop: 6 }}><div style={{ width: `${w}%`, background: m.frac != null && m.frac > 1 ? "#E0485A" : m.warn ? "#FB923C" : undefined }} /></div>
     </div>
   );
 }

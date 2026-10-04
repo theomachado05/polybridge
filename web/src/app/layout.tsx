@@ -12,7 +12,7 @@ const newsreader = Newsreader({ variable: "--font-newsreader", subsets: ["latin"
 
 export const metadata: Metadata = {
   title: "PolyBridge",
-  description: "Prediction-market signals in, fee- and tax-aware equity hedges out.",
+  description: "PolyBridge reads event probabilities from prediction markets and options, and makes a hedge for the stocks you hold.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -20,16 +20,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${newsreader.variable} antialiased`}>
       <body>
         <div style={{ position: "relative", minHeight: "100vh" }}>
-          <div className="pb-bg" aria-hidden>
-            <div className="pb-blob pb-blob-1" />
-            <div className="pb-blob pb-blob-2" />
-            <div className="pb-blob pb-blob-3" />
-            <div className="pb-grid" />
-          </div>
           <StoreProvider>
             <Nav />
             {children}
-            {/* Inside the store: voice tool results drive the same state and routes as the mouse flow. */}
             <VoiceButton />
           </StoreProvider>
         </div>

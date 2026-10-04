@@ -34,9 +34,9 @@ const scoreLabel = (basis: "opportunity" | "vs_static" | "legacy") =>
 const fmtScore = (s: number | null | undefined, basis: "opportunity" | "vs_static" | "legacy") =>
   !fin(s) ? "n/a" : basis === "opportunity" ? s.toFixed(3) : basis === "vs_static" ? `${signedPct(s)} vs static` : pct1(s);
 /** Fit scores are tuned and scored on the same history a replay bridge then plays back: in-sample, not a forecast. */
-export const IN_SAMPLE_NOTE = "Scored on the same history the bridge replays (in-sample); not a forecast or out-of-sample result.";
+export const IN_SAMPLE_NOTE = "The score comes from the same history that the bridge replays (in-sample). It is not a forecast or an out-of-sample result.";
 /** Why the hedge headline is the vs-static number: any static short of a fraction h earns 1 - (1 - h)^2 of the raw cut. */
-export const VS_STATIC_NOTE = "Ranked by the variance cut beyond a static hedge of the same average size, which is what the prediction-market signal adds. The raw variance reduction mostly reflects how much is hedged, so it is shown but never ranked.";
+export const VS_STATIC_NOTE = "The rank uses the variance cut that is more than a static hedge of the same average size. The prediction-market signal adds this cut. The raw variance reduction mostly shows how much of the position has a hedge, thus the app shows it but does not rank by it.";
 /** Shown, in a neutral tone, when even the best preset did no better than a static hedge of the same size. */
 export const NO_SIGNAL_TEXT = "the PM signal adds nothing over a static hedge on this history";
 /** A plain fit score (opportunity, or a legacy hedge score), labelled in-sample. */
@@ -71,7 +71,7 @@ export function fitScoreView(f: ScoredFit): FitScoreView {
   const ticks = f.n_ticks > 0 ? `, ${f.n_ticks.toLocaleString("en-US")} ticks` : "";
   if (basis === "vs_static") {
     const vs = fin(f.score_vs_static) ? f.score_vs_static : f.score;
-    if (!fin(vs)) return { tone: "neutral", scored: false, noSignal: false, headline: "not scored on replay", short: "not scored on replay", secondary: null, title: "No preset was scored against a static hedge on this market's history." };
+    if (!fin(vs)) return { tone: "neutral", scored: false, noSignal: false, headline: "not scored on replay", short: "not scored on replay", secondary: null, title: "The replay did not score a preset against a static hedge on the history of this market." };
     const parts = [
       vs <= 0 ? `${signedPct(vs)} vs static` : null,
       fin(f.score_raw) ? `raw variance reduction ${pct1(f.score_raw)}` : null,
@@ -86,11 +86,11 @@ export function fitScoreView(f: ScoredFit): FitScoreView {
       secondary, title: [headline + ".", secondary ? secondary + "." : null, VS_STATIC_NOTE, IN_SAMPLE_NOTE].filter(Boolean).join(" "),
     };
   }
-  if (!fin(f.score)) return { tone: "neutral", scored: false, noSignal: false, headline: "not scored on replay", short: "not scored on replay", secondary: null, title: "Not scored on replay: the family's default preset was picked by rules." };
+  if (!fin(f.score)) return { tone: "neutral", scored: false, noSignal: false, headline: "not scored on replay", short: "not scored on replay", secondary: null, title: "The replay did not score this family. Rules selected its default preset." };
   const headline = hedgeScoreText(f.score, String(f.division));
   return {
     tone: "neutral", scored: true, noSignal: false, headline,
-    short: basis === "opportunity" ? `${f.score.toFixed(3)} net P&L / risk` : `${pct1(f.score)} var. reduction`,
+    short: basis === "opportunity" ? `${f.score.toFixed(3)} net P&L / risk` : `${pct1(f.score)} variance reduction`,
     secondary: null, title: `${headline}. ${IN_SAMPLE_NOTE}`,
   };
 }
@@ -116,29 +116,29 @@ export function fitSteps(fit: FitOut, c: PipeContext): PipeStep[] {
   const alts = (fit.alternatives ?? []).filter((a) => a && a.family);
   const short = c.shortlisted?.length ? c.shortlisted : [fit.family, ...alts.map((a) => a.family)].filter((x): x is string => !!x);
   const history =
-    fit.ticks_source === "live_history" ? `${fit.n_ticks.toLocaleString("en-US")} ticks of real ${c.venues.join(" + ")} price history, aligned to ${c.ticker} bars. Missing book depth stays empty, never invented.`
-    : fit.ticks_source === "replay" ? `Offline: ${fit.n_ticks.toLocaleString("en-US")} ticks from a recorded replay file (not live history).`
-    : `No usable price history for this market, so presets were not replayed; the family default is used.`;
+    fit.ticks_source === "live_history" ? `${fit.n_ticks.toLocaleString("en-US")} ticks of real ${c.venues.join(" + ")} price history, aligned to ${c.ticker} bars. Missing book depth stays empty. The app does not invent it.`
+    : fit.ticks_source === "replay" ? `Offline mode: ${fit.n_ticks.toLocaleString("en-US")} ticks from a recorded replay file (not live history).`
+    : `No usable price history for this market. The engine did not replay presets and uses the family default.`;
   return [
     { key: "classify", name: "Classifying the event", orb: "searching", text: `${c.question.replace(/\?$/, "")} → ${cls} (${classifiedByGemini(fit) ? aiLabel(ai).replace(/^AI · /, "") : "keyword rules"}). Division: ${fit.division}.` },
-    { key: "shortlist", name: "Shortlisting algo families", orb: "connecting", text: short.length ? `${short.length} ${short.length === 1 ? "family covers" : "families cover"} ${cls}: ${short.slice(0, 5).map(prettyId).join(", ")}${short.length > 5 ? "…" : ""}.` : `No compiled family covers ${cls}.` },
+    { key: "shortlist", name: "Selecting algo families", orb: "connecting", text: short.length ? `${short.length} ${short.length === 1 ? "family covers" : "families cover"} ${cls}: ${short.slice(0, 5).map(prettyId).join(", ")}${short.length > 5 ? "…" : ""}.` : `No compiled family covers ${cls}.` },
     { key: "history", name: "Loading price history", orb: "working", text: history },
-    { key: "tune", name: "Tuning presets on replay", orb: "searching", text: fit.family ? tuneText(fit, fam, alts) : "Nothing to tune." },
-    { key: "explain", name: "Explaining the fit", orb: "composing", text: fit.rationale || "No rationale returned." },
-    { key: "ready", name: "Ready for your approval", orb: "listening", text: `${ai.live ? "AI fit" : "Fit (rules + C++ replay)"} for ${c.ticker}: ${fam}${fit.family ? (fit.division === "hedge" && fit.preset_index != null ? ` preset #${fit.preset_index}. It is sent with the proposal: once you approve, the bridge runs exactly this family and preset` : ` (${fit.division} family: not run on a hedge bridge, which uses the engine's default delta-bridge spec)`) : ""}. Next: you approve a proposal, then the engine starts.` },
+    { key: "tune", name: "Tuning presets on replay", orb: "searching", text: fit.family ? tuneText(fit, fam, alts) : "No family to tune." },
+    { key: "explain", name: "Explaining the fit", orb: "composing", text: fit.rationale || "The fit did not give a rationale." },
+    { key: "ready", name: "Ready for your approval", orb: "listening", text: `${ai.live ? "AI fit" : "Fit (rules + C++ replay)"} for ${c.ticker}: ${fam}${fit.family ? (fit.division === "hedge" && fit.preset_index != null ? ` preset #${fit.preset_index}. The proposal includes it. After you approve, the bridge runs this family and preset` : ` (${fit.division} family. A hedge bridge does not run it and uses the default delta-bridge spec of the engine)`) : ""}. Next, approve a proposal to start the engine.` },
   ];
 }
 
 /** The steps when no fit can run for a live pick: the fit failed (the screen shows the error and a retry) or the
  *  outcome that hurts the ticker is unknown. Real facts only; approving then runs the engine's default spec. */
 export function noFitSteps(c: PipeContext): PipeStep[] {
-  const held = c.heldReal ? `${c.heldReal.toLocaleString("en-US")} sh held` : `no position — sized to a ${c.held.toLocaleString("en-US")} sh notional`;
+  const held = c.heldReal ? `${c.heldReal.toLocaleString("en-US")} shares held` : `no position, sized to a ${c.held.toLocaleString("en-US")}-share notional`;
   return [
-    { key: "classify", name: "Reading the market", orb: "searching", text: `${c.question.replace(/\?$/, "")} · ${c.venues.join(" + ")}${c.yes ? ` · YES ${c.yes}¢, 24h vol ${c.vol}` : ""}.` },
+    { key: "classify", name: "Reading the market", orb: "searching", text: `${c.question.replace(/\?$/, "")} on ${c.venues.join(" and ")}${c.yes ? `. YES ${c.yes}¢, 24-hour volume ${c.vol}` : ""}.` },
     { key: "shortlist", name: "Mapping exposure", orb: "connecting", text: `${c.ticker}: ${held}.` },
-    { key: "history", name: "Estimating impact", orb: "working", text: c.move ? `Mapping estimate: expected move on YES ${fmtPct(c.move)}. ${c.why}` : `No impact estimate for ${c.ticker} on this market; the engine hedges on probability alone (fee gate off).` },
-    { key: "tune", name: "Tuning presets on replay", orb: "searching", text: c.noDirection ? `No hedge fit: ${c.ticker} is not in this market's mapping and you have not said which outcome hurts it, so no presets were scored.` : "The fit did not answer, so no presets were scored; approving runs the engine's default delta-bridge spec." },
+    { key: "history", name: "Estimating impact", orb: "working", text: c.move ? `Mapping estimate: expected move on YES ${fmtPct(c.move)}. ${c.why}` : `This market has no impact estimate for ${c.ticker}. The engine hedges on probability only (fee gate off).` },
+    { key: "tune", name: "Tuning presets on replay", orb: "searching", text: c.noDirection ? `No hedge fit: ${c.ticker} is not in this market's mapping and you did not say which outcome hurts it. Thus no presets were scored.` : "The fit did not answer, thus no presets were scored. If you approve, the engine runs its default delta-bridge spec." },
     { key: "explain", name: "Composing the chain", orb: "composing", text: "Staleness → Sigma gate → No-trade band → Fee gate → Delta-bridge sizer → Position cap (hedgecore Engine, default spec)." },
-    { key: "ready", name: "Ready for your approval", orb: "listening", text: c.noDirection ? `The engine cannot orient a hedge for ${c.ticker} until you say which outcome hurts it (on Build).` : `Next: you approve a proposal for ${c.ticker}; then the engine's default delta-bridge spec runs on the market's recorded replay (or its live feed).` },
+    { key: "ready", name: "Ready for your approval", orb: "listening", text: c.noDirection ? `The engine cannot orient a hedge for ${c.ticker} until you say which outcome hurts it (on Build).` : `Next, approve a proposal for ${c.ticker}. The engine then runs its default delta-bridge spec on the recorded replay or the live feed of the market.` },
   ];
 }

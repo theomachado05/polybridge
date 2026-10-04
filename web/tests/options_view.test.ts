@@ -35,7 +35,7 @@ describe("strike ladder", () => {
     assert.equal(st.stale, true);
     assert.match(st.title, /low OI/);
     assert.match(st.title, /stale: old quote/);
-    assert.equal(sideCells(null).bid, "—");
+    assert.equal(sideCells(null).bid, "n/a");
   });
   it("computed IV and delta are marked visibly, Massive's are not", () => {
     assert.deepEqual(sideCells(CHAIN.contracts[0]).marks, { iv: "", delta: "" });

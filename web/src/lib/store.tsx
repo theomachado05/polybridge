@@ -205,12 +205,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (inflight) return inflight;
     const run = (async () => {
       try {
-        if (instId !== "shares") throw new Error("the engine runs only the dynamic short-shares hedge");
+        if (instId !== "shares") throw new Error("the engine uses only the dynamic short-shares hedge");
         const mine = fit && fit.key === key && fit.status === "ok" ? fit.data : null;
         const want = runnableFit(mine);
         const { bridgeId, gap, applied } = await startRealBridge(q, eq, settings.maxHedge, undefined, want, { closedPmHedge, actOnUnvalidated, ackUnvalidated: opts.ackUnvalidated, proposal: opts.proposal ?? null });
         const unapplied = mine?.family && !applied
-          ? { family: mine.family, preset_index: mine.preset_index ?? null, why: mine.division !== "hedge" ? `${mine.division} families do not run on a hedge bridge` : "no preset" }
+          ? { family: mine.family, preset_index: mine.preset_index ?? null, why: mine.division !== "hedge" ? `${mine.division} families do not operate on a hedge bridge` : "no preset" }
           : null;
         const entry: BridgeEntry = { id: `live:${bridgeId}`, kind: "live", bridgeId, q, eq, inst: instId, fit: applied, unapplied, gap, pmHedge: closedPmHedge, override: actOnUnvalidated };
         setBridges((bs) => (bs.some((b) => b.id === entry.id) ? bs : [...bs, entry]));
@@ -296,7 +296,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const existing = bridges.find((b) => b.mode === "opportunity" && b.q?.id === q.id && b.eq?.t === eq.t);
     if (existing) { setActiveId(existing.id); return existing.id; }
     const want = opportunityFit(oppFit && oppFit.key === key && oppFit.status === "ok" ? oppFit.data : null);
-    if (!want) throw new Error("no scored opportunity fit for this pick");
+    if (!want) throw new Error("there is no scored opportunity fit for this selection");
     const { bridgeId, applied } = await startOpportunityBridge(q, eq.t, want, undefined, undefined, opts);
     const entry: BridgeEntry = { id: `live:${bridgeId}`, kind: "live", bridgeId, q, eq, inst: "options", fit: applied, gap: null, mode: "opportunity" };
     setBridges((bs) => (bs.some((b) => b.id === entry.id) ? bs : [...bs, entry]));
@@ -395,7 +395,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
 /** "sim" | "webull-paper" from GET /account, as a label; "Account unavailable" when it cannot be read. */
 export function brokerLabel(a: Remote<AccountOut>): { name: string; tone: "sim" | "paper" | "demo" } {
-  if (a.status !== "ok" || !a.data) return { name: a.status === "loading" ? "Reading account…" : "Account unavailable", tone: "demo" };
+  if (a.status !== "ok" || !a.data) return { name: a.status === "loading" ? "Account not read yet" : "Account not available", tone: "demo" };
   const b = (a.data.broker ?? "sim").toLowerCase();
   return b.includes("webull") ? { name: "Webull paper", tone: "paper" } : { name: "Simulated account", tone: "sim" };
 }

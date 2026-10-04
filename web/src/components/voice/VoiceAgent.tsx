@@ -64,7 +64,7 @@ export function VoiceAgent({ agentId }: { agentId: string }) {
     },
     onEnd: (name: VoiceToolName, reply: ToolReply, params: Record<string, unknown>) => {
       setBusy((n) => Math.max(0, n - 1));
-      if (reply.needs_confirmation && CONFIRM_TOOLS.includes(name)) setNote({ tone: "info", text: "The agent needs your spoken “yes” before it approves or starts anything." });
+      if (reply.needs_confirmation && CONFIRM_TOOLS.includes(name)) setNote({ tone: "info", text: "The agent waits for your spoken “yes” before it approves or starts an item." });
       else if (!reply.ok && reply.status === 401) setNote({ tone: "error", text: reply.summary });
       setDrive(driveScreen(name, params, reply, (route) => router.push(route)));
     },
@@ -116,12 +116,11 @@ function VoicePill({ toolBusy, note, setNote, drive, setDrive }: {
       {active && drive && (
         // Never blocks the mouse (pointer-events: none): the user can take over at any moment.
         <div className="pb-voice-drive" role="status" aria-live="polite" data-busy={toolBusy || undefined}>
-          <span className="pb-voice-drive-dot" aria-hidden />
-          <span className="pb-voice-drive-k">Voice is driving</span>
+          <span className="pb-voice-drive-k">Voice control</span>
           <span className="pb-voice-drive-t">{drive}</span>
         </div>
       )}
-      {askingMic && <div className="pb-voice-note" role="status">Allow microphone access to talk to PolyBridge. Audio is used only during the call.</div>}
+      {askingMic && <div className="pb-voice-note" role="status">Click Allow in the browser to talk to PolyBridge. The app uses audio only during the call.</div>}
       {note && <div className="pb-voice-note" data-tone={note.tone} role={note.tone === "error" ? "alert" : "status"}>{note.text}</div>}
       {active && <button type="button" className="pb-voice-end" onClick={stop}>End call</button>}
       <button type="button" className="pb-voice-pill pb-navpill" onClick={active ? stop : () => void start()} aria-pressed={active} aria-label={active ? `${label}. End the call` : label}>

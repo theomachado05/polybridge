@@ -2,13 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Btn, Glass, Label, Orb } from "@/components/pb";
-import { aiLabel, classifyLead } from "@/lib/ai";
-import { LOGO } from "@/lib/brokers";
+import { Btn } from "@/components/pb";
+import { classifiedByGemini } from "@/lib/ai";
 import { useStore } from "@/lib/store";
 
-const CARD1 = { k: "01 · REVERSE THE BRIDGE", t: "The contract is the signal, not the trade", p: "Polymarket and Kalshi put a live probability on the event itself. We read that probability and its σ — and act in the stock you hold. (Our lead-lag case studies do not show the markets moving first; the signal is the probability, not a head start.)" };
-const CARD3 = { k: "03 · YOUR FEES, YOUR TAXES", t: "Acts only when it beats the cost", p: "A fee gate holds any order whose expected benefit does not cover its cost, and every decision is explained in plain words. Tax-lot and wash-sale blocks are in the library, not yet on live bridges." };
+const h2 = { margin: 0, fontFamily: "var(--serif)", fontWeight: 400, fontSize: "clamp(26px,2.6vw,32px)", lineHeight: 1.15, letterSpacing: "-.01em" } as const;
+const body = { margin: 0, fontSize: 15, lineHeight: 1.55, color: "var(--text-2)" } as const;
 
 export default function Landing() {
   const router = useRouter();
@@ -16,14 +15,16 @@ export default function Landing() {
   const [opening, setOpening] = useState(false);
   const presets = s.library.status === "ok" && s.library.data ? s.library.data.total : null;
   const count = presets != null ? presets.toLocaleString("en-US") : null;
-  // "AI" only when the backend says an LLM is answering, and "Gemini classifies" only when Gemini produced the event
-  // class (ai.live alone can mean only the rationale came from Gemini); otherwise the card says what does the work.
-  const card2 = {
-    k: s.ai.live ? `02 · ${aiLabel(s.ai).toUpperCase()}` : "02 · RULES + C++ REPLAY",
-    t: "Compiled algorithms, chained per event",
-    p: `${classifyLead(s.ai)}; the C++ engine replays every preset of the matching compiled families on the market's own history and picks the best in-sample.`,
-  };
-  const cards = [CARD1, card2, CARD3];
+  const classify = classifiedByGemini(s.ai) ? "Gemini classifies the event."
+    : s.ai.live ? "Gemini helps to classify the event. Keyword rules do each step that Gemini does not do."
+    : "Keyword rules classify the event.";
+  const steps = [
+    "PolyBridge finds the stocks in your portfolio that the event can change.",
+    `${classify} Then the C++ engine replays the applicable presets${count != null ? ` from a library of ${count}` : ""} on the history of that market.`,
+    "It selects the preset with the best in-sample result and makes a hedge from it.",
+    "A fee gate stops each order that costs more than its expected benefit. Tax-lot and wash-sale rules are in the library, but live bridges do not use them yet.",
+    "No order goes to your broker until you approve it.",
+  ];
   const watchWeekend = async () => {
     if (opening) return;
     setOpening(true);
@@ -31,39 +32,58 @@ export default function Landing() {
     finally { setOpening(false); }
   };
   return (
-    <main className="pb-page" style={{ maxWidth: 1180, paddingTop: 60, paddingBottom: 80, animationDuration: ".5s" }}>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 22 }}>
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 10, padding: "6px 14px 6px 8px", borderRadius: 999, background: "rgba(255,255,255,.55)", border: "1px solid rgba(255,255,255,.85)", backdropFilter: "blur(20px)", fontSize: 12.5, fontWeight: 500, color: "#2B57D6" }}>
-          <Orb state="connecting" size={20} ink="#2B57D6" />
-          <span style={{ display: "inline-flex", gap: 4 }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={LOGO("polymarket.com").replace("128", "64")} alt="" style={{ width: 12, height: 12, borderRadius: 3 }} />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={LOGO("kalshi.com").replace("128", "64")} alt="" style={{ width: 12, height: 12, borderRadius: 3 }} />
-          </span>
-          Prediction markets → your portfolio
-        </div>
-        <h1 className="pb-serif pb-balance" style={{ margin: 0, fontSize: "clamp(44px,6vw,80px)", lineHeight: 1.02, letterSpacing: "-.02em", fontWeight: 400, maxWidth: 920 }}>Hedge the headline before it hits your stock.</h1>
-        <p className="pb-pretty" style={{ margin: 0, maxWidth: 640, fontSize: 18, lineHeight: 1.5, color: "#3C4458" }}>
-          Prediction markets already price the event. PolyBridge reads that signal, estimates what it does to the equities you hold, and composes a hedge from {count != null ? `${count} compiled algorithm presets` : "a library of compiled algorithm presets"} — fee-aware, acting only when it must.
+    <main className="pb-page" style={{ maxWidth: 1080, paddingTop: 72, paddingBottom: 96 }}>
+      <header style={{ maxWidth: 760 }}>
+        <h1 className="pb-serif pb-balance" style={{ margin: 0, fontSize: "clamp(40px,5.2vw,68px)", lineHeight: 1.04, letterSpacing: "-.02em", fontWeight: 400 }}>Hedge your stocks before an event changes their price.</h1>
+        <p className="pb-pretty" style={{ ...body, marginTop: 22, fontSize: 18, maxWidth: 640 }}>
+          PolyBridge is a hedge tool for the stocks you hold. It reads the probability of an event, such as a recession, from prediction markets and options.
         </p>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center", marginTop: 6 }}>
-          <Btn href="/build" arrow>Build a bridge</Btn>
-          <Btn kind={opening ? "disabled" : "secondary"} onClick={() => void watchWeekend()}
-            title="US recession in 2025 → SPY, the April 2025 tariff weekend: the one market whose expected gap passed its out-of-sample test. A real backend bridge on the recorded replay; nothing runs until you approve.">
-            {opening ? "Loading the recorded weekend…" : "Watch the weekend replay"}
-          </Btn>
+      </header>
+
+      <section style={{ marginTop: 64, display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,300px),1fr))", gap: "16px 56px", alignItems: "start" }}>
+        <h2 style={h2}>What PolyBridge does with your stocks</h2>
+        <ol style={{ margin: 0, paddingLeft: 20, listStyle: "decimal", display: "grid", gap: 12 }}>
+          {steps.map((t) => <li key={t} className="pb-pretty" style={{ ...body, paddingLeft: 4 }}>{t}</li>)}
+        </ol>
+      </section>
+
+      <section className="pb-glass" style={{ marginTop: 56, padding: "clamp(24px,3.5vw,40px)", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,320px),1fr))", gap: "28px 56px", alignItems: "center" }}>
+        <div style={{ display: "grid", gap: 14 }}>
+          <h2 style={h2}>Which price is more accurate</h2>
+          <p className="pb-pretty" style={body}>
+            We tested 4,561 Polymarket stock markets that no earlier test used. The options-implied probability was more accurate than the Polymarket price.
+          </p>
+          <p className="pb-pretty" style={body}>
+            The Brier score measures the error of a probability, and a lower score is better. The Polymarket score was higher than the options score.
+          </p>
+          <p className="pb-pretty" style={{ ...body, fontSize: 14, color: "var(--muted)" }}>
+            Our lead-lag studies do not show that prediction markets move before stocks. PolyBridge uses the probability, not a time advantage.
+          </p>
         </div>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,280px),1fr))", gap: 16, marginTop: 70 }}>
-        {cards.map((c, i) => (
-          <Glass key={c.k} style={{ padding: 26 }}>
-            <Label rule color="#2B57D6">{c.k}</Label>
-            <div className="pb-serif" style={{ fontSize: 25, fontWeight: 400, letterSpacing: "-.01em", lineHeight: 1.2, marginTop: 14 }}>{i === 1 && count != null ? `${count} presets, chained per event` : c.t}</div>
-            <p style={{ margin: "10px 0 0", fontSize: 14, lineHeight: 1.5, color: "#3C4458" }}>{c.p}</p>
-          </Glass>
-        ))}
-      </div>
+        <dl style={{ margin: 0, display: "grid", gap: 6, paddingLeft: "clamp(0px,2vw,28px)", borderLeft: "1px solid var(--divider)" }}>
+          <dt style={{ fontSize: 13, color: "var(--muted)" }}>Brier difference, Polymarket minus options</dt>
+          <dd className="pb-serif pb-tab" style={{ margin: 0, fontSize: "clamp(44px,5vw,60px)", lineHeight: 1, letterSpacing: "-.02em" }}>+0.0108</dd>
+          <dd className="pb-tab" style={{ margin: "6px 0 0", fontSize: 14, color: "var(--text-2)" }}>95% confidence interval +0.0064 to +0.0158</dd>
+          <dd style={{ margin: 0, fontSize: 14, color: "var(--text-2)" }}>4,561 markets</dd>
+        </dl>
+      </section>
+
+      <section style={{ marginTop: 56, paddingTop: 32, borderTop: "1px solid var(--hairline)" }}>
+        <h2 style={h2}>What you can do now</h2>
+        <div style={{ marginTop: 22, display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,300px),1fr))", gap: 28 }}>
+          <div style={{ display: "grid", gap: 12, justifyItems: "start" }}>
+            <Btn href="/build">Build a bridge</Btn>
+            <p className="pb-pretty" style={{ ...body, fontSize: 14 }}>Select a market and a stock. PolyBridge makes a hedge for your approval.</p>
+          </div>
+          <div style={{ display: "grid", gap: 12, justifyItems: "start" }}>
+            <Btn kind={opening ? "disabled" : "secondary"} onClick={() => void watchWeekend()}
+              title="This market passed the out-of-sample test for the expected gap. No order goes to the broker until you approve it.">
+              {opening ? "Wait for the replay" : "Watch the weekend replay"}
+            </Btn>
+            <p className="pb-pretty" style={{ ...body, fontSize: 14 }}>See a recorded bridge for the April 2025 tariff weekend. It connects the market for a US recession in 2025 to SPY.</p>
+          </div>
+        </div>
+      </section>
     </main>
   );
 }

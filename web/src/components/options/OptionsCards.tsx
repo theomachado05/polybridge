@@ -10,7 +10,7 @@ import { useStore } from "@/lib/store";
 import { Tag } from "@/components/pb";
 import { BadgeTag, subBox } from "@/components/risk/RiskBits";
 
-const th = { fontFamily: "var(--mono)", fontSize: 10, letterSpacing: ".06em", color: "#5A627A", fontWeight: 500, padding: "6px 6px", textAlign: "right" as const, whiteSpace: "nowrap" as const };
+const th = { fontSize: 11, color: "#5A627A", fontWeight: 500, padding: "6px 6px", textAlign: "right" as const, whiteSpace: "nowrap" as const };
 const td = { fontFamily: "var(--mono)", fontSize: 11.5, padding: "6px 6px", textAlign: "right" as const, whiteSpace: "nowrap" as const, fontVariantNumeric: "tabular-nums" as const };
 
 /** Strike ladder: calls left, puts right, one expiry; in-the-money cells tinted, the strike nearest spot marked. */
@@ -23,11 +23,11 @@ export function OptionChainCard({ ticker }: { ticker: string }) {
   const { account } = useStore();
   const fills = optionFillBadge(account.status === "ok" ? account.data : null);
   const anyComputed = rows.some((r) => [r.call, r.put].some((x) => { const m = sideCells(x).marks; return !!(m.iv || m.delta); }));
-  const side = ["BID", "ASK", "IV", "Δ", "OI", "VOL"];
+  const side = ["Bid", "Ask", "IV", "Δ", "OI", "Vol"];
   return (
     <div style={subBox} data-testid="option-chain">
       <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-        <span className="pb-label">OPTIONS CHAIN · {ticker}{d?.expiry ? ` · ${d.expiry} (${d.dte ?? "?"}d)` : ""}</span>
+        <span className="pb-label">Options chain: {ticker}{d?.expiry ? `, ${d.expiry} (${d.dte ?? "?"} days)` : ""}</span>
         <span style={{ display: "inline-flex", gap: 6, flexWrap: "wrap" }}><BadgeTag b={label} /><BadgeTag b={fills} /></span>
       </div>
       {d?.expiries_listed && d.expiries_listed.length > 1 && (
@@ -37,14 +37,14 @@ export function OptionChainCard({ ticker }: { ticker: string }) {
           ))}
         </div>
       )}
-      {chain.loading && <div style={{ fontSize: 12.5, color: "#5A627A", marginTop: 10 }}>Loading the chain from Massive…</div>}
-      {chain.error && <div style={{ fontSize: 12.5, color: "#5A627A", marginTop: 10 }}>Chain unavailable ({chain.error}).</div>}
+      {chain.loading && <div style={{ fontSize: 12.5, color: "#5A627A", marginTop: 10 }}>The app reads the chain from Massive…</div>}
+      {chain.error && <div style={{ fontSize: 12.5, color: "#5A627A", marginTop: 10 }}>The chain is not available ({chain.error}). Try again later.</div>}
       {d && !d.available && <div style={{ fontSize: 12.5, color: "#5A627A", marginTop: 10 }}>No chain: {d.reason ?? "unavailable"}.</div>}
       {rows.length > 0 && (
         <div className="pb-table-scroll" style={{ marginTop: 10 }}>
           <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 680 }}>
             <thead>
-              <tr><th colSpan={6} style={{ ...th, textAlign: "center", color: "#15804F" }}>CALLS</th><th style={{ ...th, textAlign: "center" }}>STRIKE</th><th colSpan={6} style={{ ...th, textAlign: "center", color: "#C8323F" }}>PUTS</th></tr>
+              <tr><th colSpan={6} style={{ ...th, textAlign: "center", color: "#15804F" }}>Calls</th><th style={{ ...th, textAlign: "center" }}>Strike</th><th colSpan={6} style={{ ...th, textAlign: "center", color: "#C8323F" }}>Puts</th></tr>
               <tr style={{ borderBottom: "1px solid rgba(15,22,38,.14)" }}>{side.map((h) => <th key={`c${h}`} style={th}>{h}</th>)}<th style={{ ...th, textAlign: "center" }} />{side.map((h) => <th key={`p${h}`} style={th}>{h}</th>)}</tr>
             </thead>
             <tbody>
@@ -71,7 +71,7 @@ export function OptionChainCard({ ticker }: { ticker: string }) {
       )}
       {d?.available && (
         <div className="pb-pretty" style={{ fontSize: 11, color: "#5A627A", marginTop: 8, lineHeight: 1.5 }}>
-          Underlying {d.underlying_price?.price?.toFixed(2) ?? "n/a"} ({d.underlying_price?.source?.replaceAll("_", " ") ?? "source n/a"}). {d.snapshot_label ?? ""} Bid/ask: Massive last NBBO, 15 minutes delayed; IV and Δ from Massive, else Black–Scholes from the mark{anyComputed ? ` (italic; ${GREEK_LEGEND})` : " (every IV and Δ shown here is Massive's)"}. Hover a cell for its source and liquidity flags.
+          Underlying: {d.underlying_price?.price?.toFixed(2) ?? "n/a"} ({d.underlying_price?.source?.replaceAll("_", " ") ?? "source n/a"}). {d.snapshot_label ?? ""} Bid and ask: Massive last NBBO, 15 minutes delayed. IV and Δ: from Massive, or Black–Scholes from the mark{anyComputed ? ` (italic: ${GREEK_LEGEND})` : " (all IV and Δ values here are from Massive)"}. Put the pointer on a cell to see its source and liquidity flags.
         </div>
       )}
     </div>
@@ -87,19 +87,19 @@ export function HedgeCompareCard({ ticker, shares, protection = 0.05, horizon = 
   return (
     <div style={subBox} data-testid="hedge-compare">
       <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-        <span className="pb-label">HEDGE INSTRUMENTS · {shares.toLocaleString("en-US")} {ticker} · {horizon} DAYS</span>
+        <span className="pb-label">Hedge instruments: {shares.toLocaleString("en-US")} {ticker}, {horizon} days</span>
         <span style={{ display: "inline-flex", gap: 6, flexWrap: "wrap" }}>
-          {d?.market_open === false ? <Tag tone="sim" title="Last session's close; not tradable now">last close</Tag> : d?.available ? <Tag tone="live" title="Massive last quotes (15-min delayed)">delayed quotes</Tag> : null}
+          {d?.market_open === false ? <Tag tone="sim" title="Prices from the last session close. You cannot trade at these prices now.">last close</Tag> : d?.available ? <Tag tone="live" title="Massive last quotes (15-min delayed)">delayed quotes</Tag> : null}
           <Tag tone="ai" title={d?.label ?? "An estimate, not advice"}>estimate</Tag>
         </span>
       </div>
       <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginTop: 10, fontSize: 12, color: "#5A627A" }}>
         Protection below spot:
         {[0.03, 0.05, 0.1].map((x) => <button key={x} type="button" className="pb-chip pb-chip-sm" data-on={x === pp} onClick={() => setPp(x)}>{(x * 100).toFixed(0)}%</button>)}
-        {d?.spot?.price != null && <span>· spot {d.spot.price.toFixed(2)} · notional {d.notional_usd != null ? `$${Math.round(d.notional_usd).toLocaleString("en-US")}` : "n/a"}{d.expiry ? ` · options expiry ${d.expiry}` : ""}</span>}
+        {d?.spot?.price != null && <span>Spot {d.spot.price.toFixed(2)}, notional {d.notional_usd != null ? `$${Math.round(d.notional_usd).toLocaleString("en-US")}` : "n/a"}{d.expiry ? `, options expiry ${d.expiry}` : ""}</span>}
       </div>
       {hq.loading && <div style={{ fontSize: 12.5, color: "#5A627A", marginTop: 10 }}>Pricing the four hedges from the last quotes…</div>}
-      {hq.error && <div style={{ fontSize: 12.5, color: "#5A627A", marginTop: 10 }}>Hedge quote unavailable ({hq.error}).</div>}
+      {hq.error && <div style={{ fontSize: 12.5, color: "#5A627A", marginTop: 10 }}>The hedge quote is not available ({hq.error}). Try again later.</div>}
       {d && !d.available && <div style={{ fontSize: 12.5, color: "#5A627A", marginTop: 10 }}>No hedge quote: {d.reason ?? "unavailable"}.</div>}
       {rows.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 10 }}>
@@ -108,21 +108,21 @@ export function HedgeCompareCard({ ticker, shares, protection = 0.05, horizon = 
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "baseline" }}>
                 <span style={{ display: "inline-flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                   <span style={{ fontSize: 14.5, fontWeight: 600, letterSpacing: "-.01em" }}>{r.name}</span>
-                  {r.rank != null && <span className="pb-mono" style={{ fontSize: 11, color: "#5A627A" }}>#{r.rank} by friction</span>}
+                  {r.rank != null && <span className="pb-mono" style={{ fontSize: 11, color: "#5A627A" }}>Rank {r.rank} by friction</span>}
                   {r.cheapest && <Tag tone="measured" title="Lowest expected trading friction (spread + fees, borrow for short stock)">lowest friction</Tag>}
-                  {r.id === "short_stock" && <Tag tone="neutral" title="The engine's hedge: the bridge shorts shares">what the bridge runs</Tag>}
+                  {r.id === "short_stock" && <Tag tone="neutral" title="The engine uses this hedge. The bridge sells shares short.">the bridge uses this</Tag>}
                   {r.available && <BadgeTag b={r.liquidity} />}
                 </span>
                 {r.available
-                  ? <span className="pb-mono pb-tab" style={{ fontSize: 12.5 }}>{r.upfront} upfront ({r.upfrontBp}) · expected {r.expected} ({r.expectedBp})</span>
-                  : <span style={{ fontSize: 12, color: "#5A627A" }}>unavailable: {r.reason}</span>}
+                  ? <span className="pb-mono pb-tab" style={{ fontSize: 12.5 }}>{r.upfront} upfront ({r.upfrontBp}), expected {r.expected} ({r.expectedBp})</span>
+                  : <span style={{ fontSize: 12, color: "#5A627A" }}>not available: {r.reason}</span>}
               </div>
               {r.available && (
                 <>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: "4px 14px", marginTop: 6, fontSize: 12, color: "#3C4458" }}>
                     <span>Protection: {r.protection}</span><span>Upside: {r.upside}</span><span>Capital: {r.capital}</span><span>{r.ratio}</span>
                   </div>
-                  {r.flags.length > 0 && <div style={{ fontSize: 11.5, color: "#9A4A00", marginTop: 4 }}>Liquidity flags: {r.flags.join(" · ")}</div>}
+                  {r.flags.length > 0 && <div style={{ fontSize: 11.5, color: "#9A4A00", marginTop: 4 }}>Liquidity flags: {r.flags.join(", ")}</div>}
                   {r.legs.length > 0 && <div className="pb-mono" style={{ fontSize: 11, color: "#5A627A", marginTop: 6, lineHeight: 1.6 }}>{r.legs.map((l) => <div key={l}>{l}</div>)}</div>}
                 </>
               )}

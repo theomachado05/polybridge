@@ -37,7 +37,7 @@ export function useBridgeStream(id: string, initialSource: string | null): Strea
         void fetch(`${API_URL}/bridges/${id}`).then((r) => {
           if (r.status === 404) {
             done = true; clearTimeout(timer); es?.close();
-            dispatch({ k: "error", message: "Bridge not found (404); check the id." });
+            dispatch({ k: "error", message: "The backend did not find this bridge (404). Make sure that the bridge ID is correct." });
             dispatch({ k: "status", status: "stopped" });
           }
         }, () => {});
