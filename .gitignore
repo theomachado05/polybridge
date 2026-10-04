@@ -50,3 +50,6 @@ backend/data_logs/raw/
 backend/data_logs/*.cache
 backend/data_logs/*.jsonl
 .claude/worktrees/
+
+# forward_monday http and massive caches
+research/results/forward_monday/.cache/
