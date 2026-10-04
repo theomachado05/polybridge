@@ -21,6 +21,9 @@ export type VoiceToolName = (typeof VOICE_TOOLS)[number];
 export const CONFIRM_TOOLS: readonly VoiceToolName[] = ["approve", "start_bridge"];
 
 /** The voice button renders only with an agent id (NEXT_PUBLIC_ELEVENLABS_AGENT_ID). */
+/** The event the voice pill listens for: any "Talk to PolyBridge" button (the home hero) starts the one existing session. */
+export const VOICE_START_EVENT = "pb:voice-start";
+
 export const voiceEnabled = (agentId: string | null | undefined): agentId is string => typeof agentId === "string" && agentId.trim().length > 0;
 
 export interface ToolReply { ok: boolean; tool: string; summary: string; data?: unknown; needs_confirmation?: boolean; status?: number }

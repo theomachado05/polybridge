@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Btn } from "@/components/pb";
+import { Btn, Label, Orb } from "@/components/pb";
+import { startVoice, voiceAvailable } from "@/components/voice/VoiceButton";
 import { StatusTag, useRegistry } from "@/components/micro/parts";
 import { mechanismById } from "@/lib/micro";
 import { useStore } from "@/lib/store";
@@ -94,6 +95,9 @@ export default function Landing() {
   const s = useStore();
   const reg = useRegistry();
   const [opening, setOpening] = useState(false);
+  // The hero's "Talk to PolyBridge" starts the same ElevenLabs session as the voice pill (shown only when it exists).
+  // NEXT_PUBLIC_* is inlined at build time, so server and browser agree.
+  const voice = voiceAvailable();
   const mechs = MECHANISM_LINES.map((id) => mechanismById(reg.data, id)).filter((m) => m != null);
   const fit = mechanismById(reg.data, "generic_ai_fit");
   const watchWeekend = async () => {
@@ -103,21 +107,31 @@ export default function Landing() {
     finally { setOpening(false); }
   };
   return (
-    <main className="pb-page" style={{ paddingTop: 80, paddingBottom: 96 }}>
-      <header style={{ maxWidth: 820 }}>
+    <main className="pb-page" style={{ paddingTop: 48, paddingBottom: 96 }}>
+      <header className="pb-hero">
+        <span className="pb-orbdisc pb-navpill" style={{ width: 92, height: 92, borderRadius: "50%", marginBottom: 28 }} aria-hidden>
+          <Orb state="breathing" size={70} ink="#0F1626" />
+        </span>
         <h1 className="pb-h1 pb-balance">Check thin prediction-market books against their own logic and the options chain.</h1>
-        <p className="pb-pretty" style={{ ...body, marginTop: 24, fontSize: 20, lineHeight: 1.5, maxWidth: 640 }}>
+        <p className="pb-pretty" style={{ ...body, marginTop: 24, fontSize: 18, lineHeight: 1.55, maxWidth: 640 }}>
           PolyBridge watches Polymarket date ladders and &ldquo;will it hit&rdquo; stock tickets. It compares each one with its own date logic or with listed options, and drafts proposals for your approval. Every line below carries the status of its own test.
         </p>
+        <div className="pb-hero-actions">
+          {voice && <Btn onClick={startVoice} title="Starts the voice agent (ElevenLabs). The browser asks for the microphone first.">Talk to PolyBridge</Btn>}
+          <Btn href="/bridge" kind="secondary">Open the ticket board</Btn>
+        </div>
       </header>
 
       <section className="pb-split" style={{ marginTop: 96 }}>
-        <h2 className="pb-h3 pb-balance" style={{ maxWidth: 400 }}>What PolyBridge acts on, and how far each was tested</h2>
-        <ol data-testid="landing-mechanisms" style={{ margin: 0, padding: 0, listStyle: "none", borderTop: "1px solid var(--border-strong)" }}>
+        <div style={{ display: "grid", gap: 12, maxWidth: 400 }}>
+          <Label rule>01 · Mechanisms</Label>
+          <h2 className="pb-h3 pb-balance">What PolyBridge acts on, and how far each was tested</h2>
+        </div>
+        <ol className="pb-card" data-testid="landing-mechanisms" style={{ margin: 0, padding: "4px 24px", listStyle: "none" }}>
           {reg.loading && <li className="pb-small" style={{ padding: "16px 0" }}>Reading the evidence registry…</li>}
           {!reg.loading && !mechs.length && <li className="pb-small" style={{ padding: "16px 0" }}>The evidence registry (GET /evidence/mechanisms) did not answer, so no status is shown. See What we tested.</li>}
           {mechs.map((m, i) => (
-            <li key={m.id} style={{ display: "grid", gridTemplateColumns: "40px minmax(0,1fr)", gap: 8, padding: "16px 0", borderBottom: "1px solid var(--border)" }}>
+            <li key={m.id} style={{ display: "grid", gridTemplateColumns: "40px minmax(0,1fr)", gap: 8, padding: "16px 0", borderBottom: "1px solid var(--divider)" }}>
               <span className="pb-serif" style={{ fontSize: 20, lineHeight: 1.2, color: "var(--faint)", fontVariantNumeric: "lining-nums" }}>{i + 1}</span>
               <span style={{ display: "grid", gap: 6, minWidth: 0 }}>
                 <span style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
@@ -128,7 +142,7 @@ export default function Landing() {
               </span>
             </li>
           ))}
-          <li style={{ display: "grid", gridTemplateColumns: "40px minmax(0,1fr)", gap: 8, padding: "16px 0", borderBottom: "1px solid var(--border)" }}>
+          <li style={{ display: "grid", gridTemplateColumns: "40px minmax(0,1fr)", gap: 8, padding: "16px 0", borderBottom: "1px solid var(--divider)" }}>
             <span />
             <span className="pb-pretty" style={{ ...body, fontSize: 16, color: "var(--ink)" }}>No order goes to your broker until you approve it.</span>
           </li>
@@ -137,6 +151,7 @@ export default function Landing() {
 
       <section className="pb-split" style={{ marginTop: 96, alignItems: "start" }}>
         <div style={{ display: "grid", gap: 16, maxWidth: 520 }}>
+          <Label rule>02 · Options reference</Label>
           <h2 className="pb-h3">Which price is more accurate</h2>
           <p className="pb-pretty" style={body}>
             We tested 4,561 Polymarket stock markets that no earlier test used. The options-implied probability was more accurate than the Polymarket price.
@@ -151,9 +166,10 @@ export default function Landing() {
         <BrierFigure />
       </section>
 
-      <section style={{ marginTop: 96, paddingTop: 32, borderTop: "1px solid var(--border-strong)" }}>
-        <h2 className="pb-h3">What you can do now</h2>
-        <div className="pb-split" style={{ marginTop: 24 }}>
+      <section style={{ marginTop: 96 }}>
+        <Label rule>03 · Boards</Label>
+        <h2 className="pb-h3" style={{ marginTop: 12 }}>What you can do now</h2>
+        <div className="pb-split pb-card" style={{ marginTop: 24, padding: "var(--sp-5)" }}>
           <div style={{ display: "grid", gap: 12, justifyItems: "start" }}>
             <Btn href="/pipeline">Open the ladder board</Btn>
             <p className="pb-pretty" style={{ ...body, fontSize: 14 }}>Polymarket date ladders in date order, with the nesting checks and any violation after fees.</p>

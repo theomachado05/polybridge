@@ -21,6 +21,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${newsreader.variable} antialiased`}>
       <body>
         <div className="pb-voice-shell" style={{ position: "relative", minHeight: "100vh", boxSizing: "border-box" }}>
+          <div className="pb-bg" aria-hidden>
+            <div className="pb-blob pb-blob-1" />
+            <div className="pb-blob pb-blob-2" />
+            <div className="pb-blob pb-blob-3" />
+            <div className="pb-grid" />
+          </div>
           <StoreProvider>
             <Nav />
             <EngineStrip />
