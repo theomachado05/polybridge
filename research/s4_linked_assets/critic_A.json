@@ -1,0 +1,435 @@
+{
+ "critic": "A",
+ "answers": [
+  {
+   "id": "polymarket:5126779",
+   "family": "event",
+   "links": [
+    {"ticker": "AEP", "direction": "down_on_yes", "confidence": 0.45, "mechanism": "AEP's Indiana Michigan Power subsidiary has built its load-growth and capital-spending plan on new hyperscale data centers in Indiana, so a state moratorium would cut that growth."}
+   ]
+  },
+  {
+   "id": "polymarket:562831",
+   "family": "event",
+   "links": [
+    {"ticker": "ICLN", "direction": "down_on_yes", "confidence": 0.3, "mechanism": "A Republican hold of both chambers removes any check on further cuts to clean-energy support, and clean-energy equities have traded against Republican election odds."},
+    {"ticker": "COIN", "direction": "up_on_yes", "confidence": 0.3, "mechanism": "Unified Republican control keeps crypto-friendly legislation and regulator confirmations on track, which the market treats as positive for the largest US crypto exchange."}
+   ]
+  },
+  {
+   "id": "polymarket:665374",
+   "family": "event",
+   "links": [
+    {"ticker": "USO", "direction": "up_on_yes", "confidence": 0.65, "mechanism": "A US ground invasion of Iran would threaten Gulf production and Hormuz transit, lifting crude prices that USO tracks."},
+    {"ticker": "XOP", "direction": "up_on_yes", "confidence": 0.5, "mechanism": "US oil producers sit outside the conflict zone and earn more on every barrel when a Gulf supply shock raises crude."},
+    {"ticker": "JETS", "direction": "down_on_yes", "confidence": 0.4, "mechanism": "Airlines are hit by the jet-fuel spike and airspace disruption that a wider Iran war brings."}
+   ]
+  },
+  {
+   "id": "polymarket:562802",
+   "family": "event",
+   "links": [
+    {"ticker": "ICLN", "direction": "up_on_yes", "confidence": 0.3, "mechanism": "A Democratic House blocks further rollback of clean-energy support, and clean-energy equities have traded with Democratic election odds."},
+    {"ticker": "COIN", "direction": "down_on_yes", "confidence": 0.3, "mechanism": "A Democratic House can stall crypto-friendly legislation and open oversight of the industry, a headwind for the largest US crypto exchange."}
+   ]
+  },
+  {
+   "id": "polymarket:5170735",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "IBIT", "direction": "up_on_yes", "confidence": 0.95, "mechanism": "IBIT holds spot bitcoin, so it rises one for one with the price move that makes this strike more likely."},
+    {"ticker": "MSTR", "direction": "up_on_yes", "confidence": 0.85, "mechanism": "MSTR is a leveraged holder of bitcoin and its share price follows the bitcoin price."},
+    {"ticker": "MARA", "direction": "up_on_yes", "confidence": 0.75, "mechanism": "MARA mines and holds bitcoin, so its revenue and treasury value rise with the bitcoin price."}
+   ]
+  },
+  {
+   "id": "polymarket:562803",
+   "family": "event",
+   "links": [
+    {"ticker": "ICLN", "direction": "down_on_yes", "confidence": 0.3, "mechanism": "A Republican House keeps the path open for further cuts to clean-energy support, and clean-energy equities have traded against Republican election odds."},
+    {"ticker": "COIN", "direction": "up_on_yes", "confidence": 0.3, "mechanism": "A Republican House keeps crypto-friendly legislation moving and avoids hostile oversight of the industry."}
+   ]
+  },
+  {
+   "id": "polymarket:2589810",
+   "family": "event",
+   "links": [
+    {"ticker": "TLT", "direction": "up_on_yes", "confidence": 0.45, "mechanism": "A larger cut being priced pulls Treasury yields lower, which raises the price of long-dated bonds."},
+    {"ticker": "GLD", "direction": "up_on_yes", "confidence": 0.4, "mechanism": "A 50 basis point cut lowers real rates and the dollar, both of which support gold."}
+   ]
+  },
+  {
+   "id": "polymarket:4037600",
+   "family": "event",
+   "links": [
+    {"ticker": "EWZ", "direction": "up_on_yes", "confidence": 0.55, "mechanism": "Brazilian equities and the real have rallied when Lula looks weaker, and the main right-wing challenger topping the first round raises the odds of a change of government in the runoff."}
+   ]
+  },
+  {
+   "id": "polymarket:5123857",
+   "family": "event",
+   "links": [
+    {"ticker": "CEG", "direction": "down_on_yes", "confidence": 0.4, "mechanism": "Constellation's Texas generation fleet is valued on data-center-driven demand growth in the Texas grid, which a moratorium would remove."},
+    {"ticker": "VRT", "direction": "down_on_yes", "confidence": 0.35, "mechanism": "Texas is the largest pipeline of new US data center construction, so a moratorium there cuts orders for Vertiv's power and cooling equipment."},
+    {"ticker": "AEP", "direction": "down_on_yes", "confidence": 0.35, "mechanism": "A large share of AEP's contracted new load is data centers connecting to its Texas transmission system, so a moratorium would shrink its growth plan."}
+   ]
+  },
+  {
+   "id": "polymarket:2589811",
+   "family": "event",
+   "links": [
+    {"ticker": "TLT", "direction": "up_on_yes", "confidence": 0.5, "mechanism": "A cut being priced pulls Treasury yields lower, which raises the price of long-dated bonds."},
+    {"ticker": "IWM", "direction": "up_on_yes", "confidence": 0.5, "mechanism": "Small caps carry more floating-rate debt and have rallied hardest on dovish repricing of the Fed."},
+    {"ticker": "XHB", "direction": "up_on_yes", "confidence": 0.4, "mechanism": "Lower expected policy rates pull mortgage rates down, which lifts homebuilder demand and share prices."}
+   ]
+  },
+  {
+   "id": "polymarket:5082317",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:5179177",
+   "family": "event",
+   "links": [
+    {"ticker": "AEE", "direction": "down_on_yes", "confidence": 0.5, "mechanism": "Ameren Missouri's growth plan rests on new data center load in Missouri, so a state moratorium would cut its expected sales and capital spending."}
+   ]
+  },
+  {
+   "id": "polymarket:5126778",
+   "family": "event",
+   "links": [
+    {"ticker": "AEP", "direction": "down_on_yes", "confidence": 0.45, "mechanism": "AEP's Indiana Michigan Power subsidiary has built its load-growth and capital-spending plan on new hyperscale data centers in Indiana, so a state moratorium would cut that growth."}
+   ]
+  },
+  {
+   "id": "polymarket:5081860",
+   "family": "event",
+   "links": [
+    {"ticker": "USO", "direction": "up_on_yes", "confidence": 0.6, "mechanism": "Kharg Island handles most of Iran's crude exports, so its seizure removes those barrels and invites retaliation against Gulf supply, lifting crude."},
+    {"ticker": "XOP", "direction": "up_on_yes", "confidence": 0.45, "mechanism": "US oil producers earn more on every barrel when a Gulf escalation raises crude prices."},
+    {"ticker": "JETS", "direction": "down_on_yes", "confidence": 0.35, "mechanism": "Airlines are hit by the jet-fuel spike and airspace disruption that a renewed escalation with Iran brings."}
+   ]
+  },
+  {
+   "id": "polymarket:4906127",
+   "family": "event",
+   "links": [
+    {"ticker": "USO", "direction": "down_on_yes", "confidence": 0.55, "mechanism": "Ending the blockade returns Iranian barrels to the market and removes war risk premium, pushing crude lower."},
+    {"ticker": "XOP", "direction": "down_on_yes", "confidence": 0.45, "mechanism": "US oil producers' earnings fall with the crude price when Gulf supply normalises."},
+    {"ticker": "JETS", "direction": "up_on_yes", "confidence": 0.4, "mechanism": "Airlines gain from cheaper jet fuel and reopened routes when the Iran conflict de-escalates."}
+   ]
+  },
+  {
+   "id": "polymarket:1107582",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:4985083",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "IBIT", "direction": "up_on_yes", "confidence": 0.95, "mechanism": "IBIT holds spot bitcoin, so it rises one for one with the price move that makes this strike more likely."},
+    {"ticker": "MSTR", "direction": "up_on_yes", "confidence": 0.85, "mechanism": "MSTR is a leveraged holder of bitcoin and its share price follows the bitcoin price."},
+    {"ticker": "MARA", "direction": "up_on_yes", "confidence": 0.75, "mechanism": "MARA mines and holds bitcoin, so its revenue and treasury value rise with the bitcoin price."}
+   ]
+  },
+  {
+   "id": "polymarket:4985077",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "IBIT", "direction": "up_on_yes", "confidence": 0.95, "mechanism": "IBIT holds spot bitcoin, so it rises one for one with the price move that makes this strike more likely."},
+    {"ticker": "MSTR", "direction": "up_on_yes", "confidence": 0.85, "mechanism": "MSTR is a leveraged holder of bitcoin and its share price follows the bitcoin price."},
+    {"ticker": "MARA", "direction": "up_on_yes", "confidence": 0.75, "mechanism": "MARA mines and holds bitcoin, so its revenue and treasury value rise with the bitcoin price."}
+   ]
+  },
+  {
+   "id": "polymarket:3554657",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1535973",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:601922",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:2170255",
+   "family": "event",
+   "links": [
+    {"ticker": "STNG", "direction": "up_on_yes", "confidence": 0.45, "mechanism": "A closed Bab el-Mandeb forces product tankers around the Cape, lengthening voyages and raising the freight rates Scorpio earns."},
+    {"ticker": "FRO", "direction": "up_on_yes", "confidence": 0.4, "mechanism": "Crude tankers diverted away from the Red Sea sail longer routes, tightening vessel supply and raising Frontline's rates."},
+    {"ticker": "ZIM", "direction": "up_on_yes", "confidence": 0.3, "mechanism": "Red Sea diversions raise container freight rates as in 2024, though the move is muted if the Hapag-Lloyd cash offer still pins the share price."}
+   ]
+  },
+  {
+   "id": "polymarket:3128888",
+   "family": "event",
+   "links": [
+    {"ticker": "USO", "direction": "down_on_yes", "confidence": 0.55, "mechanism": "Ending the blockade returns Iranian barrels to the market and removes war risk premium, pushing crude lower."},
+    {"ticker": "XOP", "direction": "down_on_yes", "confidence": 0.45, "mechanism": "US oil producers' earnings fall with the crude price when Gulf supply normalises."},
+    {"ticker": "JETS", "direction": "up_on_yes", "confidence": 0.4, "mechanism": "Airlines gain from cheaper jet fuel and reopened routes when the Iran conflict de-escalates."}
+   ]
+  },
+  {
+   "id": "polymarket:4824013",
+   "family": "event",
+   "links": [
+    {"ticker": "VLO", "direction": "down_on_yes", "confidence": 0.6, "mechanism": "Valero is the largest US Gulf Coast diesel exporter, and a ban would trap distillate at home and collapse the export margins it earns."},
+    {"ticker": "MPC", "direction": "down_on_yes", "confidence": 0.55, "mechanism": "Marathon Petroleum exports large diesel volumes from the Gulf Coast, so a ban would lower its realised distillate margins."},
+    {"ticker": "PSX", "direction": "down_on_yes", "confidence": 0.5, "mechanism": "Phillips 66's refining margins would fall as domestic diesel prices drop under an export ban."}
+   ]
+  },
+  {
+   "id": "polymarket:4620900",
+   "family": "event",
+   "links": [
+    {"ticker": "IWM", "direction": "down_on_yes", "confidence": 0.45, "mechanism": "Small caps carry more floating-rate debt and sell off hardest when a further Fed hike is priced."},
+    {"ticker": "TLT", "direction": "down_on_yes", "confidence": 0.4, "mechanism": "A further hike being priced pushes Treasury yields up, which lowers the price of long-dated bonds."},
+    {"ticker": "XHB", "direction": "down_on_yes", "confidence": 0.4, "mechanism": "Higher expected policy rates push mortgage rates up, which weakens homebuilder demand and share prices."}
+   ]
+  },
+  {
+   "id": "polymarket:3554666",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:601920",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:5130978",
+   "family": "event",
+   "links": [
+    {"ticker": "USO", "direction": "down_on_yes", "confidence": 0.5, "mechanism": "A ceasefire that holds keeps Gulf supply flowing and drains the war risk premium from crude."},
+    {"ticker": "XOP", "direction": "down_on_yes", "confidence": 0.4, "mechanism": "US oil producers' earnings fall with the crude price when the risk of renewed fighting recedes."},
+    {"ticker": "JETS", "direction": "up_on_yes", "confidence": 0.35, "mechanism": "Airlines gain from lower jet fuel and stable airspace when the ceasefire holds."}
+   ]
+  },
+  {
+   "id": "polymarket:1193094",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:4985100",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "IBIT", "direction": "up_on_yes", "confidence": 0.9, "mechanism": "IBIT holds spot bitcoin, so it rises one for one with the price move that makes this strike more likely."},
+    {"ticker": "MSTR", "direction": "up_on_yes", "confidence": 0.8, "mechanism": "MSTR is a leveraged holder of bitcoin and its share price follows the bitcoin price."},
+    {"ticker": "MARA", "direction": "up_on_yes", "confidence": 0.7, "mechanism": "MARA mines and holds bitcoin, so its revenue and treasury value rise with the bitcoin price."}
+   ]
+  },
+  {
+   "id": "polymarket:5082386",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:2695686",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:3758964",
+   "family": "event",
+   "links": [
+    {"ticker": "STNG", "direction": "up_on_yes", "confidence": 0.45, "mechanism": "A closed Bab el-Mandeb forces product tankers around the Cape, lengthening voyages and raising the freight rates Scorpio earns."},
+    {"ticker": "FRO", "direction": "up_on_yes", "confidence": 0.4, "mechanism": "Crude tankers diverted away from the Red Sea sail longer routes, tightening vessel supply and raising Frontline's rates."},
+    {"ticker": "ZIM", "direction": "up_on_yes", "confidence": 0.3, "mechanism": "Red Sea diversions raise container freight rates as in 2024, though the move is muted if the Hapag-Lloyd cash offer still pins the share price."}
+   ]
+  },
+  {
+   "id": "polymarket:5062325",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "ETHA", "direction": "up_on_yes", "confidence": 0.95, "mechanism": "ETHA holds spot ether, so it rises one for one with the price move that makes this strike more likely."},
+    {"ticker": "BMNR", "direction": "up_on_yes", "confidence": 0.8, "mechanism": "BitMine is an ether treasury company whose net asset value and share price follow the ether price."},
+    {"ticker": "COIN", "direction": "up_on_yes", "confidence": 0.45, "mechanism": "Coinbase's trading and staking revenue rise with ether's price and activity."}
+   ]
+  },
+  {
+   "id": "polymarket:3887127",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:5082320",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:5126792",
+   "family": "event",
+   "links": [
+    {"ticker": "AEE", "direction": "down_on_yes", "confidence": 0.5, "mechanism": "Ameren Missouri's growth plan rests on new data center load in Missouri, so a state moratorium would cut its expected sales and capital spending."}
+   ]
+  },
+  {
+   "id": "polymarket:5170728",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "IBIT", "direction": "up_on_yes", "confidence": 0.85, "mechanism": "IBIT holds spot bitcoin, so it rises one for one with the price move that makes this strike more likely."},
+    {"ticker": "MSTR", "direction": "up_on_yes", "confidence": 0.75, "mechanism": "MSTR is a leveraged holder of bitcoin and its share price follows the bitcoin price."},
+    {"ticker": "MARA", "direction": "up_on_yes", "confidence": 0.65, "mechanism": "MARA mines and holds bitcoin, so its revenue and treasury value rise with the bitcoin price."}
+   ]
+  },
+  {
+   "id": "polymarket:5170740",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "IBIT", "direction": "down_on_yes", "confidence": 0.95, "mechanism": "IBIT holds spot bitcoin, so it falls one for one with the price drop that makes this dip more likely."},
+    {"ticker": "MSTR", "direction": "down_on_yes", "confidence": 0.85, "mechanism": "MSTR is a leveraged holder of bitcoin and its share price falls with the bitcoin price."},
+    {"ticker": "MARA", "direction": "down_on_yes", "confidence": 0.75, "mechanism": "MARA mines and holds bitcoin, so its revenue and treasury value fall with the bitcoin price."}
+   ]
+  },
+  {
+   "id": "polymarket:1366007",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:5180122",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "ETHA", "direction": "up_on_yes", "confidence": 0.8, "mechanism": "Taking YES as the Up outcome, ETHA holds spot ether and rises with the same daily move."},
+    {"ticker": "BMNR", "direction": "up_on_yes", "confidence": 0.65, "mechanism": "Taking YES as the Up outcome, BitMine's ether treasury value and share price rise with the ether price."}
+   ]
+  },
+  {
+   "id": "polymarket:4970459",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:5062323",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "ETHA", "direction": "up_on_yes", "confidence": 0.95, "mechanism": "ETHA holds spot ether, so it rises one for one with the price move that makes this strike more likely."},
+    {"ticker": "BMNR", "direction": "up_on_yes", "confidence": 0.8, "mechanism": "BitMine is an ether treasury company whose net asset value and share price follow the ether price."},
+    {"ticker": "COIN", "direction": "up_on_yes", "confidence": 0.45, "mechanism": "Coinbase's trading and staking revenue rise with ether's price and activity."}
+   ]
+  },
+  {
+   "id": "polymarket:5036098",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "IBIT", "direction": "up_on_yes", "confidence": 0.95, "mechanism": "IBIT holds spot bitcoin, so it rises one for one with the price move that makes this strike more likely."},
+    {"ticker": "MSTR", "direction": "up_on_yes", "confidence": 0.85, "mechanism": "MSTR is a leveraged holder of bitcoin and its share price follows the bitcoin price."},
+    {"ticker": "MARA", "direction": "up_on_yes", "confidence": 0.75, "mechanism": "MARA mines and holds bitcoin, so its revenue and treasury value rise with the bitcoin price."}
+   ]
+  },
+  {
+   "id": "polymarket:4985057",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "IBIT", "direction": "up_on_yes", "confidence": 0.95, "mechanism": "IBIT holds spot bitcoin, so it rises one for one with the price move that makes this strike more likely."},
+    {"ticker": "MSTR", "direction": "up_on_yes", "confidence": 0.85, "mechanism": "MSTR is a leveraged holder of bitcoin and its share price follows the bitcoin price."},
+    {"ticker": "MARA", "direction": "up_on_yes", "confidence": 0.75, "mechanism": "MARA mines and holds bitcoin, so its revenue and treasury value rise with the bitcoin price."}
+   ]
+  },
+  {
+   "id": "polymarket:4951230",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "USO", "direction": "down_on_yes", "confidence": 0.95, "mechanism": "USO holds WTI futures, so it falls with the crude price drop that makes a $65 low more likely."},
+    {"ticker": "XOP", "direction": "down_on_yes", "confidence": 0.75, "mechanism": "US oil producers' earnings and share prices fall with the WTI price."},
+    {"ticker": "XLE", "direction": "down_on_yes", "confidence": 0.65, "mechanism": "The energy sector's earnings fall with the crude price, though the integrated majors soften the move."}
+   ]
+  },
+  {
+   "id": "polymarket:1321565",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:562794",
+   "family": "event",
+   "links": [
+    {"ticker": "COIN", "direction": "up_on_yes", "confidence": 0.3, "mechanism": "A Republican Senate keeps crypto-friendly regulator confirmations and legislation on track."},
+    {"ticker": "ICLN", "direction": "down_on_yes", "confidence": 0.25, "mechanism": "A Republican Senate keeps the path open for further cuts to clean-energy support, and clean-energy equities have traded against Republican election odds."}
+   ]
+  },
+  {
+   "id": "polymarket:5170745",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "IBIT", "direction": "down_on_yes", "confidence": 0.85, "mechanism": "IBIT holds spot bitcoin, so it falls one for one with the price drop that makes this dip more likely."},
+    {"ticker": "MSTR", "direction": "down_on_yes", "confidence": 0.75, "mechanism": "MSTR is a leveraged holder of bitcoin and its share price falls with the bitcoin price."},
+    {"ticker": "MARA", "direction": "down_on_yes", "confidence": 0.65, "mechanism": "MARA mines and holds bitcoin, so its revenue and treasury value fall with the bitcoin price."}
+   ]
+  },
+  {
+   "id": "polymarket:5170743",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "IBIT", "direction": "down_on_yes", "confidence": 0.9, "mechanism": "IBIT holds spot bitcoin, so it falls one for one with the price drop that makes this dip more likely."},
+    {"ticker": "MSTR", "direction": "down_on_yes", "confidence": 0.8, "mechanism": "MSTR is a leveraged holder of bitcoin and its share price falls with the bitcoin price."},
+    {"ticker": "MARA", "direction": "down_on_yes", "confidence": 0.7, "mechanism": "MARA mines and holds bitcoin, so its revenue and treasury value fall with the bitcoin price."}
+   ]
+  },
+  {
+   "id": "polymarket:1131150",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:2467206",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "IBIT", "direction": "up_on_yes", "confidence": 0.95, "mechanism": "IBIT holds spot bitcoin, so it rises one for one with the price move that makes this strike more likely."},
+    {"ticker": "MSTR", "direction": "up_on_yes", "confidence": 0.85, "mechanism": "MSTR is a leveraged holder of bitcoin and its share price follows the bitcoin price."},
+    {"ticker": "MARA", "direction": "up_on_yes", "confidence": 0.75, "mechanism": "MARA mines and holds bitcoin, so its revenue and treasury value rise with the bitcoin price."}
+   ]
+  },
+  {
+   "id": "polymarket:1321569",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:4762522",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:701488",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "IBIT", "direction": "up_on_yes", "confidence": 0.7, "mechanism": "IBIT holds spot bitcoin and rises with the price, though a strike this far away reprices only on very large moves."},
+    {"ticker": "MSTR", "direction": "up_on_yes", "confidence": 0.6, "mechanism": "MSTR is a leveraged holder of bitcoin and its share price follows the bitcoin price."},
+    {"ticker": "MARA", "direction": "up_on_yes", "confidence": 0.5, "mechanism": "MARA mines and holds bitcoin, so its revenue and treasury value rise with the bitcoin price."}
+   ]
+  },
+  {
+   "id": "polymarket:3399450",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:1345531",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "IBIT", "direction": "up_on_yes", "confidence": 0.95, "mechanism": "IBIT holds spot bitcoin, so it rises one for one with the price move that makes this strike more likely."},
+    {"ticker": "MSTR", "direction": "up_on_yes", "confidence": 0.85, "mechanism": "MSTR is a leveraged holder of bitcoin and its share price follows the bitcoin price."},
+    {"ticker": "MARA", "direction": "up_on_yes", "confidence": 0.75, "mechanism": "MARA mines and holds bitcoin, so its revenue and treasury value rise with the bitcoin price."}
+   ]
+  },
+  {
+   "id": "polymarket:5062285",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "IBIT", "direction": "down_on_yes", "confidence": 0.95, "mechanism": "IBIT holds spot bitcoin, so it falls one for one with the price drop that makes this dip more likely."},
+    {"ticker": "MSTR", "direction": "down_on_yes", "confidence": 0.85, "mechanism": "MSTR is a leveraged holder of bitcoin and its share price falls with the bitcoin price."},
+    {"ticker": "MARA", "direction": "down_on_yes", "confidence": 0.75, "mechanism": "MARA mines and holds bitcoin, so its revenue and treasury value fall with the bitcoin price."}
+   ]
+  }
+ ]
+}
