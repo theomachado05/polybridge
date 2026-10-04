@@ -20,7 +20,8 @@
 | Sun 02:42:40 | `run settle`: first P&L. 86 of 375 primary trades resolved with the ladder's order violated. |
 | Sun 02:43–02:50 | The 11 pairs behind those 86 trades read one by one, with their descriptions. Two faults in S11's ladder rules: the year of a rung (8 date pairs, 61 trades; the partner's finding) and the word "reach" used for levels below the price (3 strike pairs, 25 trades; new). Every pair that traded was then read (161 pairs). |
 | Sun 02:45 | Amendment 2, post hoc: a direction check from the descriptions (`secondary direction`, no request), written to its own file so the files committed in `e10f593` stay as they were. |
-| Sun 02:55 | Audit, report, tests (26 pass). SUMMARY.md written by `report.py` from the result files. |
+| Sun 02:51 | Audit, report, tests (26 pass, exit code 0). SUMMARY.md written by `report.py` from the result files. Results committed and pushed: `3a482a3`. |
+| Sun 02:53 | After the commit: the pooled means and intervals recomputed from `trades.csv` by separate code (they match `metrics.csv`), three trades checked by hand, the split rule and the pull order verified. Run log regenerated; this commit. |
 
 ## Commits (from `git log`, oldest first; the commit that carries this file is not in its own list)
 
@@ -28,6 +29,7 @@
 - `eee3a9b` Sun 02:04 S24: report, audit and notes code and an end-to-end test on made-up prints, written while the print pull runs and before any print is analysed; no rule changed
 - `61c05e0` Sun 02:34 S24 amendment 1 (02:35): the partner's ladder replay became known at 02:30, after a detection smoke test on part of the pull (02:04, match counts only) and before any result or P&L. The registered test is not changed. A secondary analysis is fixed here: the partner's rung-year check and nesting rule as written, and an unseen sample without the 58 markets its fresh universe shares with set (a). Code, the partner's market list and 2 tests
 - `e10f593` Sun 02:42 S24: prints pulled (662 ladders: all 214 of set a, 448 of 1,309 of set b; 2,392 print requests, 2,927 in all). Detection from prints: 375 primary trades. Out-of-sample cut dates fixed from the trade dates alone, before any P&L: set a from 2025-09-11 (160 trade dates), set b from 2026-07-18 (67 trade dates). Pair verdicts of the secondary corrected rule (texts only). No result has been used and no P&L computed
+- `3a482a3` Sun 02:51 S24 result: not a pass. Under S11's own rules the ladder trade on fresh ladders made -2.56 points per trade [-6.51, +1.27] on 375 trades on 226 dates (-4.78 at 2x; in-sample -4.46 [-9.05, -0.18]; out-of-sample +5.70 [-1.50, +13.31] on 70 trades). 86 trades resolved with the ladder's order violated, all on 11 wrongly built pairs: the rung year (8 date pairs, 61 trades, the partner's finding) and 'reach' used for levels below the price (3 strike pairs, 25 trades, new). Secondary, fixed before any result (amendment 1): corrected rule on the unseen sample +7.12 [+3.07, +11.11] on 193 trades, out-of-sample +14.47 [+0.56, +30.72] on 28 trades, +4.80 at 2x. Post hoc direction check (amendment 2): +8.14 [+3.74, +12.17] on 160 trades, no order violation, 27 out-of-sample trades; the profit is 12 payouts of $1 and $425 at the cap. SUMMARY, metrics, trades, curves, capacity, audit and run log written by report.py
 
 ## Requests (one worker, at most one a second; `.cache/requests.json`)
 

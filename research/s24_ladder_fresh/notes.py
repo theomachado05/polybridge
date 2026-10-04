@@ -29,7 +29,8 @@ RUN_LOG = [
     ("Sun 02:42:40", "`run settle`: first P&L. 86 of 375 primary trades resolved with the ladder's order violated."),
     ("Sun 02:43–02:50", "The 11 pairs behind those 86 trades read one by one, with their descriptions. Two faults in S11's ladder rules: the year of a rung (8 date pairs, 61 trades; the partner's finding) and the word \"reach\" used for levels below the price (3 strike pairs, 25 trades; new). Every pair that traded was then read (161 pairs)."),
     ("Sun 02:45", "Amendment 2, post hoc: a direction check from the descriptions (`secondary direction`, no request), written to its own file so the files committed in `e10f593` stay as they were."),
-    ("Sun 02:55", "Audit, report, tests (26 pass). SUMMARY.md written by `report.py` from the result files."),
+    ("Sun 02:51", "Audit, report, tests (26 pass, exit code 0). SUMMARY.md written by `report.py` from the result files. Results committed and pushed: `3a482a3`."),
+    ("Sun 02:53", "After the commit: the pooled means and intervals recomputed from `trades.csv` by separate code (they match `metrics.csv`), three trades checked by hand, the split rule and the pull order verified. Run log regenerated; this commit."),
 ]
 
 WENT_WRONG: list[str] = [
