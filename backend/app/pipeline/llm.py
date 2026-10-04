@@ -263,6 +263,17 @@ async def list_models(api_key: str, http: httpx.AsyncClient | None = None, timeo
     return models
 
 
+def _round_floats(x: Any, nd: int = 4) -> Any:
+    """Round every float before it reaches the LLM, so the rationale never echoes 17-digit numbers."""
+    if isinstance(x, float):
+        return round(x, nd)
+    if isinstance(x, dict):
+        return {k: _round_floats(v, nd) for k, v in x.items()}
+    if isinstance(x, list):
+        return [_round_floats(v, nd) for v in x]
+    return x
+
+
 class GeminiProvider:
     name = "gemini"
 
@@ -365,7 +376,8 @@ class GeminiProvider:
                   "(what the market signal adds); 'score_raw' is plain variance reduction, which any static short "
                   "earns, so never present score_raw as the hedge's edge. "
                   "Say 'replay' for replayed history, never 'live performance'.\n"
-                  f"{json.dumps(result, default=str, sort_keys=True)}\n"
+                  "Write scores as percentages with one decimal (0.2459 -> 24.6%).\n"
+                  f"{json.dumps(_round_floats(result), default=str, sort_keys=True)}\n"
                   'Answer as JSON: {"rationale": "<2-3 sentences>"}')
         schema = {"type": "OBJECT", "properties": {"rationale": {"type": "STRING"}}, "required": ["rationale"]}
         out = await self._generate(prompt, schema)
