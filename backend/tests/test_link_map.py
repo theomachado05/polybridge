@@ -103,6 +103,101 @@ def test_shipped_file_loads():
         pytest.skip("data/link_map.json not generated")
     assert "error" not in lib
     for e in lib["items"].values():
-        assert e["mappings"] or e["no_instrument"]
+        assert e["mappings"] or e["no_instrument"] or link_map.contract_type(e) != "other"
+        ctype = link_map.contract_type(e)
+        assert ctype == "other" or e["mappings"] == []
+        assert e.get("exact_contract", False) == (ctype != "other" and link_map.has_exact_contract(ctype, e.get("contract")))
+        if ctype != "other" and not e["exact_contract"]:
+            assert "no exact link" in e["no_instrument_reason"] and "exact contract link" not in e["no_instrument_reason"]
         for m in e["mappings"]:
             assert m["trusted"] and m["direction"] in ("up_on_yes", "down_on_yes") and m["rationale"]
+            assert m.get("evidence", "unvalidated estimate") == "unvalidated estimate"
+
+
+TYPED = {"generated_at": "2026-10-04T12:00:00", "generator": "link agent v3", "items": {
+    "polymarket:1": {**LM["items"]["polymarket:1"], "contract_type": "ladder_rung",
+                     "contract": {"linkable": True, "ladder_id": "hormuz::Strait of Hormuz traffic returns to normal by @D@?", "date": "2026-12-31"}},
+    "polymarket:2": {"question": "Will NVIDIA (NVDA) reach $200 by October 31, 2026?", "contract_type": "touch_ticket", "no_instrument": False,
+                     "contract": {"underlying": "NVDA", "linkable": True,
+                                  "exact": {"ok": True, "expiry": "2026-10-30", "lower_strike": 195.0, "upper_strike": 200.0}},
+                     "mappings": [{"ticker": "NVDA", "direction": "up_on_yes", "impact_pct": 3.0, "rationale": "r", "trusted": True,
+                                   "evidence": "unvalidated estimate", "mechanism": "event_link",
+                                   "option": {"contract": "O:NVDA261030C00185000", "expiry": "2026-10-30", "strike": 185.0}}]},
+    "polymarket:3": {"question": "Will the U.S. invade Iran before 2027?", "contract_type": "other", "contract": None, "no_instrument": False,
+                     "mappings": [{"ticker": "JETS", "direction": "down_on_yes", "impact_pct": 2.0, "rationale": "Fuel.", "trusted": True,
+                                   "evidence": "unvalidated estimate", "mechanism": "event_link", "option": {"contract": "O:JETS"}}]},
+    "polymarket:4": {"question": "Will Tesla (TSLA) close above $300 on October 30?", "contract_type": "close_above_ticket",
+                     "contract": {"underlying": "TSLA", "linkable": True, "reasons": [], "exact": {"ok": True, "expiry": "2026-10-30"}},
+                     "mappings": [], "no_instrument": True, "no_instrument_reason": "x"},
+    # classified, but no exact link: never labelled exact, never served the generic guess
+    "polymarket:6": {"question": "Will Bitcoin reach $150,000 by December 31, 2026?", "contract_type": "ladder_rung", "no_instrument": False,
+                     "contract": {"mechanism": "ladder", "linkable": False, "reasons": ["no event id, slug or title"], "ladder_id": None,
+                                  "date": "2026-12-31", "event": None},
+                     "mappings": [{"ticker": "IBIT", "direction": "up_on_yes", "impact_pct": 4.0, "rationale": "r", "trusted": True}]},
+    "polymarket:7": {"question": "Will Apple (AAPL) reach $300 by November 30, 2026?", "contract_type": "touch_ticket", "no_instrument": False,
+                     "contract": {"underlying": "AAPL", "linkable": True, "reasons": [], "exact": None},
+                     "mappings": [{"ticker": "AAPL", "direction": "up_on_yes", "impact_pct": 3.0, "rationale": "r", "trusted": True}]},
+    "polymarket:8": {"question": "Will Meta (META) close above $900 on November 27?", "contract_type": "close_above_ticket", "no_instrument": False,
+                     "contract": {"underlying": "META", "linkable": True, "reasons": [],
+                                  "exact": {"ok": False, "reason": "no listed expiry on or after the window end"}},
+                     "mappings": [{"ticker": "META", "direction": "up_on_yes", "impact_pct": 3.0, "rationale": "r", "trusted": True}]}}}
+
+
+@pytest.fixture
+def typed(tmp_path, monkeypatch):
+    b = tmp_path / "typed.json"
+    b.write_text(json.dumps(TYPED))
+    monkeypatch.setattr(link_map, "PATH", b)
+    monkeypatch.setattr(link_map.load, "__defaults__", (b, True))
+    link_map._cache.clear()
+    return b
+
+
+@pytest.mark.parametrize("trusted_only", [True, False])
+def test_a_contract_typed_item_never_serves_the_generic_mapping(typed, trusted_only):
+    items = link_map.load(typed, trusted_only)["items"]
+    for k in ("polymarket:1", "polymarket:2", "polymarket:4"):
+        e = items[k]
+        assert e["mappings"] == [] and e["exact_contract"] and not e["no_instrument"], k
+        assert "exact" in e["no_instrument_reason"] and e["contract"] == TYPED["items"][k]["contract"]
+    assert link_map.option_for("polymarket:2", "NVDA", typed) is None                     # no at-the-money guess on a ticket
+    other = items["polymarket:3"]
+    assert [m["ticker"] for m in other["mappings"]] == ["JETS"] and other["mappings"][0]["evidence"] == "unvalidated estimate"
+    assert "exact_contract" not in other and link_map.option_for("polymarket:3", "JETS", typed) == {"contract": "O:JETS"}
+
+
+def test_switch_serves_the_contract_note_not_the_guess(typed, monkeypatch):
+    monkeypatch.setenv("POLYBRIDGE_LINK_MAP", "1")
+    monkeypatch.setattr(mapping, "_cache", None)
+    r = _post(source="polymarket", market_id="2")
+    assert r["source"] == "ai_precomputed" and r["items"] == [] and "exact option contracts" in r["note"]
+    r = _post(question="Strait of Hormuz traffic returns to normal by December 31")
+    assert r["items"] == [] and "date ladder" in r["note"]
+    assert [m["ticker"] for m in _post(source="polymarket", market_id="3")["items"]] == ["JETS"]
+
+
+def test_contract_type_reads_old_and_unknown_values_as_other():
+    assert link_map.contract_type({}) == "other" and link_map.contract_type({"contract_type": None}) == "other"
+    assert link_map.contract_type({"contract_type": "something_new"}) == "other"
+    assert link_map.contract_type({"contract_type": "touch_ticket"}) == "touch_ticket"
+
+
+@pytest.mark.parametrize("trusted_only", [True, False])
+def test_a_classified_item_without_its_exact_link_is_not_labelled_exact(typed, trusted_only):
+    items = link_map.load(typed, trusted_only)["items"]
+    for k, why in (("polymarket:6", "no event id, slug or title"), ("polymarket:7", "no exact contract was listed"),
+                   ("polymarket:8", "no listed expiry on or after the window end")):
+        e = items[k]
+        assert e["mappings"] == [] and e["exact_contract"] is False and not e["no_instrument"], k
+        assert "no exact link" in e["no_instrument_reason"] and why in e["no_instrument_reason"], k
+        assert "exact contract link" not in e["no_instrument_reason"] and "bracketing" not in e["no_instrument_reason"], k
+    assert link_map.option_for("polymarket:6", "IBIT", typed) is None
+    hx = link_map.has_exact_contract
+    assert not hx("ladder_rung", None) and not hx("touch_ticket", {"linkable": False, "exact": {"ok": True}})
+
+
+def test_switch_serves_the_no_link_note_for_a_classified_item_without_a_link(typed, monkeypatch):
+    monkeypatch.setenv("POLYBRIDGE_LINK_MAP", "1")
+    monkeypatch.setattr(mapping, "_cache", None)
+    r = _post(source="polymarket", market_id="6")
+    assert r["items"] == [] and "no exact link" in r["note"] and "date ladder" not in r["note"]

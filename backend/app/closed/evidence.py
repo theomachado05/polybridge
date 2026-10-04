@@ -181,7 +181,7 @@ def hedge_evidence(doc: dict | None = None) -> dict:
 # hard-coded text. A number is never shown without its range and its sample: each one carries ``ci_low``/``ci_high``
 # with ``range_kind`` saying what the range is (a 95% date-cluster interval, a percentile span, or "census": a count
 # with no sampling interval, low == high == value), ``sample`` (n and units) and ``result_file`` (repo-relative).
-# Two result files are not on main yet; those numbers also carry ``source_branch`` and ``source_commit`` so a reader can
+# Some result files are not on main yet; those numbers also carry ``source_branch`` and ``source_commit`` so a reader can
 # still open them, and ``result_file_on_disk`` (computed when served) says whether this checkout has the file.
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -233,6 +233,10 @@ S25 = "research/results/s25_ticket_option_hedge/SUMMARY.md"
 S25_REF = {"source_branch": "r/weekend-options", "source_commit": "bd18b9f"}
 LATENCY = "research/results/live_books/LATENCY.md"
 LATENCY_REF = {"source_branch": "r/live-speed", "source_commit": "a6ba327"}
+LINKER_H2 = "research/results/linker/heldout2.json"
+LINKER_POOLED = "research/results/linker/pooled_heldout2.json"
+LINKER_REF = {"source_branch": "r/link-agent", "source_commit": "e476728"}
+CI95_SE = "95% interval, slope +/- 1.96 x date-clustered standard error"
 
 
 def _n(label: str, value: float, lo: float, hi: float, range_kind: str, n: int, units: str, result_file: str, *,
@@ -246,6 +250,15 @@ def _n(label: str, value: float, lo: float, hi: float, range_kind: str, n: int, 
     if ref:
         out.update(ref)
     return out
+
+
+def _se(label: str, value: float, se: float, lo: float, hi: float, n: int, units: str, result_file: str, *,
+        confirmatory: bool, unit: str = "", also: tuple[tuple[int, str], ...] = (), note: str = "",
+        ref: dict | None = None) -> dict:
+    """A slope whose 95% interval is computed from the date-clustered standard error the result file reports
+    (value +/- 1.96 se, rounded); ``se`` is served so the interval can be checked against the file."""
+    return {**_n(label, value, lo, hi, CI95_SE, n, units, result_file, confirmatory=confirmatory, unit=unit, also=also,
+                 note=note, ref=ref), "se": se}
 
 
 def _census(label: str, value: float, n: int, units: str, result_file: str, *, confirmatory: bool, unit: str = "",
@@ -425,6 +438,52 @@ MECHANISMS: tuple[dict, ...] = (
         ],
         "caveats": ["In-sample the same presets looked good (98 of 122 better on train): picked on the data they "
                     "were scored on."],
+        "forward_test": None,
+    },
+    {
+        "id": "event_links",
+        "name": "Question-to-instrument links (generic link agent)",
+        "status": OPEN_LEAD,
+        "claim": ("Pooled over 71 links, instruments opened in the direction two blind labelling models linked to the "
+                  "overnight move in the odds, but one link at a time the held-out bar failed and nothing is shown on "
+                  "sessions after the models' knowledge ends."),
+        "actions_allowed": {"mode": "reference_only", "trade": False, "proposals": False, "requires_approval": False,
+                            "requires_acknowledgement": False,
+                            "text": ("Shown only as an unvalidated estimate beside a question's own contract link; "
+                                     "never traded or proposed. A ticket's link is its exact option contracts and a "
+                                     "rung's its ladder, not these links.")},
+        "numbers": [
+            _census("Held-out test: testable links confirmed by prices (bar: more than 9 of 21, about 43%)", 11, 62,
+                    "testable links", LINKER_H2, confirmatory=True, unit="links confirmed", also=((71, "links"),),
+                    note="Confirmatory verdict: does not meet the bar (18%). The previous linker on the same markets: "
+                         "5 of 42.", ref=LINKER_REF),
+            _census("Held-out test: testable links contradicted by prices (bar: none)", 1, 62, "testable links",
+                    LINKER_H2, confirmatory=True, unit="links contradicted", ref=LINKER_REF),
+            _census("Previous linker (control arm), same markets: testable links confirmed", 5, 42, "testable links",
+                    LINKER_H2, confirmatory=True, unit="links confirmed", also=((58, "links"),), ref=LINKER_REF),
+            _n("Held-out test: link scorer AUC on the testable links (bar: 0.85 or more)", 0.635, 0.635, 0.635,
+               NO_INTERVAL, 62, "testable links", LINKER_H2, confirmatory=True, unit="AUC",
+               note="Bar not met.", ref=LINKER_REF),
+            _se("Pooled mechanism test: opening gap per point of odds (holds if above zero with t 2 or more)", 0.0263,
+                0.0079, 0.0109, 0.0417, 8078, "link-nights", LINKER_POOLED, confirmatory=True,
+                unit="daily standard deviations per point", also=((71, "links"), (46, "events"), (252, "dates")),
+                note="t 3.34: holds. Pre-registered as amendment 1 of linker/heldout2/PLAN.md, after the labels and "
+                     "before any price of the fresh set was pulled.", ref=LINKER_REF),
+            _se("Same, sessions from 2026-07-01 only (after the labelling models' knowledge ends)", 0.0092, 0.0107,
+                -0.0118, 0.0302, 2070, "link-nights", LINKER_POOLED, confirmatory=False,
+                unit="daily standard deviations per point", also=((35, "links"), (22, "events"), (66, "dates")),
+                note="t 0.86: not shown. A split the amendment fixed in advance, reported whatever it showed.",
+                ref=LINKER_REF),
+        ],
+        "caveats": [
+            "Two election nights carry about 70% of the pooled size (Colombia's first round 45%, Argentina's "
+            "lower-house vote 27%); found after the result (post hoc).",
+            "Not shown after the labelling models' knowledge ends: on sessions from 2026-07-01 the slope is 0.0092 "
+            "(t 0.86).",
+            "10 of the 11 confirmed links are on markets that resolved before July 2026.",
+            "Trusted (two models agree, prices do not contradict, confirmed or score 0.5 or more) is not validated: "
+            "on trusted links alone the bar also failed (6 of 20 testable confirmed).",
+        ],
         "forward_test": None,
     },
     {

@@ -289,3 +289,13 @@ changed; the run is not repeated.** Disclosures and two figures the plan promise
   confirmed, 2 unproven, none contradicted; on equity-unproven links 2 confirmed, 22 unproven, 3 contradicted.
 - The verification reproduced every reported figure from its own code and found the pre-registration intact. Its
   checks on the pooled result are post hoc and are reported as such in `linker/LINKER.md`.
+
+**Note, 2026-10-04 03:58 ET, after the result. The manifest describes commit e476728.** The branch was then merged with the
+micro-markets work, which extends `linker/options.py` (exact ticket links, importing S21) and rewrites
+`linker/link_map.py`; `freeze.py` and `test_freeze.py` were adjusted so the module list covers the new imports. The
+test is finished and is not re-run; `FROZEN.json` is left as written, so a check at a later commit lists those files
+as changed. The final deliverable now rests on exact contract links, not on the generic links this plan tested;
+their own test is `linker/contract_eval/PLAN.md`.
+
+**Correction, 2026-10-04 04:16 ET.** The note above misstates one fact: `FROZEN.json` was written at commit 748fe0c, with the
+plan. Its files were unchanged through the result commit e476728, except this plan, which only grew.

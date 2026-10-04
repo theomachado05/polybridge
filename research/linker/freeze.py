@@ -5,7 +5,8 @@ the test, written once at the commit that holds the plan, and checked before the
               module the evaluation imports from research/ (the linker's, and S1's, S4's and S5's that it calls: the
               verdict, the sessions, the betas, the window, S5's ticker list and themes, the pullers), the frozen
               scorer weights and v1, the odds-only model's training table, and the linker tests (paths relative to
-              research/). tests/test_freeze.py checks that no imported module is left out.
+              research/). tests/test_freeze.py checks that no imported module is left out. NEWLY_IMPORTED: the
+              modules options.py imports since 2026-10-04 (after the result), in the set but not in FROZEN.json.
     write()   linker/heldout2/FROZEN.json: {path: sha256} and "#plan_bytes", the plan's length
     changed() files whose hash differs from FROZEN.json, files gone, and files of the set it does not hold
     gate()    the plan may only grow: the frozen text must be a byte prefix of the current one, ending under its
@@ -27,6 +28,8 @@ ROOT = HERE.parent
 FROZEN = HERE / "heldout2" / "FROZEN.json"
 PLAN = "linker/heldout2/PLAN.md"
 AMENDMENTS = "## Amendments"
+NEWLY_IMPORTED = ("s21_options_anchor/__init__.py", "s21_options_anchor/config.py", "s21_options_anchor/engine.py",
+                  "arb/arbscan/__init__.py", "arb/arbscan/costs.py", "arb/arbscan/implied.py")
 FIXED = (PLAN, "linker/heldout2/universe.json", "linker/prompts/labeller_v3.md", "linker/prompts/labeller_control.md",
          "linker/prompts/recall.md", "linker/instruments.json", "results/linker/scorer_v2.json", "results/linker/scorer.json",
          "results/linker/train_v2.csv",
@@ -39,7 +42,11 @@ FIXED = (PLAN, "linker/heldout2/universe.json", "linker/prompts/labeller_v3.md",
          "s4_linked_assets/__init__.py", "s4_linked_assets/config.py", "s4_linked_assets/data.py", "s4_linked_assets/engine.py",
          "s4_linked_assets/run.py",
          "s5_big_moves/__init__.py", "s5_big_moves/config.py", "s5_big_moves/granular.py", "s5_big_moves/run.py",
-         "s5_big_moves/universe.py", "polybridge_research/__init__.py", "polybridge_research/calendar.py")
+         "s5_big_moves/universe.py", "polybridge_research/__init__.py", "polybridge_research/calendar.py",
+         # added 2026-10-04, after the result (e476728): options.py now imports S21's ticket rules (exact contract
+         # links) and through them arbscan's bracketing; they decide no heldout2 verdict, and FROZEN.json, written
+         # before they were imported, does not hold them (tests/test_freeze.py states exactly what changed since)
+         *NEWLY_IMPORTED)
 GLOBS = ("linker/heldout2/input_*.json", "linker/tests/*.py")
 META = "#"
 

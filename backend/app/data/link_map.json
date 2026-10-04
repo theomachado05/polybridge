@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-03T23:41:04",
+ "generated_at": "2026-10-04T04:16:55",
  "generator": "link agent v3 (two blind labellers, trained scorer, price benchmark)",
  "as_of": "2026-10-02",
  "summary": {
@@ -33,7 +33,7 @@
    "XLE"
   ],
   "trusted_confirmed_by_prices": 32,
-  "trusted_with_an_option_contract": 39,
+  "trusted_with_an_option_contract": 13,
   "trusted_event_links": 23,
   "trusted_event_questions": 13,
   "trusted_price_proxy_links": 17,
@@ -49,7 +49,22 @@
   "probe_links": 3,
   "no_instrument_items": 17,
   "no_instrument_open_clusters": 17,
-  "no_instrument_but_older_links": 0
+  "no_instrument_but_older_links": 0,
+  "note": "trusted is not validated: the generic linker (two blind labellers proposing question -> instrument links) failed its held-out bar (heldout2: 11 of 62 testable links confirmed against a bar of more than 9 of 21; scorer AUC 0.635 against 0.85), so every mapping is an unvalidated estimate. The pooled mechanism test held (slope 0.0263 daily sd per point, t 3.34) but not on sessions from 2026-07-01 (t 0.86). A question's link is its contract: exact option contracts for a ticket, its ladder for a rung, none for 'other'.",
+  "mapping_evidence": "unvalidated estimate",
+  "mapping_mechanism": "event_link",
+  "items": 93,
+  "by_contract_type": {
+   "ladder_rung": 34,
+   "touch_ticket": 0,
+   "close_above_ticket": 0,
+   "other": 59
+  },
+  "items_with_an_exact_contract": 21,
+  "tickets_with_an_exact_contract": 0,
+  "linkable_tickets": 0,
+  "linkable_rungs": 21,
+  "trusted_links_on_type_other": 13
  },
  "items": {
   "polymarket:1163699": {
@@ -64,8 +79,12 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "COIN",
      "direction": "up_on_yes",
      "impact_pct": 5.0,
@@ -91,6 +110,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "GLXY",
      "direction": "up_on_yes",
      "impact_pct": 4.0,
@@ -116,6 +137,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "HOOD",
      "direction": "up_on_yes",
      "impact_pct": 3.0,
@@ -141,6 +164,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "CRCL",
      "direction": "up_on_yes",
      "impact_pct": 4.0,
@@ -175,8 +200,22 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "price proxy",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": false,
+    "reasons": [
+     "no event id, slug or title"
+    ],
+    "ladder_id": null,
+    "date": "2026-12-31",
+    "event": null,
+    "year_source": "explicit year"
+   },
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "IBIT",
      "direction": "up_on_yes",
      "impact_pct": 3.0,
@@ -188,13 +227,7 @@
      "gap_t": 8.903896225923578,
      "days": 164,
      "trusted": true,
-     "option": {
-      "contract": "O:IBIT270115C00048000",
-      "expiry": "2027-01-15",
-      "strike": 48.0,
-      "call": "O:IBIT270115C00048000",
-      "put": "O:IBIT270115P00048000"
-     },
+     "option": null,
      "version": 1,
      "source": "S4 (open markets, Oct 2026)",
      "probe": false,
@@ -202,6 +235,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "MSTR",
      "direction": "up_on_yes",
      "impact_pct": 6.0,
@@ -213,13 +248,7 @@
      "gap_t": 6.913854837652552,
      "days": 164,
      "trusted": true,
-     "option": {
-      "contract": "O:MSTR270115C00160000",
-      "expiry": "2027-01-15",
-      "strike": 160.0,
-      "call": "O:MSTR270115C00160000",
-      "put": "O:MSTR270115P00160000"
-     },
+     "option": null,
      "version": 1,
      "source": "S4 (open markets, Oct 2026)",
      "probe": false,
@@ -227,6 +256,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "MARA",
      "direction": "up_on_yes",
      "impact_pct": 5.0,
@@ -238,13 +269,7 @@
      "gap_t": 5.302862040538015,
      "days": 164,
      "trusted": true,
-     "option": {
-      "contract": "O:MARA270115C00011000",
-      "expiry": "2027-01-15",
-      "strike": 11.0,
-      "call": "O:MARA270115C00011000",
-      "put": "O:MARA270115P00011000"
-     },
+     "option": null,
      "version": 1,
      "source": "S4 (open markets, Oct 2026)",
      "probe": false,
@@ -252,6 +277,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "COIN",
      "direction": "up_on_yes",
      "impact_pct": 4.0,
@@ -286,8 +313,20 @@
    "alternative": "The blockade continues through 2026.",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": true,
+    "reasons": [],
+    "ladder_id": "us-announces-end-of-iranian-blockade-byptptpt-20260713152715080::US announces end of Iranian blockade by @D@?",
+    "date": "2026-12-31",
+    "event": "us-announces-end-of-iranian-blockade-byptptpt-20260713152715080",
+    "year_source": "explicit year"
+   },
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "USO",
      "direction": "down_on_yes",
      "impact_pct": 7.0,
@@ -299,13 +338,7 @@
      "gap_t": 5.495046881789617,
      "days": 48,
      "trusted": true,
-     "option": {
-      "contract": "O:USO270115P00147000",
-      "expiry": "2027-01-15",
-      "strike": 147.0,
-      "call": "O:USO270115C00147000",
-      "put": "O:USO270115P00147000"
-     },
+     "option": null,
      "version": 3,
      "source": "dev",
      "probe": false,
@@ -313,6 +346,8 @@
      "verdict_since_cutoff": "confirmed"
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "XLE",
      "direction": "down_on_yes",
      "impact_pct": 2.75,
@@ -324,13 +359,7 @@
      "gap_t": 4.704618429634594,
      "days": 48,
      "trusted": true,
-     "option": {
-      "contract": "O:XLE270115P00062500",
-      "expiry": "2027-01-15",
-      "strike": 62.5,
-      "call": "O:XLE270115C00062500",
-      "put": "O:XLE270115P00062500"
-     },
+     "option": null,
      "version": 3,
      "source": "dev",
      "probe": false,
@@ -338,6 +367,8 @@
      "verdict_since_cutoff": "confirmed"
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "JETS",
      "direction": "up_on_yes",
      "impact_pct": 2.75,
@@ -349,13 +380,7 @@
      "gap_t": 4.963409120734109,
      "days": 48,
      "trusted": true,
-     "option": {
-      "contract": "O:JETS270115C00028000",
-      "expiry": "2027-01-15",
-      "strike": 28.0,
-      "call": "O:JETS270115C00028000",
-      "put": "O:JETS270115P00028000"
-     },
+     "option": null,
      "version": 3,
      "source": "dev",
      "probe": false,
@@ -378,8 +403,22 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "price proxy",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": false,
+    "reasons": [
+     "no event id, slug or title"
+    ],
+    "ladder_id": null,
+    "date": "2026-12-31",
+    "event": null,
+    "year_source": "explicit year"
+   },
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "IBIT",
      "direction": "down_on_yes",
      "impact_pct": 6.5,
@@ -391,13 +430,7 @@
      "gap_t": 5.284752878386452,
      "days": 188,
      "trusted": true,
-     "option": {
-      "contract": "O:IBIT270115P00048000",
-      "expiry": "2027-01-15",
-      "strike": 48.0,
-      "call": "O:IBIT270115C00048000",
-      "put": "O:IBIT270115P00048000"
-     },
+     "option": null,
      "version": 1,
      "source": "S4 (open markets, Oct 2026)",
      "probe": false,
@@ -405,6 +438,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "MSTR",
      "direction": "down_on_yes",
      "impact_pct": 13.0,
@@ -416,13 +451,7 @@
      "gap_t": 3.6038315430320984,
      "days": 188,
      "trusted": true,
-     "option": {
-      "contract": "O:MSTR270115P00160000",
-      "expiry": "2027-01-15",
-      "strike": 160.0,
-      "call": "O:MSTR270115C00160000",
-      "put": "O:MSTR270115P00160000"
-     },
+     "option": null,
      "version": 1,
      "source": "S4 (open markets, Oct 2026)",
      "probe": false,
@@ -430,6 +459,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "MARA",
      "direction": "down_on_yes",
      "impact_pct": 10.4,
@@ -441,13 +472,7 @@
      "gap_t": 3.3731910923770188,
      "days": 188,
      "trusted": true,
-     "option": {
-      "contract": "O:MARA270115P00011000",
-      "expiry": "2027-01-15",
-      "strike": 11.0,
-      "call": "O:MARA270115C00011000",
-      "put": "O:MARA270115P00011000"
-     },
+     "option": null,
      "version": 1,
      "source": "S4 (open markets, Oct 2026)",
      "probe": false,
@@ -455,6 +480,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "COIN",
      "direction": "down_on_yes",
      "impact_pct": 9.1,
@@ -489,8 +516,22 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "price proxy",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": false,
+    "reasons": [
+     "no event id, slug or title"
+    ],
+    "ladder_id": null,
+    "date": "2026-12-31",
+    "event": null,
+    "year_source": "explicit year"
+   },
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "IBIT",
      "direction": "up_on_yes",
      "impact_pct": 5.5,
@@ -502,13 +543,7 @@
      "gap_t": 8.756058007695978,
      "days": 188,
      "trusted": true,
-     "option": {
-      "contract": "O:IBIT270115C00048000",
-      "expiry": "2027-01-15",
-      "strike": 48.0,
-      "call": "O:IBIT270115C00048000",
-      "put": "O:IBIT270115P00048000"
-     },
+     "option": null,
      "version": 1,
      "source": "S4 (open markets, Oct 2026)",
      "probe": false,
@@ -516,6 +551,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "MSTR",
      "direction": "up_on_yes",
      "impact_pct": 11.0,
@@ -527,13 +564,7 @@
      "gap_t": 6.295839698726488,
      "days": 188,
      "trusted": true,
-     "option": {
-      "contract": "O:MSTR270115C00160000",
-      "expiry": "2027-01-15",
-      "strike": 160.0,
-      "call": "O:MSTR270115C00160000",
-      "put": "O:MSTR270115P00160000"
-     },
+     "option": null,
      "version": 1,
      "source": "S4 (open markets, Oct 2026)",
      "probe": false,
@@ -541,6 +572,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "MARA",
      "direction": "up_on_yes",
      "impact_pct": 8.8,
@@ -552,13 +585,7 @@
      "gap_t": 5.309937916281895,
      "days": 188,
      "trusted": true,
-     "option": {
-      "contract": "O:MARA270115C00011000",
-      "expiry": "2027-01-15",
-      "strike": 11.0,
-      "call": "O:MARA270115C00011000",
-      "put": "O:MARA270115P00011000"
-     },
+     "option": null,
      "version": 1,
      "source": "S4 (open markets, Oct 2026)",
      "probe": false,
@@ -566,6 +593,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "COIN",
      "direction": "up_on_yes",
      "impact_pct": 7.7,
@@ -600,8 +629,22 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "price proxy",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": false,
+    "reasons": [
+     "no event id, slug or title"
+    ],
+    "ladder_id": null,
+    "date": "2026-12-31",
+    "event": null,
+    "year_source": "explicit year"
+   },
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "IBIT",
      "direction": "up_on_yes",
      "impact_pct": 3.0,
@@ -613,13 +656,7 @@
      "gap_t": 5.981127995557104,
      "days": 81,
      "trusted": true,
-     "option": {
-      "contract": "O:IBIT270115C00048000",
-      "expiry": "2027-01-15",
-      "strike": 48.0,
-      "call": "O:IBIT270115C00048000",
-      "put": "O:IBIT270115P00048000"
-     },
+     "option": null,
      "version": 1,
      "source": "S4 (open markets, Oct 2026)",
      "probe": false,
@@ -627,6 +664,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "MSTR",
      "direction": "up_on_yes",
      "impact_pct": 6.0,
@@ -638,13 +677,7 @@
      "gap_t": 5.035530601310943,
      "days": 81,
      "trusted": true,
-     "option": {
-      "contract": "O:MSTR270115C00160000",
-      "expiry": "2027-01-15",
-      "strike": 160.0,
-      "call": "O:MSTR270115C00160000",
-      "put": "O:MSTR270115P00160000"
-     },
+     "option": null,
      "version": 1,
      "source": "S4 (open markets, Oct 2026)",
      "probe": false,
@@ -652,6 +685,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "MARA",
      "direction": "up_on_yes",
      "impact_pct": 5.0,
@@ -663,13 +698,7 @@
      "gap_t": 5.33724754229291,
      "days": 81,
      "trusted": true,
-     "option": {
-      "contract": "O:MARA270115C00011000",
-      "expiry": "2027-01-15",
-      "strike": 11.0,
-      "call": "O:MARA270115C00011000",
-      "put": "O:MARA270115P00011000"
-     },
+     "option": null,
      "version": 1,
      "source": "S4 (open markets, Oct 2026)",
      "probe": false,
@@ -677,6 +706,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "COIN",
      "direction": "up_on_yes",
      "impact_pct": 4.0,
@@ -755,8 +786,12 @@
    "alternative": "A lower end-2026 federal funds rate, i.e. more cuts.",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "SHY",
      "direction": "down_on_yes",
      "impact_pct": 4.0,
@@ -782,6 +817,8 @@
      "verdict_since_cutoff": "unproven"
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "UUP",
      "direction": "up_on_yes",
      "impact_pct": 4.5,
@@ -807,6 +844,8 @@
      "verdict_since_cutoff": "unproven"
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "TLT",
      "direction": "down_on_yes",
      "impact_pct": 4.5,
@@ -893,8 +932,12 @@
    "alternative": "Lula or another candidate of the Workers' Party left wins.",
    "ends": "2026-10-05",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "EWZ",
      "direction": "up_on_yes",
      "impact_pct": 10.0,
@@ -920,6 +963,8 @@
      "verdict_since_cutoff": "unproven"
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "PBR",
      "direction": "up_on_yes",
      "impact_pct": 15.0,
@@ -945,6 +990,8 @@
      "verdict_since_cutoff": "confirmed"
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "ITUB",
      "direction": "up_on_yes",
      "impact_pct": 9.0,
@@ -985,8 +1032,22 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": false,
+    "reasons": [
+     "no event id, slug or title"
+    ],
+    "ladder_id": null,
+    "date": "2026-12-31",
+    "event": null,
+    "year_source": "re-derived from the creation date"
+   },
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "JETS",
      "direction": "up_on_yes",
      "impact_pct": 4.0,
@@ -998,13 +1059,7 @@
      "gap_t": 4.372771752039705,
      "days": 100,
      "trusted": true,
-     "option": {
-      "contract": "O:JETS270115C00028000",
-      "expiry": "2027-01-15",
-      "strike": 28.0,
-      "call": "O:JETS270115C00028000",
-      "put": "O:JETS270115P00028000"
-     },
+     "option": null,
      "version": 1,
      "source": "S4 (open markets, Oct 2026)",
      "probe": false,
@@ -1012,6 +1067,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "XLE",
      "direction": "down_on_yes",
      "impact_pct": 4.0,
@@ -1031,6 +1088,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "OXY",
      "direction": "down_on_yes",
      "impact_pct": 4.5,
@@ -1065,8 +1124,22 @@
    "alternative": "",
    "ends": "2026-11-01",
    "kind": "event",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": false,
+    "reasons": [
+     "no event id, slug or title"
+    ],
+    "ladder_id": null,
+    "date": "2026-10-31",
+    "event": null,
+    "year_source": "re-derived from the creation date"
+   },
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "USO",
      "direction": "down_on_yes",
      "impact_pct": 5.0,
@@ -1078,13 +1151,7 @@
      "gap_t": 4.026297382386859,
      "days": 37,
      "trusted": true,
-     "option": {
-      "contract": "O:USO261106P00147500",
-      "expiry": "2026-11-06",
-      "strike": 147.5,
-      "call": "O:USO261106C00147500",
-      "put": "O:USO261106P00147500"
-     },
+     "option": null,
      "version": 1,
      "source": "S4 (open markets, Oct 2026)",
      "probe": false,
@@ -1092,6 +1159,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "XLE",
      "direction": "down_on_yes",
      "impact_pct": 3.0,
@@ -1111,6 +1180,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "STNG",
      "direction": "down_on_yes",
      "impact_pct": 3.0,
@@ -1130,6 +1201,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "DAL",
      "direction": "up_on_yes",
      "impact_pct": 2.0,
@@ -1164,8 +1237,22 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "price proxy",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": false,
+    "reasons": [
+     "no event id, slug or title"
+    ],
+    "ladder_id": null,
+    "date": "2026-12-31",
+    "event": null,
+    "year_source": "re-derived from the creation date"
+   },
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "XLE",
      "direction": "up_on_yes",
      "impact_pct": 4.0,
@@ -1177,13 +1264,7 @@
      "gap_t": 3.1107421035846397,
      "days": 107,
      "trusted": true,
-     "option": {
-      "contract": "O:XLE270115C00062500",
-      "expiry": "2027-01-15",
-      "strike": 62.5,
-      "call": "O:XLE270115C00062500",
-      "put": "O:XLE270115P00062500"
-     },
+     "option": null,
      "version": 1,
      "source": "S4 (open markets, Oct 2026)",
      "probe": false,
@@ -1191,6 +1272,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "OXY",
      "direction": "up_on_yes",
      "impact_pct": 5.0,
@@ -1210,6 +1293,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "XOM",
      "direction": "up_on_yes",
      "impact_pct": 3.5,
@@ -1244,8 +1329,22 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "price proxy",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": false,
+    "reasons": [
+     "no event id, slug or title"
+    ],
+    "ladder_id": null,
+    "date": "2026-12-31",
+    "event": null,
+    "year_source": "explicit year"
+   },
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "ETHA",
      "direction": "up_on_yes",
      "impact_pct": 9.0,
@@ -1257,13 +1356,7 @@
      "gap_t": 5.1694666408180705,
      "days": 188,
      "trusted": true,
-     "option": {
-      "contract": "O:ETHA270115C00020000",
-      "expiry": "2027-01-15",
-      "strike": 20.0,
-      "call": "O:ETHA270115C00020000",
-      "put": "O:ETHA270115P00020000"
-     },
+     "option": null,
      "version": 1,
      "source": "S4 (open markets, Oct 2026)",
      "probe": false,
@@ -1271,6 +1364,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "BMNR",
      "direction": "up_on_yes",
      "impact_pct": 13.5,
@@ -1282,13 +1377,7 @@
      "gap_t": 3.375832606007409,
      "days": 188,
      "trusted": true,
-     "option": {
-      "contract": "O:BMNR270115C00026000",
-      "expiry": "2027-01-15",
-      "strike": 26.0,
-      "call": "O:BMNR270115C00026000",
-      "put": "O:BMNR270115P00026000"
-     },
+     "option": null,
      "version": 1,
      "source": "S4 (open markets, Oct 2026)",
      "probe": false,
@@ -1296,6 +1385,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "COIN",
      "direction": "up_on_yes",
      "impact_pct": 6.0,
@@ -1307,13 +1398,7 @@
      "gap_t": 2.1690987664386405,
      "days": 188,
      "trusted": true,
-     "option": {
-      "contract": "O:COIN270115C00185000",
-      "expiry": "2027-01-15",
-      "strike": 185.0,
-      "call": "O:COIN270115C00185000",
-      "put": "O:COIN270115P00185000"
-     },
+     "option": null,
      "version": 1,
      "source": "S4 (open markets, Oct 2026)",
      "probe": false,
@@ -1336,8 +1421,20 @@
    "alternative": "Hormuz transit stays free of Iranian fees.",
    "ends": "2026-11-01",
    "kind": "event",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": true,
+    "reasons": [],
+    "ladder_id": "iran-charges-hormuz-fees-byptptpt-20260625175035466::Iran charges Hormuz fees by @D@?",
+    "date": "2026-10-31",
+    "event": "iran-charges-hormuz-fees-byptptpt-20260625175035466",
+    "year_source": "re-derived from the creation date"
+   },
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "USO",
      "direction": "up_on_yes",
      "impact_pct": 4.0,
@@ -1349,13 +1446,7 @@
      "gap_t": -1.9516982603170032,
      "days": 65,
      "trusted": true,
-     "option": {
-      "contract": "O:USO261106C00147500",
-      "expiry": "2026-11-06",
-      "strike": 147.5,
-      "call": "O:USO261106C00147500",
-      "put": "O:USO261106P00147500"
-     },
+     "option": null,
      "version": 3,
      "source": "heldout2",
      "probe": false,
@@ -1363,6 +1454,8 @@
      "verdict_since_cutoff": "unproven"
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "FRO",
      "direction": "up_on_yes",
      "impact_pct": 5.0,
@@ -1374,13 +1467,7 @@
      "gap_t": 0.0300487275185825,
      "days": 65,
      "trusted": true,
-     "option": {
-      "contract": "O:FRO261120C00054200",
-      "expiry": "2026-11-20",
-      "strike": 54.2,
-      "call": "O:FRO261120C00054200",
-      "put": "O:FRO261120P00054200"
-     },
+     "option": null,
      "version": 3,
      "source": "heldout2",
      "probe": false,
@@ -1403,8 +1490,20 @@
    "alternative": "Hamas does not agree to disarm by December 31",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": true,
+    "reasons": [],
+    "ladder_id": "will-hamaz-disarm-by-december-31::Will Hamas agree to disarm by @D@?",
+    "date": "2026-12-31",
+    "event": "will-hamaz-disarm-by-december-31",
+    "year_source": "re-derived from the creation date"
+   },
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "EIS",
      "direction": "up_on_yes",
      "impact_pct": 2.0,
@@ -1439,8 +1538,22 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "price proxy",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": false,
+    "reasons": [
+     "no event id, slug or title"
+    ],
+    "ladder_id": null,
+    "date": "2026-12-31",
+    "event": null,
+    "year_source": "explicit year"
+   },
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "MSTR",
      "direction": "up_on_yes",
      "impact_pct": 10.0,
@@ -1452,13 +1565,7 @@
      "gap_t": 2.5423740601473757,
      "days": 188,
      "trusted": true,
-     "option": {
-      "contract": "O:MSTR270115C00160000",
-      "expiry": "2027-01-15",
-      "strike": 160.0,
-      "call": "O:MSTR270115C00160000",
-      "put": "O:MSTR270115P00160000"
-     },
+     "option": null,
      "version": 1,
      "source": "S4 (open markets, Oct 2026)",
      "probe": false,
@@ -1466,6 +1573,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "MARA",
      "direction": "up_on_yes",
      "impact_pct": 9.0,
@@ -1485,6 +1594,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "COIN",
      "direction": "up_on_yes",
      "impact_pct": 6.0,
@@ -1519,8 +1630,12 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "JETS",
      "direction": "down_on_yes",
      "impact_pct": 6.0,
@@ -1546,6 +1661,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "LMT",
      "direction": "up_on_yes",
      "impact_pct": 3.0,
@@ -1565,6 +1682,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "XLE",
      "direction": "up_on_yes",
      "impact_pct": 6.0,
@@ -1643,8 +1762,12 @@
    "alternative": "Fewer or no Fed rate cuts in 2026.",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "SHY",
      "direction": "down_on_yes",
      "impact_pct": 4.0,
@@ -1670,6 +1793,8 @@
      "verdict_since_cutoff": "unproven"
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "IEF",
      "direction": "down_on_yes",
      "impact_pct": 2.13,
@@ -1695,6 +1820,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "UUP",
      "direction": "up_on_yes",
      "impact_pct": 4.5,
@@ -1714,6 +1841,8 @@
      "verdict_since_cutoff": "unproven"
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "GLD",
      "direction": "down_on_yes",
      "impact_pct": 5.0,
@@ -1748,8 +1877,12 @@
    "alternative": "",
    "ends": "2026-10-31",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "GOOGL",
      "direction": "up_on_yes",
      "impact_pct": 4.0,
@@ -1775,6 +1908,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "MSFT",
      "direction": "down_on_yes",
      "impact_pct": 1.0,
@@ -1809,8 +1944,20 @@
    "alternative": "No US-Iran nuclear deal in 2026, sanctions and conflict risk persist.",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": true,
+    "reasons": [],
+    "ladder_id": "us-iran-final-nuclear-deal-by-20260621201254412::US-Iran Final Nuclear Deal by @D@?",
+    "date": "2026-12-31",
+    "event": "us-iran-final-nuclear-deal-by-20260621201254412",
+    "year_source": "explicit year"
+   },
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "USO",
      "direction": "down_on_yes",
      "impact_pct": 5.5,
@@ -1822,13 +1969,7 @@
      "gap_t": 5.741322256176288,
      "days": 68,
      "trusted": true,
-     "option": {
-      "contract": "O:USO270115P00147000",
-      "expiry": "2027-01-15",
-      "strike": 147.0,
-      "call": "O:USO270115C00147000",
-      "put": "O:USO270115P00147000"
-     },
+     "option": null,
      "version": 3,
      "source": "dev",
      "probe": false,
@@ -1836,6 +1977,8 @@
      "verdict_since_cutoff": "confirmed"
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "XLE",
      "direction": "down_on_yes",
      "impact_pct": 2.0,
@@ -1847,13 +1990,7 @@
      "gap_t": 6.833010319655699,
      "days": 68,
      "trusted": true,
-     "option": {
-      "contract": "O:XLE270115P00062500",
-      "expiry": "2027-01-15",
-      "strike": 62.5,
-      "call": "O:XLE270115C00062500",
-      "put": "O:XLE270115P00062500"
-     },
+     "option": null,
      "version": 3,
      "source": "dev",
      "probe": false,
@@ -1861,6 +1998,8 @@
      "verdict_since_cutoff": "confirmed"
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "EIS",
      "direction": "up_on_yes",
      "impact_pct": 2.0,
@@ -1895,8 +2034,12 @@
    "alternative": "No military clash between China and Taiwan.",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "FXI",
      "direction": "down_on_yes",
      "impact_pct": 6.5,
@@ -1922,6 +2065,8 @@
      "verdict_since_cutoff": "unproven"
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "TSM",
      "direction": "down_on_yes",
      "impact_pct": 12.5,
@@ -1941,6 +2086,8 @@
      "verdict_since_cutoff": "unproven"
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "EWT",
      "direction": "down_on_yes",
      "impact_pct": 12.5,
@@ -1975,8 +2122,20 @@
    "alternative": "",
    "ends": "2026-11-01",
    "kind": "event",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": true,
+    "reasons": [],
+    "ladder_id": "us-announces-end-of-iranian-blockade-byptptpt-20260713152715080::US announces end of Iranian blockade by @D@?",
+    "date": "2026-10-31",
+    "event": "us-announces-end-of-iranian-blockade-byptptpt-20260713152715080",
+    "year_source": "explicit year"
+   },
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "XLE",
      "direction": "down_on_yes",
      "impact_pct": 4.0,
@@ -1996,6 +2155,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "UAL",
      "direction": "up_on_yes",
      "impact_pct": 3.0,
@@ -2015,6 +2176,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "DAL",
      "direction": "up_on_yes",
      "impact_pct": 3.0,
@@ -2034,6 +2197,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "XOM",
      "direction": "down_on_yes",
      "impact_pct": 3.0,
@@ -2068,8 +2233,12 @@
    "alternative": "",
    "ends": "2026-12-31",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "ITA",
      "direction": "down_on_yes",
      "impact_pct": 1.5,
@@ -2089,6 +2258,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "XLE",
      "direction": "down_on_yes",
      "impact_pct": 2.5,
@@ -2123,8 +2294,12 @@
    "alternative": "",
    "ends": "2026-10-31",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "XLE",
      "direction": "down_on_yes",
      "impact_pct": 3.0,
@@ -2144,6 +2319,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "ITA",
      "direction": "down_on_yes",
      "impact_pct": 1.5,
@@ -2178,8 +2355,22 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": false,
+    "reasons": [
+     "no event id, slug or title"
+    ],
+    "ladder_id": null,
+    "date": "2026-12-31",
+    "event": null,
+    "year_source": "explicit year"
+   },
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "RTX",
      "direction": "up_on_yes",
      "impact_pct": 3.0,
@@ -2199,6 +2390,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "LMT",
      "direction": "up_on_yes",
      "impact_pct": 3.5,
@@ -2218,6 +2411,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "ITA",
      "direction": "up_on_yes",
      "impact_pct": 3.0,
@@ -2252,8 +2447,12 @@
    "alternative": "",
    "ends": "2026-12-09",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "KRE",
      "direction": "up_on_yes",
      "impact_pct": 1.0,
@@ -2273,6 +2472,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "XHB",
      "direction": "down_on_yes",
      "impact_pct": 3.0,
@@ -2292,6 +2493,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "TLT",
      "direction": "down_on_yes",
      "impact_pct": 2.0,
@@ -2326,8 +2529,12 @@
    "alternative": "",
    "ends": "2026-10-29",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "IWM",
      "direction": "down_on_yes",
      "impact_pct": 3.0,
@@ -2347,6 +2554,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "XHB",
      "direction": "down_on_yes",
      "impact_pct": 3.0,
@@ -2381,8 +2590,12 @@
    "alternative": "",
    "ends": "2026-10-31",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "AMZN",
      "direction": "up_on_yes",
      "impact_pct": 1.0,
@@ -2402,6 +2615,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "GOOGL",
      "direction": "down_on_yes",
      "impact_pct": 1.0,
@@ -2436,8 +2651,12 @@
    "alternative": "",
    "ends": "2026-10-05",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "EWZ",
      "direction": "up_on_yes",
      "impact_pct": 1.5,
@@ -2472,8 +2691,22 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": false,
+    "reasons": [
+     "no event id, slug or title"
+    ],
+    "ladder_id": null,
+    "date": "2026-12-31",
+    "event": null,
+    "year_source": "re-derived from the creation date"
+   },
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "CCL",
      "direction": "down_on_yes",
      "impact_pct": 2.0,
@@ -2493,6 +2726,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "XLE",
      "direction": "up_on_yes",
      "impact_pct": 0.8,
@@ -2527,8 +2762,20 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": true,
+    "reasons": [],
+    "ladder_id": "iran-leadership-change-by::Iran leadership change by @D@?",
+    "date": "2026-12-31",
+    "event": "iran-leadership-change-by",
+    "year_source": "re-derived from the creation date"
+   },
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "XLE",
      "direction": "down_on_yes",
      "impact_pct": 2.0,
@@ -2548,6 +2795,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "ITA",
      "direction": "down_on_yes",
      "impact_pct": 1.0,
@@ -2582,8 +2831,12 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "XLE",
      "direction": "down_on_yes",
      "impact_pct": 3.0,
@@ -2603,6 +2856,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "ITA",
      "direction": "up_on_yes",
      "impact_pct": 1.0,
@@ -2637,8 +2892,12 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "TSM",
      "direction": "down_on_yes",
      "impact_pct": 20.0,
@@ -2658,6 +2917,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "SMH",
      "direction": "down_on_yes",
      "impact_pct": 12.0,
@@ -2677,6 +2938,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "AAPL",
      "direction": "down_on_yes",
      "impact_pct": 8.0,
@@ -2696,6 +2959,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "NVDA",
      "direction": "down_on_yes",
      "impact_pct": 12.0,
@@ -2730,8 +2995,12 @@
    "alternative": "The war continues without a signed deal.",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "EPOL",
      "direction": "up_on_yes",
      "impact_pct": 6.0,
@@ -2751,6 +3020,8 @@
      "verdict_since_cutoff": "unproven"
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "VGK",
      "direction": "up_on_yes",
      "impact_pct": 2.5,
@@ -2770,6 +3041,8 @@
      "verdict_since_cutoff": "unproven"
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "USO",
      "direction": "down_on_yes",
      "impact_pct": 4.0,
@@ -2804,8 +3077,20 @@
    "alternative": "Iran keeps its enriched uranium stockpile, conflict risk persists.",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": true,
+    "reasons": [],
+    "ladder_id": "iran-agrees-to-surrender-enriched-uranium-stockpile-by::Iran agrees to surrender enriched uranium stockpile by @D@?",
+    "date": "2026-12-31",
+    "event": "iran-agrees-to-surrender-enriched-uranium-stockpile-by",
+    "year_source": "explicit year"
+   },
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "USO",
      "direction": "down_on_yes",
      "impact_pct": 4.5,
@@ -2825,6 +3110,8 @@
      "verdict_since_cutoff": "unproven"
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "EIS",
      "direction": "up_on_yes",
      "impact_pct": 2.0,
@@ -2859,8 +3146,20 @@
    "alternative": "no Russia-Ukraine ceasefire agreement by December 31, 2026",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": true,
+    "reasons": [],
+    "ladder_id": "russia-x-ukraine-ceasefire-agreement-by::Russia x Ukraine ceasefire agreement by @D@?",
+    "date": "2026-12-31",
+    "event": "russia-x-ukraine-ceasefire-agreement-by",
+    "year_source": "explicit year"
+   },
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "EPOL",
      "direction": "up_on_yes",
      "impact_pct": 5.5,
@@ -2880,6 +3179,8 @@
      "verdict_since_cutoff": "unproven"
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "VGK",
      "direction": "up_on_yes",
      "impact_pct": 2.0,
@@ -2914,8 +3215,12 @@
    "alternative": "",
    "ends": "2026-12-09",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "IWM",
      "direction": "down_on_yes",
      "impact_pct": 1.5,
@@ -2935,6 +3240,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "XHB",
      "direction": "down_on_yes",
      "impact_pct": 1.5,
@@ -2969,8 +3276,20 @@
    "alternative": "Hezbollah keeps its arms through December 31",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": true,
+    "reasons": [],
+    "ladder_id": "will-hezbollah-disarm-by-march-31::Will Hezbollah disarm by @D@?",
+    "date": "2026-12-31",
+    "event": "will-hezbollah-disarm-by-march-31",
+    "year_source": "re-derived from the creation date"
+   },
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "EIS",
      "direction": "up_on_yes",
      "impact_pct": 1.5,
@@ -3005,8 +3324,12 @@
    "alternative": "",
    "ends": "2026-10-31",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "GOOGL",
      "direction": "down_on_yes",
      "impact_pct": 1.5,
@@ -3026,6 +3349,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "MSFT",
      "direction": "up_on_yes",
      "impact_pct": 1.0,
@@ -3060,8 +3385,20 @@
    "alternative": "",
    "ends": "2026-11-01",
    "kind": "event",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": true,
+    "reasons": [],
+    "ladder_id": "us-iran-final-nuclear-deal-by-20260621201254412::US-Iran Final Nuclear Deal by @D@?",
+    "date": "2026-10-31",
+    "event": "us-iran-final-nuclear-deal-by-20260621201254412",
+    "year_source": "explicit year"
+   },
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "XLE",
      "direction": "down_on_yes",
      "impact_pct": 3.0,
@@ -3081,6 +3418,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "ITA",
      "direction": "down_on_yes",
      "impact_pct": 1.5,
@@ -3100,6 +3439,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "DAL",
      "direction": "up_on_yes",
      "impact_pct": 2.0,
@@ -3134,8 +3475,20 @@
    "alternative": "Anthropic stays private through 2026.",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": true,
+    "reasons": [],
+    "ladder_id": "anthropic-ipo-by::Will Anthropic IPO by @D@?",
+    "date": "2026-12-31",
+    "event": "anthropic-ipo-by",
+    "year_source": "explicit year"
+   },
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "AMZN",
      "direction": "up_on_yes",
      "impact_pct": 2.0,
@@ -3170,8 +3523,20 @@
    "alternative": "Iran keeps enriching and the confrontation continues.",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": true,
+    "reasons": [],
+    "ladder_id": "iran-agrees-to-end-enrichment-of-uranium-by-december-31::Iran agrees to end enrichment of uranium by @D@?",
+    "date": "2026-12-31",
+    "event": "iran-agrees-to-end-enrichment-of-uranium-by-december-31",
+    "year_source": "re-derived from the creation date"
+   },
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "USO",
      "direction": "down_on_yes",
      "impact_pct": 4.5,
@@ -3206,8 +3571,20 @@
    "alternative": "No US strike on Mexico.",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": true,
+    "reasons": [],
+    "ladder_id": "us-strike-on-mexico-by::US strike on Mexico by @D@?",
+    "date": "2026-12-31",
+    "event": "us-strike-on-mexico-by",
+    "year_source": "re-derived from the creation date"
+   },
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "EWW",
      "direction": "down_on_yes",
      "impact_pct": 7.0,
@@ -3242,8 +3619,12 @@
    "alternative": "",
    "ends": "2026-10-29",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "IWM",
      "direction": "up_on_yes",
      "impact_pct": 2.5,
@@ -3263,6 +3644,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "XHB",
      "direction": "up_on_yes",
      "impact_pct": 2.5,
@@ -3297,8 +3680,22 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "price proxy",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": false,
+    "reasons": [
+     "no event id, slug or title"
+    ],
+    "ladder_id": null,
+    "date": "2026-12-31",
+    "event": null,
+    "year_source": "explicit year"
+   },
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "IBIT",
      "direction": "up_on_yes",
      "impact_pct": 4.5,
@@ -3318,6 +3715,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "MSTR",
      "direction": "up_on_yes",
      "impact_pct": 9.0,
@@ -3337,6 +3736,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "COIN",
      "direction": "up_on_yes",
      "impact_pct": 6.0,
@@ -3356,6 +3757,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "MARA",
      "direction": "up_on_yes",
      "impact_pct": 7.5,
@@ -3390,8 +3793,20 @@
    "alternative": "OpenAI stays private through 2026.",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": true,
+    "reasons": [],
+    "ladder_id": "openai-ipo-by::Will OpenAI IPO by @D@?",
+    "date": "2026-12-31",
+    "event": "openai-ipo-by",
+    "year_source": "explicit year"
+   },
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "MSFT",
      "direction": "up_on_yes",
      "impact_pct": 2.0,
@@ -3426,8 +3841,20 @@
    "alternative": "",
    "ends": "2026-11-01",
    "kind": "event",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": true,
+    "reasons": [],
+    "ladder_id": "iran-leadership-change-by::Iran leadership change by @D@?",
+    "date": "2026-10-31",
+    "event": "iran-leadership-change-by",
+    "year_source": "re-derived from the creation date"
+   },
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "ITA",
      "direction": "down_on_yes",
      "impact_pct": 1.5,
@@ -3447,6 +3874,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "DAL",
      "direction": "up_on_yes",
      "impact_pct": 2.0,
@@ -3466,6 +3895,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "XLE",
      "direction": "down_on_yes",
      "impact_pct": 3.0,
@@ -3500,8 +3931,12 @@
    "alternative": "",
    "ends": "2026-10-31",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "NVDA",
      "direction": "up_on_yes",
      "impact_pct": 0.5,
@@ -3521,6 +3956,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "TSLA",
      "direction": "up_on_yes",
      "impact_pct": 2.0,
@@ -3555,8 +3992,12 @@
    "alternative": "",
    "ends": "2026-11-04",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "XLE",
      "direction": "up_on_yes",
      "impact_pct": 1.5,
@@ -3576,6 +4017,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "ITA",
      "direction": "up_on_yes",
      "impact_pct": 1.0,
@@ -3595,6 +4038,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "ICLN",
      "direction": "down_on_yes",
      "impact_pct": 2.5,
@@ -3629,8 +4074,12 @@
    "alternative": "No acquisition.",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "EBAY",
      "direction": "up_on_yes",
      "impact_pct": 15.0,
@@ -3650,6 +4099,8 @@
      "verdict_since_cutoff": "unproven"
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "GME",
      "direction": "down_on_yes",
      "impact_pct": 9.0,
@@ -3684,8 +4135,12 @@
    "alternative": "",
    "ends": "2026-10-29",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "IWM",
      "direction": "down_on_yes",
      "impact_pct": 5.0,
@@ -3705,6 +4160,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "XHB",
      "direction": "down_on_yes",
      "impact_pct": 5.0,
@@ -3739,8 +4196,12 @@
    "alternative": "Iran does not get a nuclear weapon before 2027.",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "EIS",
      "direction": "down_on_yes",
      "impact_pct": 7.0,
@@ -3760,6 +4221,8 @@
      "verdict_since_cutoff": "unproven"
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "USO",
      "direction": "up_on_yes",
      "impact_pct": 8.0,
@@ -3779,6 +4242,8 @@
      "verdict_since_cutoff": "unproven"
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "GLD",
      "direction": "up_on_yes",
      "impact_pct": 3.0,
@@ -3813,8 +4278,12 @@
    "alternative": "",
    "ends": "2026-11-01",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "GOOGL",
      "direction": "down_on_yes",
      "impact_pct": 1.0,
@@ -3834,6 +4303,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "META",
      "direction": "up_on_yes",
      "impact_pct": 2.0,
@@ -3868,8 +4339,12 @@
    "alternative": "The AI investment boom continues through 2026.",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "SMH",
      "direction": "down_on_yes",
      "impact_pct": 25.0,
@@ -3904,8 +4379,20 @@
    "alternative": "no Russia-Ukraine ceasefire by December 31, 2026",
    "ends": "2026-12-31",
    "kind": "event",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": true,
+    "reasons": [],
+    "ladder_id": "russia-x-ukraine-ceasefire-by::Russia x Ukraine ceasefire by @D@?",
+    "date": "2026-12-31",
+    "event": "russia-x-ukraine-ceasefire-by",
+    "year_source": "explicit year"
+   },
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "EPOL",
      "direction": "up_on_yes",
      "impact_pct": 4.5,
@@ -3925,6 +4412,8 @@
      "verdict_since_cutoff": "unproven"
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "VGK",
      "direction": "up_on_yes",
      "impact_pct": 3.5,
@@ -3944,6 +4433,8 @@
      "verdict_since_cutoff": "unproven"
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "USO",
      "direction": "down_on_yes",
      "impact_pct": 4.5,
@@ -3978,8 +4469,12 @@
    "alternative": "",
    "ends": "2026-11-04",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "KRE",
      "direction": "up_on_yes",
      "impact_pct": 0.5,
@@ -3999,6 +4494,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "XLE",
      "direction": "up_on_yes",
      "impact_pct": 0.7,
@@ -4018,6 +4515,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "ICLN",
      "direction": "down_on_yes",
      "impact_pct": 1.5,
@@ -4052,8 +4551,20 @@
    "alternative": "No direct US-Russia military clash.",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": true,
+    "reasons": [],
+    "ladder_id": "us-x-russia-military-clash-by::US x Russia military clash by @D@?",
+    "date": "2026-12-31",
+    "event": "us-x-russia-military-clash-by",
+    "year_source": "explicit year"
+   },
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "ITA",
      "direction": "up_on_yes",
      "impact_pct": 4.5,
@@ -4088,8 +4599,12 @@
    "alternative": "The US stays in NATO.",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "EPOL",
      "direction": "down_on_yes",
      "impact_pct": 5.5,
@@ -4109,6 +4624,8 @@
      "verdict_since_cutoff": "unproven"
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "VGK",
      "direction": "down_on_yes",
      "impact_pct": 2.5,
@@ -4143,8 +4660,12 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "SHY",
      "direction": "up_on_yes",
      "impact_pct": 0.81,
@@ -4164,6 +4685,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "TLT",
      "direction": "up_on_yes",
      "impact_pct": 4.5,
@@ -4183,6 +4706,8 @@
      "verdict_since_cutoff": "contradicted"
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "IEF",
      "direction": "up_on_yes",
      "impact_pct": 1.77,
@@ -4217,8 +4742,22 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": false,
+    "reasons": [
+     "no event id, slug or title"
+    ],
+    "ladder_id": null,
+    "date": "2026-12-31",
+    "event": null,
+    "year_source": "explicit year"
+   },
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "ITA",
      "direction": "down_on_yes",
      "impact_pct": 1.5,
@@ -4253,8 +4792,12 @@
    "alternative": "Alberta stays in Canada.",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "FXC",
      "direction": "down_on_yes",
      "impact_pct": 3.5,
@@ -4274,6 +4817,8 @@
      "verdict_since_cutoff": "unproven"
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "EWC",
      "direction": "down_on_yes",
      "impact_pct": 5.0,
@@ -4308,8 +4853,12 @@
    "alternative": "Satoshi's roughly one million coins stay dormant.",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "IBIT",
      "direction": "down_on_yes",
      "impact_pct": 10.0,
@@ -4329,6 +4878,8 @@
      "verdict_since_cutoff": "unproven"
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "MSTR",
      "direction": "down_on_yes",
      "impact_pct": 15.0,
@@ -4363,8 +4914,12 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "SHY",
      "direction": "up_on_yes",
      "impact_pct": 1.69,
@@ -4384,6 +4939,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "IEF",
      "direction": "up_on_yes",
      "impact_pct": 2.92,
@@ -4403,6 +4960,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "TLT",
      "direction": "up_on_yes",
      "impact_pct": 8.87,
@@ -4437,8 +4996,12 @@
    "alternative": "No military clash between China and Japan.",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "EWJ",
      "direction": "down_on_yes",
      "impact_pct": 6.0,
@@ -4458,6 +5021,8 @@
      "verdict_since_cutoff": "unproven"
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "FXI",
      "direction": "down_on_yes",
      "impact_pct": 6.0,
@@ -4477,6 +5042,8 @@
      "verdict_since_cutoff": "unproven"
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "ITA",
      "direction": "up_on_yes",
      "impact_pct": 3.0,
@@ -4511,8 +5078,12 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "SHY",
      "direction": "up_on_yes",
      "impact_pct": 1.63,
@@ -4532,6 +5103,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "IEF",
      "direction": "up_on_yes",
      "impact_pct": 4.74,
@@ -4551,6 +5124,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "TLT",
      "direction": "up_on_yes",
      "impact_pct": 6.69,
@@ -4585,8 +5160,12 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "KWEB",
      "direction": "down_on_yes",
      "impact_pct": 4.0,
@@ -4606,6 +5185,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "FXI",
      "direction": "down_on_yes",
      "impact_pct": 3.0,
@@ -4640,8 +5221,12 @@
    "alternative": "",
    "ends": "2026-11-04",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "XLE",
      "direction": "down_on_yes",
      "impact_pct": 1.5,
@@ -4661,6 +5246,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "ICLN",
      "direction": "up_on_yes",
      "impact_pct": 2.5,
@@ -4695,8 +5282,12 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "SHY",
      "direction": "up_on_yes",
      "impact_pct": 2.31,
@@ -4716,6 +5307,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "IEF",
      "direction": "up_on_yes",
      "impact_pct": 6.59,
@@ -4735,6 +5328,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "TLT",
      "direction": "up_on_yes",
      "impact_pct": 9.84,
@@ -4769,8 +5364,12 @@
    "alternative": "China keeps its Bitcoin ban through 2027",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "COIN",
      "direction": "up_on_yes",
      "impact_pct": 9.0,
@@ -4790,6 +5389,8 @@
      "verdict_since_cutoff": "unproven"
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "IBIT",
      "direction": "up_on_yes",
      "impact_pct": 12.5,
@@ -4824,8 +5425,12 @@
    "alternative": "",
    "ends": "2026-11-04",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "XLE",
      "direction": "up_on_yes",
      "impact_pct": 0.8,
@@ -4845,6 +5450,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "ICLN",
      "direction": "down_on_yes",
      "impact_pct": 1.0,
@@ -4879,8 +5486,12 @@
    "alternative": "",
    "ends": "2026-10-29",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "IWM",
      "direction": "up_on_yes",
      "impact_pct": 1.5,
@@ -4900,6 +5511,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "GLD",
      "direction": "up_on_yes",
      "impact_pct": 2.0,
@@ -4934,8 +5547,12 @@
    "alternative": "No US invasion of Greenland.",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "GLD",
      "direction": "up_on_yes",
      "impact_pct": 3.0,
@@ -4955,6 +5572,8 @@
      "verdict_since_cutoff": "unproven"
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "VGK",
      "direction": "down_on_yes",
      "impact_pct": 4.5,
@@ -4989,8 +5608,12 @@
    "alternative": "",
    "ends": "2026-11-04",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "XLE",
      "direction": "down_on_yes",
      "impact_pct": 0.8,
@@ -5010,6 +5633,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "ICLN",
      "direction": "up_on_yes",
      "impact_pct": 1.0,
@@ -5088,8 +5713,12 @@
    "alternative": "A centrist or centre-right candidate wins.",
    "ends": "2027-04-19",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "EWQ",
      "direction": "down_on_yes",
      "impact_pct": 6.0,
@@ -5109,6 +5738,8 @@
      "verdict_since_cutoff": "unproven"
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "FXE",
      "direction": "down_on_yes",
      "impact_pct": 52.64,
@@ -5143,8 +5774,12 @@
    "alternative": "",
    "ends": "2027-04-19",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "EWQ",
      "direction": "down_on_yes",
      "impact_pct": 5.31,
@@ -5164,6 +5799,8 @@
      "verdict_since_cutoff": null
     },
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "FXE",
      "direction": "down_on_yes",
      "impact_pct": 15.03,
@@ -5198,8 +5835,12 @@
    "alternative": "",
    "ends": "2027-04-19",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "EWQ",
      "direction": "up_on_yes",
      "impact_pct": 110.01,
@@ -5234,8 +5875,12 @@
    "alternative": "",
    "ends": "2027-04-19",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [
     {
+     "evidence": "unvalidated estimate",
+     "mechanism": "event_link",
      "ticker": "EWQ",
      "direction": "up_on_yes",
      "impact_pct": 29.1,
@@ -5265,6 +5910,16 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": true,
+    "reasons": [],
+    "ladder_id": "jeffrey-epstein-foul-play-confirmed-in-2025::Jeffrey Epstein foul play confirmed by @D@?",
+    "date": "2026-12-31",
+    "event": "jeffrey-epstein-foul-play-confirmed-in-2025",
+    "year_source": "explicit year"
+   },
    "mappings": [],
    "no_instrument": true,
    "no_instrument_reason": "No listed instrument reacts to this. / No listed instrument reacts to this finding.",
@@ -5277,6 +5932,8 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [],
    "no_instrument": true,
    "no_instrument_reason": "Cuba has no listed market; cruise or travel names would not move 1% beyond beta. / Cuba's economy is too small for regime change to move a listed US instrument by 1%.",
@@ -5289,6 +5946,8 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [],
    "no_instrument": true,
    "no_instrument_reason": "MetaMask's parent is private; no US-listed instrument would move 1%. / MetaMask's owner Consensys is private and the token moves no listed US instrument by 1%.",
@@ -5301,6 +5960,8 @@
    "alternative": "",
    "ends": "2026-11-04",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [],
    "no_instrument": true,
    "no_instrument_reason": "A state-level tax on individuals' wealth would not move any listed instrument by 1% after taking out the market. / A one-time state tax on individuals would not move any listed instrument by 1% after market.",
@@ -5313,6 +5974,8 @@
    "alternative": "",
    "ends": "2026-11-30",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [],
    "no_instrument": true,
    "no_instrument_reason": "A reality TV outcome has no market effect. / A reality show outcome moves no listed instrument.",
@@ -5325,6 +5988,16 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": true,
+    "reasons": [],
+    "ladder_id": "mojtaba-khamenei-public-appearance-by::Mojtaba Khamenei seen in public by @D@?",
+    "date": "2026-12-31",
+    "event": "mojtaba-khamenei-public-appearance-by",
+    "year_source": "re-derived from the creation date"
+   },
    "mappings": [],
    "no_instrument": true,
    "no_instrument_reason": "A public appearance would not move oil or any listed instrument by 1%. / A public appearance has no clear directional effect of 1% on any listed instrument.",
@@ -5337,6 +6010,8 @@
    "alternative": "",
    "ends": "2027-01-04",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [],
    "no_instrument": true,
    "no_instrument_reason": "Kentucky's governor-appointment rules keep the seat Republican in practice; no market effect. / A Senate seat change with a same-party replacement moves no listed instrument.",
@@ -5349,6 +6024,8 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [],
    "no_instrument": true,
    "no_instrument_reason": "The token is not tradable through any US-listed instrument. / A small token's valuation moves no US-listed instrument.",
@@ -5361,6 +6038,8 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [],
    "no_instrument": true,
    "no_instrument_reason": "The direction for European assets is ambiguous: membership brings security but also escalation risk with Russia. / Membership could mean either security guarantees or escalation; no instrument has a clear 1% direction.",
@@ -5373,6 +6052,8 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [],
    "no_instrument": true,
    "no_instrument_reason": "Direction is unclear: his exit could come from a peace deal and elections or from a collapse, so no instrument has a reliable sign. / His exit could come from a peace deal and election or from a collapse, so no instrument has a clear direction.",
@@ -5385,6 +6066,16 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": true,
+    "reasons": [],
+    "ladder_id": "will-ukraine-recapture-crimean-territory-by-june-30-2026::Will Ukraine recapture Crimean territory by @D@?",
+    "date": "2026-12-31",
+    "event": "will-ukraine-recapture-crimean-territory-by-june-30-2026",
+    "year_source": "explicit year"
+   },
    "mappings": [],
    "no_instrument": true,
    "no_instrument_reason": "Battlefield gains in Crimea have no clear-signed effect of 1% on a listed instrument. / A limited territorial gain has no clear 1% effect on any US-listed instrument.",
@@ -5397,6 +6088,8 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [],
    "no_instrument": true,
    "no_instrument_reason": "No listed instrument reacts.",
@@ -5409,6 +6102,8 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [],
    "no_instrument": true,
    "no_instrument_reason": "The token is not US-listed and moves no listed instrument by 1%. / The OpenSea token is not traded through any US-listed instrument.",
@@ -5421,6 +6116,8 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [],
    "no_instrument": true,
    "no_instrument_reason": "No listed instrument would move 1% on the timing of a crewed landing. / No listed instrument would move 1% on the timing of a landing.",
@@ -5433,6 +6130,16 @@
    "alternative": "",
    "ends": "2027-01-01",
    "kind": "event",
+   "contract_type": "ladder_rung",
+   "contract": {
+    "mechanism": "ladder",
+    "linkable": true,
+    "reasons": [],
+    "ladder_id": "will-samuel-alito-announce-his-retirement-by::Will Samuel Alito announce his retirement by @D@?",
+    "date": "2026-12-31",
+    "event": "will-samuel-alito-announce-his-retirement-by",
+    "year_source": "explicit year"
+   },
    "mappings": [],
    "no_instrument": true,
    "no_instrument_reason": "A conservative-for-conservative replacement moves no listed instrument by 1%. / A like-for-like court replacement moves no listed instrument 1%.",
@@ -5445,6 +6152,8 @@
    "alternative": "",
    "ends": "2026-11-04",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [],
    "no_instrument": true,
    "no_instrument_reason": "One Senate seat moves no listed instrument by 1%. / A single Senate seat does not move any listed instrument 1%.",
@@ -5457,6 +6166,8 @@
    "alternative": "",
    "ends": "2026-11-04",
    "kind": "event",
+   "contract_type": "other",
+   "contract": null,
    "mappings": [],
    "no_instrument": true,
    "no_instrument_reason": "No listed instrument on the list has California-specific exposure that would move 1% on the governor race. / A state governorship would not move any listed instrument 1% after beta.",

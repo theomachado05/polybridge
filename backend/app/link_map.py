@@ -8,6 +8,15 @@ every extra field (score, verdict, option contract, ...) stays on each mapping. 
 "no listed instrument" is always kept, with an empty mapping list, ``no_instrument`` and ``no_instrument_reason``
 (``/map`` puts the reason in its ``note``).
 
+The four contract types come first (the final decision): every item carries ``contract_type`` and ``contract`` from
+the rule parser. An item whose type is not "other" (a ladder rung, a touch or close-above ticket) is linked by its
+contract, so its generic mappings (the labellers' question -> instrument guess, an unvalidated estimate) are never
+served: the item is kept with an empty mapping list and a ``no_instrument_reason`` (``/map`` shows it as the note).
+``exact_contract`` is true only when the exact link really exists (``has_exact_contract``: a linkable rung with a ladder
+id, a ticket whose resolve_exact link is ok; the same rule as ``research/linker/link_map2.py``); then the note says
+where the link is. Otherwise ``exact_contract`` is false and the note says the item was classified but has no exact
+link, with the parser's reasons. A file written before contract types existed is read as all "other".
+
 The product serves ``ai_map.json`` unless ``POLYBRIDGE_LINK_MAP=1`` (see ``mapping._load``).
 """
 from __future__ import annotations
@@ -17,6 +26,40 @@ from pathlib import Path
 
 PATH = Path(__file__).parent / "data" / "link_map.json"
 _cache: dict[tuple, dict] = {}
+CONTRACT_NOTE = {
+    "ladder_rung": "A ladder rung: its link is its date ladder (exact contract link), not a generic instrument mapping.",
+    "touch_ticket": "A touch ticket: its link is its exact option contracts (expiry and two bracketing strikes), not a "
+                    "generic instrument mapping.",
+    "close_above_ticket": "A close-above ticket: its link is its exact option contracts (expiry and two bracketing "
+                          "strikes), not a generic instrument mapping.",
+}
+
+
+LABEL = {"ladder_rung": "a ladder rung", "touch_ticket": "a touch ticket", "close_above_ticket": "a close-above ticket"}
+
+
+def has_exact_contract(ctype: str, contract: object) -> bool:
+    """True only when the parser found the exact link: a linkable rung with a ladder id, or a ticket whose exact link is ok."""
+    c = contract if isinstance(contract, dict) else {}
+    if ctype == "ladder_rung":
+        return bool(c.get("linkable") and c.get("ladder_id"))
+    ex = c.get("exact")
+    return ctype in ("touch_ticket", "close_above_ticket") and bool(c.get("linkable") and isinstance(ex, dict) and ex.get("ok"))
+
+
+def no_link_note(ctype: str, contract: object) -> str:
+    """The note for a classified item whose exact link was not found, with the parser's reasons."""
+    c = contract if isinstance(contract, dict) else {}
+    ex = c.get("exact") if isinstance(c.get("exact"), dict) else {}
+    why = [str(r) for r in c.get("reasons") or [] if r] + ([str(ex["reason"])] if ex.get("reason") else [])
+    return (f"Classified as {LABEL[ctype]}; no exact link: {'; '.join(why) or 'no exact contract was listed'}. "
+            "The generic instrument mapping (an unvalidated estimate) is not served.")
+
+
+def contract_type(e: dict) -> str:
+    """The item's contract type; "other" when the file has none (older map) or an unknown value."""
+    t = str(e.get("contract_type") or "other")
+    return t if t in CONTRACT_NOTE else "other"
 
 
 def load(path: Path | str = PATH, trusted_only: bool = True) -> dict:
@@ -34,6 +77,12 @@ def load(path: Path | str = PATH, trusted_only: bool = True) -> dict:
     items = {}
     for k, e in data["items"].items():
         if not isinstance(e, dict):
+            continue
+        ctype = contract_type(e)
+        if ctype != "other":       # linked by its exact contract: the generic mapping (the old guess) is never served
+            ok = has_exact_contract(ctype, e.get("contract"))
+            items[k] = {**e, "mappings": [], "no_instrument": False, "exact_contract": ok,
+                        "no_instrument_reason": CONTRACT_NOTE[ctype] if ok else no_link_note(ctype, e.get("contract"))}
             continue
         rows = [m for m in e.get("mappings") or [] if isinstance(m, dict) and (m.get("trusted") or not trusted_only)]
         no_inst = bool(e.get("no_instrument"))

@@ -83,3 +83,34 @@ def test_no_imported_research_module_is_left_out_of_the_set():
     assert out.returncode == 0, out.stderr[-500:]
     used = {x for x in out.stdout.split() if not x.startswith("linker/tests/")}
     assert used and used <= set(freeze.FIXED), sorted(used - set(freeze.FIXED))
+
+
+# What changed in the frozen set since FROZEN.json was written (commit 748fe0c, unchanged through the result e476728).
+# The study is finished and its manifest is never rewritten; this states the change plainly, file by file.
+CHANGED_AFTER_RESULT = {
+    "linker/options.py",            # exact contract links added (tickets -> expiry and bracketing strikes); contracts,
+                                    # last_close and resolve are unchanged, `from .benchmark import OUT` moved into main
+    "linker/freeze.py",             # NEWLY_IMPORTED added to the set (the import test below needs it)
+    "linker/tests/test_freeze.py",  # this test
+    "linker/tests/test_link_map2.py",   # the link map v2 placed under the four contract types (2026-10-04)
+}
+
+
+def test_files_changed_since_the_manifest_are_exactly_the_stated_ones():
+    """Since the manifest: the plan, which only grew; test_pooled.py and other new test files; options.py and the
+    modules it newly imports; the freeze module, its test and the link map v2 test of this adaptation. Nothing else:
+    no module that decides a verdict (signal, study, events, features, scorer2, option_evidence, store, instruments,
+    benchmark, scorer, S1/S4/S5) and no input, prompt or universe file."""
+    old = {k for k in json.loads(freeze.FROZEN.read_text()) if not k.startswith(freeze.META)}
+    changed = set(freeze.changed())
+    assert freeze.plan_growth()[0] is None                               # the plan only grew, under its Amendments heading
+    new_tests = {f for f in changed if f.startswith("linker/tests/") and f.endswith(".py") and f not in old}
+    assert "linker/tests/test_pooled.py" in new_tests
+    assert not set(freeze.NEWLY_IMPORTED) & old                          # not in the manifest: added after it
+    assert set(freeze.NEWLY_IMPORTED) <= changed
+    allowed = {freeze.PLAN} | new_tests | set(freeze.NEWLY_IMPORTED) | CHANGED_AFTER_RESULT
+    assert changed <= allowed, sorted(changed - allowed)
+    for f in ("linker/signal.py", "linker/study.py", "linker/events.py", "linker/features.py", "linker/scorer2.py",
+              "linker/option_evidence.py", "linker/store.py", "linker/instruments.py", "linker/heldout2/universe.json",
+              "linker/prompts/labeller_v3.md", "linker/prompts/labeller_control.md", "linker/prompts/recall.md"):
+        assert f not in changed, f

@@ -1,14 +1,27 @@
 """The link map, version 2: every scored link on a question that is still open, in a file the backend can serve in place
-of `backend/app/data/ai_map.json`, with one option contract per trusted link.
+of `backend/app/data/ai_map.json`, placed under the four contract types of `linker.link_map` (the final decision).
+
+**The four-type frame comes first.** Every item carries what the rule parser says about its question:
+    contract_type   `link_map.classify` on the question, with the creation date, end date and event slug read from the
+                    rosters below (no roster holds the event title, so a ticker written only in the title is not seen)
+    contract        a ticket (touch_ticket, close_above_ticket): the parser's fields, and for a linkable ticket the exact
+                    link of `options.resolve_exact` (expiry and the two bracketing strikes; null under --no-options);
+                    a ladder_rung: its ladder id and date; "other": null (no tested mechanism)
+**The generic links are an unvalidated tier under it.** Each mapping (a question -> instrument link from the two blind
+labellers) carries "evidence": "unvalidated estimate" and "mechanism": "event_link", trusted or not: the generic linker
+failed its held-out bar (heldout2: 11 of 62 testable links confirmed; scorer AUC 0.64). The legacy at-the-money option
+stays on a trusted mapping only when the item's type is "other": a ticket's risk is carried by its exact contract and a
+rung's by its ladder, never by an at-the-money guess.
 
 Sources, newest linker first (for the same market, ticker and direction the version-3 row wins):
     results/linker/heldout2_links.csv, dev_v3_links.csv   version 3, by event (read when they exist)
     results/linker/benchmark_scored.csv                   S4 and S5 (version-1 score in score_full_model)
     results/linker/heldout_links.csv                      the first held-out test
 A link is **trusted** by the rule of LINKER.md: two models agree, the prices do not contradict it, and either the
-prices confirm it or its score is 0.5 or more (score_v2 where the row has one, else the version-1 score). Clusters
-where both version-3 labellers answered "no listed instrument" are kept as items with no mapping, so the product can
-say so instead of guessing. SPY is never a link; the Brazil probe is kept and marked.
+prices confirm it or its score is 0.5 or more (score_v2 where the row has one, else the version-1 score). Trusted is not
+validated. Clusters where both version-3 labellers answered "no listed instrument" are kept as items with no mapping,
+so the product can say so instead of guessing. SPY is never a link; the Brazil probe is kept and marked.
+Rosters (names and dates only): S4's pull_meta, the S5 and first held-out universes, dev/ and heldout2/universe.json.
 
 Writes results/linker/link_map_v2.json and a copy at backend/app/data/link_map.json (loader: backend/app/link_map.py).
 
@@ -38,6 +51,18 @@ GENERATOR = "link agent v3 (two blind labellers, trained scorer, price benchmark
 V3_FILES = ("heldout2_links.csv", "dev_v3_links.csv")
 V3_SETS = ("heldout2", "dev")
 Resolver = Callable[[str, str, str], "dict | None"]
+Exact = Callable[[str, float, str, str], dict]          # (ticker, level, direction up|down, window end) -> resolve_exact dict
+TYPES = ("ladder_rung", "touch_ticket", "close_above_ticket", "other")     # link_map.TYPES, in its order
+TICKETS = ("touch_ticket", "close_above_ticket")
+MAPPING_EVIDENCE = "unvalidated estimate"
+MAPPING_MECHANISM = "event_link"
+NOTE = ("trusted is not validated: the generic linker (two blind labellers proposing question -> instrument links) failed "
+        "its held-out bar (heldout2: 11 of 62 testable links confirmed against a bar of more than 9 of 21; scorer AUC "
+        "0.635 against 0.85), so every mapping is an unvalidated estimate. The pooled mechanism test held (slope 0.0263 "
+        "daily sd per point, t 3.34) but not on sessions from 2026-07-01 (t 0.86). A question's link is its contract: "
+        "exact option contracts for a ticket, its ladder for a rung, none for 'other'.")
+EXACT_KEYS = ("ok", "reason", "expiry", "option_type", "lower_strike", "upper_strike", "long_leg", "short_leg", "long_strike",
+              "short_strike", "end_session", "option_root", "expiries_tried", "rule")
 
 
 def _pm(x) -> str:
@@ -133,6 +158,67 @@ def roster(set_name: str) -> dict[str, dict]:
     return out
 
 
+def market_meta() -> dict[str, dict]:
+    """market id -> the gamma-style fields `link_map.classify` reads (startDate, endDate, event_slug when known), from
+    every roster the links came from; a later roster fills only what an earlier one left empty."""
+    from s4_linked_assets import data as d4
+    rows: list[dict] = []
+    meta = d4.CACHE / "pull_meta.json"
+    if meta.exists():
+        rows += [{"id": m["market"], **m} for m in json.loads(meta.read_text())["markets"]]
+    for f in (RESEARCH / "s5_big_moves" / "universe.json", HERE / "heldout" / "universe.json"):
+        if f.exists():
+            rows += json.loads(f.read_text())["markets"]
+    for s in V3_SETS:
+        f = HERE / s / "universe.json"
+        if f.exists():
+            u = json.loads(f.read_text())
+            rows += u.get("markets", []) + [m for e in u.get("events", []) for m in e.get("markets", [])]
+    out: dict[str, dict] = {}
+    for m in rows:
+        new = {"startDate": m.get("start"), "endDate": m.get("end"), "event_slug": m.get("event")}
+        cur = out.setdefault(_pm(m["id"]), {})
+        for k, v in new.items():
+            if v and not cur.get(k):
+                cur[k] = str(v)
+    return out
+
+
+def has_exact_contract(ctype: str, contract: dict | None) -> bool:
+    """True only when the parser really found the item's exact link: a rung that is linkable with a ladder id, or a ticket
+    whose resolve_exact link came back ok. A classified item with no exact link (no event slug, no creation date, no
+    listing) is False; backend/app/link_map.py applies the same rule."""
+    c = contract or {}
+    if ctype == "ladder_rung":
+        return bool(c.get("linkable") and c.get("ladder_id"))
+    return ctype in TICKETS and bool(c.get("linkable") and (c.get("exact") or {}).get("ok"))
+
+
+def contract_of(question: str, meta: dict | None = None, exact: Exact | None = None) -> tuple[str, dict | None]:
+    """(contract_type, contract) for one question by the rule parser. A ticket: the parser's fields, linkable and
+    reasons, and `exact` (the resolve_exact link, or null when it was not asked or the ticket is not linkable); a rung:
+    its ladder id and date; other: None."""
+    from . import link_map as lm
+    c = lm.classify(question or "", None, dict(meta or {}))
+    f = c.get("fields") or {}
+    if c["type"] in TICKETS:
+        link = None
+        if c["linkable"] and exact is not None:
+            try:
+                r = exact(f["underlying"], float(f["level"]), f["direction"], f["window_end"])
+                link = {k: r.get(k) for k in EXACT_KEYS if k in r}
+            except Exception as e:                    # message may carry the request; only the type is kept
+                link = {"ok": False, "reason": f"contract listing failed: {type(e).__name__}"}
+        keep = ("underlying", "level", "direction", "window_end", "end_session", "option_root", "year_source")
+        return c["type"], {"mechanism": c["mechanism"], "linkable": bool(c["linkable"]), "reasons": list(c["reasons"]),
+                           **{k: f.get(k) for k in keep}, "exact": link}
+    if c["type"] == "ladder_rung":
+        return c["type"], {"mechanism": "ladder", "linkable": bool(c["linkable"]), "reasons": list(c["reasons"]),
+                           "ladder_id": f.get("ladder_id"), "date": f.get("date"), "event": f.get("event"),
+                           "year_source": f.get("year_source")}
+    return c["type"], None
+
+
 def clusters(set_name: str) -> dict[str, dict]:
     """cluster id -> its universe entry, with `main` as a market id."""
     f = HERE / set_name / "universe.json"
@@ -224,10 +310,17 @@ def rationale(r: dict, mechanism: str | None) -> str:
 
 def build(links: pd.DataFrame, ends: dict[str, tuple[str, bool]], notes: dict | None = None, fams: dict | None = None,
           v3: dict[str, tuple[dict, dict]] | None = None, resolve: Resolver | None = None, today: str = TODAY,
-          as_of: str = AS_OF) -> dict:
+          as_of: str = AS_OF, meta: dict[str, dict] | None = None, exact: Exact | None = None) -> dict:
     """The served map. `links` from gather(); `v3` is set name -> (answers, clusters); `resolve(ticker, direction,
-    ends)` returns an options.resolve dict or None (None skips options)."""
-    notes, fams, v3 = notes or {}, fams or {}, v3 or {}
+    ends)` returns an options.resolve dict or None (None skips the legacy option); `meta` is market_meta();
+    `exact(ticker, level, direction, window_end)` returns an options.resolve_exact dict (None: parser fields only)."""
+    notes, fams, v3, meta = notes or {}, fams or {}, v3 or {}, meta or {}
+    typed: dict[str, tuple[str, dict | None]] = {}
+
+    def typ(m: str, q: str) -> tuple[str, dict | None]:
+        if m not in typed:
+            typed[m] = contract_of(q, {**meta.get(m, {}), "id": m}, exact)
+        return typed[m]
     live = open_only(_with_optional(links), ends, today)
     live["trusted"] = is_trusted(live)
     live = live.sort_values(["trusted", "score_used"], ascending=[False, False], na_position="last")
@@ -252,8 +345,9 @@ def build(links: pd.DataFrame, ends: dict[str, tuple[str, bool]], notes: dict | 
             imp = sum(n["impact"]) / len(n["impact"])
         if imp is None and _num(r.get("gap_bp_per_point")) is not None:
             imp = abs(float(r["gap_bp_per_point"])) * 100 / 100      # measured bp per point x 100 points, in percent
+        ctype, contract = typ(m, r["question"])
         opt = None
-        if r["trusted"] and resolve is not None:
+        if r["trusted"] and resolve is not None and ctype == "other":     # a ticket's or rung's risk is its contract
             k = (r["ticker"], r["direction"], r["ends"])
             if k not in cache:
                 try:
@@ -268,8 +362,10 @@ def build(links: pd.DataFrame, ends: dict[str, tuple[str, bool]], notes: dict | 
         kind = "event" if r["version"] == 3 else ("price proxy" if "spot_proxy" in fams.get(m, set()) else "event")
         it = items.setdefault(m, {"question": r["question"], "cluster": r["cluster"] if isinstance(r.get("cluster"), str) else None, "signal": sig,
                                   "alternative": r["alternative"] if isinstance(r.get("alternative"), str) else (ans3.get("alternative") or (n.get("alternative") or [""])[0]),
-                                  "ends": r["ends"], "kind": kind, "mappings": [], "no_instrument": False, "no_instrument_reason": ""})
+                                  "ends": r["ends"], "kind": kind, "contract_type": ctype, "contract": contract, "mappings": [],
+                                  "no_instrument": False, "no_instrument_reason": ""})
         it["mappings"].append({
+            "evidence": MAPPING_EVIDENCE, "mechanism": MAPPING_MECHANISM,
             "ticker": r["ticker"], "direction": r["direction"], "impact_pct": round(imp, 2) if imp is not None else None,
             "rationale": rationale(r, mech), "confidence": _num(r.get("confidence")), "score": _num(r.get("score_used")), "verdict": r.get("verdict"),
             "gap_bp_per_point": _num(r.get("gap_bp_per_point")), "gap_t": _num(r.get("gap_t")), "days": int(_num(r.get("days")) or 0),
@@ -289,7 +385,9 @@ def build(links: pd.DataFrame, ends: dict[str, tuple[str, bool]], notes: dict | 
                 items[x["main"]]["no_instrument_reason"] = f"version-3 labellers: no listed instrument ({x['reason']})"
                 continue
             q = roster(s).get(x["main"], {}).get("question", "")
-            items[x["main"]] = {"question": q, "cluster": x["cluster"], "signal": [], "alternative": "", "ends": end, "kind": "event", "mappings": [],
+            ctype, contract = typ(x["main"], q)
+            items[x["main"]] = {"question": q, "cluster": x["cluster"], "signal": [], "alternative": "", "ends": end, "kind": "event",
+                                "contract_type": ctype, "contract": contract, "mappings": [],
                                 "no_instrument": True, "no_instrument_reason": x["reason"], "probe": x["probe"]}
     t = live[live.trusted]
     with_opt = sum(1 for it in items.values() for mp in it["mappings"] if mp["trusted"] and mp["option"] and mp["option"]["contract"])
@@ -306,7 +404,16 @@ def build(links: pd.DataFrame, ends: dict[str, tuple[str, bool]], notes: dict | 
                "version3_links": int((live.version == 3).sum()), "trusted_version3_links": int((t.version == 3).sum()),
                "probe_links": int(live.probe.map(_flag).sum()),
                "no_instrument_items": int(sum(it["no_instrument"] for it in items.values())), "no_instrument_open_clusters": n_none,
-               "no_instrument_but_older_links": conflicts}
+               "no_instrument_but_older_links": conflicts,
+               "note": NOTE, "mapping_evidence": MAPPING_EVIDENCE, "mapping_mechanism": MAPPING_MECHANISM,
+               "items": len(items), "by_contract_type": {t: sum(it["contract_type"] == t for it in items.values()) for t in TYPES},
+               "items_with_an_exact_contract": sum(has_exact_contract(it["contract_type"], it["contract"]) for it in items.values()),
+               "tickets_with_an_exact_contract": sum(it["contract_type"] in TICKETS and has_exact_contract(it["contract_type"], it["contract"])
+                                                     for it in items.values()),
+               "linkable_tickets": sum(it["contract_type"] in TICKETS and bool(it["contract"]["linkable"]) for it in items.values()),
+               "linkable_rungs": sum(it["contract_type"] == "ladder_rung" and bool(it["contract"]["linkable"]) for it in items.values()),
+               "trusted_links_on_type_other": int(sum(1 for it in items.values() if it["contract_type"] == "other"
+                                                      for mp in it["mappings"] if mp["trusted"]))}
     return _clean({"generated_at": datetime.now().isoformat(timespec="seconds"), "generator": GENERATOR, "as_of": as_of, "summary": summary, "items": items})
 
 
@@ -314,13 +421,14 @@ def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     notes, fams = v1_notes()
     v3 = {s: (v3_answers(s), clusters(s)) for s in V3_SETS}
-    resolve = None
+    resolve = exact = None
     if "--no-options" not in argv:
         from s4_linked_assets import data as d4
         from . import options as op
         s, base = d4._massive_session()
         resolve = lambda tk, dr, ends: op.resolve(s, base, tk, dr, ends, AS_OF)  # noqa: E731
-    m = build(gather(), end_dates(), notes, fams, v3, resolve)
+        exact = lambda tk, lv, dr, end: op.resolve_exact(s, base, tk, lv, dr, end)  # noqa: E731
+    m = build(gather(), end_dates(), notes, fams, v3, resolve, meta=market_meta(), exact=exact)
     text = json.dumps(m, indent=1)
     (OUT / "link_map_v2.json").write_text(text)
     BACKEND_COPY.write_text(text)
@@ -328,7 +436,7 @@ def main(argv: list[str] | None = None) -> int:
     for k, it in m["items"].items():
         for mp in it["mappings"]:
             if mp["trusted"]:
-                print(f"{it['question'][:60]:60} | {mp['ticker']:5} {mp['direction']:11} | {it['kind']:11} | {mp['verdict']:11} | "
+                print(f"{it['question'][:60]:60} | {it['contract_type']:12} | {mp['ticker']:5} {mp['direction']:11} | {mp['verdict']:11} | "
                       f"score {mp['score'] if mp['score'] is None else round(mp['score'], 2)} | {(mp['option'] or {}).get('contract')}")
     return 0
 

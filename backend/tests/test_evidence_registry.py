@@ -53,6 +53,9 @@ def test_one_entry_per_mechanism_with_the_statuses_of_the_brief():
     assert by["generic_ai_fit"]["status_label"] == "Unvalidated: walk-forward test failed"
     assert by["ticket_option_hedge"]["status"] == ev.FAILED
     assert [m["id"] for m in by.values() if m["status"] == ev.FAILED] == ["ticket_option_hedge"]
+    # the generic link agent: an open lead (pooled test held, per-link bar failed), never traded or proposed
+    assert by["event_links"]["status"] == ev.OPEN_LEAD
+    assert by["event_links"]["name"] == "Question-to-instrument links (generic link agent)"
     for m in by.values():
         assert m["status"] in ev.STATUSES and m["status_label"] == ev.STATUS_LABELS[m["status"]]
         assert m["name"] and m["claim"] and isinstance(m["caveats"], list)
@@ -71,6 +74,9 @@ def test_actions_allowed_follow_the_brief():
     assert by["generic_ai_fit"]["mode"] == "available_unvalidated" and by["generic_ai_fit"]["requires_acknowledgement"]
     assert by["ticket_option_hedge"]["mode"] == "none" and not by["ticket_option_hedge"]["proposals"]
     assert by["foundation"]["mode"] == "reference_only" and not by["foundation"]["trade"]
+    el = by["event_links"]
+    assert el["mode"] == "reference_only" and el["trade"] is False and el["proposals"] is False
+    assert not el["requires_approval"] and not el["requires_acknowledgement"]
 
 
 @pytest.mark.parametrize("mid,n", list(_all_numbers()), ids=lambda x: x if isinstance(x, str) else x["label"][:40])
@@ -88,7 +94,7 @@ def test_every_number_has_a_range_a_sample_and_a_result_file(mid, n):
     assert n["result_file_on_disk"] is on_disk
     if not on_disk:  # only two files live off main; both name the branch and commit that hold them
         assert n.get("source_branch") and n.get("source_commit"), rf
-        assert rf in (ev.S25, ev.LATENCY)
+        assert rf in (ev.S25, ev.LATENCY, ev.LINKER_H2, ev.LINKER_POOLED)
 
 
 @pytest.mark.parametrize("mid,n", [(m, n) for m, n in _all_numbers() if (REPO / n["result_file"]).is_file()],
@@ -113,7 +119,12 @@ def test_every_number_is_copied_from_its_result_file(mid, n):
         walk(json.loads(raw))
     else:
         found = _floats(raw)
-    for k in ("value", "ci_low", "ci_high"):
+    keys = ("value", "ci_low", "ci_high")
+    if n["range_kind"] == ev.CI95_SE:  # the interval is value +/- 1.96 se; the value and the se are in the file
+        keys = ("value", "se")
+        assert abs(n["ci_low"] - (n["value"] - 1.96 * n["se"])) <= 2e-4, n["label"]
+        assert abs(n["ci_high"] - (n["value"] + 1.96 * n["se"])) <= 2e-4, n["label"]
+    for k in keys:
         assert _appears(n[k], found), (n["label"], k, n[k], n["result_file"])
     assert _appears(n["sample"]["n"], found), (n["label"], n["sample"])
 
@@ -205,3 +216,30 @@ def test_touch_entry_carries_the_sell_threshold_behind_the_ack_gate_and_no_hedge
     assert a["proposals"] and a["requires_acknowledgement"] and a["requires_approval"]
     hedge = ev.mechanism("ticket_option_hedge")
     assert hedge["actions_allowed"]["proposals"] is False and hedge["actions_allowed"]["trade"] is False
+
+
+def test_event_links_numbers_are_the_result_files_values():
+    """The generic link agent's entry: every number read back from heldout2.json and pooled_heldout2.json."""
+    h2 = json.loads((REPO / ev.LINKER_H2).read_text())
+    po = json.loads((REPO / ev.LINKER_POOLED).read_text())
+    m = ev.mechanism("event_links")
+    nums = m["numbers"]
+    bar, ctrl = h2["brief_bar"], h2["against_control"]["control, by event"]
+    assert (nums[0]["value"], nums[0]["sample"]["n"]) == (bar["confirmed"]["value"], bar["testable"]) == (11, 62)
+    assert "9 of 21" in bar["confirmed_share"]["bar"] and "9 of 21" in nums[0]["label"] and bar["all_four_pass"] is False
+    assert nums[1]["value"] == bar["contradicted"]["value"] == 1
+    assert (nums[2]["value"], nums[2]["sample"]["n"]) == (ctrl["confirmed"], ctrl["testable"]) == (5, 42)
+    assert nums[3]["value"] == round(bar["auc_v2_v3_testable"]["value"], 3) == 0.635 and "0.85" in nums[3]["label"]
+    p, late = po["pooled"], po["splits"]["sessions_from_2026_07_01"]
+    for n, src in ((nums[4], p), (nums[5], late)):
+        assert n["value"] == round(src["slope"], 4) and n["se"] == round(src["se"], 4)
+        assert (n["ci_low"], n["ci_high"]) == (round(src["slope"] - 1.96 * src["se"], 4), round(src["slope"] + 1.96 * src["se"], 4))
+        assert n["sample"]["n"] == src["link_days"] and n["range_kind"] == ev.CI95_SE
+    assert (nums[4]["sample"]["also"][0]["n"], nums[4]["sample"]["also"][1]["n"]) == (p["links"], p["event_clusters"]) == (71, 46)
+    assert p["holds"] is True and late["holds"] is False and nums[4]["confirmatory"] and not nums[5]["confirmatory"]
+    assert len(nums) == 6
+    text = " ".join(m["caveats"])
+    for s in ("70%", "post hoc", "2026-07-01", "10 of the 11", "not validated"):
+        assert s in text, s
+    # not reached from any contract type: a question's link is its contract, never this entry
+    assert "event_links" not in ev.CONTRACT_MECHANISM.values()
