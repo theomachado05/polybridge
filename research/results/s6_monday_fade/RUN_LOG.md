@@ -35,7 +35,7 @@ The two runs use identical rules; the second only adds the print check. No rule 
 | The signal uses only 09:45 prices | Yes (`test_sell_yes_when_polymarket_is_above_the_band_after_costs` and the three tests after it) |
 | The result is never an input | Yes |
 | Costs on every trade | Yes: 4.5 points of half-spread and the fee on entry |
-| R3's filter for the 0.50 placeholder | Applied by R3 at the close and at the open, not at 09:45. 40 of the primary's 187 entries have a 09:45 price between 0.45 and 0.55 |
+| R3's filter for the 0.50 placeholder | Applied by R3 at the close and at the open, not at 09:45. 54 of the primary's 187 entries have a 09:45 price between 0.45 and 0.55 |
 | The print check | 21 of 187 entries verified. The modelled Sharpe of 4.3 is the unverified entries |
 
 ## Tests
