@@ -4,7 +4,7 @@ Gator Quant Hacks 2026 · Systematic Trading track · PolyBridge · Jacob Craini
 
 ## Summary
 
-Prediction markets now price elections, macro events and stock levels around the clock, but most of their books are thin and retail. We test two places where such a book can be checked against something firmer: its own internal logic, and the listed options on the same stock. **Foundation:** on 4,561 fresh Polymarket stock markets, pre-registered and run once, the option-implied probability was a more accurate forecast than the Polymarket price (Brier difference +0.0108, 95% CI +0.0064 to +0.0158). **Mechanism 1, date ladders:** a contract that resolves YES by an earlier date can never be worth more than the same contract for a later date; we measure how often that rule breaks and whether the break can be traded. **Mechanism 2, "will it hit" tickets:** in past data, tickets priced above an options-derived reference lost money for their buyers, but a fresh test could not confirm it. We report every approach that failed, including our pre-registered 8-K study for the Massive challenge, and describe the C++ system that watches these markets and acts only on signals that have passed their tests.
+Prediction markets now price elections, macro events and stock levels around the clock, but most of their books are thin and retail. We test two places where such a book can be checked against something firmer: its own internal logic, and the listed options on the same stock. **Foundation:** on 4,561 fresh Polymarket stock markets, pre-registered and run once, the option-implied probability was a more accurate forecast than the Polymarket price (Brier difference +0.0108, 95% CI +0.0064 to +0.0158). **Mechanism 1, date ladders:** a contract that resolves YES by an earlier date can never be worth more than the same contract for a later date. When this rule broke and both legs traded, the pair paid; as registered our fresh test is NULL because of a date-parsing error, and with the dates read correctly no trade lost (+8.82 points per trade [+6.73, +11.13], 562 trades), a fix chosen after the run. **Mechanism 2, "will it hit" tickets:** in past data, tickets priced above an options-derived reference lost money for their buyers, but a fresh test could not confirm it. We report every approach that failed, including our pre-registered 8-K study for the Massive challenge, and describe the C++ system that watches these markets and acts only on signals that have passed their tests.
 
 ## 1. Economic foundation
 
@@ -31,7 +31,17 @@ The result holds on daily and weekly markets, at both snapshots, with equal weig
 
 **Prior evidence (seen data, `research/s11_bundles/`).** Over the year, 99 violations had public trade prints on both legs at the needed prices. They earned +3.89 points per trade at 1× costs (95% interval over dates +2.49 to +5.43, 71 dates) and +4.34 at 2× costs. Of 1,425 violations a mid-price backtest would trade, 965 had no print at that price, so most apparent violations are not real. Out of sample there were 11 trades. Capacity was about $385 a year at 100 contracts a leg.
 
-**Validation tonight (`research/ladder_replay/`, method committed before data).** [LADDER: settlement-rule check counts; causal chronological replay with both legs filled at prints within the fixed window, fees, capital locked to resolution; fresh-universe verdict with n, CI, return on locked capital, Sharpe, drawdown; live violations at real bid and ask.]
+**Validation tonight (`research/ladder_replay/`, method committed before data).** We first checked the written rules of every pair: 680 of 861 fresh pairs share the same event definition and source (a hand check of 20 random pairs found no pair wrongly called nested). We then replayed the trade in time order, entering only when both legs had real taker prints within 60 seconds of each other at prices that cleared one tick and both fees, sized at the smaller print up to 100 contracts, and held to resolution.
+
+| Sample | Trades / dates | Net points per trade, 95% date CI | Losing trades |
+|---|---|---|---|
+| Fresh ladders, rule as registered (confirmatory) | 650 / 221 | +2.47 [−1.14, +6.26] | 74 |
+| Fresh ladders, year parsed correctly (fixed after the run) | 562 / 211 | +8.82 [+6.73, +11.13] | 0 |
+| Same, from 22 July 2026 | 102 | +9.20 [+4.86, +14.01] | 0 |
+
+**As registered, the confirmatory test is NULL.** All 74 losing trades came from 3 ladders where the inherited rule read the year wrong (for example, "by December 31" in a market created in December 2025 means 2026) and so put the rungs in the wrong order. With the year read correctly, no trade lost, which is what the logic predicts for a truly nested pair. That fix was chosen after we saw the losers, so the +8.82 is not a confirmatory number. Most of the dollars also come from 30 trades where the event fell between the two dates and both legs paid; the median edge locked in at entry is 1.6 points, and without those 30 trades the mean is 3.4 points. On the year-checked fresh sample the book earned 8.5% on capital, with a Sharpe of 4.2 on monthly returns and no drawdown. A single sweep of the 34 live date ladders at 01:57 ET found 0 violations after fees; the median pair was 10.5 points from an arbitrage.
+
+**Reading.** When a nested pair is out of order and both legs actually trade, the pair pays, and the main risks are reading the rules and the dates correctly. The opportunity is real but small, and it appears in bursts rather than continuously.
 
 ## 4. Mechanism 2: "will it hit" tickets above the options reference
 
@@ -49,7 +59,7 @@ The result holds on daily and weekly markets, at both snapshots, with equal weig
 
 **Risk controls.** Orders need approval. Equity orders are capped at 10% of the opening five-minute volume and 1% of ADV per session; option legs at 10% of volume and 5% of open interest; prediction-market legs at 50% of the depth within 2 cents. Gross hedge notional is capped at 50% of equity and per-event exposure at 20%. Ladder positions carry no market risk if held to resolution, but they carry settlement-rule risk and capital lock-up; touch-ticket sales carry tail risk when the level is hit, and correlated tickets on one underlying can lose together.
 
-**Capacity.** Printed size, not order-book depth, bounds every estimate here. Historical printed size is an upper limit on what a new trader could have filled, not deployable capital. [CAPACITY from the two validations.]
+**Capacity.** Printed size, not order-book depth, bounds every estimate here. Historical printed size is an upper limit on what a new trader could have filled, not deployable capital. For ladders, at the 100-contract cap, the fresh sample would have earned about $1,480 a year ($530 of it locked in at entry) with peak capital near $3,000; the median trade was 19 to 25 contracts. Together with the seen pairs that is about $3,300 a year. Touch tickets had too few fresh trades to size.
 
 ## 6. What failed
 
@@ -68,4 +78,4 @@ We pre-registered and ran about 40 tests. The table lists the ones a reader migh
 
 ## 7. Limits and next steps
 
-Most prior evidence for both mechanisms is in-sample; tonight's validations are the confirmatory part, and forward tests from 5 October are committed in git before they run. Capacity is small by construction. Prices on thin books are a per-minute history that can be a stale last trade. Fills are simulated from public prints, not our own orders. Next: score the forward tests, record order-book depth to replace printed size, and extend the ladder rule to every venue that lists nested contracts.
+The ladder result that clears zero depends on a correction chosen after the run, and the touch-ticket fresh test had too few markets; both mechanisms therefore need their committed forward tests, which start on 5 October. Capacity is small by construction. Prices on thin books are a per-minute history that can be a stale last trade. Fills are simulated from public prints, not our own orders. Next: score the forward tests, record order-book depth to replace printed size, and extend the ladder rule to every venue that lists nested contracts.

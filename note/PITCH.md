@@ -2,22 +2,18 @@
 
 | Time | Slide | Say |
 |---|---|---|
-| 0:00 | Title | "Stocks close; prediction markets don't. PolyBridge hedges a stock book around the clock, and lets a market's signal touch a position only after it passes an out-of-sample test." |
-| 0:30 | The record | "Six pre-registered follow-up tests yesterday, each method committed to git before its data. Four did not pass, including both that used mostly new data. The two that passed did so on a panel we had already seen, and we say so." |
-| 1:00 | Headline | "Which price should a hedger trust? On 4,561 fresh Polymarket stock markets, pre-registered and run once, the options-implied probability beat the Polymarket price: Brier +0.0108, CI +0.0064 to +0.0158. So PolyBridge shows options as the reference and the prediction market as a noisier input." |
-| 1:40 | Reopening chart | "At the reopening after a weekend or holiday, options had repriced only 0.44 of the prediction market's weekend move, CI 0.33 to 0.57, 1,535 events over 44 closures. After option costs it is NULL, and the prediction market gives part of its move back. Information, not arbitrage." |
-| 2:00 | The 8-K test | "Our Massive entry by the book: two hypotheses committed before any data, NULL in-sample; out of sample H1 had 3 events, too few to test, and H2 flipped sign. So 8-K tags never act on a position." |
-| 2:40 | Forecast slide | "We wrote down the out-of-sample result before running it. We had 'no pass' right. We got the H1 event count (3, not about 11) and H2's sign wrong." |
-| 3:15 | Demo, 90 seconds | "It's Sunday: stocks are shut, the prediction market is live. PolyBridge labels each market validated or an unvalidated estimate, and stages the equity hedge for 09:30. The broker refuses orders until then, which is the design. The staged hedge is the one closed-market hedge that met its rule: fragile, +6.82% [+0.50, +13.54] over a same-size static hedge." |
-| 4:45 | Close | "The backtest shows the gate at work: in sample the overlay lost $7.3k; out of sample no market qualified, so it stood aside. Next: time-matched trade prints and a futures benchmark." |
+| 0:00 | Question | "Prediction markets price events around the clock, but their books are thin. We asked where they are mispriced, against options and against their own logic, and how much of it can be traded." |
+| 0:30 | Foundation | "On 4,561 fresh Polymarket stock markets, pre-registered and run once, the options price was the more accurate forecast. Brier difference +0.0108, CI +0.0064 to +0.0158. The gap closes where books are deep: Kalshi's index markets matched options." |
+| 1:20 | Ladders | "'By January 15' can never be worth more than 'by January 16'. When that broke and both legs traded within a minute, the pair paid. As registered our fresh test was NULL, and every loss came from one bug: a misread year. With dates read correctly, 562 trades, no losses, +8.8 points a trade. We fixed that after the run, so we say it plainly. Capacity is about $3,300 a year." |
+| 2:20 | Touch tickets | "Tickets priced above the options reference lost money for buyers in past data. A fresh test found too few markets, and much of the premium is market exposure. It is a lead with a forward test committed for Monday." |
+| 2:50 | What failed | "About 40 pre-registered tests. The 8-K study for Massive, the overnight thesis, the overlay backtest and 23 weekend strategies did not pass. That is why the product gates every signal." |
+| 3:20 | Demo, 90 seconds | "The C++ detector runs on the live Polymarket feed: 39 microseconds from message to decision at the median. Signals are labelled validated or unvalidated, orders need approval, and the broker refuses orders until the open, so hedges are staged." |
+| 4:50 | Close | "Thin markets are measurably mispriced, the mispricing is small, and we built the system that only trades it after it passes." |
 
 ## Questions to expect
 
-- **So can you trade Polymarket off the options price?** Not at scale. On fresh 2026 markets it made money on 40 trades, too few to confirm, with about $750 of capacity; at weekend reopenings, at prices that actually traded, it was flat. The forward test for Monday's open is committed in git.
-
-- **Does the prediction market beat futures or pre-market?** No. Given SPY's own move to 08:00, the PM adds nothing (−0.60 bp per pp [−2.64, +1.44]). Futures were not on our data key.
-- **Is the accuracy gap just timing?** Partly possible: the PM series is about 47 seconds older than the option quote; on rows under 30 seconds old the gap is not significant. With a symmetric filter the gap is +0.0077 [+0.0036, +0.0129].
-- **Why should anyone use a product whose signals mostly fail?** Because it tells you which ones fail before they touch your book.
-- **The 8-K atlas has low q-values.** The lowest is 0.014, with 5 to 15 events per tag and 96,390 variants counted; leads, not findings.
-- **Capacity?** For a $1M book the capital budget binds before liquidity; one order at the open fits a $191M SPY holding at 50% coverage (Saturday snapshot of Friday's data).
-- **Is the latency claim end to end?** No: 27.1 to 34.6 ns per decision on a synthetic tape, decision logic only.
+- **Is the ladder fix data snooping?** It was chosen after the run, so the confirmatory verdict is NULL and we report both numbers. The fix only corrects which rung is earlier; no correctly ordered pair lost.
+- **Could you really get both fills?** A print shows one trader filled at that price, not that a second could. We require both legs to print within 60 seconds and pay one tick each side.
+- **Does it beat futures?** We did not test futures. Given SPY's own pre-market move, the Polymarket move added nothing.
+- **Capacity?** Small by construction: about $3,300 a year for ladders at 100 contracts a leg.
+- **Is the latency end to end?** Receive to decision on the live feed, network time excluded.
