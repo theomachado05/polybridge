@@ -116,3 +116,21 @@ P1. The labelling models' knowledge ends in June 2026. So:
   that date.
 S4 is less exposed (its markets were open and unresolved when linked), but not immune: the same models may know how
 those equities moved with the news before June 2026.
+
+**Amendment 2, 2026-10-04 01:00 UTC, after the S5 run: an exploratory follow-up on who moves first inside the session
+(S5b).** S5 showed that by the open the equity has absorbed the overnight move in odds. That leaves one question the
+closure tests cannot answer: when both trade at the same time, which one moves first, and by how many minutes? S5b
+was designed after seeing S5, so it is **exploratory** and outside the success criterion. Its rules, fixed before
+anything is computed:
+- Same links, same data, regular session only, 5-minute bins. In each bin: the equity's excess return (bp) and the
+  direction-signed change in odds (points, as-of at the bin's edges).
+- **Odds first?** After a bin in which the odds move by 3 points or more, the equity's excess return, signed by the
+  odds move, over the next 5, 15, 30 and 60 minutes.
+- **Equity first?** After a bin in which the equity's excess return is 50 bp or more, the change in odds, signed by
+  the equity move, over the next 5, 15, 30 and 60 minutes.
+- Both with date-bootstrap 95% intervals, and the pooled through-origin slopes with errors clustered by date.
+- **A trade, only for the odds-first direction** (equity prices are executable; historical Polymarket prices are
+  not): enter the equity at the open of the next bin after a 3-point odds jump, hold 30 minutes, hedge with SPY,
+  costs as section 5. One position per ticker at a time.
+- The equity-first direction is reported in points of odds and set against what a Polymarket round trip costs. It is
+  not turned into a P&L.
