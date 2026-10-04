@@ -158,3 +158,15 @@ def test_fault4_tokens_are_not_stocks():
     assert "SPCX" not in lm.UNIVERSE and s["type"] == "close_above_ticket" and s["fields"]["underlying"] == "SPCX" and s["linkable"]
     spx = lm.classify("Will S&P 500 hit $7000 by December 31?", None, {"createdAt": "2026-03-01T00:00:00Z"})
     assert spx["type"] == "touch_ticket" and not spx["linkable"]
+
+
+def test_end_of_february_is_the_months_last_day_not_the_next_leap_day():
+    """Found on the held-out half after it was scored: a ticket created in January 2026 linked to 2028-02-29."""
+    q = "Will Amazon (AMZN) close above $230 end of February?"
+    f = lm.classify(q, None, {"createdAt": "2026-01-28T00:00:00Z"})["fields"]
+    assert (f["window_end"], f["end_session"]) == ("2026-02-28", "2026-02-27")          # the 28th is a Saturday
+    assert lm.classify(q, None, {"createdAt": "2027-12-20T00:00:00Z"})["fields"]["window_end"] == "2028-02-29"   # a real leap year
+    assert lm.classify(q, None, {"createdAt": "2026-03-02T00:00:00Z"})["fields"]["window_end"] == "2027-02-28"   # next February
+    assert lm.classify("Will Apple (AAPL) close above $230 end of March?", None, {"createdAt": "2026-02-28T00:00:00Z"})["fields"]["window_end"] == "2026-03-31"
+    assert lm.classify("Will Apple (AAPL) close above $230 end of December?", None, {"createdAt": "2026-12-01T00:00:00Z"})["fields"]["window_end"] == "2026-12-31"
+    assert lm.classify("Will Apple (AAPL) close above $230 end of February 2028?", None, {"createdAt": "2026-01-28T00:00:00Z"})["fields"]["window_end"] == "2028-02-29"

@@ -233,10 +233,12 @@ S25 = "research/results/s25_ticket_option_hedge/SUMMARY.md"
 S25_REF = {"source_branch": "r/weekend-options", "source_commit": "bd18b9f"}
 LATENCY = "research/results/live_books/LATENCY.md"
 LATENCY_REF = {"source_branch": "r/live-speed", "source_commit": "a6ba327"}
+CONTRACT_EVAL = "research/results/linker/contract_eval_B.json"
 LINKER_H2 = "research/results/linker/heldout2.json"
 LINKER_POOLED = "research/results/linker/pooled_heldout2.json"
 LINKER_REF = {"source_branch": "r/link-agent", "source_commit": "e476728"}
 CI95_SE = "95% interval, slope +/- 1.96 x date-clustered standard error"
+CI95_EXACT = "95% exact binomial interval"
 
 
 def _n(label: str, value: float, lo: float, hi: float, range_kind: str, n: int, units: str, result_file: str, *,
@@ -521,6 +523,13 @@ SYSTEM_NUMBERS: tuple[dict, ...] = (
     _n("C++ stale-quote detector call (isolated)", 158, 158, 158, NO_INTERVAL, 1, "isolated benchmark", LATENCY,
        confirmatory=False, unit="nanoseconds per call", note="Includes the pybind11 call; Python twin 290 ns.",
        ref=LATENCY_REF),
+    _n("Exact contract links right: ticker, level, direction and settlement day of every linkable ticket, against two "
+       "blind readers of the rules text (held-out half, scored once)", 0.9615, 0.9044, 0.9894, CI95_EXACT, 104,
+       "linkable tickets", CONTRACT_EVAL, confirmatory=True, unit="share of tickets linked exactly",
+       also=((54, "rung dates checked (53 right)"), (30, "nested pairs checked (30 right)")),
+       note="Pre-registered bar 0.95 (research/linker/contract_eval/PLAN.md). The parser before the four fixes found on "
+            "the development half scored 89 of 99 on the same held-out questions; a fifth fault found on the held-out "
+            "half (end of February linked to 2028) was fixed after scoring and is not in this figure."),
 )
 
 # engine/hedgecore/BENCH.md, "Micro families" section (run 2026-10-04 03:21 ET): on_tick per call in nanoseconds,

@@ -230,6 +230,17 @@ def _year_date(phrase: str, m: dict) -> tuple[date | None, str]:
     if key is None:
         return None, "date phrase does not parse"
     explicit = re.search(r"20\d\d", phrase)
+    if phrase.strip().lower().startswith("end of") and not explicit:
+        # "end of February" is the month's last day in whichever year it falls, not February 29: keyed on the 29th of a leap
+        # year, the year rule waits for the next leap year (a ticket created in January 2026 linked to 2028-02-29)
+        st = _ts(m)
+        if st is None:
+            return None, "no creation date: the year cannot be re-derived"
+        s0 = datetime.fromtimestamp(st - 86400, timezone.utc).date()
+        for y in (s0.year, s0.year + 1):
+            last = date.fromordinal(date(y + (key.month == 12), key.month % 12 + 1, 1).toordinal() - 1)
+            if last >= s0:
+                return last, "re-derived from the creation date"
     if explicit:
         # the phrase's own year wins (amendment 5). `replay.deadline` finds it by re-reading the question with S11's DATE_RE,
         # which cuts "January 2026" to "January 20" (Amendment 1, fault 1), so the year is taken from the phrase here.

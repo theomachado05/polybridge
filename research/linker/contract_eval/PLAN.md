@@ -100,3 +100,26 @@ ticket links 91 of 92, rung dates 64 of 64, nested pairs 30 of 30. Side effects 
   ("Chainlink (LINK)") still links to that stock's options; a negated ticket ("not close above") is still read as
   up; "in 2026" and "before 2027" deadlines, which the readers call rungs, stay "other"; one pair's year comes out a
   year early from the frozen ladder rule (a market created on 2024-12-30 for "by December 31").
+
+**Result, 2026-10-04 04:41 ET. Half B, held out, scored once (commit d287a16; parser as committed at 70736db).**
+
+| Measure | Parser before the fixes | Fixed parser | Bar |
+|---|---|---|---|
+| Exact ticket links, dates on the session the link uses | 89 of 99 (90%) | **100 of 104 (96%, 95% interval 90% to 99%)** | 95%: met |
+| Same, dates on the calendar day (the rule as first written) | 75 of 99 (76%) | 84 of 104 (81%) | 95%: not met |
+| Rung dates | 53 of 54 | 53 of 54 (98%) | 95%: met |
+| Nested pairs the code accepts | 30 of 30 | 30 of 30 | 95%: met |
+
+- On the questions where both readers agree on the type, the fixed parser's type is right on all 202; the readers
+  disagreed on the type of 18 of 220.
+- The code refuses 6 of the 36 pairs both readers call nested, each because the two rules texts differ. That is the
+  safe side, and it costs ladder trades.
+- The calendar-day figures stay low because "end of October" is Saturday the 31st to the parser and Friday the 30th
+  to the readers. The link uses the Friday in both cases, which is why amendment 1 changed the measure before this
+  half was read.
+- **A fifth fault, found on this half after it was scored:** all four ticket misses are "close above ... end of
+  February", which the parser dated 2028-02-29 (it keyed the month's end on a leap day and waited for the next leap
+  year). The step-1 parser had it too. Fixed after scoring with a test; with that fix the half reads 104 of 104, a
+  figure that is not held out and is not the result.
+- The one rung miss ("Will Ethereum hit $10,000 by December 31?", a year early) comes from the frozen ladder rule
+  for a market created on 30 December; left for the ladder study's owners.

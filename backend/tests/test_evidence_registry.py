@@ -243,3 +243,11 @@ def test_event_links_numbers_are_the_result_files_values():
         assert s in text, s
     # not reached from any contract type: a question's link is its contract, never this entry
     assert "event_links" not in ev.CONTRACT_MECHANISM.values()
+
+
+def test_contract_link_accuracy_is_the_held_out_figure_of_its_result_file():
+    n = next(x for x in ev.system_numbers() if x["label"].startswith("Exact contract links right"))
+    bar = json.loads((REPO / n["result_file"]).read_text())["bars"]["exact_ticket_links"]
+    assert n["sample"]["n"] == bar["n"] and abs(n["value"] - bar["share"]) < 1e-4 and bar["result"] == "pass"
+    assert abs(n["ci_low"] - bar["interval_95_exact"][0]) < 1e-4 and abs(n["ci_high"] - bar["interval_95_exact"][1]) < 1e-4
+    assert n["confirmatory"] and n["range_kind"] == ev.CI95_EXACT and n["result_file_on_disk"]
