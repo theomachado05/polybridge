@@ -135,7 +135,7 @@ anything is computed:
 - The equity-first direction is reported in points of odds and set against what a Polymarket round trip costs. It is
   not turned into a P&L.
 
-**Amendment 3, 2026-10-04 01:03 UTC, after S5 and S5b: one more exploratory check, on the prediction market itself.**
+**Amendment 3, 2026-10-04 01:00 UTC, after S5 and S5b: one more exploratory check, on the prediction market itself.**
 The equity is efficient to the odds at every horizon tested. An earlier study (R3) saw Polymarket give back part of
 its weekend move after the stock market opened. If the odds overshoot while equities are closed, the trade is on the
 odds, not the equity. Rules, fixed before computing:

@@ -81,6 +81,69 @@ def charts(eq: pd.DataFrame, recent_from: str) -> None:
         plt.close(fig)
 
 
+def intraday_section() -> list[str]:
+    """S5b (amendment 2) and the give-back check (amendment 3); empty until `python -m s5_big_moves.intraday` has run."""
+    if not (R / "intraday.csv").exists():
+        return []
+    it, z = pd.read_csv(R / "intraday.csv"), json.loads((R / "intraday.json").read_text())
+
+    def jump(prefix, lab):
+        r = it[it.test == f"{prefix} {lab}"].iloc[0]
+        return f"{r['mean']:+.2f} [{r.ci_lo:+.2f}, {r.ci_hi:+.2f}]"
+
+    def slope(prefix, lab):
+        r = it[it.test == f"{prefix} the next {lab} on this bin's " + ("odds move" if prefix.startswith("odds") else "equity move")].iloc[0]
+        return f"{r.slope:+.3f} (t {r.t:+.1f})"
+
+    snap = json.loads((R / "pm_cost_snapshot.json").read_text()) if (R / "pm_cost_snapshot.json").exists() else None
+    cost_txt = (f"{snap['round_trip_points_median_mid']:.1f} points (measured on the live books of {snap['mid_10_90']} open linked markets "
+                f"priced between 0.10 and 0.90: one spread plus two fees, quartiles {snap['round_trip_points_p25_mid']:.1f} to "
+                f"{snap['round_trip_points_p75_mid']:.1f}; ${snap['touch_dollars_median_mid']:,.0f} at the touch)") if snap else "2 to 4 points"
+    labs = ["5 min", "15 min", "30 min", "60 min"]
+    tbl = pd.DataFrame([{"H": lab, "A": jump("odds jump of 3+ points: equity over the next", lab),
+                         "B": slope("odds first: equity over", lab), "C": jump("equity jump of 50+ bp: odds over the next", lab),
+                         "D": slope("equity first: odds over", lab)} for lab in labs])
+    t1, t2 = z["trade"][0], z["trade"][1]
+    out = ["## Exploratory: who moves first inside the session? (S5b)", "",
+           f"Designed after the S5 run (amendment 2). Regular session, 5-minute bins: {z['bins']:,} link-bins on {z['links']} links and "
+           f"{z['dates']} dates; {z['odds_jumps']:,} bins with an odds jump of 3 points or more, {z['equity_jumps']:,} with an equity jump of "
+           "50 bp or more.", "",
+           md_table(tbl, {"H": "Next", "A": "After an odds jump: equity, bp", "B": "Equity on odds, bp per point",
+                          "C": "After an equity jump: odds, points", "D": "Odds on equity, points per 100 bp"}), "",
+           "- **Each leads the other a little, and neither by enough to trade.** After a 3-point jump in the odds the equity moves about "
+           f"2 bp more over the next half hour. After a 50 bp jump in the equity the odds move about 0.1 point more.",
+           f"- **The odds-first trade loses.** Entering the equity in the bin after an odds jump and holding 30 minutes: {t1['trades']:,} trades, "
+           f"{t1['mean_gross_bp']:+.1f} bp before costs [{t1['gross_ci_lo']:+.1f}, {t1['gross_ci_hi']:+.1f}], {t1['mean_net_bp']:+.1f} bp after "
+           f"[{t1['ci_lo']:+.1f}, {t1['ci_hi']:+.1f}]; {t2['mean_net_bp']:+.1f} bp at 2× costs.",
+           "- **The equity-first direction is statistically clear (t about 5) and economically nothing:** 0.1 point of odds against a "
+           f"Polymarket round trip of about {cost_txt}.", ""]
+    if (R / "reversal.csv").exists():
+        rv = pd.read_csv(R / "reversal.csv")
+
+        def rr(scope, window, kind):
+            return rv[(rv.scope == scope) & (rv.window == window) & (rv.kind == kind)].iloc[0]
+
+        s1 = rr("all closures", "09:29 to the close", "slope, points per point")
+        a5, a10 = rr("all closures", "09:29 to the close", "after an overnight move of 5+ points"), rr("all closures", "09:29 to the close", "after an overnight move of 10+ points")
+        n10, w10 = rr("all closures", "09:29 to the next 09:29", "after an overnight move of 10+ points"), rr("weekends only", "09:29 to the close", "after an overnight move of 10+ points")
+        out += ["## Exploratory: do the odds give back their overnight move? (amendment 3)", "",
+                f"The 93 S5 markets, odds only. After an overnight move, the odds retrace part of it during the next session: slope "
+                f"{s1.slope:+.3f} (t = {s1.t:.1f}, {int(s1.n):,} market-days).", "",
+                "| Overnight move | Cases | Dates | Average move | Change by the close, signed by the move | By the next 09:29 |", "|---|---|---|---|---|---|",
+                f"| 5 points or more | {int(a5.n)} | {int(a5.dates)} | {a5.mean_abs_move:.1f} points | {a5['mean']:+.2f} points [{a5.ci_lo:+.2f}, {a5.ci_hi:+.2f}] | "
+                f"{rr('all closures', '09:29 to the next 09:29', 'after an overnight move of 5+ points')['mean']:+.2f} |",
+                f"| 10 points or more | {int(a10.n)} | {int(a10.dates)} | {a10.mean_abs_move:.1f} points | {a10['mean']:+.2f} points [{a10.ci_lo:+.2f}, {a10.ci_hi:+.2f}] | "
+                f"{n10['mean']:+.2f} [{n10.ci_lo:+.2f}, {n10.ci_hi:+.2f}] |",
+                f"| 10 points or more, weekends only | {int(w10.n)} | {int(w10.dates)} | {w10.mean_abs_move:.1f} points | {w10['mean']:+.2f} points [{w10.ci_lo:+.2f}, {w10.ci_hi:+.2f}] | |", "",
+                f"A give-back of about {abs(a10['mean']):.1f} points after a {a10.mean_abs_move:.0f}-point move is significant in this price series. "
+                f"A round trip costs about {cost_txt}. So after 10-point moves the point estimate is a little above the cost and its "
+                f"interval ({abs(a10.ci_hi):.1f} to {abs(a10.ci_lo):.1f} points) straddles it; after 5-point moves it is below the cost. "
+                "Three reasons not to call it an edge: it is not significant by the next morning or on weekends alone; a give-back is "
+                "exactly what bid-ask bounce in a history of last trades and midpoints looks like (S1 showed how far such prices can be "
+                "from executable ones); and the size on offer at the touch is a few hundred dollars. Only recorded order books can settle it.", ""]
+    return out
+
+
 def main() -> int:
     m, rg, bk = pd.read_csv(R / "metrics.csv"), pd.read_csv(R / "regressions.csv"), pd.read_csv(R / "buckets.csv")
     tr = pd.read_csv(R / "trades.csv") if (R / "trades.csv").stat().st_size > 5 else pd.DataFrame(columns=["variant", "cost_mult"])
@@ -169,6 +232,7 @@ def main() -> int:
           "| Criterion | Result | Evidence |", "|---|---|---|"]
     S += [f"| {a} | {'pass' if b else '**fail**'} | {e} |" for a, b, e in crit]
     S += ["", f"**Verdict: {p2}.**", "",
+          *intraday_section(),
           "## The links", "",
           f"{meta['universe_counts']['events']:,} events scanned, {meta['universe_candidates']} markets eligible, the 240 with the largest volume "
           f"kept. Two blind labellers per question: both called {st['both_event']} of {st['questions']} questions an event; they agreed on "

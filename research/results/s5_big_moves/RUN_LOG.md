@@ -14,7 +14,13 @@ All times UTC, 2026-10-04 (Sat 2026-10-03 evening in New York). Commands are run
 | 00:56:52 | `python -m s5_big_moves.run` | 1.9 s. The numbers in `SUMMARY.md` |
 | 00:57 | `python -m s5_big_moves.report` | `SUMMARY.md`, charts, `capacity.md` |
 
-The run was made once. No rule was changed after it.
+| 00:58:49 | Amendment 2 committed (`d7155d6`): exploratory intraday follow-up S5b | After the S5 run, before anything was computed |
+| 00:59 | `python -m s5_big_moves.intraday` | 2.4 s, cached data. The S5b table in `SUMMARY.md` |
+| 01:00:18 | Amendment 3 committed (`504628b`): exploratory give-back check on the odds | Before it was computed |
+| 01:00 | `python -m s5_big_moves.intraday reversal` | The give-back table in `SUMMARY.md` |
+
+The S5 run was made once. No rule was changed after it. S5b and the give-back check are exploratory: each was written
+down and committed before it was computed, and each was designed after seeing the results before it.
 
 ## The links
 

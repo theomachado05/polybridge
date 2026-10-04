@@ -1,0 +1,13 @@
+{
+ "snapshot_utc": "2026-10-04T01:01:35.842000Z",
+ "markets": 36,
+ "two_sided": 36,
+ "mid_10_90": 18,
+ "round_trip_points_median_all": 1.2430999999999952,
+ "round_trip_points_median_mid": 2.0276590000000003,
+ "round_trip_points_p25_mid": 1.1879500000000007,
+ "round_trip_points_p75_mid": 2.4203624999999986,
+ "spread_points_median_mid": 1.0000000000000009,
+ "fee_points_median_mid": 0.5771,
+ "touch_dollars_median_mid": 785.6992
+}

@@ -65,6 +65,33 @@ Share of link-days by move: 2 to 5 points 13.7%, 5 to 10 points 5.9%, 10 or more
 
 **Verdict: not a pass.**
 
+## Exploratory: who moves first inside the session? (S5b)
+
+Designed after the S5 run (amendment 2). Regular session, 5-minute bins: 1,127,527 link-bins on 220 links and 253 dates; 3,978 bins with an odds jump of 3 points or more, 13,476 with an equity jump of 50 bp or more.
+
+| Next | After an odds jump: equity, bp | Equity on odds, bp per point | After an equity jump: odds, points | Odds on equity, points per 100 bp |
+|---|---|---|---|---|
+| 5 min | +1.31 [+0.41, +2.18] | +0.156 (t +2.5) | +0.06 [+0.03, +0.10] | +0.066 (t +4.3) |
+| 15 min | +1.84 [-0.32, +4.07] | +0.228 (t +1.7) | +0.11 [+0.07, +0.15] | +0.104 (t +5.0) |
+| 30 min | +2.05 [-0.21, +4.56] | +0.339 (t +2.5) | +0.12 [+0.07, +0.16] | +0.127 (t +4.9) |
+| 60 min | +0.18 [-4.41, +4.46] | +0.014 (t +0.1) | +0.10 [+0.05, +0.15] | +0.130 (t +4.1) |
+
+- **Each leads the other a little, and neither by enough to trade.** After a 3-point jump in the odds the equity moves about 2 bp more over the next half hour. After a 50 bp jump in the equity the odds move about 0.1 point more.
+- **The odds-first trade loses.** Entering the equity in the bin after an odds jump and holding 30 minutes: 1,469 trades, +1.8 bp before costs [-0.7, +4.4], -4.3 bp after [-6.9, -1.8]; -10.4 bp at 2× costs.
+- **The equity-first direction is statistically clear (t about 5) and economically nothing:** 0.1 point of odds against a Polymarket round trip of about 2.0 points (measured on the live books of 18 open linked markets priced between 0.10 and 0.90: one spread plus two fees, quartiles 1.2 to 2.4; $786 at the touch).
+
+## Exploratory: do the odds give back their overnight move? (amendment 3)
+
+The 93 S5 markets, odds only. After an overnight move, the odds retrace part of it during the next session: slope -0.127 (t = -3.2, 6,229 market-days).
+
+| Overnight move | Cases | Dates | Average move | Change by the close, signed by the move | By the next 09:29 |
+|---|---|---|---|---|---|
+| 5 points or more | 553 | 172 | 11.3 points | -1.55 points [-2.30, -0.88] | -1.11 |
+| 10 points or more | 198 | 92 | 19.0 points | -2.86 points [-4.37, -1.40] | -1.87 [-4.23, +0.44] |
+| 10 points or more, weekends only | 89 | 34 | 20.0 points | -1.37 points [-3.66, +0.77] | |
+
+A give-back of about 2.9 points after a 19-point move is significant in this price series. A round trip costs about 2.0 points (measured on the live books of 18 open linked markets priced between 0.10 and 0.90: one spread plus two fees, quartiles 1.2 to 2.4; $786 at the touch). So after 10-point moves the point estimate is a little above the cost and its interval (1.4 to 4.4 points) straddles it; after 5-point moves it is below the cost. Three reasons not to call it an edge: it is not significant by the next morning or on weekends alone; a give-back is exactly what bid-ask bounce in a history of last trades and midpoints looks like (S1 showed how far such prices can be from executable ones); and the size on offer at the touch is a few hundred dollars. Only recorded order books can settle it.
+
 ## The links
 
 2,400 events scanned, 892 markets eligible, the 240 with the largest volume kept. Two blind labellers per question: both called 124 of 240 questions an event; they agreed on 220 links (ticker and direction) across 93 markets, named a ticker the other did not 47 times, and named the same ticker with opposite directions 0 times. 220 links have odds inside the window. Tickers with the most links: USO 41, XLE 30, SHY 25, IEF 23, SPY 18, TLT 16, XOP 7, EPOL 7, VGK 7, GLD 5.
