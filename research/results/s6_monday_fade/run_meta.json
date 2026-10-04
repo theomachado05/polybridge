@@ -1,0 +1,24 @@
+{
+ "half_spread": {
+  "markets": 158,
+  "h": 0.04500000000000001,
+  "h_p25": 0.03999999999999998,
+  "h_p75": 0.065,
+  "touch_dollars_median": 2.325,
+  "slice": [
+   "2026-10-03T23:09:48+00:00",
+   "2026-10-04T00:00:00+00:00"
+  ]
+ },
+ "events_rows": 5021,
+ "valid_rows": 1535,
+ "event_rows": 1535,
+ "closures": 45,
+ "closures_per_year": 51.00931677018633,
+ "first_closure": "2025-11-10",
+ "last_closure": "2026-09-28",
+ "oos_from": "2026-08-03",
+ "oos_closures": 9,
+ "markets_checked_for_prints": 180,
+ "run_seconds": 100.2
+}
