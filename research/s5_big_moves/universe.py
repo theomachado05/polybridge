@@ -89,6 +89,10 @@ def main() -> int:
     uniq = {c["id"]: c for c in cands}
     top = sorted(uniq.values(), key=lambda x: -x["volume"])[: cfg.N_MARKETS]
     (HERE / "universe.json").write_text(json.dumps({"counts": counts, "candidates": len(uniq), "markets": top}, indent=1, ensure_ascii=False))
+    if "--keep" in sys.argv:        # the labellers' files already exist: only refresh the ranked list of every candidate
+        (HERE / "candidates.json").write_text(json.dumps(sorted(uniq.values(), key=lambda x: -x["volume"]), indent=1, ensure_ascii=False))
+        print("candidates saved:", len(uniq))
+        return 0
     half = [top[0::2], top[1::2]]
     for name, part in zip(("1", "2"), half):       # two chunks; each is read by two independent labellers
         (HERE / f"questions_{name}.json").write_text(json.dumps(
