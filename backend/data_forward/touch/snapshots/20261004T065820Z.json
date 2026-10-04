@@ -1,0 +1,43 @@
+{
+ "kind": "touch_forward_state",
+ "run_utc": "2026-10-04T06:58:20.305294+00:00",
+ "stamp": "20261004T065820Z",
+ "first_listing_et": "2026-10-05 00:00",
+ "frozen": [
+  {
+   "file": "research/touch_fresh/FORWARD.md",
+   "sha256": "b7cfc8836034905e42366d6022f7fa82926e46bd976b65d9f579f57154475629",
+   "commit": "57d86d6",
+   "modified_since_commit": false
+  },
+  {
+   "file": "research/touch_fresh/forward_config.py",
+   "sha256": "91782943acbc59164af2780c980ecfc5fbec2a3cb7d82637c3cb6dbfb9d66b52",
+   "commit": "dcffa67",
+   "modified_since_commit": false
+  },
+  {
+   "file": "research/touch_fresh/forward.py",
+   "sha256": "16ef07419b3ffa7938cb109b3f55a7030f0d12be163ce23358215b1097cf5aff",
+   "commit": "57d86d6",
+   "modified_since_commit": false
+  }
+ ],
+ "markets_listed": 0,
+ "parsed": 0,
+ "eligible_first_weekend": 0,
+ "eligible_events": 0,
+ "by_entry_day": {},
+ "not_eligible_reasons": {},
+ "eligible": [],
+ "pending": {
+  "volume_floor_usd": 10000.0,
+  "read_at": "Sunday 20:00 New York snapshot",
+  "verdict_needs": {
+   "markets": 30,
+   "events": 15,
+   "by": "2027-06-30"
+  }
+ },
+ "note": "state only: no order, no option quote; the anchor is taken by `snapshot` on the entry Friday at 15:55 New York"
+}

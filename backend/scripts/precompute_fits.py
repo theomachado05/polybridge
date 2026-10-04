@@ -143,7 +143,7 @@ async def amain(argv: list[str] | None = None, deps: Deps | None = None, univers
     ap.add_argument("--offline", action="store_true", help="no network: recorded replays only")
     ap.add_argument("--shares", type=float, default=1000.0, help="shares held for the hedge division (default 1000)")
     ap.add_argument("--provider", choices=("auto", "rules"), default="auto",
-                    help="auto: Gemini when GEMINI_API_KEY is set, else rules; rules: keyword rules only")
+                    help="auto: the provider factory (OpenAI -> Gemini -> rules, LLM_PROVIDER); rules: keyword rules only")
     ap.add_argument("--fit-timeout", type=float, default=FIT_TIMEOUT_S, help="seconds per market (default 60)")
     ap.add_argument("--log", type=Path, default=None, help="also write the per-market lines and the summary here")
     ap.add_argument("--out", type=Path, default=DATA / "fits.json")

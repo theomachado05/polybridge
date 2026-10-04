@@ -25,7 +25,7 @@ describe("voice drives the screen", () => {
 
   it("fit → the fit lands in the store for that market + ticker, and the pipeline shows its steps", () => {
     const d = voiceDrive("fit", { ticker: "spy", market_source: "polymarket", market_id: "4620900", direction: "down_on_yes", shares_held: 1000 }, ok("fit", FIT), [MKT]);
-    assert.equal(d.route, "/pipeline");
+    assert.equal(d.route, "/build/fit");
     assert.equal(d.scrollTo, VOICE_ANCHOR.steps);
     assert.deepEqual(d.storeUpdate, { kind: "fit", market: MKT, ticker: "SPY", direction: "down_on_yes", sharesHeld: 1000, fit: FIT });
     assert.equal(d.announcement, "SPY fit ready · score 0.31");
@@ -41,7 +41,7 @@ describe("voice drives the screen", () => {
 
   it("propose → the pipeline's approval panel with that pending proposal", () => {
     const d = voiceDrive("propose", { ticker: "SPY", shares_held: 1000, market_id: "4620900" }, ok("propose", PROP), [MKT]);
-    assert.deepEqual(d, { route: "/pipeline", storeUpdate: { kind: "proposal", proposal: PROP, market: MKT }, announcement: "Proposal p7 is waiting for your approval", scrollTo: VOICE_ANCHOR.approval });
+    assert.deepEqual(d, { route: "/build/fit", storeUpdate: { kind: "proposal", proposal: PROP, market: MKT }, announcement: "Proposal p7 is waiting for your approval", scrollTo: VOICE_ANCHOR.approval });
     // Filing-tag proposals (no market) and opportunities have no hedge approval panel.
     assert.equal(voiceDrive("propose", {}, ok("propose", { ...PROP, market: null })).route, null);
     assert.equal(voiceDrive("propose", {}, ok("propose", { ...PROP, family: "opportunity" })).route, null);
@@ -50,7 +50,7 @@ describe("voice drives the screen", () => {
   it("approve moves only with confirm true, and reflects the approval", () => {
     const approved = { ...PROP, status: "approved", ack_unvalidated: true };
     const d = voiceDrive("approve", { proposal_id: "p7", confirm: true, ack_unvalidated: true }, ok("approve", approved));
-    assert.equal(d.route, "/pipeline");
+    assert.equal(d.route, "/build/fit");
     assert.equal(d.scrollTo, VOICE_ANCHOR.approval);
     assert.deepEqual(d.storeUpdate, { kind: "proposal", proposal: approved, market: resolveMarket("polymarket", "4620900", "tok", null) });
     assert.equal(d.announcement, "Proposal p7 approved");

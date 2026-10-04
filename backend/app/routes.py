@@ -166,6 +166,19 @@ def _decide(request: Request, pid: str, action: str, **kw) -> Proposal:
 
 
 EVIDENCE_409 = "EVIDENCE_UNVALIDATED"
+FIT_409 = "GENERIC_FIT_UNVALIDATED"
+
+
+def generic_fit_unacked(prop: Proposal, ack: bool) -> str | None:
+    """The registry's generic AI fit (``generic_ai_fit``: its walk-forward test failed) acts only behind the
+    acknowledgement gate, whatever the market's own gap evidence says. The 409 message when a proposal whose algo the
+    AI fit chose is approved or started without ``ack_unvalidated``; None otherwise."""
+    if ack or prop.algo is None or prop.algo.source != "ai_fit":
+        return None
+    return (f"{FIT_409}: proposal {prop.id} runs {prop.algo.family} chosen by the generic AI fit, which is unvalidated "
+            "(its walk-forward test failed: the chosen preset did not beat a static hedge out of sample). It acts only "
+            "behind the acknowledgement gate, even on a market whose gap evidence is validated: approve with "
+            "ack_unvalidated: true, or choose the algo yourself (algo.source: 'user').")
 
 
 @router.post("/proposals/{pid}/approve", response_model=Proposal)
@@ -191,6 +204,9 @@ def approve(pid: str, request: Request, body: ApproveIn | None = None) -> Propos
                                      "passed its out-of-sample test; to run the approved algo anyway, approve with "
                                      "ack_unvalidated: true (every decision and fill is then labelled 'unvalidated "
                                      f"(acknowledged)').{extra}")
+        fit = generic_fit_unacked(prop, ack)
+        if fit:
+            raise HTTPException(409, fit)
     return _decide(request, pid, "approve", ack_unvalidated=ack)
 
 

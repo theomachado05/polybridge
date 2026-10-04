@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <new>
 #include "hedgecore/library.hpp"
+#include "hedgecore/micro.hpp"
 #include "tick_helpers.hpp"
 
 namespace {
@@ -87,4 +88,57 @@ TEST(NoAlloc, ClosedSessionHedgeAcrossCloseAndOpenNeverAllocates) {
   EXPECT_GT(yes_orders, 0u);
   EXPECT_GT(equity_orders, 0u);
   EXPECT_GE(handoffs, 2u);  // the YES unwind and the first equity order at the Monday open
+}
+
+// The micro families take their own ticks; same rule: on_tick, on_fill and on_reject never allocate, on the order path
+// as well as the hold path.
+TEST(NoAlloc, MicroFamiliesNeverAllocate) {
+  algos::LadderPair lp(algos::LadderPair::spec().defaults(), Position{});
+  algos::TouchTicketReference tt(algos::TouchTicketReference::spec().defaults(), Position{});
+  std::vector<LadderTick> lt;
+  std::vector<TicketTick> tk;
+  for (int i = 0; i < 4000; ++i) {
+    LadderTick t;
+    t.ts_ns = (i + 1) * 900LL * kSec;
+    t.bid_rich = 0.50 + 0.05 * std::sin(i * 0.3);
+    t.ask_cheap = 0.48;
+    t.bid_rich_qty = 30;
+    t.ask_cheap_qty = 20 + (i % 5);
+    t.fee_rate_rich = t.fee_rate_cheap = 0.02;
+    t.tick = 0.01;
+    t.ts_rich_ns = t.ts_cheap_ns = t.ts_ns;
+    t.nested = (i % 9 == 0) ? Tri::Missing : Tri::True;
+    t.event_held = 0;
+    lt.push_back(t);
+    TicketTick k;
+    k.ts_ns = t.ts_ns;
+    k.bid = 0.30 + 0.1 * std::sin(i * 0.2);
+    k.bid_qty = 50;
+    k.ref_central = 0.28;
+    k.validated = (i % 2) ? Tri::True : Tri::False;
+    k.underlying_short = k.event_short = 0;
+    tk.push_back(k);
+  }
+  std::size_t ladder_orders = 0, ticket_orders = 0, proposals = 0;
+  g_allocs = 0;
+  g_counting = true;
+  for (std::size_t i = 0; i < lt.size(); ++i) {
+    const PairIntent in = lp.on_tick(lt[i], lt[i].ts_ns);
+    if (in.action == MicroAction::Order) {
+      ++ladder_orders;
+      lp.on_fill(Leg::Rich, in.rich.qty, in.rich.limit_px);
+      if (i % 7 == 0) lp.on_reject(Leg::Cheap);  // exercises the leg-risk path once
+      else lp.on_fill(Leg::Cheap, in.cheap.qty, in.cheap.limit_px);
+    } else if (in.action == MicroAction::Unwind) {
+      lp.on_fill(in.rich.side ? Leg::Rich : Leg::Cheap, in.rich.side ? in.rich.qty : in.cheap.qty, 0.5);
+    }
+    const TicketIntent ti = tt.on_tick(tk[i], tk[i].ts_ns);
+    if (ti.action == MicroAction::Order) { ++ticket_orders; tt.on_fill(1, ti.limit_px); }
+    proposals += ti.action == MicroAction::Propose;
+  }
+  g_counting = false;
+  EXPECT_EQ(g_allocs.load(), 0);
+  EXPECT_GT(ladder_orders, 0u);
+  EXPECT_GT(ticket_orders, 0u);
+  EXPECT_GT(proposals, 0u);
 }

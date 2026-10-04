@@ -5,7 +5,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { aiLabel, aiStatus, aiTitle, classifiedByGemini, classifyLead, fitNoun, mappingLabel, modelName, RULES_LABEL } from "../src/lib/ai.ts";
+import { aiLabel, aiStatus, aiTitle, classifiedByGemini, classifiedByLlm, classifyLead, fitNoun, mappingLabel, modelName, RULES_LABEL } from "../src/lib/ai.ts";
 import { buildClientTools, callAgentTool, CONFIRM_TOOLS, ORB_FOR, replyForAgent, SECRET_REFUSED, startedBridgeId, VOICE_TOOLS, voiceEnabled, voicePhase } from "../src/lib/voice.ts";
 import { WEEKEND_REPLAY, isRecordedOnly, isWeekendReplay, weekendPick, weekendQuestion } from "../src/lib/markets.ts";
 import { hedgeTerms } from "../src/lib/realBridge.ts";
@@ -60,6 +60,28 @@ describe("AI labels come from backend fields only", () => {
     assert.equal(fitNoun(aiStatus({ llm: "rules" })), "fit");
     assert.equal(fitNoun(aiStatus({ llm: "gemini:gemini-2.5-flash" })), "AI fit");
     assert.equal(modelName("models/gemini-2.5-flash-lite"), "2.5 Flash Lite");
+  });
+  it("labels OpenAI from the backend fields (same role as Gemini)", () => {
+    const fit = { llm: "openai:gpt-5.6-sol", ai: { provider: "openai", model: "gpt-5.6-sol", live: true, steps: { classify: "openai", explain: "openai" } } };
+    assert.equal(aiLabel(aiStatus(fit)), "AI · OpenAI gpt-5.6-sol");
+    assert.equal(aiLabel(aiStatus({ llm: "openai:gpt-5.6-sol" })), "AI · OpenAI gpt-5.6-sol", "llm prefix alone");
+    assert.equal(classifiedByLlm(fit), true);
+    assert.equal(classifyLead(aiStatus(fit)), "OpenAI classifies the event");
+    assert.match(aiTitle(aiStatus(fit)), /^OpenAI \(gpt-5\.6-sol\) classified the event and wrote the rationale/);
+    assert.match(aiTitle(aiStatus(fit)), /The LLM did not select them/);
+    // OpenAI fell back to Gemini for the rationale: the backend's ai.provider names Gemini, classify step stays OpenAI.
+    const mixed = { llm: "openai:gpt-5.6-sol", ai: { provider: "gemini", model: "gemini-flash-lite-latest", live: true, steps: { classify: "openai", explain: "gemini" } } };
+    assert.match(aiLabel(aiStatus(mixed)), /^AI · Gemini/);
+    // OpenAI answered only the rationale: no classification credit.
+    const partial = { llm: "rules", ai: { provider: "openai", model: "gpt-5.6-sol", live: true, steps: { classify: "rules", explain: "openai" } } };
+    assert.equal(classifiedByLlm(partial), false);
+    assert.doesNotMatch(aiTitle(aiStatus(partial)), /classified/);
+    assert.equal(aiLabel(aiStatus({ llm: "rules", ai: { provider: "rules", live: false } })), RULES_LABEL);
+    const ml = mappingLabel("ai_live:openai:gpt-5.6-sol")!;
+    assert.equal(ml.text, "AI (OpenAI, live)");
+    assert.match(ml.title, /^OpenAI \(gpt-5\.6-sol\)/);
+    assert.equal(mappingLabel("ai_live:gemini:gemini-2.5-flash")!.text, "AI (Gemini, live)");
+    assert.equal(modelName("gpt-5.6-sol", "openai"), "gpt-5.6-sol");
   });
   it("credits Gemini with the classification only when Gemini produced the event class", () => {
     // Gemini 503 on classify, rules stood in, then the explain call succeeded: ai.live is true, classify is "rules".

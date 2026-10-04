@@ -9,6 +9,9 @@
 - ``GET /options/hedge-quote?ticker=&shares=&horizon_days=&protection_pct=&borrow_rate=``: short stock vs protective
   put vs collar vs put spread, side by side at executable prices, with liquidity flags and caveats.
 - ``GET /options/mark/{contract}``: one OCC contract's mark (mid, spread, stale flag), as bridges / portfolio use.
+- ``GET /options/reference?ticker=&level=&direction=above|below&window_end=&kind=touch|finish``: the finish-beyond
+  probability from the call / put spread bracketing the level (S21 rules) with its bid/ask band, and the touch
+  reference (2x, capped at 1); outside the session it is the last close, labelled (``reference.py``).
 
 Every response says where the numbers come from (``freshness.source``, ``timeframe``, ``data_age_s``,
 ``staleness``, ``mark_sources``) and is labelled an estimate. No key, an unsupported question or a Massive outage
@@ -31,6 +34,7 @@ from . import chain as ch
 from . import hedge as hq
 from . import live as lv
 from . import mark as mk
+from . import reference as ref
 from .eightk import OOS_END, eightk_detail, refresh_eightk
 from .enrich import refresh, structure_mid
 from .implied import implied_for_threshold, jsonable
@@ -299,3 +303,23 @@ async def options_mark(contract: str) -> dict:
     if mk.qt.parse_occ(contract) is None:
         raise HTTPException(422, "contract must be an OCC option symbol like O:AAPL261023P00300000.")
     return await mk.mark(contract, client=make_client())
+
+
+@router.get("/reference")
+async def options_reference(ticker: str, level: float, direction: str, window_end: str, kind: str = "touch") -> dict:
+    """Options reference of one price ticket (touch tickets: OPEN LEAD, unvalidated). Bad input is a 422; everything
+    else (no key, outage, timeout, nothing listed) is a 200 with ``available: false`` and a reason."""
+    tk = ticker.strip().upper()
+    if not ref._TICKER.match(tk):
+        raise HTTPException(422, "ticker must look like NVDA, SPY or SPX.")
+    if not (math.isfinite(level) and level > 0):
+        raise HTTPException(422, "level must be a positive number.")
+    if direction not in ("above", "below"):
+        raise HTTPException(422, "direction must be above or below.")
+    if kind not in ("touch", "finish"):
+        raise HTTPException(422, "kind must be touch or finish.")
+    try:
+        we = dt.date.fromisoformat(window_end)
+    except ValueError:
+        raise HTTPException(422, "window_end must be YYYY-MM-DD.")
+    return await ref.reference_for(tk, level, direction, we, kind)

@@ -55,7 +55,7 @@ def get_adapter(request: Request) -> EngineAdapter:
 
 
 def get_provider(request: Request, http) -> LLMProvider:
-    """Tests set app.state.pipeline_provider; otherwise Gemini when GEMINI_API_KEY is set, else rules."""
+    """Tests set app.state.pipeline_provider; otherwise the provider factory (OpenAI -> Gemini -> rules, LLM_PROVIDER)."""
     p = getattr(request.app.state, "pipeline_provider", None)
     return p if p is not None else default_provider(http)
 

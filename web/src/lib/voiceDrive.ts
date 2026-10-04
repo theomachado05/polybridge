@@ -6,12 +6,15 @@ import type { ToolReply } from "./voice.ts";
 
 export const SCREENS = ["landing", "build", "pipeline", "bridge", "portfolio", "library", "profile", "connect"] as const;
 export type Screen = (typeof SCREENS)[number];
+/** The generic AI fit flow (Build → Connect → fit → approval). /pipeline is the ladder board; the screen name
+ *  "pipeline" stays as it is in backend/app/agent/tools.py SCREENS so the navigate tool's enum matches. */
+export const FIT_PATH = "/build/fit";
 export const SCREEN_PATH: Record<Screen, string> = {
   landing: "/", build: "/build", pipeline: "/pipeline", bridge: "/bridge", portfolio: "/portfolio", library: "/library",
   profile: "/profile", connect: "/connect",
 };
 const SCREEN_NAME: Record<Screen, string> = {
-  landing: "the home screen", build: "Build", pipeline: "the pipeline", bridge: "your bridges", portfolio: "your portfolio",
+  landing: "the home screen", build: "Build", pipeline: "the ladder board", bridge: "the ticket board and your bridges", portfolio: "your portfolio",
   library: "the algo library", profile: "your profile", connect: "Connect",
 };
 
@@ -105,7 +108,7 @@ export function voiceDrive(tool: string, args: Record<string, unknown> | null | 
       const market = resolveMarket(str(a.market_source), id, str(a.token_id), str(a.question), known);
       const score = num(d.score);
       return {
-        route: "/pipeline", scrollTo: VOICE_ANCHOR.steps,
+        route: FIT_PATH, scrollTo: VOICE_ANCHOR.steps,
         storeUpdate: { kind: "fit", market, ticker, direction: dir(a.direction), sharesHeld: num(a.shares_held), fit: reply.data as FitOut },
         announcement: `${ticker} fit ready${score == null ? " · unscored" : ` · score ${score.toFixed(2)}`}`,
       };
@@ -121,7 +124,7 @@ export function voiceDrive(tool: string, args: Record<string, unknown> | null | 
       if (!id || p.family !== "hedge") return stay(label);
       if (tool === "approve" && a.confirm !== true) return stay(label);
       const market = resolveMarket(str(m.source), id, str(m.token_id), null, known);
-      return { route: "/pipeline", storeUpdate: { kind: "proposal", proposal: p, market }, announcement: label, scrollTo: VOICE_ANCHOR.approval };
+      return { route: FIT_PATH, storeUpdate: { kind: "proposal", proposal: p, market }, announcement: label, scrollTo: VOICE_ANCHOR.approval };
     }
     case "start_bridge": {
       const bid = str(d.bridge_id);

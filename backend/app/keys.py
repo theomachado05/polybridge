@@ -1,4 +1,4 @@
-"""Key lookup for the CLI checks (make gemini-check / voice-agent / keys-check). Values are returned, never printed.
+"""Key lookup for the CLI checks (make openai-check / gemini-check / voice-agent / keys-check). Values are returned, never printed.
 
 The environment wins (``make`` passes ``--env-file ../.env``), then ``.env`` in backend/ or up to three parents (the
 repo-root ``.env``), the same rule the research client and ``app.pipeline.llm.gemini_key`` use."""
@@ -13,6 +13,7 @@ REPO = BACKEND.parent
 # (label, accepted names): what keys-check reports, by name only.
 KNOWN_KEYS: list[tuple[str, tuple[str, ...]]] = [
     ("MASSIVE_API_KEY", ("MASSIVE_API_KEY",)),
+    ("OPENAI_API_KEY", ("OPENAI_API_KEY",)),
     ("GEMINI_API_KEY", ("GEMINI_API_KEY",)),
     ("ELEVENLABS_API_KEY", ("ELEVENLABS_API_KEY",)),
     ("WEBULL_APP_KEY", ("WEBULL_APP_KEY", "WEBULL_API_KEY")),

@@ -1,4 +1,4 @@
-.PHONY: setup-research test-research reproduce setup-backend test-backend build-engine test-engine test-engine-py setup-web test-web test dev dev-live dev-tlt dev-ita dev-iwm dev-nvda e2e e2e-api e2e-opportunity e2e-weekend e2e-demo webull-check gemini-check voice-agent keys-check
+.PHONY: setup-research test-research reproduce setup-backend test-backend build-engine test-engine test-engine-py setup-web test-web test dev dev-live dev-tlt dev-ita dev-iwm dev-nvda e2e e2e-api e2e-opportunity e2e-weekend e2e-demo webull-check gemini-check voice-agent keys-check openai-check
 
 research/.venv:
 	$(MAKE) setup-research
@@ -123,17 +123,46 @@ e2e-demo:
 webull-check:
 	cd backend && uv run --locked $(ENVFILE) python scripts/webull_check.py
 
-# --- AI keys (GEMINI_API_KEY, ELEVENLABS_API_KEY in the repo-root .env; values are never printed) ------------------
+# --- AI keys (OPENAI_API_KEY, GEMINI_API_KEY, ELEVENLABS_API_KEY in the repo-root .env; values are never printed) ------------------
 # Gemini: lists the models the key can use, picks the newest flash model, runs one classify + one explain + one live
 # ticker mapping through the app's own GeminiProvider; prints model, latency and results. Exit 2 = no key, 1 = failed.
 gemini-check:
 	cd backend && uv run --locked $(ENVFILE) python scripts/gemini_check.py
+
+# OpenAI (same role as Gemini; never decides a trade): lists the models the key can use (ids matching OPENAI_MODEL plus
+# the newest few), runs one classify + one explain + one live ticker mapping through the app's own OpenAIProvider;
+# prints model, latency and results. Exit 2 = no key, 1 = key rejected, OPENAI_MODEL not listed, or a call failed.
+# Provider order in the app: OpenAI -> Gemini -> rules; LLM_PROVIDER=openai|gemini|rules|auto (default auto).
+openai-check:
+	cd backend && uv run --locked $(ENVFILE) python scripts/openai_check.py
 
 # ElevenLabs: create (or update) the PolyBridge agent with CLIENT tools matching GET /agent/tools (no tunnel), then
 # write only NEXT_PUBLIC_ELEVENLABS_AGENT_ID into web/.env.local (gitignored). Idempotent. ARGS=--dry-run: no network.
 voice-agent:
 	cd backend && uv run --locked $(ENVFILE) python scripts/elevenlabs_agent.py $(ARGS)
 
-# Which keys are present (names only); runs gemini-check and read-only ElevenLabs calls when their keys are present.
+# Which keys are present (names only); runs openai-check, gemini-check and read-only ElevenLabs calls when their keys are present.
 keys-check:
 	cd backend && uv run --locked $(ENVFILE) python scripts/keys_check.py
+
+# --- forward tests (rules frozen; no trading) -----------------------------------------------------------------------
+# make forward-ladders: research/ladder_replay/live.py once (every open date ladder's real books), a timestamped snapshot
+# under backend/data_forward/ladders/. make forward-touch: list the "will it hit" markets eligible under
+# research/touch_fresh/FORWARD.md (listed from Mon 5 Oct) and record their state under backend/data_forward/touch/.
+# The frozen runner's timed stages: forward-touch-snapshot (Friday 15:55 New York), forward-touch-prints (after Sunday
+# 20:00), forward-touch-evaluate. GET /forward/status shows the latest of each.
+.PHONY: forward-ladders forward-touch forward-touch-snapshot forward-touch-prints forward-touch-evaluate
+forward-ladders:
+	cd backend && uv run $(ENVFILE) python ../scripts/forward_ladders.py
+
+forward-touch:
+	cd backend && uv run $(ENVFILE) python ../scripts/forward_touch.py list
+
+forward-touch-snapshot:
+	cd backend && uv run $(ENVFILE) python ../scripts/forward_touch.py snapshot
+
+forward-touch-prints:
+	cd backend && uv run $(ENVFILE) python ../scripts/forward_touch.py prints
+
+forward-touch-evaluate:
+	cd backend && uv run $(ENVFILE) python ../scripts/forward_touch.py evaluate
