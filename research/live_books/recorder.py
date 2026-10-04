@@ -1,5 +1,6 @@
-"""Live recorder for the Polymarket CLOB market websocket on the forward_monday universe, with the stale-quote detector
-run on every book update. Raw messages and decisions go to hourly gzip JSONL. No order is ever sent.
+"""Live recorder for the Polymarket CLOB market websocket on the forward_monday universe. Each frame goes as raw bytes to
+hedgecore_book.BookEngine, which parses it, updates the token books and runs the stale-quote detector on every touched
+token in one C++ call. Raw messages and decisions go to hourly gzip JSONL. No order is ever sent.
 
     cd research && nohup caffeinate -i .venv/bin/python -m live_books.recorder > results/live_books/nohup.out 2>&1 &
     research/live_books/stop.sh
@@ -30,6 +31,13 @@ from forward_monday.run import listing, sessions, universe
 from polybridge_research.massive import MassiveClient, load_api_key
 
 from . import detector, reference as R
+from .pybook import PyBookEngine
+
+try:
+    from .hedgecore_book import BookEngine
+    BOOK_IMPL = "cpp_book"
+except ImportError:
+    BookEngine, BOOK_IMPL = PyBookEngine, "python_book"
 
 UTC = timezone.utc
 WS_URL = "wss://ws-subscriptions-clob.polymarket.com/ws/market"
@@ -44,15 +52,16 @@ FLUSH_SEC = 30
 DISK_SEC = 60
 RAW_CAP = 5 * 1024 ** 3
 UNTIL = "2026-10-05T10:30:00-04:00"
+KINDS = ("book", "price_change")
 
 
 class HourlyGz:
-    def __init__(self, d: Path, prefix: str):
-        self.d, self.prefix = d, prefix
+    def __init__(self, d: Path, prefix: str, binary: bool = False):
+        self.d, self.prefix, self.mode = d, prefix, "ab" if binary else "at"
         d.mkdir(parents=True, exist_ok=True)
         self.hour, self.f, self.path = None, None, None
 
-    def write(self, t_ns: int, line: str) -> Path | None:
+    def write(self, t_ns: int, line: str | bytes) -> Path | None:
         h = t_ns // 3_600_000_000_000
         closed = None
         if h != self.hour:
@@ -60,7 +69,7 @@ class HourlyGz:
             self.hour = h
             stamp = datetime.fromtimestamp(h * 3600, UTC).strftime("%Y%m%dT%H")
             self.path = self.d / f"{self.prefix}_{stamp}.jsonl.gz"
-            self.f = gzip.open(self.path, "at", compresslevel=5)
+            self.f = gzip.open(self.path, self.mode, compresslevel=5)
         self.f.write(line)
         return closed
 
@@ -92,7 +101,7 @@ def yes_no(meta: dict) -> tuple[str, str]:
 class Recorder:
     def __init__(self, out: Path, until: datetime, raw_cap: int):
         self.out, self.until, self.raw_cap = out, until, raw_cap
-        self.raw = HourlyGz(out / "raw", "raw")
+        self.raw = HourlyGz(out / "raw", "raw", binary=True)
         self.dec = HourlyGz(out / "decisions", "decisions")
         self.gaps = (out / "gaps.jsonl").open("a")
         self.log = logging.getLogger("live_books")
@@ -104,7 +113,9 @@ class Recorder:
         self.pool = ThreadPoolExecutor(max_workers=6)
         self.markets: dict[str, dict] = {}
         self.assets: dict[str, tuple[str, bool]] = {}
-        self.books: dict[str, tuple[dict, dict]] = {}
+        self.engine = BookEngine(R.TAU, 0.04, 1.0)
+        self.mid_idx: dict[str, int] = {}
+        self.slot_info: dict[int, tuple[str, bool]] = {}
         self.refs: dict[str, R.Ref] = {}
         self.snapshot_ids = {r["id"] for r in csv.DictReader(SNAPSHOT.open())}
         self.raw_on = True
@@ -139,7 +150,7 @@ class Recorder:
         basis = f"close_{d}"
         todo = [m for m in mids if self.refs.get(m) is None or self.refs[m].basis != basis]
         for mid, ref in zip(todo, self.pool.map(lambda m: R.close_ref(self.opts, self.markets[m], d), todo)):
-            self.refs[mid] = ref
+            self.set_ref(mid, ref)
         if todo:
             ok = sum(self.refs[m].status == "ok" for m in todo)
             self.log.info("close references (%s): %d computed, %d usable", basis, len(todo), ok)
@@ -149,7 +160,13 @@ class Recorder:
         due = [m for m in self.markets if (r := self.refs.get(m)) is None or r.basis != "live"
                or now - r.computed_ns > REF_MIN_SEC * 1e9]
         for mid, ref in zip(due, self.pool.map(lambda m: R.live_ref(self.opts, self.live, self.markets[m]), due)):
-            self.refs[mid] = ref
+            self.set_ref(mid, ref)
+
+    def set_ref(self, mid: str, ref: R.Ref):
+        self.refs[mid] = ref
+        i = self.mid_idx.get(mid)
+        if i is not None:
+            self.engine.set_p(i, ref.p)
 
     async def universe_loop(self):
         while not self.stop.is_set():
@@ -161,12 +178,20 @@ class Recorder:
                     for mid in [m for m in self.markets if m not in new]:
                         self.markets.pop(mid)
                         self.refs.pop(mid, None)
+                        if mid in self.mid_idx:
+                            self.engine.set_p(self.mid_idx[mid], float("nan"))
                     self.assets = {}
                     for mid, m in self.markets.items():
                         self.assets[m["yes"]] = (mid, True)
                         self.assets[m["no"]] = (mid, False)
-                    for a in [a for a in self.books if a not in self.assets]:
-                        self.books.pop(a)
+                    for a in old - set(self.assets):
+                        self.engine.remove_asset(a)
+                    for mid, m in self.markets.items():
+                        i = self.mid_idx.setdefault(mid, len(self.mid_idx))
+                        ref = self.refs.get(mid)
+                        self.engine.set_market(i, ref.p if ref is not None else float("nan"), bool(m["fees_listing"]))
+                    for a, (mid, is_yes) in self.assets.items():
+                        self.slot_info[self.engine.add_asset(a, self.mid_idx[mid], is_yes)] = (mid, is_yes)
                     if not self.in_sess:
                         await asyncio.to_thread(self.close_refs, list(self.markets))
                     if set(self.assets) != old:
@@ -190,87 +215,46 @@ class Recorder:
                 self.log.exception("reference refresh failed: %s", e)
             await asyncio.sleep(2.0)
 
-    def on_message(self, raw: str, t0: int):
-        if raw == "PONG":
+    def on_message(self, raw: bytes, t0: int, t0m: int):
+        if raw == b"PONG":
             return
         self.counts["msgs"] += 1
-        raw = raw.rstrip()
+        n = self.engine.process(raw, t0, t0m)
+        if n < 0:
+            self.counts["bad_json"] += 1
         if self.raw_on:
-            if "\n" in raw:
-                raw = raw.replace("\n", " ")
-            closed = self.raw.write(t0, f'{{"t":{t0},"m":{raw}}}\n')
+            raw = raw.rstrip()
+            if b"\n" in raw:
+                raw = raw.replace(b"\n", b" ")
+            closed = self.raw.write(t0, b'{"t":%d,"m":%b}\n' % (t0, raw))
             if closed:
                 self.log.info("raw hour closed %s: %.1f MB, raw dir %.1f MB", closed.name, closed.stat().st_size / 1e6,
                               dir_bytes(closed.parent) / 1e6)
-        try:
-            msg = json.loads(raw)
-        except ValueError:
-            self.counts["bad_json"] += 1
-            return
-        t1 = time.time_ns()
-        for ev in (msg if isinstance(msg, list) else [msg]):
-            if not isinstance(ev, dict):
-                continue
-            et = ev.get("event_type")
-            if et == "book":
-                a = ev.get("asset_id")
-                if a not in self.assets:
-                    continue
-                self.books[a] = ({float(x["price"]): float(x["size"]) for x in ev.get("bids") or []},
-                                 {float(x["price"]): float(x["size"]) for x in ev.get("asks") or []})
-                self.decide(a, t0, t1, "book")
-            elif et == "price_change":
-                changes = ev.get("price_changes") or [dict(c, asset_id=ev.get("asset_id")) for c in ev.get("changes") or []]
-                touched = []
-                for c in changes:
-                    a = c.get("asset_id")
-                    if a not in self.assets:
-                        continue
-                    bids, asks = self.books.setdefault(a, ({}, {}))
-                    side = bids if c.get("side") == "BUY" else asks
-                    px, sz = float(c["price"]), float(c["size"])
-                    if sz > 0:
-                        side[px] = sz
-                    else:
-                        side.pop(px, None)
-                    if a not in touched:
-                        touched.append(a)
-                for a in touched:
-                    self.decide(a, t0, t1, "price_change")
-            else:
-                self.counts[f"ev_{et}"] += 1
+        if n > 0:
+            for d in self.engine.decisions():
+                self.log_decision(t0, d)
 
-    def decide(self, a: str, t0: int, t1: int, kind: str):
-        mid, is_yes = self.assets[a]
-        bids, asks = self.books[a]
-        bb = max(bids) if bids else 0.0
-        ba = min(asks) if asks else 0.0
-        bs, as_ = bids.get(bb, 0.0), asks.get(ba, 0.0)
-        if is_yes:
-            yb, ybs, ya, yas = bb, bs, ba, as_
-        else:
-            yb, ybs = (1.0 - ba, as_) if ba > 0 else (0.0, 0.0)
-            ya, yas = (1.0 - bb, bs) if bb > 0 else (0.0, 0.0)
+    def log_decision(self, t0: int, d: tuple):
+        slot, kind, side, yb, ybs, ya, yas, bdep, adep, p, edge, net, px, sz, t1, t2 = d
+        mid, is_yes = self.slot_info[slot]
         ref = self.refs.get(mid)
-        p = ref.p if ref is not None else float("nan")
         m = self.markets[mid]
-        side, edge, net, px, sz = detector.decide(yb, ybs, ya, yas, p, R.TAU, 0.04, 1.0, bool(m["fees_listing"]))
-        t2 = time.time_ns()
         stale = not (self.in_sess and ref is not None and ref.basis == "live" and t2 - ref.computed_ns <= REF_FRESH_SEC * 1e9)
         self.counts["decisions"] += 1
         if side:
             self.counts["flagged"] += 1
             if not stale:
                 self.counts["flagged_fresh"] += 1
-        row = {"t0": t0, "t1": t1, "t2": t2, "kind": kind, "mid": mid, "tok": "yes" if is_yes else "no", "tk": m["tk"],
+        row = {"t0": t0, "t1": t1, "t2": t2, "kind": KINDS[kind], "mid": mid, "tok": "yes" if is_yes else "no", "tk": m["tk"],
                "k": m["k"], "res": m["res_date"], "bid": yb, "bid_sz": ybs, "ask": ya, "ask_sz": yas,
+               "bid_depth_2c": bdep, "ask_depth_2c": adep,
                "p_ref": None if p != p else round(p, 5), "ref_basis": ref.basis if ref else None,
                "ref_age_s": None if ref is None else round((t2 - ref.computed_ns) / 1e9, 1),
                "quote_age_s": None if ref is None or ref.quote_ts != ref.quote_ts else round(t2 / 1e9 - ref.quote_ts, 1),
                "reference_stale": stale, "in_window": t2 // 1_000_000_000 >= int(m["w0"]) and t2 // 1_000_000_000 <= int(m["w1"])
                and str(datetime.fromtimestamp(t2 / 1e9, R.ET).date()) == m["reopening"],
                "decision": detector.SIDES[side], "edge_pt": round(edge, 3), "net_edge_pt": round(net, 3),
-               "price": None if px != px else round(px, 4), "size": sz, "impl": detector.IMPL}
+               "price": None if px != px else round(px, 4), "size": sz, "impl": BOOK_IMPL}
         self.dec.write(t2, json.dumps(row, separators=(",", ":")) + "\n")
 
     async def pinger(self, ws):
@@ -295,8 +279,13 @@ class Recorder:
                     backoff = 1.0
                     ping = asyncio.create_task(self.pinger(ws))
                     try:
-                        async for raw in ws:
-                            self.on_message(raw if isinstance(raw, str) else raw.decode(), time.time_ns())
+                        while True:
+                            try:
+                                raw = await ws.recv(decode=False)
+                            except websockets.ConnectionClosedOK:
+                                break
+                            t0m = time.perf_counter_ns()
+                            self.on_message(raw, time.time_ns(), t0m)
                     finally:
                         ping.cancel()
                     err = "closed by server"
@@ -358,7 +347,8 @@ class Recorder:
         loop = asyncio.get_running_loop()
         for s in (signal.SIGTERM, signal.SIGINT):
             loop.add_signal_handler(s, lambda: (self.stop.set(), self.resub.set()))
-        self.log.info("start pid %d, detector impl %s, until %s", os.getpid(), detector.IMPL, self.until.isoformat())
+        self.log.info("start pid %d, frame path %s, detector impl %s, until %s", os.getpid(), BOOK_IMPL, detector.IMPL,
+                      self.until.isoformat())
         tasks = [asyncio.create_task(c) for c in (self.universe_loop(), self.ref_loop(), self.ws_supervisor(), self.housekeeping())]
         await self.stop.wait()
         for t in tasks:
@@ -368,7 +358,8 @@ class Recorder:
         self.dec.close()
         self.gaps.close()
         self.pool.shutdown(wait=False, cancel_futures=True)
-        self.log.info("stopped; counts %s", dict(self.counts))
+        self.log.info("stopped; counts %s; engine bad frames %d, other events %d", dict(self.counts), self.engine.bad_frames,
+                      self.engine.other_events)
 
 
 def main(argv=None):

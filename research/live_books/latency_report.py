@@ -23,8 +23,15 @@ from .recorder import OUT
 QS = (50, 90, 99, 99.9)
 
 
+IMPL_NAMES = {"cpp": "old path: Python json.loads and dict books, C++ detector call per token",
+              "python": "old path with the pure-Python detector",
+              "cpp_book": "new path: one C++ call per frame (simdjson parse, books, detector)",
+              "python_book": "fallback path (Python twin of the C++ engine)"}
+
+
 def read(dec_dir: Path):
-    tot, parse, dec = array("q"), array("q"), array("q")
+    lat: dict[str, tuple[array, array, array]] = {}
+    span: dict[str, list[int]] = {}
     t0s: set[int] = set()
     c: Counter = Counter()
     flagged_mk: set[str] = set()
@@ -39,6 +46,9 @@ def read(dec_dir: Path):
                         c["bad_lines"] += 1
                         continue
                     t0, t1, t2 = r["t0"], r["t1"], r["t2"]
+                    tot, parse, dec = lat.setdefault(r["impl"], (array("q"), array("q"), array("q")))
+                    w = span.setdefault(r["impl"], [t0, t2])
+                    w[0], w[1] = min(w[0], t0), max(w[1], t2)
                     tot.append(t2 - t0)
                     parse.append(t1 - t0)
                     dec.append(t2 - t1)
@@ -59,7 +69,7 @@ def read(dec_dir: Path):
                         flagged_mk.add(r["mid"])
         except EOFError:
             c["truncated_files"] += 1
-    return tot, parse, dec, len(t0s), c, flagged_mk, tmin, tmax
+    return lat, span, len(t0s), c, flagged_mk, tmin, tmax
 
 
 def raw_messages(raw_dir: Path, tmin: int, tmax: int) -> int:
@@ -94,16 +104,15 @@ def fmt(ts: int) -> str:
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", type=Path, default=OUT)
+    ap.add_argument("--no-replay", action="store_true")
     a = ap.parse_args(argv)
-    tot, parse, dec, n_msg_dec, c, flagged_mk, tmin, tmax = read(a.out / "decisions")
+    lat, spans, n_msg_dec, c, flagged_mk, tmin, tmax = read(a.out / "decisions")
     if not c["decisions"]:
         raise SystemExit("no decisions logged yet")
     span = (tmax - tmin) / 1e9
     n_raw = raw_messages(a.out / "raw", tmin, tmax)
     cpp = call_cost(detector.decide_cpp) if detector.decide_cpp else None
     py = call_cost(detector.decide_py)
-    rows = [("receive to decision (t2 - t0)", pct(tot)), ("receive to parsed (t1 - t0)", pct(parse)),
-            ("parsed to decision (t2 - t1)", pct(dec))]
     impl = ", ".join(f"{k[5:]} {v:,}" for k, v in sorted(c.items()) if k.startswith("impl_"))
     L = ["# Live book recorder: detector latency", "",
          f"Window: {fmt(tmin)} to {fmt(tmax)} ({span / 60:.1f} min). Detector implementation in the logged decisions: {impl}.",
@@ -111,20 +120,51 @@ def main(argv=None):
          "**These decisions use a stale reference.** Outside the US regular session the reference probability is the option-implied "
          "probability at the last regular-session close, and every such decision is flagged `reference_stale=true`. Weekend "
          "numbers are a latency demonstration of the recorder and detector, not a trading result. No order is ever sent.", "",
-         "## Latency per book update (microseconds)", "",
-         "| stage | p50 | p90 | p99 | p99.9 | mean |", "|---|---:|---:|---:|---:|---:|"]
-    L += [f"| {name} | " + " | ".join(f"{v:,.1f}" for v in vals) + " |" for name, vals in rows]
-    L += ["",
-          "t0 is `time.time_ns()` when the websocket frame is handed to the handler, t1 after `json.loads`, t2 after the book update "
-          "and the detector call for that asset. A frame that carries several book events is parsed once, so its later events "
-          "include the earlier events' processing. Network latency from Polymarket to this machine is not included.", "",
+         "## Live latency per book update (microseconds)", ""]
+    for impl in [k for k in IMPL_NAMES if k in lat] + sorted(k for k in lat if k not in IMPL_NAMES):
+        tot, parse, dec = lat[impl]
+        w0, w1 = spans[impl]
+        L += [f"**{IMPL_NAMES.get(impl, impl)}** (`impl={impl}`), {fmt(w0)} to {fmt(w1)} ({(w1 - w0) / 6e10:.1f} min), "
+              f"{len(tot):,} decisions.", "",
+              "| stage | p50 | p90 | p99 | p99.9 | mean |", "|---|---:|---:|---:|---:|---:|"]
+        L += [f"| {name} | " + " | ".join(f"{v:,.2f}" for v in pct(x)) + " |" for name, x in
+              (("receive to decision (t2 - t0)", tot), ("receive to parsed (t1 - t0)", parse), ("parsed to decision (t2 - t1)", dec))]
+        L += [""]
+    L += ["t0 is `time.time_ns()` when the websocket frame is handed to the handler. Old path: t1 after `json.loads` (and after "
+          "the gzip write of the raw frame, which came first), t2 after the dict book update and the detector call for that "
+          "token, both from `time.time_ns()`. New path: the frame bytes go to `hedgecore_book.BookEngine.process` in one call; "
+          "t1 is when that event's book update is done and t2 when its decision is written, both read inside C++ from the "
+          "monotonic clock that `time.perf_counter_ns()` uses and placed on t0's wall clock by the offset from a "
+          "`perf_counter_ns()` read taken at receive, so sub-microsecond intervals are resolved; the raw gzip write now "
+          "happens after the decisions. A frame that carries several book events is handled in one pass, so its later events "
+          "include the earlier events' processing. Network latency from Polymarket to this machine is not included.", ""]
+    if not a.no_replay:
+        from . import bench_replay as B
+        files = sorted((a.out / "raw").glob("raw_*.jsonl.gz"))[:-1]
+        if files:
+            r = B.run(files)
+            L += ["## Replay benchmark on the recorded frames (microseconds per frame)", "",
+                  f"Closed raw files {files[0].name} to {files[-1].name}: {r['n_msg']:,} frames, {r['n_dec']:,} decisions "
+                  f"against synthetic references (drawn per market so that both sides and the no-reference case occur, with "
+                  f"reference changes and token removal and re-adding during the replay). Decisions that differ between the "
+                  f"two paths (side, prices and sizes exact, edges to 1e-9): {r['mism']} frames.", "",
+                  "| path | p50 | p90 | p99 | p99.9 | mean |", "|---|---:|---:|---:|---:|---:|"]
+            L += [f"| {name} | " + " | ".join(f"{v:,.2f}" for v in r[k]) + " |" for name, k in
+                  (("old: `json.loads`, dict books, C++ detector call per token", "old"),
+                   ("new: one `BookEngine.process` call", "new"),
+                   ("new, receive to decision inside C++ (t2 - t0), per decision", "new_int"))]
+            L += ["", "Both paths run in one process on the same frames, timed with `time.perf_counter_ns()` around the "
+                  "call; the raw gzip write is excluded from both. The per-decision tail of the new path comes from the "
+                  "subscription snapshot frames, which carry 200 books each.", ""]
+    L += [
           "## Detector call cost (isolated, one book touch, nanoseconds per call)", "",
           "| implementation | ns per call |", "|---|---:|",
           f"| C++ `hedgecore::stale_quote` through the pybind11 module `hedgecore_stale` | {cpp:,.0f} |" if cpp else
           "| C++ binding | not built |",
           f"| pure-Python twin `live_books.detector.decide_py` | {py:,.0f} |", "",
-          "The C++ figure includes the pybind11 call and tuple return; the hot path inside C++ does no allocation. Most of the "
-          "receive-to-decision time is Python JSON parsing and book bookkeeping, not the decision itself.", "",
+          "The C++ figure includes the pybind11 call and tuple return. In the old path most of the receive-to-decision time is "
+          "Python JSON parsing and book bookkeeping, not the decision itself; the new path moves the parse, the books and the "
+          "decision into one C++ call that does no allocation once its buffers are warm.", "",
           "## Throughput and decisions", "",
           f"- Websocket messages in the window: {n_raw:,} ({n_raw / span:.2f} per second); messages that produced a book decision: "
           f"{n_msg_dec:,}.",
