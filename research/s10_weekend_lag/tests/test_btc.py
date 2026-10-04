@@ -32,3 +32,11 @@ def test_verify_up_and_down_prints():
     assert verify(pr, True, 0.60, 1000) == (2, 15.0)
     assert verify(pr, True, 0.56, 1000) == (1, 5.0)
     assert verify(pr, False, 0.60, 1000) == (0, 0.0)
+
+
+def test_yes_result():
+    from s10_weekend_lag.hold import yes_result
+    assert yes_result({"closed": True, "outcomes": '["Yes", "No"]', "outcomePrices": '["0", "1"]'}) == 0.0
+    assert yes_result({"closed": True, "outcomes": '["No", "Yes"]', "outcomePrices": '["0", "1"]'}) == 1.0
+    assert yes_result({"closed": False, "outcomes": '["Yes", "No"]', "outcomePrices": '["0.4", "0.6"]'}) is None
+    assert yes_result({"closed": True, "outcomes": '["Yes", "No"]', "outcomePrices": '["0.5", "0.5"]'}) is None
