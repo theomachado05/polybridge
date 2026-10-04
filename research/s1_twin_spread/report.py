@@ -73,6 +73,7 @@ def charts(eq: pd.DataFrame, split: pd.Timestamp) -> None:
         fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.3), sharey=True, facecolor=SURFACE)
         for ax, cost in zip(axes, cfg.COST_MULTIPLIERS):
             style(ax, f"{cost:.0f}× costs")
+            deepest: list[str] = []
             for mark, label, color in series:
                 c = curve(eq, cost, mark)
                 y = c.y.values
@@ -80,15 +81,23 @@ def charts(eq: pd.DataFrame, split: pd.Timestamp) -> None:
                     full = np.concatenate([[0.0], y])
                     y = (full - np.maximum.accumulate(full))[1:]
                 ax.plot(c.t, y, color=color, linewidth=2, solid_capstyle="round", solid_joinstyle="round", label=label)
-                ax.plot([c.t.iloc[-1]], [y[-1]], "o", color=color, markersize=7, markeredgecolor=SURFACE, markeredgewidth=2)
-                ax.annotate(f"{y[-1]:+.1f}%", (c.t.iloc[-1], y[-1]), xytext=(7, 0), textcoords="offset points",
-                            va="center", fontsize=9, color=INK)
+                if transform is None:       # the end value is the story of the equity curve; the trough is the drawdown's
+                    ax.plot([c.t.iloc[-1]], [y[-1]], "o", color=color, markersize=7, markeredgecolor=SURFACE, markeredgewidth=2)
+                    ax.annotate(f"{y[-1]:+.1f}%", (c.t.iloc[-1], y[-1]), xytext=(7, 0), textcoords="offset points",
+                                va="center", fontsize=9, color=INK)
+                else:
+                    deepest.append(f"{label.split(' entries')[0].lower()} {y.min():.2f}%")
             ax.axvline(split, color=INK2, linewidth=1)
-            ax.annotate("out-of-sample starts ▸", (split, 1.0), xycoords=("data", "axes fraction"), xytext=(-5, -4),
-                        textcoords="offset points", va="top", ha="right", fontsize=8.5, color=INK2)
-            ax.margins(x=0.09)
+            top = transform is None
+            ax.annotate("out-of-sample starts ▸", (split, 1.0 if top else 0.0), xycoords=("data", "axes fraction"),
+                        xytext=(-5, -4 if top else 5), textcoords="offset points", va="top" if top else "bottom", ha="right",
+                        fontsize=8.5, color=INK2)
+            if deepest:
+                ax.annotate("Deepest: " + ", ".join(deepest), (0.0, 0.0), xycoords="axes fraction", xytext=(12, 34),
+                            textcoords="offset points", ha="left", va="bottom", fontsize=8.5, color=INK)
+            ax.margins(x=0.09 if top else 0.03)
         axes[0].set_ylabel(ylabel, fontsize=9, color=INK2)
-        axes[0].legend(loc="upper left", bbox_to_anchor=(0.0, 0.86) if transform is None else (0.0, 0.3), frameon=False,
+        axes[0].legend(loc="upper left", bbox_to_anchor=(0.0, 0.86) if transform is None else (0.0, 0.42), frameon=False,
                        fontsize=9, labelcolor=INK)
         what = "equity curve" if transform is None else "drawdown"
         fig.suptitle(f"S1 twin spread, primary variant V0: {what}, in-sample then out-of-sample (mid mark)",
