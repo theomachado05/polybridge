@@ -227,3 +227,32 @@ Most of these markets have resolved and the labelling models' knowledge runs to 
   recalled clusters. A question answered twice counts for nothing.
 
 ## Amendments
+
+**Amendment 1, 2026-10-03 23:27 ET (2026-10-04 03:27 UTC). After the labels were committed (05e04ec), before any
+price of the fresh set was pulled: a pooled test of the mechanism.** The tables of section 5 count links one at a
+time, and a link needs 30 days of its own to count. That drops the short-lived markets and does not say why a link
+fails. So one more test, on the mechanism and not on single links: `linker/pooled.py`, new, with
+`linker/tests/test_pooled.py`. Its rules, fixed here:
+
+- **Population.** Every version-3 event link (floor applied, the Brazil cluster left out), including links with
+  under 30 days. Each link-day is one observation: x is the direction-signed overnight move of the link's signal in
+  points; y is the instrument's excess opening gap divided by the instrument's daily volatility before 2025-10-01,
+  so that instruments of different volatility are on one scale. Links whose instrument has no such figure are left
+  out and counted.
+- **The test.** One through-origin slope of y on x over all link-days, errors clustered by date. **The mechanism
+  holds if the slope is above zero with t ≥ 2.** Reported with the number of link-days, links, clusters and dates,
+  and again with one observation per instrument and date (the mean x over that instrument's links that night),
+  because one instrument can sit on several links.
+- **Reported whatever it shows:** the same slope without the theme that has the most confirmed links; by instrument
+  class; by the labellers' mechanism class; for trusted links and for the rest; on nights when the signal moved 5
+  points or more and on the other nights; on sessions from 2026-07-01; and for the control arm.
+- **Why links fail: active odds against quiet odds.** Links are split at the median of the share of nights on which
+  their signal moved a point or more. If the slope per point is about the same in both halves, the unconfirmed
+  links are right but short of data. If it is near zero in the quiet half, a move in a quiet market carries no
+  information. Reported: both slopes, their t, and the t of their difference.
+- **Options, pooled.** Over every link-day of section 7 on which both legs traded, for every version-3 link with
+  any such day: the directional leg's overnight return on the overnight move in the signal, through the origin; and
+  the straddle's overnight return on the absolute move, with an intercept. Errors clustered by date. The option
+  carries the mechanism if the first slope is above zero with t ≥ 2; the size of the move is priced if the second is.
+- The code is written after this amendment and checked on the development run only; the development figures are not
+  evidence. Nothing in sections 1 to 9 changes: this test adds no link and removes none.
