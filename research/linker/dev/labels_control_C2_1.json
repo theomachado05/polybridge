@@ -1,0 +1,92 @@
+{"labeller": "C2", "chunk": 1, "answers": [
+{"id": "polymarket:704475", "family": "none", "role": "none", "remembered": false, "links": []},
+{"id": "polymarket:631291", "family": "spot_proxy", "role": "none", "remembered": false, "links": []},
+{"id": "polymarket:546257", "family": "none", "role": "none", "remembered": false, "links": []},
+{"id": "polymarket:1501205", "family": "none", "role": "none", "remembered": false, "links": []},
+{"id": "polymarket:645986", "family": "event", "role": "carrier", "remembered": false, "links": [
+ {"ticker": "EWW", "direction": "down_on_yes", "confidence": 0.3, "impact_pct": 1.5, "alternative": "no US anti-cartel strike or operation on foreign soil by December 31", "mechanism": "A US strike on cartels, most likely in Mexico, raises sovereign and trade-relations risk for Mexican assets."}]},
+{"id": "polymarket:558107", "family": "none", "role": "none", "remembered": false, "links": []},
+{"id": "polymarket:1130016", "family": "none", "role": "tail", "remembered": false, "links": []},
+{"id": "polymarket:1130015", "family": "none", "role": "tail", "remembered": false, "links": []},
+{"id": "polymarket:551143", "family": "none", "role": "none", "remembered": false, "links": []},
+{"id": "polymarket:635529", "family": "none", "role": "none", "remembered": false, "links": []},
+{"id": "polymarket:635528", "family": "none", "role": "none", "remembered": false, "links": []},
+{"id": "polymarket:635518", "family": "none", "role": "none", "remembered": false, "links": []},
+{"id": "polymarket:2241742", "family": "event", "role": "carrier", "remembered": false, "links": [
+ {"ticker": "USO", "direction": "up_on_yes", "confidence": 0.5, "impact_pct": 3, "alternative": "Iran keeps its airspace open through June 30", "mechanism": "Iran closing its airspace signals imminent conflict, raising the Gulf supply risk premium in crude."},
+ {"ticker": "JETS", "direction": "down_on_yes", "confidence": 0.3, "impact_pct": 1.5, "alternative": "Iran keeps its airspace open through June 30", "mechanism": "Airspace closures reroute flights and higher fuel costs hit airline margins."}]},
+{"id": "polymarket:1273937", "family": "event", "role": "carrier", "remembered": false, "links": [
+ {"ticker": "USO", "direction": "up_on_yes", "confidence": 0.5, "impact_pct": 4, "alternative": "the next US strike on Iran comes on a later date", "mechanism": "A US strike on Iran raises the risk of Gulf supply disruption, lifting crude."},
+ {"ticker": "ITA", "direction": "up_on_yes", "confidence": 0.3, "impact_pct": 1.5, "alternative": "the next US strike on Iran comes on a later date", "mechanism": "Active US military operations raise expected defense spending and munitions demand."}]},
+{"id": "polymarket:1273936", "family": "event", "role": "duplicate", "remembered": false, "links": []},
+{"id": "polymarket:549876", "family": "none", "role": "none", "remembered": false, "links": []},
+{"id": "polymarket:549874", "family": "none", "role": "none", "remembered": false, "links": []},
+{"id": "polymarket:947288", "family": "none", "role": "tail", "remembered": false, "links": []},
+{"id": "polymarket:947281", "family": "none", "role": "tail", "remembered": false, "links": []},
+{"id": "polymarket:623601", "family": "event", "role": "duplicate", "remembered": false, "links": []},
+{"id": "polymarket:1105751", "family": "event", "role": "tail", "remembered": false, "links": []},
+{"id": "polymarket:1105753", "family": "event", "role": "tail", "remembered": false, "links": []},
+{"id": "polymarket:2296152", "family": "event", "role": "duplicate", "remembered": false, "links": []},
+{"id": "polymarket:2241674", "family": "event", "role": "carrier", "remembered": false, "links": [
+ {"ticker": "EIS", "direction": "down_on_yes", "confidence": 0.5, "impact_pct": 3, "alternative": "Israel keeps its airspace open through June 30", "mechanism": "Israel closing its airspace signals an incoming attack or war, hitting Israeli equities."},
+ {"ticker": "USO", "direction": "up_on_yes", "confidence": 0.4, "impact_pct": 3, "alternative": "Israel keeps its airspace open through June 30", "mechanism": "Escalation with Iran raises the Gulf supply risk premium in crude."}]},
+{"id": "polymarket:3128887", "family": "event", "role": "carrier", "remembered": false, "links": [
+ {"ticker": "USO", "direction": "down_on_yes", "confidence": 0.55, "impact_pct": 5, "alternative": "the US blockade of Iran stays in place past September 30, 2026", "mechanism": "Ending the blockade frees Iranian and Gulf oil flows and removes the supply risk premium."},
+ {"ticker": "FRO", "direction": "down_on_yes", "confidence": 0.3, "impact_pct": 3, "alternative": "the US blockade of Iran stays in place past September 30, 2026", "mechanism": "Normal Gulf transit shortens tanker voyages and lowers elevated tanker rates."}]},
+{"id": "polymarket:2910438", "family": "event", "role": "duplicate", "remembered": false, "links": []},
+{"id": "polymarket:516937", "family": "event", "role": "carrier", "remembered": false, "links": [
+ {"ticker": "IBIT", "direction": "up_on_yes", "confidence": 0.6, "impact_pct": 8, "alternative": "no US national Bitcoin reserve established in 2025", "mechanism": "A sovereign buyer and official endorsement would raise demand for bitcoin."},
+ {"ticker": "MSTR", "direction": "up_on_yes", "confidence": 0.5, "impact_pct": 12, "alternative": "no US national Bitcoin reserve established in 2025", "mechanism": "MSTR is a leveraged bitcoin holder and moves more than bitcoin itself."},
+ {"ticker": "COIN", "direction": "up_on_yes", "confidence": 0.4, "impact_pct": 6, "alternative": "no US national Bitcoin reserve established in 2025", "mechanism": "Higher crypto prices and legitimacy lift trading volumes at the exchange."}]},
+{"id": "polymarket:665307", "family": "event", "role": "carrier", "remembered": false, "links": [
+ {"ticker": "USO", "direction": "up_on_yes", "confidence": 0.7, "impact_pct": 15, "alternative": "the Strait of Hormuz stays open through 2026", "mechanism": "About a fifth of world oil passes through Hormuz, so closing it would sharply cut supply."},
+ {"ticker": "XLE", "direction": "up_on_yes", "confidence": 0.5, "impact_pct": 6, "alternative": "the Strait of Hormuz stays open through 2026", "mechanism": "Higher crude prices lift earnings at non-Gulf energy producers."},
+ {"ticker": "JETS", "direction": "down_on_yes", "confidence": 0.4, "impact_pct": 6, "alternative": "the Strait of Hormuz stays open through 2026", "mechanism": "A spike in jet fuel prices squeezes airline margins."}]},
+{"id": "polymarket:680919", "family": "none", "role": "none", "remembered": false, "links": []},
+{"id": "polymarket:616913", "family": "event", "role": "tail", "remembered": false, "links": []},
+{"id": "polymarket:616912", "family": "event", "role": "tail", "remembered": false, "links": []},
+{"id": "polymarket:616911", "family": "event", "role": "tail", "remembered": false, "links": []},
+{"id": "polymarket:616908", "family": "event", "role": "carrier", "remembered": false, "links": [
+ {"ticker": "TLT", "direction": "up_on_yes", "confidence": 0.5, "impact_pct": 5, "alternative": "two to three Fed rate cuts in 2026", "mechanism": "Six cuts implies a much lower policy path and recession-style easing, which pushes long yields down."},
+ {"ticker": "UUP", "direction": "down_on_yes", "confidence": 0.4, "impact_pct": 2, "alternative": "two to three Fed rate cuts in 2026", "mechanism": "Lower US rates shrink the dollar's yield advantage."}]},
+{"id": "polymarket:1469755", "family": "event", "role": "tail", "remembered": false, "links": []},
+{"id": "polymarket:1466575", "family": "event", "role": "carrier", "remembered": false, "links": [
+ {"ticker": "USO", "direction": "down_on_yes", "confidence": 0.5, "impact_pct": 4, "alternative": "US military operations against Iran continue past March 31", "mechanism": "Ending operations removes part of the war risk premium in crude."},
+ {"ticker": "JETS", "direction": "up_on_yes", "confidence": 0.3, "impact_pct": 2, "alternative": "US military operations against Iran continue past March 31", "mechanism": "Lower fuel prices and reopened routes help airlines."}]},
+{"id": "polymarket:1895140", "family": "event", "role": "duplicate", "remembered": false, "links": []},
+{"id": "polymarket:556016", "family": "none", "role": "none", "remembered": false, "links": []},
+{"id": "polymarket:642090", "family": "none", "role": "none", "remembered": false, "links": []},
+{"id": "polymarket:1169205", "family": "event", "role": "carrier", "remembered": false, "links": [
+ {"ticker": "EIS", "direction": "down_on_yes", "confidence": 0.5, "impact_pct": 3, "alternative": "no Iranian strike on Israel by February 28", "mechanism": "A direct Iranian strike raises war risk for Israeli assets."},
+ {"ticker": "USO", "direction": "up_on_yes", "confidence": 0.5, "impact_pct": 3, "alternative": "no Iranian strike on Israel by February 28", "mechanism": "Escalation raises the Gulf supply risk premium in crude."}]},
+{"id": "polymarket:1535972", "family": "event", "role": "duplicate", "remembered": false, "links": []},
+{"id": "polymarket:1708133", "family": "event", "role": "carrier", "remembered": false, "links": [
+ {"ticker": "USO", "direction": "down_on_yes", "confidence": 0.3, "impact_pct": 3, "alternative": "the current Iranian leadership stays in power through June 30", "mechanism": "A leadership change raises odds of de-escalation and more Iranian oil supply, though the transition carries short-run instability."}]},
+{"id": "polymarket:666494", "family": "spot_proxy", "role": "none", "remembered": false, "links": []},
+{"id": "polymarket:920396", "family": "none", "role": "none", "remembered": false, "links": []},
+{"id": "polymarket:948043", "family": "none", "role": "none", "remembered": false, "links": []},
+{"id": "polymarket:948039", "family": "none", "role": "tail", "remembered": false, "links": []},
+{"id": "polymarket:585593", "family": "event", "role": "tail", "remembered": false, "links": []},
+{"id": "polymarket:2109449", "family": "event", "role": "carrier", "remembered": false, "links": [
+ {"ticker": "USO", "direction": "down_on_yes", "confidence": 0.4, "impact_pct": 2.5, "alternative": "no US-Iran diplomatic meeting by May 31, 2026", "mechanism": "Direct talks raise odds of de-escalation and lower the risk premium in crude."}]},
+{"id": "polymarket:676716", "family": "spot_proxy", "role": "none", "remembered": false, "links": []},
+{"id": "polymarket:625811", "family": "event", "role": "carrier", "remembered": false, "links": [
+ {"ticker": "GOOGL", "direction": "up_on_yes", "confidence": 0.4, "impact_pct": 2, "alternative": "Gemini 3.0 not released by November 30", "mechanism": "A timely flagship model release supports the view that Google is competitive in AI."}]},
+{"id": "polymarket:1032303", "family": "spot_proxy", "role": "none", "remembered": false, "links": []},
+{"id": "polymarket:1170143", "family": "event", "role": "tail", "remembered": false, "links": []},
+{"id": "polymarket:678937", "family": "none", "role": "none", "remembered": false, "links": []},
+{"id": "polymarket:678931", "family": "none", "role": "none", "remembered": false, "links": []},
+{"id": "polymarket:631182", "family": "spot_proxy", "role": "none", "remembered": false, "links": []},
+{"id": "polymarket:631185", "family": "spot_proxy", "role": "none", "remembered": false, "links": []},
+{"id": "polymarket:958448", "family": "event", "role": "tail", "remembered": false, "links": []},
+{"id": "polymarket:1237456", "family": "spot_proxy", "role": "none", "remembered": false, "links": []},
+{"id": "polymarket:2155023", "family": "event", "role": "duplicate", "remembered": false, "links": []},
+{"id": "polymarket:638734", "family": "event", "role": "carrier", "remembered": false, "links": [
+ {"ticker": "SPY", "direction": "up_on_yes", "confidence": 0.25, "impact_pct": 0.8, "alternative": "the government shutdown continues past November 15", "mechanism": "Ending the shutdown restores federal spending and data releases, removing a drag on growth."}]},
+{"id": "polymarket:638735", "family": "event", "role": "duplicate", "remembered": false, "links": []},
+{"id": "polymarket:1277190", "family": "event", "role": "carrier", "remembered": false, "links": [
+ {"ticker": "GOOGL", "direction": "up_on_yes", "confidence": 0.25, "impact_pct": 1, "alternative": "another company has the best AI model at the end of February 2026", "mechanism": "Leading the AI model rankings supports the view that Google is winning in AI."}]},
+{"id": "polymarket:1472026", "family": "event", "role": "carrier", "remembered": false, "links": [
+ {"ticker": "USO", "direction": "up_on_yes", "confidence": 0.5, "impact_pct": 4, "alternative": "no other country strikes Iran by March 31", "mechanism": "A strike on Iran widens the conflict and raises the Gulf supply risk premium in crude."},
+ {"ticker": "EIS", "direction": "down_on_yes", "confidence": 0.3, "impact_pct": 2, "alternative": "no other country strikes Iran by March 31", "mechanism": "The most likely striker is Israel, which then faces retaliation risk."}]}
+]}

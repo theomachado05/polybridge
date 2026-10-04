@@ -1,0 +1,84 @@
+{"labeller": "C2", "chunk": 2, "answers": [
+{"id": "polymarket:679049", "family": "event", "role": "tail", "remembered": false},
+{"id": "polymarket:679033", "family": "event", "role": "tail", "remembered": false},
+{"id": "polymarket:679023", "family": "event", "role": "tail", "remembered": false},
+{"id": "polymarket:679041", "family": "event", "role": "tail", "remembered": false},
+{"id": "polymarket:679036", "family": "event", "role": "tail", "remembered": false},
+{"id": "polymarket:2507607", "family": "event", "role": "carrier", "remembered": false, "links": [
+ {"ticker": "USO", "direction": "up_on_yes", "confidence": 0.4, "impact_pct": 4, "alternative": "Kharg Island stays under Iranian control", "mechanism": "Loss of Iran's main crude export terminal removes Iranian barrels from the market and signals escalation, lifting oil."},
+ {"ticker": "XLE", "direction": "up_on_yes", "confidence": 0.3, "impact_pct": 1.5, "alternative": "Kharg Island stays under Iranian control", "mechanism": "Higher crude prices lift energy producers."}]},
+{"id": "polymarket:2507618", "family": "event", "role": "duplicate", "remembered": false},
+{"id": "polymarket:567562", "family": "event", "role": "tail", "remembered": false},
+{"id": "polymarket:604067", "family": "none", "role": "none", "remembered": false},
+{"id": "polymarket:1494703", "family": "spot_proxy", "role": "none", "remembered": false},
+{"id": "polymarket:1223258", "family": "none", "role": "none", "remembered": false},
+{"id": "polymarket:1223261", "family": "none", "role": "none", "remembered": false},
+{"id": "polymarket:516730", "family": "event", "role": "tail", "remembered": true},
+{"id": "polymarket:549625", "family": "none", "role": "none", "remembered": true},
+{"id": "polymarket:1484915", "family": "event", "role": "carrier", "remembered": false, "links": [
+ {"ticker": "USO", "direction": "down_on_yes", "confidence": 0.6, "impact_pct": 5, "alternative": "Conflict continues past June 30", "mechanism": "End of hostilities removes the supply-risk premium and Gulf shipping threat from crude."},
+ {"ticker": "JETS", "direction": "up_on_yes", "confidence": 0.4, "impact_pct": 2, "alternative": "Conflict continues past June 30", "mechanism": "Lower fuel costs and reopened airspace help airlines."}]},
+{"id": "polymarket:1567747", "family": "event", "role": "duplicate", "remembered": false},
+{"id": "polymarket:1466150", "family": "event", "role": "duplicate", "remembered": false},
+{"id": "polymarket:1198479", "family": "event", "role": "carrier", "remembered": true, "links": [
+ {"ticker": "USO", "direction": "up_on_yes", "confidence": 0.6, "impact_pct": 4, "alternative": "No US or Israeli strike on Iran by February 28, 2026", "mechanism": "A strike raises the risk to Iranian output and Gulf shipping, adding a risk premium to crude."},
+ {"ticker": "ITA", "direction": "up_on_yes", "confidence": 0.3, "impact_pct": 1, "alternative": "No US or Israeli strike on Iran by February 28, 2026", "mechanism": "Military action raises expected defense spending and munitions demand."}]},
+{"id": "polymarket:2262267", "family": "none", "role": "none", "remembered": false},
+{"id": "polymarket:569362", "family": "event", "role": "tail", "remembered": false},
+{"id": "polymarket:2002685", "family": "event", "role": "duplicate", "remembered": false},
+{"id": "polymarket:1500922", "family": "event", "role": "carrier", "remembered": false, "links": [
+ {"ticker": "EWU", "direction": "down_on_yes", "confidence": 0.3, "impact_pct": 1, "alternative": "Starmer remains prime minister through April 30, 2026", "mechanism": "A leadership change raises the risk of a more left-leaning fiscal stance, weighing on sterling and UK assets."}]},
+{"id": "polymarket:1394368", "family": "event", "role": "carrier", "remembered": false, "links": [
+ {"ticker": "USO", "direction": "up_on_yes", "confidence": 0.6, "impact_pct": 8, "alternative": "No US ground invasion of Iran by March 31", "mechanism": "A ground invasion threatens Iranian supply and Strait of Hormuz flows, spiking crude."},
+ {"ticker": "ITA", "direction": "up_on_yes", "confidence": 0.4, "impact_pct": 2, "alternative": "No US ground invasion of Iran by March 31", "mechanism": "A major war raises defense spending expectations."},
+ {"ticker": "SPY", "direction": "down_on_yes", "confidence": 0.4, "impact_pct": 2, "alternative": "No US ground invasion of Iran by March 31", "mechanism": "War and an oil shock hit risk appetite."}]},
+{"id": "polymarket:965261", "family": "spot_proxy", "role": "none", "remembered": false},
+{"id": "polymarket:562189", "family": "none", "role": "none", "remembered": false},
+{"id": "polymarket:562186", "family": "none", "role": "none", "remembered": false},
+{"id": "polymarket:562187", "family": "none", "role": "none", "remembered": false},
+{"id": "polymarket:663849", "family": "event", "role": "carrier", "remembered": true, "links": [
+ {"ticker": "USO", "direction": "down_on_yes", "confidence": 0.3, "impact_pct": 1.5, "alternative": "Maduro remains in power through November 30, 2025", "mechanism": "A change of regime opens the path to lifting sanctions and recovering Venezuelan oil output."}]},
+{"id": "polymarket:1731345", "family": "event", "role": "carrier", "remembered": false, "links": [
+ {"ticker": "USO", "direction": "down_on_yes", "confidence": 0.5, "impact_pct": 3, "alternative": "Iran does not agree to surrender its stockpile by June 30, 2026", "mechanism": "An agreement lowers the risk of renewed war and opens a path to more Iranian exports, cutting the oil risk premium."}]},
+{"id": "polymarket:2126542", "family": "event", "role": "duplicate", "remembered": false},
+{"id": "polymarket:517817", "family": "event", "role": "tail", "remembered": true},
+{"id": "polymarket:608420", "family": "none", "role": "none", "remembered": true},
+{"id": "polymarket:2099579", "family": "event", "role": "tail", "remembered": false},
+{"id": "polymarket:2099583", "family": "event", "role": "tail", "remembered": false},
+{"id": "polymarket:2099585", "family": "none", "role": "none", "remembered": false},
+{"id": "polymarket:1144471", "family": "event", "role": "tail", "remembered": false},
+{"id": "polymarket:631143", "family": "event", "role": "tail", "remembered": false},
+{"id": "polymarket:516845", "family": "spot_proxy", "role": "none", "remembered": true},
+{"id": "polymarket:1288111", "family": "event", "role": "duplicate", "remembered": true},
+{"id": "polymarket:553374", "family": "event", "role": "tail", "remembered": true},
+{"id": "polymarket:1385748", "family": "event", "role": "carrier", "remembered": false, "links": [
+ {"ticker": "USO", "direction": "up_on_yes", "confidence": 0.3, "impact_pct": 2, "alternative": "No French, UK or German military action against Iran by March 31", "mechanism": "European military involvement widens the conflict and raises the crude supply-risk premium."}]},
+{"id": "polymarket:642524", "family": "event", "role": "carrier", "remembered": true, "links": [
+ {"ticker": "EPOL", "direction": "up_on_yes", "confidence": 0.5, "impact_pct": 4, "alternative": "No Russia-Ukraine ceasefire by November 30", "mechanism": "A ceasefire lowers regional risk and raises reconstruction prospects for frontline Poland."},
+ {"ticker": "VGK", "direction": "up_on_yes", "confidence": 0.5, "impact_pct": 1.5, "alternative": "No Russia-Ukraine ceasefire by November 30", "mechanism": "Lower war risk and energy costs support European equities."},
+ {"ticker": "USO", "direction": "down_on_yes", "confidence": 0.4, "impact_pct": 3, "alternative": "No Russia-Ukraine ceasefire by November 30", "mechanism": "A ceasefire raises the odds of easing sanctions on Russian oil."},
+ {"ticker": "WEAT", "direction": "down_on_yes", "confidence": 0.4, "impact_pct": 3, "alternative": "No Russia-Ukraine ceasefire by November 30", "mechanism": "Safer Black Sea grain exports add supply."}]},
+{"id": "polymarket:628955", "family": "none", "role": "none", "remembered": false},
+{"id": "polymarket:540844", "family": "spot_proxy", "role": "none", "remembered": false},
+{"id": "polymarket:586301", "family": "event", "role": "carrier", "remembered": true, "links": [
+ {"ticker": "XRT", "direction": "down_on_yes", "confidence": 0.5, "impact_pct": 2, "alternative": "Supreme Court strikes down the IEEPA tariffs", "mechanism": "Upholding the tariffs keeps import costs high for retailers, which a ruling against them would remove."},
+ {"ticker": "SPY", "direction": "down_on_yes", "confidence": 0.4, "impact_pct": 1, "alternative": "Supreme Court strikes down the IEEPA tariffs", "mechanism": "Tariffs staying in place weigh on margins and growth."}]},
+{"id": "polymarket:1500768", "family": "event", "role": "tail", "remembered": false},
+{"id": "polymarket:1796310", "family": "event", "role": "carrier", "remembered": false, "links": [
+ {"ticker": "GLD", "direction": "up_on_yes", "confidence": 0.4, "impact_pct": 2, "alternative": "No Russian nuclear test by June 30, 2026", "mechanism": "A nuclear test raises geopolitical fear and safe-haven demand for gold."},
+ {"ticker": "SPY", "direction": "down_on_yes", "confidence": 0.3, "impact_pct": 1, "alternative": "No Russian nuclear test by June 30, 2026", "mechanism": "Nuclear escalation hits risk appetite."}]},
+{"id": "polymarket:661700", "family": "event", "role": "carrier", "remembered": true, "links": [
+ {"ticker": "EIS", "direction": "up_on_yes", "confidence": 0.4, "impact_pct": 3, "alternative": "Khamenei remains Supreme Leader through 2026", "mechanism": "The removal of Israel's main adversary's leader lowers perceived threat to Israel."},
+ {"ticker": "USO", "direction": "up_on_yes", "confidence": 0.3, "impact_pct": 3, "alternative": "Khamenei remains Supreme Leader through 2026", "mechanism": "A leadership upheaval in Iran raises near-term instability and supply risk."}]},
+{"id": "polymarket:2633430", "family": "event", "role": "duplicate", "remembered": false},
+{"id": "polymarket:556034", "family": "spot_proxy", "role": "none", "remembered": false},
+{"id": "polymarket:2183424", "family": "event", "role": "duplicate", "remembered": false},
+{"id": "polymarket:668098", "family": "none", "role": "none", "remembered": true},
+{"id": "polymarket:1235514", "family": "none", "role": "none", "remembered": false},
+{"id": "polymarket:1820098", "family": "event", "role": "tail", "remembered": false},
+{"id": "polymarket:516960", "family": "event", "role": "carrier", "remembered": true, "links": [
+ {"ticker": "GOOGL", "direction": "up_on_yes", "confidence": 0.3, "impact_pct": 1, "alternative": "Another company holds the top AI model on December 31", "mechanism": "Holding the top model supports the view that Google is winning in AI."}]},
+{"id": "polymarket:516971", "family": "event", "role": "tail", "remembered": false},
+{"id": "polymarket:550022", "family": "none", "role": "none", "remembered": false},
+{"id": "polymarket:1198451", "family": "event", "role": "duplicate", "remembered": true}
+]}

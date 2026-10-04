@@ -1,0 +1,2115 @@
+{
+ "as_of": "2026-10-03",
+ "classes": {
+  "broad_us": [
+   {
+    "ticker": "QQQ",
+    "name": "Invesco QQQ Trust, Series 1"
+   },
+   {
+    "ticker": "IWM",
+    "name": "iShares Russell 2000 ETF"
+   },
+   {
+    "ticker": "DIA",
+    "name": "State Street SPDR Dow Jones Industrial Average ETF Trust"
+   }
+  ],
+  "volatility": [
+   {
+    "ticker": "VIXY",
+    "name": "ProShares VIX Short-Term Futures ETF"
+   },
+   {
+    "ticker": "UVXY",
+    "name": "ProShares Ultra VIX Short-Term Futures ETF"
+   },
+   {
+    "ticker": "SVXY",
+    "name": "ProShares Short VIX Short-Term Futures ETF"
+   }
+  ],
+  "rates_short": [
+   {
+    "ticker": "SHY",
+    "name": "iShares 1-3 Year Treasury Bond ETF"
+   },
+   {
+    "ticker": "IEI",
+    "name": "iShares 3-7 Year Treasury Bond ETF"
+   },
+   {
+    "ticker": "VGSH",
+    "name": "Vanguard Short-Term Treasury ETF"
+   },
+   {
+    "ticker": "UTWO",
+    "name": "US Treasury 2 Year Note ETF"
+   }
+  ],
+  "rates_long": [
+   {
+    "ticker": "TLT",
+    "name": "iShares 20+ Year Treasury Bond ETF"
+   },
+   {
+    "ticker": "IEF",
+    "name": "iShares 7-10 Year Treasury Bond ETF"
+   },
+   {
+    "ticker": "TLH",
+    "name": "iShares 10-20 Year Treasury Bond ETF"
+   },
+   {
+    "ticker": "ZROZ",
+    "name": "PIMCO 25+ Year Zero Coupon U.S. Treasury Index Exchange-Traded Fund"
+   }
+  ],
+  "credit": [
+   {
+    "ticker": "HYG",
+    "name": "iShares iBoxx $ High Yield Corporate Bond ETF"
+   },
+   {
+    "ticker": "LQD",
+    "name": "iShares iBoxx $ Investment Grade Corporate Bond ETF"
+   },
+   {
+    "ticker": "JNK",
+    "name": "State Street SPDR Bloomberg High Yield Bond ETF"
+   }
+  ],
+  "rate_sensitive_equity": [
+   {
+    "ticker": "KRE",
+    "name": "State Street SPDR S&P Regional Banking ETF"
+   },
+   {
+    "ticker": "XHB",
+    "name": "State Street SPDR S&P Homebuilders ETF"
+   },
+   {
+    "ticker": "ITB",
+    "name": "iShares U.S. Home Construction ETF"
+   },
+   {
+    "ticker": "XLU",
+    "name": "State Street Utilities Select Sector SPDR ETF"
+   },
+   {
+    "ticker": "IYR",
+    "name": "iShares U.S. Real Estate ETF"
+   },
+   {
+    "ticker": "XLF",
+    "name": "State Street Financial Select Sector SPDR ETF"
+   },
+   {
+    "ticker": "AEP",
+    "name": "American Electric Power Company, Inc."
+   },
+   {
+    "ticker": "AEE",
+    "name": "Ameren Corporation"
+   },
+   {
+    "ticker": "ETR",
+    "name": "Entergy Corporation"
+   }
+  ],
+  "banks": [
+   {
+    "ticker": "JPM",
+    "name": "JPMorgan Chase & Co."
+   },
+   {
+    "ticker": "GS",
+    "name": "Goldman Sachs Group Inc."
+   },
+   {
+    "ticker": "BAC",
+    "name": "Bank of America Corporation"
+   },
+   {
+    "ticker": "WFC",
+    "name": "Wells Fargo & Co."
+   }
+  ],
+  "dollar_fx": [
+   {
+    "ticker": "UUP",
+    "name": "Invesco DB US Dollar Index Bullish Fund"
+   },
+   {
+    "ticker": "FXE",
+    "name": "Invesco CurrencyShares Euro Currency Trust"
+   },
+   {
+    "ticker": "FXY",
+    "name": "Invesco CurrencyShares Japanese Yen Trust"
+   },
+   {
+    "ticker": "FXB",
+    "name": "Invesco CurrencyShares British Pound Sterling Trust"
+   },
+   {
+    "ticker": "FXC",
+    "name": "Invesco CurrencyShares Canadian Dollar Trust"
+   },
+   {
+    "ticker": "FXA",
+    "name": "Invesco CurrencyShares Australian Dollar Trust"
+   }
+  ],
+  "gold_metals": [
+   {
+    "ticker": "GLD",
+    "name": "SPDR Gold Trust, SPDR Gold Shares"
+   },
+   {
+    "ticker": "SLV",
+    "name": "iShares Silver Trust"
+   },
+   {
+    "ticker": "GDX",
+    "name": "VanEck Gold Miners ETF"
+   },
+   {
+    "ticker": "CPER",
+    "name": "United States Copper Index Fund"
+   },
+   {
+    "ticker": "COPX",
+    "name": "Global X Copper Miners ETF (NEW)"
+   },
+   {
+    "ticker": "PPLT",
+    "name": "abrdn Physical Platinum Shares ETF"
+   }
+  ],
+  "oil_gas": [
+   {
+    "ticker": "USO",
+    "name": "United States Oil Fund, LP"
+   },
+   {
+    "ticker": "BNO",
+    "name": "United States Brent Oil Fund, LP"
+   },
+   {
+    "ticker": "XLE",
+    "name": "State Street Energy Select Sector SPDR ETF"
+   },
+   {
+    "ticker": "XOP",
+    "name": "State Street SPDR S&P Oil & Gas Exploration & Production ETF"
+   },
+   {
+    "ticker": "OIH",
+    "name": "VanEck Oil Services ETF"
+   },
+   {
+    "ticker": "UNG",
+    "name": "United States Natural Gas Fund, LP Unit"
+   },
+   {
+    "ticker": "UGA",
+    "name": "United States Gasoline Fund, LP"
+   }
+  ],
+  "oil_companies_tankers": [
+   {
+    "ticker": "XOM",
+    "name": "ExxonMobil Holdings Corporation"
+   },
+   {
+    "ticker": "CVX",
+    "name": "Chevron Corporation"
+   },
+   {
+    "ticker": "OXY",
+    "name": "Occidental Petroleum Corporation"
+   },
+   {
+    "ticker": "COP",
+    "name": "ConocoPhillips"
+   },
+   {
+    "ticker": "LNG",
+    "name": "Cheniere Energy Inc"
+   },
+   {
+    "ticker": "FRO",
+    "name": "Frontline Plc"
+   },
+   {
+    "ticker": "STNG",
+    "name": "Scorpio Tankers Inc."
+   },
+   {
+    "ticker": "DHT",
+    "name": "DHT HOLDINGS, INC."
+   },
+   {
+    "ticker": "ZIM",
+    "name": "ZIM Integrated Shipping Services Ltd."
+   },
+   {
+    "ticker": "MPC",
+    "name": "MARATHON PETROLEUM CORPORATION"
+   },
+   {
+    "ticker": "PSX",
+    "name": "PHILLIPS 66"
+   },
+   {
+    "ticker": "VLO",
+    "name": "Valero Energy Corporation"
+   }
+  ],
+  "agriculture": [
+   {
+    "ticker": "DBA",
+    "name": "Invesco DB Agriculture Fund"
+   },
+   {
+    "ticker": "CORN",
+    "name": "Teucrium Corn Fund"
+   },
+   {
+    "ticker": "WEAT",
+    "name": "Teucrium Wheat Fund"
+   },
+   {
+    "ticker": "SOYB",
+    "name": "Teucrium Soybean Fund"
+   }
+  ],
+  "uranium_nuclear_power": [
+   {
+    "ticker": "URA",
+    "name": "Global X Uranium ETF"
+   },
+   {
+    "ticker": "CCJ",
+    "name": "Cameco Corporation"
+   },
+   {
+    "ticker": "CEG",
+    "name": "Constellation Energy Corporation Common Stock"
+   },
+   {
+    "ticker": "VST",
+    "name": "Vistra Corp."
+   },
+   {
+    "ticker": "SMR",
+    "name": "NuScale Power Corporation"
+   },
+   {
+    "ticker": "OKLO",
+    "name": "Oklo Inc."
+   },
+   {
+    "ticker": "LEU",
+    "name": "Centrus Energy Corp."
+   }
+  ],
+  "defense": [
+   {
+    "ticker": "ITA",
+    "name": "iShares U.S. Aerospace & Defense ETF"
+   },
+   {
+    "ticker": "XAR",
+    "name": "State Street SPDR S&P Aerospace & Defense ETF"
+   },
+   {
+    "ticker": "LMT",
+    "name": "Lockheed Martin Corp."
+   },
+   {
+    "ticker": "RTX",
+    "name": "RTX Corporation"
+   },
+   {
+    "ticker": "NOC",
+    "name": "Northrop Grumman Corp."
+   },
+   {
+    "ticker": "GD",
+    "name": "General Dynamics Corporation"
+   },
+   {
+    "ticker": "LHX",
+    "name": "L3Harris Technologies, Inc."
+   },
+   {
+    "ticker": "HII",
+    "name": "Huntington Ingalls Industries, Inc."
+   },
+   {
+    "ticker": "KTOS",
+    "name": "Kratos Defense & Security Solutions, Inc."
+   },
+   {
+    "ticker": "AVAV",
+    "name": "AeroVironment, Inc."
+   }
+  ],
+  "airlines_travel": [
+   {
+    "ticker": "JETS",
+    "name": "U.S. Global Jets ETF"
+   },
+   {
+    "ticker": "DAL",
+    "name": "Delta Air Lines, Inc."
+   },
+   {
+    "ticker": "UAL",
+    "name": "United Airlines Holdings, Inc. Common Stock"
+   },
+   {
+    "ticker": "AAL",
+    "name": "American Airlines Group Inc."
+   },
+   {
+    "ticker": "CCL",
+    "name": "Carnival Corporation Ltd."
+   }
+  ],
+  "crypto": [
+   {
+    "ticker": "IBIT",
+    "name": "iShares Bitcoin Trust ETF"
+   },
+   {
+    "ticker": "ETHA",
+    "name": "iShares Ethereum Trust ETF"
+   },
+   {
+    "ticker": "COIN",
+    "name": "Coinbase Global, Inc. Class A Common Stock"
+   },
+   {
+    "ticker": "MSTR",
+    "name": "Strategy Inc Common Stock Class A"
+   },
+   {
+    "ticker": "MARA",
+    "name": "MARA Holdings, Inc. Common Stock"
+   },
+   {
+    "ticker": "HOOD",
+    "name": "Robinhood Markets, Inc. Class A Common Stock"
+   },
+   {
+    "ticker": "RIOT",
+    "name": "Riot Platforms, Inc. Common Stock"
+   },
+   {
+    "ticker": "CLSK",
+    "name": "CLEANSPARK INC"
+   },
+   {
+    "ticker": "BMNR",
+    "name": "BitMine Immersion Technologies, Inc."
+   },
+   {
+    "ticker": "GLXY",
+    "name": "Galaxy Digital Inc. Class A Common Stock"
+   },
+   {
+    "ticker": "CRCL",
+    "name": "Circle Internet Group, Inc."
+   },
+   {
+    "ticker": "BITO",
+    "name": "ProShares Bitcoin ETF"
+   }
+  ],
+  "semis_ai": [
+   {
+    "ticker": "SMH",
+    "name": "VanEck Semiconductor ETF"
+   },
+   {
+    "ticker": "NVDA",
+    "name": "Nvidia Corp"
+   },
+   {
+    "ticker": "AMD",
+    "name": "Advanced Micro Devices"
+   },
+   {
+    "ticker": "TSM",
+    "name": "Taiwan Semiconductor Manufacturing Company Ltd."
+   },
+   {
+    "ticker": "INTC",
+    "name": "Intel Corp"
+   },
+   {
+    "ticker": "AVGO",
+    "name": "Broadcom Inc. Common Stock"
+   },
+   {
+    "ticker": "MU",
+    "name": "Micron Technology, Inc."
+   },
+   {
+    "ticker": "ASML",
+    "name": "ASML Holding NV"
+   },
+   {
+    "ticker": "ARM",
+    "name": "Arm Holdings plc American Depositary Shares"
+   }
+  ],
+  "big_tech": [
+   {
+    "ticker": "XLK",
+    "name": "State Street Technology Select Sector SPDR ETF"
+   },
+   {
+    "ticker": "AAPL",
+    "name": "Apple Inc."
+   },
+   {
+    "ticker": "MSFT",
+    "name": "Microsoft Corp"
+   },
+   {
+    "ticker": "GOOGL",
+    "name": "Alphabet Inc. Class A Common Stock"
+   },
+   {
+    "ticker": "AMZN",
+    "name": "Amazon.Com Inc"
+   },
+   {
+    "ticker": "META",
+    "name": "Meta Platforms, Inc. Class A Common Stock"
+   },
+   {
+    "ticker": "ORCL",
+    "name": "Oracle Corp"
+   },
+   {
+    "ticker": "NFLX",
+    "name": "NetFlix Inc"
+   },
+   {
+    "ticker": "PLTR",
+    "name": "Palantir Technologies Inc. Class A Common Stock"
+   },
+   {
+    "ticker": "CRWV",
+    "name": "CoreWeave, Inc. Class A Common Stock"
+   },
+   {
+    "ticker": "DIS",
+    "name": "The Walt Disney Company"
+   }
+  ],
+  "ai_power_datacenter": [
+   {
+    "ticker": "VRT",
+    "name": "Vertiv Holdings Co Class A Common Stock"
+   },
+   {
+    "ticker": "DLR",
+    "name": "Digital Realty Trust, Inc."
+   },
+   {
+    "ticker": "EQIX",
+    "name": "Equinix, Inc. Common Stock REIT"
+   },
+   {
+    "ticker": "ETN",
+    "name": "Eaton Corporation, plc Ordinary Shares"
+   }
+  ],
+  "tesla_ev_space": [
+   {
+    "ticker": "TSLA",
+    "name": "Tesla, Inc. Common Stock"
+   },
+   {
+    "ticker": "RIVN",
+    "name": "Rivian Automotive, Inc. Class A Common Stock"
+   },
+   {
+    "ticker": "RKLB",
+    "name": "Rocket Lab Corporation Common Stock"
+   },
+   {
+    "ticker": "ASTS",
+    "name": "AST SpaceMobile, Inc. Class A Common Stock"
+   },
+   {
+    "ticker": "UBER",
+    "name": "Uber Technologies, Inc."
+   }
+  ],
+  "health": [
+   {
+    "ticker": "XLV",
+    "name": "State Street Health Care Select Sector SPDR ETF"
+   },
+   {
+    "ticker": "XBI",
+    "name": "State Street SPDR S&P Biotech ETF"
+   },
+   {
+    "ticker": "UNH",
+    "name": "UNITEDHEALTH GROUP INCORPORATED (Delaware)"
+   },
+   {
+    "ticker": "PFE",
+    "name": "Pfizer Inc."
+   },
+   {
+    "ticker": "MRNA",
+    "name": "Moderna, Inc. Common Stock"
+   },
+   {
+    "ticker": "LLY",
+    "name": "Eli Lilly & Co."
+   },
+   {
+    "ticker": "NVO",
+    "name": "Novo-Nordisk A/S"
+   },
+   {
+    "ticker": "HUM",
+    "name": "Humana Inc."
+   },
+   {
+    "ticker": "CVS",
+    "name": "CVS HEALTH CORPORATION"
+   },
+   {
+    "ticker": "HIMS",
+    "name": "Hims & Hers Health, Inc."
+   }
+  ],
+  "consumer_tariff": [
+   {
+    "ticker": "XLY",
+    "name": "State Street Consumer Discretionary Select Sector SPDR ETF"
+   },
+   {
+    "ticker": "XLP",
+    "name": "State Street Consumer Staples Select Sector SPDR ETF"
+   },
+   {
+    "ticker": "XRT",
+    "name": "State Street SPDR S&P Retail ETF"
+   },
+   {
+    "ticker": "WMT",
+    "name": "Walmart Inc. Common Stock"
+   },
+   {
+    "ticker": "COST",
+    "name": "Costco Wholesale Corp"
+   },
+   {
+    "ticker": "TGT",
+    "name": "Target Corporation"
+   },
+   {
+    "ticker": "NKE",
+    "name": "Nike, Inc."
+   },
+   {
+    "ticker": "F",
+    "name": "Ford Motor Company"
+   },
+   {
+    "ticker": "GM",
+    "name": "General Motors Company"
+   }
+  ],
+  "industrials_metals": [
+   {
+    "ticker": "XLI",
+    "name": "State Street Industrial Select Sector SPDR ETF"
+   },
+   {
+    "ticker": "NUE",
+    "name": "Nucor Corporation"
+   },
+   {
+    "ticker": "CLF",
+    "name": "Cleveland-Cliffs Inc."
+   },
+   {
+    "ticker": "CAT",
+    "name": "Caterpillar Inc."
+   },
+   {
+    "ticker": "DE",
+    "name": "Deere & Company"
+   },
+   {
+    "ticker": "BA",
+    "name": "Boeing Company"
+   },
+   {
+    "ticker": "AA",
+    "name": "Alcoa Corporation"
+   }
+  ],
+  "clean_energy": [
+   {
+    "ticker": "ICLN",
+    "name": "iShares Global Clean Energy ETF"
+   },
+   {
+    "ticker": "TAN",
+    "name": "Invesco Solar ETF"
+   },
+   {
+    "ticker": "FSLR",
+    "name": "First Solar, Inc."
+   },
+   {
+    "ticker": "ENPH",
+    "name": "Enphase Energy, Inc."
+   }
+  ],
+  "policy_single_names": [
+   {
+    "ticker": "DJT",
+    "name": "Trump Media & Technology Group Corp. Common Stock"
+   },
+   {
+    "ticker": "GEO",
+    "name": "The GEO Group, Inc."
+   },
+   {
+    "ticker": "CXW",
+    "name": "CoreCivic, Inc."
+   },
+   {
+    "ticker": "MSOS",
+    "name": "AdvisorShares Pure US Cannabis ETF"
+   }
+  ],
+  "china": [
+   {
+    "ticker": "FXI",
+    "name": "iShares China Large-Cap ETF"
+   },
+   {
+    "ticker": "KWEB",
+    "name": "KraneShares CSI China Internet ETF"
+   },
+   {
+    "ticker": "MCHI",
+    "name": "iShares MSCI China ETF"
+   },
+   {
+    "ticker": "BABA",
+    "name": "Alibaba Group Holding Limited American Depositary Shares, each represents eight Ordinary Shares"
+   },
+   {
+    "ticker": "PDD",
+    "name": "PDD Holdings Inc. American Depositary Shares"
+   },
+   {
+    "ticker": "JD",
+    "name": "JD.com, Inc."
+   },
+   {
+    "ticker": "BIDU",
+    "name": "Baidu, Inc."
+   }
+  ],
+  "asia_other": [
+   {
+    "ticker": "EWT",
+    "name": "iShares MSCI Taiwan ETF"
+   },
+   {
+    "ticker": "EWY",
+    "name": "iShares MSCI South Korea ETF"
+   },
+   {
+    "ticker": "EWJ",
+    "name": "iShares MSCI Japan ETF"
+   },
+   {
+    "ticker": "INDA",
+    "name": "iShares MSCI India ETF"
+   }
+  ],
+  "europe": [
+   {
+    "ticker": "VGK",
+    "name": "Vanguard FTSE Europe ETF"
+   },
+   {
+    "ticker": "EWG",
+    "name": "iShares MSCI Germany ETF"
+   },
+   {
+    "ticker": "EWU",
+    "name": "iShares MSCI United Kingdom ETF"
+   },
+   {
+    "ticker": "EWQ",
+    "name": "iShares MSCI France ETF"
+   },
+   {
+    "ticker": "EWI",
+    "name": "iShares MSCI Italy ETF"
+   },
+   {
+    "ticker": "EWP",
+    "name": "iShares MSCI Spain ETF"
+   },
+   {
+    "ticker": "EPOL",
+    "name": "iShares MSCI Poland ETF"
+   },
+   {
+    "ticker": "GREK",
+    "name": "Global X MSCI Greece ETF"
+   },
+   {
+    "ticker": "EWN",
+    "name": "iShares MSCI Netherlands ETF"
+   },
+   {
+    "ticker": "EWD",
+    "name": "iShares MSCI Sweden ETF"
+   },
+   {
+    "ticker": "EWL",
+    "name": "iShares MSCI Switzerland ETF"
+   }
+  ],
+  "latin_america": [
+   {
+    "ticker": "EWZ",
+    "name": "iShares MSCI Brazil ETF"
+   },
+   {
+    "ticker": "EWW",
+    "name": "iShares MSCI Mexico ETF"
+   },
+   {
+    "ticker": "ARGT",
+    "name": "Global X MSCI Argentina ETF"
+   },
+   {
+    "ticker": "ECH",
+    "name": "iShares MSCI Chile ETF"
+   },
+   {
+    "ticker": "EPU",
+    "name": "iShares MSCI Peru and Global Exposure ETF"
+   },
+   {
+    "ticker": "ILF",
+    "name": "iShares Latin America 40 ETF"
+   },
+   {
+    "ticker": "PBR",
+    "name": "PETROLEO BRASILEIRO S.A.-PETROBRAS ADS (REP 1 COMMON SHARE)"
+   },
+   {
+    "ticker": "VALE",
+    "name": "VALE S.A."
+   },
+   {
+    "ticker": "ITUB",
+    "name": "Itau Unibanco Holding S.A. American Depositary Shares"
+   },
+   {
+    "ticker": "YPF",
+    "name": "YPF Sociedad Anonima American Depositary Shares (Each representing ten (10) Class D shares of Capital Stock)"
+   },
+   {
+    "ticker": "GGAL",
+    "name": "Grupo Financiero Galicia SA"
+   },
+   {
+    "ticker": "BMA",
+    "name": "Banco Macro S.A."
+   }
+  ],
+  "middle_east_africa": [
+   {
+    "ticker": "EIS",
+    "name": "iShares MSCI Israel ETF"
+   },
+   {
+    "ticker": "TUR",
+    "name": "iShares MSCI Turkey ETF"
+   },
+   {
+    "ticker": "EZA",
+    "name": "iShares MSCI South Africa ETF"
+   },
+   {
+    "ticker": "KSA",
+    "name": "iShares MSCI Saudi Arabia ETF"
+   },
+   {
+    "ticker": "UAE",
+    "name": "iShares Trust iShares MSCI UAE ETF"
+   },
+   {
+    "ticker": "QAT",
+    "name": "iShares Trust iShares MSCI Qatar ETF"
+   }
+  ],
+  "canada_australia": [
+   {
+    "ticker": "EWC",
+    "name": "iShares MSCI Canada ETF"
+   },
+   {
+    "ticker": "EWA",
+    "name": "iShares MSCI Australia ETF"
+   }
+  ]
+ },
+ "tickers": {
+  "QQQ": {
+   "class": "broad_us",
+   "name": "Invesco QQQ Trust, Series 1",
+   "type": "ETF",
+   "has_options": true
+  },
+  "IWM": {
+   "class": "broad_us",
+   "name": "iShares Russell 2000 ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "DIA": {
+   "class": "broad_us",
+   "name": "State Street SPDR Dow Jones Industrial Average ETF Trust",
+   "type": "ETF",
+   "has_options": true
+  },
+  "VIXY": {
+   "class": "volatility",
+   "name": "ProShares VIX Short-Term Futures ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "UVXY": {
+   "class": "volatility",
+   "name": "ProShares Ultra VIX Short-Term Futures ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "SVXY": {
+   "class": "volatility",
+   "name": "ProShares Short VIX Short-Term Futures ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "SHY": {
+   "class": "rates_short",
+   "name": "iShares 1-3 Year Treasury Bond ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "IEI": {
+   "class": "rates_short",
+   "name": "iShares 3-7 Year Treasury Bond ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "VGSH": {
+   "class": "rates_short",
+   "name": "Vanguard Short-Term Treasury ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "UTWO": {
+   "class": "rates_short",
+   "name": "US Treasury 2 Year Note ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "TLT": {
+   "class": "rates_long",
+   "name": "iShares 20+ Year Treasury Bond ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "IEF": {
+   "class": "rates_long",
+   "name": "iShares 7-10 Year Treasury Bond ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "TLH": {
+   "class": "rates_long",
+   "name": "iShares 10-20 Year Treasury Bond ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "ZROZ": {
+   "class": "rates_long",
+   "name": "PIMCO 25+ Year Zero Coupon U.S. Treasury Index Exchange-Traded Fund",
+   "type": "ETF",
+   "has_options": true
+  },
+  "HYG": {
+   "class": "credit",
+   "name": "iShares iBoxx $ High Yield Corporate Bond ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "LQD": {
+   "class": "credit",
+   "name": "iShares iBoxx $ Investment Grade Corporate Bond ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "JNK": {
+   "class": "credit",
+   "name": "State Street SPDR Bloomberg High Yield Bond ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "KRE": {
+   "class": "rate_sensitive_equity",
+   "name": "State Street SPDR S&P Regional Banking ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "XHB": {
+   "class": "rate_sensitive_equity",
+   "name": "State Street SPDR S&P Homebuilders ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "ITB": {
+   "class": "rate_sensitive_equity",
+   "name": "iShares U.S. Home Construction ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "XLU": {
+   "class": "rate_sensitive_equity",
+   "name": "State Street Utilities Select Sector SPDR ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "IYR": {
+   "class": "rate_sensitive_equity",
+   "name": "iShares U.S. Real Estate ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "XLF": {
+   "class": "rate_sensitive_equity",
+   "name": "State Street Financial Select Sector SPDR ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "AEP": {
+   "class": "rate_sensitive_equity",
+   "name": "American Electric Power Company, Inc.",
+   "type": "CS",
+   "has_options": true
+  },
+  "AEE": {
+   "class": "rate_sensitive_equity",
+   "name": "Ameren Corporation",
+   "type": "CS",
+   "has_options": true
+  },
+  "ETR": {
+   "class": "rate_sensitive_equity",
+   "name": "Entergy Corporation",
+   "type": "CS",
+   "has_options": true
+  },
+  "JPM": {
+   "class": "banks",
+   "name": "JPMorgan Chase & Co.",
+   "type": "CS",
+   "has_options": true
+  },
+  "GS": {
+   "class": "banks",
+   "name": "Goldman Sachs Group Inc.",
+   "type": "CS",
+   "has_options": true
+  },
+  "BAC": {
+   "class": "banks",
+   "name": "Bank of America Corporation",
+   "type": "CS",
+   "has_options": true
+  },
+  "WFC": {
+   "class": "banks",
+   "name": "Wells Fargo & Co.",
+   "type": "CS",
+   "has_options": true
+  },
+  "UUP": {
+   "class": "dollar_fx",
+   "name": "Invesco DB US Dollar Index Bullish Fund",
+   "type": "ETV",
+   "has_options": true
+  },
+  "FXE": {
+   "class": "dollar_fx",
+   "name": "Invesco CurrencyShares Euro Currency Trust",
+   "type": "ETV",
+   "has_options": true
+  },
+  "FXY": {
+   "class": "dollar_fx",
+   "name": "Invesco CurrencyShares Japanese Yen Trust",
+   "type": "ETV",
+   "has_options": true
+  },
+  "FXB": {
+   "class": "dollar_fx",
+   "name": "Invesco CurrencyShares British Pound Sterling Trust",
+   "type": "ETV",
+   "has_options": true
+  },
+  "FXC": {
+   "class": "dollar_fx",
+   "name": "Invesco CurrencyShares Canadian Dollar Trust",
+   "type": "ETV",
+   "has_options": true
+  },
+  "FXA": {
+   "class": "dollar_fx",
+   "name": "Invesco CurrencyShares Australian Dollar Trust",
+   "type": "ETV",
+   "has_options": true
+  },
+  "GLD": {
+   "class": "gold_metals",
+   "name": "SPDR Gold Trust, SPDR Gold Shares",
+   "type": "ETV",
+   "has_options": true
+  },
+  "SLV": {
+   "class": "gold_metals",
+   "name": "iShares Silver Trust",
+   "type": "ETV",
+   "has_options": true
+  },
+  "GDX": {
+   "class": "gold_metals",
+   "name": "VanEck Gold Miners ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "CPER": {
+   "class": "gold_metals",
+   "name": "United States Copper Index Fund",
+   "type": "ETV",
+   "has_options": true
+  },
+  "COPX": {
+   "class": "gold_metals",
+   "name": "Global X Copper Miners ETF (NEW)",
+   "type": "ETF",
+   "has_options": true
+  },
+  "PPLT": {
+   "class": "gold_metals",
+   "name": "abrdn Physical Platinum Shares ETF",
+   "type": "ETV",
+   "has_options": true
+  },
+  "USO": {
+   "class": "oil_gas",
+   "name": "United States Oil Fund, LP",
+   "type": "ETV",
+   "has_options": true
+  },
+  "BNO": {
+   "class": "oil_gas",
+   "name": "United States Brent Oil Fund, LP",
+   "type": "ETV",
+   "has_options": true
+  },
+  "XLE": {
+   "class": "oil_gas",
+   "name": "State Street Energy Select Sector SPDR ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "XOP": {
+   "class": "oil_gas",
+   "name": "State Street SPDR S&P Oil & Gas Exploration & Production ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "OIH": {
+   "class": "oil_gas",
+   "name": "VanEck Oil Services ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "UNG": {
+   "class": "oil_gas",
+   "name": "United States Natural Gas Fund, LP Unit",
+   "type": "ETV",
+   "has_options": true
+  },
+  "UGA": {
+   "class": "oil_gas",
+   "name": "United States Gasoline Fund, LP",
+   "type": "ETV",
+   "has_options": true
+  },
+  "XOM": {
+   "class": "oil_companies_tankers",
+   "name": "ExxonMobil Holdings Corporation",
+   "type": "CS",
+   "has_options": true
+  },
+  "CVX": {
+   "class": "oil_companies_tankers",
+   "name": "Chevron Corporation",
+   "type": "CS",
+   "has_options": true
+  },
+  "OXY": {
+   "class": "oil_companies_tankers",
+   "name": "Occidental Petroleum Corporation",
+   "type": "CS",
+   "has_options": true
+  },
+  "COP": {
+   "class": "oil_companies_tankers",
+   "name": "ConocoPhillips",
+   "type": "CS",
+   "has_options": true
+  },
+  "LNG": {
+   "class": "oil_companies_tankers",
+   "name": "Cheniere Energy Inc",
+   "type": "CS",
+   "has_options": true
+  },
+  "FRO": {
+   "class": "oil_companies_tankers",
+   "name": "Frontline Plc",
+   "type": "CS",
+   "has_options": true
+  },
+  "STNG": {
+   "class": "oil_companies_tankers",
+   "name": "Scorpio Tankers Inc.",
+   "type": "CS",
+   "has_options": true
+  },
+  "DHT": {
+   "class": "oil_companies_tankers",
+   "name": "DHT HOLDINGS, INC.",
+   "type": "CS",
+   "has_options": true
+  },
+  "ZIM": {
+   "class": "oil_companies_tankers",
+   "name": "ZIM Integrated Shipping Services Ltd.",
+   "type": "CS",
+   "has_options": true
+  },
+  "MPC": {
+   "class": "oil_companies_tankers",
+   "name": "MARATHON PETROLEUM CORPORATION",
+   "type": "CS",
+   "has_options": true
+  },
+  "PSX": {
+   "class": "oil_companies_tankers",
+   "name": "PHILLIPS 66",
+   "type": "CS",
+   "has_options": true
+  },
+  "VLO": {
+   "class": "oil_companies_tankers",
+   "name": "Valero Energy Corporation",
+   "type": "CS",
+   "has_options": true
+  },
+  "DBA": {
+   "class": "agriculture",
+   "name": "Invesco DB Agriculture Fund",
+   "type": "ETV",
+   "has_options": true
+  },
+  "CORN": {
+   "class": "agriculture",
+   "name": "Teucrium Corn Fund",
+   "type": "ETV",
+   "has_options": true
+  },
+  "WEAT": {
+   "class": "agriculture",
+   "name": "Teucrium Wheat Fund",
+   "type": "ETV",
+   "has_options": true
+  },
+  "SOYB": {
+   "class": "agriculture",
+   "name": "Teucrium Soybean Fund",
+   "type": "ETV",
+   "has_options": true
+  },
+  "URA": {
+   "class": "uranium_nuclear_power",
+   "name": "Global X Uranium ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "CCJ": {
+   "class": "uranium_nuclear_power",
+   "name": "Cameco Corporation",
+   "type": "CS",
+   "has_options": true
+  },
+  "CEG": {
+   "class": "uranium_nuclear_power",
+   "name": "Constellation Energy Corporation Common Stock",
+   "type": "CS",
+   "has_options": true
+  },
+  "VST": {
+   "class": "uranium_nuclear_power",
+   "name": "Vistra Corp.",
+   "type": "CS",
+   "has_options": true
+  },
+  "SMR": {
+   "class": "uranium_nuclear_power",
+   "name": "NuScale Power Corporation",
+   "type": "CS",
+   "has_options": true
+  },
+  "OKLO": {
+   "class": "uranium_nuclear_power",
+   "name": "Oklo Inc.",
+   "type": "CS",
+   "has_options": true
+  },
+  "LEU": {
+   "class": "uranium_nuclear_power",
+   "name": "Centrus Energy Corp.",
+   "type": "CS",
+   "has_options": true
+  },
+  "ITA": {
+   "class": "defense",
+   "name": "iShares U.S. Aerospace & Defense ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "XAR": {
+   "class": "defense",
+   "name": "State Street SPDR S&P Aerospace & Defense ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "LMT": {
+   "class": "defense",
+   "name": "Lockheed Martin Corp.",
+   "type": "CS",
+   "has_options": true
+  },
+  "RTX": {
+   "class": "defense",
+   "name": "RTX Corporation",
+   "type": "CS",
+   "has_options": true
+  },
+  "NOC": {
+   "class": "defense",
+   "name": "Northrop Grumman Corp.",
+   "type": "CS",
+   "has_options": true
+  },
+  "GD": {
+   "class": "defense",
+   "name": "General Dynamics Corporation",
+   "type": "CS",
+   "has_options": true
+  },
+  "LHX": {
+   "class": "defense",
+   "name": "L3Harris Technologies, Inc.",
+   "type": "CS",
+   "has_options": true
+  },
+  "HII": {
+   "class": "defense",
+   "name": "Huntington Ingalls Industries, Inc.",
+   "type": "CS",
+   "has_options": true
+  },
+  "KTOS": {
+   "class": "defense",
+   "name": "Kratos Defense & Security Solutions, Inc.",
+   "type": "CS",
+   "has_options": true
+  },
+  "AVAV": {
+   "class": "defense",
+   "name": "AeroVironment, Inc.",
+   "type": "CS",
+   "has_options": true
+  },
+  "JETS": {
+   "class": "airlines_travel",
+   "name": "U.S. Global Jets ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "DAL": {
+   "class": "airlines_travel",
+   "name": "Delta Air Lines, Inc.",
+   "type": "CS",
+   "has_options": true
+  },
+  "UAL": {
+   "class": "airlines_travel",
+   "name": "United Airlines Holdings, Inc. Common Stock",
+   "type": "CS",
+   "has_options": true
+  },
+  "AAL": {
+   "class": "airlines_travel",
+   "name": "American Airlines Group Inc.",
+   "type": "CS",
+   "has_options": true
+  },
+  "CCL": {
+   "class": "airlines_travel",
+   "name": "Carnival Corporation Ltd.",
+   "type": "CS",
+   "has_options": true
+  },
+  "IBIT": {
+   "class": "crypto",
+   "name": "iShares Bitcoin Trust ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "ETHA": {
+   "class": "crypto",
+   "name": "iShares Ethereum Trust ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "COIN": {
+   "class": "crypto",
+   "name": "Coinbase Global, Inc. Class A Common Stock",
+   "type": "CS",
+   "has_options": true
+  },
+  "MSTR": {
+   "class": "crypto",
+   "name": "Strategy Inc Common Stock Class A",
+   "type": "CS",
+   "has_options": true
+  },
+  "MARA": {
+   "class": "crypto",
+   "name": "MARA Holdings, Inc. Common Stock",
+   "type": "CS",
+   "has_options": true
+  },
+  "HOOD": {
+   "class": "crypto",
+   "name": "Robinhood Markets, Inc. Class A Common Stock",
+   "type": "CS",
+   "has_options": true
+  },
+  "RIOT": {
+   "class": "crypto",
+   "name": "Riot Platforms, Inc. Common Stock",
+   "type": "CS",
+   "has_options": true
+  },
+  "CLSK": {
+   "class": "crypto",
+   "name": "CLEANSPARK INC",
+   "type": "CS",
+   "has_options": true
+  },
+  "BMNR": {
+   "class": "crypto",
+   "name": "BitMine Immersion Technologies, Inc.",
+   "type": "CS",
+   "has_options": true
+  },
+  "GLXY": {
+   "class": "crypto",
+   "name": "Galaxy Digital Inc. Class A Common Stock",
+   "type": "CS",
+   "has_options": true
+  },
+  "CRCL": {
+   "class": "crypto",
+   "name": "Circle Internet Group, Inc.",
+   "type": "CS",
+   "has_options": true
+  },
+  "BITO": {
+   "class": "crypto",
+   "name": "ProShares Bitcoin ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "SMH": {
+   "class": "semis_ai",
+   "name": "VanEck Semiconductor ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "NVDA": {
+   "class": "semis_ai",
+   "name": "Nvidia Corp",
+   "type": "CS",
+   "has_options": true
+  },
+  "AMD": {
+   "class": "semis_ai",
+   "name": "Advanced Micro Devices",
+   "type": "CS",
+   "has_options": true
+  },
+  "TSM": {
+   "class": "semis_ai",
+   "name": "Taiwan Semiconductor Manufacturing Company Ltd.",
+   "type": "ADRC",
+   "has_options": true
+  },
+  "INTC": {
+   "class": "semis_ai",
+   "name": "Intel Corp",
+   "type": "CS",
+   "has_options": true
+  },
+  "AVGO": {
+   "class": "semis_ai",
+   "name": "Broadcom Inc. Common Stock",
+   "type": "CS",
+   "has_options": true
+  },
+  "MU": {
+   "class": "semis_ai",
+   "name": "Micron Technology, Inc.",
+   "type": "CS",
+   "has_options": true
+  },
+  "ASML": {
+   "class": "semis_ai",
+   "name": "ASML Holding NV",
+   "type": "ADRC",
+   "has_options": true
+  },
+  "ARM": {
+   "class": "semis_ai",
+   "name": "Arm Holdings plc American Depositary Shares",
+   "type": "ADRC",
+   "has_options": true
+  },
+  "XLK": {
+   "class": "big_tech",
+   "name": "State Street Technology Select Sector SPDR ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "AAPL": {
+   "class": "big_tech",
+   "name": "Apple Inc.",
+   "type": "CS",
+   "has_options": true
+  },
+  "MSFT": {
+   "class": "big_tech",
+   "name": "Microsoft Corp",
+   "type": "CS",
+   "has_options": true
+  },
+  "GOOGL": {
+   "class": "big_tech",
+   "name": "Alphabet Inc. Class A Common Stock",
+   "type": "CS",
+   "has_options": true
+  },
+  "AMZN": {
+   "class": "big_tech",
+   "name": "Amazon.Com Inc",
+   "type": "CS",
+   "has_options": true
+  },
+  "META": {
+   "class": "big_tech",
+   "name": "Meta Platforms, Inc. Class A Common Stock",
+   "type": "CS",
+   "has_options": true
+  },
+  "ORCL": {
+   "class": "big_tech",
+   "name": "Oracle Corp",
+   "type": "CS",
+   "has_options": true
+  },
+  "NFLX": {
+   "class": "big_tech",
+   "name": "NetFlix Inc",
+   "type": "CS",
+   "has_options": true
+  },
+  "PLTR": {
+   "class": "big_tech",
+   "name": "Palantir Technologies Inc. Class A Common Stock",
+   "type": "CS",
+   "has_options": true
+  },
+  "CRWV": {
+   "class": "big_tech",
+   "name": "CoreWeave, Inc. Class A Common Stock",
+   "type": "CS",
+   "has_options": true
+  },
+  "DIS": {
+   "class": "big_tech",
+   "name": "The Walt Disney Company",
+   "type": "CS",
+   "has_options": true
+  },
+  "VRT": {
+   "class": "ai_power_datacenter",
+   "name": "Vertiv Holdings Co Class A Common Stock",
+   "type": "CS",
+   "has_options": true
+  },
+  "DLR": {
+   "class": "ai_power_datacenter",
+   "name": "Digital Realty Trust, Inc.",
+   "type": "CS",
+   "has_options": true
+  },
+  "EQIX": {
+   "class": "ai_power_datacenter",
+   "name": "Equinix, Inc. Common Stock REIT",
+   "type": "CS",
+   "has_options": true
+  },
+  "ETN": {
+   "class": "ai_power_datacenter",
+   "name": "Eaton Corporation, plc Ordinary Shares",
+   "type": "CS",
+   "has_options": true
+  },
+  "TSLA": {
+   "class": "tesla_ev_space",
+   "name": "Tesla, Inc. Common Stock",
+   "type": "CS",
+   "has_options": true
+  },
+  "RIVN": {
+   "class": "tesla_ev_space",
+   "name": "Rivian Automotive, Inc. Class A Common Stock",
+   "type": "CS",
+   "has_options": true
+  },
+  "RKLB": {
+   "class": "tesla_ev_space",
+   "name": "Rocket Lab Corporation Common Stock",
+   "type": "CS",
+   "has_options": true
+  },
+  "ASTS": {
+   "class": "tesla_ev_space",
+   "name": "AST SpaceMobile, Inc. Class A Common Stock",
+   "type": "CS",
+   "has_options": true
+  },
+  "UBER": {
+   "class": "tesla_ev_space",
+   "name": "Uber Technologies, Inc.",
+   "type": "CS",
+   "has_options": true
+  },
+  "XLV": {
+   "class": "health",
+   "name": "State Street Health Care Select Sector SPDR ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "XBI": {
+   "class": "health",
+   "name": "State Street SPDR S&P Biotech ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "UNH": {
+   "class": "health",
+   "name": "UNITEDHEALTH GROUP INCORPORATED (Delaware)",
+   "type": "CS",
+   "has_options": true
+  },
+  "PFE": {
+   "class": "health",
+   "name": "Pfizer Inc.",
+   "type": "CS",
+   "has_options": true
+  },
+  "MRNA": {
+   "class": "health",
+   "name": "Moderna, Inc. Common Stock",
+   "type": "CS",
+   "has_options": true
+  },
+  "LLY": {
+   "class": "health",
+   "name": "Eli Lilly & Co.",
+   "type": "CS",
+   "has_options": true
+  },
+  "NVO": {
+   "class": "health",
+   "name": "Novo-Nordisk A/S",
+   "type": "ADRC",
+   "has_options": true
+  },
+  "HUM": {
+   "class": "health",
+   "name": "Humana Inc.",
+   "type": "CS",
+   "has_options": true
+  },
+  "CVS": {
+   "class": "health",
+   "name": "CVS HEALTH CORPORATION",
+   "type": "CS",
+   "has_options": true
+  },
+  "HIMS": {
+   "class": "health",
+   "name": "Hims & Hers Health, Inc.",
+   "type": "CS",
+   "has_options": true
+  },
+  "XLY": {
+   "class": "consumer_tariff",
+   "name": "State Street Consumer Discretionary Select Sector SPDR ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "XLP": {
+   "class": "consumer_tariff",
+   "name": "State Street Consumer Staples Select Sector SPDR ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "XRT": {
+   "class": "consumer_tariff",
+   "name": "State Street SPDR S&P Retail ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "WMT": {
+   "class": "consumer_tariff",
+   "name": "Walmart Inc. Common Stock",
+   "type": "CS",
+   "has_options": true
+  },
+  "COST": {
+   "class": "consumer_tariff",
+   "name": "Costco Wholesale Corp",
+   "type": "CS",
+   "has_options": true
+  },
+  "TGT": {
+   "class": "consumer_tariff",
+   "name": "Target Corporation",
+   "type": "CS",
+   "has_options": true
+  },
+  "NKE": {
+   "class": "consumer_tariff",
+   "name": "Nike, Inc.",
+   "type": "CS",
+   "has_options": true
+  },
+  "F": {
+   "class": "consumer_tariff",
+   "name": "Ford Motor Company",
+   "type": "CS",
+   "has_options": true
+  },
+  "GM": {
+   "class": "consumer_tariff",
+   "name": "General Motors Company",
+   "type": "CS",
+   "has_options": true
+  },
+  "XLI": {
+   "class": "industrials_metals",
+   "name": "State Street Industrial Select Sector SPDR ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "NUE": {
+   "class": "industrials_metals",
+   "name": "Nucor Corporation",
+   "type": "CS",
+   "has_options": true
+  },
+  "CLF": {
+   "class": "industrials_metals",
+   "name": "Cleveland-Cliffs Inc.",
+   "type": "CS",
+   "has_options": true
+  },
+  "CAT": {
+   "class": "industrials_metals",
+   "name": "Caterpillar Inc.",
+   "type": "CS",
+   "has_options": true
+  },
+  "DE": {
+   "class": "industrials_metals",
+   "name": "Deere & Company",
+   "type": "CS",
+   "has_options": true
+  },
+  "BA": {
+   "class": "industrials_metals",
+   "name": "Boeing Company",
+   "type": "CS",
+   "has_options": true
+  },
+  "AA": {
+   "class": "industrials_metals",
+   "name": "Alcoa Corporation",
+   "type": "CS",
+   "has_options": true
+  },
+  "ICLN": {
+   "class": "clean_energy",
+   "name": "iShares Global Clean Energy ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "TAN": {
+   "class": "clean_energy",
+   "name": "Invesco Solar ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "FSLR": {
+   "class": "clean_energy",
+   "name": "First Solar, Inc.",
+   "type": "CS",
+   "has_options": true
+  },
+  "ENPH": {
+   "class": "clean_energy",
+   "name": "Enphase Energy, Inc.",
+   "type": "CS",
+   "has_options": true
+  },
+  "DJT": {
+   "class": "policy_single_names",
+   "name": "Trump Media & Technology Group Corp. Common Stock",
+   "type": "CS",
+   "has_options": true
+  },
+  "GEO": {
+   "class": "policy_single_names",
+   "name": "The GEO Group, Inc.",
+   "type": "CS",
+   "has_options": true
+  },
+  "CXW": {
+   "class": "policy_single_names",
+   "name": "CoreCivic, Inc.",
+   "type": "CS",
+   "has_options": true
+  },
+  "MSOS": {
+   "class": "policy_single_names",
+   "name": "AdvisorShares Pure US Cannabis ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "FXI": {
+   "class": "china",
+   "name": "iShares China Large-Cap ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "KWEB": {
+   "class": "china",
+   "name": "KraneShares CSI China Internet ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "MCHI": {
+   "class": "china",
+   "name": "iShares MSCI China ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "BABA": {
+   "class": "china",
+   "name": "Alibaba Group Holding Limited American Depositary Shares, each represents eight Ordinary Shares",
+   "type": "ADRC",
+   "has_options": true
+  },
+  "PDD": {
+   "class": "china",
+   "name": "PDD Holdings Inc. American Depositary Shares",
+   "type": "ADRC",
+   "has_options": true
+  },
+  "JD": {
+   "class": "china",
+   "name": "JD.com, Inc.",
+   "type": "ADRC",
+   "has_options": true
+  },
+  "BIDU": {
+   "class": "china",
+   "name": "Baidu, Inc.",
+   "type": "ADRC",
+   "has_options": true
+  },
+  "EWT": {
+   "class": "asia_other",
+   "name": "iShares MSCI Taiwan ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "EWY": {
+   "class": "asia_other",
+   "name": "iShares MSCI South Korea ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "EWJ": {
+   "class": "asia_other",
+   "name": "iShares MSCI Japan ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "INDA": {
+   "class": "asia_other",
+   "name": "iShares MSCI India ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "VGK": {
+   "class": "europe",
+   "name": "Vanguard FTSE Europe ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "EWG": {
+   "class": "europe",
+   "name": "iShares MSCI Germany ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "EWU": {
+   "class": "europe",
+   "name": "iShares MSCI United Kingdom ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "EWQ": {
+   "class": "europe",
+   "name": "iShares MSCI France ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "EWI": {
+   "class": "europe",
+   "name": "iShares MSCI Italy ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "EWP": {
+   "class": "europe",
+   "name": "iShares MSCI Spain ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "EPOL": {
+   "class": "europe",
+   "name": "iShares MSCI Poland ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "GREK": {
+   "class": "europe",
+   "name": "Global X MSCI Greece ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "EWN": {
+   "class": "europe",
+   "name": "iShares MSCI Netherlands ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "EWD": {
+   "class": "europe",
+   "name": "iShares MSCI Sweden ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "EWL": {
+   "class": "europe",
+   "name": "iShares MSCI Switzerland ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "EWZ": {
+   "class": "latin_america",
+   "name": "iShares MSCI Brazil ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "EWW": {
+   "class": "latin_america",
+   "name": "iShares MSCI Mexico ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "ARGT": {
+   "class": "latin_america",
+   "name": "Global X MSCI Argentina ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "ECH": {
+   "class": "latin_america",
+   "name": "iShares MSCI Chile ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "EPU": {
+   "class": "latin_america",
+   "name": "iShares MSCI Peru and Global Exposure ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "ILF": {
+   "class": "latin_america",
+   "name": "iShares Latin America 40 ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "PBR": {
+   "class": "latin_america",
+   "name": "PETROLEO BRASILEIRO S.A.-PETROBRAS ADS (REP 1 COMMON SHARE)",
+   "type": "ADRC",
+   "has_options": true
+  },
+  "VALE": {
+   "class": "latin_america",
+   "name": "VALE S.A.",
+   "type": "ADRC",
+   "has_options": true
+  },
+  "ITUB": {
+   "class": "latin_america",
+   "name": "Itau Unibanco Holding S.A. American Depositary Shares",
+   "type": "ADRC",
+   "has_options": true
+  },
+  "YPF": {
+   "class": "latin_america",
+   "name": "YPF Sociedad Anonima American Depositary Shares (Each representing ten (10) Class D shares of Capital Stock)",
+   "type": "ADRC",
+   "has_options": true
+  },
+  "GGAL": {
+   "class": "latin_america",
+   "name": "Grupo Financiero Galicia SA",
+   "type": "ADRC",
+   "has_options": true
+  },
+  "BMA": {
+   "class": "latin_america",
+   "name": "Banco Macro S.A.",
+   "type": "ADRC",
+   "has_options": true
+  },
+  "EIS": {
+   "class": "middle_east_africa",
+   "name": "iShares MSCI Israel ETF",
+   "type": "ETF",
+   "has_options": false
+  },
+  "TUR": {
+   "class": "middle_east_africa",
+   "name": "iShares MSCI Turkey ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "EZA": {
+   "class": "middle_east_africa",
+   "name": "iShares MSCI South Africa ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "KSA": {
+   "class": "middle_east_africa",
+   "name": "iShares MSCI Saudi Arabia ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "UAE": {
+   "class": "middle_east_africa",
+   "name": "iShares Trust iShares MSCI UAE ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "QAT": {
+   "class": "middle_east_africa",
+   "name": "iShares Trust iShares MSCI Qatar ETF",
+   "type": "ETF",
+   "has_options": false
+  },
+  "EWC": {
+   "class": "canada_australia",
+   "name": "iShares MSCI Canada ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "EWA": {
+   "class": "canada_australia",
+   "name": "iShares MSCI Australia ETF",
+   "type": "ETF",
+   "has_options": true
+  },
+  "SPY": {
+   "class": "broad_us",
+   "name": "State Street SPDR S&P 500 ETF Trust",
+   "type": "ETF",
+   "has_options": true
+  }
+ }
+}

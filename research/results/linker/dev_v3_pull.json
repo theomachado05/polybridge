@@ -1,0 +1,40 @@
+{
+ "study": "dev",
+ "amended": [],
+ "t1": "2026-10-04T02:54:48+00:00",
+ "markets": 196,
+ "markets_cached": 46,
+ "markets_pulled": 150,
+ "tickers": 35,
+ "equities_pulled": 9,
+ "off_menu": {
+  "CIB": {
+   "keep": true,
+   "note": "off the list, served by Massive as 'Grupo Cibest S.A. American Depositary Shares (each representing four (4) Preferred Shares)' (ADRC) on XNYS",
+   "ticker": "CIB",
+   "name": "Grupo Cibest S.A. American Depositary Shares (each representing four (4) Preferred Shares)",
+   "type": "ADRC",
+   "has_options": true,
+   "list_date": "1995-07-26",
+   "primary_exchange": "XNYS",
+   "recent_listing": false
+  },
+  "EC": {
+   "keep": true,
+   "note": "off the list, served by Massive as 'Ecopetrol S.A' (ADRC) on XNYS",
+   "ticker": "EC",
+   "name": "Ecopetrol S.A",
+   "type": "ADRC",
+   "has_options": true,
+   "list_date": "2008-09-18",
+   "primary_exchange": "XNYS",
+   "recent_listing": false
+  },
+  "GXG": {
+   "keep": false,
+   "note": "off the list and not served by Massive as an active ticker: links dropped"
+  }
+ },
+ "failures": [],
+ "seconds": 497.9
+}

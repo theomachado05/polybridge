@@ -1,0 +1,3541 @@
+{
+ "generated_at": "2026-10-03T22:02:11",
+ "generator": "link agent v3 (two blind labellers, trained scorer, price benchmark)",
+ "as_of": "2026-10-02",
+ "summary": {
+  "as_of": "2026-10-02",
+  "today": "2026-10-04",
+  "open_links": 130,
+  "open_questions": 51,
+  "trusted_links": 26,
+  "trusted_questions": 13,
+  "trusted_tickers": [
+   "BMNR",
+   "COIN",
+   "ETHA",
+   "GLXY",
+   "GOOGL",
+   "HOOD",
+   "IBIT",
+   "IEF",
+   "JETS",
+   "MARA",
+   "MSTR",
+   "SHY",
+   "USO",
+   "XLE"
+  ],
+  "trusted_confirmed_by_prices": 25,
+  "trusted_with_an_option_contract": 26,
+  "trusted_event_links": 9,
+  "trusted_event_questions": 6,
+  "trusted_price_proxy_links": 17,
+  "trusted_by_theme": {
+   "Bitcoin holders": 13,
+   "Other": 8,
+   "Iran, Hormuz and oil": 3,
+   "Fed rate decision": 2
+  },
+  "version3_links": 0,
+  "trusted_version3_links": 0,
+  "probe_links": 0,
+  "no_instrument_items": 0,
+  "no_instrument_open_clusters": 0,
+  "no_instrument_but_older_links": 0
+ },
+ "items": {
+  "polymarket:1163699": {
+   "question": "Clarity Act (H.R.3633) signed into law in 2026?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:1163699",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 5.0,
+     "rationale": "A US market-structure law gives Coinbase legal clarity for listing and trading tokens and removes enforcement overhang.",
+     "confidence": 0.7,
+     "score": 0.9358911363589958,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 7.05259928838445,
+     "gap_t": 2.3002817751604305,
+     "days": 182,
+     "trusted": true,
+     "option": {
+      "contract": "O:COIN270115C00185000",
+      "expiry": "2027-01-15",
+      "strike": 185.0,
+      "call": "O:COIN270115C00185000",
+      "put": "O:COIN270115P00185000"
+     },
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "GLXY",
+     "direction": "up_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Galaxy's trading, asset management and token holdings benefit from clearer US rules and the crypto rally they would bring.",
+     "confidence": 0.5,
+     "score": 0.8896013369861845,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 7.3944824966998,
+     "gap_t": 2.406026011753415,
+     "days": 182,
+     "trusted": true,
+     "option": {
+      "contract": "O:GLXY270115C00022500",
+      "expiry": "2027-01-15",
+      "strike": 22.5,
+      "call": "O:GLXY270115C00022500",
+      "put": "O:GLXY270115P00022500"
+     },
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "HOOD",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Robinhood's crypto trading and tokenisation businesses gain from a clear federal framework.",
+     "confidence": 0.45,
+     "score": 0.874144923669653,
+     "verdict": "unproven",
+     "gap_bp_per_point": 2.721533076178554,
+     "gap_t": 1.368013234730801,
+     "days": 182,
+     "trusted": true,
+     "option": {
+      "contract": "O:HOOD270115C00115000",
+      "expiry": "2027-01-15",
+      "strike": 115.0,
+      "call": "O:HOOD270115C00115000",
+      "put": "O:HOOD270115P00115000"
+     },
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "CRCL",
+     "direction": "up_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Clearer rules support stablecoin and crypto adoption.",
+     "confidence": 0.0,
+     "score": 0.9086874827863104,
+     "verdict": "unproven",
+     "gap_bp_per_point": 5.284039383919722,
+     "gap_t": 1.4275042229336277,
+     "days": 182,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:1345531": {
+   "question": "Will Bitcoin reach $90,000 by December 31, 2026?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:1345531",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "price proxy",
+   "mappings": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "IBIT holds spot bitcoin, so it rises one for one with the price move that makes this strike more likely.",
+     "confidence": 0.95,
+     "score": 0.9265225449075134,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 26.20680961745894,
+     "gap_t": 8.903896225923578,
+     "days": 164,
+     "trusted": true,
+     "option": {
+      "contract": "O:IBIT270115C00048000",
+      "expiry": "2027-01-15",
+      "strike": 48.0,
+      "call": "O:IBIT270115C00048000",
+      "put": "O:IBIT270115P00048000"
+     },
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "impact_pct": 6.0,
+     "rationale": "MSTR is a leveraged holder of bitcoin and its share price follows the bitcoin price.",
+     "confidence": 0.85,
+     "score": 0.903552830534197,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 32.91182270586213,
+     "gap_t": 6.913854837652552,
+     "days": 164,
+     "trusted": true,
+     "option": {
+      "contract": "O:MSTR270115C00160000",
+      "expiry": "2027-01-15",
+      "strike": 160.0,
+      "call": "O:MSTR270115C00160000",
+      "put": "O:MSTR270115P00160000"
+     },
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "impact_pct": 5.0,
+     "rationale": "MARA mines and holds bitcoin, so its revenue and treasury value rise with the bitcoin price.",
+     "confidence": 0.75,
+     "score": 0.8743761599207982,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 20.623505177690593,
+     "gap_t": 5.302862040538015,
+     "days": 164,
+     "trusted": true,
+     "option": {
+      "contract": "O:MARA270115C00011000",
+      "expiry": "2027-01-15",
+      "strike": 11.0,
+      "call": "O:MARA270115C00011000",
+      "put": "O:MARA270115P00011000"
+     },
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Exchange volumes and fees track bitcoin price.",
+     "confidence": 0.0,
+     "score": 0.8035221688470686,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 28.98597370744292,
+     "gap_t": 6.496999931916721,
+     "days": 164,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:701502": {
+   "question": "Will Bitcoin dip to $45,000 by December 31, 2026?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:701502",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "price proxy",
+   "mappings": [
+    {
+     "ticker": "IBIT",
+     "direction": "down_on_yes",
+     "impact_pct": 6.5,
+     "rationale": "The fund holds spot bitcoin, so it falls as bitcoin drops toward the level in the question.",
+     "confidence": 0.95,
+     "score": 0.8576077827162801,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 33.01573574646227,
+     "gap_t": 5.284752878386452,
+     "days": 188,
+     "trusted": true,
+     "option": {
+      "contract": "O:IBIT270115P00048000",
+      "expiry": "2027-01-15",
+      "strike": 48.0,
+      "call": "O:IBIT270115C00048000",
+      "put": "O:IBIT270115P00048000"
+     },
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "down_on_yes",
+     "impact_pct": 13.0,
+     "rationale": "The company is a levered bitcoin treasury whose equity value falls with the bitcoin price.",
+     "confidence": 0.85,
+     "score": 0.8173418355264713,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 36.1858529989352,
+     "gap_t": 3.6038315430320984,
+     "days": 188,
+     "trusted": true,
+     "option": {
+      "contract": "O:MSTR270115P00160000",
+      "expiry": "2027-01-15",
+      "strike": 160.0,
+      "call": "O:MSTR270115C00160000",
+      "put": "O:MSTR270115P00160000"
+     },
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "MARA",
+     "direction": "down_on_yes",
+     "impact_pct": 10.4,
+     "rationale": "A bitcoin miner with a large bitcoin balance loses value when bitcoin is lower.",
+     "confidence": 0.7,
+     "score": 0.7413045643668121,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 25.15576840412346,
+     "gap_t": 3.3731910923770188,
+     "days": 188,
+     "trusted": true,
+     "option": {
+      "contract": "O:MARA270115P00011000",
+      "expiry": "2027-01-15",
+      "strike": 11.0,
+      "call": "O:MARA270115C00011000",
+      "put": "O:MARA270115P00011000"
+     },
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "COIN",
+     "direction": "down_on_yes",
+     "impact_pct": 9.1,
+     "rationale": "Coinbase volumes and revenue are levered to crypto prices.",
+     "confidence": 0.0,
+     "score": 0.6614039429642823,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 28.77446291818738,
+     "gap_t": 3.3351555001083426,
+     "days": 188,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:701496": {
+   "question": "Will Bitcoin reach $100,000 by December 31, 2026?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:701496",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "price proxy",
+   "mappings": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "impact_pct": 5.5,
+     "rationale": "The fund holds spot bitcoin, so it rises as bitcoin moves toward the level in the question.",
+     "confidence": 0.95,
+     "score": 0.8517119148908633,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 36.371324574619806,
+     "gap_t": 8.756058007695978,
+     "days": 188,
+     "trusted": true,
+     "option": {
+      "contract": "O:IBIT270115C00048000",
+      "expiry": "2027-01-15",
+      "strike": 48.0,
+      "call": "O:IBIT270115C00048000",
+      "put": "O:IBIT270115P00048000"
+     },
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "impact_pct": 11.0,
+     "rationale": "The company is a levered bitcoin treasury whose equity value tracks the bitcoin price.",
+     "confidence": 0.85,
+     "score": 0.8101478076962418,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 40.36417514436789,
+     "gap_t": 6.295839698726488,
+     "days": 188,
+     "trusted": true,
+     "option": {
+      "contract": "O:MSTR270115C00160000",
+      "expiry": "2027-01-15",
+      "strike": 160.0,
+      "call": "O:MSTR270115C00160000",
+      "put": "O:MSTR270115P00160000"
+     },
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "impact_pct": 8.8,
+     "rationale": "A bitcoin miner with a large bitcoin balance gains when bitcoin is higher.",
+     "confidence": 0.7,
+     "score": 0.7320973895790979,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 27.257416252563743,
+     "gap_t": 5.309937916281895,
+     "days": 188,
+     "trusted": true,
+     "option": {
+      "contract": "O:MARA270115C00011000",
+      "expiry": "2027-01-15",
+      "strike": 11.0,
+      "call": "O:MARA270115C00011000",
+      "put": "O:MARA270115P00011000"
+     },
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 7.7,
+     "rationale": "Coinbase volumes and revenue are levered to crypto prices.",
+     "confidence": 0.0,
+     "score": 0.6506930221337307,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 27.1752962800608,
+     "gap_t": 4.238130568069963,
+     "days": 188,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:2467206": {
+   "question": "Will Bitcoin reach $95,000 by December 31, 2026?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:2467206",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "price proxy",
+   "mappings": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "IBIT holds spot bitcoin, so it rises one for one with the price move that makes this strike more likely.",
+     "confidence": 0.95,
+     "score": 0.8153484935419429,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 32.54630916563773,
+     "gap_t": 5.981127995557104,
+     "days": 81,
+     "trusted": true,
+     "option": {
+      "contract": "O:IBIT270115C00048000",
+      "expiry": "2027-01-15",
+      "strike": 48.0,
+      "call": "O:IBIT270115C00048000",
+      "put": "O:IBIT270115P00048000"
+     },
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "impact_pct": 6.0,
+     "rationale": "MSTR is a leveraged holder of bitcoin and its share price follows the bitcoin price.",
+     "confidence": 0.85,
+     "score": 0.7663876076938768,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 41.7757745929248,
+     "gap_t": 5.035530601310943,
+     "days": 81,
+     "trusted": true,
+     "option": {
+      "contract": "O:MSTR270115C00160000",
+      "expiry": "2027-01-15",
+      "strike": 160.0,
+      "call": "O:MSTR270115C00160000",
+      "put": "O:MSTR270115P00160000"
+     },
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "impact_pct": 5.0,
+     "rationale": "MARA mines and holds bitcoin, so its revenue and treasury value rise with the bitcoin price.",
+     "confidence": 0.75,
+     "score": 0.7090767313979338,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 32.373717408869176,
+     "gap_t": 5.33724754229291,
+     "days": 81,
+     "trusted": true,
+     "option": {
+      "contract": "O:MARA270115C00011000",
+      "expiry": "2027-01-15",
+      "strike": 11.0,
+      "call": "O:MARA270115C00011000",
+      "put": "O:MARA270115P00011000"
+     },
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Exchange volumes and fees track bitcoin price.",
+     "confidence": 0.0,
+     "score": 0.5888324148670803,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 34.52586786078634,
+     "gap_t": 5.099740944171884,
+     "days": 81,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:2176270": {
+   "question": "Strait of Hormuz traffic returns to normal by December 31?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:2176270",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "JETS",
+     "direction": "up_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Lower crude and jet fuel prices cut airlines' largest variable cost.",
+     "confidence": 0.45,
+     "score": 0.6857015587340811,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 12.796908380524266,
+     "gap_t": 4.372771752039705,
+     "days": 100,
+     "trusted": true,
+     "option": {
+      "contract": "O:JETS270115C00028000",
+      "expiry": "2027-01-15",
+      "strike": 28.0,
+      "call": "O:JETS270115C00028000",
+      "put": "O:JETS270115P00028000"
+     },
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Normalized Hormuz flows ease oil supply risk premium.",
+     "confidence": 0.0,
+     "score": 0.757624138548384,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 12.272777520440776,
+     "gap_t": 3.820249566838512,
+     "days": 100,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "OXY",
+     "direction": "down_on_yes",
+     "impact_pct": 4.5,
+     "rationale": "US E&P with high oil beta.",
+     "confidence": 0.0,
+     "score": 0.757624138548384,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 13.674943025781072,
+     "gap_t": 3.3581791960400076,
+     "days": 100,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:3501950": {
+   "question": "Strait of Hormuz traffic returns to normal by October 31?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:3501950",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2026-11-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "impact_pct": 5.0,
+     "rationale": "Normal Hormuz transit restores Gulf crude exports and removes the supply-disruption premium from oil.",
+     "confidence": 0.7,
+     "score": 0.6655806017831083,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 44.224660417609456,
+     "gap_t": 4.026297382386859,
+     "days": 37,
+     "trusted": true,
+     "option": {
+      "contract": "O:USO261106P00147500",
+      "expiry": "2026-11-06",
+      "strike": 147.5,
+      "call": "O:USO261106C00147500",
+      "put": "O:USO261106P00147500"
+     },
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Normalized Hormuz flows remove oil supply risk premium.",
+     "confidence": 0.0,
+     "score": 0.5756791737206922,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 22.042227200465916,
+     "gap_t": 3.156593912644225,
+     "days": 37,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "STNG",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Tanker rates ease as disruption premium fades.",
+     "confidence": 0.0,
+     "score": 0.5756791737206922,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 27.815997746262305,
+     "gap_t": 2.9329224834720704,
+     "days": 37,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "DAL",
+     "direction": "up_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Lower jet fuel costs help airlines.",
+     "confidence": 0.0,
+     "score": 0.5756791737206922,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 33.63230111212595,
+     "gap_t": 3.5122817689740233,
+     "days": 37,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:2126461": {
+   "question": "Will Crude Oil reach a new all-time high by December 31?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:2126461",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "price proxy",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "The energy sector's earnings rise with the crude price.",
+     "confidence": 0.65,
+     "score": 0.5546703001339437,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 10.037081441465851,
+     "gap_t": 3.1107421035846397,
+     "days": 107,
+     "trusted": true,
+     "option": {
+      "contract": "O:XLE270115C00062500",
+      "expiry": "2027-01-15",
+      "strike": 62.5,
+      "call": "O:XLE270115C00062500",
+      "put": "O:XLE270115P00062500"
+     },
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "OXY",
+     "direction": "up_on_yes",
+     "impact_pct": 5.0,
+     "rationale": "Occidental is high-beta to oil prices.",
+     "confidence": 0.0,
+     "score": 0.4962290921704556,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 15.96110597974266,
+     "gap_t": 3.705987633648018,
+     "days": 107,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "XOM",
+     "direction": "up_on_yes",
+     "impact_pct": 3.5,
+     "rationale": "Exxon earnings are leveraged to crude.",
+     "confidence": 0.0,
+     "score": 0.4962290921704556,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 10.7448965827567,
+     "gap_t": 3.273390810506434,
+     "days": 107,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:701548": {
+   "question": "Will Ethereum reach $4,000 by December 31, 2026?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:701548",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "price proxy",
+   "mappings": [
+    {
+     "ticker": "ETHA",
+     "direction": "up_on_yes",
+     "impact_pct": 9.0,
+     "rationale": "ETHA holds spot ether, so it rises one-for-one with the ether rally needed to reach the level.",
+     "confidence": 0.95,
+     "score": 0.5436319938324552,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 44.909246815605705,
+     "gap_t": 5.1694666408180705,
+     "days": 188,
+     "trusted": true,
+     "option": {
+      "contract": "O:ETHA270115C00020000",
+      "expiry": "2027-01-15",
+      "strike": 20.0,
+      "call": "O:ETHA270115C00020000",
+      "put": "O:ETHA270115P00020000"
+     },
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "BMNR",
+     "direction": "up_on_yes",
+     "impact_pct": 13.5,
+     "rationale": "BitMine's value is dominated by its ether treasury, so the stock rises with ether at a beta above one.",
+     "confidence": 0.85,
+     "score": 0.4695010254112733,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 26.488417137694046,
+     "gap_t": 3.375832606007409,
+     "days": 188,
+     "trusted": true,
+     "option": {
+      "contract": "O:BMNR270115C00026000",
+      "expiry": "2027-01-15",
+      "strike": 26.0,
+      "call": "O:BMNR270115C00026000",
+      "put": "O:BMNR270115P00026000"
+     },
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 6.0,
+     "rationale": "Coinbase trading and staking revenue rise with ether prices and the activity that accompanies a rally.",
+     "confidence": 0.5,
+     "score": 0.2382914470482055,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 13.664166609600995,
+     "gap_t": 2.1690987664386405,
+     "days": 188,
+     "trusted": true,
+     "option": {
+      "contract": "O:COIN270115C00185000",
+      "expiry": "2027-01-15",
+      "strike": 185.0,
+      "call": "O:COIN270115C00185000",
+      "put": "O:COIN270115P00185000"
+     },
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:701494": {
+   "question": "Will Bitcoin reach $120,000 by December 31, 2026?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:701494",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "price proxy",
+   "mappings": [
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "impact_pct": 10.0,
+     "rationale": "Strategy's value is dominated by its leveraged bitcoin treasury, so the share price rises with bitcoin at a beta above one.",
+     "confidence": 0.85,
+     "score": 0.5167948878110422,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 32.66316198694725,
+     "gap_t": 2.5423740601473757,
+     "days": 188,
+     "trusted": true,
+     "option": {
+      "contract": "O:MSTR270115C00160000",
+      "expiry": "2027-01-15",
+      "strike": 160.0,
+      "call": "O:MSTR270115C00160000",
+      "put": "O:MSTR270115P00160000"
+     },
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "impact_pct": 9.0,
+     "rationale": "MARA mines and holds bitcoin, so its revenue and treasury value move with the bitcoin price and the stock rises with it.",
+     "confidence": 0.7,
+     "score": 0.4064945171952475,
+     "verdict": "unproven",
+     "gap_bp_per_point": 11.956515986193487,
+     "gap_t": 1.1525348910765083,
+     "days": 188,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 6.0,
+     "rationale": "Bitcoin at $120k would boost Coinbase volumes and revenue.",
+     "confidence": 0.0,
+     "score": 0.3182818076087388,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 22.23515927145819,
+     "gap_t": 2.339873987931953,
+     "days": 188,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:665374": {
+   "question": "Will the U.S. invade Iran before 2027?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:665374",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "JETS",
+     "direction": "down_on_yes",
+     "impact_pct": 6.0,
+     "rationale": "Airlines are hit by the jet-fuel spike and airspace disruption that a wider Iran war brings.",
+     "confidence": 0.4,
+     "score": 0.5017187287024283,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 14.783354116568455,
+     "gap_t": 6.4342075753428825,
+     "days": 188,
+     "trusted": true,
+     "option": {
+      "contract": "O:JETS270115P00028000",
+      "expiry": "2027-01-15",
+      "strike": 28.0,
+      "call": "O:JETS270115C00028000",
+      "put": "O:JETS270115P00028000"
+     },
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "LMT",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Defense primes benefit from escalation.",
+     "confidence": 0.0,
+     "score": 0.6259856907593623,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 5.4460453878143005,
+     "gap_t": 2.505862960498861,
+     "days": 188,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "impact_pct": 6.0,
+     "rationale": "Invasion would spike oil prices on Hormuz disruption risk.",
+     "confidence": 0.0,
+     "score": 0.6259856907593623,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 15.727233758134702,
+     "gap_t": 8.798713224997947,
+     "days": 188,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:3554659": {
+   "question": "Will Google have the best AI model at the end of October 2026?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:3554659",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2026-10-31",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "GOOGL",
+     "direction": "up_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Holding the top-ranked model supports the view that Alphabet is winning the AI race, which has driven its multiple.",
+     "confidence": 0.4,
+     "score": 0.4089082501748244,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 2.7103248092053938,
+     "gap_t": 14.162189178039554,
+     "days": 35,
+     "trusted": true,
+     "option": {
+      "contract": "O:GOOGL261106C00345000",
+      "expiry": "2026-11-06",
+      "strike": 345.0,
+      "call": "O:GOOGL261106C00345000",
+      "put": "O:GOOGL261106P00345000"
+     },
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "MSFT",
+     "direction": "down_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Rival leadership weakens OpenAI-aligned Microsoft narrative.",
+     "confidence": 0.0,
+     "score": 0.5348628541716057,
+     "verdict": "contradicted",
+     "gap_bp_per_point": -1.5020585637502353,
+     "gap_t": -10.834538596055408,
+     "days": 35,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:616902": {
+   "question": "Will no Fed rate cuts happen in 2026?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:616902",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "SHY",
+     "direction": "down_on_yes",
+     "impact_pct": 0.81,
+     "rationale": "A hike or a withheld cut raises front-end Treasury yields, lowering short-dated Treasury prices.",
+     "confidence": 0.65,
+     "score": 0.1587671742934876,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 0.8110126708746125,
+     "gap_t": 3.1381621248826503,
+     "days": 252,
+     "trusted": true,
+     "option": {
+      "contract": "O:SHY270115P00081000",
+      "expiry": "2027-01-15",
+      "strike": 81.0,
+      "call": "O:SHY270115C00081000",
+      "put": "O:SHY270115P00081000"
+     },
+     "version": 1,
+     "source": "S5 (240 largest markets of the year)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "IEF",
+     "direction": "down_on_yes",
+     "impact_pct": 2.13,
+     "rationale": "A more hawkish Fed outcome pushes intermediate Treasury yields up, lowering 7-10 year Treasury prices.",
+     "confidence": 0.55,
+     "score": 0.1229754533156209,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 2.129530085027886,
+     "gap_t": 2.7382398994335597,
+     "days": 252,
+     "trusted": true,
+     "option": {
+      "contract": "O:IEF270115P00089000",
+      "expiry": "2027-01-15",
+      "strike": 89.0,
+      "call": "O:IEF270115C00089000",
+      "put": "O:IEF270115P00089000"
+     },
+     "version": 1,
+     "source": "S5 (240 largest markets of the year)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:3128888": {
+   "question": "US announces end of Iranian blockade by October 31, 2026?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:3128888",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2026-11-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Ending blockade restores Gulf oil flows and lowers prices.",
+     "confidence": 0.0,
+     "score": 0.9785596359667562,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 6.653304196207416,
+     "gap_t": 3.74153747348029,
+     "days": 48,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "UAL",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Cheaper jet fuel benefits airlines.",
+     "confidence": 0.0,
+     "score": 0.9785596359667562,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 10.073966526103408,
+     "gap_t": 3.6916091809647353,
+     "days": 48,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "DAL",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Cheaper jet fuel benefits airlines.",
+     "confidence": 0.0,
+     "score": 0.9785596359667562,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 8.32929917289232,
+     "gap_t": 4.019494520164479,
+     "days": 48,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "XOM",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Lower crude hurts Exxon earnings.",
+     "confidence": 0.0,
+     "score": 0.9785596359667562,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 6.445331542202213,
+     "gap_t": 3.4903747549693676,
+     "days": 48,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:3399468": {
+   "question": "Israel x Iran ceasefire continues through December 31?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:3399468",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2026-12-31",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "ITA",
+     "direction": "down_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Less conflict reduces defense premium.",
+     "confidence": 0.0,
+     "score": 0.6393169335535326,
+     "verdict": "unproven",
+     "gap_bp_per_point": -2.6711134053299173,
+     "gap_t": -1.7520815225607609,
+     "days": 39,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "impact_pct": 2.5,
+     "rationale": "Continued ceasefire lowers oil risk premium.",
+     "confidence": 0.0,
+     "score": 0.6393169335535326,
+     "verdict": "unproven",
+     "gap_bp_per_point": 2.8142336252526228,
+     "gap_t": 0.7066409026214854,
+     "days": 39,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:3399459": {
+   "question": "Israel x Iran ceasefire continues through October 31?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:3399459",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2026-10-31",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Continued ceasefire lowers Middle East oil risk premium.",
+     "confidence": 0.0,
+     "score": 0.5830223131773471,
+     "verdict": "unproven",
+     "gap_bp_per_point": 2.8975197657446397,
+     "gap_t": 0.6313060002726454,
+     "days": 39,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "ITA",
+     "direction": "down_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Peace reduces defense risk premium.",
+     "confidence": 0.0,
+     "score": 0.5830223131773471,
+     "verdict": "unproven",
+     "gap_bp_per_point": 0.1590277059879896,
+     "gap_t": 0.0900153691834703,
+     "days": 39,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:1090496": {
+   "question": "NATO x Russia military clash by December 31, 2026?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:1090496",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "RTX",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Missile and air-defense demand rises.",
+     "confidence": 0.0,
+     "score": 0.5154004667171952,
+     "verdict": "unproven",
+     "gap_bp_per_point": -0.6377932918851517,
+     "gap_t": -0.6838934832076509,
+     "days": 181,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "LMT",
+     "direction": "up_on_yes",
+     "impact_pct": 3.5,
+     "rationale": "Prime contractor benefits from escalation.",
+     "confidence": 0.0,
+     "score": 0.5154004667171952,
+     "verdict": "unproven",
+     "gap_bp_per_point": 0.4070987399763222,
+     "gap_t": 0.5506367561035198,
+     "days": 181,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "ITA",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Defence contractors reprice higher on expected rearmament spending when NATO-Russia conflict escalates.",
+     "confidence": 0.5,
+     "score": 0.4627151924111369,
+     "verdict": "unproven",
+     "gap_bp_per_point": -0.0672639682041554,
+     "gap_t": -0.1219834552878489,
+     "days": 181,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:3215008": {
+   "question": "Will the Fed increase interest rates by 25 bps after the December 2026 meeting?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:3215008",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2026-12-09",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "KRE",
+     "direction": "up_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Higher rates modestly lift bank margins.",
+     "confidence": 0.0,
+     "score": 0.4290971298719477,
+     "verdict": "unproven",
+     "gap_bp_per_point": -0.5628552720482957,
+     "gap_t": -0.1959138531423289,
+     "days": 45,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "XHB",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Higher mortgage rates hurt homebuilders.",
+     "confidence": 0.0,
+     "score": 0.4290971298719477,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 6.7005454912043785,
+     "gap_t": 2.663609512937122,
+     "days": 45,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "TLT",
+     "direction": "down_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "A higher expected policy-rate path lifts Treasury yields and lowers long-bond prices.",
+     "confidence": 0.5,
+     "score": 0.3783461903294126,
+     "verdict": "unproven",
+     "gap_bp_per_point": 5.046156720269311,
+     "gap_t": 1.7856106892593675,
+     "days": 45,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:2589813": {
+   "question": "Will the Fed increase interest rates by 25 bps after the October 2026 meeting?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:2589813",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2026-10-29",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "IWM",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Small caps carry more floating-rate debt and are the most rate-sensitive equity index, so a more likely hike pushes them down.",
+     "confidence": 0.6,
+     "score": 0.4024969576541233,
+     "verdict": "unproven",
+     "gap_bp_per_point": -0.4952876817518638,
+     "gap_t": -0.4966794269738009,
+     "days": 73,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "XHB",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Homebuilders suffer from higher mortgage rates.",
+     "confidence": 0.0,
+     "score": 0.3819795557523913,
+     "verdict": "unproven",
+     "gap_bp_per_point": 1.803839385218436,
+     "gap_t": 1.1376455336285314,
+     "days": 73,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:3554657": {
+   "question": "Will Anthropic have the best AI model at the end of October 2026?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:3554657",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2026-10-31",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "AMZN",
+     "direction": "up_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Amazon is a large Anthropic investor and cloud partner.",
+     "confidence": 0.0,
+     "score": 0.3889385489794928,
+     "verdict": "contradicted",
+     "gap_bp_per_point": -0.8498325784574192,
+     "gap_t": -3.222597666545131,
+     "days": 35,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "GOOGL",
+     "direction": "down_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Anthropic leading would weaken Google's AI-leader narrative.",
+     "confidence": 0.0,
+     "score": 0.3889385489794928,
+     "verdict": "unproven",
+     "gap_bp_per_point": 1.364344339899772,
+     "gap_t": 1.0754898306663934,
+     "days": 35,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:1365861": {
+   "question": "Will Fl\u00e1vio Bolsonaro finish in second place in the first round of the 2026 Brazilian presidential election?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:1365861",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2026-10-05",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "EWZ",
+     "direction": "up_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Stronger right-wing showing is market-friendly for Brazil assets.",
+     "confidence": 0.0,
+     "score": 0.3655956936671123,
+     "verdict": "unproven",
+     "gap_bp_per_point": -3.7200240033849257,
+     "gap_t": -1.5926170792632404,
+     "days": 160,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:1107582": {
+   "question": "US strike on Cuba by December 31?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:1107582",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "CCL",
+     "direction": "down_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Cruise operators with Caribbean itineraries face disruption risk.",
+     "confidence": 0.0,
+     "score": 0.3308899932884482,
+     "verdict": "unproven",
+     "gap_bp_per_point": 8.91037248561536,
+     "gap_t": 1.445269213987385,
+     "days": 187,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "impact_pct": 0.8,
+     "rationale": "Escalation with Cuba adds modest geopolitical risk premium to energy.",
+     "confidence": 0.0,
+     "score": 0.3308899932884482,
+     "verdict": "unproven",
+     "gap_bp_per_point": 2.310352397808227,
+     "gap_t": 0.5616188523378554,
+     "days": 187,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:1535973": {
+   "question": "Iran leadership change by December 31?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:1535973",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Iran regime change could reduce Middle East supply risk and oil prices.",
+     "confidence": 0.0,
+     "score": 0.3152071146559068,
+     "verdict": "contradicted",
+     "gap_bp_per_point": -14.210821825802922,
+     "gap_t": -2.6330044453535995,
+     "days": 144,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "ITA",
+     "direction": "down_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Reduced regional conflict risk modestly lowers defense premium.",
+     "confidence": 0.0,
+     "score": 0.3152071146559068,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 2.8194753885641632,
+     "gap_t": 2.5213191582355425,
+     "days": 144,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:663583": {
+   "question": "Will the Iranian regime fall before 2027?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:663583",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Regime collapse likely lowers long-run oil risk premium, though near-term volatility.",
+     "confidence": 0.0,
+     "score": 0.2659441822724546,
+     "verdict": "contradicted",
+     "gap_bp_per_point": -16.690376529120723,
+     "gap_t": -3.708786472106304,
+     "days": 188,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "ITA",
+     "direction": "up_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Instability may lift defense demand.",
+     "confidence": 0.0,
+     "score": 0.2659441822724546,
+     "verdict": "unproven",
+     "gap_bp_per_point": 3.169073827006972,
+     "gap_t": 1.192465964738373,
+     "days": 188,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:567621": {
+   "question": "Will China invade Taiwan by end of 2026?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:567621",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "TSM",
+     "direction": "down_on_yes",
+     "impact_pct": 20.0,
+     "rationale": "TSMC's fabs and headquarters are in Taiwan, so an invasion threatens its production and the ADR directly.",
+     "confidence": 0.95,
+     "score": 0.2466713730013018,
+     "verdict": "unproven",
+     "gap_bp_per_point": 3.6138246571874992,
+     "gap_t": 0.1557433531400875,
+     "days": 188,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "SMH",
+     "direction": "down_on_yes",
+     "impact_pct": 12.0,
+     "rationale": "The semiconductor ETF is concentrated in TSMC and in chip designers that depend on Taiwanese fabrication.",
+     "confidence": 0.9,
+     "score": 0.2201135365721365,
+     "verdict": "unproven",
+     "gap_bp_per_point": -3.126326160757872,
+     "gap_t": -0.2037234264612266,
+     "days": 188,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "AAPL",
+     "direction": "down_on_yes",
+     "impact_pct": 8.0,
+     "rationale": "Heavy reliance on Taiwan and China supply chain.",
+     "confidence": 0.0,
+     "score": 0.096002777594898,
+     "verdict": "unproven",
+     "gap_bp_per_point": 2.9856114294954983,
+     "gap_t": 0.2616930937532439,
+     "days": 188,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "NVDA",
+     "direction": "down_on_yes",
+     "impact_pct": 12.0,
+     "rationale": "Depends on TSMC for advanced chips.",
+     "confidence": 0.0,
+     "score": 0.096002777594898,
+     "verdict": "unproven",
+     "gap_bp_per_point": 15.103070960240634,
+     "gap_t": 1.2552544581973184,
+     "days": 188,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:3215007": {
+   "question": "Will there be no change in Fed interest rates after the December 2026 meeting?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:3215007",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2026-12-09",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "IWM",
+     "direction": "down_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "No December cut keeps rates high, weighing on small caps.",
+     "confidence": 0.0,
+     "score": 0.1554654430470346,
+     "verdict": "unproven",
+     "gap_bp_per_point": -1.0542175288968292,
+     "gap_t": -0.8077954516832095,
+     "days": 45,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "XHB",
+     "direction": "down_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Homebuilders weigh on unchanged mortgage rates.",
+     "confidence": 0.0,
+     "score": 0.1554654430470346,
+     "verdict": "unproven",
+     "gap_bp_per_point": -0.9769430163718946,
+     "gap_t": -0.2331411220643815,
+     "days": 45,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:3554662": {
+   "question": "Will OpenAI have the best AI model at the end of October 2026?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:3554662",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2026-10-31",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "GOOGL",
+     "direction": "down_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Google's Gemini is the main rival for the top model ranking, and Alphabet's stock has traded on perceived AI leadership, so OpenAI holding the lead is a mild negative.",
+     "confidence": 0.3,
+     "score": 0.1135518830711963,
+     "verdict": "unproven",
+     "gap_bp_per_point": 6.338074922752622,
+     "gap_t": 1.2381322146549705,
+     "days": 35,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "MSFT",
+     "direction": "up_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Microsoft owns roughly a quarter of OpenAI and distributes its models through Azure, so OpenAI leadership is a mild positive.",
+     "confidence": 0.25,
+     "score": 0.0994345658811371,
+     "verdict": "unproven",
+     "gap_bp_per_point": -3.604597255432517,
+     "gap_t": -1.317422831021296,
+     "days": 35,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:3491459": {
+   "question": "US-Iran Final Nuclear Deal by October 31, 2026?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:3491459",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2026-11-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Nuclear deal enables Iranian oil supply and lowers prices.",
+     "confidence": 0.0,
+     "score": 0.1060193398244206,
+     "verdict": "unproven",
+     "gap_bp_per_point": -9.576115159601136,
+     "gap_t": -1.181998437943171,
+     "days": 38,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "ITA",
+     "direction": "down_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Reduced conflict risk lowers defense premium.",
+     "confidence": 0.0,
+     "score": 0.1060193398244206,
+     "verdict": "unproven",
+     "gap_bp_per_point": 2.482381900561232,
+     "gap_t": 0.7608864277288947,
+     "days": 38,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "DAL",
+     "direction": "up_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Lower fuel costs help airlines.",
+     "confidence": 0.0,
+     "score": 0.1060193398244206,
+     "verdict": "unproven",
+     "gap_bp_per_point": -10.010195901003478,
+     "gap_t": -0.8553178496379072,
+     "days": 38,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:2589811": {
+   "question": "Will the Fed decrease interest rates by 25 bps after the October 2026 meeting?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:2589811",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2026-10-29",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "IWM",
+     "direction": "up_on_yes",
+     "impact_pct": 2.5,
+     "rationale": "Small caps carry more floating-rate debt and have rallied hardest on dovish repricing of the Fed.",
+     "confidence": 0.5,
+     "score": 0.0850061328912688,
+     "verdict": "contradicted",
+     "gap_bp_per_point": -4.70327710354426,
+     "gap_t": -2.620198214650953,
+     "days": 73,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "XHB",
+     "direction": "up_on_yes",
+     "impact_pct": 2.5,
+     "rationale": "Lower expected policy rates pull mortgage rates down, which lifts homebuilder demand and share prices.",
+     "confidence": 0.4,
+     "score": 0.0645664901757067,
+     "verdict": "contradicted",
+     "gap_bp_per_point": -7.678592815258486,
+     "gap_t": -2.0097937945343074,
+     "days": 73,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:701488": {
+   "question": "Will Bitcoin reach $180,000 by December 31, 2026?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:701488",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "price proxy",
+   "mappings": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "impact_pct": 4.5,
+     "rationale": "IBIT holds spot bitcoin and rises with the price, though a strike this far away reprices only on very large moves.",
+     "confidence": 0.7,
+     "score": 0.0778120025027975,
+     "verdict": "unproven",
+     "gap_bp_per_point": 20.267582450192435,
+     "gap_t": 0.5009679045062878,
+     "days": 188,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "impact_pct": 9.0,
+     "rationale": "MSTR is a leveraged holder of bitcoin and its share price follows the bitcoin price.",
+     "confidence": 0.6,
+     "score": 0.0589906580016013,
+     "verdict": "unproven",
+     "gap_bp_per_point": 12.420241577107948,
+     "gap_t": 0.2437092978058936,
+     "days": 188,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 6.0,
+     "rationale": "Exchange volumes and fees track bitcoin price.",
+     "confidence": 0.0,
+     "score": 0.0543896564865392,
+     "verdict": "unproven",
+     "gap_bp_per_point": 29.060406278145745,
+     "gap_t": 0.819750863588777,
+     "days": 188,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "MARA",
+     "direction": "up_on_yes",
+     "impact_pct": 7.5,
+     "rationale": "MARA mines and holds bitcoin, so its revenue and treasury value rise with the bitcoin price.",
+     "confidence": 0.5,
+     "score": 0.0445021701013419,
+     "verdict": "unproven",
+     "gap_bp_per_point": 29.344559962258177,
+     "gap_t": 1.017777357234477,
+     "days": 188,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:3399450": {
+   "question": "Iran leadership change by October 31?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:3399450",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2026-11-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "ITA",
+     "direction": "down_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Reduced Middle East tension lowers defense premium.",
+     "confidence": 0.0,
+     "score": 0.0709690311281943,
+     "verdict": "unproven",
+     "gap_bp_per_point": 5.45913337426308,
+     "gap_t": 1.4706172576243886,
+     "days": 39,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "DAL",
+     "direction": "up_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Lower oil helps airlines.",
+     "confidence": 0.0,
+     "score": 0.0709690311281943,
+     "verdict": "unproven",
+     "gap_bp_per_point": 6.76605582621899,
+     "gap_t": 0.5235430433771522,
+     "days": 39,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Regime change in Iran may ease Gulf supply risk premium.",
+     "confidence": 0.0,
+     "score": 0.0709690311281943,
+     "verdict": "unproven",
+     "gap_bp_per_point": 16.159312311481507,
+     "gap_t": 1.328407391709444,
+     "days": 39,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:3554666": {
+   "question": "Will SpaceXAI have the best AI model at the end of October 2026?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:3554666",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2026-10-31",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "NVDA",
+     "direction": "up_on_yes",
+     "impact_pct": 0.5,
+     "rationale": "More competitive AI race supports GPU demand.",
+     "confidence": 0.0,
+     "score": 0.0646694240390029,
+     "verdict": "unproven",
+     "gap_bp_per_point": -13.893897113081048,
+     "gap_t": -1.2600892573272828,
+     "days": 35,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "TSLA",
+     "direction": "up_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Musk's xAI/SpaceX AI leadership boosts Musk-linked sentiment.",
+     "confidence": 0.0,
+     "score": 0.0646694240390029,
+     "verdict": "unproven",
+     "gap_bp_per_point": 10.032849980403492,
+     "gap_t": 1.3094028567057074,
+     "days": 35,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:562831": {
+   "question": "2026 Balance of Power: R Senate, R House",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:562831",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2026-11-04",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "GOP sweep favors fossil fuel policy.",
+     "confidence": 0.0,
+     "score": 0.061666357759897,
+     "verdict": "unproven",
+     "gap_bp_per_point": 6.790408639962085,
+     "gap_t": 0.8196186422740739,
+     "days": 188,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "ITA",
+     "direction": "up_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "GOP control favors defense spending.",
+     "confidence": 0.0,
+     "score": 0.061666357759897,
+     "verdict": "unproven",
+     "gap_bp_per_point": 5.623790792725799,
+     "gap_t": 1.180862879148349,
+     "days": 188,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "ICLN",
+     "direction": "down_on_yes",
+     "impact_pct": 2.5,
+     "rationale": "A Republican hold of both chambers removes any check on further cuts to clean-energy support, and clean-energy equities have traded against Republican election odds.",
+     "confidence": 0.3,
+     "score": 0.0285357680412864,
+     "verdict": "unproven",
+     "gap_bp_per_point": -3.886919200437808,
+     "gap_t": -0.4787893830654823,
+     "days": 188,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:2589814": {
+   "question": "Will the Fed increase interest rates by 50+ bps after the October 2026 meeting?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:2589814",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2026-10-29",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "IWM",
+     "direction": "down_on_yes",
+     "impact_pct": 5.0,
+     "rationale": "Small caps carry more floating-rate debt and are the most rate-sensitive part of the US equity market.",
+     "confidence": 0.65,
+     "score": 0.0493129034748366,
+     "verdict": "unproven",
+     "gap_bp_per_point": 3.335117371175363,
+     "gap_t": 0.427789654892275,
+     "days": 73,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "XHB",
+     "direction": "down_on_yes",
+     "impact_pct": 5.0,
+     "rationale": "Homebuilders suffer from higher mortgage rates.",
+     "confidence": 0.0,
+     "score": 0.0394056842200207,
+     "verdict": "unproven",
+     "gap_bp_per_point": -16.171506397019417,
+     "gap_t": -1.6580677435335414,
+     "days": 73,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:3554658": {
+   "question": "Will Meta have the best AI model at the end of October 2026?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:3554658",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2026-11-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "GOOGL",
+     "direction": "down_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "Rival leadership weakens Google's relative position.",
+     "confidence": 0.0,
+     "score": 0.0440346083562697,
+     "verdict": "unproven",
+     "gap_bp_per_point": 8.099799423474948,
+     "gap_t": 0.7648050672953398,
+     "days": 35,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "META",
+     "direction": "up_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Meta taking the top model ranking would validate its very large AI capital spending, which investors currently discount.",
+     "confidence": 0.45,
+     "score": 0.0311485360365685,
+     "verdict": "contradicted",
+     "gap_bp_per_point": -18.075830973351852,
+     "gap_t": -2.689412334632213,
+     "days": 35,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:562794": {
+   "question": "Will the Republican Party control the Senate after the 2026 Midterm elections?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:562794",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2026-11-04",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "KRE",
+     "direction": "up_on_yes",
+     "impact_pct": 0.5,
+     "rationale": "Lighter bank regulation expectations.",
+     "confidence": 0.0,
+     "score": 0.0403778508899468,
+     "verdict": "unproven",
+     "gap_bp_per_point": 4.290030251949272,
+     "gap_t": 1.2968485454370833,
+     "days": 188,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "impact_pct": 0.7,
+     "rationale": "GOP Senate seen as friendlier to fossil fuel policy.",
+     "confidence": 0.0,
+     "score": 0.0403778508899468,
+     "verdict": "unproven",
+     "gap_bp_per_point": -12.83646268395348,
+     "gap_t": -1.1783317356600689,
+     "days": 188,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "ICLN",
+     "direction": "down_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "A Republican Senate keeps the path open for further cuts to clean-energy support, and clean-energy equities have traded against Republican election odds.",
+     "confidence": 0.25,
+     "score": 0.0159518882508766,
+     "verdict": "unproven",
+     "gap_bp_per_point": 6.589520443371682,
+     "gap_t": 1.0521903392401577,
+     "days": 188,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:616908": {
+   "question": "Will 6 Fed rate cuts happen in 2026?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:616908",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "SHY",
+     "direction": "up_on_yes",
+     "impact_pct": 0.81,
+     "rationale": "More Fed cuts than priced pull front-end Treasury yields down, lifting short-dated Treasury prices.",
+     "confidence": 0.55,
+     "score": 0.0303115373601781,
+     "verdict": "unproven",
+     "gap_bp_per_point": 0.8091624393406414,
+     "gap_t": 1.2759546829720925,
+     "days": 252,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "held-out",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "IEF",
+     "direction": "up_on_yes",
+     "impact_pct": 1.77,
+     "rationale": "A deeper cutting path lowers intermediate Treasury yields, raising 7-10 year Treasury prices.",
+     "confidence": 0.45,
+     "score": 0.0226969330140651,
+     "verdict": "unproven",
+     "gap_bp_per_point": 1.7703971413033568,
+     "gap_t": 1.2020308655455532,
+     "days": 252,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "held-out",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:560317": {
+   "question": "Putin out as President of Russia by December 31, 2026?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:560317",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "ITA",
+     "direction": "down_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Reduced Russia threat could lower defense premium.",
+     "confidence": 0.0,
+     "score": 0.029600950241946,
+     "verdict": "unproven",
+     "gap_bp_per_point": -4.55800045522597,
+     "gap_t": -0.7020052366559968,
+     "days": 188,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:616913": {
+   "question": "Will 11 Fed rate cuts happen in 2026?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:616913",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "SHY",
+     "direction": "up_on_yes",
+     "impact_pct": 1.69,
+     "rationale": "More Fed cuts than priced pull front-end Treasury yields down, lifting short-dated Treasury prices.",
+     "confidence": 0.5,
+     "score": 0.0275282787689681,
+     "verdict": "unproven",
+     "gap_bp_per_point": -1.6897314296601866,
+     "gap_t": -0.8195701430776817,
+     "days": 252,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "held-out",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "IEF",
+     "direction": "up_on_yes",
+     "impact_pct": 2.92,
+     "rationale": "A deeper cutting path lowers intermediate Treasury yields, raising 7-10 year Treasury prices.",
+     "confidence": 0.4,
+     "score": 0.0205980087317009,
+     "verdict": "unproven",
+     "gap_bp_per_point": -2.91587521916467,
+     "gap_t": -0.6499248417698877,
+     "days": 252,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "held-out",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "TLT",
+     "direction": "up_on_yes",
+     "impact_pct": 8.87,
+     "rationale": "A cut count this large implies a sharp slowdown or crisis, which usually pulls long yields down too.",
+     "confidence": 0.3,
+     "score": 0.0153848388970865,
+     "verdict": "unproven",
+     "gap_bp_per_point": -8.87277909297318,
+     "gap_t": -0.9900681799848428,
+     "days": 252,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "held-out",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:616911": {
+   "question": "Will 9 Fed rate cuts happen in 2026?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:616911",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "SHY",
+     "direction": "up_on_yes",
+     "impact_pct": 1.63,
+     "rationale": "More Fed cuts than priced pull front-end Treasury yields down, lifting short-dated Treasury prices.",
+     "confidence": 0.5,
+     "score": 0.0272108118242198,
+     "verdict": "unproven",
+     "gap_bp_per_point": 1.6266153125264384,
+     "gap_t": 1.8314202305864171,
+     "days": 252,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "held-out",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "IEF",
+     "direction": "up_on_yes",
+     "impact_pct": 4.74,
+     "rationale": "A deeper cutting path lowers intermediate Treasury yields, raising 7-10 year Treasury prices.",
+     "confidence": 0.4,
+     "score": 0.0203587912009585,
+     "verdict": "unproven",
+     "gap_bp_per_point": 4.739393096790932,
+     "gap_t": 1.695983812748772,
+     "days": 252,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "held-out",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "TLT",
+     "direction": "up_on_yes",
+     "impact_pct": 6.69,
+     "rationale": "A cut count this large implies a sharp slowdown or crisis, which usually pulls long yields down too.",
+     "confidence": 0.3,
+     "score": 0.0152052252182138,
+     "verdict": "unproven",
+     "gap_bp_per_point": 6.693295544221948,
+     "gap_t": 1.147023853416228,
+     "days": 252,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "held-out",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:559651": {
+   "question": "Xi Jinping out before 2027?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:559651",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "KWEB",
+     "direction": "down_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "China internet stocks are sensitive to policy and leadership risk.",
+     "confidence": 0.0,
+     "score": 0.0263393371579219,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 43.14977535557553,
+     "gap_t": 2.3855205075536343,
+     "days": 188,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "FXI",
+     "direction": "down_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Abrupt Chinese leadership change would raise political uncertainty.",
+     "confidence": 0.0,
+     "score": 0.0263393371579219,
+     "verdict": "unproven",
+     "gap_bp_per_point": 35.72395619540113,
+     "gap_t": 1.8450085264292464,
+     "days": 188,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:562828": {
+   "question": "2026 Balance of Power: D Senate, D House",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:562828",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2026-11-04",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Democratic sweep raises regulatory risk for fossil fuels.",
+     "confidence": 0.0,
+     "score": 0.0258373210614102,
+     "verdict": "unproven",
+     "gap_bp_per_point": 4.22256274787882,
+     "gap_t": 0.5337438244734514,
+     "days": 188,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "ICLN",
+     "direction": "up_on_yes",
+     "impact_pct": 2.5,
+     "rationale": "Clean-energy equities trade as a partisan policy proxy and a Democratic Congress blocks further rollback of energy tax credits, though a presidential veto limits the real effect.",
+     "confidence": 0.3,
+     "score": 0.0117157370234522,
+     "verdict": "unproven",
+     "gap_bp_per_point": 4.006353141199388,
+     "gap_t": 0.5920970208617536,
+     "days": 188,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:616912": {
+   "question": "Will 10 Fed rate cuts happen in 2026?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:616912",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "SHY",
+     "direction": "up_on_yes",
+     "impact_pct": 2.31,
+     "rationale": "More Fed cuts than priced pull front-end Treasury yields down, lifting short-dated Treasury prices.",
+     "confidence": 0.5,
+     "score": 0.025459157339262,
+     "verdict": "unproven",
+     "gap_bp_per_point": 2.3080782411858243,
+     "gap_t": 1.3484053466206585,
+     "days": 252,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "held-out",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "IEF",
+     "direction": "up_on_yes",
+     "impact_pct": 6.59,
+     "rationale": "A deeper cutting path lowers intermediate Treasury yields, raising 7-10 year Treasury prices.",
+     "confidence": 0.4,
+     "score": 0.0190395920317363,
+     "verdict": "unproven",
+     "gap_bp_per_point": 6.590459385111168,
+     "gap_t": 1.3721131072583368,
+     "days": 252,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "held-out",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "TLT",
+     "direction": "up_on_yes",
+     "impact_pct": 9.84,
+     "rationale": "A cut count this large implies a sharp slowdown or crisis, which usually pulls long yields down too.",
+     "confidence": 0.3,
+     "score": 0.0142151187175927,
+     "verdict": "unproven",
+     "gap_bp_per_point": 9.836881446772267,
+     "gap_t": 0.8603008356118689,
+     "days": 252,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "held-out",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:562803": {
+   "question": "Will the Republican Party control the House after the 2026 Midterm elections?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:562803",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2026-11-04",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "impact_pct": 0.8,
+     "rationale": "GOP House supports energy-friendly policy.",
+     "confidence": 0.0,
+     "score": 0.023944144054987,
+     "verdict": "unproven",
+     "gap_bp_per_point": 13.503943086573935,
+     "gap_t": 0.7034456224067049,
+     "days": 188,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "ICLN",
+     "direction": "down_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "A Republican House keeps the path open for further cuts to clean-energy support, and clean-energy equities have traded against Republican election odds.",
+     "confidence": 0.3,
+     "score": 0.0108457701917985,
+     "verdict": "unproven",
+     "gap_bp_per_point": -9.211356064143022,
+     "gap_t": -1.3724548058423158,
+     "days": 188,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:2589810": {
+   "question": "Will the Fed decrease interest rates by 50+ bps after the October 2026 meeting?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:2589810",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2026-10-29",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "IWM",
+     "direction": "up_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "Small caps benefit from lower rates.",
+     "confidence": 0.0,
+     "score": 0.0237343637909001,
+     "verdict": "contradicted",
+     "gap_bp_per_point": -6.1122391713303275,
+     "gap_t": -8.50415868250354,
+     "days": 73,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "GLD",
+     "direction": "up_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "A 50 basis point cut lowers real rates and the dollar, both of which support gold.",
+     "confidence": 0.4,
+     "score": 0.0144149539359986,
+     "verdict": "unproven",
+     "gap_bp_per_point": 7.819445003784087,
+     "gap_t": 0.7664801149679368,
+     "days": 73,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:1144471": {
+   "question": "Will Satoshi move any Bitcoin in 2026?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:1144471",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "IBIT",
+     "direction": "down_on_yes",
+     "impact_pct": 33.2,
+     "rationale": "Satoshi's coins moving would raise fears of a roughly one million bitcoin overhang or compromised keys, hitting bitcoin.",
+     "confidence": 0.35,
+     "score": 0.0150793276308608,
+     "verdict": "unproven",
+     "gap_bp_per_point": 33.201798277027684,
+     "gap_t": 0.865315786714034,
+     "days": 183,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "held-out",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "down_on_yes",
+     "impact_pct": 44.11,
+     "rationale": "Strategy is a leveraged holder of bitcoin and falls with the bitcoin price.",
+     "confidence": 0.3,
+     "score": 0.0130247109253019,
+     "verdict": "unproven",
+     "gap_bp_per_point": 44.11225178780665,
+     "gap_t": 0.8325392301025485,
+     "days": 183,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "held-out",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:562802": {
+   "question": "Will the Democratic Party control the House after the 2026 Midterm elections?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:562802",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2026-11-04",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "impact_pct": 0.8,
+     "rationale": "Democratic House raises energy regulation risk.",
+     "confidence": 0.0,
+     "score": 0.0121748839111366,
+     "verdict": "unproven",
+     "gap_bp_per_point": 17.674122372055393,
+     "gap_t": 0.8252197584488825,
+     "days": 188,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "ICLN",
+     "direction": "up_on_yes",
+     "impact_pct": 1.0,
+     "rationale": "A Democratic House blocks further rollback of clean-energy support, and clean-energy equities have traded with Democratic election odds.",
+     "confidence": 0.3,
+     "score": 0.0054786131037289,
+     "verdict": "contradicted",
+     "gap_bp_per_point": -19.03680184155839,
+     "gap_t": -2.174046437021998,
+     "days": 188,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "S4 (open markets, Oct 2026)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:679036": {
+   "question": "Will Fran\u00e7ois Asselineau win the 2027 French presidential election?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:679036",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2027-04-19",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "EWQ",
+     "direction": "down_on_yes",
+     "impact_pct": 5.31,
+     "rationale": "A Frexit candidate winning would threaten France's EU and euro membership, a severe shock to French equities.",
+     "confidence": 0.4,
+     "score": 0.0098255695413278,
+     "verdict": "unproven",
+     "gap_bp_per_point": -5.307313880025031,
+     "gap_t": -0.2947034530592694,
+     "days": 220,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "held-out",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "FXE",
+     "direction": "down_on_yes",
+     "impact_pct": 15.03,
+     "rationale": "A Frexit presidency would put the euro's integrity in question, weakening the currency.",
+     "confidence": 0.35,
+     "score": 0.00848063392958,
+     "verdict": "contradicted",
+     "gap_bp_per_point": -15.032208792932297,
+     "gap_t": -3.746759693831739,
+     "days": 220,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "held-out",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:679049": {
+   "question": "Will Mathilde Panot win the 2027 French presidential election?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:679049",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2027-04-19",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "EWQ",
+     "direction": "down_on_yes",
+     "impact_pct": 97.88,
+     "rationale": "A far-left LFI presidency implies large spending, higher taxes and EU conflict, negative for French equities.",
+     "confidence": 0.4,
+     "score": 0.0090368871181073,
+     "verdict": "contradicted",
+     "gap_bp_per_point": -97.88331429260458,
+     "gap_t": -2.484942431017912,
+     "days": 220,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "held-out",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "FXE",
+     "direction": "down_on_yes",
+     "impact_pct": 52.64,
+     "rationale": "A far-left French president raises euro-area fiscal and cohesion risk, weakening the euro.",
+     "confidence": 0.3,
+     "score": 0.0067296275493749,
+     "verdict": "contradicted",
+     "gap_bp_per_point": -52.64326941993851,
+     "gap_t": -2.3352223311969635,
+     "days": 220,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "held-out",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:679023": {
+   "question": "Will Xavier Bertrand win the 2027 French presidential election?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:679023",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2027-04-19",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "EWQ",
+     "direction": "up_on_yes",
+     "impact_pct": 110.01,
+     "rationale": "A mainstream centre-right, pro-business president beats the far-right or far-left alternatives the market fears.",
+     "confidence": 0.3,
+     "score": 0.0043837902424986,
+     "verdict": "contradicted",
+     "gap_bp_per_point": -110.00844791816756,
+     "gap_t": -2.615361695893083,
+     "days": 220,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "held-out",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:679041": {
+   "question": "Will Fran\u00e7ois Bayrou win the 2027 French presidential election?",
+   "cluster": null,
+   "signal": [
+    [
+     "polymarket:679041",
+     1.0
+    ]
+   ],
+   "alternative": "",
+   "ends": "2027-04-19",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "EWQ",
+     "direction": "up_on_yes",
+     "impact_pct": 29.1,
+     "rationale": "A centrist, fiscally conservative president is the market-friendly outcome relative to far-right or far-left alternatives.",
+     "confidence": 0.3,
+     "score": 0.0043110047786272,
+     "verdict": "unproven",
+     "gap_bp_per_point": 29.10335201039725,
+     "gap_t": 1.1499223359930966,
+     "days": 220,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "held-out",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  }
+ }
+}
