@@ -1,0 +1,14 @@
+{
+ "dropped_end_not_after_scan_commit": 0,
+ "dropped_in_arb_scan": 200,
+ "events_listed": 72,
+ "frame_dates": 1,
+ "frame_markets": 200,
+ "frame_tickers": 13,
+ "holdout_dates": [],
+ "holdout_markets": 0,
+ "holdout_tickers": [],
+ "markets_listed": 860,
+ "parse_not_above_threshold": 132,
+ "parse_out_of_scope_type": 528
+}
