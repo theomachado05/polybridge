@@ -91,6 +91,8 @@ def _universe() -> dict[str, str]:
         if isinstance(d, list):
             d = {str(x.get("ticker") or x.get("symbol") or ""): str(x.get("name") or "") for x in d if isinstance(x, dict)}
         if isinstance(d, dict):
+            if not all(v is None or isinstance(v, str) for v in d.values()):
+                continue        # not a flat ticker -> name table (the generic linker's nested instrument list): next file
             out.update({str(k).upper(): str(v or "") for k, v in d.items() if k})
         break
     for k, v in NAMES.items():
