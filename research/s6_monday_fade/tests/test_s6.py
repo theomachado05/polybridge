@@ -80,9 +80,9 @@ def test_closure_metrics():
 
 def test_forward_fill_walks_only_levels_that_clear_the_band():
     from s6_monday_fade import forward as fw
-    bids = [[0.60, 100.0], [0.55, 100.0], [0.48, 100.0]]                 # options' band top 0.45
+    bids = [[0.60, 100.0], [0.55, 100.0], [0.475, 100.0]]                # options band top 0.45
     f = fw.fill(bids, 0.45, "sell YES", "pm")
-    assert f["qty"] == 200 and f["avg_price"] == pytest.approx(0.575)   # 0.48 - fee - 0.45 is under 2 points
+    assert f["qty"] == 200 and f["avg_price"] == pytest.approx(0.575)   # 0.475 - fee - 0.45 is under 2 points
     assert f["capital"] == pytest.approx(200 - 115.0)                    # buying NO costs 1 - price
     asks = [[0.30, 40.0], [0.36, 40.0], [0.60, 40.0]]                    # band bottom 0.40
     g = fw.fill(asks, 0.40, "buy YES", "pm")
