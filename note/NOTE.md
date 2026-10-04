@@ -1,90 +1,88 @@
 # PolyBridge: Evidence-Gated 24/7 Hedging
 
-Gator Quant Hacks 2026 · Systematic Trading track · quant note · Jacob Crainic and Theo Machado
+Gator Quant Hacks 2026 · Systematic Trading track and Massive "Trade the 8-K" challenge · Jacob Crainic and Theo Machado
 
-## Summary
+US stocks trade 6.5 hours a day; prediction markets (PMs) trade around the clock. PolyBridge turns PM prices into hedges for an equity book, under one rule: a market's signal may act on a position only after it passes a pre-registered out-of-sample test, and the product says so when it fails. Every signal carries the label **validated** or **unvalidated estimate**, enforced in code (`backend/app/closed/evidence.py`; an order on an unvalidated market returns HTTP 409 without an explicit acknowledgement). Every study below had its method committed to git before its data was fetched and was run once; extra passes are disclosed in each run log.
 
-US stocks trade about 6.5 hours a day; prediction markets trade around the clock. A holder of equities is exposed to news that breaks overnight and at weekends, and a prediction market is often the only liquid price that moves with that news while the stock is shut. PolyBridge turns prediction-market prices into hedges for an equity book. Its principle is that a market's signal may act on a position only after it has passed a pre-registered out-of-sample test, and the product says so when a market fails. Every signal carries the label **validated** or **unvalidated estimate**, and the label is enforced in code: an order on an unvalidated market needs an explicit acknowledgement at approval (`backend/app/closed/evidence.py`, HTTP 409 without it).
+**Headline.** On 4,561 fresh Polymarket stock and SPY "close above $K" markets, the option-implied probability was a more accurate forecast of the outcome than the Polymarket price (Brier difference +0.0108, 95% CI +0.0064 to +0.0158; 89 resolution-date clusters). Most of our tests of the PM-predicts-the-open idea failed, and that is why the product gates every signal.
 
-On 3 October we ran six pre-registered follow-up tests, each with its method committed to git before its data was fetched and one confirmatory run each (extra passes and re-renders are disclosed in each run log). The four that did not pass include the two that used mostly new data. The two that passed did so on a panel we had already seen, and we state that scope wherever we cite them. The record is the reason for the gate: most markets carry no usable signal, and a hedging product that acts on all of them by default would add noise to a book.
+## Part I · The 8-K test (Massive challenge)
 
-## 1. Economic foundation
+**Hypotheses** (committed before any event or price was downloaded, `research/HYPOTHESIS.md`). We measure whether the option chain misprices the move after two kinds of 8-K filing, using the parity ratio R (realized move over the move the chain priced the session before, scaled to each horizon). **H1:** after litigation, investigation, cybersecurity or impairment 8-Ks, the stock keeps moving by more than the options priced, because implied volatility is marked down once the headline passes while the damage resolves over weeks; a protective put opened at the close of the session after the filing should beat the same position on an ordinary day. **H2:** after restructuring, layoff, facility-closure or exit 8-Ks, holders who must stay in the stock buy puts and dealers charge for absorbing that demand (Gârleanu, Pedersen and Poteshman, 2009); a cash-secured put sold then should beat one sold on an ordinary day.
 
-**The exposure.** Of the 380 closures in our main panel, 305 are overnight, 63 weekends and 12 holidays. The median absolute SPY opening gap on that panel is 28 bp; on the 17 closures we selected for news it is 94 bp. A long holder cannot trade SPY in the regular session during any of these windows.
+**Method.** Top-100 US stocks; in-sample 2024-01-01 to 2025-12-31; out-of-sample 2026-01-01 to 2026-08-31, frozen at 13:00 ET on 3 October and run once. One event per company per filing date; every filing treated as public after the close. Options 90 to 180 days out, put 5% out of the money, legs marked from daily bars. Baseline: 120 ordinary days per family for the same companies. Pass rule: a 97.5% bootstrap interval on the event-minus-ordinary-day edge above zero at 2 or more of 21 sessions, 42 sessions and expiry, with R moving the predicted way.
 
-**Why a prediction market could help.** A prediction market on a macro outcome (a US recession in 2025, a Fed decision) reprices when news arrives, whatever the hour. If its moves line up with the next equity open, they give a holder an estimate of the gap before the open and a time to prepare a hedge. Who is on the other side matters. Prediction markets are thin, retail-heavy and fee-light; equity index futures are deep and trade nearly 24 hours. Any value a prediction market adds must survive that comparison, and the futures objection is the first thing our own evidence leaves open (section 5).
+**Results.** Neither hypothesis passes. Edge per $1 of stock, 97.5% intervals (other horizons in `research/results/in_sample/`):
 
-**Why a signal would persist or vanish.** A thin market can overshoot. If prediction-market moves during a closure partly reverse after the open, they are noise to a hedger. If options or futures absorb the same news more slowly, they are information. The tests below are built to tell these apart, and for most markets they cannot.
+| | Sessions | n events / ordinary | Edge | 97.5% CI |
+|---|---|---|---|---|
+| H1 in-sample | 21 / 42 / expiry | 32 / 30 / 28 | +0.001 / +0.005 / +0.033 | [−0.027, +0.029] / [−0.045, +0.058] / [−0.030, +0.101] |
+| H2 in-sample | 21 / 42 / expiry | 24 / 24 / 23 | +0.001 / +0.002 / +0.009 | [−0.007, +0.009] / [−0.009, +0.014] / [−0.004, +0.023] |
+| H1 out of sample | 21 / 42 | 3 / 3 | not computable (n < 5) | |
+| H2 out of sample | 21 / 42 | 7 / 7 | −0.022 / −0.014 | [−0.076, +0.020] / [−0.073, +0.026] |
 
-## 2. Framework and method (innovation)
+Out of sample, H1's computed verdict under the frozen method is NULL on 3 events, too few for an interval. H2 is NULL with its sign reversed. In 2024 and 2025 a stock-plus-put position after an H1 filing did no better or worse than on ordinary days by more than about 3% of spot at 21 sessions, and short puts after H2 filings were not overpriced by more than about 0.9%. The in-sample H1 parity ratio (0.68 one session after the filing, 1.36 at 42, ordinary days 0.92 to 1.15) had the shape H1 predicts, but its intervals overlap the placebo at every horizon and the out-of-sample points went the other way. Costs: the 5% premium haircut moves the edge by at most 0.04% of spot; median option leg volume was 33.5 (H1) and 48.5 (H2) contracts.
 
-**Two prices of one risk.** A prediction-market contract and an option chain both price the same event risk: the contract as a probability, the chain as a distribution of moves. PolyBridge compares them, and compares both with what the stock then does.
+**What would break it, and the forecast.** 24 to 36 events per family in-sample and 3 and 8 out of sample, a static top-100 list, spot inferred from put-call parity, last-trade marks. Before the out-of-sample run we committed a forecast (`research/FORECAST.md`). It had "no pass" and H2's count right, and got H1's count (3, not about 11), the interval width (2 to 3 times wider) and the one scorable sign wrong. For a 3-month sealed window it predicts too few events for an interval in both families.
 
-**Pre-registration as the gate.** Each study has a METHOD.md committed before any data for it was fetched, a single run, a run log and a `.done` marker that refuses a second run. Commit order is checked for every METHOD.md. Exploratory results are labelled exploratory and never become headlines.
+**How to trade it.** We would not. PolyBridge shows 8-K tags as untested and never lets them size a hedge.
 
-**A compiled library that the AI only configures.** The hedging logic is a C++20 library of 17 families and 1,386 presets (`engine/hedgecore/manifest.json`). The AI step classifies a market, shortlists families and picks a preset by replaying the market's own history; it cannot write trading logic. A decision costs 27.1 to 34.6 ns per `on_tick` on a synthetic benchmark tape (`engine/hedgecore/BENCH.md`), so tuning a preset per market is cheap. The fit is configuration, not edge (section 3).
+## Part II · Closed-market mode and which price to trust
 
-**Closed-market mode.** While stocks are shut, PolyBridge stages an equity hedge for the first tradable moment (hedge B) and, only on the holder's opt-in, holds the adverse prediction-market contract during the closure (hedge A). The broker enforces the session: Webull paper refuses orders outside 09:30 to 16:00 ET, so a staged order waits for the open.
+**The exposure.** Of 380 closures in our main panel, 305 are overnight, 63 weekends and 12 holidays; the median absolute SPY opening gap is 28 bp. A PM on a macro outcome reprices while the stock is shut. The open question was whether it tells a holder anything that equity and options markets do not already price. Three pre-registered results answer it.
 
-## 3. Results (performance and evidence)
+**1. Options are the better forecaster (fresh data, confirmatory).** `research/fresh_accuracy/`: 7,111 scored rows from 4,561 Polymarket markets on 89 resolution dates, none used by any earlier study, selected by a frozen rule committed with the market list before any price was fetched.
 
-### Six pre-registered tests
-
-| Test | Data | Verdict | Key numbers |
+| Score | Polymarket | Options | Difference (positive = options better), 95% date-cluster CI |
 |---|---|---|---|
-| Replication of the 380-closure relation | new PM series on mostly already-seen SPY gap dates, 10 rule-selected markets | does not replicate | pooled slope +0.63 bp per pp (date-permutation p = 0.126, n = 1,211) against +7.52 originally |
-| Walk-forward of the AI fit | time split of already-seen histories, 122 markets | fails | median test gain over a static hedge −0.0040; 19 above 0, 72 below; Wilcoxon p = 1.000 |
-| 8-K implied-move parity, out of sample | new, 2026-01 to 2026-08 | H1 NULL as computed (3 events, untestable), H2 NULL | H1 3 events; H2 edge −0.0215 [−0.0759, +0.0203] at 21 sessions, sign opposite to in-sample |
-| R3 options catch-up at the reopening | mostly new (210 of 1,535 events overlap markets scored earlier in the arb scan), 44 closures | NULL | net residual gap +0.79 pt [−1.21, +2.78]; catch-up slope 0.44 [0.33, 0.57] |
-| R2 expected-gap model | already-seen 380 panel | passes on the panel via one market; fails on replication | recession market 97 of 151 signs (64.2%), slope +1.28; election 52.4% (p = 0.744); replication 50.2% of 878 |
-| R1 closed-market hedge | already-seen 380 panel | hedge A no evidence; hedge B passes, fragile | hedge B variance cut +11.42% [+5.10, +18.14] vs no hedge, +6.82% [+0.50, +13.54] vs a same-size static hedge |
+| Brier | 0.0938 | 0.0831 | +0.0108 [+0.0064, +0.0158] |
+| Log score | 0.3044 | 0.2726 | +0.0318 [+0.0170, +0.0471] |
 
-Sources: `research/results/<study>/SUMMARY.md` for each row; methods and commit hashes in `research/EVIDENCE.md`.
+It holds on daily and weekly markets, at both snapshots, with equal weight per date, after dropping the five most influential dates (+0.0064 [+0.0036, +0.0093]) and with a symmetric price filter (+0.0077 [+0.0036, +0.0129]). About half the headline size comes from the inherited filter, so +0.0077 is the safer magnitude. The PM price is a per-minute series about 47 seconds older than the option quote on average, which favours options; on the 669 rows where the PM point is under 30 seconds old there is no significant difference. Polymarket still adds some information (encompassing logit: options +0.85 [+0.63, +1.07], PM +0.30 [+0.15, +0.45]) and leans toward 0.5 relative to options (slope −0.105 [−0.133, −0.077]). On Kalshi's deeper S&P 500 and Nasdaq-100 markets, the venue price matched options within the pre-set ±0.003 Brier margin (90% CI [+0.0001, +0.0025]). This is an accuracy result, not a trade: the median option half-band is 2.3 points per $1 of payoff.
 
-### What cleared a test, with its scope
+**2. Pre-market SPY absorbs the overnight PM signal.** `research/pm_vs_premarket/`, on the already-seen 380-closure panel. Alone, the PM move during the closure has the familiar slope (+7.27 bp of gap per pp). Given SPY's own move to 08:00, the PM coefficient is −0.60 bp per pp [−2.64, +1.44] (permutation p = 0.57); at 09:25 it is +0.17 [−0.23, +0.57]. Index futures were not available on our data key, so this is against pre-market SPY only.
 
-**Options move less than the prediction market over a closure, but not in a way anyone can trade.** At 09:45 on the reopening day (weekends and holidays), options had repriced 0.44 of the prediction market's closure move (95% CI 0.33 to 0.57; closure-clustered bootstrap over 44 closures). R3's pass test was the residual gap net of option costs, +0.79 pt [−1.21, +2.78], so its verdict is NULL. After the open the options did not keep moving toward the prediction market (−0.59 pt), the prediction market gave back part of its move (−3.48 pt [−5.40, −1.62]), and on the 1,535 resolved events the options had the lower Brier score (0.120 against 0.146, options marked 15 minutes later). The gap looks at least as much like prediction-market overshoot as slow options.
+**3. Part of the PM's closure move is overshoot.** `research/overshoot/`, a pre-registered re-analysis of R3's already-seen rows (1,123 events, 43 closures). At the reopening options had repriced 0.44 of the PM's closure move. Of the gap, the PM gives back +3.84 pt [+1.84, +6.22] by the close, options catch up −0.59 pt [−2.43, +0.88], and +4.59 pt [+2.87, +6.26] persists to the end of the day. After option costs the residual gap is NULL (+0.79 pt [−1.21, +2.78], R3).
 
-**The expected-gap model held out of sample in time on one market.** Fitting each closure's rate only on earlier closures, the US-recession market predicted the sign of the SPY gap in 97 of 151 closures (64.2%, p < 0.001). The election market did not (52.4%), and on the 10-market replication panel the model failed (50.2%, slope −0.23). Out-of-sample R-squared on the panel is +0.050. This is a pre-registered re-analysis of a panel we had already seen.
+**What the product does with this.** Where an options price exists for the same outcome, PolyBridge shows it as the reference probability and the PM as a secondary, noisier input. Closed-market mode stages an equity hedge for the first tradable moment (hedge B) rather than acting on the PM during the closure, and labels every PM-driven estimate unvalidated until its market passes its own test.
 
-**Staging the hedge for the open cut post-open variance, fragilely.** Hedge B shorts a fraction of SPY at 09:30 when the expected gap is adverse and covers at 10:00. It met R1's rule against both controls, but it is partial under a block bootstrap ([−0.71, +14.60] against static), and dropping the 5 closures that contribute most turns its gain over static to −0.78%. It works by timing: the half-hour after an adverse expected gap is more volatile (sd 36.5 bp against 24.8 bp), and hedge size does not predict direction (correlation +0.00). It cannot reduce the gap itself.
+## Part III · Evidence table, strategy backtest, risk and liquidity
 
-### What didn't work
-
-- **The overnight relation did not replicate.** Over 380 unselected closures of two markets the prediction-market move lined up with the next SPY gap (+7.52 bp per pp, permutation p = 0.001), but that was our reading of the placebo arm after the results, it rests on one market (recession 58 of 83 signs; election 31 of 66), and on 10 new, mostly geopolitical markets the slope was +0.63 (p = 0.126).
-- **No prediction-market lead during market hours.** In 20 stress events with a move in both series, the prediction market moved first 9 times, equities 9 times, 2 simultaneous (sign test p = 1.000); pooled Granger tests lean toward equities leading.
-- **No executable arbitrage between prediction markets and options.** 224 resolved rows passed a cost screen; 5 had a trade print at the needed price, each a single print of 5 to 100 shares; 0 were executable.
-- **The AI fit does not hold out of sample.** In-sample the median gain over a static hedge is 0.0053; on walk-forward the picked preset loses (median −0.0040), including on both demo markets (−0.245 and −0.418).
-- **The 8-K study is NULL in-sample and out of sample.** Two hypotheses pre-registered before any event was fetched, a 97.5% bootstrap against ordinary days for the same companies: no headline horizon passes for either. Our separate Massive write-up gives the detail.
-- **Hedge A shows no evidence** (variance cut +4.76% [−0.80, +10.01] against no hedge) and increased variance on the replication panel (−3.79% [−8.19, −0.91]).
-
-[Tonight's pre-registered pass on the open questions of section 5 goes here: macro-only panel and power, prediction market against pre-market SPY or futures, overshoot against slow options. Verdicts as run, whatever they show.]
-
-## 4. Risk management, liquidity and capital
-
-**What the evidence does to the product.** Closed-market mode defaults to staged equity orders (hedge B), labelled fragile. The prediction-market hedge (hedge A) is opt-in and always labelled an unvalidated estimate. Options at the open is an unvalidated estimate whose simulated trade needs an explicit acknowledgement. The expected gap is shown as a direction-and-size hint with its band and closure count, and is informative only where a market has its own well-determined rate. The AI fit is configuration.
-
-**Controls in the library.** Coverage cap, fee gate, no-trade band, drawdown kill, gap-flip kill and an approval gate on every hedge (`docs/library.md`). An equity fill needs a fresh in-session price, so a stale close is never booked as hedge P&L.
-
-**Liquidity caps and cost model.** Equity orders are capped at 10% of the opening five-minute volume (hedge B executes at the open) and 1% of ADV per session; option legs at 10% of volume and 5% of open interest; prediction-market legs at 50% of the depth within 2 cents. Cost is half the spread plus k × σ_daily × √(q / ADV) with k = 1.0, the conservative end of Toth et al. (2011) and Almgren et al. (2005); k is assumed, not fitted, since there are no live fills. Every order path passes these caps (`backend/app/liquidity/model.py`).
-
-**Capital.** Gross hedge notional is capped at 50% of equity and per-event exposure at 20%; short equity carries Reg T 50% initial and 30% maintenance margin; short puts are cash-secured. An exposure-increasing order that breaches a limit is refused, and an unreadable account refuses such orders.
-
-**One capacity snapshot.** Run once on Saturday 3 October on Friday's data (`docs/liquidity-snapshot-2026-10-03.json`):
-
-| | SPY | TLT | ITA |
+| Test (method committed first, run once) | Data | Verdict | Key numbers |
 |---|---|---|---|
-| 20-day ADV | 46.0M shares ($35.2B) | 47.8M ($3.82B) | 0.86M ($184M) |
-| Max order at the open (10% of 5-min volume) | 124,240 shares | 80,510 | 3,099 |
-| Est. cost at that size | 4.22 bp | 3.31 bp | 89.44 bp (after-hours spread; upper bound) |
-| Holding whose 50% hedge fits one order at the open | $191.2M | $12.5M | $1.29M |
+| Options vs Polymarket accuracy | fresh, 4,561 markets | **PASS** | Brier +0.0108 [+0.0064, +0.0158] |
+| Kalshi index vs options accuracy | fresh | **equivalent** | within ±0.003, 90% CI [+0.0001, +0.0025] |
+| 8-K parity, out of sample | new | NULL (H1 3 events) | H2 −0.022 [−0.076, +0.020] |
+| Overnight relation, replication | new PM series, mostly seen dates | does not replicate | +0.63 bp per pp (p = 0.126) vs +7.52 |
+| Overnight relation, US macro panel | 36 new markets, 353 dates | does not hold | +0.81 [−0.14, +1.76], perm p = 0.053; macro = geopolitics |
+| PM vs pre-market SPY | seen panel | PM adds nothing | 08:00: −0.60 [−2.64, +1.44] |
+| Options catch-up at the reopening (R3) | mostly new, 44 closures | NULL after costs | +0.79 pt [−1.21, +2.78] |
+| Expected-gap model (R2) | seen panel | passes via one market | recession 97 of 151 signs; replication 50.2% |
+| Staged 09:30 hedge (R1, hedge B) | seen panel | passes, fragile | +6.82% [+0.50, +13.54] vs same-size static |
+| AI fit walk-forward | time split of seen histories | fails | median −0.0040 vs static |
+| Options-anchored PM taker | fresh | insufficient trades | 77 projected vs 100 required |
+| Overlay backtest on long SPY | 2024-01 to 2026-10 | **Fail** | no out-of-sample trade |
 
-On the $1M Webull paper account, the per-event limit is $200,000 of hedge notional (259 SPY shares at Friday's close), far below the liquidity cap, so capital binds before liquidity for any book under about $191M in SPY. This is what the product enforces, not a capacity claim for returns: there is no signal edge to scale.
+**Strategy backtest** (`research/strategy_backtest/`, method `3c6b280`). A $1M book long SPY from the 2024-01-02 close. At 09:30 the overlay shorts up to 50% when a market that has passed its own walk-forward gate signals an adverse expected gap, and covers at 10:00. Costs 1 bp per side (2× stress). The last 20% of days (from 2026-03-18) are out of sample; nothing is tuned on them.
 
-**Costs where the studies measured them.** Hedge A pays 0.60 bp per closure at today's top-of-book prediction-market half-spread (0.05 pp) and far more than it saves at thin-book spreads (5.0 pp: variance cut −74.15%). R3's median option cost at the open was 2.60 pt of half-band plus 0.26 pt of commission, and a round trip toward the prediction market cost −22.83 pt.
+| Segment | Book | Ann. return | Vol | Sharpe | Max DD | Turnover | Hedge days | Hedge P&L |
+|---|---|---|---|---|---|---|---|---|
+| Out of sample | Buy-and-hold | 29.57% | 13.18% | 2.031 | −5.40% | 0 | | |
+| Out of sample | Overlay, 1× | 29.73% | 13.25% | 2.032 | −5.43% | 0 | 0 | $0 |
+| In sample | Buy-and-hold | 18.47% | 15.81% | 1.151 | −18.51% | 0 | | |
+| In sample | Overlay, 1× | 18.20% | 15.63% | 1.148 | −18.52% | 9.2×/yr | 37 | −$7,318 |
+| In sample | Overlay, 2× | 18.10% | 15.63% | 1.142 | −18.52% | 9.2×/yr | 37 | −$9,858 |
 
-## 5. Limits and next steps
+Verdict: **Fail.** In sample the overlay traded on 37 days, almost all driven by the 2025 recession market, and lost $7.3k net. Out of sample no market passed the gate, so it did not trade; the books differ only by the in-sample loss carried as cash. Every variant (pre-market entry, no gate, hold to the close, wider universe) lost money in sample. The gate's out-of-sample behaviour is the product working as designed: with no validated market, it stood aside.
 
-**Limits.** Closed-market results rest on two markets loosely tied to SPY, closures that are not independent, simulated prediction-market fills at mid plus a half-spread taken from today's books, and no live fills. The engine latency is measured on a synthetic tape for `on_tick` only, not end to end. Polymarket publishes mid-price history without book depth. The 380-closure relation was never compared with index futures or pre-market SPY, and 305 of its closures are overnight, when futures trade.
+**Risk controls.** Coverage cap, fee gate, no-trade band, drawdown kill, gap-flip kill and an approval gate on every hedge (`docs/library.md`); an equity fill needs a fresh in-session price. Gross hedge notional is capped at 50% of equity and per-event exposure at 20%; short equity carries Reg T margin; short puts are cash-secured; an order that breaches a limit, or comes from an unreadable account, is refused.
 
-**Next.** A fresh-sample test of hedge B on closures outside the panel; the expected gap on a rule-selected US macro panel with clustered errors; a benchmark against pre-market SPY or index futures; and a decomposition of the Monday-open gap into prediction-market overshoot and options lag. Each will run under the same rule: method committed first, run once, reported whatever it shows. Until a market passes, PolyBridge labels it an unvalidated estimate.
+**Liquidity and capital.** Equity orders are capped at 10% of the opening five-minute volume and 1% of ADV per session; option legs at 10% of volume and 5% of open interest; PM legs at 50% of the depth within 2 cents. Cost is half the spread plus k·σ·√(q/ADV) with k = 1.0 (conservative end of Toth et al., 2011, and Almgren et al., 2005), assumed rather than fitted, since there are no live fills. In the backtest, the largest hedge (50% of the book) stays under 1% of the first five minutes' SPY dollar volume for books up to $19.0M on a median day and $9.7M on a 5th-percentile day; at 08:00 pre-market the limit falls to $749k. On the $1M Webull paper account the 20% per-event limit binds long before liquidity.
+
+## Part IV · What didn't work, limits, next steps
+
+**What didn't work.** The overnight relation that started the project (+7.52 bp per pp over 380 closures) rested on one market, did not replicate on 10 new markets or on a 36-market macro panel, and disappears once SPY's own pre-market move is known. No PM lead in market hours (PM first 9, equities first 9, simultaneous 2). No executable PM-versus-options arbitrage (5 verified gaps, 0 executable). The AI preset fit does not hold out of sample, including on both demo markets. The PM-contract hedge (hedge A) showed no variance reduction and increased variance on the replication panel. The 8-K study is NULL in and out of sample. The overlay backtest failed.
+
+**Limits.** The accuracy result is about prices, not traders: the PM series PolyBridge reads is a per-minute history that can be a stale last trade or a thin-book midpoint, and it is about 47 seconds older than the option quote. Closed-market results rest on few markets and closures that are not independent; PM fills are simulated; index futures were not tested; engine latency (27.1 to 34.6 ns per decision) is measured on a synthetic tape, decision logic only.
+
+**Next.** Test the accuracy gap with time-matched PM trade prints instead of per-minute history; benchmark against index futures; and run the options-anchored PM taker on the full 2026 window once enough trades print. Until a market passes its own test, PolyBridge labels it an unvalidated estimate.
