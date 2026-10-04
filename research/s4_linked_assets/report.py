@@ -123,18 +123,6 @@ def main() -> int:
     trusted_ev = trusted[trusted.family == "event"]
     conf_only = int((test.status == "confirmed, not agreed").sum())
 
-    def reg(setname, rel, seg="ALL"):
-        q = rg[(rg["set"] == setname) & (rg.relation == rel) & (rg.segment == seg)]
-        return q.iloc[0] if len(q) else None
-
-    def reg_cell(r):
-        return "n/a" if r is None or r.slope != r.slope else f"{r.slope:+.2f} (t {r.t:+.2f}, n {int(r.n)}, same sign {100 * r.sign_agree:.0f}%)"
-
-    rels = ["gap on overnight odds move", "move after the open on overnight odds move",
-            "next overnight odds move on the equity's session move", "next 24h odds move on the equity's session move"]
-    sets = ["trusted, event (V0 set)", "agreed, event, no data gate", "every proposer link", "motivating example (Brazil)"]
-    reg_tbl = pd.DataFrame([{"Relation": f"{rel} ({rg[rg.relation == rel].unit.iloc[0]})", **{s: reg_cell(reg(s, rel)) for s in sets}} for rel in rels])
-
     vt = m.assign(S=m.segment, V=m.variant + np.where(m.variant == cfg.PRIMARY, " (primary)", ""), C=m.cost_mult.map(lambda x: f"{x:.0f}×"),
                   T=m.trades.astype(int), K=m.tickers.astype(int), D=m.trade_dates.astype(int), P=m.pnl.map(money),
                   N=m.mean_net_bp.map(bp), CI=m.apply(lambda r: f"[{num(r.ci_lo, 1)}, {num(r.ci_hi, 1)}]", axis=1), G=m.mean_gross_bp.map(bp),
@@ -151,13 +139,36 @@ def main() -> int:
                          S=top.sensitivity_bp_per_pp.map(lambda x: f"{x:+.1f}"), TT=top.gate_t.map(lambda x: num(x, 1)),
                          B=top.gate_bins.astype(int), F=top.first_confirmed)
 
+    def reg(setname, rel, seg="ALL"):
+        q = rg[(rg["set"] == setname) & (rg.relation == rel) & (rg.segment == seg)]
+        return q.iloc[0] if len(q) else None
+
+    def reg_cell(r):
+        return "n/a" if r is None or r.slope != r.slope else f"{r.slope:+.2f} (t {r.t:+.2f}, n {int(r.n)}, same sign {100 * r.sign_agree:.0f}%)"
+
+    rels = ["gap on overnight odds move", "move after the open on overnight odds move",
+            "next overnight odds move on the equity's session move", "next 24h odds move on the equity's session move"]
+    sets = ["trusted, event (V0 set)", "agreed, event, no data gate", "every proposer link", "motivating example (Brazil)"]
+    reg_tbl = pd.DataFrame([{"Relation": f"{rel} ({rg[rg.relation == rel].unit.iloc[0]})", **{s: reg_cell(reg(s, rel)) for s in sets}} for rel in rels])
+
     S = ["# S4: prediction-market odds against the equity they move", "",
          "Method, pre-registered before any test-sample price was pulled: [`research/s4_linked_assets/METHOD.md`](../../s4_linked_assets/METHOD.md) "
          "(commit `603f2e8`). Files: [`metrics.csv`](metrics.csv), [`trades.csv`](trades.csv), [`links.csv`](links.csv), "
          "[`regressions.csv`](regressions.csv), [`capacity.md`](capacity.md), [`RUN_LOG.md`](RUN_LOG.md).", "",
          "## Answer", ""]
     verdict = "pass" if passed else ("too few observations" if few else "not a pass")
-    S += [f"**Verdict on the pre-registered criterion: {verdict}.** Out of sample ({meta['oos_start']} to {meta['last']}, "
+    g_ag, a_ag = reg("agreed, event, no data gate", rels[0]), reg("agreed, event, no data gate", rels[1])
+    b_ag = reg("agreed, event, no data gate", rels[2])
+    g_is, g_oos = reg("agreed, event, no data gate", rels[0], "IS"), reg("agreed, event, no data gate", rels[0], "OOS")
+    S += [f"**The link is real, and the open already prices it.** On event questions where two independent models agree on the "
+          f"equity and the direction, a 1-point overnight move in odds comes with a {g_ag.slope:+.1f} bp excess gap in that equity at "
+          f"the open (t = {g_ag.t:.1f}, {int(g_ag.n):,} link-days, {int(g_ag.clusters)} dates; in-sample {g_is.slope:+.1f}, t = {g_is.t:.1f}; "
+          f"out-of-sample {g_oos.slope:+.1f}, t = {g_oos.t:.1f}). It comes from the larger moves: the two have the same sign on only "
+          f"{100 * g_ag.sign_agree:.0f}% of days. After the open nothing follows: "
+          f"{a_ag.slope:+.1f} bp per point (t = {a_ag.t:.1f}). The reverse does not hold either: the odds do not follow the equity's "
+          f"session move ({b_ag.slope:+.2f} pp per 100 bp, t = {b_ag.t:.1f}). The information reaches the equity while it is closed; "
+          "by 09:30 there is no lag left to trade.", "",
+          f"**Verdict on the pre-registered criterion: {verdict}.** Out of sample ({meta['oos_start']} to {meta['last']}, "
           f"{meta['oos_sessions']} sessions), trading the equity at the open in the direction of the overnight move in odds, on links "
           f"the agent trusts, gave {int(o1.trades)} trades on {int(o1.tickers)} tickers: {bp(o1.mean_net_bp)} net per trade at 1× costs "
           f"(95% interval {num(o1.ci_lo, 1)} to {num(o1.ci_hi, 1)}), {bp(o1.mean_gross_bp)} before costs; {bp(o2.mean_net_bp)} net at 2× costs. "
