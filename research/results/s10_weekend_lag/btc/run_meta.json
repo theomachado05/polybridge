@@ -1,0 +1,18 @@
+{
+ "markets_in_catalogue": 5760,
+ "windows": 5760,
+ "no_result": 0,
+ "no_pm": 4,
+ "spot_gap": 0,
+ "markets_used": 5756,
+ "dates": 60,
+ "first_date": "2026-08-04",
+ "last_date": "2026-10-02",
+ "oos_from": "2026-09-21",
+ "markets_checked_for_prints": 5756,
+ "print_errors": 0,
+ "fee_rates_seen": [
+  0.07
+ ],
+ "run_seconds": 3931.8
+}
