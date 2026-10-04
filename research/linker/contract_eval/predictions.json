@@ -1,0 +1,5195 @@
+{
+ "sha256": {
+  "link_map.py": "b87960029e5558526f81820552d7ce2530da44749e1ced0d99287e9a6f0412fa",
+  "options.py": "77076e0ab719f422f7e143f86414acb48fe99b9dbc8cf0db964b60e2dd809f97",
+  "ladder_replay/replay.py": "d391425bcc190be3061fa88371430b8eb5b4f9babd76113d893214ef1108e134"
+ },
+ "questions": {
+  "4936053": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "EWY",
+   "level": 176.0,
+   "direction": "down",
+   "date": "2026-10-31",
+   "year_source": "explicit year"
+  },
+  "3258436": {
+   "type": "touch_ticket",
+   "linkable": false,
+   "reasons": [
+    "no single stock ticker named"
+   ],
+   "underlying": null,
+   "level": 48.0,
+   "direction": "down",
+   "date": "2026-08-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "701726": {
+   "type": "touch_ticket",
+   "linkable": false,
+   "reasons": [
+    "no single stock ticker named"
+   ],
+   "underlying": null,
+   "level": 100.0,
+   "direction": "up",
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "2874476": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "META",
+   "level": 680.0,
+   "direction": "up",
+   "date": "2026-07-17",
+   "year_source": "explicit year"
+  },
+  "4935983": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "MU",
+   "level": 840.0,
+   "direction": "down",
+   "date": "2026-10-31",
+   "year_source": "explicit year"
+  },
+  "4727627": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "GOOGL",
+   "level": 350.0,
+   "direction": "down",
+   "date": "2026-09-30",
+   "year_source": "explicit year"
+  },
+  "5218971": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "COIN",
+   "level": 167.5,
+   "direction": "down",
+   "date": "2026-10-09",
+   "year_source": "explicit year"
+  },
+  "2788479": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "RKLB",
+   "level": 106.0,
+   "direction": "up",
+   "date": "2026-07-10",
+   "year_source": "explicit year"
+  },
+  "4935820": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "TSLA",
+   "level": 435.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "explicit year"
+  },
+  "1712213": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "HOOD",
+   "level": 90.0,
+   "direction": "up",
+   "date": "2026-04-30",
+   "year_source": "explicit year"
+  },
+  "5218378": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "MSFT",
+   "level": 510.0,
+   "direction": "down",
+   "date": "2026-10-09",
+   "year_source": "explicit year"
+  },
+  "3961589": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "SPY",
+   "level": 765.0,
+   "direction": "down",
+   "date": "2026-09-04",
+   "year_source": "explicit year"
+  },
+  "4935844": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "NVDA",
+   "level": 176.0,
+   "direction": "down",
+   "date": "2026-10-31",
+   "year_source": "explicit year"
+  },
+  "3934002": {
+   "type": "touch_ticket",
+   "linkable": false,
+   "reasons": [
+    "no single stock ticker named"
+   ],
+   "underlying": null,
+   "level": 92.0,
+   "direction": "up",
+   "date": "2026-08-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "701830": {
+   "type": "touch_ticket",
+   "linkable": false,
+   "reasons": [
+    "no single stock ticker named"
+   ],
+   "underlying": null,
+   "level": 18.0,
+   "direction": "up",
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "1940790": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AAPL",
+   "level": 248.0,
+   "direction": "down",
+   "date": "2026-04-17",
+   "year_source": "explicit year"
+  },
+  "4935809": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "META",
+   "level": 780.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "explicit year"
+  },
+  "1016024": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "TSLA",
+   "level": 645.0,
+   "direction": "up",
+   "date": "2026-01-31",
+   "year_source": "explicit year"
+  },
+  "2732612": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "ANSEM",
+   "level": 0.06,
+   "direction": "down",
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "4035642": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "GOOGL",
+   "level": 345.0,
+   "direction": "up",
+   "date": "2026-09-04",
+   "year_source": "explicit year"
+  },
+  "4935815": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "META",
+   "level": 660.0,
+   "direction": "down",
+   "date": "2026-10-31",
+   "year_source": "explicit year"
+  },
+  "657271": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "ABNB",
+   "level": 86.0,
+   "direction": "down",
+   "date": "2025-11-30",
+   "year_source": "explicit year"
+  },
+  "5218998": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "MU",
+   "level": 900.0,
+   "direction": "down",
+   "date": "2026-10-09",
+   "year_source": "explicit year"
+  },
+  "3410119": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "SPY",
+   "level": 765.0,
+   "direction": "down",
+   "date": "2026-08-14",
+   "year_source": "explicit year"
+  },
+  "4935977": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "MU",
+   "level": 1200.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "explicit year"
+  },
+  "1081547": {
+   "type": "touch_ticket",
+   "linkable": false,
+   "reasons": [
+    "no single stock ticker named",
+    "direction unknown: no direction word, label arrow, sign or latest price"
+   ],
+   "underlying": null,
+   "level": 13.0,
+   "direction": null,
+   "date": "2026-01-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "5218959": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "COIN",
+   "level": 197.5,
+   "direction": "up",
+   "date": "2026-10-09",
+   "year_source": "explicit year"
+  },
+  "3410058": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "HOOD",
+   "level": 102.5,
+   "direction": "up",
+   "date": "2026-08-14",
+   "year_source": "explicit year"
+  },
+  "4936013": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "SKHY",
+   "level": 150.0,
+   "direction": "down",
+   "date": "2026-10-31",
+   "year_source": "explicit year"
+  },
+  "3096255": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "COIN",
+   "level": 175.0,
+   "direction": "up",
+   "date": "2026-08-31",
+   "year_source": "explicit year"
+  },
+  "5218441": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AMZN",
+   "level": 236.0,
+   "direction": "down",
+   "date": "2026-10-09",
+   "year_source": "explicit year"
+  },
+  "1850335": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "SPY",
+   "level": 635.0,
+   "direction": "down",
+   "date": "2026-04-10",
+   "year_source": "explicit year"
+  },
+  "4935839": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "NVDA",
+   "level": 216.0,
+   "direction": "down",
+   "date": "2026-10-31",
+   "year_source": "explicit year"
+  },
+  "3933462": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AMZN",
+   "level": 256.0,
+   "direction": "down",
+   "date": "2026-08-31",
+   "year_source": "explicit year"
+  },
+  "5218834": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "OPEN",
+   "level": 4.0,
+   "direction": "up",
+   "date": "2026-10-09",
+   "year_source": "explicit year"
+  },
+  "2203168": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "RKLB",
+   "level": 92.0,
+   "direction": "down",
+   "date": "2026-05-15",
+   "year_source": "explicit year"
+  },
+  "5208016": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "OPEN",
+   "level": 2.5,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "explicit year"
+  },
+  "3258440": {
+   "type": "touch_ticket",
+   "linkable": false,
+   "reasons": [
+    "no single stock ticker named"
+   ],
+   "underlying": null,
+   "level": 0.32,
+   "direction": "up",
+   "date": "2026-08-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "5218843": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "OPEN",
+   "level": 3.0,
+   "direction": "up",
+   "date": "2026-10-09",
+   "year_source": "explicit year"
+  },
+  "2388896": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "META",
+   "level": 590.0,
+   "direction": "down",
+   "date": "2026-06-05",
+   "year_source": "explicit year"
+  },
+  "4935821": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "TSLA",
+   "level": 420.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "explicit year"
+  },
+  "3258465": {
+   "type": "touch_ticket",
+   "linkable": false,
+   "reasons": [
+    "no single stock ticker named"
+   ],
+   "underlying": null,
+   "level": 6.0,
+   "direction": "down",
+   "date": "2026-08-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "5218988": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "MU",
+   "level": 1200.0,
+   "direction": "up",
+   "date": "2026-10-09",
+   "year_source": "explicit year"
+  },
+  "4148955": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "SPCX",
+   "level": 142.5,
+   "direction": "up",
+   "date": "2026-09-04",
+   "year_source": "explicit year"
+  },
+  "5171322": {
+   "type": "touch_ticket",
+   "linkable": false,
+   "reasons": [
+    "no single stock ticker named"
+   ],
+   "underlying": null,
+   "level": 1100.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "4413206": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "EWY",
+   "level": 192.0,
+   "direction": "up",
+   "date": "2026-09-30",
+   "year_source": "explicit year"
+  },
+  "704527": {
+   "type": "touch_ticket",
+   "linkable": false,
+   "reasons": [
+    "no single stock ticker named"
+   ],
+   "underlying": null,
+   "level": 0.6,
+   "direction": "up",
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "4191026": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "EWY",
+   "level": 178.0,
+   "direction": "down",
+   "date": "2026-09-04",
+   "year_source": "explicit year"
+  },
+  "5171326": {
+   "type": "touch_ticket",
+   "linkable": false,
+   "reasons": [
+    "no single stock ticker named"
+   ],
+   "underlying": null,
+   "level": 700.0,
+   "direction": "down",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1015974": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AMZN",
+   "level": 232.0,
+   "direction": "down",
+   "date": "2026-01-31",
+   "year_source": "explicit year"
+  },
+  "4389603": {
+   "type": "touch_ticket",
+   "linkable": false,
+   "reasons": [
+    "no single stock ticker named"
+   ],
+   "underlying": null,
+   "level": 0.25,
+   "direction": "up",
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "4231901": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "MSTR",
+   "level": 120.0,
+   "direction": "down",
+   "date": "2026-09-11",
+   "year_source": "explicit year"
+  },
+  "4935903": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "RKLB",
+   "level": 96.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "explicit year"
+  },
+  "2074008": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "META",
+   "level": 800.0,
+   "direction": "up",
+   "date": "2026-05-31",
+   "year_source": "explicit year"
+  },
+  "3866008": {
+   "type": "touch_ticket",
+   "linkable": false,
+   "reasons": [
+    "no single stock ticker named"
+   ],
+   "underlying": null,
+   "level": 70.0,
+   "direction": "down",
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "1850289": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "COIN",
+   "level": 170.0,
+   "direction": "down",
+   "date": "2026-04-10",
+   "year_source": "explicit year"
+  },
+  "4936010": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "SKHY",
+   "level": 168.0,
+   "direction": "down",
+   "date": "2026-10-31",
+   "year_source": "explicit year"
+  },
+  "3096207": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "PLTR",
+   "level": 96.0,
+   "direction": "down",
+   "date": "2026-08-31",
+   "year_source": "explicit year"
+  },
+  "704521": {
+   "type": "touch_ticket",
+   "linkable": false,
+   "reasons": [
+    "no single stock ticker named"
+   ],
+   "underlying": null,
+   "level": 0.4,
+   "direction": "up",
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "2788458": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "OPEN",
+   "level": 4.5,
+   "direction": "down",
+   "date": "2026-07-10",
+   "year_source": "explicit year"
+  },
+  "4935814": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "META",
+   "level": 680.0,
+   "direction": "down",
+   "date": "2026-10-31",
+   "year_source": "explicit year"
+  },
+  "3096265": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "COIN",
+   "level": 125.0,
+   "direction": "down",
+   "date": "2026-08-31",
+   "year_source": "explicit year"
+  },
+  "5218783": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "PLTR",
+   "level": 198.0,
+   "direction": "up",
+   "date": "2026-10-09",
+   "year_source": "explicit year"
+  },
+  "4231824": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "ABNB",
+   "level": 178.0,
+   "direction": "down",
+   "date": "2026-09-11",
+   "year_source": "explicit year"
+  },
+  "4935816": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "META",
+   "level": 640.0,
+   "direction": "down",
+   "date": "2026-10-31",
+   "year_source": "explicit year"
+  },
+  "4690398": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "GOOGL",
+   "level": 350.0,
+   "direction": "up",
+   "date": "2026-09-30",
+   "year_source": "explicit year"
+  },
+  "5219051": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "SPY",
+   "level": 755.0,
+   "direction": "down",
+   "date": "2026-10-09",
+   "year_source": "explicit year"
+  },
+  "3410001": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "RKLB",
+   "level": 90.0,
+   "direction": "up",
+   "date": "2026-08-14",
+   "year_source": "explicit year"
+  },
+  "4935790": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "GOOGL",
+   "level": 400.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "explicit year"
+  },
+  "1262703": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AAPL",
+   "level": 272.0,
+   "direction": "up",
+   "date": "2026-02-28",
+   "year_source": "explicit year"
+  },
+  "701895": {
+   "type": "touch_ticket",
+   "linkable": false,
+   "reasons": [
+    "no single stock ticker named"
+   ],
+   "underlying": null,
+   "level": 0.4,
+   "direction": "down",
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "4412915": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "MSTR",
+   "level": 135.0,
+   "direction": "down",
+   "date": "2026-09-11",
+   "year_source": "explicit year"
+  },
+  "5208029": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "ABNB",
+   "level": 160.0,
+   "direction": "down",
+   "date": "2026-10-31",
+   "year_source": "explicit year"
+  },
+  "657146": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "GOOGL",
+   "level": 380.0,
+   "direction": "up",
+   "date": "2025-11-30",
+   "year_source": "explicit year"
+  },
+  "2732599": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "ANSEM",
+   "level": 1.5,
+   "direction": "up",
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "2447785": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "GOOGL",
+   "level": 345.0,
+   "direction": "down",
+   "date": "2026-06-12",
+   "year_source": "explicit year"
+  },
+  "4935845": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "NFLX",
+   "level": 105.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "explicit year"
+  },
+  "1016040": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "TSLA",
+   "level": 338.0,
+   "direction": "down",
+   "date": "2026-01-31",
+   "year_source": "explicit year"
+  },
+  "5218974": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "HOOD",
+   "level": 125.0,
+   "direction": "up",
+   "date": "2026-10-09",
+   "year_source": "explicit year"
+  },
+  "3248826": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "MSTR",
+   "level": 80.0,
+   "direction": "down",
+   "date": "2026-08-07",
+   "year_source": "explicit year"
+  },
+  "4935701": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AAPL",
+   "level": 344.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "explicit year"
+  },
+  "3096224": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "RKLB",
+   "level": 88.0,
+   "direction": "up",
+   "date": "2026-08-31",
+   "year_source": "explicit year"
+  },
+  "701744": {
+   "type": "touch_ticket",
+   "linkable": false,
+   "reasons": [
+    "no single stock ticker named"
+   ],
+   "underlying": null,
+   "level": 8.0,
+   "direction": "down",
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "1850345": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "EWY",
+   "level": 122.0,
+   "direction": "down",
+   "date": "2026-04-10",
+   "year_source": "explicit year"
+  },
+  "4935765": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AMZN",
+   "level": 272.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "explicit year"
+  },
+  "702407": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "TSLA",
+   "level": 353.0,
+   "direction": "down",
+   "date": "2025-12-31",
+   "year_source": "explicit year"
+  },
+  "5219039": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "SPCX",
+   "level": 147.5,
+   "direction": "down",
+   "date": "2026-10-09",
+   "year_source": "explicit year"
+  },
+  "2203227": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "EWY",
+   "level": 195.0,
+   "direction": "up",
+   "date": "2026-05-15",
+   "year_source": "explicit year"
+  },
+  "5171340": {
+   "type": "touch_ticket",
+   "linkable": false,
+   "reasons": [
+    "no single stock ticker named"
+   ],
+   "underlying": null,
+   "level": 8.0,
+   "direction": "down",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1432280": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AMZN",
+   "level": 224.0,
+   "direction": "up",
+   "date": "2026-03-31",
+   "year_source": "explicit year"
+  },
+  "701923": {
+   "type": "touch_ticket",
+   "linkable": false,
+   "reasons": [
+    "no single stock ticker named"
+   ],
+   "underlying": null,
+   "level": 14.0,
+   "direction": "up",
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "3409691": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AMZN",
+   "level": 280.0,
+   "direction": "up",
+   "date": "2026-08-14",
+   "year_source": "explicit year"
+  },
+  "5171307": {
+   "type": "touch_ticket",
+   "linkable": false,
+   "reasons": [
+    "no single stock ticker named"
+   ],
+   "underlying": null,
+   "level": 84.0,
+   "direction": "down",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1823916": {
+   "type": "touch_ticket",
+   "linkable": false,
+   "reasons": [
+    "no single stock ticker named"
+   ],
+   "underlying": null,
+   "level": 0.32,
+   "direction": "up",
+   "date": "2026-04-30",
+   "year_source": "re-derived from the creation date"
+  },
+  "5218725": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "NFLX",
+   "level": 72.5,
+   "direction": "up",
+   "date": "2026-10-09",
+   "year_source": "explicit year"
+  },
+  "2788498": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "ABNB",
+   "level": 148.0,
+   "direction": "down",
+   "date": "2026-07-10",
+   "year_source": "explicit year"
+  },
+  "4935969": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "HOOD",
+   "level": 100.0,
+   "direction": "down",
+   "date": "2026-10-31",
+   "year_source": "explicit year"
+  },
+  "3866279": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "NVDA",
+   "level": 176.0,
+   "direction": "down",
+   "date": "2026-09-30",
+   "year_source": "explicit year"
+  },
+  "701902": {
+   "type": "touch_ticket",
+   "linkable": false,
+   "reasons": [
+    "no single stock ticker named"
+   ],
+   "underlying": null,
+   "level": 1.2,
+   "direction": "up",
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "4035683": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "ABNB",
+   "level": 184.0,
+   "direction": "down",
+   "date": "2026-09-04",
+   "year_source": "explicit year"
+  },
+  "701947": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "RKLB",
+   "level": 45.0,
+   "direction": "up",
+   "date": "2025-11-30",
+   "year_source": "explicit year"
+  },
+  "1542684": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "NVDA",
+   "level": 228.0,
+   "direction": "up",
+   "date": "2026-04-30",
+   "year_source": "explicit year"
+  },
+  "5218674": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "NVDA",
+   "level": 228.0,
+   "direction": "down",
+   "date": "2026-10-09",
+   "year_source": "explicit year"
+  },
+  "2202921": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "GOOGL",
+   "level": 385.0,
+   "direction": "down",
+   "date": "2026-05-15",
+   "year_source": "explicit year"
+  },
+  "4935831": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "NVDA",
+   "level": 280.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "explicit year"
+  },
+  "3096298": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "MSTR",
+   "level": 120.0,
+   "direction": "up",
+   "date": "2026-08-31",
+   "year_source": "explicit year"
+  },
+  "5218992": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "MU",
+   "level": 1080.0,
+   "direction": "up",
+   "date": "2026-10-09",
+   "year_source": "explicit year"
+  },
+  "1941136": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "NFLX",
+   "level": 120.0,
+   "direction": "up",
+   "date": "2026-04-17",
+   "year_source": "explicit year"
+  },
+  "4936055": {
+   "type": "touch_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "EWY",
+   "level": 172.0,
+   "direction": "down",
+   "date": "2026-10-31",
+   "year_source": "explicit year"
+  },
+  "2758415": {
+   "type": "touch_ticket",
+   "linkable": false,
+   "reasons": [
+    "no single stock ticker named"
+   ],
+   "underlying": null,
+   "level": 84.0,
+   "direction": "up",
+   "date": "2026-07-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963356": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "META",
+   "level": 840.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "2388855": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "META",
+   "level": 600.0,
+   "direction": "up",
+   "date": "2026-06-30",
+   "year_source": "re-derived from the creation date"
+  },
+  "1125369": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "SPX",
+   "level": 6900.0,
+   "direction": "up",
+   "date": "2026-01-20",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963077": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AAPL",
+   "level": 400.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "2389159": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "MU",
+   "level": 900.0,
+   "direction": "up",
+   "date": "2026-06-30",
+   "year_source": "re-derived from the creation date"
+  },
+  "1125367": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "SPX",
+   "level": 7040.0,
+   "direction": "up",
+   "date": "2026-01-20",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963254": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "GOOGL",
+   "level": 290.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1460492": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "OPEN",
+   "level": 0.0,
+   "direction": "up",
+   "date": "2026-03-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1125371": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "SPX",
+   "level": 6760.0,
+   "direction": "up",
+   "date": "2026-01-20",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963493": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "NVDA",
+   "level": 240.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "740767": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "META",
+   "level": 540.0,
+   "direction": "up",
+   "date": "2025-12-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1492885": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "SPX",
+   "level": 6600.0,
+   "direction": "up",
+   "date": "2026-03-20",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963505": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "NVDA",
+   "level": 270.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "2699306": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "TSLA",
+   "level": 440.0,
+   "direction": "up",
+   "date": "2026-07-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1492882": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "SPX",
+   "level": 6900.0,
+   "direction": "up",
+   "date": "2026-03-20",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963342": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "META",
+   "level": 760.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "2388564": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AAPL",
+   "level": 270.0,
+   "direction": "up",
+   "date": "2026-06-30",
+   "year_source": "re-derived from the creation date"
+  },
+  "1125372": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "SPX",
+   "level": 6600.0,
+   "direction": "up",
+   "date": "2026-01-20",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963104": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "MSFT",
+   "level": 435.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1748381": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "PLTR",
+   "level": 160.0,
+   "direction": "up",
+   "date": "2026-04-30",
+   "year_source": "re-derived from the creation date"
+  },
+  "1492886": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "SPX",
+   "level": 6500.0,
+   "direction": "up",
+   "date": "2026-03-20",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963334": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "META",
+   "level": 720.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "2699234": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "META",
+   "level": 560.0,
+   "direction": "up",
+   "date": "2026-07-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1492884": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "SPX",
+   "level": 6700.0,
+   "direction": "up",
+   "date": "2026-03-20",
+   "year_source": "re-derived from the creation date"
+  },
+  "5203057": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "SPY",
+   "level": 770.0,
+   "direction": "up",
+   "date": "2026-10-05",
+   "year_source": "re-derived from the creation date"
+  },
+  "740693": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AMZN",
+   "level": 290.0,
+   "direction": "up",
+   "date": "2025-12-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1125368": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "SPX",
+   "level": 6960.0,
+   "direction": "up",
+   "date": "2026-01-20",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963179": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AMZN",
+   "level": 200.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1460664": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "TSLA",
+   "level": 420.0,
+   "direction": "up",
+   "date": "2026-03-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1492883": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "SPX",
+   "level": 6800.0,
+   "direction": "up",
+   "date": "2026-03-20",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963016": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AAPL",
+   "level": 280.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "2388916": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "TSLA",
+   "level": 490.0,
+   "direction": "up",
+   "date": "2026-06-30",
+   "year_source": "re-derived from the creation date"
+  },
+  "1125370": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "SPX",
+   "level": 6840.0,
+   "direction": "up",
+   "date": "2026-01-20",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963501": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "NVDA",
+   "level": 260.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1491751": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "MSFT",
+   "level": 380.0,
+   "direction": "up",
+   "date": "2026-03-04",
+   "year_source": "re-derived from the creation date"
+  },
+  "1492880": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "SPX",
+   "level": 7100.0,
+   "direction": "up",
+   "date": "2026-03-20",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963361": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "META",
+   "level": 860.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "662965": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AMZN",
+   "level": 210.0,
+   "direction": "up",
+   "date": "2025-11-30",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963649": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "PLTR",
+   "level": 192.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1301694": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AMZN",
+   "level": 230.0,
+   "direction": "up",
+   "date": "2028-02-29",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963633": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "PLTR",
+   "level": 184.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "2698946": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AAPL",
+   "level": 270.0,
+   "direction": "up",
+   "date": "2026-07-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "5202998": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "MSFT",
+   "level": 510.0,
+   "direction": "up",
+   "date": "2026-10-05",
+   "year_source": "re-derived from the creation date"
+  },
+  "663032": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "NFLX",
+   "level": 110.0,
+   "direction": "up",
+   "date": "2025-11-30",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963256": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "GOOGL",
+   "level": 300.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1031545": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AAPL",
+   "level": 330.0,
+   "direction": "up",
+   "date": "2026-01-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963693": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "OPEN",
+   "level": 2.5,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "2768324": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "GOOGL",
+   "level": 350.0,
+   "direction": "up",
+   "date": "2026-07-06",
+   "year_source": "re-derived from the creation date"
+  },
+  "5202990": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AAPL",
+   "level": 320.0,
+   "direction": "up",
+   "date": "2026-10-05",
+   "year_source": "re-derived from the creation date"
+  },
+  "740726": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "GOOGL",
+   "level": 330.0,
+   "direction": "up",
+   "date": "2025-12-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963777": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "SPCX",
+   "level": 110.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1301868": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "NVDA",
+   "level": 150.0,
+   "direction": "up",
+   "date": "2028-02-29",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963399": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "TSLA",
+   "level": 320.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1031771": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "NVDA",
+   "level": 250.0,
+   "direction": "up",
+   "date": "2026-01-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963055": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AAPL",
+   "level": 360.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "740777": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "META",
+   "level": 740.0,
+   "direction": "up",
+   "date": "2025-12-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963032": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AAPL",
+   "level": 320.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "3961305": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "PLTR",
+   "level": 176.0,
+   "direction": "up",
+   "date": "2026-09-30",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963625": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "PLTR",
+   "level": 180.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "2427156": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AAPL",
+   "level": 305.0,
+   "direction": "up",
+   "date": "2026-06-04",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963663": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "PLTR",
+   "level": 202.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1460692": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "NFLX",
+   "level": 100.0,
+   "direction": "up",
+   "date": "2026-03-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "5202992": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AAPL",
+   "level": 330.0,
+   "direction": "up",
+   "date": "2026-10-05",
+   "year_source": "re-derived from the creation date"
+  },
+  "1748401": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "OPEN",
+   "level": 0.0,
+   "direction": "up",
+   "date": "2026-04-30",
+   "year_source": "re-derived from the creation date"
+  },
+  "5203026": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "TSLA",
+   "level": 370.0,
+   "direction": "up",
+   "date": "2026-10-05",
+   "year_source": "re-derived from the creation date"
+  },
+  "3961330": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "PLTR",
+   "level": 194.0,
+   "direction": "up",
+   "date": "2026-09-30",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963346": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "META",
+   "level": 780.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "741017": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "OPEN",
+   "level": 9.0,
+   "direction": "up",
+   "date": "2025-12-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963774": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "SPCX",
+   "level": 100.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "663078": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "RKLB",
+   "level": 74.0,
+   "direction": "up",
+   "date": "2025-11-30",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963749": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "MU",
+   "level": 1120.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1301972": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "OPEN",
+   "level": 2.0,
+   "direction": "up",
+   "date": "2028-02-29",
+   "year_source": "re-derived from the creation date"
+  },
+  "5203023": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "TSLA",
+   "level": 340.0,
+   "direction": "up",
+   "date": "2026-10-05",
+   "year_source": "re-derived from the creation date"
+  },
+  "2388822": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "GOOGL",
+   "level": 450.0,
+   "direction": "up",
+   "date": "2026-06-30",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963738": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "MU",
+   "level": 1060.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1301566": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AAPL",
+   "level": 230.0,
+   "direction": "up",
+   "date": "2028-02-29",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963696": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "OPEN",
+   "level": 3.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "662996": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "META",
+   "level": 680.0,
+   "direction": "up",
+   "date": "2025-11-30",
+   "year_source": "re-derived from the creation date"
+  },
+  "4125993": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "MSFT",
+   "level": 510.0,
+   "direction": "up",
+   "date": "2026-09-03",
+   "year_source": "re-derived from the creation date"
+  },
+  "740712": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "GOOGL",
+   "level": 260.0,
+   "direction": "up",
+   "date": "2025-12-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "5203010": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "GOOGL",
+   "level": 330.0,
+   "direction": "up",
+   "date": "2026-10-05",
+   "year_source": "re-derived from the creation date"
+  },
+  "3961100": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "META",
+   "level": 480.0,
+   "direction": "up",
+   "date": "2026-09-30",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963205": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AMZN",
+   "level": 270.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1748368": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "PLTR",
+   "level": 150.0,
+   "direction": "up",
+   "date": "2026-04-30",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963562": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "NFLX",
+   "level": 50.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "2699016": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "MSFT",
+   "level": 285.0,
+   "direction": "up",
+   "date": "2026-07-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963690": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "OPEN",
+   "level": 2.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1460483": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "TSLA",
+   "level": 350.0,
+   "direction": "up",
+   "date": "2026-03-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963201": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AMZN",
+   "level": 260.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "2698929": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AAPL",
+   "level": 240.0,
+   "direction": "up",
+   "date": "2026-07-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963468": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "NVDA",
+   "level": 170.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1460769": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AMZN",
+   "level": 240.0,
+   "direction": "up",
+   "date": "2026-03-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963485": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "NVDA",
+   "level": 220.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1748059": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AMZN",
+   "level": 190.0,
+   "direction": "up",
+   "date": "2026-04-30",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963193": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AMZN",
+   "level": 240.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "663084": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "ABNB",
+   "level": 120.0,
+   "direction": "up",
+   "date": "2025-11-30",
+   "year_source": "re-derived from the creation date"
+  },
+  "5203006": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AMZN",
+   "level": 255.0,
+   "direction": "up",
+   "date": "2026-10-05",
+   "year_source": "re-derived from the creation date"
+  },
+  "1460804": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AAPL",
+   "level": 300.0,
+   "direction": "up",
+   "date": "2026-03-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "5202999": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "MSFT",
+   "level": 520.0,
+   "direction": "up",
+   "date": "2026-10-05",
+   "year_source": "re-derived from the creation date"
+  },
+  "2388734": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AMZN",
+   "level": 260.0,
+   "direction": "up",
+   "date": "2026-06-30",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963331": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "META",
+   "level": 700.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "2388961": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "NVDA",
+   "level": 200.0,
+   "direction": "up",
+   "date": "2026-06-30",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963264": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "GOOGL",
+   "level": 330.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1460723": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "TSLA",
+   "level": 440.0,
+   "direction": "up",
+   "date": "2026-03-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963621": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "PLTR",
+   "level": 178.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "663046": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "PLTR",
+   "level": 200.0,
+   "direction": "up",
+   "date": "2025-11-30",
+   "year_source": "re-derived from the creation date"
+  },
+  "4963645": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "PLTR",
+   "level": 190.0,
+   "direction": "up",
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "740980": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "PLTR",
+   "level": 172.0,
+   "direction": "up",
+   "date": "2025-12-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "5203032": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "NVDA",
+   "level": 235.0,
+   "direction": "up",
+   "date": "2026-10-05",
+   "year_source": "re-derived from the creation date"
+  },
+  "2768272": {
+   "type": "close_above_ticket",
+   "linkable": true,
+   "reasons": [],
+   "underlying": "AAPL",
+   "level": 290.0,
+   "direction": "up",
+   "date": "2026-07-06",
+   "year_source": "re-derived from the creation date"
+  },
+  "654269": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2025-11-30",
+   "year_source": "re-derived from the creation date"
+  },
+  "665223": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-03-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "2749367": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "951180": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-09-30",
+   "year_source": "explicit year"
+  },
+  "2749491": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "4117966": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-09-15",
+   "year_source": "re-derived from the creation date"
+  },
+  "3865962": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "611054": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-06-30",
+   "year_source": "explicit year"
+  },
+  "1642010": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "2758325": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-07-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "701714": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "2672043": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-08-31",
+   "year_source": "explicit year"
+  },
+  "1280207": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-02-28",
+   "year_source": "re-derived from the creation date"
+  },
+  "956634": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2025-12-23",
+   "year_source": "re-derived from the creation date"
+  },
+  "608368": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "1038876": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-06-30",
+   "year_source": "explicit year"
+  },
+  "1320796": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1667094": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-04-30",
+   "year_source": "re-derived from the creation date"
+  },
+  "1174671": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-01-31",
+   "year_source": "explicit year"
+  },
+  "693777": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-03-31",
+   "year_source": "explicit year"
+  },
+  "5180509": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "2758324": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-07-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "3866001": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "776340": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2025-12-31",
+   "year_source": "explicit year"
+  },
+  "609624": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2025-12-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "2419651": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-06-30",
+   "year_source": "re-derived from the creation date"
+  },
+  "1393070": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "573828": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-03-31",
+   "year_source": "explicit year"
+  },
+  "957645": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-02-28",
+   "year_source": "re-derived from the creation date"
+  },
+  "2060039": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-04-28",
+   "year_source": "re-derived from the creation date"
+  },
+  "706862": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "701497": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "1353293": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1323366": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-06-30",
+   "year_source": "re-derived from the creation date"
+  },
+  "593974": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-11-02",
+   "year_source": "explicit year"
+  },
+  "690689": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-03-31",
+   "year_source": "explicit year"
+  },
+  "2747437": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "573829": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2025-12-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1057883": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "2481528": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "1918981": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1007578": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-03-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "2325350": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2027-12-31",
+   "year_source": "explicit year"
+  },
+  "1795596": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-09-30",
+   "year_source": "explicit year"
+  },
+  "2181883": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-05-14",
+   "year_source": "re-derived from the creation date"
+  },
+  "2695772": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-07-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "701488": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "516868": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2025-12-31",
+   "year_source": "explicit year"
+  },
+  "2953591": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "657427": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2025-11-30",
+   "year_source": "re-derived from the creation date"
+  },
+  "2640947": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2027-06-30",
+   "year_source": "explicit year"
+  },
+  "573830": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-03-31",
+   "year_source": "explicit year"
+  },
+  "587982": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2025-11-30",
+   "year_source": "re-derived from the creation date"
+  },
+  "1327130": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-03-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "2467356": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "704136": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-06-30",
+   "year_source": "explicit year"
+  },
+  "2676310": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "516874": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2024-12-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "665464": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "3205508": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-09-30",
+   "year_source": "explicit year"
+  },
+  "1939065": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "604490": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-03-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "701591": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "675601": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-06-30",
+   "year_source": "explicit year"
+  },
+  "2953592": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "950085": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-03-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1439550": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-10-20",
+   "year_source": "re-derived from the creation date"
+  },
+  "621144": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-06-30",
+   "year_source": "explicit year"
+  },
+  "2317467": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "2232280": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-06-30",
+   "year_source": "re-derived from the creation date"
+  },
+  "701563": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "675596": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-06-30",
+   "year_source": "explicit year"
+  },
+  "2749430": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "663965": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2025-11-30",
+   "year_source": "re-derived from the creation date"
+  },
+  "1356655": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "1795678": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-04-30",
+   "year_source": "explicit year"
+  },
+  "1068769": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-03-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "2643403": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-07-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "813508": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "3206724": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-08-31",
+   "year_source": "explicit year"
+  },
+  "2747434": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1029815": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-03-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "620335": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "800789": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2025-12-31",
+   "year_source": "explicit year"
+  },
+  "2749485": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "693493": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-06-30",
+   "year_source": "re-derived from the creation date"
+  },
+  "704138": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "1171858": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-06-30",
+   "year_source": "explicit year"
+  },
+  "1430556": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1007515": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-01-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "677315": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "690672": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-03-31",
+   "year_source": "explicit year"
+  },
+  "1124829": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1221088": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-01-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "701496": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "1809580": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-04-30",
+   "year_source": "explicit year"
+  },
+  "810178": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2025-12-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "2419603": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-06-30",
+   "year_source": "re-derived from the creation date"
+  },
+  "2100106": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2027-12-31",
+   "year_source": "explicit year"
+  },
+  "1038646": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-09-30",
+   "year_source": "explicit year"
+  },
+  "1301527": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "4167002": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-09-09",
+   "year_source": "re-derived from the creation date"
+  },
+  "1038719": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "800432": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2025-12-31",
+   "year_source": "explicit year"
+  },
+  "5177579": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-10-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "2419657": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-06-30",
+   "year_source": "re-derived from the creation date"
+  },
+  "1038643": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "explicit year"
+  },
+  "644510": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-06-30",
+   "year_source": "explicit year"
+  },
+  "2676288": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-12-31",
+   "year_source": "re-derived from the creation date"
+  },
+  "1797301": {
+   "type": "ladder_rung",
+   "linkable": true,
+   "reasons": [],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": "2026-04-30",
+   "year_source": "re-derived from the creation date"
+  },
+  "2406810": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "1573471": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "631056": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "699802": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "5219073": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "2178986": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "665265": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "643465": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "5218829": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "992558": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "2365820": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "3096445": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "5170802": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "663140": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "679095": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "1420756": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "5218491": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "1924278": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "3358952": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "622926": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "5170815": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "699824": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "811736": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "3942420": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "691340": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "640198": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "5219107": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "673815": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "5218555": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "2788130": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "637015": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "525633": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "5218828": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "572775": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "5170819": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "3410144": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "5218463": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "581885": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "629335": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "3074307": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "704277": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "608401": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "5219127": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "1536155": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "5218873": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "1358218": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "789424": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "3093749": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "1076131": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "1678679": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "5062234": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "1301753": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "676519": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "2459642": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "562810": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "634413": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "4936090": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "2788220": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "635002": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "2424268": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "5062481": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "2774656": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "630828": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "949286": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "5218409": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "618974": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "680952": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "4641646": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "5218314": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "3780329": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "679115": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "601858": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "920405": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "3961044": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "5170732": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "1849851": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "4936102": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "662892": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "628969": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "1485697": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "5218554": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "1564095": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "5218807": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "3780326": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "705808": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "1460618": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "679090": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "2584818": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "5219131": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "4205771": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "4936071": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "2791118": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "5218724": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "5182296": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "666579": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "628053": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "3358974": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "1118093": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "2406816": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "1048161": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "897023": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "2433386": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "559699": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "2430975": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "608365": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "2071535": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "663583": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "1301933": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "916716": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  },
+  "663143": {
+   "type": "other",
+   "linkable": false,
+   "reasons": [
+    "no tested mechanism"
+   ],
+   "underlying": null,
+   "level": null,
+   "direction": null,
+   "date": null,
+   "year_source": null
+  }
+ },
+ "pairs": {
+  "p001": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-05-16",
+   "cheap_date": "2026-05-31"
+  },
+  "p002": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2025-10-31",
+   "cheap_date": "2025-11-30"
+  },
+  "p003": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-01-15",
+   "cheap_date": "2026-01-31"
+  },
+  "p004": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2025-09-15",
+   "cheap_date": "2025-10-31"
+  },
+  "p005": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-07-07",
+   "cheap_date": "2026-07-15"
+  },
+  "p006": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2025-10-31",
+   "cheap_date": "2025-11-30"
+  },
+  "p007": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-05-31",
+   "cheap_date": "2026-06-30"
+  },
+  "p008": {
+   "nested": false,
+   "reasons": [
+    "descriptions differ"
+   ],
+   "rich_date": "2024-12-31",
+   "cheap_date": "2025-12-31"
+  },
+  "p009": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-02-06",
+   "cheap_date": "2026-02-14"
+  },
+  "p010": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2025-12-31",
+   "cheap_date": "2026-01-31"
+  },
+  "p011": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2025-10-31",
+   "cheap_date": "2026-03-31"
+  },
+  "p012": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-03-31",
+   "cheap_date": "2026-04-30"
+  },
+  "p013": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2025-12-31",
+   "cheap_date": "2026-03-31"
+  },
+  "p014": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-09-02",
+   "cheap_date": "2026-09-04"
+  },
+  "p015": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2025-12-31",
+   "cheap_date": "2026-03-31"
+  },
+  "p016": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-03-31",
+   "cheap_date": "2026-06-30"
+  },
+  "p017": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-09-30",
+   "cheap_date": "2026-12-31"
+  },
+  "p018": {
+   "nested": false,
+   "reasons": [
+    "descriptions differ"
+   ],
+   "rich_date": "2025-10-20",
+   "cheap_date": "2025-12-20"
+  },
+  "p019": {
+   "nested": false,
+   "reasons": [
+    "descriptions differ"
+   ],
+   "rich_date": "2026-07-17",
+   "cheap_date": "2026-07-31"
+  },
+  "p020": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2025-09-30",
+   "cheap_date": "2025-10-31"
+  },
+  "p021": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-01-31",
+   "cheap_date": "2026-03-31"
+  },
+  "p022": {
+   "nested": false,
+   "reasons": [
+    "window starts at creation and the cheap rung was created later"
+   ],
+   "rich_date": "2026-05-31",
+   "cheap_date": "2026-06-30"
+  },
+  "p023": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2025-10-31",
+   "cheap_date": "2025-11-30"
+  },
+  "p024": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-03-31",
+   "cheap_date": "2026-05-14"
+  },
+  "p025": {
+   "nested": false,
+   "reasons": [
+    "descriptions differ"
+   ],
+   "rich_date": "2025-10-31",
+   "cheap_date": "2025-11-30"
+  },
+  "p026": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-04-30",
+   "cheap_date": "2026-05-08"
+  },
+  "p027": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-06-15",
+   "cheap_date": "2026-06-30"
+  },
+  "p028": {
+   "nested": false,
+   "reasons": [
+    "2025-12-31 vs 2025-12-31",
+    "descriptions differ"
+   ],
+   "rich_date": "2025-12-31",
+   "cheap_date": "2025-12-31"
+  },
+  "p029": {
+   "nested": false,
+   "reasons": [
+    "window starts at creation and the cheap rung was created later"
+   ],
+   "rich_date": "2026-04-30",
+   "cheap_date": "2026-06-30"
+  },
+  "p030": {
+   "nested": false,
+   "reasons": [
+    "window starts at creation and the cheap rung was created later"
+   ],
+   "rich_date": "2026-07-31",
+   "cheap_date": "2026-08-31"
+  },
+  "p031": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-06-08",
+   "cheap_date": "2026-06-09"
+  },
+  "p032": {
+   "nested": false,
+   "reasons": [
+    "descriptions differ"
+   ],
+   "rich_date": "2025-12-23",
+   "cheap_date": "2025-12-31"
+  },
+  "p033": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-07-07",
+   "cheap_date": "2026-07-08"
+  },
+  "p034": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-05-31",
+   "cheap_date": "2026-06-15"
+  },
+  "p035": {
+   "nested": false,
+   "reasons": [
+    "descriptions differ"
+   ],
+   "rich_date": "2026-06-30",
+   "cheap_date": "2026-07-31"
+  },
+  "p036": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-02-28",
+   "cheap_date": "2026-04-30"
+  },
+  "p037": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-03-31",
+   "cheap_date": "2026-06-30"
+  },
+  "p038": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-07-17",
+   "cheap_date": "2026-07-24"
+  },
+  "p039": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2025-10-31",
+   "cheap_date": "2025-11-15"
+  },
+  "p040": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-07-09",
+   "cheap_date": "2026-07-10"
+  },
+  "p041": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-01-31",
+   "cheap_date": "2026-02-28"
+  },
+  "p042": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2025-08-31",
+   "cheap_date": "2025-09-30"
+  },
+  "p043": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-08-31",
+   "cheap_date": "2026-09-01"
+  },
+  "p044": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-03-31",
+   "cheap_date": "2026-04-30"
+  },
+  "p045": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-05-31",
+   "cheap_date": "2026-06-30"
+  },
+  "p046": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-01-31",
+   "cheap_date": "2026-03-31"
+  },
+  "p047": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2025-08-31",
+   "cheap_date": "2025-09-30"
+  },
+  "p048": {
+   "nested": false,
+   "reasons": [
+    "window starts at creation and the cheap rung was created later"
+   ],
+   "rich_date": "2026-12-31",
+   "cheap_date": "2027-06-30"
+  },
+  "p049": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2025-09-30",
+   "cheap_date": "2025-10-31"
+  },
+  "p050": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2025-11-07",
+   "cheap_date": "2025-11-14"
+  },
+  "p051": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-06-30",
+   "cheap_date": "2026-09-30"
+  },
+  "p052": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-09-15",
+   "cheap_date": "2026-09-30"
+  },
+  "p053": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2025-11-14",
+   "cheap_date": "2025-11-21"
+  },
+  "p054": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-05-21",
+   "cheap_date": "2026-05-22"
+  },
+  "p055": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2025-10-31",
+   "cheap_date": "2025-11-15"
+  },
+  "p056": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-06-09",
+   "cheap_date": "2026-06-10"
+  },
+  "p057": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2025-09-30",
+   "cheap_date": "2025-10-31"
+  },
+  "p058": {
+   "nested": false,
+   "reasons": [
+    "descriptions differ"
+   ],
+   "rich_date": "2025-10-31",
+   "cheap_date": "2026-03-31"
+  },
+  "p059": {
+   "nested": false,
+   "reasons": [
+    "descriptions differ"
+   ],
+   "rich_date": "2025-07-11",
+   "cheap_date": "2025-07-31"
+  },
+  "p060": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2025-09-30",
+   "cheap_date": "2025-10-15"
+  },
+  "p061": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2025-12-19",
+   "cheap_date": "2025-12-31"
+  },
+  "p062": {
+   "nested": false,
+   "reasons": [
+    "descriptions differ"
+   ],
+   "rich_date": "2025-08-31",
+   "cheap_date": "2025-09-30"
+  },
+  "p063": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-08-15",
+   "cheap_date": "2026-08-31"
+  },
+  "p064": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-08-31",
+   "cheap_date": "2026-09-30"
+  },
+  "p065": {
+   "nested": false,
+   "reasons": [
+    "descriptions differ"
+   ],
+   "rich_date": "2025-09-30",
+   "cheap_date": "2025-10-24"
+  },
+  "p066": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2025-12-31",
+   "cheap_date": "2026-03-31"
+  },
+  "p067": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-04-30",
+   "cheap_date": "2026-05-15"
+  },
+  "p068": {
+   "nested": false,
+   "reasons": [
+    "descriptions differ"
+   ],
+   "rich_date": "2026-05-31",
+   "cheap_date": "2026-06-30"
+  },
+  "p069": {
+   "nested": false,
+   "reasons": [
+    "descriptions differ"
+   ],
+   "rich_date": "2025-12-31",
+   "cheap_date": "2026-01-31"
+  },
+  "p070": {
+   "nested": false,
+   "reasons": [
+    "descriptions differ"
+   ],
+   "rich_date": "2026-07-15",
+   "cheap_date": "2026-07-16"
+  },
+  "p071": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-05-31",
+   "cheap_date": "2026-06-30"
+  },
+  "p072": {
+   "nested": false,
+   "reasons": [
+    "descriptions differ"
+   ],
+   "rich_date": "2025-09-30",
+   "cheap_date": "2025-10-31"
+  },
+  "p073": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2025-12-31",
+   "cheap_date": "2026-06-30"
+  },
+  "p074": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2025-11-20",
+   "cheap_date": "2025-11-25"
+  },
+  "p075": {
+   "nested": false,
+   "reasons": [
+    "descriptions differ"
+   ],
+   "rich_date": "2025-09-30",
+   "cheap_date": "2025-10-31"
+  },
+  "p076": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-10-31",
+   "cheap_date": "2026-12-31"
+  },
+  "p077": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2025-12-31",
+   "cheap_date": "2026-01-31"
+  },
+  "p078": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-05-15",
+   "cheap_date": "2026-06-30"
+  },
+  "p079": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-01-15",
+   "cheap_date": "2026-01-31"
+  },
+  "p080": {
+   "nested": true,
+   "reasons": [],
+   "rich_date": "2026-07-17",
+   "cheap_date": "2026-07-24"
+  }
+ }
+}
