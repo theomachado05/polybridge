@@ -17,7 +17,7 @@ All times New York, Sun 2026-10-04. Branch `r/weekend-options`. Commit hashes re
 | 00:42 | METHOD.md amendment 2 (the bug hunt's checks, added after the result, not pre-registered). |
 | 00:45 | SUMMARY.md, charts, capacity.md written from the result files; 18 unit tests pass (exit code 0). |
 
-The result commit and its hash are recorded at the end of this file.
+The result commit (`1fce155`, 00:46) is recorded at the end of this file.
 
 ## Data sources
 
@@ -65,3 +65,4 @@ No bug was found. The checks were added after the result was seen and are labell
 |---|---|
 | `df3cb4a` | Pre-registration: METHOD.md, config.py, parsing rules. Before any option quote. |
 | `146ebb1` | Pull, anchor builder, tests T1 to T3, report, 16 unit tests. During the pull, before any result was read. |
+| `1fce155` | The result: SUMMARY.md, every result file, the bug hunt (`checks.py`, METHOD.md amendments 1 and 2), 18 unit tests. 00:46. |
