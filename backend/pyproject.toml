@@ -8,6 +8,7 @@ dependencies = [
     "pydantic>=2.7",
     "polybridge-research",
     "httpx>=0.28.1",
+    "openai>=2",
 ]
 
 [dependency-groups]

@@ -4,11 +4,12 @@ Three answers, always labelled by ``source``:
 
 - ``"ai_precomputed"``: the bundled library ``data/ai_map.json`` (generated ahead of time, see its ``generator``),
   matched exactly by market id or by a confident fuzzy match on the question.
-- ``"ai_live:gemini:<model>"``: the question is not in the library and Gemini is available. Gemini picks tickers
+- ``"ai_live:<provider>:<model>"`` (provider ``openai`` or ``gemini``): the question is not in the library and an
+  LLM is available (OpenAI first, then Gemini; ``LLM_PROVIDER``). The LLM picks tickers
   ONLY from the candidate universe (``ticker_universe``) under a strict JSON schema; every row is validated
   (``validate_mappings``: ticker in the universe, direction known, move bounded, one sentence) before it is served,
   and the answer is cached by question hash.
-- ``"none"``: nothing matched and no live answer was possible; ``note`` says why (no key, Gemini failed, ...).
+- ``"none"``: nothing matched and no live answer was possible; ``note`` says why (no key, the LLM failed, ...).
   A fake AI answer is never served.
 """
 from __future__ import annotations
@@ -195,7 +196,8 @@ router = APIRouter()
 
 
 def _provider(request: Request):
-    """Tests set app.state.pipeline_provider; otherwise Gemini when GEMINI_API_KEY is set, else rules (no live map)."""
+    """Tests set app.state.pipeline_provider; otherwise the provider factory (OpenAI -> Gemini, LLM_PROVIDER), else
+    rules (no live map)."""
     from .pipeline.llm import default_provider
     p = getattr(request.app.state, "pipeline_provider", None)
     if p is not None:
@@ -274,7 +276,7 @@ async def map_event(req: MapRequest, request: Request) -> dict:
 
 async def _live(request: Request, question: str, cands: list, fallback_note: str, lib: dict) -> dict:
     """Not in the precomputed library: ask Gemini (validated, cached), or say plainly why there is no AI answer."""
-    from .pipeline.llm import NO_KEY_REASON, LLMError, RulesProvider, rules_info
+    from .pipeline.llm import LLMError, RulesProvider, no_llm_reason, rules_info
 
     def miss(note: str, c: list, ai: dict) -> dict:
         return _miss(lib, note, c, ai)
@@ -285,7 +287,7 @@ async def _live(request: Request, question: str, cands: list, fallback_note: str
     except Exception as e:  # never a 500
         provider, err = RulesProvider(), f"provider error: {type(e).__name__}"
     if isinstance(provider, RulesProvider) or not hasattr(provider, "map_tickers"):
-        reason = err or NO_KEY_REASON
+        reason = err or no_llm_reason(provider)
         return miss(f"{fallback_note}; live AI mapping unavailable ({reason})", cands, rules_info(reason))
     qh = question_hash(question)
     cache = _live_cache(request)
@@ -296,7 +298,7 @@ async def _live(request: Request, question: str, cands: list, fallback_note: str
     try:
         rows = await asyncio.wait_for(provider.map_tickers(question, universe, LIVE_MAX_ITEMS), LIVE_BUDGET_S)
     except asyncio.TimeoutError:
-        reason = f"Gemini took over {LIVE_BUDGET_S:g} s"
+        reason = f"{getattr(provider, 'display', 'Gemini')} took over {LIVE_BUDGET_S:g} s"
         return miss(f"{fallback_note}; live AI mapping failed ({reason})", cands, rules_info(reason))
     except LLMError as e:
         return miss(f"{fallback_note}; live AI mapping failed ({e})", cands, rules_info(str(e)))
@@ -310,14 +312,17 @@ async def _live(request: Request, question: str, cands: list, fallback_note: str
         return miss(f"{fallback_note}; live AI mapping rejected ({reason})", cands,
                     {**rules_info(reason), "model": getattr(provider, "model", None)})
     model = getattr(provider, "model", None) or "unknown"
+    who, name = getattr(provider, "display", None) or "Gemini", getattr(provider, "name", None) or "gemini"
+    if name not in ("openai", "gemini"):
+        name, who = "gemini", "Gemini"  # test doubles and legacy providers
     note = None
     if not valid:
-        note = "Gemini found no stock in the candidate universe with a clear link to this question."
+        note = f"{who} found no stock in the candidate universe with a clear link to this question."
     elif dropped:
         note = f"{len(dropped)} of {n_rows} rows dropped by validation: " + "; ".join(dropped[:3])
-    out = {"label": f"AI estimate (live, Gemini {model})",
+    out = {"label": f"AI estimate (live, {who} {model})",
            "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-           "source": f"ai_live:gemini:{model}", "match_type": "live", "score": None, "items": valid,
+           "source": f"ai_live:{name}:{model}", "match_type": "live", "score": None, "items": valid,
            "matched_question": question, "candidates": cands, "note": note, "question_hash": qh,
            "universe_size": len(universe),
            "ai": {**provider.info(True), "cached": False}}

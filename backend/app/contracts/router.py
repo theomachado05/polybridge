@@ -20,7 +20,8 @@ class ClassifyIn(BaseModel):
 
 
 def provider():
-    """The text reader for the Gemini cross-check (rules only without a key). Tests replace it."""
+    """The text reader for the LLM cross-check (OpenAI -> Gemini via the provider factory; rules only without a
+    key). Tests replace it."""
     return default_provider()
 
 
