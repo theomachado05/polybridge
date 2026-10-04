@@ -84,3 +84,14 @@ close comes from the same one-minute request as the day (one call from the previ
 of the last regular-session bar), not from the cached daily bars: the minute bars are split-adjusted at pull time and
 the daily cache was pulled earlier, so mixing them could fake a gap. Betas still use the daily cache (returns only).
 Before this, one format probe was made (USO, 2026-09-30, one minute-bar call and one quote): no return computed.
+
+**Amendment 2, Sun 2026-10-04 00:20 New York time, after the first run. A code bug, not a change of rule.** The first
+full run built no trades: pandas renamed the quote columns (`q_09:31_ok` is not a valid identifier inside
+`itertuples`), so every quote looked missing and the report crashed on an empty trade table. The loop now reads plain
+records. F1 and F2 were computed by the same run and did not change. Before the full run, F1 and F2 at 10+ points were
+computed once from the cache while the 5+ pull finished; the same numbers are in `tests.csv`.
+
+**Note after the run (the Sharpe-above-3 bug hunt).** T2 at 5+ points out-of-sample has Sharpe 3.88. Checked: entry and
+exit quotes against the minute bars (every mid within 1% of its bar but one, within 1.1%); no split or wrong previous
+close. No bug found. The result is concentrated: COIN, GLXY and HOOD on crypto-legislation questions give about three
+quarters of it, and three dates give half. Reported in SUMMARY.md as what it is.

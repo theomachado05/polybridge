@@ -1,0 +1,21 @@
+trade,criterion,pass,evidence
+T1,at least 30 OOS trades,True,53 on 22 dates
+T1,"OOS net > 0, interval excludes 0 (1x)",False,"+7.9 bp [-35.5, +55.2]"
+T1,OOS net > 0 at 2x,False,-5.0 bp
+T1,IS net > 0 (1x),False,"-6.9 bp [-24.0, +8.7]"
+T1,VERDICT,False,
+T1f,at least 30 OOS trades,True,53 on 22 dates
+T1f,"OOS net > 0, interval excludes 0 (1x)",False,"-33.7 bp [-84.2, +13.4]"
+T1f,OOS net > 0 at 2x,False,-46.6 bp
+T1f,IS net > 0 (1x),False,"-8.0 bp [-23.9, +8.7]"
+T1f,VERDICT,False,
+T2,at least 30 OOS trades,True,53 on 22 dates
+T2,"OOS net > 0, interval excludes 0 (1x)",False,"+36.0 bp [-38.3, +119.0]"
+T2,OOS net > 0 at 2x,True,+24.9 bp
+T2,IS net > 0 (1x),True,"+1.2 bp [-29.9, +31.7]"
+T2,VERDICT,False,
+T3,at least 30 OOS trades,False,12 on 8 dates
+T3,"OOS net > 0, interval excludes 0 (1x)",False,"+23.1 bp [-109.9, +188.8]"
+T3,OOS net > 0 at 2x,True,+12.5 bp
+T3,IS net > 0 (1x),False,"-44.0 bp [-99.3, +5.8]"
+T3,VERDICT,False,

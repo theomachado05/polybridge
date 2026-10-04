@@ -301,22 +301,20 @@ def main() -> int:
                               "diff_bp": du[0], "diff_lo": du[1], "diff_hi": du[2]})
         for tr in cfg.TRADES:
             ex = tr.exit
-            for r in ev.itertuples():
-                if tr.only_unconfirmed and r.confirmed:
+            for rd in ev.to_dict("records"):
+                if tr.only_unconfirmed and rd["confirmed"]:
                     continue
-                rd = r._asdict()
-                ok_in, ok_out = rd.get(f"q_{cfg.ENTRY}_ok"), rd.get(f"q_{ex}_ok")
-                if not (ok_in is True and ok_out is True):
+                if not (rd.get(f"q_{cfg.ENTRY}_ok") is True and rd.get(f"q_{ex}_ok") is True):
                     continue
                 qi = {k: rd[f"q_{cfg.ENTRY}_{k}"] for k in ("bid", "ask")}
                 qo = {k: rd[f"q_{ex}_{k}"] for k in ("bid", "ask")}
-                side = r.d if tr.direction == "follow" else -r.d
+                side = rd["d"] if tr.direction == "follow" else -rd["d"]
                 for cm in cfg.COST_MULTIPLIERS:
                     tres = trade_return(qi, qo, side, cm)
-                    trades.append({"trade": tr.id, "threshold": thr, "cost_mult": cm, "segment": r.segment, "day": r.day, "ticker": r.ticker,
-                                   "theme": r.theme, "weekend": r.weekend, "question": r.question, "x": r.x, "d": r.d,
-                                   "side": "long" if side > 0 else "short", "gap_bp": r.gap, "confirmed": r.confirmed, **tres,
-                                   "pnl": cfg.NOTIONAL * tres["net_bp"] / 1e4,
+                    trades.append({"trade": tr.id, "threshold": thr, "cost_mult": cm, "segment": rd["segment"], "day": rd["day"],
+                                   "ticker": rd["ticker"], "theme": rd["theme"], "weekend": rd["weekend"], "question": rd["question"],
+                                   "x": rd["x"], "d": rd["d"], "side": "long" if side > 0 else "short", "gap_bp": rd["gap"],
+                                   "confirmed": rd["confirmed"], **tres, "pnl": cfg.NOTIONAL * tres["net_bp"] / 1e4,
                                    "touch_size_usd": (rd[f"q_{cfg.ENTRY}_ask_size"] * rd[f"q_{cfg.ENTRY}_ask"] if side > 0
                                                       else rd[f"q_{cfg.ENTRY}_bid_size"] * rd[f"q_{cfg.ENTRY}_bid"])})
     from .report import report
