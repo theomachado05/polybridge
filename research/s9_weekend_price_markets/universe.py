@@ -39,7 +39,26 @@ def wanted(title: str) -> bool:
     return bool(re.search(cfg.KIND_RE, title, re.I)) and not re.search(cfg.EXCLUDE_RE, title, re.I) and asset_class(title) is not None
 
 
+def add_outcomes() -> int:
+    """Amendment 1: each market's result (1, 0 or None while open) and closing time, from the catalogue. The list is unchanged."""
+    f = HERE / "universe.json"
+    u, pt, n = json.loads(f.read_text()), ds.Throttle(4.0), 0
+    for m in u["markets"]:
+        g = ds.get_json(f"{ds.GAMMA}/markets/{m['id']}", throttle=pt)
+        prices = json.loads(g["outcomePrices"]) if g.get("outcomePrices") else []
+        yes = float(prices[0]) if prices else float("nan")
+        m["outcome"] = yes if g.get("closed") and yes in (0.0, 1.0) else None
+        m["closed_time"] = g.get("closedTime")
+        n += m["outcome"] is not None
+    u["outcomes_added_utc"] = datetime.now(timezone.utc).isoformat()
+    f.write_text(json.dumps(u, indent=1))
+    print(f"{len(u['markets'])} markets, {n} with a result; YES {sum(1 for m in u['markets'] if m['outcome'] == 1.0)}")
+    return 0
+
+
 def main() -> int:
+    if "--outcomes" in sys.argv:
+        return add_outcomes()
     pt, seen = ds.Throttle(3.0), {}
     for q in cfg.SEARCHES:
         for page in range(1, cfg.SEARCH_PAGES + 1):

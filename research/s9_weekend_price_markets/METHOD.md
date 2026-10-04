@@ -131,4 +131,10 @@ verified", never as an edge. Anything else is a null or "too few observations" a
 
 ## Amendments
 
-None.
+**Amendment 1, 2026-10-04 02:18 UTC, before any price is pulled: markets that resolve during the trade.** A "hit"
+market resolves the moment its target is touched. Section 3 did not say what happens when that falls between entry
+and exit, and dropping those trades would remove the fade's worst losses. Rule: if a market has no valid price at the
+exit instant and the catalogue shows it closed by then, the position is settled at the market's result (1 or 0) with
+no exit spread or fee, and the same value is used for `y` in the tests. If it has no valid price and had not closed,
+the trade is dropped and counted. `universe.py --outcomes` adds each market's result and closing time to
+`universe.json` from the catalogue; the list of markets does not change.
