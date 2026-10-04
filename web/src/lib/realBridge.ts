@@ -141,12 +141,14 @@ export async function prepareHedgeProposal(t: HedgeTerms, api: Pick<BridgeApi, "
  *  after approval), else a pending one, which is approved here. `ackUnvalidated` is the user's explicit acknowledgement
  *  of an unvalidated market (the evidence gate); without it the backend answers 409 EVIDENCE_UNVALIDATED on such a market. */
 export async function startRealBridge(q: Question, eq: EquityPick, maxHedge: string, api: BridgeApi = defaultApi,
-  fit: AppliedFit | null = null, opts: HedgeOpts & { ackUnvalidated?: boolean } = {}): Promise<{ bridgeId: string; gap: number; applied: AppliedFit | null }> {
+  fit: AppliedFit | null = null, opts: HedgeOpts & { ackUnvalidated?: boolean; proposal?: Proposal | null } = {}): Promise<{ bridgeId: string; gap: number; applied: AppliedFit | null }> {
   const { approveProposal, getEquity, startBridge } = api;
   const t = hedgeTerms(q, eq, maxHedge, fit, opts);
   let spot = eq.px;
   if (!spot) spot = await getEquity(eq.t).then((c) => c.implied_move?.spot ?? null, () => null);
-  const prop = await prepareHedgeProposal(t, api);
+  // A proposal the user already has on screen (the voice agent drafted it for this pick) is the one approved and run.
+  const given = opts.proposal && opts.proposal.ticker.toUpperCase() === t.ticker && opts.proposal.market?.id === t.market.id && bridgeable(opts.proposal) ? opts.proposal : null;
+  const prop = given ?? await prepareHedgeProposal(t, api);
   const ok = prop.status === "approved" ? prop : await approveProposal(prop.id, opts.ackUnvalidated === true);
   const gap = gapPerShare(spot, eq.move);
   const sources: ("replay" | "live")[] = t.market.token_id ? ["replay", "live"] : ["replay"];

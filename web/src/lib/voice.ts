@@ -8,8 +8,11 @@
 // still refuses approve / start_bridge unless the agent sends confirm: true, which its prompt sets only after the
 // user said yes; the client tool passes the agent's arguments through unchanged, confirm flag included.
 import { API_URL } from "./api.ts";
+import { navigateReply } from "./voiceDrive.ts";
 
-export const VOICE_TOOLS = ["search_markets", "fit", "propose", "approve", "start_bridge", "bridge_status", "account", "positions"] as const;
+export const VOICE_TOOLS = ["search_markets", "fit", "propose", "approve", "start_bridge", "bridge_status", "account", "positions", "navigate"] as const;
+/** Tools the page answers itself, with no backend call (navigate: the screen moves, nothing is written). */
+export const BROWSER_TOOLS: readonly VoiceToolName[] = ["navigate"];
 export type VoiceToolName = (typeof VOICE_TOOLS)[number];
 /** The tools the backend refuses without `confirm: true` (the user's spoken yes). */
 export const CONFIRM_TOOLS: readonly VoiceToolName[] = ["approve", "start_bridge"];
@@ -75,19 +78,21 @@ export function replyForAgent(r: ToolReply): string {
 }
 
 export interface ToolHooks {
-  onStart?: (name: VoiceToolName) => void;
-  onEnd?: (name: VoiceToolName, reply: ToolReply) => void;
+  onStart?: (name: VoiceToolName, params: Record<string, unknown>) => void;
+  onEnd?: (name: VoiceToolName, reply: ToolReply, params: Record<string, unknown>) => void;
 }
 
-/** One client tool per backend tool, for the SDK's `clientTools`. Arguments go through unchanged (confirm included). */
+/** One client tool per backend tool, for the SDK's `clientTools`. Arguments go through unchanged (confirm included).
+ *  navigate never reaches the backend: the page answers it (lib/voiceDrive.ts) and moves the screen in onEnd. */
 export function buildClientTools(call: typeof callAgentTool = callAgentTool, hooks: ToolHooks = {}):
   Record<VoiceToolName, (params: Record<string, unknown>) => Promise<string>> {
   const entries = VOICE_TOOLS.map((name) => [name, async (params: Record<string, unknown>) => {
-    hooks.onStart?.(name);
+    const args = params ?? {};
+    hooks.onStart?.(name, args);
     let reply: ToolReply;
-    try { reply = await call(name, params); }
+    try { reply = BROWSER_TOOLS.includes(name) ? navigateReply(args) : await call(name, args); }
     catch { reply = { ok: false, tool: name, summary: "Something went wrong in the browser. Please try again." }; }
-    hooks.onEnd?.(name, reply);
+    hooks.onEnd?.(name, reply, args);
     return replyForAgent(reply);
   }] as const);
   return Object.fromEntries(entries) as Record<VoiceToolName, (params: Record<string, unknown>) => Promise<string>>;

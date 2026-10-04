@@ -10,6 +10,8 @@ from fastapi import HTTPException, Request, Response
 from pydantic import BaseModel, ValidationError
 
 CONFIRM_TOOLS = {"approve", "start_bridge"}
+# Screens the browser-only `navigate` tool can open (web routes: / /build /pipeline /bridge /portfolio ...).
+SCREENS = ["landing", "build", "pipeline", "bridge", "portfolio", "library", "profile", "connect"]
 Handler = Callable[[Request, dict], Awaitable[tuple[str, Any]]]
 
 
@@ -82,6 +84,14 @@ TOOLS: list[dict] = [
     {"name": "positions", "method": "GET", "path": "/positions",
      "description": "List what the account currently holds.",
      "parameters": _obj({})},
+    # Browser-only: the web page moves to that screen itself and never calls the backend for it (no route). The
+    # dispatcher echoes it so POST /agent/tool/navigate answers like every other tool.
+    {"name": "navigate", "method": None, "path": None, "client_only": True,
+     "description": "Open a screen when the user asks to see something.",
+     "parameters": _obj({
+         "screen": {"type": "string", "enum": SCREENS, "description": "The screen to open."},
+         "bridge_id": {"type": "string", "description": "A bridge id, only with screen bridge, to open that bridge."}},
+         ["screen"])},
 ]
 NAMES = {t["name"] for t in TOOLS}
 
@@ -264,9 +274,18 @@ async def _positions(request: Request, a: dict):
     return f"The account holds {len(out)} positions: {names}" + (", and more." if len(out) > 5 else "."), out
 
 
+async def _navigate(request: Request, a: dict):
+    screen = str(_need(a, "screen"))
+    if screen not in SCREENS:
+        raise ToolError(f"I cannot open {screen}. I can open: {', '.join(SCREENS)}.")
+    bid = a.get("bridge_id") if screen == "bridge" and isinstance(a.get("bridge_id"), str) and a["bridge_id"] else None
+    return f"Opening {screen}.", {"screen": screen, "bridge_id": bid}
+
+
 HANDLERS: dict[str, Handler] = {
     "search_markets": _search_markets, "fit": _fit, "propose": _propose, "approve": _approve,
     "start_bridge": _start_bridge, "bridge_status": _bridge_status, "account": _account, "positions": _positions,
+    "navigate": _navigate,
 }
 
 
