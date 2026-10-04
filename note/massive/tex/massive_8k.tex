@@ -1,6 +1,6 @@
 % PolyBridge, Massive "Trade the 8-K" report. Build: xelatex massive_8k.tex (twice)
 \documentclass[11pt]{article}
-\usepackage[letterpaper,margin=0.75in]{geometry}
+\usepackage[letterpaper,margin=0.7in]{geometry}
 \usepackage{fontspec}
 \setmainfont{Times New Roman}
 \setmonofont{Menlo}[Scale=0.85]
@@ -17,8 +17,11 @@
 \renewcommand\section{\@startsection{section}{1}{\z@}{-1.2ex \@plus -.3ex \@minus -.2ex}{0.4ex}{\normalfont\normalsize\bfseries}}
 \makeatother
 \setlength{\parindent}{0pt}
-\setlength{\parskip}{0.35ex}
+\setlength{\parskip}{0.25ex}
 \pagestyle{plain}
+\setlength{\textfloatsep}{8pt plus 2pt minus 2pt}
+\setlength{\floatsep}{6pt plus 2pt minus 2pt}
+\setlength{\intextsep}{6pt plus 2pt minus 2pt}
 
 \begin{document}
 
@@ -31,18 +34,18 @@ Gator Quant Hacks 2026, Massive ``Trade the 8-K'' challenge
 \vspace{-0.6ex}
 \begin{center}\textbf{Abstract}\end{center}
 \vspace{-1.4ex}
-{\small Before an 8-K is filed, the options on the stock already price how far it should move. With rules committed before any data, we tested whether that price is wrong after slow-burning bad news (a bought put should be cheap) and after restructurings (a sold put should be overpriced), and neither passed in any of four years. The options did not misprice protection by more than about 3 percent of the stock price, nor restructuring puts by more than 0.9 percent. The one place the price bent was 2022, a falling market, where stocks rebounded after bad news and puts were overpriced. Selling the put after bad-news filings returned a Sharpe ratio of 3.3 there against 0.1 on ordinary days, but not in the calm years 2023 to 2025, and we commit it as a stress-only rule for the sealed window.}
+{\small Before an 8-K filing, options already reflect expected stock movement. Using pre-committed rules, we tested whether options misprice after slow-burning bad news (expecting cheap puts) or restructurings (expecting overpriced sold puts). Neither hypothesis held in any of four years. Options did not misprice protection by more than 3 percent of the stock price, nor restructuring puts by more than 0.9 percent. The exception was 2022, a declining market, where stocks rebounded after bad news and puts were overpriced. Selling puts after bad-news filings in 2022 produced a Sharpe ratio of 3.3, compared to 0.1 on ordinary days. This strategy did not work in calmer years (2023--2025), so we recommend it only during periods of market stress.}
 
 \section{Hypothesis}
-Our main paper finds options forecast Polymarket's stock contracts better than Polymarket, so we treat the chain as the reference price and ask where it could be wrong. \textbf{H1} (litigation, class actions, regulatory investigations, cyber incidents, goodwill, asset and investment impairments): implied volatility falls once the headline passes, but the legal or accounting damage resolves over weeks, so the chain should over-price the first day and under-price the follow-through, and a \textbf{protective put} bought after the filing should be cheap. \textbf{H2} (restructuring plans, workforce reductions, facility closures, business-line exits): holders who must keep the stock through the event buy puts, and dealers charge for demand they cannot offset (Gârleanu, Pedersen and Poteshman, 2009, \emph{Rev.\ Financ.\ Stud.} 22:4259), so a \textbf{cash-secured put} sold after the filing should be overpriced. Applying this dealer-demand argument to corporate filings, and testing it on both the profit and the chain's pricing of the move, is our contribution. Each hypothesis predicts both a profit and a sign on the ratio $R$, the realized move divided by the move the chain priced on the session before the filing (H1 above ordinary days, H2 below), so merely being long or short volatility cannot pass.
+Our main paper shows that options forecast Polymarket's stock contracts better than Polymarket itself, so we use the chain as the reference price and ask where it may be wrong. \textbf{H1} covers litigation, regulatory actions, and impairments: implied volatility drops after the headline, but the underlying issue resolves over weeks. The chain should overprice risk on the first day and underprice it later, making \textbf{protective puts} cheap after the filing. \textbf{H2} covers restructurings and similar events: holders needing to keep the stock buy puts, and dealers charge for unhedgeable demand (Gârleanu, Pedersen and Poteshman, 2009, \emph{Rev.\ Financ.\ Stud.} 22:4259), so \textbf{cash-secured puts} sold after the filing should be overpriced. Our contribution is applying this dealer-demand argument to corporate filings and testing both profit and the chain's pricing. Each hypothesis predicts both a profit and a direction for the ratio $R$, the realized move divided by the move priced before the filing (H1 above ordinary days, H2 below), so pure volatility exposure cannot pass.
 
 \section{Data and method}
-Filings come from Massive's 8-K disclosure tags and options from its chains and daily bars, through the starter's pipeline: the 100 largest US companies, put-call-parity spot, puts 5 percent out of the money with 90 to 180 days to expiry. The 11 tags, the pass rule and a forecast for unseen windows were committed before any event or price was fetched.\footnote{\url{https://github.com/theomachado05/polybridge}, with the notebook \texttt{research/massive\_8k.ipynb} (sealed window: \texttt{RUN\_HOLDOUT}).} One event counts per company and filing date, and 5 filings tagged in both families are dropped. Every filing is treated as public after the close, so the trade enters at the next session's close. The baseline is 120 ordinary days per family on the same companies, at least 30 days from their filings. A hypothesis passes if the 97.5 percent bootstrap interval of its edge over ordinary days lies above zero at 2 or more of 21 sessions, 42 sessions and expiry, with $R$ moving the predicted way there. Fewer than 2 testable horizons is \emph{insufficient}. In-sample is 2024--25. January to August 2026 and the fresh year 2022 were each run once after the method was frozen.
+Filings come from Massive's 8-K disclosure tags and options from its chains and daily bars, for the 100 largest US companies. We used puts 5 percent out of the money with 90 to 180 days to expiry, with spot inferred from put-call parity. The 11 tags, pass rule, and forecast for unseen windows were set before any data was collected (code and notebook: \url{https://github.com/theomachado05/polybridge}, \texttt{research/massive\_8k.ipynb}). Each event is counted once per company and filing date, and five filings tagged in both families were excluded. All filings are considered public after market close, with trades entered at the next session's close. The baseline uses 120 ordinary days per family, at least 30 days from any filing. A hypothesis passes if the 97.5 percent bootstrap interval of its edge over ordinary days is above zero at two or more of 21 sessions, 42 sessions, and expiry, with $R$ moving as predicted. Fewer than two testable horizons is \emph{insufficient}. The in-sample period is 2024--25. January to August 2026 and 2022 were each run once after the method was finalized.
 
 \section{Results}
 \begin{table}[h]
 \centering
-\caption{Edge over ordinary days on the same stocks, percent of the stock price, with 97.5 percent intervals. Bold rows are the registered horizons. H1 in 2026 had 3 events, too few for an interval.}
+\caption{Edge over ordinary days on the same stocks, as a percent of the stock price, with 97.5 percent intervals. Bold rows indicate registered horizons. H1 in 2026 had only 3 events, which is too few for an interval.}
 \label{tab:edge}
 \footnotesize
 \setlength{\tabcolsep}{4pt}
@@ -65,21 +68,21 @@ Sessions & 2024--25 ($n$ 28--33) & 2022 ($n$ 11--12) & 2024--25 ($n$ 23--24) & 2
 \end{tabular}
 \end{table}
 
-Neither hypothesis passes in any window (Table~\ref{tab:edge}). Over 2024 and 2025, $R$ moved the predicted way at all three registered horizons for H1 and two for H2, but no interval excludes zero, which bounds the mispricing: post-filing protection was not under-priced by more than about 3 percent of the stock price, nor restructuring puts over-priced by more than about 0.9 percent. Figure~\ref{fig:decay} shows H1's predicted shape (0.68 against 0.99 one session after the filing, 1.36 against 1.15 at 42), inside its interval. Out of sample H2 reversed sign, because 2026 restructurings moved 2.2 to 2.5 times the implied move in their first week, the opposite of H2.
+Neither hypothesis passes in any window (Table~\ref{tab:edge}). In 2024 and 2025, $R$ moved as predicted at all three registered horizons for H1 and two for H2, but no interval excludes zero, which bounds the mispricing at about 3 percent (H1) and 0.9 percent (H2) of the stock price. Figure~\ref{fig:decay} shows H1's predicted pattern (0.68 vs.\ 0.99 one session after filing, 1.36 vs.\ 1.15 at 42), all within its interval. Out of sample, H2 reversed sign because 2026 restructurings moved 2.2 to 2.5 times the implied move in their first week, contrary to H2.
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=\linewidth]{decay.pdf}
 \vspace{-3ex}
-\caption{Realized move divided by the move the chain priced on the session before the filing, with 95 percent intervals for 2024--25 filings. A ratio of 1 means priced correctly.}
+\caption{Realized move divided by the move priced by the chain on the session before the filing, with 95 percent intervals for 2024--25 filings. A ratio of 1 indicates correct pricing.}
 \label{fig:decay}
 \end{figure}
 
-\textbf{A fresh year, and the trade it suggests.} On 2022, run once, H1 beat ordinary days by 4.30 percent at 21 sessions [$+0.54$, $+7.93$], meeting both pass conditions there but not at 42 sessions or expiry. It was not H1's mechanism: the stocks rose 6.1 percent in 21 sessions after the bad news (0.6 on ordinary days) while the bought put alone lost 1.8 percent. In a falling market the headline was oversold and the put overpriced, so the trade paid by both is to \emph{sell} the put. We committed this as \textbf{H3} before applying it to any other year: after an H1 filing, sell the same put cash-secured at the next close, with a high-fear filter set from 2022 alone (implied move at entry at least 14 percent).
+\textbf{A new year and its trading implication.} In 2022, run once, H1 outperformed ordinary days by 4.30 percent at 21 sessions [$+0.54$, $+7.93$], meeting both pass conditions at that horizon but not at 42 sessions or expiry. This was not due to H1's mechanism: stocks rose 6.1 percent in 21 sessions after bad news (0.6 percent on ordinary days), while the bought put lost 1.8 percent. In a declining market, the headline was oversold and the put overpriced, so the profitable trade was to sell the put. We formalized this as \textbf{H3} before testing it in other years: after an H1 filing, sell the same put cash-secured at the next close, using a high-fear filter from 2022 (implied move at entry of at least 14 percent).
 
 \begin{table}[!htb]
 \centering
-\caption{H3, edge over ordinary days (percent of the stock price, 97.5 percent intervals) and annualized per-trade Sharpe ratio at 21 sessions. 2022 formed the hypothesis and is not evidence.}
+\caption{H3: edge over ordinary days (percent of the stock price, 97.5 percent intervals) and annualized per-trade Sharpe ratio at 21 sessions. 2022 generated the hypothesis and is not considered evidence.}
 \label{tab:h3}
 \small
 \setlength{\tabcolsep}{5pt}
@@ -95,12 +98,13 @@ Year & Role & Events & 21 sessions & 42 sessions & Sharpe, filings vs ordinary \
 \end{tabular}
 \end{table}
 
-H3 did not carry to the calm years and the stock-level filter failed, so what separated 2022 looks like market-wide stress, a condition we have not defined or tested and add none after the fact. We ran 2023 before the organizers confirmed it is outside their window.
+H3 did not apply in calmer years, and the stock-level filter was ineffective. The distinguishing factor in 2022 appears to be market-wide stress, a condition we have not defined or tested and do not add after the fact. We ran 2023 before organizers confirmed it is outside their window.
 
 \section{Book, costs, capacity and risk}
-Run as a book (one \$1 trade per filing at 21 sessions, net of a 5 percent premium charge each way, entry at the close after the filing so no intraday filing is traded before it is public), H1's per-trade Sharpe ratio is 1.20 in-sample against 1.01 for the same put on ordinary days, and H2's 1.41 against 0.74. Out of sample H2 is $-1.36$ with a 25 percent drawdown over 7 trades. The filing adds the gap, which Table~\ref{tab:edge} shows is not distinguishable from zero. The premium charge costs 28 to 29 basis points of the stock price, close to Massive's quoted half-spreads (26 to 29), leaving about $+11$ basis points of edge for both families. The median put traded 34 (H1) and 49 (H2) contracts on the entry day, so at 10 percent participation a trader fills 3 to 5 contracts, about \$0.1 million of stock per filing, on about one filing per family a month. Were H3 traded: equal notional per filing, at most a fifth of capital per name, strikes cash-backed, no filing near earnings, and a stop when the live edge's upper bound falls below zero. Across expiry bucket by out-of-money distance, the H2 edge is positive in 9 of 9 cells and H1 in 7 of 9. By tag, only restructuring plans with the sold put clear zero (exploratory).
+When run as a book (one \$1 trade per filing at 21 sessions, net of a 5 percent premium charge each way, with entry at the close after the filing), H1's per-trade Sharpe ratio is 1.20 in-sample versus 1.01 for the same put on ordinary days, and H2's is 1.41 versus 0.74. Out of sample, H2 is $-1.36$ with a 25 percent drawdown over 7 trades. The gap is the filing's contribution, not distinguishable from zero (Table~\ref{tab:edge}). The premium charge is 28 to 29 basis points of the stock price, similar to Massive's quoted half-spreads (26 to 29), leaving about $+11$ basis points of edge for both families. The median put traded 34 (H1) and 49 (H2) contracts on entry day. At 10 percent participation, a trader fills 3 to 5 contracts, about \$0.1 million of stock per filing, with about one filing per family per month. If H3 were traded: equal notional per filing, at most a fifth of capital per name, cash-backed strikes, no filings near earnings, and a stop when the live edge's upper bound falls below zero. Across expiry buckets by out-of-money distance, the H2 edge is positive in 9 of 9 cells and H1 in 7 of 9. By tag, only restructuring plans with the sold put clear zero (exploratory).
 
 \section{What we predict for the sealed window, and how to trade it}
-Our committed forecast called no pass and the H2 count out of sample, and missed the H1 count, the widths and three signs. \textbf{For the judges' window} it predicts \emph{insufficient} for H1 and H2 in three months and a null in six or more. \textbf{H3} should be a null or insufficient in a calm window and show the edge at 21 and 42 sessions in a falling one. The notebook prints each verdict beside this forecast. \textbf{How to trade it.} Buy protection after these filings at the next close without waiting: it is fairly priced within the bounds above. Sell the put after bad-news filings only in a falling market, sized as above, and only after the sealed window or a new stress period confirms it.
+\enlargethispage{2\baselineskip}
+Our committed forecast predicted no pass and matched the H2 count out of sample, but missed the H1 count, interval widths, and three signs. For the judges' window, it predicts \emph{insufficient} results for H1 and H2 in three months and a null in six or more. H3 should be null or insufficient in a calm window and show an edge at 21 and 42 sessions in a declining market. \textbf{Trading guidance:} buy protection after these filings at the next close, as it is fairly priced within the stated bounds. Sell the put after bad-news filings only in a declining market, once the sealed window or a new stress period confirms it.
 
 \end{document}
