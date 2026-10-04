@@ -203,7 +203,7 @@ R1 and R2 are pre-registered analyses of an already-seen 380-closure panel; the 
 
 ## 7. Front end and voice
 
-- **The UI** (`web/`) follows the high-fidelity design in `design/design_handoff_polybridge/`: the liquid-glass style and 8 screens (Landing, Build chat, Connect brokerage, AI pipeline, Bridge live, Portfolio, Library, Profile). Our API replaces the prototype's simulated data wherever an endpoint exists; where none exists the prototype's behaviour stays, labelled.
+- **The UI** (`web/`) follows a high-fidelity design prototype: the liquid-glass style and 8 screens (Landing, Build chat, Connect brokerage, AI pipeline, Bridge live, Portfolio, Library, Profile). Our API replaces the prototype's simulated data wherever an endpoint exists; where none exists the prototype's behaviour stays, labelled.
 - Highlights: the **AI fit card** on Build (event class, family, preset, score, rationale, alternatives); the **Library** screen (families, presets, latency, read live from the catalog); the **Account** panel (broker name, cash, positions, fills); the closed-market views in section 2.
 - **Voice:** an ElevenLabs agent whose tools call our API (search markets, fit, propose, approve, start a bridge, account). The backend lists the tools at `GET /agent/tools`; the web app embeds the widget when `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` is set. Approving and starting a bridge need an explicit "yes". Setup: `docs/voice-agent.md`.
 

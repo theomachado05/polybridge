@@ -1,7 +1,6 @@
 # PolyBridge web
 
-Next.js 16 (App Router) + Tailwind 4. The UI recreates the high-fidelity design in
-`design/design_handoff_polybridge/` (liquid glass, Newsreader / Geist / Geist Mono, the thinking orb).
+Next.js 16 (App Router) + Tailwind 4 (liquid glass, Newsreader / Geist / Geist Mono, the thinking orb).
 
 ```bash
 pnpm install

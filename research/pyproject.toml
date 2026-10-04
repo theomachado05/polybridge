@@ -10,7 +10,7 @@ requires-python = ">=3.10"
 dependencies = ["pandas>=2.2", "numpy>=2.0", "requests>=2.31", "matplotlib>=3.8", "pyyaml>=6.0"]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "nbformat>=5.9"]
+dev = ["pytest>=8", "nbformat>=5.9", "websockets>=12"]
 
 [tool.setuptools.packages.find]
 include = ["polybridge_research*"]

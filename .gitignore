@@ -69,3 +69,5 @@ research/results/live_books/*.pid
 research/results/live_books/*.out
 research/results/live_books/gaps.jsonl
 research/live_books/*.so
+
+web/e2e/screens/
