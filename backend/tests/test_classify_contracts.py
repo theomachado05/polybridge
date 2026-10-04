@@ -143,7 +143,8 @@ def test_bare_ticker_cashtag_and_company_name_resolve_the_underlying():
     assert rc("Will Apple (AAPL) dip to $200 in November?", createdAt="2026-10-01T00:00:00Z")["fields"]["underlying"] == "AAPL"
     assert rc("Will Bank of America hit $60 by December 31, 2026?")["fields"]["underlying"] == "BAC"   # names.json
     # ordinary uppercase words are not tickers; two different tickers are refused
-    assert rc("Will the US CEO of AI ETF hit $5 by December 31, 2026?")["fields"]["underlying"] is None
+    # (a price question with no stock ticker is no longer a ticket: it falls to the rung rule, so there is no underlying)
+    assert rc("Will the US CEO of AI ETF hit $5 by December 31, 2026?")["fields"].get("underlying") is None
     two = rc("Will AAPL or MSFT hit $300 by December 31, 2026?")
     assert two["fields"]["underlying"] is None and "more than one ticker" in " ".join(two["reasons"])
 

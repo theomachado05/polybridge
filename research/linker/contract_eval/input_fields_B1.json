@@ -1,0 +1,775 @@
+{
+ "instructions": "# Contract reader\n\nYou are one of two independent readers. The other one cannot see your answers. You read this one file and nothing\nelse: no other file, no web, no prices, no search.\n\n`questions` lists Polymarket yes/no questions. Each has `id`, `question`, `event_title`, `rules` (the market's own\nrules text, possibly cut short), and `created` (the day the market was created). Read each one into fields. Do not\njudge prices, odds or trades.\n\n## Fields\n\n- `type`, one of:\n  - `touch_ticket`: will a single stock listed in the US, or the S&P 500, **hit, reach, touch, dip to or fall to** a\n    dollar level at any time within a window.\n  - `close_above_ticket`: will a single stock listed in the US, or the S&P 500, **close, finish or settle** above\n    or below a dollar level on one given day.\n  - `ladder_rung`: \"X by <date>\": the question resolves yes if something happens on or before a deadline, so that\n    the same question with a later deadline would also resolve yes. A price question on anything that is not a US\n    stock or the S&P 500 (Bitcoin, gold, oil, another index) is a rung when it has such a deadline.\n  - `other`: everything else: a question about one fixed day or one fixed month that is not cumulative, a range\n    (\"between $A and $B\"), an up-or-down market over minutes or hours, an election, a ranking.\n- `underlying`: for the two ticket types, the ticker as its US exchange shows it (NVDA, TSLA; `SPX` for the S&P 500\n  index, `SPY` only if the question is about the SPY fund itself). Otherwise \"\".\n- `level`: for tickets, the dollar level as a number. Otherwise 0.\n- `direction`: for tickets, `up` when yes means the price went up to the level or closed above it, `down` when yes\n  means it dipped or fell to the level or closed below it. If the question's verb is neutral (\"hit\") take the\n  direction from the rules text (\"at or above\", \"at or below\") or from an arrow in the event title or question; if\n  nothing says, `none`. For other types, `none`.\n- `date`, as YYYY-MM-DD: a rung's deadline, a touch ticket's last day, a close ticket's day. Take the year from the\n  rules text when it is written there, else from the question or the event title, else use the first such day on\n  or after `created`. Use the calendar day in US Eastern time as the rules state it. For `other`, \"\".\n- `year_from`: `rules`, `question`, `title` or `created`: where the year came from. For `other`, \"\".\n- `sure`: false if you had to guess any field.\n\n## Output\n\nWrite one JSON object to the answer file you were told, and nothing else there:\n\n```json\n{\"labeller\": \"<the name you were given>\", \"chunk\": \"<the chunk you were given>\", \"answers\": [\n  {\"id\": \"123\", \"type\": \"touch_ticket\", \"underlying\": \"NVDA\", \"level\": 200, \"direction\": \"up\",\n   \"date\": \"2026-12-31\", \"year_from\": \"rules\", \"sure\": true}\n]}\n```\n\nEvery question gets exactly one answer, in the same order.\n",
+ "questions": [
+  {
+   "id": "1038646",
+   "question": "Will Titan launch a token by September 30, 2026?",
+   "event_title": "Will Titan launch a token by ___?",
+   "rules": "This market will resolve to “Yes” if Titan (https://x.com/Titan_Exchange) officially launches a governance token by 11:59 PM ET on the date specified in the title. Otherwise, this market will resolve to “No”.\n\nThe token must be actively and publicly transferable and tradable. Announcements alone do not qualify.\n\nThe primary resolution source for this market will be information from Titan, however a consensus of credible reporting will also be used.",
+   "created": "2025-12-27"
+  },
+  {
+   "id": "3942420",
+   "question": "49ers 1H Team Total: O/U 8.5",
+   "event_title": "49ers vs. Rams",
+   "rules": "In the first half of the NFL game between 49ers and Rams, scheduled for September 10 at 8:35 PM ET:\n\nThis market will resolve to \"Over\" if the 49ers score 9 or more points in the first half.\n\nIf the 49ers score less than 9 points in the first half, this market will resolve to \"Under\".\n\nThis market is based solely on the 49ers's first half score.\n\nOnly points scored during that period count; overtime is not included.\n\nIf the game is postponed, this market will remain open until the game has been completed. If the game is canceled entirely, with no make-up game, this market will resolve 50-50.",
+   "created": "2026-08-28"
+  },
+  {
+   "id": "657146",
+   "question": "Will Google reach $380 in November?",
+   "event_title": "What will Google (GOOGL) hit in November 2025?",
+   "rules": "This market will resolve to \"Yes\" if, at any point during November 2025 (ET), any 1-minute candle for Alphabet Inc. (GOOGL) has a final \"High\" price equal to or above the listed price. Otherwise, this market will resolve to \"No\".\n\nOnly prices achieved during regular trading hours (ET) will be considered.\n\nIn the event of a stock split, reverse stock split, or similar corporate action affecting the listed company during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Yahoo Finance.\n\nThe target price will be adjusted proportionally to reflect any stock splits. Resolution will be based on the historical price data as shown on Yahoo Finance after any adjustments have been applied.\n\nThe resolution source for this market is Yahoo Finance — specifically, the Alphabet Inc. (GOOGL) \"High\" prices available at https://finance.yahoo.com/quote/GOOGL/, wi",
+   "created": "2025-10-30"
+  },
+  {
+   "id": "3410144",
+   "question": "Will Gold (XAUUSD) hit (HIGH) $4,400 Week of August 10 2026?",
+   "event_title": "What will Gold (XAUUSD) hit Week of August 10 2026?",
+   "rules": "This market will resolve to \"Yes\" if, at any point after market creation and during a trading session of the week of August 10 2026, any 1-minute candle for Gold (XAUUSD) has a final \"High\" or \"Low\" price equal to or beyond (above for ↑ High Prices, below for ↓ Low Prices) the listed price. Otherwise, this market will resolve to \"No\".\n\nOnly prices achieved during an applicable trading session of the specified timeframe's business days will be considered. The trading session for a given business day typically begins at 6:00 PM ET on the prior calendar date. Under the standard schedule, trading is open from 6:00:00 PM ET Sunday through 5:00:00 PM ET Friday, with a daily break from 5:00:00 PM ET to 6:00:00 PM ET, except where modified by holiday or special-session hours.\n\nPrices will be used exactly as published by Pyth, without rounding.\n\nIf Gold (XAUUSD) does not trade at all during the l",
+   "created": "2026-08-07"
+  },
+  {
+   "id": "1849851",
+   "question": "Will Apple (AAPL) close at $240-$245 on the final day of trading of the week of Apr 6 – Apr 10?",
+   "event_title": "Apple (AAPL) closes week of Apr 6 at ___?",
+   "rules": "This market will resolve according to the official closing price for Apple (AAPL) on the final day of trading of the specified week (normally Friday).\n\nIf the reported value falls exactly between two brackets, then this market will resolve to the higher range bracket.\n\nIf the final session of the week is shortened (for example, due to a market-holiday schedule), the official closing price published for that shortened session will still be used for resolution.\n\nIf no official closing price is published for that session (for example, due to a trading halt into the close, system issue, delisting, or other disruption), the market will use the last valid on-exchange trade price of the regular session as the effective closing price.\n\nIn the event of a stock split, reverse stock split, or similar corporate action affecting the listed company during the listed time frame, this market will resolv",
+   "created": "2026-04-03"
+  },
+  {
+   "id": "4035642",
+   "question": "Will Alphabet Inc. (GOOGL) hit (HIGH) $345 Week of August 31 2026?",
+   "event_title": "What will Alphabet Inc. (GOOGL) hit Week of August 31 2026?",
+   "rules": "This market will resolve to \"Yes\" if, at any point after market creation and during the week of August 31 2026, any 1-minute candle for Alphabet Inc. (GOOGL) has a final \"High\" or \"Low\" price equal to or beyond (above for ↑ High Prices, below for ↓ Low Prices) the listed price. Otherwise, this market will resolve to \"No\".\n\nOnly prices achieved during the regular trading hours of the primary exchange on which the listed security trades (typically 9:30 AM – 4:00 PM ET) will be considered. Prices occurring during pre-market or after-hours trading will not qualify.\n\nPrices will be used exactly as published by Pyth, without rounding.\n\nIn the event of a stock split, reverse stock split, or similar corporate action affecting the listed company during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Pyth.\n\nThe target price will be adjusted proportion",
+   "created": "2026-08-31"
+  },
+  {
+   "id": "1460804",
+   "question": "Will Apple (AAPL) close above $300 end of March?",
+   "event_title": "Will Apple (AAPL) close above ___ end of March?",
+   "rules": "This market will resolve to \"Yes\" if the official closing price for Apple (AAPL) on the final trading day of March 2026 is higher than the listed price. Otherwise, this market will resolve to \"No\".\n\nIf the final trading day of the month is shortened (for example, due to a market-holiday schedule), the official closing price published for that shortened session will still be used for resolution.\n\nIf no official closing price is published for that session (for example, due to a trading halt into the close, system issue, or other disruption), the market will use the last valid on-exchange trade price of the regular session as the effective closing price.\n\nThe resolution source for this market is Yahoo Finance — specifically, the Apple (AAPL) \"Close\" prices available at https://finance.yahoo.com/quote/AAPL/history, published under \"Historical Prices.\"\n\nIn the event of a stock split, reverse ",
+   "created": "2026-02-27"
+  },
+  {
+   "id": "2758325",
+   "question": "Will the Bitcoin Volatility Index hit 60 by July 31?",
+   "event_title": "What will the Bitcoin Implied Volatility index hit by July 31?",
+   "rules": "This market will immediately resolve to \"Yes\" if any Volmex 1 minute candle for the Bitcoin Volmex Implied Volatility 30 Day Index (BVIV) between the creation of this market and 23:59 ET on the date specified in the title has a final \"High\" or \"Low\" value equal to or beyond (above for ↑ High Prices, below for ↓ Low Prices) the listed value. Otherwise, this market will resolve to \"No\".\n\nThe resolution source for this market is Volmex, specifically the Bitcoin Volmex Implied Volatility 30 Day Index \"High\" and \"Low\" values available at https://charts.volmex.finance/symbol/BVIV, with the chart settings on \"1m\" for one-minute candles selected on the top bar.\n\nPlease note that the outcome of this market depends solely on the data from the Bitcoin Volmex Implied Volatility 30 Day Index chart. Values from other exchanges or different indexes will not be considered for the resolution of this mark",
+   "created": "2026-07-01"
+  },
+  {
+   "id": "740693",
+   "question": "Will Amazon (AMZN) close above $290 end of December?",
+   "event_title": "Will Amazon (AMZN) close above ___ end of December?",
+   "rules": "This market will resolve to \"Yes\" if the official closing price for Amazon.com, Inc. (AMZN) on the final trading day of December 2025 is higher than the listed price. Otherwise, this market will resolve to \"No\".\n\nIf the final trading day of the month is shortened (for example, due to a market-holiday schedule), the official closing price published for that shortened session will still be used for resolution.\n\nIf no official closing price is published for that session (for example, due to a trading halt into the close, system issue, or other disruption), the market will use the last valid on-exchange trade price of the regular session as the effective closing price.\n\nThe resolution source for this market is Yahoo Finance — specifically, the Amazon.com, Inc. (AMZN) \"Close\" prices available at https://finance.yahoo.com/quote/AMZN/history, published under \"Historical Prices.\"\n\nIn the event o",
+   "created": "2025-11-28"
+  },
+  {
+   "id": "2202921",
+   "question": "Will Alphabet Inc. (GOOGL) hit (LOW) $385 Week of May 11 2026?",
+   "event_title": "What will Alphabet Inc. (GOOGL) hit Week of May 11 2026?",
+   "rules": "This market will resolve to \"Yes\" if, at any point during the week of May 11 2026, any 1-minute candle for Alphabet Inc. (GOOGL) has a final \"Low\" price equal to or below the listed price. Otherwise, this market will resolve to \"No\".\n\nOnly prices achieved during the regular trading hours of the primary exchange on which the listed security trades (typically 9:30 AM – 4:00 PM ET) will be considered. Prices occurring during pre-market or after-hours trading will not qualify.\n\nPrices will be used exactly as published by Pyth, without rounding.\n\nIn the event of a stock split, reverse stock split, or similar corporate action affecting the listed company during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Pyth.\n\nThe target price will be adjusted proportionally to reflect any stock splits. Resolution will be based on the historical price data as",
+   "created": "2026-05-08"
+  },
+  {
+   "id": "1542684",
+   "question": "Will NVIDIA reach $228 in April?",
+   "event_title": "What will NVIDIA (NVDA) hit in April 2026?",
+   "rules": "This market will resolve to \"Yes\" if, at any point during April 2026 (ET), any 1-minute candle for NVIDIA (NVDA) has a final \"High\" price equal to or above the listed price. Otherwise, this market will resolve to \"No\".\n\nOnly prices achieved during regular trading hours (ET) will be considered.\n\nThe resolution source for this market is Yahoo Finance — specifically, the NVIDIA (NVDA) \"High\" prices available at https://finance.yahoo.com/quote/NVDA/, with the chart settings on \"1m\" for candle intervals.\n\nIn the event of a stock split, reverse stock split, or similar corporate action affecting the listed company during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Yahoo Finance.",
+   "created": "2026-03-09"
+  },
+  {
+   "id": "2419603",
+   "question": "Will the Bitcoin Volatility Index dip to 35 by June 30?",
+   "event_title": "What will the Bitcoin Implied Volatility index hit by June 30?",
+   "rules": "This market will immediately resolve to \"Yes\" if any Volmex 1 minute candle for the Bitcoin Volmex Implied Volatility 30 Day Index (BVIV) between the creation of this market and 23:59 on the date specified in the title has a final \"Low\" value equal to or lower than the value specified in the title. Otherwise, this market will resolve to \"No.\"\n\nThe resolution source for this market is Volmex, specifically the Bitcoin Volmex Implied Volatility 30 Day Index \"Low\" values available at https://charts.volmex.finance/symbol/BVIV, with the chart settings on \"1m\" for one-minute candles selected on the top bar.\n\nPlease note that the outcome of this market depends solely on the data from the Bitcoin Volmex Implied Volatility 30 Day Index chart. Values from other exchanges or different indexes will not be considered for the resolution of this market.",
+   "created": "2026-06-02"
+  },
+  {
+   "id": "1492880",
+   "question": "Will S&P 500 (SPX) close over $7,100 on the final trading day of March 2026?",
+   "event_title": "S&P 500 (SPX) above ___ end of March?",
+   "rules": "This market will resolve to \"Yes\" if the official closing price for S&P 500 (SPX) on the final trading day of March 2026 is higher than the listed price. Otherwise, this market will resolve to \"No\".\n\nIf the final trading day of the month is shortened (for example, due to a market-holiday schedule), the official closing price published for that shortened session will still be used for resolution.\n\nIf no official closing price is published for that session (for example, due to a trading halt into the close, system issue, delisting, or other disruption), the market will use the last valid recorded price in March as the effective closing price.\n\nThe resolution source for this market is Yahoo Finance, specifically the S&P 500 (SPX) \"Close\" prices available at https://finance.yahoo.com/quote/%5EGSPC/history, published under \"Historical Prices.\"",
+   "created": "2026-03-03"
+  },
+  {
+   "id": "2643403",
+   "question": "Will the US announce withdrawal from MOU negotiations by July 31?",
+   "event_title": "US announces withdrawal from MOU negotiations by...?",
+   "rules": "On June 14, 2026, the United States and Iran announced a memorandum of understanding ending the immediate conflict and establishing a 60-day framework for negotiating a final agreement.\n\nThis market will resolve to \"Yes\" if the United States government, or an authorized representative of the United States government, publicly and officially announces its termination of participation in the negotiation process toward the final agreement contemplated by the June 14, 2026 MOU between market creation and the specified date, 11:59 PM ET. Otherwise, this market will resolve to \"No.\"\n\nA termination means a definitive end to the United States' participation in the negotiation process as a whole. A temporary suspension, pause, or adjournment of negotiations, however open-ended or indefinite, does not constitute a termination unless it is itself clearly and unambiguously framed as a definitive end",
+   "created": "2026-06-22"
+  },
+  {
+   "id": "4191026",
+   "question": "Will South Korea ETF (EWY) hit (LOW) $178 Week of August 31 2026?",
+   "event_title": "What will South Korea ETF (EWY) hit Week of August 31 2026?",
+   "rules": "This market will resolve to \"Yes\" if, at any point after market creation and during the week of August 31 2026, any 1-minute candle for South Korea ETF (EWY) has a final \"High\" or \"Low\" price equal to or beyond (above for ↑ High Prices, below for ↓ Low Prices) the listed price. Otherwise, this market will resolve to \"No\".\n\nOnly prices achieved during the regular trading hours of the primary exchange on which the listed security trades (typically 9:30 AM – 4:00 PM ET) will be considered. Prices occurring during pre-market or after-hours trading will not qualify.\n\nPrices will be used exactly as published by Pyth, without rounding.\n\nIn the event of a stock split, reverse stock split, or similar corporate action affecting the listed company during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Pyth.\n\nThe target price will be adjusted proportion",
+   "created": "2026-09-03"
+  },
+  {
+   "id": "3258436",
+   "question": "Will Hyperliquid dip to $48 in August?",
+   "event_title": "What price will Hyperliquid hit in August?",
+   "rules": "This market will immediately resolve to \"Yes\" if any Binance 1 minute candle for HYPEUSDT during the month specified in the title (from 00:00 AM ET on the first day to 11:59 PM ET on the last) has a final Low price equal to or lower than the price specified in the title. Otherwise, this market will resolve to \"No.\"\n\nThe resolution source for this market is Binance, specifically the HYPEUSDT Low prices available at https://www.binance.com/en/futures/HYPEUSDT, with the chart settings on \"1m\" for one-minute candles selected on the top bar.\n\nPlease note that the outcome of this market depends solely on the price data from the Binance HYPEUSDT trading pair. Prices from other exchanges, different trading pairs, or spot markets will not be considered for the resolution of this market.",
+   "created": "2026-08-01"
+  },
+  {
+   "id": "2424268",
+   "question": "Will XRP reach $1.20 on June 3?",
+   "event_title": "What price will XRP hit on June 3?",
+   "rules": "This market will immediately resolve to \"Yes\" if any Binance 1-minute candle for XRP (XRP/USDT) on the date specified in the title, between 12:00 AM ET and 11:59 PM ET has a final \"High\" price equal to or greater than the price specified in the title. Otherwise, this market will resolve to \"No\".\n\nThe resolution source for this market is Binance, specifically the XRP/USDT \"High\" prices available at https://www.binance.com/en/trade/XRP_USDT, with the chart settings on \"1m\" candles selected on the top bar.\n\nPlease note that the outcome of this market depends solely on the price data from the Binance XRP/USDT trading pair. Prices from other exchanges, different trading pairs, or spot markets will not be considered for the resolution of this market.",
+   "created": "2026-06-03"
+  },
+  {
+   "id": "4727627",
+   "question": "Will Alphabet Inc. (GOOGL) hit (LOW) $350 in September?",
+   "event_title": "What will Alphabet Inc. (GOOGL) hit in September 2026?",
+   "rules": "This market will resolve to \"Yes\" if, at any point after market creation and during September 2026, any 1-minute candle for Alphabet Inc. (GOOGL) has a final \"High\" or \"Low\" price equal to or beyond (above for ↑ High Prices, below for ↓ Low Prices) the listed price. Otherwise, this market will resolve to \"No\".\n\nOnly prices achieved during the regular trading hours of the primary exchange on which the listed security trades (typically 9:30 AM – 4:00 PM ET) will be considered. Prices occurring during pre-market or after-hours trading will not qualify.\n\nPrices will be used exactly as published by Pyth, without rounding.\n\nIn the event of a stock split, reverse stock split, or similar corporate action affecting the listed company during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Pyth.\n\nThe target price will be adjusted proportionally to refl",
+   "created": "2026-09-19"
+  },
+  {
+   "id": "2178986",
+   "question": "Will Solana reach $100 on May 7?",
+   "event_title": "What price will Solana hit on May 7?",
+   "rules": "This market will immediately resolve to \"Yes\" if any Binance 1-minute candle for Solana (SOL/USDT) on the date specified in the title, between 12:00 AM ET and 11:59 PM ET has a final \"High\" price equal to or greater than the price specified in the title. Otherwise, this market will resolve to \"No\".\n\nThe resolution source for this market is Binance, specifically the SOL/USDT \"High\" prices available at https://www.binance.com/en/trade/SOL_USDT, with the chart settings on \"1m\" candles selected on the top bar.\n\nPlease note that the outcome of this market depends solely on the price data from the Binance SOL/USDT trading pair. Prices from other exchanges, different trading pairs, or spot markets will not be considered for the resolution of this market.",
+   "created": "2026-05-07"
+  },
+  {
+   "id": "1081547",
+   "question": "Will Chainlink hit $13 in January?",
+   "event_title": "What price will Chainlink hit in January?",
+   "rules": "This market will immediately resolve to “Yes” if any Binance 1 minute candle for LINK/USDT during the month specified in the title (from 00:00 AM ET on the first day to 11:59 PM ET on the last) has a final High price equal to or greater than the price specified in the title. Otherwise, this market will resolve to “No.”\n\nThe resolution source for this market is Binance, specifically the LINK/USDT High prices available at https://www.binance.com/en/trade/LINK_USDT, with the chart settings on “1m” for one-minute candles selected on the top bar.\n\nPlease note that the outcome of this market depends solely on the price data from the Binance LINK/USDT trading pair. Prices from other exchanges, different trading pairs, or spot markets will not be considered for the resolution of this market.",
+   "created": "2026-01-01"
+  },
+  {
+   "id": "1016024",
+   "question": "Will Tesla reach $645 in January?",
+   "event_title": "What will Tesla (TSLA) hit in January 2026?",
+   "rules": "This market will resolve to \"Yes\" if, at any point during January 2026 (ET), any 1-minute candle for Tesla, Inc. (TSLA) has a final \"High\" price equal to or above the listed price. Otherwise, this market will resolve to \"No\".\n\nOnly prices achieved during regular trading hours (ET) will be considered.\n\nThe resolution source for this market is Yahoo Finance — specifically, the Tesla, Inc. (TSLA) \"High\" prices available at https://finance.yahoo.com/quote/TSLA/, with the chart settings on \"1m\" for candle intervals.\n\nIn the event of a stock split, reverse stock split, or similar corporate action affecting the listed company during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Yahoo Finance.",
+   "created": "2025-12-25"
+  },
+  {
+   "id": "2584818",
+   "question": "1st 5 Innings Spread: San Francisco Giants (-2.5)",
+   "event_title": "San Francisco Giants vs. Atlanta Braves",
+   "rules": "In the upcoming MLB game between the San Francisco Giants and Atlanta Braves, scheduled for June 18 at 7:15 PM ET: This market will resolve to \"San Francisco Giants\" if the San Francisco Giants is winning the game by 3 or more runs at the conclusion of the 5th inning. Otherwise, this market will resolve to \"Atlanta Braves\". If the game is tied at the conclusion of the 5th inning, this market will resolve to \"Atlanta Braves\". If the game is postponed, this market will remain open until the 5th inning has been completed. If the game is canceled entirely, with no make-up game, this market will resolve 50-50. To know when a postponed game will be played, please check the home team's schedule on MLB.com for the listed team and look for the game described as a makeup game. The primary resolution source for this market is the official final statistics of the event as recognized by the governing",
+   "created": "2026-06-17"
+  },
+  {
+   "id": "662996",
+   "question": "Will Meta (META) close above $680 end of November?",
+   "event_title": "Will Meta (META) close above ___ end of November?",
+   "rules": "This market will resolve to \"Yes\" if the official closing price for Meta Platforms, Inc. (META) on the final trading day of November 2025 is higher than the listed price. Otherwise, this market will resolve to \"No\".\n\nIf the final trading day of the month is shortened (for example, due to a market-holiday schedule), the official closing price published for that shortened session will still be used for resolution.\n\nIf no official closing price is published for that session (for example, due to a trading halt into the close, system issue, or other disruption), the market will use the last valid on-exchange trade price of the regular session as the effective closing price.\n\nThe resolution source for this market is Yahoo Finance — specifically, the Meta Platforms, Inc. (META) \"Close\" prices available at https://finance.yahoo.com/quote/META/history, published under \"Historical Prices.\"\n\nIn the",
+   "created": "2025-11-03"
+  },
+  {
+   "id": "4231901",
+   "question": "Will MicroStrategy (MSTR) hit (LOW) $120 Week of September 7 2026?",
+   "event_title": "What will MicroStrategy (MSTR) hit Week of September 7 2026?",
+   "rules": "This market will resolve to \"Yes\" if, at any point after market creation and during the week of September 7 2026, any 1-minute candle for MicroStrategy (MSTR) has a final \"High\" or \"Low\" price equal to or beyond (above for ↑ High Prices, below for ↓ Low Prices) the listed price. Otherwise, this market will resolve to \"No\".\n\nOnly prices achieved during the regular trading hours of the primary exchange on which the listed security trades (typically 9:30 AM – 4:00 PM ET) will be considered. Prices occurring during pre-market or after-hours trading will not qualify.\n\nPrices will be used exactly as published by Pyth, without rounding.\n\nIn the event of a stock split, reverse stock split, or similar corporate action affecting the listed company during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Pyth.\n\nThe target price will be adjusted proportio",
+   "created": "2026-09-04"
+  },
+  {
+   "id": "1420756",
+   "question": "Will Burlington Stores (BURL) beat quarterly earnings?",
+   "event_title": "Will Burlington Stores (BURL) beat quarterly earnings?",
+   "rules": "As of market creation, Burlington Stores is estimated to release earnings on March 5, 2026. The Street consensus estimate for Burlington Stores's GAAP EPS for the relevant quarter is $4.58 as of market creation. This market will resolve to \"Yes\" if Burlington Stores reports GAAP EPS greater than $4.58 for the relevant quarter in its next quarterly earnings release. Otherwise, it will resolve to \"No.\" The resolution source will be the GAAP EPS listed in the company’s official earnings documents. \n\nIf Burlington Stores releases earnings without GAAP EPS, then the market will resolve according to the GAAP EPS figure reported by SeekingAlpha. If no such figure is published within 96h of market close (4:00:00pm ET) on the day earnings are announced, the market will resolve to “No”.\n\nIf the company does not release earnings within 45 calendar days of the estimated earnings date, this market wi",
+   "created": "2026-02-23"
+  },
+  {
+   "id": "4035683",
+   "question": "Will Airbnb, Inc. (ABNB) hit (LOW) $184 Week of August 31 2026?",
+   "event_title": "What will Airbnb, Inc. (ABNB) hit Week of August 31 2026?",
+   "rules": "This market will resolve to \"Yes\" if, at any point after market creation and during the week of August 31 2026, any 1-minute candle for Airbnb, Inc. (ABNB) has a final \"High\" or \"Low\" price equal to or beyond (above for ↑ High Prices, below for ↓ Low Prices) the listed price. Otherwise, this market will resolve to \"No\".\n\nOnly prices achieved during the regular trading hours of the primary exchange on which the listed security trades (typically 9:30 AM – 4:00 PM ET) will be considered. Prices occurring during pre-market or after-hours trading will not qualify.\n\nPrices will be used exactly as published by Pyth, without rounding.\n\nIn the event of a stock split, reverse stock split, or similar corporate action affecting the listed company during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Pyth.\n\nThe target price will be adjusted proportional",
+   "created": "2026-08-31"
+  },
+  {
+   "id": "3410119",
+   "question": "Will S&P 500 (SPY) hit (LOW) $765 Week of August 10 2026?",
+   "event_title": "What will S&P 500 (SPY) hit Week of August 10 2026?",
+   "rules": "This market will resolve to \"Yes\" if, at any point after market creation and during the week of August 10 2026, any 1-minute candle for S&P 500 (SPY) has a final \"High\" or \"Low\" price equal to or beyond (above for ↑ High Prices, below for ↓ Low Prices) the listed price. Otherwise, this market will resolve to \"No\".\n\nOnly prices achieved during the regular trading hours of the primary exchange on which the listed security trades (typically 9:30 AM – 4:00 PM ET) will be considered. Prices occurring during pre-market or after-hours trading will not qualify.\n\nPrices will be used exactly as published by Pyth, without rounding.\n\nIn the event of a stock split, reverse stock split, or similar corporate action affecting the listed company during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Pyth.\n\nThe target price will be adjusted proportionally to ",
+   "created": "2026-08-07"
+  },
+  {
+   "id": "704136",
+   "question": "Will Tempo launch a token by June 30, 2026?",
+   "event_title": "Will Tempo launch a token by ___ ?",
+   "rules": "This market will resolve to “Yes” if Tempo (https://tempo.xyz/) officially launches a governance token by 11:59 PM ET on the date specified in the title. Otherwise, this market will resolve to “No”.\n\nThe token must be actively and publicly transferable and tradable. Announcements alone do not qualify.\n\nThe primary resolution source for this market will be information from Tempo, however a consensus of credible reporting will also be used.",
+   "created": "2025-11-25"
+  },
+  {
+   "id": "951180",
+   "question": "Ethereum all time high by September 30, 2026?",
+   "event_title": "Ethereum all time high by ___?",
+   "rules": "This market will resolve to \"Yes\" if any Binance 1 minute candle for ETH/USDT between 16 December '25 16:30 and 11:59PM ET on the date specified in the title has a final “High” price that is higher than any previous Binance 1 minute candle's \"High\" price on any prior date. Otherwise, this market will resolve to \"No\".\n\nThe resolution source for this market is Binance, specifically the ETH/USDT \"High\" prices currently available at https://www.binance.com/en/trade/ETH_USDT with “1m” and “Candles” selected on the top bar.\n\nPlease note that this market is about the price according to Binance ETH/USDT, not according to other sources or spot markets.",
+   "created": "2025-12-16"
+  },
+  {
+   "id": "1323366",
+   "question": "Ukraine officially agrees to a US backed ceasefire framework by June 30?",
+   "event_title": "Ukraine officially agrees to a US backed ceasefire framework by...?",
+   "rules": "This market will resolve to “Yes” if Ukraine officially agrees to a peace framework to end the Russo–Ukrainian war that the United States has formally endorsed by June 30, 2026, 11:59 PM ET. Otherwise, this market will resolve to “No”.\n\nA qualifying peace framework is any publicly announced plan, roadmap, or framework intended as the basis for ending the war, provided that the United States formally endorses it and Ukraine officially agrees to it through one of the following:\n\n1. A written or signed framework-related instrument issued or signed by Ukraine that affirms agreement with the U.S.-endorsed framework.\n\n2. An official U.S.–Ukraine announcement — defined as an official government-issued declaration, such as a joint statement, communiqué, or coordinated official releases, explicitly stating that Ukraine has agreed to a U.S.-endorsed peace framework. The announcement must be issued",
+   "created": "2026-02-03"
+  },
+  {
+   "id": "1125367",
+   "question": "Will S&P 500 (SPX) close over $7,040 on the final trading day of January 2026?",
+   "event_title": "S&P 500 (SPX) above ___ end of January?",
+   "rules": "This market will resolve to \"Yes\" if the official closing price for S&P 500 (SPX) on the final trading day of January 2026 is higher than the listed price. Otherwise, this market will resolve to \"No\".\n\nIf the final trading day of the month is shortened (for example, due to a market-holiday schedule), the official closing price published for that shortened session will still be used for resolution.\n\nIf no official closing price is published for that session (for example, due to a trading halt into the close, system issue, or other disruption), the market will use the last valid on-exchange trade price of the regular session as the effective closing price.\n\nThe resolution source for this market is Yahoo Finance, specifically the S&P 500 (SPX) \"Close\" prices available at https://finance.yahoo.com/quote/%5EGSPC/history, published under \"Historical Prices.\"",
+   "created": "2026-01-06"
+  },
+  {
+   "id": "2874476",
+   "question": "Will Meta Platforms, Inc. (META) hit (HIGH) $680 Week of July 13 2026?",
+   "event_title": "What will Meta Platforms, Inc. (META) hit Week of July 13 2026?",
+   "rules": "This market will resolve to \"Yes\" if, at any point during the week of July 13 2026, any 1-minute candle for Meta Platforms, Inc. (META) has a final \"High\" price equal to or above the listed price. Otherwise, this market will resolve to \"No\".\n\nOnly prices achieved during the regular trading hours of the primary exchange on which the listed security trades (typically 9:30 AM – 4:00 PM ET) will be considered. Prices occurring during pre-market or after-hours trading will not qualify.\n\nPrices will be used exactly as published by Pyth, without rounding.\n\nIn the event of a stock split, reverse stock split, or similar corporate action affecting the listed company during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Pyth.\n\nThe target price will be adjusted proportionally to reflect any stock splits. Resolution will be based on the historical price",
+   "created": "2026-07-10"
+  },
+  {
+   "id": "800432",
+   "question": "Will Bitcoin reach $95,000 by December 31, 2025?",
+   "event_title": "What price will Bitcoin hit in 2025?",
+   "rules": "This market will immediately resolve to \"Yes\" if any Binance 1 minute candle for Bitcoin (BTCUSDT) between December 2, 2025, 14:30 and December 31, 2025, 23:59 in the ET timezone has a final \"High\" price equal to or greater than the price specified in the title. Otherwise, this market will resolve to \"No.\"\n\nThe resolution source for this market is Binance, specifically the BTCUSDT \"High\" prices available at https://www.binance.com/en/trade/BTC_USDT, with the chart settings on \"1m\" for one-minute candles selected on the top bar.\n\nPlease note that the outcome of this market depends solely on the price data from the Binance BTCUSDT trading pair. Prices from other exchanges, different trading pairs, or spot markets will not be considered for the resolution of this market.",
+   "created": "2025-12-02"
+  },
+  {
+   "id": "949286",
+   "question": "Will Jatiya Party win the most seats in the Bangladesh parliamentary election?",
+   "event_title": "Bangladesh Parliamentary Election Winner",
+   "rules": "Parliamentary elections are scheduled to be held in Bangladesh on February 12, 2026.\n\nThis market will resolve to the political party that wins the greatest number of seats in the unicameral Bangladeshi parliament, the “House of the Nation” (Jatiya Sangsad), in this election.\n\nThis market's resolution will be based solely on the number of seats won by the named party or coalition in the House of the Nation in this election. If additional seats are contested after the results of this election are made official (i.e. seats reserved for women are contested at a later date), those seats will not be considered for resolution of this market. If a second house of the Bangladeshi parliament is established, seats in that house will not be considered for resolution of this market.\n\nIn the event of a tie between multiple parties for the most seats won, this market will resolve in favor of the party",
+   "created": "2025-12-16"
+  },
+  {
+   "id": "4167002",
+   "question": "Will Apple release a foldable iPhone by September 9?",
+   "event_title": "Will Apple release a foldable iPhone by...?",
+   "rules": "This market will resolve to \"Yes\" if Apple officially releases a foldable iPhone by September 9, 2026, 11:59 PM ET. Otherwise, this market will resolve to \"No\".\n\nIn order to be considered released, the product must be available for purchase by the general public within the specified timeframe. An announcement or unveiling alone is not sufficient.\n\nA qualifying release of a foldable smartphone by Apple will count even if it is not explicitly branded an iPhone.\n\nThe primary resolution source for this market will be official statements from Apple. However, a consensus of credible reporting may also be used.",
+   "created": "2026-09-02"
+  },
+  {
+   "id": "2459642",
+   "question": "Will Ethereum dip to $1,250 on June 7?",
+   "event_title": "What price will Ethereum hit on June 7?",
+   "rules": "This market will immediately resolve to \"Yes\" if any Binance 1 minute candle for Ethereum (ETH/USDT) on the date specified in the title, between 12:00 AM ET and 11:59 PM ET has a final \"Low\" price equal to or lower than the price specified in the title. Otherwise, this market will resolve to \"No.\"\n\nThe resolution source for this market is Binance, specifically the ETH/USDT \"Low\" prices available at https://www.binance.com/en/trade/ETH_USDT, with the chart settings on \"1m\" for one-minute candles selected on the top bar.\n\nPlease note that the outcome of this market depends solely on the price data from the Binance ETH/USDT trading pair. Prices from other exchanges, different trading pairs, or spot markets will not be considered for the resolution of this market.",
+   "created": "2026-06-07"
+  },
+  {
+   "id": "2481528",
+   "question": "Labour leadership election scheduled by December 31, 2026?",
+   "event_title": "Labour leadership election scheduled by ...?",
+   "rules": "This market will resolve to \"Yes\" if a leadership election for the UK-wide Leader of the Labour Party is scheduled by the specified date, ET. Otherwise, this market will resolve to \"No\".\n\nThis market is about whether a date for any Labour Party leadership election is announced within this market's timeframe. Whether the election is supposed to take place within this market's timeframe or later will have no effect on the resolution to this market.\n\nThe resolution source for this market will be official information from the Labour Party, however a consensus of credible reporting may be used.",
+   "created": "2026-06-09"
+  },
+  {
+   "id": "4148955",
+   "question": "Will SpaceX (SPCX) hit (HIGH) $142.50 Week of August 31 2026?",
+   "event_title": "What will SpaceX (SPCX) hit Week of August 31 2026?",
+   "rules": "This market will resolve to \"Yes\" if, at any point after market creation and during the week of August 31 2026, any 1-minute candle for SpaceX (SPCX) has a final \"High\" or \"Low\" price equal to or beyond (above for ↑ High Prices, below for ↓ Low Prices) the listed price. Otherwise, this market will resolve to \"No\".\n\nOnly prices achieved during the regular trading hours of the primary exchange on which the listed security trades (typically 9:30 AM – 4:00 PM ET) will be considered. Prices occurring during pre-market or after-hours trading will not qualify.\n\nPrices will be used exactly as published by Pyth, without rounding.\n\nIn the event of a stock split, reverse stock split, or similar corporate action affecting the listed company during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Pyth.\n\nThe target price will be adjusted proportionally to ",
+   "created": "2026-09-02"
+  },
+  {
+   "id": "702407",
+   "question": "Will Tesla dip to $353 in December?",
+   "event_title": "What will Tesla (TSLA) hit in December 2025?",
+   "rules": "This market will resolve to \"Yes\" if, at any point during December 2025 (ET), any 1-minute candle for Tesla, Inc. (TSLA) has a final \"Low\" price equal to or below the listed price. Otherwise, this market will resolve to \"No\".\n\nOnly prices achieved during regular trading hours (ET) will be considered.\n\nThe resolution source for this market is Yahoo Finance — specifically, the Tesla, Inc. (TSLA) \"Low\" prices available at https://finance.yahoo.com/quote/TSLA/, with the chart settings on \"1m\" for candle intervals.\n\nIn the event of a stock split, reverse stock split, or similar corporate action affecting the listed company during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Yahoo Finance.",
+   "created": "2025-11-25"
+  },
+  {
+   "id": "3096224",
+   "question": "Will Rocket Lab USA, Inc. (RKLB) hit (HIGH) $88 in August?",
+   "event_title": "What will Rocket Lab USA, Inc. (RKLB) hit in August 2026?",
+   "rules": "This market will resolve to \"Yes\" if, at any point during August 2026, any 1-minute candle for Rocket Lab USA, Inc. (RKLB) has a final \"High\" price equal to or above the listed price. Otherwise, this market will resolve to \"No\".\n\nOnly prices achieved during the regular trading hours of the primary exchange on which the listed security trades (typically 9:30 AM – 4:00 PM ET) will be considered. Prices occurring during pre-market or after-hours trading will not qualify.\n\nPrices will be used exactly as published by Pyth, without rounding.\n\nIn the event of a stock split, reverse stock split, or similar corporate action affecting the listed company during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Pyth.\n\nThe target price will be adjusted proportionally to reflect any stock splits. Resolution will be based on the historical price data as show",
+   "created": "2026-07-25"
+  },
+  {
+   "id": "2788458",
+   "question": "Will Opendoor Technologies Inc. (OPEN) hit (LOW) $4.50 Week of July 6 2026?",
+   "event_title": "What will Opendoor Technologies Inc. (OPEN) hit Week of July 6 2026?",
+   "rules": "This market will resolve to \"Yes\" if, at any point during the week of July 6 2026, any 1-minute candle for Opendoor Technologies Inc. (OPEN) has a final \"Low\" price equal to or below the listed price. Otherwise, this market will resolve to \"No\".\n\nOnly prices achieved during the regular trading hours of the primary exchange on which the listed security trades (typically 9:30 AM – 4:00 PM ET) will be considered. Prices occurring during pre-market or after-hours trading will not qualify.\n\nPrices will be used exactly as published by Pyth, without rounding.\n\nIn the event of a stock split, reverse stock split, or similar corporate action affecting the listed company during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Pyth.\n\nThe target price will be adjusted proportionally to reflect any stock splits. Resolution will be based on the historical p",
+   "created": "2026-07-03"
+  },
+  {
+   "id": "2427156",
+   "question": "Will Apple (AAPL) close above $305 on June 4?",
+   "event_title": "Apple (AAPL) closes above ___ on June 4?",
+   "rules": "This market will resolve to \"Yes\" if the official closing price for Apple Inc. (AAPL) on June 4 is higher than the listed price. Otherwise, this market will resolve to \"No.\"\n\nIf the final session is shortened (for example, due to a market-holiday schedule), the official closing price published for that shortened session will still be used for resolution.\n\nIf no official closing price is published for that session (for example, due to a trading halt into the close, system issue, delisting, or other disruption), the market will use the last valid on-exchange trade price of the regular session as the effective closing price.\n\nIn the event of a stock split, reverse stock split, or similar corporate action affecting the listed company during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Yahoo Finance. The target price will be adjusted proportio",
+   "created": "2026-06-03"
+  },
+  {
+   "id": "2774656",
+   "question": "Will Tim van Dijke finish top 3 in the 2026 Tour De France?",
+   "event_title": "Tour De France 2026: Top 3",
+   "rules": "This market will resolve to \"Yes\" if the listed cyclist finishes in the top 3 of the 2026 Tour De France scheduled for July 4, 2026 through July 26, 2026.\n\nIf at any point it becomes impossible for a listed cyclist to finish in the top 3 of the 2026 Tour De France per the rules of the UCI, the corresponding market will resolve to \"No\".\n\nIf the 2026 Tour De France is cancelled, postponed after August 9, 2026, 11:59 PM ET, or there are otherwise no declared top 3 finishers declared within that timeframe, the corresponding market will resolve to \"No\".\n\nThe primary resolution source will be official information from UCI; however, a consensus of credible reporting may also be used.",
+   "created": "2026-07-02"
+  },
+  {
+   "id": "2791118",
+   "question": "Will XRP reach $1.25 on July 4?",
+   "event_title": "What price will XRP hit on July 4?",
+   "rules": "This market will immediately resolve to \"Yes\" if any Binance 1-minute candle for XRP (XRP/USDT) on the date specified in the title, between 12:00 AM ET and 11:59 PM ET has a final \"High\" price equal to or greater than the price specified in the title. Otherwise, this market will resolve to \"No\".\n\nThe resolution source for this market is Binance, specifically the XRP/USDT \"High\" prices available at https://www.binance.com/en/trade/XRP_USDT, with the chart settings on \"1m\" candles selected on the top bar.\n\nPlease note that the outcome of this market depends solely on the price data from the Binance XRP/USDT trading pair. Prices from other exchanges, different trading pairs, or spot markets will not be considered for the resolution of this market.",
+   "created": "2026-07-04"
+  },
+  {
+   "id": "2419651",
+   "question": "Will the Ethereum Volatility Index hit 65 by June 30?",
+   "event_title": "What will the Ethereum Implied Volatility Index hit by June 30?",
+   "rules": "This market will immediately resolve to \"Yes\" if any Volmex 1 minute candle for the Ethereum Volmex Implied Volatility 30 Day Index (EVIV) between the creation of this market and 23:59 ET on the date specified in the title has a final \"High\" value equal to or greater than the value specified in the title. Otherwise, this market will resolve to \"No.\"\n\nThe resolution source for this market is Volmex, specifically the Ethereum Volmex Implied Volatility 30 Day Index \"High\" values available at https://charts.volmex.finance/symbol/EVIV, with the chart settings on \"1m\" for one-minute candles selected on the top bar.\n\nPlease note that the outcome of this market depends solely on the data from the Ethereum Volmex Implied Volatility 30 Day Index chart. Values from other exchanges or different indexes will not be considered for the resolution of this market.",
+   "created": "2026-06-02"
+  },
+  {
+   "id": "2699016",
+   "question": "Will Microsoft (MSFT) close above $285 end of July?",
+   "event_title": "Will Microsoft (MSFT) close above ___ end of July?",
+   "rules": "This market will resolve to \"Yes\" if the official closing price for Microsoft Corporation (MSFT) on the final trading day of July 2026 is higher than the listed price. Otherwise, this market will resolve to \"No\".\n\nIf the final trading day of the month is shortened (for example, due to a market-holiday schedule), the official closing price published for that shortened session will still be used for resolution.\n\nIf no official closing price is published for that session (for example, due to a trading halt into the close, system issue, or other disruption), the market will use the last valid on-exchange trade price of the regular session as the effective closing price.\n\nThe resolution source for this market is Yahoo Finance — specifically, the Microsoft Corporation (MSFT) \"Close\" prices available at https://finance.yahoo.com/quote/MSFT/history, published under \"Historical Prices.\"\n\nIn the e",
+   "created": "2026-06-26"
+  },
+  {
+   "id": "634413",
+   "question": "Will V win Best Television Series – Drama at the 83rd Golden Globes?",
+   "event_title": "Golden Globes: Best Television Series – Drama Winner",
+   "rules": "The Golden Globes are presented annually by Dick Clark Productions. For the 83rd Annual Golden Globe Awards, nominations are scheduled for December 8, 2025, and the ceremony for January 11, 2026.\n\nThis market will resolve according to the listed series that wins Best Television Series – Drama at the 83rd Annual Golden Globe Awards.\n\nIf, for any reason, no winner is declared by April 30, 2026, 11:59 PM ET, or in case of a tie for the winner, this market will resolve in favor of the listed series whose title comes first in alphabetical order.\n\nThe resolution source will be the television broadcast of the Golden Globe Awards and the official Golden Globes website (https://www.goldenglobes.com/); however, a consensus of credible reporting may also be used.",
+   "created": "2025-10-13"
+  },
+  {
+   "id": "1460483",
+   "question": "Will Tesla (TSLA) close above $350 end of March?",
+   "event_title": "Will Tesla (TSLA) close above ___ end of March?",
+   "rules": "This market will resolve to \"Yes\" if the official closing price for Tesla, Inc. (TSLA) on the final trading day of March 2026 is higher than the listed price. Otherwise, this market will resolve to \"No\".\n\nIf the final trading day of the month is shortened (for example, due to a market-holiday schedule), the official closing price published for that shortened session will still be used for resolution.\n\nIf no official closing price is published for that session (for example, due to a trading halt into the close, system issue, or other disruption), the market will use the last valid on-exchange trade price of the regular session as the effective closing price.\n\nThe resolution source for this market is Yahoo Finance — specifically, the Tesla, Inc. (TSLA) \"Close\" prices available at https://finance.yahoo.com/quote/TSLA/history, published under \"Historical Prices.\"\n\nIn the event of a stock spl",
+   "created": "2026-02-27"
+  },
+  {
+   "id": "673815",
+   "question": "Will Solana dip to $130 November 10-16?",
+   "event_title": "What price will Solana hit November 10-16?",
+   "rules": "This market will immediately resolve to \"Yes\" if any Binance 1 minute candle for Solana (SOL/USDT) during the date range specified in the title (from 12:00 AM ET on the first date to 11:59 PM ET on the last) has a final \"Low\" price equal to or lower than the price specified in the title. Otherwise, this market will resolve to \"No.\"\n\nThe resolution source for this market is Binance, specifically the SOL/USDT \"Low\" prices available at https://www.binance.com/en/trade/SOL_USDT, with the chart settings on \"1m\" candles selected on the top bar.\n\nPlease note that the outcome of this market depends solely on the price data from the Binance SOL/USDT trading pair. Prices from other exchanges, different trading pairs, or spot markets will not be considered for the resolution of this market.",
+   "created": "2025-11-10"
+  },
+  {
+   "id": "663965",
+   "question": "Will Nancy Pelosi announce her retirement by November 30?",
+   "event_title": "Will Nancy Pelosi announce her retirement by...?",
+   "rules": "This market will resolve to \"Yes\" if Nancy Pelosi announces that she will retire from representing California's 11th Congressional District by November 30, 2025, at 11:59 PM ET. Otherwise, this market will resolve to \"No\".\n\nThe announced timing of her retirement may be immediate, at the end of her current term, or at any point in between.\n\nAny qualifying announcement from Pelosi will count for a \"Yes\" resolution, regardless of whether the announced resignation goes into effect.\n\nThe resolution source for this market will be official announcements from Pelosi or one of her official representatives.",
+   "created": "2025-11-04"
+  },
+  {
+   "id": "2060039",
+   "question": "DeepSeek V4 released by April 28?",
+   "event_title": "DeepSeek V4 released by...?",
+   "rules": "This market will resolve to \"Yes\" if the next DeepSeek V model is made available to the general public by April 28, 2026, at 11:59 PM ET. Otherwise, this market will resolve to \"No.\"\n\nIntermediate versions (e.g., DeepSeek-V3.5) will not count; however, versions such as DeepSeek V4 or V5 would count.\n\nThe \"next DeepSeek V model\" refers to the next major release in the DeepSeek V series, explicitly named as such or clearly positioned as a successor to DeepSeek-V3.\n\nOnly releases representing a core version progression in the DeepSeek V series, “clearly positioned as a successor to DeepSeek-V3,” will qualify. Other models, such as derivative models (e.g., \"V4-Lite,\" \"V4-Mini\"), task-specialized models, R-series reasoning models, and experimental or preview releases (e.g., \"V4-Exp,\" \"V4-Preview\"), that are not positioned as the new V flagship model, will not qualify.\n\nFor this market to reso",
+   "created": "2026-04-23"
+  },
+  {
+   "id": "1038876",
+   "question": "Will Exponent launch a token by June 30, 2026?",
+   "event_title": "Will Exponent launch a token by ___?",
+   "rules": "This market will resolve to “Yes” if Exponent (https://x.com/ExponentFinance) officially launches a governance token by 11:59 PM ET on the date specified in the title. Otherwise, this market will resolve to “No”.\n\nThe token must be actively and publicly transferable and tradable. Announcements alone do not qualify.\n\nThe primary resolution source for this market will be information from Exponent, however a consensus of credible reporting will also be used.",
+   "created": "2025-12-27"
+  },
+  {
+   "id": "693777",
+   "question": "Will Railbird self-certify sports event contracts by March 31, 2026?",
+   "event_title": "Which DCMs self-certify sports event contracts by March 31, 2026?",
+   "rules": "This market will resolve to “Yes” if the listed Designated Contract Market (DCM) self-certifies sports-related event-based contracts with the Commodity Futures Trading Commission (CFTC) at any point before March 31, 2026, 11:59 PM ET. Otherwise, this market will resolve to “No”.\n\nThe primary resolution source will be official information released by the CFTC or the respective DCM; however, a consensus of credible reporting will also be used.",
+   "created": "2025-11-20"
+  },
+  {
+   "id": "1007578",
+   "question": "Will Russia enter Borova by March 31?",
+   "event_title": "Will Russia enter Borova by...?",
+   "rules": "This market will resolve to “Yes” if, according to the ISW map, Russia captures any territory of Borova (49.37457173620971, 37.62233412539868) between market creation and the specified date, 11:59 PM ET.\n\nTerritory will be considered captured if any part of the specified territory is shaded under a below specified layer on the ISW map (https://storymaps.arcgis.com/stories/36a7f6a6f5a9448496de641cf64bd375) by the resolution date. Otherwise, the market will resolve to “No”.\n\nThe boundaries of the municipality are those shown under the “Ukrainian Settlements” layer on the ISW map.\n\nFor any change on the ISW map to qualify for this market’s resolution, the relevant shading must persist through the next full ISW daily update cycle. If ISW skips a day, shading must persist until the next finalized ISW update is published, regardless of the date.\n\nAny continuous shading under the following laye",
+   "created": "2025-12-23"
+  },
+  {
+   "id": "663143",
+   "question": "Will Google (GOOGL) finish week of November 10 above $310?",
+   "event_title": "Will Google (GOOGL) finish week of November 10 above___?",
+   "rules": "This market will resolve to \"Yes\" if the official closing price for Alphabet Inc. (GOOGL) on the final day of trading of the specified week (normally Friday) is higher than the listed price. Otherwise, this market will resolve to \"No.\"\n\nIf the final session is shortened (for example, due to a market-holiday schedule), the official closing price published for that shortened session will still be used for resolution.\n\nIf no official closing price is published for that session (for example, due to a trading halt into the close, system issue, delisting, or other disruption), the market will use the last valid on-exchange trade price of the regular session as the effective closing price.\n\nThe resolution source for this market is Yahoo Finance, specifically the Alphabet Inc. (GOOGL) \"Close\" prices available at https://finance.yahoo.com/quote/GOOGL/history, published under \"Historical Prices.\"\n",
+   "created": "2025-11-03"
+  },
+  {
+   "id": "4231824",
+   "question": "Will Airbnb, Inc. (ABNB) hit (LOW) $178 Week of September 7 2026?",
+   "event_title": "What will Airbnb, Inc. (ABNB) hit Week of September 7 2026?",
+   "rules": "This market will resolve to \"Yes\" if, at any point after market creation and during the week of September 7 2026, any 1-minute candle for Airbnb, Inc. (ABNB) has a final \"High\" or \"Low\" price equal to or beyond (above for ↑ High Prices, below for ↓ Low Prices) the listed price. Otherwise, this market will resolve to \"No\".\n\nOnly prices achieved during the regular trading hours of the primary exchange on which the listed security trades (typically 9:30 AM – 4:00 PM ET) will be considered. Prices occurring during pre-market or after-hours trading will not qualify.\n\nPrices will be used exactly as published by Pyth, without rounding.\n\nIn the event of a stock split, reverse stock split, or similar corporate action affecting the listed company during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Pyth.\n\nThe target price will be adjusted proportion",
+   "created": "2026-09-04"
+  },
+  {
+   "id": "621144",
+   "question": "Will Company O be the first company to have an AI model hit 1500 on Chatbot Arena by June 30 2026?",
+   "event_title": "Which company's AI will first hit 1500 on Chatbot Arena by June 30?",
+   "rules": "This market will resolve according to the listed entity which is the first to reach an Arena Score of 1500+ on the Chatbot Arena LLM Leaderboard (https://lmarena.ai/) by June 30, 2026, 11:59 PM ET. \n\nResults from the \"Arena Score\" section on the Leaderboard tab of https://lmarena.ai/ with the style control unchecked will be used to resolve this market.\n\nIf no company's model reaches 1500 Arena Score by the specified time, this market will resolve to \"None by June 30\".\n\nIf the first model to reach a 1500+ Arena Score belongs to any company other than the listed ones, this market will be resolved to \"Other\".\n\nThe resolution source for this market is the Chatbot Arena LLM Leaderboard found at https://lmarena.ai/. If this resolution source becomes unavailable, the market will remain open until it is accessible again. If it becomes permanently unavailable, resolution will be based on another ",
+   "created": "2025-10-03"
+  },
+  {
+   "id": "1492885",
+   "question": "Will S&P 500 (SPX) close over $6,600 on the final trading day of March 2026?",
+   "event_title": "S&P 500 (SPX) above ___ end of March?",
+   "rules": "This market will resolve to \"Yes\" if the official closing price for S&P 500 (SPX) on the final trading day of March 2026 is higher than the listed price. Otherwise, this market will resolve to \"No\".\n\nIf the final trading day of the month is shortened (for example, due to a market-holiday schedule), the official closing price published for that shortened session will still be used for resolution.\n\nIf no official closing price is published for that session (for example, due to a trading halt into the close, system issue, delisting, or other disruption), the market will use the last valid recorded price in March as the effective closing price.\n\nThe resolution source for this market is Yahoo Finance, specifically the S&P 500 (SPX) \"Close\" prices available at https://finance.yahoo.com/quote/%5EGSPC/history, published under \"Historical Prices.\"",
+   "created": "2026-03-03"
+  },
+  {
+   "id": "608401",
+   "question": "Will Discord’s market cap be between $25B and $30B at market close on IPO day?",
+   "event_title": "Discord IPO Closing Market Cap",
+   "rules": "This market will resolve based on Discord's market capitalization at the closing price on its first day of trading.\n\nIf no IPO occurs by June 30, 2026, 11:59 PM ET, the market will resolve to \"No IPO by June 30, 2026\".\n\nMarket capitalization expresses the monetary value of a company’s outstanding shares, stated in its pricing currency. It is calculated as the number of shares outstanding multiplied by the closing share price on the first trading day.\n\nIf the relevant value falls exactly between two brackets, then this market will resolve to the higher range bracket.\n\nResolution will be based on the primary exchange’s official listing page. In the event that the relevant figure is not displayed, another reliable source will be used.\n\nIn the event of an interruption in the course of the normal trading session on Discord’s first day of trading (e.g., a circuit breaker or half-day), the mark",
+   "created": "2025-09-22"
+  },
+  {
+   "id": "4963493",
+   "question": "Will NVIDIA (NVDA) close above $240 end of October?",
+   "event_title": "Will NVIDIA (NVDA) close above ___ end of October?",
+   "rules": "This market will resolve to \"Yes\" if the Close price for NVIDIA (NVDA) on the final trading day of October 2026 is higher than the listed price. Otherwise, this market will resolve to \"No.\"\n\nIf the two specified prices are exactly equal, this market will resolve to \"No\".\n\nClosing prices will be used exactly as published by Pyth, without rounding.\n\nIf NVIDIA (NVDA) does not trade at all during the regular session of the final trading day of the month, the market will resolve 50-50.\n\nFor a standard full trading session, the closing price refers to the Pyth \"Close\" value of the 1-minute candle corresponding to the final minute of regular trading hours on the primary exchange. If the relevant session is shortened (for example, due to a market-holiday schedule), the Pyth \"Close\" value of the 1-minute candle corresponding to the final minute of that shortened session will be used.\n\nIf the rele",
+   "created": "2026-09-25"
+  },
+  {
+   "id": "1795678",
+   "question": "Naim Qassem out as Hezbollah’s secretary-general by April 30, 2026?",
+   "event_title": "Naim Qassem out as Hezbollah’s secretary-general by...?",
+   "rules": "This market will resolve to \"Yes\" if Naim Qassem ceases to be Hezbollah’s secretary-general for any length of time between market creation and the specified date, 11:59 PM ET. Otherwise, this market will resolve to \"No\".\n\nNaim Qassem will be considered to be removed from power if he resigns, is detained, or otherwise loses his position or is prevented from fulfilling his duties as Hezbollah’s secretary-general within this market's timeframe.\n\nThe primary resolution source for this market will be official statements from Hezbollah; however, a consensus of credible reporting will also be used.",
+   "created": "2026-03-30"
+  },
+  {
+   "id": "1748368",
+   "question": "Will Palantir (PLTR) close above $150 end of April?",
+   "event_title": "Will Palantir (PLTR) close above ___ end of April?",
+   "rules": "This market will resolve to \"Yes\" if the official closing price for Palantir Technologies Inc. (PLTR) on the final trading day of April 2026 is higher than the listed price. Otherwise, this market will resolve to \"No\".\n\nIf the final trading day of the month is shortened (for example, due to a market-holiday schedule), the official closing price published for that shortened session will still be used for resolution.\n\nIf no official closing price is published for that session (for example, due to a trading halt into the close, system issue, or other disruption), the market will use the last valid on-exchange trade price of the regular session as the effective closing price.\n\nThe resolution source for this market is Yahoo Finance — specifically, the Palantir Technologies Inc. (PLTR) \"Close\" prices available at https://finance.yahoo.com/quote/PLTR/history, published under \"Historical Prices.",
+   "created": "2026-03-27"
+  },
+  {
+   "id": "2232280",
+   "question": "Will Russia capture all of Huliaipole by June 30?",
+   "event_title": "Will Russia capture all of Huliaipole by...?",
+   "rules": "This market will resolve to “Yes” if, according to the ISW map, Russia captures the entirety of Huliaipole, Zaporizhzhya Oblast, (47°39'45.5\"N 36°15'13.1\"E) by June 30, 2026, 11:59 PM ET.\n\nHuliaipole will be considered captured if the entirety of the municipality is shaded red on the ISW map (https://storymaps.arcgis.com/stories/36a7f6a6f5a9448496de641cf64bd375) by the resolution date. If the area is not shaded red by June 30, 2026, 11:59 PM ET, the market will resolve to “No”.\n\nFor any change on the ISW map to qualify for this market’s resolution, the relevant shading indicating Russian control must persist through the next full ISW daily update cycle. If ISW skips a day, shading must persist until the next finalized ISW update is published, regardless of the date. Any continuous shading which reflects either “Assessed Russian Control”, “Assessed Russian Advance In Ukraine”, or “Assesse",
+   "created": "2026-05-11"
+  },
+  {
+   "id": "4413206",
+   "question": "Will South Korea ETF (EWY) hit (HIGH) $192 in September?",
+   "event_title": "What will South Korea ETF (EWY) hit in September 2026?",
+   "rules": "This market will resolve to \"Yes\" if, at any point after market creation and during September 2026, any 1-minute candle for South Korea ETF (EWY) has a final \"High\" or \"Low\" price equal to or beyond (above for ↑ High Prices, below for ↓ Low Prices) the listed price. Otherwise, this market will resolve to \"No\".\n\nOnly prices achieved during the regular trading hours of the primary exchange on which the listed security trades (typically 9:30 AM – 4:00 PM ET) will be considered. Prices occurring during pre-market or after-hours trading will not qualify.\n\nPrices will be used exactly as published by Pyth, without rounding.\n\nIn the event of a stock split, reverse stock split, or similar corporate action affecting the listed company during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Pyth.\n\nThe target price will be adjusted proportionally to refl",
+   "created": "2026-09-09"
+  },
+  {
+   "id": "2074008",
+   "question": "Will Meta Platforms, Inc. (META) hit (HIGH) $800 in May?",
+   "event_title": "What will Meta Platforms, Inc. (META) hit in May 2026?",
+   "rules": "This market will resolve to \"Yes\" if, at any point during May 2026, any 1-minute candle for Meta Platforms, Inc. (META) has a final \"High\" price equal to or above the listed price. Otherwise, this market will resolve to \"No\".\n\nOnly prices achieved during the regular trading hours of the primary exchange on which the listed security trades (typically 9:30 AM – 4:00 PM ET) will be considered. Prices occurring during pre-market or after-hours trading will not qualify.\n\nPrices will be used exactly as published by Pyth, without rounding.\n\nIn the event of a stock split, reverse stock split, or similar corporate action affecting the listed company during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Pyth.\n\nThe target price will be adjusted proportionally to reflect any stock splits. Resolution will be based on the historical price data as shown o",
+   "created": "2026-04-25"
+  },
+  {
+   "id": "956634",
+   "question": "US x Venezuela military engagement by December 23?",
+   "event_title": "US x Venezuela military engagement by...?",
+   "rules": "This market will resolve to \"Yes\" if there is a military engagement between the military forces of the United States of America and Venezuela between December 16, and December 23, 2025, 11:59 PM ET. Otherwise, this market will resolve to \"No\".\n\nA \"military engagement\" is defined as any incident involving the use of force such as missile strikes, artillery fire, exchange of gunfire, or other forms of direct military engagement between US and Venezuelan military forces. Non-violent actions, such as warning shots or missile launches that land in territorial waters or pass through airspace, will not qualify for a \"Yes\" resolution. Intentional ship ramming that results in significant damage to (e.g., a hole in the hull) or the sinking of a military ship by another will count toward a \"Yes\" resolution; however, minor damage (scrapes, dents) will not. \n\nAny U.S. military kinetic strike that imp",
+   "created": "2025-12-17"
+  },
+  {
+   "id": "657271",
+   "question": "Will Airbnb dip to $86 in November?",
+   "event_title": "What will Airbnb (ABNB) hit in November 2025?",
+   "rules": "This market will resolve to \"Yes\" if, at any point during November 2025 (ET), any 1-minute candle for Airbnb, Inc. (ABNB) has a final \"Low\" price equal to or below the listed price. Otherwise, this market will resolve to \"No\".\n\nOnly prices achieved during regular trading hours (ET) will be considered.\n\nIn the event of a stock split, reverse stock split, or similar corporate action affecting the listed company during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Yahoo Finance.\n\nThe target price will be adjusted proportionally to reflect any stock splits. Resolution will be based on the historical price data as shown on Yahoo Finance after any adjustments have been applied.\n\nThe resolution source for this market is Yahoo Finance — specifically, the Airbnb, Inc. (ABNB) \"Low\" prices available at https://finance.yahoo.com/quote/ABNB/, with the ",
+   "created": "2025-10-30"
+  },
+  {
+   "id": "1492883",
+   "question": "Will S&P 500 (SPX) close over $6,800 on the final trading day of March 2026?",
+   "event_title": "S&P 500 (SPX) above ___ end of March?",
+   "rules": "This market will resolve to \"Yes\" if the official closing price for S&P 500 (SPX) on the final trading day of March 2026 is higher than the listed price. Otherwise, this market will resolve to \"No\".\n\nIf the final trading day of the month is shortened (for example, due to a market-holiday schedule), the official closing price published for that shortened session will still be used for resolution.\n\nIf no official closing price is published for that session (for example, due to a trading halt into the close, system issue, delisting, or other disruption), the market will use the last valid recorded price in March as the effective closing price.\n\nThe resolution source for this market is Yahoo Finance, specifically the S&P 500 (SPX) \"Close\" prices available at https://finance.yahoo.com/quote/%5EGSPC/history, published under \"Historical Prices.\"",
+   "created": "2026-03-03"
+  },
+  {
+   "id": "663078",
+   "question": "Will Rocket Lab (RKLB) close above $74 end of November?",
+   "event_title": "Will Rocket Lab (RKLB) close above ___ end of November?",
+   "rules": "This market will resolve to \"Yes\" if the official closing price for Rocket Lab USA, Inc. (RKLB) on the final trading day of November 2025 is higher than the listed price. Otherwise, this market will resolve to \"No\".\n\nIf the final trading day of the month is shortened (for example, due to a market-holiday schedule), the official closing price published for that shortened session will still be used for resolution.\n\nIf no official closing price is published for that session (for example, due to a trading halt into the close, system issue, or other disruption), the market will use the last valid on-exchange trade price of the regular session as the effective closing price.\n\nThe resolution source for this market is Yahoo Finance — specifically, the Rocket Lab USA, Inc. (RKLB) \"Close\" prices available at https://finance.yahoo.com/quote/RKLB/history, published under \"Historical Prices.\"\n\nIn the",
+   "created": "2025-11-03"
+  },
+  {
+   "id": "3780326",
+   "question": "Will Solana dip to $90 in August?",
+   "event_title": "What price will Solana hit in August?",
+   "rules": "This market will resolve to \"Yes\" if any Binance 1 minute candle for SOL/USDT from the creation of this market through 11:59 PM ET on the last day of the month specified in the title has a final Low price equal to or lower than the price specified in the title. Otherwise, this market will resolve to \"No\". Price action before this market's creation will not be considered.\n\nThe resolution source for this market is Binance, specifically the SOL/USDT Low prices available at https://www.binance.com/en/trade/SOL_USDT, with the chart settings on \"1m\" for one-minute candles selected on the top bar.\n\nPlease note that the outcome of this market depends solely on the price data from the Binance SOL/USDT trading pair. Prices from other exchanges, different trading pairs, or spot markets will not be considered for the resolution of this market.",
+   "created": "2026-08-22"
+  },
+  {
+   "id": "2695772",
+   "question": "Weed rescheduled by July 31?",
+   "event_title": "Weed rescheduled by...?",
+   "rules": "This market will resolve to \"Yes\" if marijuana is rescheduled down from I to any other level (or is unscheduled completely) by the Drug Enforcement Agency of the United States (https://www.dea.gov/drug-information/drug-scheduling), by July 31, 2026, 11:59 PM ET. Otherwise, this market will resolve to \"No\".\n\nThe primary resolution source for this market will be official information from the US government, however a consensus of credible reporting will also be used.",
+   "created": "2026-06-26"
+  },
+  {
+   "id": "1536155",
+   "question": "Will Ethereum reach $2,000 on March 9?",
+   "event_title": "What price will Ethereum hit on March 9?",
+   "rules": "This market will immediately resolve to \"Yes\" if any Binance 1-minute candle for Ethereum (ETH/USDT) on the date specified in the title, between 12:00 AM ET and 11:59 PM ET has a final \"High\" price equal to or greater than the price specified in the title. Otherwise, this market will resolve to \"No\".\n\nThe resolution source for this market is Binance, specifically the ETH/USDT \"High\" prices available at https://www.binance.com/en/trade/ETH_USDT, with the chart settings on \"1m\" candles selected on the top bar.\n\nPlease note that the outcome of this market depends solely on the price data from the Binance ETH/USDT trading pair. Prices from other exchanges, different trading pairs, or spot markets will not be considered for the resolution of this market.",
+   "created": "2026-03-09"
+  },
+  {
+   "id": "3093749",
+   "question": "Will MiniMax be the #2 AI lab at the end of September 2026?",
+   "event_title": "#2 AI Lab end of September? (Style Control On)",
+   "rules": "This market will resolve according to the second-highest ranked Company based on the arena.ai Text Arena (Overall) (Style Control On) when the table under the \"Leaderboard\" tab filtered for \"Labs\" is checked on September 30, 2026, 12:00 PM ET.\n\nResults from the \"Lab Rank\" column under the \"Text Arena | Overall\" Leaderboard tab at https://arena.ai/leaderboard/text/overall?rankBy=labs with style control on (Adjustments: Style Control) and filtered for \"Labs\" will be used to resolve this market.\n\nAI companies will be ordered primarily by their Lab Rank at the market’s check time. If the results based on the lab ranking are ambiguous or unavailable, the relevant AI companies will be ordered according to their highest-ranking AI model in the leaderboard’s “Models” view. If two or more models are tied on rank, they will be ordered by their Arena score, including any underlying, unrounded, gran",
+   "created": "2026-07-24"
+  },
+  {
+   "id": "2203168",
+   "question": "Will Rocket Lab USA, Inc. (RKLB) hit (LOW) $92 Week of May 11 2026?",
+   "event_title": "What will Rocket Lab USA, Inc. (RKLB) hit Week of May 11 2026?",
+   "rules": "This market will resolve to \"Yes\" if, at any point during the week of May 11 2026, any 1-minute candle for Rocket Lab USA, Inc. (RKLB) has a final \"Low\" price equal to or below the listed price. Otherwise, this market will resolve to \"No\".\n\nOnly prices achieved during the regular trading hours of the primary exchange on which the listed security trades (typically 9:30 AM – 4:00 PM ET) will be considered. Prices occurring during pre-market or after-hours trading will not qualify.\n\nPrices will be used exactly as published by Pyth, without rounding.\n\nIn the event of a stock split, reverse stock split, or similar corporate action affecting the listed company during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Pyth.\n\nThe target price will be adjusted proportionally to reflect any stock splits. Resolution will be based on the historical price d",
+   "created": "2026-05-08"
+  },
+  {
+   "id": "701497",
+   "question": "Will Bitcoin reach $90,000 by December 31, 2026?",
+   "event_title": "What price will Bitcoin hit in 2026?",
+   "rules": "This market will immediately resolve to \"Yes\" if any Binance 1 minute candle for Bitcoin (BTC/USDT) between November 24, 2025, 14:00 and December 31, 2026, 23:59 in the ET timezone has a final \"High\" price equal to or greater than the price specified in the title. Otherwise, this market will resolve to \"No.\"\n\nThe resolution source for this market is Binance, specifically the BTC/USDT \"High\" prices available at https://www.binance.com/en/trade/BTC_USDT, with the chart settings on \"1m\" for one-minute candles selected on the top bar.\n\nPlease note that the outcome of this market depends solely on the price data from the Binance BTC/USDT trading pair. Prices from other exchanges, different trading pairs, or spot markets will not be considered for the resolution of this market.",
+   "created": "2025-11-24"
+  },
+  {
+   "id": "4205771",
+   "question": "Will XRP reach $1.45 on September 4?",
+   "event_title": "What price will XRP hit on September 4?",
+   "rules": "This market will immediately resolve to \"Yes\" if any Binance 1-minute candle for XRP (XRP/USDT) on the date specified in the title, between 12:00 AM ET and 11:59 PM ET has a final \"High\" price equal to or greater than the price specified in the title. Otherwise, this market will resolve to \"No\".\n\nThe resolution source for this market is Binance, specifically the XRP/USDT \"High\" prices available at https://www.binance.com/en/trade/XRP_USDT, with the chart settings on \"1m\" candles selected on the top bar.\n\nPlease note that the outcome of this market depends solely on the price data from the Binance XRP/USDT trading pair. Prices from other exchanges, different trading pairs, or spot markets will not be considered for the resolution of this market.",
+   "created": "2026-09-04"
+  },
+  {
+   "id": "2071535",
+   "question": "Will Ecuador reach the 2026 FIFA World Cup final?",
+   "event_title": "World Cup: Nation to Reach Final",
+   "rules": "This market will resolve “Yes” if the listed team reaches the 2026 FIFA World Cup final. \n\nIf at any point it becomes impossible for the listed nation to advance to the 2026 FIFA World Cup final (e.g. they are mathematically eliminated), the associated market will resolve to \"No\".\n\nIf the 2026 FIFA World Cup is cancelled, postponed after August 2, 2026, 11:59 PM ET or the 2026 FIFA World Cup final matchup has not been declared within that timeframe, this market will resolve to “No”.\n\nThe resolution source for this market will be official information from the FIFA; however, a consensus of credible reporting may also be used.",
+   "created": "2026-04-24"
+  },
+  {
+   "id": "699802",
+   "question": "Will Solana reach $160 November 24-30?",
+   "event_title": "What price will Solana hit November 24-30?",
+   "rules": "This market will immediately resolve to \"Yes\" if any Binance 1-minute candle for SOL/USDT during the date range specified in the title (from 12:00 AM ET on the first date to 11:59 PM ET on the last) has a final \"High\" price equal to or greater than the price specified in the title. Otherwise, this market will resolve to \"No\".\n\nThe resolution source for this market is Binance, specifically the SOL/USDT \"High\" prices available at https://www.binance.com/en/trade/SOL_USDT, with the chart settings on \"1m\" candles selected on the top bar.\n\nPlease note that the outcome of this market depends solely on the price data from the Binance SOL/USDT trading pair. Prices from other exchanges, different trading pairs, or spot markets will not be considered for the resolution of this market.",
+   "created": "2025-11-24"
+  },
+  {
+   "id": "622926",
+   "question": "Will Bitcoin dip to $110,000 October 6-12?",
+   "event_title": "What price will Bitcoin hit October 6-12?",
+   "rules": "This market will immediately resolve to \"Yes\" if any Binance 1 minute candle for Bitcoin (BTC/USDT) during the date range specified in the title (from 12:00 AM ET on the first date to 11:59 PM ET on the last) has a final \"Low\" price equal to or lower than the price specified in the title. Otherwise, this market will resolve to \"No.\"\n\nThe resolution source for this market is Binance, specifically the BTC/USDT \"Low\" prices available at https://www.binance.com/en/trade/BTC_USDT, with the chart settings on \"1m\" candles selected on the top bar.\n\nPlease note that the outcome of this market depends solely on the price data from the Binance BTC/USDT trading pair. Prices from other exchanges, different trading pairs, or spot markets will not be considered for the resolution of this market.",
+   "created": "2025-10-06"
+  },
+  {
+   "id": "1301972",
+   "question": "Will Opendoor (OPEN) close above $2.00 end of February?",
+   "event_title": "Will Opendoor (OPEN) close above ___ end of February?",
+   "rules": "This market will resolve to \"Yes\" if the official closing price for Opendoor Technologies Inc. (OPEN) on the final trading day of February 2026 is higher than the listed price. Otherwise, this market will resolve to \"No\".\n\nIf the final trading day of the month is shortened (for example, due to a market-holiday schedule), the official closing price published for that shortened session will still be used for resolution.\n\nIf no official closing price is published for that session (for example, due to a trading halt into the close, system issue, or other disruption), the market will use the last valid on-exchange trade price of the regular session as the effective closing price.\n\nThe resolution source for this market is Yahoo Finance — specifically, the Opendoor Technologies Inc. (OPEN) \"Close\" prices available at https://finance.yahoo.com/quote/OPEN/history, published under \"Historical Pric",
+   "created": "2026-01-30"
+  },
+  {
+   "id": "1823916",
+   "question": "Will Ethena reach $0.32 in April?",
+   "event_title": "What price will Ethena hit in April?",
+   "rules": "This market will immediately resolve to \"Yes\" if any Binance 1 minute candle for ENA/USDT during the month specified in the title (from 00:00 AM ET on the first day to 11:59 PM ET on the last) has a final High price equal to or greater than the price specified in the title. Otherwise, this market will resolve to \"No.\"\n\nThe resolution source for this market is Binance, specifically the ENA/USDT High prices available at https://www.binance.com/en/trade/ENA_USDT, with the chart settings on \"1m\" for one-minute candles selected on the top bar.\n\nPlease note that the outcome of this market depends solely on the price data from the Binance ENA/USDT trading pair. Prices from other exchanges, different trading pairs, or spot markets will not be considered for the resolution of this market.",
+   "created": "2026-04-02"
+  },
+  {
+   "id": "1171858",
+   "question": "NATO x Russia military clash by June 30, 2026?",
+   "event_title": "NATO x Russia military clash by...?",
+   "rules": "This market will resolve to \"Yes\" if there is a military encounter between the military forces of a NATO country and Russia between January 12, and June 30, 2026, 11:59 PM ET. Otherwise, this market will resolve to \"No\".\n\nA \"military encounter\" is defined as any incident involving the use of force such as missile strikes, artillery fire, exchange of gunfire, or other forms of direct military engagement between NATO and Russian military forces. Non-violent actions, such as airspace violations, firing of warning shots (such as the June, 2021 Black Sea Confrontations between Russian forces and HMS Defender), or cyberattacks will not qualify.\n\nInterception of missiles or other one-way attack or loitering munitions (e.g. Shahed drones) which are targeting a 3rd party other than the listed countries or their respective forces will not alone qualify. Shooting down UAVs which are not munitions (",
+   "created": "2026-01-13"
+  },
+  {
+   "id": "1748401",
+   "question": "Will Opendoor (OPEN) close above $0.00 end of April?",
+   "event_title": "Will Opendoor (OPEN) close above ___ end of April?",
+   "rules": "This market will resolve to \"Yes\" if the official closing price for Opendoor Technologies Inc. (OPEN) on the final trading day of April 2026 is higher than the listed price. Otherwise, this market will resolve to \"No\".\n\nIf the final trading day of the month is shortened (for example, due to a market-holiday schedule), the official closing price published for that shortened session will still be used for resolution.\n\nIf no official closing price is published for that session (for example, due to a trading halt into the close, system issue, or other disruption), the market will use the last valid on-exchange trade price of the regular session as the effective closing price.\n\nThe resolution source for this market is Yahoo Finance — specifically, the Opendoor Technologies Inc. (OPEN) \"Close\" prices available at https://finance.yahoo.com/quote/OPEN/history, published under \"Historical Prices.",
+   "created": "2026-03-27"
+  },
+  {
+   "id": "3934002",
+   "question": "Will Hyperliquid reach $92 in August?",
+   "event_title": "What price will Hyperliquid hit in August?",
+   "rules": "This market will resolve to \"Yes\" if any Binance 1 minute candle for HYPEUSDT from the creation of this market through 11:59 PM ET on the last day of the month specified in the title has a final High price equal to or greater than the price specified in the title. Otherwise, this market will resolve to \"No\". Price action before this market's creation will not be considered.\n\nThe resolution source for this market is Binance, specifically the HYPEUSDT High prices available at https://www.binance.com/en/futures/HYPEUSDT, with the chart settings on \"1m\" for one-minute candles selected on the top bar.\n\nPlease note that the outcome of this market depends solely on the price data from the Binance HYPEUSDT trading pair. Prices from other exchanges, different trading pairs, or spot markets will not be considered for the resolution of this market.",
+   "created": "2026-08-27"
+  },
+  {
+   "id": "1262703",
+   "question": "Will Apple reach $272 in February?",
+   "event_title": "What will Apple (AAPL) hit in February 2026?",
+   "rules": "This market will resolve to \"Yes\" if, at any point during February 2026 (ET), any 1-minute candle for Apple (AAPL) has a final \"High\" price equal to or above the listed price. Otherwise, this market will resolve to \"No\".\n\nOnly prices achieved during regular trading hours (ET) will be considered.\n\nThe resolution source for this market is Yahoo Finance — specifically, the Apple (AAPL) \"High\" prices available at https://finance.yahoo.com/quote/AAPL/, with the chart settings on \"1m\" for candle intervals.\n\nIn the event of a stock split, reverse stock split, or similar corporate action affecting the listed company during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Yahoo Finance.",
+   "created": "2026-01-25"
+  },
+  {
+   "id": "1029815",
+   "question": "Will Larry Page be named in newly released Epstein files by March 31?",
+   "event_title": "Who will be named in newly released Epstein files by March 31?",
+   "rules": "This market will resolve to \"Yes\" if the Trump Administration (including any federal court) publicly releases previously unreleased files pertaining to the illegal activities of Jeffrey Epstein which contain any mention of the listed individual between market creation and March 31, 2026, 11:59 PM ET. Otherwise, this market will resolve to \"No\".\n\nOnly previously unreleased files, as of market creation, which contain novel material not previously available to the public will qualify. Documents that are merely re-released, have had redactions removed, repackaged, or newly publicized versions of already available information do not qualify.\n\nAny mention of the listed individual in connection with Jeffrey Epstein will qualify, regardless of if connected to nefarious or illegal activities.\n\nPreviously unreleased files is inclusive of any written, audio, photo or video documentation (e.g., qual",
+   "created": "2025-12-26"
+  },
+  {
+   "id": "3096207",
+   "question": "Will Palantir Technologies Inc. (PLTR) hit (LOW) $96 in August?",
+   "event_title": "What will Palantir Technologies Inc. (PLTR) hit in August 2026?",
+   "rules": "This market will resolve to \"Yes\" if, at any point during August 2026, any 1-minute candle for Palantir Technologies Inc. (PLTR) has a final \"Low\" price equal to or below the listed price. Otherwise, this market will resolve to \"No\".\n\nOnly prices achieved during the regular trading hours of the primary exchange on which the listed security trades (typically 9:30 AM – 4:00 PM ET) will be considered. Prices occurring during pre-market or after-hours trading will not qualify.\n\nPrices will be used exactly as published by Pyth, without rounding.\n\nIn the event of a stock split, reverse stock split, or similar corporate action affecting the listed company during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Pyth.\n\nThe target price will be adjusted proportionally to reflect any stock splits. Resolution will be based on the historical price data as",
+   "created": "2026-07-25"
+  },
+  {
+   "id": "3961330",
+   "question": "Will Palantir (PLTR) close above $194 end of September?",
+   "event_title": "Will Palantir (PLTR) close above ___ end of September?",
+   "rules": "This market will resolve to \"Yes\" if the Close price for Palantir Technologies Inc. (PLTR) on the final trading day of September 2026 is higher than the listed price. Otherwise, this market will resolve to \"No.\"\n\nIf the two specified prices are exactly equal, this market will resolve to \"No\".\n\nClosing prices will be used exactly as published by Pyth, without rounding.\n\nIf Palantir Technologies Inc. (PLTR) does not trade at all during the regular session of the final trading day of the month, the market will resolve 50-50.\n\nFor a standard full trading session, the closing price refers to the Pyth \"Close\" value of the 1-minute candle corresponding to the final minute of regular trading hours on the primary exchange. If the relevant session is shortened (for example, due to a market-holiday schedule), the Pyth \"Close\" value of the 1-minute candle corresponding to the final minute of that sh",
+   "created": "2026-08-28"
+  },
+  {
+   "id": "1048161",
+   "question": "Will the Logan Paul Break 1st Edition Charizard sale price be over 500k?",
+   "event_title": "Logan Paul 1st Edition Charizard Sale Price?",
+   "rules": "This market will resolve to \"Yes\" if the final sale price paid for the Pokemon Base Set 1st Edition Holo #4 Charizard - Logan Paul Break is greater than the listed price. Otherwise this market will resolve to \"No\".\n\nIf no sale is completed by February 28, 2026, ET this market will resolve to \"No\".\n\nThe market will resolve according to the final listed sale price including any premiums or auction fees included in the listed figure on Goldin (see: https://goldin.co/item/1999-pokemon-base-set-1st-edition-rare-holofoil-logan-paul-break-4-chajdvc5).",
+   "created": "2025-12-28"
+  },
+  {
+   "id": "690689",
+   "question": "Will Pacifica launch a token by March 31 2026?",
+   "event_title": "Will Pacifica launch a token by ___ ?",
+   "rules": "This market will resolve to “Yes” if Pacifica (https://x.com/pacifica_fi) officially launches a governance token by 11:59 PM ET on the date specified in the title. Otherwise, this market will resolve to “No”.\n\nThe token must be actively and publicly transferable and tradable. Announcements alone do not qualify.\n\nThe primary resolution source for this market will be information from Pacifica, however a consensus of credible reporting will also be used.",
+   "created": "2025-11-19"
+  },
+  {
+   "id": "3933462",
+   "question": "Will Amazon.com, Inc. (AMZN) hit (LOW) $256 in August?",
+   "event_title": "What will Amazon.com, Inc. (AMZN) hit in August 2026?",
+   "rules": "This market will resolve to \"Yes\" if, at any point after market creation and during August 2026, any 1-minute candle for Amazon.com, Inc. (AMZN) has a final \"High\" or \"Low\" price equal to or beyond (above for ↑ High Prices, below for ↓ Low Prices) the listed price. Otherwise, this market will resolve to \"No\".\n\nOnly prices achieved during the regular trading hours of the primary exchange on which the listed security trades (typically 9:30 AM – 4:00 PM ET) will be considered. Prices occurring during pre-market or after-hours trading will not qualify.\n\nPrices will be used exactly as published by Pyth, without rounding.\n\nIn the event of a stock split, reverse stock split, or similar corporate action affecting the listed company during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Pyth.\n\nThe target price will be adjusted proportionally to refle",
+   "created": "2026-08-27"
+  },
+  {
+   "id": "604490",
+   "question": "Will Trump visit China by March 31?",
+   "event_title": "Will Trump visit China by...?",
+   "rules": "If U.S. President Donald Trump visits China by March 31, 2026, 11:59 PM ET, this market will resolve to \"Yes\". Otherwise, this market will resolve to \"No\".\n\nFor the purpose of this market, a \"visit\" is defined as Trump physically entering the terrestrial or maritime territory of the listed country. Whether or not Trump enters the country's airspace during the timeframe of this market will have no bearing on a positive resolution.\n\nThe primary resolution source for this information will be official information from government of the United States of America, official information from Trump or released by his verified social media accounts (e.g. https://twitter.com/POTUS), however, a consensus of credible reporting will also be used.",
+   "created": "2025-09-19"
+  },
+  {
+   "id": "2388961",
+   "question": "Will NVIDIA (NVDA) close above $200 end of June?",
+   "event_title": "Will NVIDIA (NVDA) close above ___ end of June?",
+   "rules": "This market will resolve to \"Yes\" if the official closing price for NVIDIA (NVDA) on the final trading day of June 2026 is higher than the listed price. Otherwise, this market will resolve to \"No\".\n\nIf the final trading day of the month is shortened (for example, due to a market-holiday schedule), the official closing price published for that shortened session will still be used for resolution.\n\nIf no official closing price is published for that session (for example, due to a trading halt into the close, system issue, or other disruption), the market will use the last valid on-exchange trade price of the regular session as the effective closing price.\n\nThe resolution source for this market is Yahoo Finance — specifically, the NVIDIA (NVDA) \"Close\" prices available at https://finance.yahoo.com/quote/NVDA/history, published under \"Historical Prices.\"\n\nIn the event of a stock split, reverse",
+   "created": "2026-05-29"
+  },
+  {
+   "id": "699824",
+   "question": "Will XRP dip to $1.50 November 24-30?",
+   "event_title": "What price will XRP hit November 24-30?",
+   "rules": "This market will immediately resolve to \"Yes\" if any Binance 1 minute candle for XRP (XRP/USDT) during the date range specified in the title (from 12:00 AM ET on the first date to 11:59 PM ET on the last) has a final \"Low\" price equal to or lower than the price specified in the title. Otherwise, this market will resolve to \"No.\"\n\nThe resolution source for this market is Binance, specifically the XRP/USDT \"Low\" prices available at https://www.binance.com/en/trade/XRP_USDT, with the chart settings on \"1m\" candles selected on the top bar.\n\nPlease note that the outcome of this market depends solely on the price data from the Binance XRP/USDT trading pair. Prices from other exchanges, different trading pairs, or spot markets will not be considered for the resolution of this market.",
+   "created": "2025-11-24"
+  },
+  {
+   "id": "950085",
+   "question": "Will MrBeast hit 115 billion views by March 31?",
+   "event_title": "Will MrBeast hit ___ Billion views by March 31?",
+   "rules": "This market will resolve to \"Yes\" if the MrBeast YouTube channel (https://www.youtube.com/@MrBeast) hits the specified number of views by March 31, 2026, 11:59 PM ET.  Otherwise, this market will resolve to \"No\".\n\nThe primary resolution source for this market will be the MrBeast YouTube channel (https://www.youtube.com/@MrBeast).",
+   "created": "2025-12-16"
+  },
+  {
+   "id": "643465",
+   "question": "Will the Brooklyn Nets win the 2025–2026 NBA Atlantic Division?",
+   "event_title": "NBA Atlantic Division Winner",
+   "rules": "This market will resolve according to the winner of the listed division for the 2025–2026 NBA Eastern Conference Finals. \n\nIf it becomes impossible for this team to win based on the rules of the NBA this market will resolve to “No”. \n\nIf multiple teams share the same record, official NBA tie breaking rules will be used to determine the outcome.\n\nThe resolution source for this market will be information from the NBA.",
+   "created": "2025-10-22"
+  },
+  {
+   "id": "3780329",
+   "question": "Will XRP reach $1.60 in August?",
+   "event_title": "What price will XRP hit in August?",
+   "rules": "This market will resolve to \"Yes\" if any Binance 1 minute candle for XRP/USDT from the creation of this market through 11:59 PM ET on the last day of the month specified in the title has a final High price equal to or greater than the price specified in the title. Otherwise, this market will resolve to \"No\". Price action before this market's creation will not be considered.\n\nThe resolution source for this market is Binance, specifically the XRP/USDT High prices available at https://www.binance.com/en/trade/XRP_USDT, with the chart settings on \"1m\" for one-minute candles selected on the top bar.\n\nPlease note that the outcome of this market depends solely on the price data from the Binance XRP/USDT trading pair. Prices from other exchanges, different trading pairs, or spot markets will not be considered for the resolution of this market.",
+   "created": "2026-08-22"
+  },
+  {
+   "id": "2388896",
+   "question": "Will Meta Platforms, Inc. (META) hit (LOW) $590 Week of June 1 2026?",
+   "event_title": "What will Meta Platforms, Inc. (META) hit Week of June 1 2026?",
+   "rules": "This market will resolve to \"Yes\" if, at any point during the week of June 1 2026, any 1-minute candle for Meta Platforms, Inc. (META) has a final \"Low\" price equal to or below the listed price. Otherwise, this market will resolve to \"No\".\n\nOnly prices achieved during the regular trading hours of the primary exchange on which the listed security trades (typically 9:30 AM – 4:00 PM ET) will be considered. Prices occurring during pre-market or after-hours trading will not qualify.\n\nPrices will be used exactly as published by Pyth, without rounding.\n\nIn the event of a stock split, reverse stock split, or similar corporate action affecting the listed company during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Pyth.\n\nThe target price will be adjusted proportionally to reflect any stock splits. Resolution will be based on the historical price d",
+   "created": "2026-05-29"
+  },
+  {
+   "id": "573828",
+   "question": "Will Claude 5 be released by March 31, 2026?",
+   "event_title": "Claude 5 released by…?",
+   "rules": "This market will resolve to \"Yes\" if Anthropic's Claude 5 model is made available to the general public by March 31, 2026, 11:59 PM ET. Otherwise, this market will resolve to \"No.\"\n\nFor this market to resolve to \"Yes,\" Claude 5 must be launched and publicly accessible, including via open beta or open rolling waitlist signups. A closed beta or any form of private access will not suffice. The release must be clearly defined and publicly announced by Anthropic as being accessible to the general public.\n\nClaude 5 refers to a product explicitly named Claude 5 (e.g. Claude 5.0 would count), or one that is recognized as a successor to Claude 4, similar to the progression from Claude 2 to Claude 3. Products labeled as Claude 4.5 or similar will not count for this market's resolution.\n\nThe primary resolution source for this market will be official information from Anthropic, with additional verif",
+   "created": "2025-08-07"
+  },
+  {
+   "id": "4963342",
+   "question": "Will Meta (META) close above $760 end of October?",
+   "event_title": "Will Meta (META) close above ___ end of October?",
+   "rules": "This market will resolve to \"Yes\" if the Close price for Meta Platforms, Inc. (META) on the final trading day of October 2026 is higher than the listed price. Otherwise, this market will resolve to \"No.\"\n\nIf the two specified prices are exactly equal, this market will resolve to \"No\".\n\nClosing prices will be used exactly as published by Pyth, without rounding.\n\nIf Meta Platforms, Inc. (META) does not trade at all during the regular session of the final trading day of the month, the market will resolve 50-50.\n\nFor a standard full trading session, the closing price refers to the Pyth \"Close\" value of the 1-minute candle corresponding to the final minute of regular trading hours on the primary exchange. If the relevant session is shortened (for example, due to a market-holiday schedule), the Pyth \"Close\" value of the 1-minute candle corresponding to the final minute of that shortened sessio",
+   "created": "2026-09-25"
+  },
+  {
+   "id": "4117966",
+   "question": "Will Apple release a foldable iPhone by September 15?",
+   "event_title": "Will Apple release a foldable iPhone by...?",
+   "rules": "This market will resolve to \"Yes\" if Apple officially releases a foldable iPhone by September 15, 2026, 11:59 PM ET. Otherwise, this market will resolve to \"No\".\n\nIn order to be considered released, the product must be available for purchase by the general public within the specified timeframe. An announcement or unveiling alone is not sufficient.\n\nA qualifying release of a foldable smartphone by Apple will count even if it is not explicitly branded an iPhone.\n\nThe primary resolution source for this market will be official statements from Apple. However, a consensus of credible reporting may also be used.",
+   "created": "2026-09-02"
+  },
+  {
+   "id": "2699306",
+   "question": "Will Tesla (TSLA) close above $440 end of July?",
+   "event_title": "Will Tesla (TSLA) close above ___ end of July?",
+   "rules": "This market will resolve to \"Yes\" if the official closing price for Tesla, Inc. (TSLA) on the final trading day of July 2026 is higher than the listed price. Otherwise, this market will resolve to \"No\".\n\nIf the final trading day of the month is shortened (for example, due to a market-holiday schedule), the official closing price published for that shortened session will still be used for resolution.\n\nIf no official closing price is published for that session (for example, due to a trading halt into the close, system issue, or other disruption), the market will use the last valid on-exchange trade price of the regular session as the effective closing price.\n\nThe resolution source for this market is Yahoo Finance — specifically, the Tesla, Inc. (TSLA) \"Close\" prices available at https://finance.yahoo.com/quote/TSLA/history, published under \"Historical Prices.\"\n\nIn the event of a stock spli",
+   "created": "2026-06-26"
+  },
+  {
+   "id": "2388734",
+   "question": "Will Amazon (AMZN) close above $260 end of June?",
+   "event_title": "Will Amazon (AMZN) close above ___ end of June?",
+   "rules": "This market will resolve to \"Yes\" if the official closing price for Amazon.com, Inc. (AMZN) on the final trading day of June 2026 is higher than the listed price. Otherwise, this market will resolve to \"No\".\n\nIf the final trading day of the month is shortened (for example, due to a market-holiday schedule), the official closing price published for that shortened session will still be used for resolution.\n\nIf no official closing price is published for that session (for example, due to a trading halt into the close, system issue, or other disruption), the market will use the last valid on-exchange trade price of the regular session as the effective closing price.\n\nThe resolution source for this market is Yahoo Finance — specifically, the Amazon.com, Inc. (AMZN) \"Close\" prices available at https://finance.yahoo.com/quote/AMZN/history, published under \"Historical Prices.\"\n\nIn the event of a ",
+   "created": "2026-05-29"
+  },
+  {
+   "id": "2672043",
+   "question": "Will Badr bin Hamad Al Busaidi attend a US x Iran diplomatic meeting by August 31, 2026?",
+   "event_title": "Who will attend a round of US-Iran peace talks by August 31?",
+   "rules": "This market will resolve to \"Yes\" if the listed individual attends any formal senior-level round of peace talks between representatives of the United States and Iran between market creation and August 31, 2026, 11:59 PM ET. Otherwise, this market will resolve to “No”.\n\nA qualifying round must be a deliberate in-person diplomatic meeting or negotiating round concerning US-Iran relations, involving senior representatives of both the United States and Iran who are acting in an official capacity and are authorized to conduct or materially direct diplomacy on behalf of their governments.\n\nIndirect in-person diplomacy through designated mediators, facilitators, or interlocutors will qualify, provided senior representatives of both the United States and Iran are participating in the same formal diplomatic process with the knowledge and authorization of their respective governments. The represen",
+   "created": "2026-06-24"
+  },
+  {
+   "id": "1118093",
+   "question": "Will Los Angeles C face Los Angeles R in Super Bowl LX?",
+   "event_title": "Big Game Matchup",
+   "rules": "This market will resolve according to the teams that advance to Super Bowl LX. \n\nIf the Super Bowl LX matchup has not been confirmed by February 8, 2026, 11:59 PM ET, this market will resolve to \"Other\". \n\nAn announcement of Super Bowl LX matchup before this market's close date will immediately resolve this market to the corresponding option.\n\nIf at any point it becomes impossible for this matchup to occur in Super Bowl LX based on the rules of the NFL (e.g. one team is eliminated in the playoff bracket), this market will resolve immediately to \"No\".\n\nThe resolution source for this market will be official information from the NFL.",
+   "created": "2026-01-06"
+  },
+  {
+   "id": "1358218",
+   "question": "Will Bitcoin reach $78,000 February 9-15?",
+   "event_title": "What price will Bitcoin hit February 9-15?",
+   "rules": "This market will immediately resolve to \"Yes\" if any Binance 1-minute candle for BTC/USDT during the date range specified in the title (from 12:00 AM ET on the first date to 11:59 PM ET on the last) has a final \"High\" price equal to or greater than the price specified in the title. Otherwise, this market will resolve to \"No\".\n\nThe resolution source for this market is Binance, specifically the BTC/USDT \"High\" prices available at https://www.binance.com/en/trade/BTC_USDT, with the chart settings on \"1m\" candles selected on the top bar.\n\nPlease note that the outcome of this market depends solely on the price data from the Binance BTC/USDT trading pair. Prices from other exchanges, different trading pairs, or spot markets will not be considered for the resolution of this market.",
+   "created": "2026-02-09"
+  },
+  {
+   "id": "1460723",
+   "question": "Will Tesla (TSLA) close above $440 end of March?",
+   "event_title": "Will Tesla (TSLA) close above ___ end of March?",
+   "rules": "This market will resolve to \"Yes\" if the official closing price for Tesla, Inc. (TSLA) on the final trading day of March 2026 is higher than the listed price. Otherwise, this market will resolve to \"No\".\n\nIf the final trading day of the month is shortened (for example, due to a market-holiday schedule), the official closing price published for that shortened session will still be used for resolution.\n\nIf no official closing price is published for that session (for example, due to a trading halt into the close, system issue, or other disruption), the market will use the last valid on-exchange trade price of the regular session as the effective closing price.\n\nThe resolution source for this market is Yahoo Finance — specifically, the Tesla, Inc. (TSLA) \"Close\" prices available at https://finance.yahoo.com/quote/TSLA/history, published under \"Historical Prices.\"\n\nIn the event of a stock spl",
+   "created": "2026-02-27"
+  },
+  {
+   "id": "1850289",
+   "question": "Will Coinbase Global, Inc. (COIN) hit (LOW) $170 Week of April 6 2026?",
+   "event_title": "What will Coinbase Global, Inc. (COIN) hit Week of April 6 2026?",
+   "rules": "This market will resolve to \"Yes\" if, at any point during the week of April 6 2026, any 1-minute candle for Coinbase Global, Inc. (COIN) has a final \"Low\" price equal to or below the listed price. Otherwise, this market will resolve to \"No\".\n\nOnly prices achieved during the regular trading hours of the primary exchange on which the listed security trades (typically 9:30 AM – 4:00 PM ET) will be considered. Prices occurring during pre-market or after-hours trading will not qualify.\n\nPrices will be used exactly as published by Pyth, without rounding.\n\nIn the event of a stock split, reverse stock split, or similar corporate action affecting the listed company during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Pyth.\n\nThe target price will be adjusted proportionally to reflect any stock splits. Resolution will be based on the historical price",
+   "created": "2026-04-03"
+  },
+  {
+   "id": "1007515",
+   "question": "Will Russia enter Orikhiv by January 31?",
+   "event_title": "Will Russia enter Orikhiv by...?",
+   "rules": "This market will resolve to “Yes” if, according to the ISW map, Russia captures any territory of Orikhiv by January 31, 2026, at 11:59 PM ET.\n\nTerritory will be considered captured if any part of Orikhiv is shaded under a below specified layer on the ISW map (https://storymaps.arcgis.com/stories/36a7f6a6f5a9448496de641cf64bd375) by the resolution date. Otherwise, the market will resolve to “No”.\n\nFor any change on the ISW map to qualify for this market’s resolution, the relevant shading indicating Russian control must persist through the next full ISW daily update cycle. If ISW skips a day, shading must persist until the next finalized ISW update is published, regardless of the date. Any continuous shading which reflects either \"Assessed Russian Infiltration Areas in Ukraine\", “Assessed Russian Control”, “Assessed Russian Advance In Ukraine”, or “Assessed Russian Gains in the Past 24 Hou",
+   "created": "2025-12-23"
+  },
+  {
+   "id": "4412915",
+   "question": "Will MicroStrategy (MSTR) hit (LOW) $135 Week of September 7 2026?",
+   "event_title": "What will MicroStrategy (MSTR) hit Week of September 7 2026?",
+   "rules": "This market will resolve to \"Yes\" if, at any point after market creation and during the week of September 7 2026, any 1-minute candle for MicroStrategy (MSTR) has a final \"High\" or \"Low\" price equal to or beyond (above for ↑ High Prices, below for ↓ Low Prices) the listed price. Otherwise, this market will resolve to \"No\".\n\nOnly prices achieved during the regular trading hours of the primary exchange on which the listed security trades (typically 9:30 AM – 4:00 PM ET) will be considered. Prices occurring during pre-market or after-hours trading will not qualify.\n\nPrices will be used exactly as published by Pyth, without rounding.\n\nIn the event of a stock split, reverse stock split, or similar corporate action affecting the listed company during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Pyth.\n\nThe target price will be adjusted proportio",
+   "created": "2026-09-09"
+  }
+ ]
+}

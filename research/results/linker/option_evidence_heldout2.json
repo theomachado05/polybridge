@@ -1,0 +1,264 @@
+{
+ "study": "heldout2",
+ "written": "2026-10-04T03:39:26+00:00",
+ "links": 62,
+ "dir": {
+  "testable": 31,
+  "confirmed": 4,
+  "contradicted": 3
+ },
+ "straddle": {
+  "testable": 31,
+  "confirmed": 3,
+  "contradicted": 2
+ },
+ "by_instrument_class": {
+  "airlines_travel": {
+   "links": 1,
+   "dir": {
+    "testable": 1,
+    "confirmed": 0,
+    "contradicted": 0
+   },
+   "straddle": {
+    "testable": 1,
+    "confirmed": 0,
+    "contradicted": 0
+   }
+  },
+  "asia_other": {
+   "links": 2,
+   "dir": {
+    "testable": 0,
+    "confirmed": 0,
+    "contradicted": 0
+   },
+   "straddle": {
+    "testable": 0,
+    "confirmed": 0,
+    "contradicted": 0
+   }
+  },
+  "big_tech": {
+   "links": 2,
+   "dir": {
+    "testable": 2,
+    "confirmed": 0,
+    "contradicted": 0
+   },
+   "straddle": {
+    "testable": 2,
+    "confirmed": 0,
+    "contradicted": 1
+   }
+  },
+  "canada_australia": {
+   "links": 1,
+   "dir": {
+    "testable": 0,
+    "confirmed": 0,
+    "contradicted": 0
+   },
+   "straddle": {
+    "testable": 0,
+    "confirmed": 0,
+    "contradicted": 0
+   }
+  },
+  "china": {
+   "links": 2,
+   "dir": {
+    "testable": 2,
+    "confirmed": 0,
+    "contradicted": 0
+   },
+   "straddle": {
+    "testable": 2,
+    "confirmed": 0,
+    "contradicted": 0
+   }
+  },
+  "crypto": {
+   "links": 2,
+   "dir": {
+    "testable": 2,
+    "confirmed": 1,
+    "contradicted": 0
+   },
+   "straddle": {
+    "testable": 2,
+    "confirmed": 1,
+    "contradicted": 0
+   }
+  },
+  "defense": {
+   "links": 3,
+   "dir": {
+    "testable": 3,
+    "confirmed": 0,
+    "contradicted": 1
+   },
+   "straddle": {
+    "testable": 3,
+    "confirmed": 1,
+    "contradicted": 0
+   }
+  },
+  "dollar_fx": {
+   "links": 6,
+   "dir": {
+    "testable": 2,
+    "confirmed": 0,
+    "contradicted": 0
+   },
+   "straddle": {
+    "testable": 2,
+    "confirmed": 0,
+    "contradicted": 0
+   }
+  },
+  "europe": {
+   "links": 7,
+   "dir": {
+    "testable": 0,
+    "confirmed": 0,
+    "contradicted": 0
+   },
+   "straddle": {
+    "testable": 0,
+    "confirmed": 0,
+    "contradicted": 0
+   }
+  },
+  "gold_metals": {
+   "links": 4,
+   "dir": {
+    "testable": 4,
+    "confirmed": 0,
+    "contradicted": 0
+   },
+   "straddle": {
+    "testable": 4,
+    "confirmed": 0,
+    "contradicted": 0
+   }
+  },
+  "latin_america": {
+   "links": 6,
+   "dir": {
+    "testable": 0,
+    "confirmed": 0,
+    "contradicted": 0
+   },
+   "straddle": {
+    "testable": 0,
+    "confirmed": 0,
+    "contradicted": 0
+   }
+  },
+  "middle_east_africa": {
+   "links": 4,
+   "dir": {
+    "testable": 0,
+    "confirmed": 0,
+    "contradicted": 0
+   },
+   "straddle": {
+    "testable": 0,
+    "confirmed": 0,
+    "contradicted": 0
+   }
+  },
+  "oil_companies_tankers": {
+   "links": 1,
+   "dir": {
+    "testable": 0,
+    "confirmed": 0,
+    "contradicted": 0
+   },
+   "straddle": {
+    "testable": 0,
+    "confirmed": 0,
+    "contradicted": 0
+   }
+  },
+  "oil_gas": {
+   "links": 12,
+   "dir": {
+    "testable": 10,
+    "confirmed": 1,
+    "contradicted": 2
+   },
+   "straddle": {
+    "testable": 10,
+    "confirmed": 0,
+    "contradicted": 1
+   }
+  },
+  "policy_single_names": {
+   "links": 1,
+   "dir": {
+    "testable": 0,
+    "confirmed": 0,
+    "contradicted": 0
+   },
+   "straddle": {
+    "testable": 0,
+    "confirmed": 0,
+    "contradicted": 0
+   }
+  },
+  "rates_long": {
+   "links": 1,
+   "dir": {
+    "testable": 1,
+    "confirmed": 0,
+    "contradicted": 0
+   },
+   "straddle": {
+    "testable": 1,
+    "confirmed": 0,
+    "contradicted": 0
+   }
+  },
+  "rates_short": {
+   "links": 1,
+   "dir": {
+    "testable": 0,
+    "confirmed": 0,
+    "contradicted": 0
+   },
+   "straddle": {
+    "testable": 0,
+    "confirmed": 0,
+    "contradicted": 0
+   }
+  },
+  "semis_ai": {
+   "links": 1,
+   "dir": {
+    "testable": 1,
+    "confirmed": 0,
+    "contradicted": 0
+   },
+   "straddle": {
+    "testable": 1,
+    "confirmed": 0,
+    "contradicted": 0
+   }
+  },
+  "unknown": {
+   "links": 5,
+   "dir": {
+    "testable": 3,
+    "confirmed": 2,
+    "contradicted": 0
+   },
+   "straddle": {
+    "testable": 3,
+    "confirmed": 1,
+    "contradicted": 0
+   }
+  }
+ }
+}

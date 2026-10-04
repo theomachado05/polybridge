@@ -1,0 +1,41 @@
+id,question,field,parser,truth,parser_reasons
+3258436,Will Hyperliquid dip to $48 in August?,type,touch_ticket,other,no single stock ticker named
+3934002,Will Hyperliquid reach $92 in August?,type,touch_ticket,other,no single stock ticker named
+1081547,Will Chainlink hit $13 in January?,type,touch_ticket,other,"no single stock ticker named; direction unknown: no direction word, label arrow, sign or latest price"
+1823916,Will Ethena reach $0.32 in April?,type,touch_ticket,other,no single stock ticker named
+663140,Will Google (GOOGL) finish week of November 10 above $295?,type,other,close_above_ticket,no tested mechanism
+2788130,Will Google (GOOGL) finish week of July 6 above $345?,type,other,close_above_ticket,no tested mechanism
+2788220,Will Tesla (TSLA) finish week of July 6 above $380?,type,other,close_above_ticket,no tested mechanism
+1301933,Will Netflix (NFLX) finish week of February 2 above $120?,type,other,close_above_ticket,no tested mechanism
+663143,Will Google (GOOGL) finish week of November 10 above $310?,type,other,close_above_ticket,no tested mechanism
+4963077,Will Apple (AAPL) close above $400 end of October?,date,2026-10-31,2026-10-30,
+1125367,"Will S&P 500 (SPX) close over $7,040 on the final trading day of January 2026?",date,2026-01-20,2026-01-30,
+4963493,Will NVIDIA (NVDA) close above $240 end of October?,date,2026-10-31,2026-10-30,
+1492885,"Will S&P 500 (SPX) close over $6,600 on the final trading day of March 2026?",date,2026-03-20,2026-03-31,
+4963342,Will Meta (META) close above $760 end of October?,date,2026-10-31,2026-10-30,
+1125372,"Will S&P 500 (SPX) close over $6,600 on the final trading day of January 2026?",date,2026-01-20,2026-01-30,
+4963334,Will Meta (META) close above $720 end of October?,date,2026-10-31,2026-10-30,
+1492884,"Will S&P 500 (SPX) close over $6,700 on the final trading day of March 2026?",date,2026-03-20,2026-03-31,
+4963179,Will Amazon (AMZN) close above $200 end of October?,date,2026-10-31,2026-10-30,
+1492883,"Will S&P 500 (SPX) close over $6,800 on the final trading day of March 2026?",date,2026-03-20,2026-03-31,
+4963501,Will NVIDIA (NVDA) close above $260 end of October?,date,2026-10-31,2026-10-30,
+1492880,"Will S&P 500 (SPX) close over $7,100 on the final trading day of March 2026?",date,2026-03-20,2026-03-31,
+662965,Will Amazon (AMZN) close above $210 end of November?,date,2025-11-30,2025-11-28,
+1301694,Will Amazon (AMZN) close above $230 end of February?,date,2028-02-29,2026-02-27,
+663032,Will Netflix (NFLX) close above $110 end of November?,date,2025-11-30,2025-11-28,
+1031545,Will Apple (AAPL) close above $330 end of January?,date,2026-01-31,2026-01-30,
+1301868,Will NVIDIA (NVDA) close above $150 end of February?,date,2028-02-29,2026-02-27,
+1031771,Will NVIDIA (NVDA) close above $250 end of January?,date,2026-01-31,2026-01-30,
+663078,Will Rocket Lab (RKLB) close above $74 end of November?,date,2025-11-30,2025-11-28,
+1301972,Will Opendoor (OPEN) close above $2.00 end of February?,date,2028-02-29,2026-02-27,
+1301566,Will Apple (AAPL) close above $230 end of February?,date,2028-02-29,2026-02-27,
+662996,Will Meta (META) close above $680 end of November?,date,2025-11-30,2025-11-28,
+663084,Will Airbnb (ABNB) close above $120 end of November?,date,2025-11-30,2025-11-28,
+663046,Will Palantir (PLTR) close above $200 end of November?,date,2025-11-30,2025-11-28,
+516874,"Will Ethereum hit $10,000 by December 31?",date,2024-12-31,2025-12-31,
+p059,Israel x Iran ceasefire broken by July 11?  || Israel x Iran ceasefire broken by July 31?,nested,False,True,descriptions differ
+p062,Israel x Iran ceasefire broken by August 31? || Israel x Iran ceasefire broken by September 30?,nested,False,True,descriptions differ
+p065,US x Venezuela military engagement by September 30? || US x Venezuela military engagement by October 24?,nested,False,True,descriptions differ
+p068,Israeli parliament dissolved by May 31? || Israeli parliament dissolved by June 30?,nested,False,True,descriptions differ
+p072,Israel x Iran ceasefire broken by September 30? || Israel x Iran ceasefire broken by October 31?,nested,False,True,descriptions differ
+p075,Will Monad perform an airdrop by September 30?  || Will Monad perform an airdrop by October 31? ,nested,False,True,descriptions differ

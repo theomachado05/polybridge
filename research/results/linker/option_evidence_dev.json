@@ -1,0 +1,186 @@
+{
+ "study": "dev",
+ "written": "2026-10-04T03:17:06+00:00",
+ "links": 46,
+ "dir": {
+  "testable": 22,
+  "confirmed": 5,
+  "contradicted": 0
+ },
+ "straddle": {
+  "testable": 22,
+  "confirmed": 0,
+  "contradicted": 1
+ },
+ "by_instrument_class": {
+  "airlines_travel": {
+   "links": 4,
+   "dir": {
+    "testable": 1,
+    "confirmed": 0,
+    "contradicted": 0
+   },
+   "straddle": {
+    "testable": 1,
+    "confirmed": 0,
+    "contradicted": 0
+   }
+  },
+  "big_tech": {
+   "links": 1,
+   "dir": {
+    "testable": 1,
+    "confirmed": 0,
+    "contradicted": 0
+   },
+   "straddle": {
+    "testable": 1,
+    "confirmed": 0,
+    "contradicted": 0
+   }
+  },
+  "consumer_tariff": {
+   "links": 2,
+   "dir": {
+    "testable": 2,
+    "confirmed": 0,
+    "contradicted": 0
+   },
+   "straddle": {
+    "testable": 2,
+    "confirmed": 0,
+    "contradicted": 1
+   }
+  },
+  "crypto": {
+   "links": 4,
+   "dir": {
+    "testable": 4,
+    "confirmed": 0,
+    "contradicted": 0
+   },
+   "straddle": {
+    "testable": 4,
+    "confirmed": 0,
+    "contradicted": 0
+   }
+  },
+  "dollar_fx": {
+   "links": 3,
+   "dir": {
+    "testable": 2,
+    "confirmed": 0,
+    "contradicted": 0
+   },
+   "straddle": {
+    "testable": 2,
+    "confirmed": 0,
+    "contradicted": 0
+   }
+  },
+  "europe": {
+   "links": 3,
+   "dir": {
+    "testable": 0,
+    "confirmed": 0,
+    "contradicted": 0
+   },
+   "straddle": {
+    "testable": 0,
+    "confirmed": 0,
+    "contradicted": 0
+   }
+  },
+  "gold_metals": {
+   "links": 3,
+   "dir": {
+    "testable": 2,
+    "confirmed": 0,
+    "contradicted": 0
+   },
+   "straddle": {
+    "testable": 2,
+    "confirmed": 0,
+    "contradicted": 0
+   }
+  },
+  "latin_america": {
+   "links": 1,
+   "dir": {
+    "testable": 0,
+    "confirmed": 0,
+    "contradicted": 0
+   },
+   "straddle": {
+    "testable": 0,
+    "confirmed": 0,
+    "contradicted": 0
+   }
+  },
+  "middle_east_africa": {
+   "links": 6,
+   "dir": {
+    "testable": 0,
+    "confirmed": 0,
+    "contradicted": 0
+   },
+   "straddle": {
+    "testable": 0,
+    "confirmed": 0,
+    "contradicted": 0
+   }
+  },
+  "oil_gas": {
+   "links": 13,
+   "dir": {
+    "testable": 7,
+    "confirmed": 5,
+    "contradicted": 0
+   },
+   "straddle": {
+    "testable": 7,
+    "confirmed": 0,
+    "contradicted": 0
+   }
+  },
+  "policy_single_names": {
+   "links": 2,
+   "dir": {
+    "testable": 1,
+    "confirmed": 0,
+    "contradicted": 0
+   },
+   "straddle": {
+    "testable": 1,
+    "confirmed": 0,
+    "contradicted": 0
+   }
+  },
+  "rates_short": {
+   "links": 2,
+   "dir": {
+    "testable": 1,
+    "confirmed": 0,
+    "contradicted": 0
+   },
+   "straddle": {
+    "testable": 1,
+    "confirmed": 0,
+    "contradicted": 0
+   }
+  },
+  "unknown": {
+   "links": 2,
+   "dir": {
+    "testable": 1,
+    "confirmed": 0,
+    "contradicted": 0
+   },
+   "straddle": {
+    "testable": 1,
+    "confirmed": 0,
+    "contradicted": 0
+   }
+  }
+ }
+}

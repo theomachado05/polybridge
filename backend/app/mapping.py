@@ -18,6 +18,7 @@ import asyncio
 import hashlib
 import json
 import math
+import os
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -58,6 +59,9 @@ _universe: list[dict] | None = None
 def _load() -> dict:
     """Cache a good library by mtime; error states are re-checked on every call."""
     global _cache, _cache_mtime
+    if os.environ.get("POLYBRIDGE_LINK_MAP") == "1":  # opt-in: the link agent's map (trusted links only)
+        from . import link_map
+        return link_map.load()
     try:
         mtime = MAP_PATH.stat().st_mtime
         if _cache is not None and _cache_mtime == mtime:
@@ -236,7 +240,7 @@ def _resolve(req: MapRequest) -> tuple[dict, dict | None]:
     def hit(entry: dict, match_type: str, score: float) -> dict:
         return {"label": LABEL, "generated_at": lib.get("generated_at"), "source": SOURCE_PRECOMPUTED,
                 "match_type": match_type, "score": score, "items": _items(entry),
-                "matched_question": entry.get("question"), "candidates": [], "note": None,
+                "matched_question": entry.get("question"), "candidates": [], "note": entry.get("no_instrument_reason") or None,
                 "ai": _precomputed_ai(lib)}
 
     if req.source and req.market_id and (e := items.get(f"{req.source}:{req.market_id}")):

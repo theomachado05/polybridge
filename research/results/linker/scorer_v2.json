@@ -1,0 +1,268 @@
+{
+ "features": [
+  "confidence",
+  "two_models",
+  "log_mean_abs_move",
+  "share_nights_1pt",
+  "share_between_10_and_90",
+  "log_days",
+  "links_on_question"
+ ],
+ "groups": [],
+ "mean": [
+  0.38712574850299414,
+  0.7934131736526946,
+  0.8299877491721873,
+  0.35437472600457015,
+  0.5105888996305669,
+  4.410184901848849,
+  2.7215568862275448
+ ],
+ "sd": [
+  0.24270580943977688,
+  0.4048564060590571,
+  0.53763241951625,
+  0.2533393772121928,
+  0.3938650092011711,
+  0.6229326904535781,
+  0.8136279189387098
+ ],
+ "weights": {
+  "intercept": -0.9110533975091945,
+  "confidence": 0.7172398977911387,
+  "two_models": -0.7338721420401207,
+  "log_mean_abs_move": 0.8699609520688817,
+  "share_nights_1pt": 1.6812571627205848,
+  "share_between_10_and_90": -0.7150825328790641,
+  "log_days": -0.0168054479329308,
+  "links_on_question": 0.36824872768351785
+ },
+ "l2": 1.0,
+ "impute": {
+  "confidence": 0.4,
+  "two_models": 1.0,
+  "log_mean_abs_move": 0.8092788480212971,
+  "share_nights_1pt": 0.3617021276595745,
+  "share_between_10_and_90": 0.6346153846153846,
+  "log_days": 4.394449154672439,
+  "links_on_question": 3.0
+ },
+ "trained_on": 334,
+ "confirmed": 123,
+ "training_sources": [
+  "results/linker/benchmark.csv (S4, S5; verdict != untestable)",
+  "results/linker/heldout_links.csv (first held-out set, arms A and B, unique by market + ticker + direction; verdict != untestable)"
+ ],
+ "choice": "version 2 did not beat version 1 out of fold, so version 1's inputs are frozen (refit on all rows)",
+ "selection_on_all_rows": {
+  "cols": [
+   "confidence",
+   "two_models",
+   "log_mean_abs_move",
+   "share_nights_1pt",
+   "share_between_10_and_90",
+   "log_days",
+   "links_on_question",
+   "price_proxy"
+  ],
+  "l2": 3.0,
+  "cv_auc": 0.8913998381689978,
+  "trace": [
+   {
+    "added": "version 1",
+    "inputs": 7,
+    "l2": 1.0,
+    "cv_auc": 0.8764
+   },
+   {
+    "added": "price_proxy",
+    "inputs": 8,
+    "l2": 3.0,
+    "cv_auc": 0.8914
+   }
+  ]
+ },
+ "frozen_selection_by_market_not_nested": {
+  "validation": "by market, 5 folds",
+  "version": "v2 frozen selection, not nested",
+  "links_scored": 334,
+  "base_rate": 0.36826347305389223,
+  "auc": 0.8947520517859207,
+  "confirmed_in_top_third": 0.7837837837837838,
+  "confirmed_in_bottom_third": 0.05405405405405406
+ },
+ "mean_auc_over_validations": {
+  "v1": 0.8512826266372642,
+  "v2": 0.8516769103537566
+ },
+ "validation": [
+  {
+   "validation": "by market, 5 folds",
+   "version": "v1",
+   "links_scored": 334,
+   "base_rate": 0.36826347305389223,
+   "auc": 0.8803413863522521,
+   "confirmed_in_top_third": 0.7477477477477478,
+   "confirmed_in_bottom_third": 0.036036036036036036
+  },
+  {
+   "validation": "by market, 5 folds",
+   "version": "v2",
+   "links_scored": 334,
+   "base_rate": 0.36826347305389223,
+   "auc": 0.853697067776365,
+   "confirmed_in_top_third": 0.7387387387387387,
+   "confirmed_in_bottom_third": 0.05405405405405406,
+   "groups_chosen_per_split": [
+    [
+     "theme"
+    ],
+    [
+     "family"
+    ],
+    [],
+    [
+     "impact"
+    ],
+    [
+     "impact"
+    ]
+   ]
+  },
+  {
+   "validation": "leave one theme out",
+   "version": "v1",
+   "links_scored": 334,
+   "base_rate": 0.36826347305389223,
+   "auc": 0.8553731745848264,
+   "confirmed_in_top_third": 0.7297297297297297,
+   "confirmed_in_bottom_third": 0.06306306306306306
+  },
+  {
+   "validation": "leave one theme out",
+   "version": "v2",
+   "links_scored": 334,
+   "base_rate": 0.36826347305389223,
+   "auc": 0.8363580318267637,
+   "confirmed_in_top_third": 0.6936936936936937,
+   "confirmed_in_bottom_third": 0.05405405405405406,
+   "groups_chosen_per_split": [
+    [
+     "family"
+    ],
+    [],
+    [
+     "impact"
+    ],
+    [
+     "impact"
+    ],
+    [
+     "mechanism"
+    ],
+    [
+     "mechanism"
+    ],
+    [
+     "family"
+    ],
+    [
+     "volatility"
+    ],
+    [
+     "family"
+    ],
+    [
+     "price_proxy"
+    ]
+   ]
+  },
+  {
+   "validation": "train S4, test S5",
+   "version": "v1",
+   "links_scored": 164,
+   "base_rate": 0.3719512195121951,
+   "auc": 0.9037084195448034,
+   "confirmed_in_top_third": 0.7777777777777778,
+   "confirmed_in_bottom_third": 0.018518518518518517
+  },
+  {
+   "validation": "train S4, test S5",
+   "version": "v2",
+   "links_scored": 164,
+   "base_rate": 0.3719512195121951,
+   "auc": 0.8908164889384053,
+   "confirmed_in_top_third": 0.8148148148148148,
+   "confirmed_in_bottom_third": 0.05555555555555555,
+   "groups_chosen_per_split": [
+    [
+     "price_proxy"
+    ]
+   ]
+  },
+  {
+   "validation": "train S5, test S4",
+   "version": "v1",
+   "links_scored": 115,
+   "base_rate": 0.4260869565217391,
+   "auc": 0.7323747680890538,
+   "confirmed_in_top_third": 0.5789473684210527,
+   "confirmed_in_bottom_third": 0.15789473684210525
+  },
+  {
+   "validation": "train S5, test S4",
+   "version": "v2",
+   "links_scored": 115,
+   "base_rate": 0.4260869565217391,
+   "auc": 0.7983920841063699,
+   "confirmed_in_top_third": 0.6578947368421053,
+   "confirmed_in_bottom_third": 0.05263157894736842,
+   "groups_chosen_per_split": [
+    [
+     "mechanism"
+    ]
+   ]
+  },
+  {
+   "validation": "train S4+S5, test first held-out",
+   "version": "v1",
+   "links_scored": 55,
+   "base_rate": 0.23636363636363636,
+   "auc": 0.8846153846153846,
+   "confirmed_in_top_third": 0.5,
+   "confirmed_in_bottom_third": 0.0
+  },
+  {
+   "validation": "train S4+S5, test first held-out",
+   "version": "v2",
+   "links_scored": 55,
+   "base_rate": 0.23636363636363636,
+   "auc": 0.8791208791208791,
+   "confirmed_in_top_third": 0.5,
+   "confirmed_in_bottom_third": 0.0,
+   "groups_chosen_per_split": [
+    [
+     "family"
+    ]
+   ]
+  }
+ ],
+ "rules": {
+  "l2_grid": [
+   0.3,
+   1.0,
+   3.0,
+   10.0,
+   30.0
+  ],
+  "add_if_auc_gain_above": 0.01,
+  "max_inputs": 15,
+  "min_rows_per_one_hot": 8,
+  "fold_seeds_inside_selection": [
+   0,
+   1
+  ],
+  "volatility_cutoff": "2025-10-01",
+  "min_sessions": 15
+ }
+}

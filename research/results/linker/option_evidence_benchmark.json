@@ -1,0 +1,56 @@
+{
+ "study": "benchmark",
+ "written": "2026-10-04T02:12:08+00:00",
+ "links": 4,
+ "dir": {
+  "testable": 2,
+  "confirmed": 0,
+  "contradicted": 0
+ },
+ "straddle": {
+  "testable": 2,
+  "confirmed": 1,
+  "contradicted": 1
+ },
+ "by_instrument_class": {
+  "gold_metals": {
+   "links": 1,
+   "dir": {
+    "testable": 1,
+    "confirmed": 0,
+    "contradicted": 0
+   },
+   "straddle": {
+    "testable": 1,
+    "confirmed": 1,
+    "contradicted": 0
+   }
+  },
+  "oil_gas": {
+   "links": 2,
+   "dir": {
+    "testable": 0,
+    "confirmed": 0,
+    "contradicted": 0
+   },
+   "straddle": {
+    "testable": 0,
+    "confirmed": 0,
+    "contradicted": 0
+   }
+  },
+  "rates_long": {
+   "links": 1,
+   "dir": {
+    "testable": 1,
+    "confirmed": 0,
+    "contradicted": 0
+   },
+   "straddle": {
+    "testable": 1,
+    "confirmed": 0,
+    "contradicted": 1
+   }
+  }
+ }
+}

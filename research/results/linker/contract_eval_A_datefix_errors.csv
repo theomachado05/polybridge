@@ -1,0 +1,42 @@
+id,question,field,parser,truth,parser_reasons
+701726,"Will Hyperliquid reach $100 by December 31, 2026?",type,touch_ticket,ladder_rung,no single stock ticker named
+701830,"Will Chainlink reach $18 by December 31, 2026?",type,touch_ticket,ladder_rung,no single stock ticker named
+2732612,Will $ANSEM dip to $0.06 before 2027?,type,touch_ticket,ladder_rung,
+704527,"Will Plasma reach $0.60 by December 31, 2026?",type,touch_ticket,ladder_rung,no single stock ticker named
+5171326,Will BNB dip to $700 in October?,type,touch_ticket,other,no single stock ticker named
+4389603,"Will CASHCAT reach $0.25 by December 31, 2026?",type,touch_ticket,ladder_rung,no single stock ticker named
+3866008,"Will Hyperliquid dip to $70 by December 31, 2026?",type,touch_ticket,ladder_rung,no single stock ticker named
+704521,"Will Plasma reach $0.40 by December 31, 2026?",type,touch_ticket,ladder_rung,no single stock ticker named
+701895,"Will Aster dip to $0.40 by December 31, 2026?",type,touch_ticket,ladder_rung,no single stock ticker named
+2732599,Will $ANSEM reach $1.5 before 2027?,type,touch_ticket,ladder_rung,
+701744,"Will Hyperliquid dip to $8 by December 31, 2026?",type,touch_ticket,ladder_rung,no single stock ticker named
+5171340,Will Chainlink dip to $8 in October?,type,touch_ticket,other,no single stock ticker named
+701923,"Will UNI reach $14.00 by December 31, 2026?",type,touch_ticket,ladder_rung,no single stock ticker named
+701902,"Will Plasma reach $1.20 by December 31, 2026?",type,touch_ticket,ladder_rung,no single stock ticker named
+4936055,Will South Korea ETF (EWY) hit (LOW) $172 in October?,type,touch_ticket,other,
+608368,"Will OpenAI not IPO by December 31, 2026?",type,ladder_rung,other,
+665265,Will Donald Trump visit Germany in 2026?,type,other,ladder_rung,no tested mechanism
+5218491,Will Google (GOOGL) finish week of October 5 above $365?,type,other,close_above_ticket,no tested mechanism
+691340,AI bubble burst in 2026?,type,other,ladder_rung,no tested mechanism
+5218828,Will Opendoor (OPEN) finish week of October 5 above $4.50?,type,other,close_above_ticket,no tested mechanism
+5218463,Will Google (GOOGL) finish week of October 5 above $320?,type,other,close_above_ticket,no tested mechanism
+1076131,Will Pudgy Penguins floor price reach 10 ETH before 2027?,type,other,ladder_rung,no tested mechanism
+5218409,Will Amazon (AMZN) finish week of October 5 above $220?,type,other,close_above_ticket,no tested mechanism
+680952,Will inflation reach more than 6% in 2026?,type,other,ladder_rung,no tested mechanism
+5218314,Will Apple (AAPL) finish week of October 5 above $320?,type,other,close_above_ticket,no tested mechanism
+5218554,Will Meta (META) finish week of October 5 above $780?,type,other,close_above_ticket,no tested mechanism
+5218807,Will Opendoor (OPEN) finish week of October 5 above $1.00?,type,other,close_above_ticket,no tested mechanism
+663583,Will the Iranian regime fall before 2027?,type,other,ladder_rung,no tested mechanism
+1125369,"Will S&P 500 (SPX) close over $6,900 on the final trading day of January 2026?",date,2026-01-20,2026-01-30,
+1125371,"Will S&P 500 (SPX) close over $6,760 on the final trading day of January 2026?",date,2026-01-20,2026-01-30,
+1492882,"Will S&P 500 (SPX) close over $6,900 on the final trading day of March 2026?",date,2026-03-20,2026-03-31,
+1492886,"Will S&P 500 (SPX) close over $6,500 on the final trading day of March 2026?",date,2026-03-20,2026-03-31,
+1125368,"Will S&P 500 (SPX) close over $6,960 on the final trading day of January 2026?",date,2026-01-20,2026-01-30,
+1125370,"Will S&P 500 (SPX) close over $6,840 on the final trading day of January 2026?",date,2026-01-20,2026-01-30,
+1439550,Fed rate cut by October 2026 meeting?,date,2026-10-20,2026-10-28,
+p008,"Will Ethereum dip to $3,000 by December 31? || Will Ethereum dip to $3,000 by December 31?",earlier_date,2024-12-31,2025-12-31,descriptions differ
+p018,Fed rate cut by October 2025 meeting? || Fed rate cut by December 2025 meeting?,nested,False,True,descriptions differ
+p018,Fed rate cut by October 2025 meeting? || Fed rate cut by December 2025 meeting?,earlier_date,2025-10-20,2025-10-29,descriptions differ
+p018,Fed rate cut by October 2025 meeting? || Fed rate cut by December 2025 meeting?,later_date,2025-12-20,2025-12-16,descriptions differ
+p019,Israeli parliament dissolved by July 17? || Israeli parliament dissolved by July 31?,nested,False,True,descriptions differ
+p032,US x Venezuela military engagement by December 23? || US x Venezuela military engagement by December 31?,nested,False,True,descriptions differ

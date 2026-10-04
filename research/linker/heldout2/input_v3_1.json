@@ -1,0 +1,3647 @@
+{
+ "instructions": "# Link labeller, version 3: by event\n\nYou are one of two independent labellers. The other one cannot see your answers and you cannot see theirs. A link\ncounts only if both of you name the same ticker with the same direction, so follow the naming rules exactly.\n\n**You read this one file and nothing else.** No other file, no web, no prices, no search. Use the question text and\ngeneral knowledge of how markets work. Many of these questions have already resolved. Do not use any memory of how a\nquestion resolved or of how a price moved around it: reason from the mechanism. If you do remember either, set\n`remembered: true`.\n\n## What you are given\n\n- `events`: event clusters. Each has an id (`cluster`) and its `questions`: Polymarket yes/no questions that belong to\n  one real-world event. Each question has `id`, `question`, `volume_musd` (total traded, $ million), `start`,\n  `deadline` (the scheduled end date) and `main`. Exactly one question per cluster has `main: true`: the one the\n  grouping code picked (for a ladder its furthest deadline that still trades; otherwise the largest volume).\n- `instruments`: US-listed stocks and ETFs by class. The first ticker of a class is its standard instrument.\n\n## What you return for every cluster\n\n1. `family`\n   - `spot_proxy`: only if the question is settled by a traded market price, an index level, a yield, an exchange\n     rate or a market capitalisation, or by a holder buying or selling a traded asset (\"Will Bitcoin reach\n     $150,000\", \"largest company by market cap\", \"MicroStrategy sells Bitcoin\").\n   - `event`: anything else a listed instrument would react to: an official decision, an official statistic (CPI,\n     GDP, payrolls, a recession call), a vote, a ruling, a war, a deal, a ranking, even when prices influence it.\n     If in doubt between `event` and `spot_proxy`, answer `event`.\n   - `none`: nothing a listed instrument would react to, or you cannot tell.\n2. `structure`\n   - `binary`: one question. Also use `binary` when the cluster's questions are independent of each other (neither\n     nested nor mutually exclusive): answer for the `main` question alone.\n   - `ladder`: nested questions, where Yes on one implies Yes on another (\"by June\" implies \"by December\"; \"above\n     100\" implies \"above 80\").\n   - `multi_outcome`: at most one of the questions can resolve Yes (\"candidate X wins\", \"exactly 2 cuts\", \"cut 25 /\n     no change / hike 25\"). If each outcome also has several deadlines, use only its latest-deadline question.\n3. `signal`: the question or questions that carry the event, with weights.\n   - `binary` and `ladder`: exactly one entry, the `main` question with weight 1. Always. Do not pick another rung.\n   - `multi_outcome`: the weights describe the event along one axis, which you name in `signal_meaning`. They never\n     depend on an instrument.\n     - Outcomes on one side of the axis get positive weights, outcomes on the other side negative weights, numbers\n       in [-1, 1]. Leave out the outcomes that are neutral or unclear. Which side you make positive does not\n       matter: the code lines the two labellers up.\n     - Weight every question that belongs to a side. `main` is only the largest by volume and can be a long shot:\n       do not build the signal on it for that reason.\n     - A central-bank meeting, always: hike 50 or more = 1, hike 25 = 0.5, no change left out, cut 25 = -0.5, cut 50\n       or more = -1.\n     - A count (\"how many cuts\", \"how many seats\"): weights that rise with the number, from -1 for the smallest to\n       1 for the largest.\n     - An election or a nomination: the candidates of one camp (party, bloc or policy side) positive, the\n       candidates of the opposing camp negative, the rest left out.\n   - `signal_meaning`: one sentence, what a rise in the signal means.\n   - `alternative`: what gains when the signal falls. Every direction below is measured against this.\n4. `links`: at most 4 instruments, the most direct first. For each:\n   - `ticker`: upper case, as its primary US exchange shows it, with \".\" for a share class (BRK.B).\n   - `direction`: `up_on_yes` if the instrument rises when the signal rises, `down_on_yes` if it falls.\n   - `confidence`, 0 to 1: that an overnight move in the signal shows up in the instrument's opening gap, in that\n     direction, after taking out the move of the US market as a whole.\n   - `impact_pct`: a positive number. The instrument's move in percent, after taking out its beta times the US\n     market, if the signal went from its lowest possible value to its highest (for a binary: from certain No to\n     certain Yes). The sign is carried by `direction`, not here.\n   - `mechanism_class`: one of `commodity_supply`, `rates_policy`, `fx_macro`, `country_election`,\n     `regulation_sector`, `company_specific`, `crypto_policy`, `war_geopolitics`, `trade_tariffs`, `other`.\n   - `mechanism`: one sentence.\n   - `off_menu`: true if the ticker is not in `instruments`, else false.\n5. `no_instrument` (true or false) and `no_instrument_reason`.\n6. `market_wide`: `up`, `down` or null: the direction of the US market as a whole when the signal rises. It may be\n   given together with links.\n7. `remembered`: true if you remember how the question resolved or how any price reacted to it.\n\n## Rules for links\n\n- **A link needs `impact_pct` of 1 or more**, measured after taking out beta times the market. An instrument that\n  moves more only because it moves more with the market (QQQ, IWM, a high-beta sector) is never a link.\n- **Never name SPY.**\n- **Naming, so that two labellers agree.** Choose the class of exposure first. Within a class, name its first\n  listed ticker before any other ticker of that class. Add a second ticker of the same class only when it carries a\n  different exposure (crude oil itself, then the producers). For a meeting of the Federal Reserve: the first ticker\n  of `rates_short`. For a foreign election: the country's ETF first, then at most two of its largest companies on\n  the list.\n- **Off the list only when no class covers the exposure.**\n- **The direction must hold against the alternative you wrote.** If you cannot name the alternative, there is no link.\n- **Do not judge whether an outcome is likely.** A question with a mechanism gets its link even if it looks remote.\n  The code measures whether the odds move.\n- **\"No listed instrument\" is a full answer** and is better than a weak link. Use it when nothing listed in the US\n  would move 1%.\n- For a `spot_proxy`, link the asset itself. It is reported as a price proxy, not as an event link.\n\n## Output\n\nWrite one JSON object to the answer file you were told, and nothing else there:\n\n```json\n{\"labeller\": \"<the name you were given>\", \"chunk\": <number>, \"answers\": [\n  {\"cluster\": \"c001\", \"family\": \"event\", \"structure\": \"ladder\",\n   \"signal\": [{\"id\": \"polymarket:123\", \"weight\": 1}],\n   \"signal_meaning\": \"...\", \"alternative\": \"...\",\n   \"links\": [{\"ticker\": \"USO\", \"direction\": \"up_on_yes\", \"confidence\": 0.6, \"impact_pct\": 6,\n              \"mechanism_class\": \"commodity_supply\", \"mechanism\": \"...\", \"off_menu\": false}],\n   \"no_instrument\": false, \"no_instrument_reason\": \"\", \"market_wide\": null, \"remembered\": false}\n]}\n```\n\n## Hard rules, checked by code\n\nAn answer that breaks one of these is discarded and its cluster gets no link.\n\n- Every cluster in `events` gets exactly one answer, in the same order, and every field above is present.\n- `binary` and `ladder`: `signal` is exactly the `main` question with weight 1.\n- `multi_outcome`: every `id` in `signal` is one of the cluster's question ids, every weight is a number in\n  [-1, 1], and at least one weight is not 0.\n- `links` is empty when `no_instrument` is true or `family` is `none`. At most 4 links. No ticker twice. Never SPY.\n",
+ "instruments": {
+  "broad_us": [
+   {
+    "ticker": "QQQ",
+    "name": "Invesco QQQ Trust, Series 1"
+   },
+   {
+    "ticker": "IWM",
+    "name": "iShares Russell 2000 ETF"
+   },
+   {
+    "ticker": "DIA",
+    "name": "State Street SPDR Dow Jones Industrial Average ETF Trust"
+   }
+  ],
+  "volatility": [
+   {
+    "ticker": "VIXY",
+    "name": "ProShares VIX Short-Term Futures ETF"
+   },
+   {
+    "ticker": "UVXY",
+    "name": "ProShares Ultra VIX Short-Term Futures ETF"
+   },
+   {
+    "ticker": "SVXY",
+    "name": "ProShares Short VIX Short-Term Futures ETF"
+   }
+  ],
+  "rates_short": [
+   {
+    "ticker": "SHY",
+    "name": "iShares 1-3 Year Treasury Bond ETF"
+   },
+   {
+    "ticker": "IEI",
+    "name": "iShares 3-7 Year Treasury Bond ETF"
+   },
+   {
+    "ticker": "VGSH",
+    "name": "Vanguard Short-Term Treasury ETF"
+   },
+   {
+    "ticker": "UTWO",
+    "name": "US Treasury 2 Year Note ETF"
+   }
+  ],
+  "rates_long": [
+   {
+    "ticker": "TLT",
+    "name": "iShares 20+ Year Treasury Bond ETF"
+   },
+   {
+    "ticker": "IEF",
+    "name": "iShares 7-10 Year Treasury Bond ETF"
+   },
+   {
+    "ticker": "TLH",
+    "name": "iShares 10-20 Year Treasury Bond ETF"
+   },
+   {
+    "ticker": "ZROZ",
+    "name": "PIMCO 25+ Year Zero Coupon U.S. Treasury Index Exchange-Traded Fund"
+   }
+  ],
+  "credit": [
+   {
+    "ticker": "HYG",
+    "name": "iShares iBoxx $ High Yield Corporate Bond ETF"
+   },
+   {
+    "ticker": "LQD",
+    "name": "iShares iBoxx $ Investment Grade Corporate Bond ETF"
+   },
+   {
+    "ticker": "JNK",
+    "name": "State Street SPDR Bloomberg High Yield Bond ETF"
+   }
+  ],
+  "rate_sensitive_equity": [
+   {
+    "ticker": "KRE",
+    "name": "State Street SPDR S&P Regional Banking ETF"
+   },
+   {
+    "ticker": "XHB",
+    "name": "State Street SPDR S&P Homebuilders ETF"
+   },
+   {
+    "ticker": "ITB",
+    "name": "iShares U.S. Home Construction ETF"
+   },
+   {
+    "ticker": "XLU",
+    "name": "State Street Utilities Select Sector SPDR ETF"
+   },
+   {
+    "ticker": "IYR",
+    "name": "iShares U.S. Real Estate ETF"
+   },
+   {
+    "ticker": "XLF",
+    "name": "State Street Financial Select Sector SPDR ETF"
+   },
+   {
+    "ticker": "AEP",
+    "name": "American Electric Power Company, Inc."
+   },
+   {
+    "ticker": "AEE",
+    "name": "Ameren Corporation"
+   },
+   {
+    "ticker": "ETR",
+    "name": "Entergy Corporation"
+   }
+  ],
+  "banks": [
+   {
+    "ticker": "JPM",
+    "name": "JPMorgan Chase & Co."
+   },
+   {
+    "ticker": "GS",
+    "name": "Goldman Sachs Group Inc."
+   },
+   {
+    "ticker": "BAC",
+    "name": "Bank of America Corporation"
+   },
+   {
+    "ticker": "WFC",
+    "name": "Wells Fargo & Co."
+   }
+  ],
+  "dollar_fx": [
+   {
+    "ticker": "UUP",
+    "name": "Invesco DB US Dollar Index Bullish Fund"
+   },
+   {
+    "ticker": "FXE",
+    "name": "Invesco CurrencyShares Euro Currency Trust"
+   },
+   {
+    "ticker": "FXY",
+    "name": "Invesco CurrencyShares Japanese Yen Trust"
+   },
+   {
+    "ticker": "FXB",
+    "name": "Invesco CurrencyShares British Pound Sterling Trust"
+   },
+   {
+    "ticker": "FXC",
+    "name": "Invesco CurrencyShares Canadian Dollar Trust"
+   },
+   {
+    "ticker": "FXA",
+    "name": "Invesco CurrencyShares Australian Dollar Trust"
+   }
+  ],
+  "gold_metals": [
+   {
+    "ticker": "GLD",
+    "name": "SPDR Gold Trust, SPDR Gold Shares"
+   },
+   {
+    "ticker": "SLV",
+    "name": "iShares Silver Trust"
+   },
+   {
+    "ticker": "GDX",
+    "name": "VanEck Gold Miners ETF"
+   },
+   {
+    "ticker": "CPER",
+    "name": "United States Copper Index Fund"
+   },
+   {
+    "ticker": "COPX",
+    "name": "Global X Copper Miners ETF (NEW)"
+   },
+   {
+    "ticker": "PPLT",
+    "name": "abrdn Physical Platinum Shares ETF"
+   }
+  ],
+  "oil_gas": [
+   {
+    "ticker": "USO",
+    "name": "United States Oil Fund, LP"
+   },
+   {
+    "ticker": "BNO",
+    "name": "United States Brent Oil Fund, LP"
+   },
+   {
+    "ticker": "XLE",
+    "name": "State Street Energy Select Sector SPDR ETF"
+   },
+   {
+    "ticker": "XOP",
+    "name": "State Street SPDR S&P Oil & Gas Exploration & Production ETF"
+   },
+   {
+    "ticker": "OIH",
+    "name": "VanEck Oil Services ETF"
+   },
+   {
+    "ticker": "UNG",
+    "name": "United States Natural Gas Fund, LP Unit"
+   },
+   {
+    "ticker": "UGA",
+    "name": "United States Gasoline Fund, LP"
+   }
+  ],
+  "oil_companies_tankers": [
+   {
+    "ticker": "XOM",
+    "name": "ExxonMobil Holdings Corporation"
+   },
+   {
+    "ticker": "CVX",
+    "name": "Chevron Corporation"
+   },
+   {
+    "ticker": "OXY",
+    "name": "Occidental Petroleum Corporation"
+   },
+   {
+    "ticker": "COP",
+    "name": "ConocoPhillips"
+   },
+   {
+    "ticker": "LNG",
+    "name": "Cheniere Energy Inc"
+   },
+   {
+    "ticker": "FRO",
+    "name": "Frontline Plc"
+   },
+   {
+    "ticker": "STNG",
+    "name": "Scorpio Tankers Inc."
+   },
+   {
+    "ticker": "DHT",
+    "name": "DHT HOLDINGS, INC."
+   },
+   {
+    "ticker": "ZIM",
+    "name": "ZIM Integrated Shipping Services Ltd."
+   },
+   {
+    "ticker": "MPC",
+    "name": "MARATHON PETROLEUM CORPORATION"
+   },
+   {
+    "ticker": "PSX",
+    "name": "PHILLIPS 66"
+   },
+   {
+    "ticker": "VLO",
+    "name": "Valero Energy Corporation"
+   }
+  ],
+  "agriculture": [
+   {
+    "ticker": "DBA",
+    "name": "Invesco DB Agriculture Fund"
+   },
+   {
+    "ticker": "CORN",
+    "name": "Teucrium Corn Fund"
+   },
+   {
+    "ticker": "WEAT",
+    "name": "Teucrium Wheat Fund"
+   },
+   {
+    "ticker": "SOYB",
+    "name": "Teucrium Soybean Fund"
+   }
+  ],
+  "uranium_nuclear_power": [
+   {
+    "ticker": "URA",
+    "name": "Global X Uranium ETF"
+   },
+   {
+    "ticker": "CCJ",
+    "name": "Cameco Corporation"
+   },
+   {
+    "ticker": "CEG",
+    "name": "Constellation Energy Corporation Common Stock"
+   },
+   {
+    "ticker": "VST",
+    "name": "Vistra Corp."
+   },
+   {
+    "ticker": "SMR",
+    "name": "NuScale Power Corporation"
+   },
+   {
+    "ticker": "OKLO",
+    "name": "Oklo Inc."
+   },
+   {
+    "ticker": "LEU",
+    "name": "Centrus Energy Corp."
+   }
+  ],
+  "defense": [
+   {
+    "ticker": "ITA",
+    "name": "iShares U.S. Aerospace & Defense ETF"
+   },
+   {
+    "ticker": "XAR",
+    "name": "State Street SPDR S&P Aerospace & Defense ETF"
+   },
+   {
+    "ticker": "LMT",
+    "name": "Lockheed Martin Corp."
+   },
+   {
+    "ticker": "RTX",
+    "name": "RTX Corporation"
+   },
+   {
+    "ticker": "NOC",
+    "name": "Northrop Grumman Corp."
+   },
+   {
+    "ticker": "GD",
+    "name": "General Dynamics Corporation"
+   },
+   {
+    "ticker": "LHX",
+    "name": "L3Harris Technologies, Inc."
+   },
+   {
+    "ticker": "HII",
+    "name": "Huntington Ingalls Industries, Inc."
+   },
+   {
+    "ticker": "KTOS",
+    "name": "Kratos Defense & Security Solutions, Inc."
+   },
+   {
+    "ticker": "AVAV",
+    "name": "AeroVironment, Inc."
+   }
+  ],
+  "airlines_travel": [
+   {
+    "ticker": "JETS",
+    "name": "U.S. Global Jets ETF"
+   },
+   {
+    "ticker": "DAL",
+    "name": "Delta Air Lines, Inc."
+   },
+   {
+    "ticker": "UAL",
+    "name": "United Airlines Holdings, Inc. Common Stock"
+   },
+   {
+    "ticker": "AAL",
+    "name": "American Airlines Group Inc."
+   },
+   {
+    "ticker": "CCL",
+    "name": "Carnival Corporation Ltd."
+   }
+  ],
+  "crypto": [
+   {
+    "ticker": "IBIT",
+    "name": "iShares Bitcoin Trust ETF"
+   },
+   {
+    "ticker": "ETHA",
+    "name": "iShares Ethereum Trust ETF"
+   },
+   {
+    "ticker": "COIN",
+    "name": "Coinbase Global, Inc. Class A Common Stock"
+   },
+   {
+    "ticker": "MSTR",
+    "name": "Strategy Inc Common Stock Class A"
+   },
+   {
+    "ticker": "MARA",
+    "name": "MARA Holdings, Inc. Common Stock"
+   },
+   {
+    "ticker": "HOOD",
+    "name": "Robinhood Markets, Inc. Class A Common Stock"
+   },
+   {
+    "ticker": "RIOT",
+    "name": "Riot Platforms, Inc. Common Stock"
+   },
+   {
+    "ticker": "CLSK",
+    "name": "CLEANSPARK INC"
+   },
+   {
+    "ticker": "BMNR",
+    "name": "BitMine Immersion Technologies, Inc."
+   },
+   {
+    "ticker": "GLXY",
+    "name": "Galaxy Digital Inc. Class A Common Stock"
+   },
+   {
+    "ticker": "CRCL",
+    "name": "Circle Internet Group, Inc."
+   },
+   {
+    "ticker": "BITO",
+    "name": "ProShares Bitcoin ETF"
+   }
+  ],
+  "semis_ai": [
+   {
+    "ticker": "SMH",
+    "name": "VanEck Semiconductor ETF"
+   },
+   {
+    "ticker": "NVDA",
+    "name": "Nvidia Corp"
+   },
+   {
+    "ticker": "AMD",
+    "name": "Advanced Micro Devices"
+   },
+   {
+    "ticker": "TSM",
+    "name": "Taiwan Semiconductor Manufacturing Company Ltd."
+   },
+   {
+    "ticker": "INTC",
+    "name": "Intel Corp"
+   },
+   {
+    "ticker": "AVGO",
+    "name": "Broadcom Inc. Common Stock"
+   },
+   {
+    "ticker": "MU",
+    "name": "Micron Technology, Inc."
+   },
+   {
+    "ticker": "ASML",
+    "name": "ASML Holding NV"
+   },
+   {
+    "ticker": "ARM",
+    "name": "Arm Holdings plc American Depositary Shares"
+   }
+  ],
+  "big_tech": [
+   {
+    "ticker": "XLK",
+    "name": "State Street Technology Select Sector SPDR ETF"
+   },
+   {
+    "ticker": "AAPL",
+    "name": "Apple Inc."
+   },
+   {
+    "ticker": "MSFT",
+    "name": "Microsoft Corp"
+   },
+   {
+    "ticker": "GOOGL",
+    "name": "Alphabet Inc. Class A Common Stock"
+   },
+   {
+    "ticker": "AMZN",
+    "name": "Amazon.Com Inc"
+   },
+   {
+    "ticker": "META",
+    "name": "Meta Platforms, Inc. Class A Common Stock"
+   },
+   {
+    "ticker": "ORCL",
+    "name": "Oracle Corp"
+   },
+   {
+    "ticker": "NFLX",
+    "name": "NetFlix Inc"
+   },
+   {
+    "ticker": "PLTR",
+    "name": "Palantir Technologies Inc. Class A Common Stock"
+   },
+   {
+    "ticker": "CRWV",
+    "name": "CoreWeave, Inc. Class A Common Stock"
+   },
+   {
+    "ticker": "DIS",
+    "name": "The Walt Disney Company"
+   }
+  ],
+  "ai_power_datacenter": [
+   {
+    "ticker": "VRT",
+    "name": "Vertiv Holdings Co Class A Common Stock"
+   },
+   {
+    "ticker": "DLR",
+    "name": "Digital Realty Trust, Inc."
+   },
+   {
+    "ticker": "EQIX",
+    "name": "Equinix, Inc. Common Stock REIT"
+   },
+   {
+    "ticker": "ETN",
+    "name": "Eaton Corporation, plc Ordinary Shares"
+   }
+  ],
+  "tesla_ev_space": [
+   {
+    "ticker": "TSLA",
+    "name": "Tesla, Inc. Common Stock"
+   },
+   {
+    "ticker": "RIVN",
+    "name": "Rivian Automotive, Inc. Class A Common Stock"
+   },
+   {
+    "ticker": "RKLB",
+    "name": "Rocket Lab Corporation Common Stock"
+   },
+   {
+    "ticker": "ASTS",
+    "name": "AST SpaceMobile, Inc. Class A Common Stock"
+   },
+   {
+    "ticker": "UBER",
+    "name": "Uber Technologies, Inc."
+   }
+  ],
+  "health": [
+   {
+    "ticker": "XLV",
+    "name": "State Street Health Care Select Sector SPDR ETF"
+   },
+   {
+    "ticker": "XBI",
+    "name": "State Street SPDR S&P Biotech ETF"
+   },
+   {
+    "ticker": "UNH",
+    "name": "UNITEDHEALTH GROUP INCORPORATED (Delaware)"
+   },
+   {
+    "ticker": "PFE",
+    "name": "Pfizer Inc."
+   },
+   {
+    "ticker": "MRNA",
+    "name": "Moderna, Inc. Common Stock"
+   },
+   {
+    "ticker": "LLY",
+    "name": "Eli Lilly & Co."
+   },
+   {
+    "ticker": "NVO",
+    "name": "Novo-Nordisk A/S"
+   },
+   {
+    "ticker": "HUM",
+    "name": "Humana Inc."
+   },
+   {
+    "ticker": "CVS",
+    "name": "CVS HEALTH CORPORATION"
+   },
+   {
+    "ticker": "HIMS",
+    "name": "Hims & Hers Health, Inc."
+   }
+  ],
+  "consumer_tariff": [
+   {
+    "ticker": "XLY",
+    "name": "State Street Consumer Discretionary Select Sector SPDR ETF"
+   },
+   {
+    "ticker": "XLP",
+    "name": "State Street Consumer Staples Select Sector SPDR ETF"
+   },
+   {
+    "ticker": "XRT",
+    "name": "State Street SPDR S&P Retail ETF"
+   },
+   {
+    "ticker": "WMT",
+    "name": "Walmart Inc. Common Stock"
+   },
+   {
+    "ticker": "COST",
+    "name": "Costco Wholesale Corp"
+   },
+   {
+    "ticker": "TGT",
+    "name": "Target Corporation"
+   },
+   {
+    "ticker": "NKE",
+    "name": "Nike, Inc."
+   },
+   {
+    "ticker": "F",
+    "name": "Ford Motor Company"
+   },
+   {
+    "ticker": "GM",
+    "name": "General Motors Company"
+   }
+  ],
+  "industrials_metals": [
+   {
+    "ticker": "XLI",
+    "name": "State Street Industrial Select Sector SPDR ETF"
+   },
+   {
+    "ticker": "NUE",
+    "name": "Nucor Corporation"
+   },
+   {
+    "ticker": "CLF",
+    "name": "Cleveland-Cliffs Inc."
+   },
+   {
+    "ticker": "CAT",
+    "name": "Caterpillar Inc."
+   },
+   {
+    "ticker": "DE",
+    "name": "Deere & Company"
+   },
+   {
+    "ticker": "BA",
+    "name": "Boeing Company"
+   },
+   {
+    "ticker": "AA",
+    "name": "Alcoa Corporation"
+   }
+  ],
+  "clean_energy": [
+   {
+    "ticker": "ICLN",
+    "name": "iShares Global Clean Energy ETF"
+   },
+   {
+    "ticker": "TAN",
+    "name": "Invesco Solar ETF"
+   },
+   {
+    "ticker": "FSLR",
+    "name": "First Solar, Inc."
+   },
+   {
+    "ticker": "ENPH",
+    "name": "Enphase Energy, Inc."
+   }
+  ],
+  "policy_single_names": [
+   {
+    "ticker": "DJT",
+    "name": "Trump Media & Technology Group Corp. Common Stock"
+   },
+   {
+    "ticker": "GEO",
+    "name": "The GEO Group, Inc."
+   },
+   {
+    "ticker": "CXW",
+    "name": "CoreCivic, Inc."
+   },
+   {
+    "ticker": "MSOS",
+    "name": "AdvisorShares Pure US Cannabis ETF"
+   }
+  ],
+  "china": [
+   {
+    "ticker": "FXI",
+    "name": "iShares China Large-Cap ETF"
+   },
+   {
+    "ticker": "KWEB",
+    "name": "KraneShares CSI China Internet ETF"
+   },
+   {
+    "ticker": "MCHI",
+    "name": "iShares MSCI China ETF"
+   },
+   {
+    "ticker": "BABA",
+    "name": "Alibaba Group Holding Limited American Depositary Shares, each represents eight Ordinary Shares"
+   },
+   {
+    "ticker": "PDD",
+    "name": "PDD Holdings Inc. American Depositary Shares"
+   },
+   {
+    "ticker": "JD",
+    "name": "JD.com, Inc."
+   },
+   {
+    "ticker": "BIDU",
+    "name": "Baidu, Inc."
+   }
+  ],
+  "asia_other": [
+   {
+    "ticker": "EWT",
+    "name": "iShares MSCI Taiwan ETF"
+   },
+   {
+    "ticker": "EWY",
+    "name": "iShares MSCI South Korea ETF"
+   },
+   {
+    "ticker": "EWJ",
+    "name": "iShares MSCI Japan ETF"
+   },
+   {
+    "ticker": "INDA",
+    "name": "iShares MSCI India ETF"
+   }
+  ],
+  "europe": [
+   {
+    "ticker": "VGK",
+    "name": "Vanguard FTSE Europe ETF"
+   },
+   {
+    "ticker": "EWG",
+    "name": "iShares MSCI Germany ETF"
+   },
+   {
+    "ticker": "EWU",
+    "name": "iShares MSCI United Kingdom ETF"
+   },
+   {
+    "ticker": "EWQ",
+    "name": "iShares MSCI France ETF"
+   },
+   {
+    "ticker": "EWI",
+    "name": "iShares MSCI Italy ETF"
+   },
+   {
+    "ticker": "EWP",
+    "name": "iShares MSCI Spain ETF"
+   },
+   {
+    "ticker": "EPOL",
+    "name": "iShares MSCI Poland ETF"
+   },
+   {
+    "ticker": "GREK",
+    "name": "Global X MSCI Greece ETF"
+   },
+   {
+    "ticker": "EWN",
+    "name": "iShares MSCI Netherlands ETF"
+   },
+   {
+    "ticker": "EWD",
+    "name": "iShares MSCI Sweden ETF"
+   },
+   {
+    "ticker": "EWL",
+    "name": "iShares MSCI Switzerland ETF"
+   }
+  ],
+  "latin_america": [
+   {
+    "ticker": "EWZ",
+    "name": "iShares MSCI Brazil ETF"
+   },
+   {
+    "ticker": "EWW",
+    "name": "iShares MSCI Mexico ETF"
+   },
+   {
+    "ticker": "ARGT",
+    "name": "Global X MSCI Argentina ETF"
+   },
+   {
+    "ticker": "ECH",
+    "name": "iShares MSCI Chile ETF"
+   },
+   {
+    "ticker": "EPU",
+    "name": "iShares MSCI Peru and Global Exposure ETF"
+   },
+   {
+    "ticker": "ILF",
+    "name": "iShares Latin America 40 ETF"
+   },
+   {
+    "ticker": "PBR",
+    "name": "PETROLEO BRASILEIRO S.A.-PETROBRAS ADS (REP 1 COMMON SHARE)"
+   },
+   {
+    "ticker": "VALE",
+    "name": "VALE S.A."
+   },
+   {
+    "ticker": "ITUB",
+    "name": "Itau Unibanco Holding S.A. American Depositary Shares"
+   },
+   {
+    "ticker": "YPF",
+    "name": "YPF Sociedad Anonima American Depositary Shares (Each representing ten (10) Class D shares of Capital Stock)"
+   },
+   {
+    "ticker": "GGAL",
+    "name": "Grupo Financiero Galicia SA"
+   },
+   {
+    "ticker": "BMA",
+    "name": "Banco Macro S.A."
+   }
+  ],
+  "middle_east_africa": [
+   {
+    "ticker": "EIS",
+    "name": "iShares MSCI Israel ETF"
+   },
+   {
+    "ticker": "TUR",
+    "name": "iShares MSCI Turkey ETF"
+   },
+   {
+    "ticker": "EZA",
+    "name": "iShares MSCI South Africa ETF"
+   },
+   {
+    "ticker": "KSA",
+    "name": "iShares MSCI Saudi Arabia ETF"
+   },
+   {
+    "ticker": "UAE",
+    "name": "iShares Trust iShares MSCI UAE ETF"
+   },
+   {
+    "ticker": "QAT",
+    "name": "iShares Trust iShares MSCI Qatar ETF"
+   }
+  ],
+  "canada_australia": [
+   {
+    "ticker": "EWC",
+    "name": "iShares MSCI Canada ETF"
+   },
+   {
+    "ticker": "EWA",
+    "name": "iShares MSCI Australia ETF"
+   }
+  ]
+ },
+ "events": [
+  {
+   "cluster": "c001",
+   "questions": [
+    {
+     "id": "polymarket:601825",
+     "question": "Will Renan Santos win the 2026 Brazilian presidential election?",
+     "volume_musd": 16.19,
+     "start": "2025-09-18",
+     "deadline": "2026-10-05",
+     "main": true
+    },
+    {
+     "id": "polymarket:601818",
+     "question": "Will Tarcisio de Freitas win the 2026 Brazilian presidential election?",
+     "volume_musd": 14.65,
+     "start": "2025-09-18",
+     "deadline": "2026-10-05",
+     "main": false
+    },
+    {
+     "id": "polymarket:601819",
+     "question": "Will Luiz Inácio Lula da Silva win the 2026 Brazilian presidential election?",
+     "volume_musd": 14.53,
+     "start": "2025-09-18",
+     "deadline": "2026-10-05",
+     "main": false
+    },
+    {
+     "id": "polymarket:601826",
+     "question": "Will Flávio Bolsonaro win the 2026 Brazilian presidential election?",
+     "volume_musd": 14.16,
+     "start": "2025-09-18",
+     "deadline": "2026-10-05",
+     "main": false
+    },
+    {
+     "id": "polymarket:601824",
+     "question": "Will Carlos Roberto Massa Júnior win the 2026 Brazilian presidential election?",
+     "volume_musd": 10.5,
+     "start": "2025-09-18",
+     "deadline": "2026-10-05",
+     "main": false
+    },
+    {
+     "id": "polymarket:601823",
+     "question": "Will Eduardo Bolsonaro win the 2026 Brazilian presidential election?",
+     "volume_musd": 10.48,
+     "start": "2025-09-18",
+     "deadline": "2026-10-05",
+     "main": false
+    },
+    {
+     "id": "polymarket:601822",
+     "question": "Will Michelle Bolsonaro win the 2026 Brazilian presidential election?",
+     "volume_musd": 10.41,
+     "start": "2025-09-18",
+     "deadline": "2026-10-05",
+     "main": false
+    },
+    {
+     "id": "polymarket:601831",
+     "question": "Will Eduardo Leite win the 2026 Brazilian presidential election?",
+     "volume_musd": 8.03,
+     "start": "2025-09-18",
+     "deadline": "2026-10-05",
+     "main": false
+    },
+    {
+     "id": "polymarket:601827",
+     "question": "Will Ronaldo Caiado win the 2026 Brazilian presidential election?",
+     "volume_musd": 7.81,
+     "start": "2025-09-18",
+     "deadline": "2026-10-05",
+     "main": false
+    },
+    {
+     "id": "polymarket:601830",
+     "question": "Will Geraldo Alckmin win the 2026 Brazilian presidential election?",
+     "volume_musd": 7.81,
+     "start": "2025-09-18",
+     "deadline": "2026-10-05",
+     "main": false
+    },
+    {
+     "id": "polymarket:601821",
+     "question": "Will Fernando Haddad win the 2026 Brazilian presidential election?",
+     "volume_musd": 7.74,
+     "start": "2025-09-18",
+     "deadline": "2026-10-05",
+     "main": false
+    },
+    {
+     "id": "polymarket:601828",
+     "question": "Will Romeu Zema win the 2026 Brazilian presidential election?",
+     "volume_musd": 7.73,
+     "start": "2025-09-18",
+     "deadline": "2026-10-05",
+     "main": false
+    },
+    {
+     "id": "polymarket:601820",
+     "question": "Will Jair Bolsonaro win the 2026 Brazilian presidential election?",
+     "volume_musd": 7.61,
+     "start": "2025-09-18",
+     "deadline": "2026-10-05",
+     "main": false
+    },
+    {
+     "id": "polymarket:601829",
+     "question": "Will Camilo Santana win the 2026 Brazilian presidential election?",
+     "volume_musd": 5.61,
+     "start": "2025-09-18",
+     "deadline": "2026-10-05",
+     "main": false
+    }
+   ]
+  },
+  {
+   "cluster": "c004",
+   "questions": [
+    {
+     "id": "polymarket:521938",
+     "question": "Will SER win the most seats in the Chamber of Deputies following the 2025 Argentina election?",
+     "volume_musd": 3.85,
+     "start": "2025-02-06",
+     "deadline": "2025-10-26",
+     "main": true
+    },
+    {
+     "id": "polymarket:521936",
+     "question": "Will HNP win the most seats in the Chamber of Deputies following the 2025 Argentina election?",
+     "volume_musd": 2.32,
+     "start": "2025-02-06",
+     "deadline": "2025-10-26",
+     "main": false
+    },
+    {
+     "id": "polymarket:521932",
+     "question": "Will LLA win the most seats in the Chamber of Deputies following the 2025 Argentina election?",
+     "volume_musd": 1.6,
+     "start": "2025-02-06",
+     "deadline": "2025-10-26",
+     "main": false
+    },
+    {
+     "id": "polymarket:521933",
+     "question": "Will UP win the most seats in the Chamber of Deputies following the 2025 Argentina election?",
+     "volume_musd": 1.26,
+     "start": "2025-02-06",
+     "deadline": "2025-10-26",
+     "main": false
+    },
+    {
+     "id": "polymarket:521934",
+     "question": "Will PRO win the most seats in the Chamber of Deputies following the 2025 Argentina election?",
+     "volume_musd": 1.02,
+     "start": "2025-02-06",
+     "deadline": "2025-10-26",
+     "main": false
+    },
+    {
+     "id": "polymarket:521935",
+     "question": "Will UCR win the most seats in the Chamber of Deputies following the 2025 Argentina election?",
+     "volume_musd": 0.86,
+     "start": "2025-02-06",
+     "deadline": "2025-10-26",
+     "main": false
+    },
+    {
+     "id": "polymarket:521937",
+     "question": "Will FIT-U win the most seats in the Chamber of Deputies following the 2025 Argentina election?",
+     "volume_musd": 0.67,
+     "start": "2025-02-06",
+     "deadline": "2025-10-26",
+     "main": false
+    }
+   ]
+  },
+  {
+   "cluster": "c007",
+   "questions": [
+    {
+     "id": "polymarket:2002531",
+     "question": "Israel x Hezbollah permanent peace deal by May 31, 2026?",
+     "volume_musd": 1.63,
+     "start": "2026-04-16",
+     "deadline": "2026-05-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:2354012",
+     "question": "Israel x Hezbollah permanent peace deal by June 30, 2026?",
+     "volume_musd": 3.8,
+     "start": "2026-05-25",
+     "deadline": "2026-06-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:2535844",
+     "question": "Israel x Hezbollah permanent peace deal by July 31, 2026?",
+     "volume_musd": 1.24,
+     "start": "2026-06-13",
+     "deadline": "2026-07-31",
+     "main": true
+    }
+   ]
+  },
+  {
+   "cluster": "c010",
+   "questions": [
+    {
+     "id": "polymarket:520579",
+     "question": "Israel and Saudi Arabia normalize relations in 2025?",
+     "volume_musd": 3.67,
+     "start": "2025-01-28",
+     "deadline": "2025-12-31",
+     "main": true
+    }
+   ]
+  },
+  {
+   "cluster": "c013",
+   "questions": [
+    {
+     "id": "polymarket:2673621",
+     "question": "Will NVIDIA be the largest company in the world by market cap on July 31?",
+     "volume_musd": 3.6,
+     "start": "2026-06-24",
+     "deadline": "2026-07-31",
+     "main": true
+    },
+    {
+     "id": "polymarket:2673623",
+     "question": "Will Apple be the largest company in the world by market cap on July 31?",
+     "volume_musd": 1.98,
+     "start": "2026-06-24",
+     "deadline": "2026-07-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:2673624",
+     "question": "Will Alphabet be the largest company in the world by market cap on July 31?",
+     "volume_musd": 1.05,
+     "start": "2026-06-24",
+     "deadline": "2026-07-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:2673622",
+     "question": "Will Microsoft be the largest company in the world by market cap on July 31?",
+     "volume_musd": 0.29,
+     "start": "2026-06-24",
+     "deadline": "2026-07-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:2673625",
+     "question": "Will Tesla be the largest company in the world by market cap on July 31?",
+     "volume_musd": 0.27,
+     "start": "2026-06-24",
+     "deadline": "2026-07-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:2673626",
+     "question": "Will Saudi Aramco be the largest company in the world by market cap on July 31?",
+     "volume_musd": 0.23,
+     "start": "2026-06-24",
+     "deadline": "2026-07-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:2673628",
+     "question": "Will Broadcom be the largest company in the world by market cap on July 31?",
+     "volume_musd": 0.2,
+     "start": "2026-06-24",
+     "deadline": "2026-07-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:2673627",
+     "question": "Will Amazon be the largest company in the world by market cap on July 31?",
+     "volume_musd": 0.17,
+     "start": "2026-06-24",
+     "deadline": "2026-07-31",
+     "main": false
+    }
+   ]
+  },
+  {
+   "cluster": "c016",
+   "questions": [
+    {
+     "id": "polymarket:679229",
+     "question": "Will James Talarico be the Democratic nominee for Senate in Texas?",
+     "volume_musd": 3.53,
+     "start": "2025-11-12",
+     "deadline": "2026-03-03",
+     "main": true
+    },
+    {
+     "id": "polymarket:679231",
+     "question": "Will Jasmine Crockett be the Democratic nominee for Senate in Texas?",
+     "volume_musd": 2.14,
+     "start": "2025-11-12",
+     "deadline": "2026-03-03",
+     "main": false
+    },
+    {
+     "id": "polymarket:679230",
+     "question": "Will Beto O'Rourke be the Democratic nominee for Senate in Texas?",
+     "volume_musd": 0.18,
+     "start": "2025-11-12",
+     "deadline": "2026-03-03",
+     "main": false
+    },
+    {
+     "id": "polymarket:679226",
+     "question": "Will Colin Allred be the Democratic nominee for Senate in Texas?",
+     "volume_musd": 0.11,
+     "start": "2025-11-12",
+     "deadline": "2026-03-03",
+     "main": false
+    }
+   ]
+  },
+  {
+   "cluster": "c019",
+   "questions": [
+    {
+     "id": "polymarket:689356",
+     "question": "Epstein client list released in 2025?",
+     "volume_musd": 3.49,
+     "start": "2025-11-19",
+     "deadline": "2026-01-01",
+     "main": true
+    },
+    {
+     "id": "polymarket:996893",
+     "question": "Epstein client list released by June 30?",
+     "volume_musd": 0.87,
+     "start": "2025-12-23",
+     "deadline": "2026-07-01",
+     "main": false
+    }
+   ]
+  },
+  {
+   "cluster": "c022",
+   "questions": [
+    {
+     "id": "polymarket:1107878",
+     "question": "Will the U.S. invade Cuba in 2026?",
+     "volume_musd": 3.44,
+     "start": "2026-01-04",
+     "deadline": "2027-01-01",
+     "main": true
+    }
+   ]
+  },
+  {
+   "cluster": "c025",
+   "questions": [
+    {
+     "id": "polymarket:614699",
+     "question": "US strikes Yemen by December 31?",
+     "volume_musd": 3.35,
+     "start": "2025-09-26",
+     "deadline": "2025-09-30",
+     "main": true
+    }
+   ]
+  },
+  {
+   "cluster": "c028",
+   "questions": [
+    {
+     "id": "polymarket:915770",
+     "question": "SpaceX IPO closing market cap above $2T?",
+     "volume_musd": 3.29,
+     "start": "2025-12-11",
+     "deadline": "2027-12-31",
+     "main": true
+    },
+    {
+     "id": "polymarket:1326787",
+     "question": "SpaceX IPO closing market cap above $3T?",
+     "volume_musd": 2.52,
+     "start": "2026-02-03",
+     "deadline": "2027-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:1326777",
+     "question": "SpaceX IPO closing market cap above $2.2T?",
+     "volume_musd": 2.33,
+     "start": "2026-02-03",
+     "deadline": "2027-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:915771",
+     "question": "SpaceX IPO closing market cap above $1.8T?",
+     "volume_musd": 2.14,
+     "start": "2025-12-11",
+     "deadline": "2027-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:1326778",
+     "question": "SpaceX IPO closing market cap above $2.4T?",
+     "volume_musd": 1.87,
+     "start": "2026-02-03",
+     "deadline": "2027-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:909466",
+     "question": "SpaceX IPO closing market cap above $1T?",
+     "volume_musd": 1.12,
+     "start": "2025-12-11",
+     "deadline": "2027-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:915769",
+     "question": "SpaceX IPO closing market cap above $1.6T?",
+     "volume_musd": 1.1,
+     "start": "2025-12-11",
+     "deadline": "2027-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:909468",
+     "question": "SpaceX IPO closing market cap above $1.2T?",
+     "volume_musd": 0.75,
+     "start": "2025-12-11",
+     "deadline": "2027-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:909467",
+     "question": "SpaceX IPO closing market cap above $1.4T?",
+     "volume_musd": 0.71,
+     "start": "2025-12-11",
+     "deadline": "2027-12-31",
+     "main": false
+    }
+   ]
+  },
+  {
+   "cluster": "c031",
+   "questions": [
+    {
+     "id": "polymarket:538308",
+     "question": "Will Trump refrain from announcing a next Fed Chair in 2025?",
+     "volume_musd": 3.26,
+     "start": "2025-04-18",
+     "deadline": "2025-12-31",
+     "main": true
+    },
+    {
+     "id": "polymarket:538295",
+     "question": "Will Trump announce Judy Shelton as next Fed Chair in 2025?",
+     "volume_musd": 2.01,
+     "start": "2025-04-18",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:538300",
+     "question": "Will Trump announce Elon Musk as next Fed Chair in 2025?",
+     "volume_musd": 1.28,
+     "start": "2025-04-18",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:538292",
+     "question": "Will Trump announce Kevin Hassett as next Fed Chair in 2025?",
+     "volume_musd": 0.93,
+     "start": "2025-04-18",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:538291",
+     "question": "Will Trump announce Kevin Warsh as next Fed Chair in 2025?",
+     "volume_musd": 0.67,
+     "start": "2025-04-18",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:538301",
+     "question": "Will Trump announce Chris Waller as next Fed Chair in 2025?",
+     "volume_musd": 0.67,
+     "start": "2025-04-18",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:538303",
+     "question": "Will Trump announce Roger W. Ferguson Jr. as next Fed Chair in 2025?",
+     "volume_musd": 0.63,
+     "start": "2025-04-18",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:538299",
+     "question": "Will Trump announce Scott Bessent as next Fed Chair in 2025?",
+     "volume_musd": 0.59,
+     "start": "2025-04-18",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:538302",
+     "question": "Will Trump announce Michelle Bowman as next Fed Chair in 2025?",
+     "volume_musd": 0.58,
+     "start": "2025-04-18",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:538298",
+     "question": "Will Trump announce Howard Lutnick as next Fed Chair in 2025?",
+     "volume_musd": 0.35,
+     "start": "2025-04-18",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:538294",
+     "question": "Will Trump announce Larry Kudlow as next Fed Chair in 2025?",
+     "volume_musd": 0.17,
+     "start": "2025-04-18",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:538304",
+     "question": "Will Trump announce Rick Rieder as next Fed Chair in 2025?",
+     "volume_musd": 0.16,
+     "start": "2025-04-18",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:538296",
+     "question": "Will Trump announce Ron Paul as next Fed Chair in 2025?",
+     "volume_musd": 0.13,
+     "start": "2025-04-18",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:538293",
+     "question": "Will Trump announce Arthur Laffer as next Fed Chair in 2025?",
+     "volume_musd": 0.12,
+     "start": "2025-04-18",
+     "deadline": "2025-12-31",
+     "main": false
+    }
+   ]
+  },
+  {
+   "cluster": "c034",
+   "questions": [
+    {
+     "id": "polymarket:2154920",
+     "question": "Will GameStop acquire eBay?",
+     "volume_musd": 3.08,
+     "start": "2026-05-04",
+     "deadline": "2027-01-01",
+     "main": true
+    }
+   ]
+  },
+  {
+   "cluster": "c037",
+   "questions": [
+    {
+     "id": "polymarket:677314",
+     "question": "Israel and Indonesia normalize relations by June 30, 2026?",
+     "volume_musd": 2.96,
+     "start": "2025-11-11",
+     "deadline": "2026-07-01",
+     "main": true
+    },
+    {
+     "id": "polymarket:677315",
+     "question": "Israel and Indonesia normalize relations by December 31, 2026?",
+     "volume_musd": 0.53,
+     "start": "2025-11-11",
+     "deadline": "2027-01-01",
+     "main": false
+    }
+   ]
+  },
+  {
+   "cluster": "c040",
+   "questions": [
+    {
+     "id": "polymarket:665224",
+     "question": "Ukraine signs peace deal with Russia before 2027?",
+     "volume_musd": 2.84,
+     "start": "2025-11-05",
+     "deadline": "2027-01-01",
+     "main": true
+    }
+   ]
+  },
+  {
+   "cluster": "c043",
+   "questions": [
+    {
+     "id": "polymarket:562811",
+     "question": "Jeffrey Epstein foul play confirmed in 2025?",
+     "volume_musd": 0.3,
+     "start": "2025-07-11",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:1057349",
+     "question": "Jeffrey Epstein foul play confirmed by December 31, 2026?",
+     "volume_musd": 2.79,
+     "start": "2025-12-29",
+     "deadline": "2027-01-01",
+     "main": true
+    }
+   ]
+  },
+  {
+   "cluster": "c046",
+   "questions": [
+    {
+     "id": "polymarket:1230249",
+     "question": "Will Fumitake Fujita be the Prime Minister of Japan as a result of the 2026 snap election?",
+     "volume_musd": 2.69,
+     "start": "2026-01-20",
+     "deadline": "2026-04-30",
+     "main": true
+    },
+    {
+     "id": "polymarket:1230225",
+     "question": "Will Sanae Takaichi be the Prime Minister of Japan as a result of the 2026 snap election?",
+     "volume_musd": 2.17,
+     "start": "2026-01-20",
+     "deadline": "2026-04-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:1230243",
+     "question": "Will Taro Kono be the Prime Minister of Japan as a result of the 2026 snap election?",
+     "volume_musd": 0.93,
+     "start": "2026-01-20",
+     "deadline": "2026-04-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:1230229",
+     "question": "Will Yoshihiko Noda be the Prime Minister of Japan as a result of the 2026 snap election?",
+     "volume_musd": 0.81,
+     "start": "2026-01-20",
+     "deadline": "2026-04-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:1230241",
+     "question": "Will Yoshimasa Hayashi be the Prime Minister of Japan as a result of the 2026 snap election?",
+     "volume_musd": 0.55,
+     "start": "2026-01-20",
+     "deadline": "2026-04-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:1230239",
+     "question": "Will Yūichirō Tamaki be the Prime Minister of Japan as a result of the 2026 snap election?",
+     "volume_musd": 0.25,
+     "start": "2026-01-20",
+     "deadline": "2026-04-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:1230231",
+     "question": "Will Tetsuo Saito be the Prime Minister of Japan as a result of the 2026 snap election?",
+     "volume_musd": 0.23,
+     "start": "2026-01-20",
+     "deadline": "2026-04-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:1230235",
+     "question": "Will Toshimitsu Motegi be the Prime Minister of Japan as a result of the 2026 snap election?",
+     "volume_musd": 0.22,
+     "start": "2026-01-20",
+     "deadline": "2026-04-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:1230227",
+     "question": "Will Shinjirō Koizumi be the Prime Minister of Japan as a result of the 2026 snap election?",
+     "volume_musd": 0.2,
+     "start": "2026-01-20",
+     "deadline": "2026-04-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:1230245",
+     "question": "Will Yōko Kamikawa be the Prime Minister of Japan as a result of the 2026 snap election?",
+     "volume_musd": 0.18,
+     "start": "2026-01-20",
+     "deadline": "2026-04-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:1230237",
+     "question": "Will Takayuki Kobayashi be the Prime Minister of Japan as a result of the 2026 snap election?",
+     "volume_musd": 0.16,
+     "start": "2026-01-20",
+     "deadline": "2026-04-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:1230233",
+     "question": "Will Hirofumi Yoshimura be the Prime Minister of Japan as a result of the 2026 snap election?",
+     "volume_musd": 0.15,
+     "start": "2026-01-20",
+     "deadline": "2026-04-30",
+     "main": false
+    }
+   ]
+  },
+  {
+   "cluster": "c049",
+   "questions": [
+    {
+     "id": "polymarket:1961522",
+     "question": "Will no qualifying diplomatic US-Iran meeting occur by June 30, 2026?",
+     "volume_musd": 2.65,
+     "start": "2026-04-12",
+     "deadline": "2026-06-30",
+     "main": true
+    },
+    {
+     "id": "polymarket:1961527",
+     "question": "Will the next diplomatic US-Iran meeting be in Switzerland?",
+     "volume_musd": 2.28,
+     "start": "2026-04-12",
+     "deadline": "2026-06-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:1961536",
+     "question": "Will the next diplomatic US-Iran meeting be in Pakistan?",
+     "volume_musd": 1.89,
+     "start": "2026-04-12",
+     "deadline": "2026-06-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:2646914",
+     "question": "Will no qualifying diplomatic US-Iran meeting occur by September 30, 2026?",
+     "volume_musd": 1.64,
+     "start": "2026-06-23",
+     "deadline": "2026-10-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:1961526",
+     "question": "Will the next diplomatic US-Iran meeting be in Qatar?",
+     "volume_musd": 1.36,
+     "start": "2026-04-12",
+     "deadline": "2026-06-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:1961530",
+     "question": "Will the next diplomatic US-Iran meeting be in Iran?",
+     "volume_musd": 1.02,
+     "start": "2026-04-12",
+     "deadline": "2026-06-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:1961539",
+     "question": "Will the next diplomatic US-Iran meeting be in another European country?",
+     "volume_musd": 0.91,
+     "start": "2026-04-12",
+     "deadline": "2026-06-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:1961534",
+     "question": "Will the next diplomatic US-Iran meeting be in Iraq?",
+     "volume_musd": 0.85,
+     "start": "2026-04-12",
+     "deadline": "2026-06-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:1961523",
+     "question": "Will the next diplomatic US-Iran meeting be in Oman?",
+     "volume_musd": 0.84,
+     "start": "2026-04-12",
+     "deadline": "2026-06-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:2646918",
+     "question": "Will the next diplomatic US-Iran meeting be in Qatar by September 30, 2026?",
+     "volume_musd": 0.76,
+     "start": "2026-06-23",
+     "deadline": "2026-10-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:2646919",
+     "question": "Will the next diplomatic US-Iran meeting be in Switzerland by September 30, 2026?",
+     "volume_musd": 0.69,
+     "start": "2026-06-23",
+     "deadline": "2026-10-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:2646932",
+     "question": "Will the next diplomatic US-Iran meeting be in another country by September 30, 2026?",
+     "volume_musd": 0.69,
+     "start": "2026-06-23",
+     "deadline": "2026-10-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:1961528",
+     "question": "Will the next diplomatic US-Iran meeting be in Austria?",
+     "volume_musd": 0.67,
+     "start": "2026-04-12",
+     "deadline": "2026-06-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:1961540",
+     "question": "Will the next diplomatic US-Iran meeting be in another country?",
+     "volume_musd": 0.6,
+     "start": "2026-04-12",
+     "deadline": "2026-06-30",
+     "main": false
+    }
+   ]
+  },
+  {
+   "cluster": "c052",
+   "questions": [
+    {
+     "id": "polymarket:641769",
+     "question": "Will Donald Trump rank in Google’s Top 5 Most Searched People of 2025?",
+     "volume_musd": 2.58,
+     "start": "2025-10-21",
+     "deadline": "2025-12-31",
+     "main": true
+    },
+    {
+     "id": "polymarket:641771",
+     "question": "Will Charlie Kirk rank in Google’s Top 5 Most Searched People of 2025?",
+     "volume_musd": 1.79,
+     "start": "2025-10-21",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:641767",
+     "question": "Will Pope Leo XIV rank in Google’s Top 5 Most Searched People of 2025?",
+     "volume_musd": 1.45,
+     "start": "2025-10-21",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:641770",
+     "question": "Will Jimmy Kimmel rank in Google’s Top 5 Most Searched People of 2025?",
+     "volume_musd": 0.72,
+     "start": "2025-10-21",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:641768",
+     "question": "Will Zohran Mamdani rank in Google’s Top 5 Most Searched People of 2025?",
+     "volume_musd": 0.64,
+     "start": "2025-10-21",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:641775",
+     "question": "Will Taylor Swift rank in Google’s Top 5 Most Searched People of 2025?",
+     "volume_musd": 0.44,
+     "start": "2025-10-21",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:642953",
+     "question": "Will Bianca Censori rank in Google’s Top 5 Most Searched People of 2025?",
+     "volume_musd": 0.43,
+     "start": "2025-10-22",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:641792",
+     "question": "Will Kendrick Lamar rank in Google’s Top 5 Most Searched People of 2025?",
+     "volume_musd": 0.31,
+     "start": "2025-10-21",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:641800",
+     "question": "Will Pope Francis rank in Google’s Top 5 Most Searched People of 2025?",
+     "volume_musd": 0.22,
+     "start": "2025-10-21",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:641776",
+     "question": "Will Elon Musk rank in Google’s Top 5 Most Searched People of 2025?",
+     "volume_musd": 0.19,
+     "start": "2025-10-21",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:641781",
+     "question": "Will Imane Khelif rank in Google’s Top 5 Most Searched People of 2025?",
+     "volume_musd": 0.13,
+     "start": "2025-10-21",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:645989",
+     "question": "Will Andy Byron rank in Google’s Top 5 Most Searched People of 2025?",
+     "volume_musd": 0.13,
+     "start": "2025-10-22",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:641774",
+     "question": "Will Joe Biden rank in Google’s Top 5 Most Searched People of 2025?",
+     "volume_musd": 0.13,
+     "start": "2025-10-21",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:641791",
+     "question": "Will Sam Altman rank in Google’s Top 5 Most Searched People of 2025?",
+     "volume_musd": 0.1,
+     "start": "2025-10-21",
+     "deadline": "2025-12-31",
+     "main": false
+    }
+   ]
+  },
+  {
+   "cluster": "c055",
+   "questions": [
+    {
+     "id": "polymarket:1487055",
+     "question": "Will Microsoft be the largest company in the world by market cap on April 30?",
+     "volume_musd": 2.51,
+     "start": "2026-03-03",
+     "deadline": "2026-04-30",
+     "main": true
+    },
+    {
+     "id": "polymarket:1487059",
+     "question": "Will Tesla be the largest company in the world by market cap on April 30?",
+     "volume_musd": 2.39,
+     "start": "2026-03-03",
+     "deadline": "2026-04-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:1487054",
+     "question": "Will NVIDIA be the largest company in the world by market cap on April 30?",
+     "volume_musd": 2.34,
+     "start": "2026-03-03",
+     "deadline": "2026-04-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:1487063",
+     "question": "Will Amazon be the largest company in the world by market cap on April 30?",
+     "volume_musd": 2.28,
+     "start": "2026-03-03",
+     "deadline": "2026-04-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:1487061",
+     "question": "Will Saudi Aramco be the largest company in the world by market cap on April 30?",
+     "volume_musd": 2.23,
+     "start": "2026-03-03",
+     "deadline": "2026-04-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:1487056",
+     "question": "Will Apple be the largest company in the world by market cap on April 30?",
+     "volume_musd": 1.47,
+     "start": "2026-03-03",
+     "deadline": "2026-04-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:1487058",
+     "question": "Will Alphabet be the largest company in the world by market cap on April 30?",
+     "volume_musd": 1.3,
+     "start": "2026-03-03",
+     "deadline": "2026-04-30",
+     "main": false
+    }
+   ]
+  },
+  {
+   "cluster": "c058",
+   "questions": [
+    {
+     "id": "polymarket:2896080",
+     "question": "Will Darline Graham Nordone be the new republican nominee for Senate in South Carolina?",
+     "volume_musd": 2.45,
+     "start": "2026-07-12",
+     "deadline": "2026-08-25",
+     "main": true
+    },
+    {
+     "id": "polymarket:2896071",
+     "question": "Will Ralph Norman be the new Republican nominee for Senate in South Carolina?",
+     "volume_musd": 1.32,
+     "start": "2026-07-12",
+     "deadline": "2026-08-25",
+     "main": false
+    },
+    {
+     "id": "polymarket:2896081",
+     "question": "Will Mark Sanford be the new republican nominee for Senate in South Carolina?",
+     "volume_musd": 0.37,
+     "start": "2026-07-12",
+     "deadline": "2026-08-25",
+     "main": false
+    },
+    {
+     "id": "polymarket:2896073",
+     "question": "Will Russell Fry be the new Republican nominee for Senate in South Carolina?",
+     "volume_musd": 0.29,
+     "start": "2026-07-12",
+     "deadline": "2026-08-25",
+     "main": false
+    }
+   ]
+  },
+  {
+   "cluster": "c061",
+   "questions": [
+    {
+     "id": "polymarket:1168142",
+     "question": "Will the upper bound of the target federal funds rate be ≥ 4.5% at the end of 2026?",
+     "volume_musd": 2.42,
+     "start": "2026-01-12",
+     "deadline": "2027-01-01",
+     "main": true
+    },
+    {
+     "id": "polymarket:1168140",
+     "question": "Will the upper bound of the target federal funds rate be 4.0% at the end of 2026?",
+     "volume_musd": 1.38,
+     "start": "2026-01-12",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:1168139",
+     "question": "Will the upper bound of the target federal funds rate be 3.75% at the end of 2026?",
+     "volume_musd": 0.54,
+     "start": "2026-01-12",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:1168136",
+     "question": "Will the upper bound of the target federal funds rate be 3.0% at the end of 2026?",
+     "volume_musd": 0.5,
+     "start": "2026-01-12",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:1168141",
+     "question": "Will the upper bound of the target federal funds rate be 4.25% at the end of 2026?",
+     "volume_musd": 0.45,
+     "start": "2026-01-12",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:1168844",
+     "question": "Will the upper bound of the target federal funds rate be 2.0% at the end of 2026?",
+     "volume_musd": 0.27,
+     "start": "2026-01-12",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:1168832",
+     "question": "Will the upper bound of the target federal funds rate be ≤1.0% at the end of 2026?",
+     "volume_musd": 0.26,
+     "start": "2026-01-12",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:1168138",
+     "question": "Will the upper bound of the target federal funds rate be 3.5% at the end of 2026?",
+     "volume_musd": 0.21,
+     "start": "2026-01-12",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:1168134",
+     "question": "Will the upper bound of the target federal funds rate be 2.5% at the end of 2026?",
+     "volume_musd": 0.18,
+     "start": "2026-01-12",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:1168843",
+     "question": "Will the upper bound of the target federal funds rate be 1.75% at the end of 2026?",
+     "volume_musd": 0.15,
+     "start": "2026-01-12",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:1168833",
+     "question": "Will the upper bound of the target federal funds rate be 1.25% at the end of 2026?",
+     "volume_musd": 0.15,
+     "start": "2026-01-12",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:1168834",
+     "question": "Will the upper bound of the target federal funds rate be 1.5% at the end of 2026?",
+     "volume_musd": 0.15,
+     "start": "2026-01-12",
+     "deadline": "2027-01-01",
+     "main": false
+    }
+   ]
+  },
+  {
+   "cluster": "c064",
+   "questions": [
+    {
+     "id": "polymarket:560560",
+     "question": "Will Russia capture Kostyantynivka by October 31?",
+     "volume_musd": 0.7,
+     "start": "2025-07-07",
+     "deadline": "2025-10-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:642526",
+     "question": "Will Russia capture Kostyantynivka by November 30?",
+     "volume_musd": 0.23,
+     "start": "2025-10-21",
+     "deadline": "2025-10-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:546806",
+     "question": "Will Russia capture Kostyantynivka by December 31?",
+     "volume_musd": 1.31,
+     "start": "2025-05-22",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:898678",
+     "question": "Will Russia capture Kostyantynivka by January 31?",
+     "volume_musd": 0.5,
+     "start": "2025-12-09",
+     "deadline": "2026-03-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:956942",
+     "question": "Will Russia capture Kostyantynivka by February 28?",
+     "volume_musd": 0.49,
+     "start": "2025-12-17",
+     "deadline": "2026-03-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:677361",
+     "question": "Will Russia capture Kostyantynivka by March 31?",
+     "volume_musd": 0.97,
+     "start": "2025-11-13",
+     "deadline": "2026-03-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:1397301",
+     "question": "Will Russia capture Kostyantynivka by April 30?",
+     "volume_musd": 0.22,
+     "start": "2026-02-19",
+     "deadline": "2026-04-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:1397260",
+     "question": "Will Russia capture Kostyantynivka by June 30?",
+     "volume_musd": 0.75,
+     "start": "2026-02-19",
+     "deadline": "2026-06-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:2608935",
+     "question": "Will Russia capture Kostyantynivka by July 31?",
+     "volume_musd": 0.29,
+     "start": "2026-06-19",
+     "deadline": "2026-07-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:2853652",
+     "question": "Will Russia capture Kostyantynivka by August 31?",
+     "volume_musd": 0.51,
+     "start": "2026-07-09",
+     "deadline": "2026-08-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:2159718",
+     "question": "Will Russia capture Kostyantynivka by September 30?",
+     "volume_musd": 0.71,
+     "start": "2026-05-04",
+     "deadline": "2026-09-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:677366",
+     "question": "Will Russia capture Kostyantynivka by December 31, 2026?",
+     "volume_musd": 2.28,
+     "start": "2025-11-13",
+     "deadline": "2026-12-31",
+     "main": true
+    }
+   ]
+  },
+  {
+   "cluster": "c067",
+   "questions": [
+    {
+     "id": "polymarket:1046978",
+     "question": "Will Tim Walz resign by January 31?",
+     "volume_musd": 2.21,
+     "start": "2025-12-28",
+     "deadline": "2026-02-01",
+     "main": true
+    },
+    {
+     "id": "polymarket:1046979",
+     "question": "Will Tim Walz resign by June 30?",
+     "volume_musd": 0.3,
+     "start": "2025-12-28",
+     "deadline": "2026-07-01",
+     "main": false
+    }
+   ]
+  },
+  {
+   "cluster": "c070",
+   "questions": [
+    {
+     "id": "polymarket:616899",
+     "question": "Lisa Cook out as Fed Governor by  October 31?",
+     "volume_musd": 0.15,
+     "start": "2025-09-29",
+     "deadline": "2025-09-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:657493",
+     "question": "Lisa Cook out as Fed Governor by November 30?",
+     "volume_musd": 0.25,
+     "start": "2025-10-30",
+     "deadline": "2025-11-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:581249",
+     "question": "Lisa Cook out as Fed Governor by December 31?",
+     "volume_musd": 2.15,
+     "start": "2025-08-26",
+     "deadline": "2025-09-30",
+     "main": true
+    }
+   ]
+  },
+  {
+   "cluster": "c073",
+   "questions": [
+    {
+     "id": "polymarket:665228",
+     "question": "Will Hezbollah disarm by March 31?",
+     "volume_musd": 0.91,
+     "start": "2025-11-05",
+     "deadline": "2026-03-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:1323083",
+     "question": "Will Hezbollah disarm by December 31?",
+     "volume_musd": 2.08,
+     "start": "2026-02-03",
+     "deadline": "2027-01-01",
+     "main": true
+    }
+   ]
+  },
+  {
+   "cluster": "c076",
+   "questions": [
+    {
+     "id": "polymarket:1106813",
+     "question": "Will María Corina Machado enter Venezuela by March 31?",
+     "volume_musd": 2.01,
+     "start": "2026-01-04",
+     "deadline": "2026-04-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:1540956",
+     "question": "Will María Corina Machado enter Venezuela by April 30?",
+     "volume_musd": 0.73,
+     "start": "2026-03-09",
+     "deadline": "2026-05-01",
+     "main": true
+    },
+    {
+     "id": "polymarket:1845280",
+     "question": "Will María Corina Machado enter Venezuela by May 31?",
+     "volume_musd": 0.2,
+     "start": "2026-04-03",
+     "deadline": "2026-06-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:1845281",
+     "question": "Will María Corina Machado enter Venezuela by June 30?",
+     "volume_musd": 0.31,
+     "start": "2026-04-03",
+     "deadline": "2026-07-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:2695043",
+     "question": "Will María Corina Machado enter Venezuela by July 31?",
+     "volume_musd": 0.3,
+     "start": "2026-06-26",
+     "deadline": "2026-08-01",
+     "main": false
+    }
+   ]
+  },
+  {
+   "cluster": "c079",
+   "questions": [
+    {
+     "id": "polymarket:678746",
+     "question": "Will Israel strike 3 countries in 2026?",
+     "volume_musd": 1.96,
+     "start": "2025-11-13",
+     "deadline": "2026-12-31",
+     "main": true
+    },
+    {
+     "id": "polymarket:678747",
+     "question": "Will Israel strike 4 countries in 2026?",
+     "volume_musd": 1.37,
+     "start": "2025-11-13",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:678749",
+     "question": "Will Israel strike 6 countries in 2026?",
+     "volume_musd": 0.65,
+     "start": "2025-11-13",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:678750",
+     "question": "Will Israel strike 7 countries in 2026?",
+     "volume_musd": 0.62,
+     "start": "2025-11-13",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:678748",
+     "question": "Will Israel strike 5 countries in 2026?",
+     "volume_musd": 0.55,
+     "start": "2025-11-13",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:678751",
+     "question": "Will Israel strike 8 countries in 2026?",
+     "volume_musd": 0.53,
+     "start": "2025-11-13",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:678753",
+     "question": "Will Israel strike 10 countries in 2026?",
+     "volume_musd": 0.4,
+     "start": "2025-11-13",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:678756",
+     "question": "Will Israel strike 13 countries in 2026?",
+     "volume_musd": 0.36,
+     "start": "2025-11-13",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:678752",
+     "question": "Will Israel strike 9 countries in 2026?",
+     "volume_musd": 0.24,
+     "start": "2025-11-13",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:678755",
+     "question": "Will Israel strike 12 countries in 2026?",
+     "volume_musd": 0.23,
+     "start": "2025-11-13",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:678758",
+     "question": "Will Israel strike 15 or more countries in 2026?",
+     "volume_musd": 0.2,
+     "start": "2025-11-13",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:678757",
+     "question": "Will Israel strike 14 countries in 2026?",
+     "volume_musd": 0.19,
+     "start": "2025-11-13",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:678754",
+     "question": "Will Israel strike 11 countries in 2026?",
+     "volume_musd": 0.14,
+     "start": "2025-11-13",
+     "deadline": "2027-01-01",
+     "main": false
+    }
+   ]
+  },
+  {
+   "cluster": "c082",
+   "questions": [
+    {
+     "id": "polymarket:560552",
+     "question": "Will Russia capture Kupiansk by October 31?",
+     "volume_musd": 1.92,
+     "start": "2025-07-07",
+     "deadline": "2025-10-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:537888",
+     "question": "Will Russia capture Kupiansk by December 31?",
+     "volume_musd": 1.56,
+     "start": "2025-04-17",
+     "deadline": "2025-08-31",
+     "main": true
+    }
+   ]
+  },
+  {
+   "cluster": "c085",
+   "questions": [
+    {
+     "id": "polymarket:1343458",
+     "question": "Will Andy Burnham be the next Prime Minister of the United Kingdom in 2026?",
+     "volume_musd": 1.82,
+     "start": "2026-02-05",
+     "deadline": "2026-12-31",
+     "main": true
+    },
+    {
+     "id": "polymarket:1343457",
+     "question": "Will Nigel Farage be the next Prime Minister of the United Kingdom in 2026?",
+     "volume_musd": 1.38,
+     "start": "2026-02-05",
+     "deadline": "2026-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:1343514",
+     "question": "Will no next Prime Minister of the United Kingdom be appointed in 2026?",
+     "volume_musd": 1.14,
+     "start": "2026-02-05",
+     "deadline": "2026-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:1343466",
+     "question": "Will Rupert Lowe be the next Prime Minister of the United Kingdom in 2026?",
+     "volume_musd": 1.14,
+     "start": "2026-02-05",
+     "deadline": "2026-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:1343456",
+     "question": "Will Angela Rayner be the next Prime Minister of the United Kingdom in 2026?",
+     "volume_musd": 0.97,
+     "start": "2026-02-05",
+     "deadline": "2026-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:1343455",
+     "question": "Will Wes Streeting be the next Prime Minister of the United Kingdom in 2026?",
+     "volume_musd": 0.94,
+     "start": "2026-02-05",
+     "deadline": "2026-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:1343471",
+     "question": "Will Darren Jones be the next Prime Minister of the United Kingdom in 2026?",
+     "volume_musd": 0.87,
+     "start": "2026-02-05",
+     "deadline": "2026-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:1343461",
+     "question": "Will Shabana Mahmood be the next Prime Minister of the United Kingdom in 2026?",
+     "volume_musd": 0.83,
+     "start": "2026-02-05",
+     "deadline": "2026-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:1343460",
+     "question": "Will Yvette Cooper be the next Prime Minister of the United Kingdom in 2026?",
+     "volume_musd": 0.8,
+     "start": "2026-02-05",
+     "deadline": "2026-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:1343469",
+     "question": "Will David Lammy be the next Prime Minister of the United Kingdom in 2026?",
+     "volume_musd": 0.79,
+     "start": "2026-02-05",
+     "deadline": "2026-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:1343467",
+     "question": "Will Rachel Reeves be the next Prime Minister of the United Kingdom in 2026?",
+     "volume_musd": 0.78,
+     "start": "2026-02-05",
+     "deadline": "2026-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:1343472",
+     "question": "Will Al Carns be the next Prime Minister of the United Kingdom in 2026?",
+     "volume_musd": 0.75,
+     "start": "2026-02-05",
+     "deadline": "2026-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:1343462",
+     "question": "Will Ed Miliband be the next Prime Minister of the United Kingdom in 2026?",
+     "volume_musd": 0.74,
+     "start": "2026-02-05",
+     "deadline": "2026-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:1343459",
+     "question": "Will Kemi Badenoch be the next Prime Minister of the United Kingdom in 2026?",
+     "volume_musd": 0.67,
+     "start": "2026-02-05",
+     "deadline": "2026-12-31",
+     "main": false
+    }
+   ]
+  },
+  {
+   "cluster": "c088",
+   "questions": [
+    {
+     "id": "polymarket:1553591",
+     "question": "Cuban regime falls in 2026?",
+     "volume_musd": 1.77,
+     "start": "2026-03-10",
+     "deadline": "2027-01-01",
+     "main": true
+    }
+   ]
+  },
+  {
+   "cluster": "c091",
+   "questions": [
+    {
+     "id": "polymarket:516935",
+     "question": "Will Gold close at $3,200 or more at the end of 2025?",
+     "volume_musd": 1.75,
+     "start": "2024-12-31",
+     "deadline": "2025-12-31",
+     "main": true
+    },
+    {
+     "id": "polymarket:516930",
+     "question": "Will Gold close at $2,700-2,800 at the end of 2025?",
+     "volume_musd": 1.65,
+     "start": "2024-12-31",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:516934",
+     "question": "Will Gold close at $3,100-3,200 at the end of 2025?",
+     "volume_musd": 1.45,
+     "start": "2024-12-31",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:516933",
+     "question": "Will Gold close at $3,000-3,100 at the end of 2025?",
+     "volume_musd": 1.31,
+     "start": "2024-12-31",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:516932",
+     "question": "Will Gold close at $2,900-3,000 at the end of 2025?",
+     "volume_musd": 1.08,
+     "start": "2024-12-31",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:516928",
+     "question": "Will Gold close at $2,500-2,600 at the end of 2025?",
+     "volume_musd": 0.96,
+     "start": "2024-12-31",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:516927",
+     "question": "Will Gold close under $2,500 at the end of 2025?",
+     "volume_musd": 0.92,
+     "start": "2024-12-31",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:516931",
+     "question": "Will Gold close at $2,800-2,900 at the end of 2025?",
+     "volume_musd": 0.7,
+     "start": "2024-12-31",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:516929",
+     "question": "Will Gold close at $2,600-2,700 at the end of 2025?",
+     "volume_musd": 0.62,
+     "start": "2024-12-31",
+     "deadline": "2025-12-31",
+     "main": false
+    }
+   ]
+  },
+  {
+   "cluster": "c094",
+   "questions": [
+    {
+     "id": "polymarket:618505",
+     "question": "Will Trump and Putin meet next in Australia?",
+     "volume_musd": 1.73,
+     "start": "2025-09-30",
+     "deadline": "2026-06-30",
+     "main": true
+    },
+    {
+     "id": "polymarket:618507",
+     "question": "Will Trump and Putin meet next in another EU country?",
+     "volume_musd": 1.1,
+     "start": "2025-09-30",
+     "deadline": "2026-06-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:618509",
+     "question": "Will Trump and Putin not meet?",
+     "volume_musd": 1.07,
+     "start": "2025-09-30",
+     "deadline": "2026-06-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:618500",
+     "question": "Will Trump and Putin meet next in Russia?",
+     "volume_musd": 0.89,
+     "start": "2025-09-30",
+     "deadline": "2026-06-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:618497",
+     "question": "Will Trump and Putin meet next in Turkey?",
+     "volume_musd": 0.75,
+     "start": "2025-09-30",
+     "deadline": "2026-06-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:618508",
+     "question": "Will Trump and Putin meet next in another country?",
+     "volume_musd": 0.63,
+     "start": "2025-09-30",
+     "deadline": "2026-06-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:618510",
+     "question": "Will Trump and Putin meet next in China?",
+     "volume_musd": 0.59,
+     "start": "2025-09-30",
+     "deadline": "2026-06-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:618496",
+     "question": "Will Trump and Putin meet next in Belarus?",
+     "volume_musd": 0.45,
+     "start": "2025-09-30",
+     "deadline": "2026-06-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:618501",
+     "question": "Will Trump and Putin meet next in a Gulf country?",
+     "volume_musd": 0.41,
+     "start": "2025-09-30",
+     "deadline": "2026-06-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:618506",
+     "question": "Will Trump and Putin meet next in United States?",
+     "volume_musd": 0.36,
+     "start": "2025-09-30",
+     "deadline": "2026-06-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:618499",
+     "question": "Will Trump and Putin meet next in Switzerland?",
+     "volume_musd": 0.32,
+     "start": "2025-09-30",
+     "deadline": "2026-06-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:618511",
+     "question": "Will Trump and Putin meet next in Ukraine?",
+     "volume_musd": 0.28,
+     "start": "2025-09-30",
+     "deadline": "2026-06-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:618503",
+     "question": "Will Trump and Putin meet next in South Korea?",
+     "volume_musd": 0.24,
+     "start": "2025-09-30",
+     "deadline": "2026-06-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:618504",
+     "question": "Will Trump and Putin meet next in Japan?",
+     "volume_musd": 0.17,
+     "start": "2025-09-30",
+     "deadline": "2026-06-30",
+     "main": false
+    }
+   ]
+  },
+  {
+   "cluster": "c097",
+   "questions": [
+    {
+     "id": "polymarket:676390",
+     "question": "Based FDV above $500M one day after launch?",
+     "volume_musd": 1.7,
+     "start": "2025-11-11",
+     "deadline": "2027-01-01",
+     "main": true
+    },
+    {
+     "id": "polymarket:1068317",
+     "question": "Based FDV above $200M one day after launch?",
+     "volume_musd": 0.78,
+     "start": "2025-12-30",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:1356657",
+     "question": "Based FDV above $100M one day after launch?",
+     "volume_musd": 0.62,
+     "start": "2026-02-08",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:904738",
+     "question": "Based FDV above $300M one day after launch?",
+     "volume_musd": 0.47,
+     "start": "2025-12-09",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:675030",
+     "question": "Based FDV above $1B one day after launch?",
+     "volume_musd": 0.46,
+     "start": "2025-11-10",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:676385",
+     "question": "Based FDV above $800M one day after launch?",
+     "volume_musd": 0.27,
+     "start": "2025-11-11",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:675031",
+     "question": "Based FDV above $2B one day after launch?",
+     "volume_musd": 0.22,
+     "start": "2025-11-10",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:675032",
+     "question": "Based FDV above $3B one day after launch?",
+     "volume_musd": 0.22,
+     "start": "2025-11-10",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:675033",
+     "question": "Based FDV above $4B one day after launch?",
+     "volume_musd": 0.2,
+     "start": "2025-11-10",
+     "deadline": "2027-01-01",
+     "main": false
+    }
+   ]
+  },
+  {
+   "cluster": "c100",
+   "questions": [
+    {
+     "id": "polymarket:658462",
+     "question": "Will Trump talk to Nicolás Maduro in November?",
+     "volume_musd": 1.67,
+     "start": "2025-10-31",
+     "deadline": "2025-11-30",
+     "main": true
+    },
+    {
+     "id": "polymarket:656138",
+     "question": "Will Trump talk to Volodymyr Zelenskyy in November?",
+     "volume_musd": 0.27,
+     "start": "2025-10-30",
+     "deadline": "2025-11-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:656150",
+     "question": "Will Trump talk to Kim Jong Un in November?",
+     "volume_musd": 0.24,
+     "start": "2025-10-30",
+     "deadline": "2025-11-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:656139",
+     "question": "Will Trump talk to Vladimir Putin in November?",
+     "volume_musd": 0.15,
+     "start": "2025-10-30",
+     "deadline": "2025-11-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:656148",
+     "question": "Will Trump talk to Jair Bolsonaro in November?",
+     "volume_musd": 0.12,
+     "start": "2025-10-30",
+     "deadline": "2025-11-30",
+     "main": false
+    }
+   ]
+  },
+  {
+   "cluster": "c103",
+   "questions": [
+    {
+     "id": "polymarket:556107",
+     "question": "Will MegaETH perform an airdrop by December 31? ",
+     "volume_musd": 0.41,
+     "start": "2025-06-26",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:1242318",
+     "question": "Will MegaETH perform an airdrop by February 15?",
+     "volume_musd": 0.26,
+     "start": "2026-01-22",
+     "deadline": "2026-03-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:1235499",
+     "question": "Will MegaETH perform an airdrop by February 28?",
+     "volume_musd": 0.21,
+     "start": "2026-01-21",
+     "deadline": "2026-03-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:556108",
+     "question": "Will MegaETH perform an airdrop by June 30? ",
+     "volume_musd": 1.63,
+     "start": "2025-06-26",
+     "deadline": "2026-07-01",
+     "main": true
+    }
+   ]
+  },
+  {
+   "cluster": "c106",
+   "questions": [
+    {
+     "id": "polymarket:919767",
+     "question": "Will Russia capture all of Pokrovsk by January 15?",
+     "volume_musd": 0.1,
+     "start": "2025-12-12",
+     "deadline": "2025-09-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:956869",
+     "question": "Will Russia capture all of Pokrovsk by January 31?",
+     "volume_musd": 0.11,
+     "start": "2025-12-17",
+     "deadline": "2025-09-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:1007260",
+     "question": "Will Russia capture all of Pokrovsk by February 28?",
+     "volume_musd": 0.94,
+     "start": "2025-12-23",
+     "deadline": "2025-09-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:642529",
+     "question": "Will Russia capture all of Pokrovsk by November 30?",
+     "volume_musd": 1.26,
+     "start": "2025-10-21",
+     "deadline": "2025-09-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:595744",
+     "question": "Will Russia capture all of Pokrovsk by December 31?",
+     "volume_musd": 1.47,
+     "start": "2025-09-12",
+     "deadline": "2025-09-30",
+     "main": true
+    }
+   ]
+  },
+  {
+   "cluster": "c109",
+   "questions": [
+    {
+     "id": "polymarket:1145508",
+     "question": "Flying Tulip FDV above $800M one day after launch?",
+     "volume_musd": 1.46,
+     "start": "2026-01-09",
+     "deadline": "2027-01-01",
+     "main": true
+    },
+    {
+     "id": "polymarket:1145509",
+     "question": "Flying Tulip FDV above $1B one day after launch?",
+     "volume_musd": 0.83,
+     "start": "2026-01-09",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:1145512",
+     "question": "Flying Tulip FDV above $2.5B one day after launch?",
+     "volume_musd": 0.65,
+     "start": "2026-01-09",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:1145510",
+     "question": "Flying Tulip FDV above $1.5B one day after launch?",
+     "volume_musd": 0.37,
+     "start": "2026-01-09",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:1145511",
+     "question": "Flying Tulip FDV above $2B one day after launch?",
+     "volume_musd": 0.28,
+     "start": "2026-01-09",
+     "deadline": "2027-01-01",
+     "main": false
+    }
+   ]
+  },
+  {
+   "cluster": "c112",
+   "questions": [
+    {
+     "id": "polymarket:665531",
+     "question": "Metamask FDV above $700M one day after launch?",
+     "volume_musd": 1.4,
+     "start": "2025-11-04",
+     "deadline": "2027-01-01",
+     "main": true
+    },
+    {
+     "id": "polymarket:665532",
+     "question": "Metamask FDV above $1B one day after launch?",
+     "volume_musd": 0.62,
+     "start": "2025-11-04",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:667004",
+     "question": "Metamask FDV above $2B one day after launch?",
+     "volume_musd": 0.42,
+     "start": "2025-11-05",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:667005",
+     "question": "Metamask FDV above $4B one day after launch?",
+     "volume_musd": 0.38,
+     "start": "2025-11-05",
+     "deadline": "2027-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:665533",
+     "question": "Metamask FDV above $3B one day after launch?",
+     "volume_musd": 0.34,
+     "start": "2025-11-04",
+     "deadline": "2027-01-01",
+     "main": false
+    }
+   ]
+  },
+  {
+   "cluster": "c115",
+   "questions": [
+    {
+     "id": "polymarket:623939",
+     "question": "Macron out by October 31, 2025?",
+     "volume_musd": 0.21,
+     "start": "2025-10-06",
+     "deadline": "2025-11-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:517231",
+     "question": "Macron out in 2025?",
+     "volume_musd": 1.39,
+     "start": "2025-01-03",
+     "deadline": "2026-01-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:597964",
+     "question": "Macron out by June 30, 2026?",
+     "volume_musd": 0.48,
+     "start": "2025-09-14",
+     "deadline": "2026-07-01",
+     "main": true
+    }
+   ]
+  },
+  {
+   "cluster": "c118",
+   "questions": [
+    {
+     "id": "polymarket:1066556",
+     "question": "Lai Ching-te impeached by June 30?",
+     "volume_musd": 1.36,
+     "start": "2026-01-02",
+     "deadline": "2026-07-01",
+     "main": true
+    }
+   ]
+  },
+  {
+   "cluster": "c121",
+   "questions": [
+    {
+     "id": "polymarket:1363116",
+     "question": "Will Claude 5 be released by April 30, 2026?",
+     "volume_musd": 1.34,
+     "start": "2026-02-10",
+     "deadline": "2026-04-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:1748641",
+     "question": "Will Claude 5 be released by May 31, 2026?",
+     "volume_musd": 0.6,
+     "start": "2026-03-27",
+     "deadline": "2026-05-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:1748840",
+     "question": "Will Claude 5 be released by June 30, 2026?",
+     "volume_musd": 0.8,
+     "start": "2026-03-27",
+     "deadline": "2026-06-30",
+     "main": true
+    },
+    {
+     "id": "polymarket:2169806",
+     "question": "Will Claude 5 be released by September 30, 2026?",
+     "volume_musd": 0.11,
+     "start": "2026-05-05",
+     "deadline": "2026-09-30",
+     "main": false
+    }
+   ]
+  },
+  {
+   "cluster": "c124",
+   "questions": [
+    {
+     "id": "polymarket:571952",
+     "question": "Will Jeannette Jara win the 1st round of the 2025 Chilean presidential election?",
+     "volume_musd": 1.31,
+     "start": "2025-08-04",
+     "deadline": "2025-11-16",
+     "main": true
+    },
+    {
+     "id": "polymarket:571959",
+     "question": "Will José Antonio Kast win the 1st round of the 2025 Chilean presidential election?",
+     "volume_musd": 0.56,
+     "start": "2025-08-04",
+     "deadline": "2025-11-16",
+     "main": false
+    },
+    {
+     "id": "polymarket:571965",
+     "question": "Will Franco Parisi win the 1st round of the 2025 Chilean presidential election?",
+     "volume_musd": 0.44,
+     "start": "2025-08-04",
+     "deadline": "2025-11-16",
+     "main": false
+    },
+    {
+     "id": "polymarket:571958",
+     "question": "Will Johannes Kaiser win the 1st round of the 2025 Chilean presidential election?",
+     "volume_musd": 0.44,
+     "start": "2025-08-04",
+     "deadline": "2025-11-16",
+     "main": false
+    },
+    {
+     "id": "polymarket:571960",
+     "question": "Will Evelyn Matthei win the 1st round of the 2025 Chilean presidential election?",
+     "volume_musd": 0.34,
+     "start": "2025-08-04",
+     "deadline": "2025-11-16",
+     "main": false
+    },
+    {
+     "id": "polymarket:571966",
+     "question": "Will Alberto Undurraga win the 1st round of the 2025 Chilean presidential election?",
+     "volume_musd": 0.18,
+     "start": "2025-08-04",
+     "deadline": "2025-11-16",
+     "main": false
+    },
+    {
+     "id": "polymarket:571964",
+     "question": "Will Marco Enríquez-Ominami win the 1st round of the 2025 Chilean presidential election?",
+     "volume_musd": 0.13,
+     "start": "2025-08-04",
+     "deadline": "2025-11-16",
+     "main": false
+    }
+   ]
+  },
+  {
+   "cluster": "c127",
+   "questions": [
+    {
+     "id": "polymarket:2757754",
+     "question": "Iran charges Hormuz fees by July 31?",
+     "volume_musd": 0.24,
+     "start": "2026-07-01",
+     "deadline": "2026-08-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:2686766",
+     "question": "Iran charges Hormuz fees by August 31?",
+     "volume_musd": 1.26,
+     "start": "2026-06-25",
+     "deadline": "2026-09-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:3399473",
+     "question": "Iran charges Hormuz fees by September 30?",
+     "volume_musd": 0.5,
+     "start": "2026-08-07",
+     "deadline": "2026-10-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:2757806",
+     "question": "Iran charges Hormuz fees by October 31?",
+     "volume_musd": 0.62,
+     "start": "2026-07-01",
+     "deadline": "2026-11-01",
+     "main": true
+    },
+    {
+     "id": "polymarket:2824614",
+     "question": "Iran charges Hormuz fees by December 31?",
+     "volume_musd": 0.29,
+     "start": "2026-07-07",
+     "deadline": "2027-01-01",
+     "main": false
+    }
+   ]
+  },
+  {
+   "cluster": "c130",
+   "questions": [
+    {
+     "id": "polymarket:1485215",
+     "question": "Will Benjamin Netanyahu be the next leader out before 2027?",
+     "volume_musd": 1.23,
+     "start": "2026-03-03",
+     "deadline": "2026-12-31",
+     "main": true
+    },
+    {
+     "id": "polymarket:1485219",
+     "question": "Will Keir Starmer be the next leader out before 2027?",
+     "volume_musd": 0.83,
+     "start": "2026-03-03",
+     "deadline": "2026-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:1485225",
+     "question": "Will Sanae Takaichi be the next leader out before 2027?",
+     "volume_musd": 0.54,
+     "start": "2026-03-03",
+     "deadline": "2026-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:1485222",
+     "question": "Will Vladimir Putin be the next leader out before 2027?",
+     "volume_musd": 0.53,
+     "start": "2026-03-03",
+     "deadline": "2026-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:1485217",
+     "question": "Will Gavin Newsom be the next leader out before 2027?",
+     "volume_musd": 0.44,
+     "start": "2026-03-03",
+     "deadline": "2026-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:1485220",
+     "question": "Will Donald Trump be the next leader out before 2027?",
+     "volume_musd": 0.39,
+     "start": "2026-03-03",
+     "deadline": "2026-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:1485226",
+     "question": "Will Mahmoud Abbas be the next leader out before 2027?",
+     "volume_musd": 0.31,
+     "start": "2026-03-03",
+     "deadline": "2026-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:1485232",
+     "question": "Will Viktor Orbán be the next leader out before 2027?",
+     "volume_musd": 0.3,
+     "start": "2026-03-03",
+     "deadline": "2026-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:1485230",
+     "question": "Will Miguel Díaz-Canel be the next leader out before 2027?",
+     "volume_musd": 0.26,
+     "start": "2026-03-03",
+     "deadline": "2026-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:1485228",
+     "question": "Will Pedro Sánchez be the next leader out before 2027?",
+     "volume_musd": 0.25,
+     "start": "2026-03-03",
+     "deadline": "2026-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:1485224",
+     "question": "Will Sébastien Lecornu be the next leader out before 2027?",
+     "volume_musd": 0.24,
+     "start": "2026-03-03",
+     "deadline": "2026-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:1485212",
+     "question": "Will Recep Tayyip Erdoğan be the next leader out before 2027?",
+     "volume_musd": 0.24,
+     "start": "2026-03-03",
+     "deadline": "2026-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:1485235",
+     "question": "Will no listed leader be out before 2027?",
+     "volume_musd": 0.23,
+     "start": "2026-03-03",
+     "deadline": "2026-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:1485221",
+     "question": "Will Volodymyr Zelenskyy be the next leader out before 2027?",
+     "volume_musd": 0.22,
+     "start": "2026-03-03",
+     "deadline": "2026-12-31",
+     "main": false
+    }
+   ]
+  },
+  {
+   "cluster": "c133",
+   "questions": [
+    {
+     "id": "polymarket:1032336",
+     "question": "Will Silver (SI) hit (HIGH) $120 by end of June?",
+     "volume_musd": 1.18,
+     "start": "2025-12-26",
+     "deadline": "2026-06-30",
+     "main": true
+    },
+    {
+     "id": "polymarket:1293938",
+     "question": "Will Silver (SI) hit (HIGH) $190 by end of February?",
+     "volume_musd": 1.08,
+     "start": "2026-01-29",
+     "deadline": "2026-02-28",
+     "main": false
+    },
+    {
+     "id": "polymarket:1272520",
+     "question": "Will Silver (SI) hit (HIGH) $120 by end of February?",
+     "volume_musd": 1.07,
+     "start": "2026-01-26",
+     "deadline": "2026-02-28",
+     "main": false
+    },
+    {
+     "id": "polymarket:1272530",
+     "question": "Will Silver (SI) hit (LOW) $40 by end of February?",
+     "volume_musd": 1.05,
+     "start": "2026-01-26",
+     "deadline": "2026-02-28",
+     "main": false
+    },
+    {
+     "id": "polymarket:1278412",
+     "question": "Will Silver (SI) hit (HIGH) $180 by end of February?",
+     "volume_musd": 1.01,
+     "start": "2026-01-27",
+     "deadline": "2026-02-28",
+     "main": false
+    },
+    {
+     "id": "polymarket:1032334",
+     "question": "Will Silver (SI) hit (HIGH) $200 by end of June?",
+     "volume_musd": 0.6,
+     "start": "2025-12-26",
+     "deadline": "2026-06-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:1032335",
+     "question": "Will Silver (SI) hit (HIGH) $150 by end of June?",
+     "volume_musd": 0.52,
+     "start": "2025-12-26",
+     "deadline": "2026-06-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:1272519",
+     "question": "Will Silver (SI) hit (HIGH) $130 by end of February?",
+     "volume_musd": 0.45,
+     "start": "2026-01-26",
+     "deadline": "2026-02-28",
+     "main": false
+    },
+    {
+     "id": "polymarket:1294089",
+     "question": "Will Silver (SI) hit (HIGH) $250 by end of June?",
+     "volume_musd": 0.4,
+     "start": "2026-01-29",
+     "deadline": "2026-06-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:1293941",
+     "question": "Will Silver (SI) hit (HIGH) $230 by end of June?",
+     "volume_musd": 0.39,
+     "start": "2026-01-29",
+     "deadline": "2026-06-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:1293937",
+     "question": "Will Silver (SI) hit (HIGH) $185 by end of February?",
+     "volume_musd": 0.39,
+     "start": "2026-01-29",
+     "deadline": "2026-02-28",
+     "main": false
+    },
+    {
+     "id": "polymarket:1032345",
+     "question": "Will Silver (SI) hit (LOW) $60 by end of June?",
+     "volume_musd": 0.35,
+     "start": "2025-12-26",
+     "deadline": "2026-06-30",
+     "main": false
+    },
+    {
+     "id": "polymarket:1272529",
+     "question": "Will Silver (SI) hit (LOW) $55 by end of February?",
+     "volume_musd": 0.33,
+     "start": "2026-01-26",
+     "deadline": "2026-02-28",
+     "main": false
+    },
+    {
+     "id": "polymarket:1272518",
+     "question": "Will Silver (SI) hit (HIGH) $140 by end of February?",
+     "volume_musd": 0.33,
+     "start": "2026-01-26",
+     "deadline": "2026-02-28",
+     "main": false
+    }
+   ]
+  },
+  {
+   "cluster": "c136",
+   "questions": [
+    {
+     "id": "polymarket:1107306",
+     "question": "US strike on Colombia by March 31?",
+     "volume_musd": 0.41,
+     "start": "2026-01-04",
+     "deadline": "2026-01-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:1107307",
+     "question": "US strike on Colombia by December 31?",
+     "volume_musd": 1.13,
+     "start": "2026-01-04",
+     "deadline": "2027-01-01",
+     "main": true
+    }
+   ]
+  },
+  {
+   "cluster": "c139",
+   "questions": [
+    {
+     "id": "polymarket:668724",
+     "question": "Will Alibaba have the best AI model for coding at the end of 2025?",
+     "volume_musd": 1.1,
+     "start": "2025-11-08",
+     "deadline": "2025-12-31",
+     "main": true
+    },
+    {
+     "id": "polymarket:668725",
+     "question": "Will Z.ai have the best AI model for coding at the end of 2025?",
+     "volume_musd": 1.05,
+     "start": "2025-11-08",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:668723",
+     "question": "Will OpenAI have the best AI model for coding at the end of 2025?",
+     "volume_musd": 0.58,
+     "start": "2025-11-08",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:668722",
+     "question": "Will Anthropic have the best AI model for coding at the end of 2025?",
+     "volume_musd": 0.56,
+     "start": "2025-11-08",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:668721",
+     "question": "Will Google have the best AI model for coding at the end of 2025?",
+     "volume_musd": 0.43,
+     "start": "2025-11-08",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:668726",
+     "question": "Will xAI have the best AI model for coding at the end of 2025?",
+     "volume_musd": 0.3,
+     "start": "2025-11-08",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:668727",
+     "question": "Will DeepSeek have the best AI model for coding at the end of 2025?",
+     "volume_musd": 0.18,
+     "start": "2025-11-08",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:668728",
+     "question": "Will Moonshot have the best AI model for coding at the end of 2025?",
+     "volume_musd": 0.12,
+     "start": "2025-11-08",
+     "deadline": "2025-12-31",
+     "main": false
+    }
+   ]
+  },
+  {
+   "cluster": "c142",
+   "questions": [
+    {
+     "id": "polymarket:1927581",
+     "question": "Will Satoshi's identity be revealed by June 30?",
+     "volume_musd": 1.04,
+     "start": "2026-04-09",
+     "deadline": "2026-07-01",
+     "main": false
+    },
+    {
+     "id": "polymarket:1927582",
+     "question": "Will Satoshi's identity be revealed by December 31?",
+     "volume_musd": 0.94,
+     "start": "2026-04-09",
+     "deadline": "2027-01-01",
+     "main": true
+    }
+   ]
+  },
+  {
+   "cluster": "c145",
+   "questions": [
+    {
+     "id": "polymarket:809536",
+     "question": "Will André Ventura win the 1st round of the 2026 Portugal presidential election?",
+     "volume_musd": 1.04,
+     "start": "2025-12-03",
+     "deadline": "2026-01-25",
+     "main": true
+    },
+    {
+     "id": "polymarket:809543",
+     "question": "Will António José Seguro win the 1st round of the 2026 Portugal presidential election?",
+     "volume_musd": 0.74,
+     "start": "2025-12-03",
+     "deadline": "2026-01-25",
+     "main": false
+    },
+    {
+     "id": "polymarket:809562",
+     "question": "Will João Cotrim Figueiredo win the 1st round of the 2026 Portugal presidential election?",
+     "volume_musd": 0.57,
+     "start": "2025-12-03",
+     "deadline": "2026-01-25",
+     "main": false
+    },
+    {
+     "id": "polymarket:809540",
+     "question": "Will Luís Marques Mendes win the 1st round of the 2026 Portugal presidential election?",
+     "volume_musd": 0.36,
+     "start": "2025-12-03",
+     "deadline": "2026-01-25",
+     "main": false
+    },
+    {
+     "id": "polymarket:809542",
+     "question": "Will Henrique Gouveia e Melo win the 1st round of the 2026 Portugal presidential election?",
+     "volume_musd": 0.32,
+     "start": "2025-12-03",
+     "deadline": "2026-01-25",
+     "main": false
+    },
+    {
+     "id": "polymarket:809549",
+     "question": "Will Pedro Passos Coelho win the 1st round of the 2026 Portugal presidential election?",
+     "volume_musd": 0.26,
+     "start": "2025-12-03",
+     "deadline": "2026-01-25",
+     "main": false
+    },
+    {
+     "id": "polymarket:809548",
+     "question": "Will José Cardoso win the 1st round of the 2026 Portugal presidential election?",
+     "volume_musd": 0.12,
+     "start": "2025-12-03",
+     "deadline": "2026-01-25",
+     "main": false
+    }
+   ]
+  },
+  {
+   "cluster": "c148",
+   "questions": [
+    {
+     "id": "polymarket:956635",
+     "question": "Will Russia capture all of Myrnohrad by January 15?",
+     "volume_musd": 0.74,
+     "start": "2025-12-17",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:919772",
+     "question": "Will Russia capture all of Myrnohrad by January 31?",
+     "volume_musd": 0.88,
+     "start": "2025-12-12",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:1124168",
+     "question": "Will Russia capture all of Myrnohrad by February 28?",
+     "volume_musd": 0.7,
+     "start": "2026-01-06",
+     "deadline": "2025-12-31",
+     "main": false
+    },
+    {
+     "id": "polymarket:670028",
+     "question": "Will Russia capture all of Myrnohrad by December 31?",
+     "volume_musd": 1.02,
+     "start": "2025-11-08",
+     "deadline": "2025-12-31",
+     "main": true
+    }
+   ]
+  }
+ ]
+}
