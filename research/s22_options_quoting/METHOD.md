@@ -179,4 +179,12 @@ fill), `trades_variants.csv` (fills of every other variant), `daily.csv`, `equit
 
 ## Amendments
 
-None.
+**A1, Sun 2026-10-04 about 00:40 New York time, BEFORE any row of the input file was read (added while writing the
+runner).** One more secondary row, which never changes the verdict: a **benchmark**. We are the other side of **every**
+one of the 970 prints at the print's own price (sell YES at `px` to every taker buy, buy YES at `px` from every taker
+sell, `min(size, 100)` contracts, no quote and no options band). It answers a question the pass rule cannot: if the
+primary fills make money, is that because of the options band, or simply because takers in these markets lose to
+whoever is on the other side? Also added to the outputs: `daily.csv` already listed; the contract-weighted mean gets
+its own interval (same bootstrap, weighted by contracts); the dose table is also shown split by side. Region
+boundaries, stated exactly: below 10% is `p_mid < 0.10`; then `[0.10, 0.25)`, `[0.25, 0.75)`, `[0.75, 0.90)`, and
+`p_mid >= 0.90`.
