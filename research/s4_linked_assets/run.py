@@ -116,6 +116,7 @@ def main() -> int:
                           "confirmed, not agreed" if conf_days else "neither"})
     ld_all = pd.concat(rows, ignore_index=True)
     ld_all["segment"] = ld_all.day.map(seg_of)
+    ld_all[ld_all.confirmed][["day", "market", "ticker", "confirmed"]].to_csv(RESULTS / "gate_days.csv", index=False)
 
     # ---- trades
     trades, eq_rows, metric_rows = [], [], []

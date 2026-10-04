@@ -88,6 +88,41 @@ def charts(eq: pd.DataFrame, oos_start: str) -> None:
         plt.close(fig)
 
 
+def premarket_section() -> list[str]:
+    """Exploratory follow-up S4c (amendment 2): empty until `python -m s4_linked_assets.premarket` has been run."""
+    if not (R / "premarket_regressions.csv").exists():
+        return []
+    rg, pm = pd.read_csv(R / "premarket_regressions.csv"), pd.read_csv(R / "premarket_metrics.csv")
+    meta = json.loads((R / "premarket_meta.json").read_text())
+
+    def cell(setname, scope, rel):
+        r = rg[(rg["set"] == setname) & (rg.scope == scope) & (rg.relation == rel)].iloc[0]
+        return f"{r.slope:+.2f} (t {r.t:+.1f}, n {int(r.n):,})"
+
+    rels = list(dict.fromkeys(rg.relation))
+    tbl = pd.DataFrame([{"R": rel, "A": cell("agreed, event", "all closures", rel), "W": cell("agreed, event", "weekends only", rel),
+                         "T": cell("trusted, event", "all closures", rel)} for rel in rels])
+    t = pm[pm["set"] == "agreed, event"]
+    trades = t.assign(S=t.segment, C=t.cost_mult.map(lambda x: f"{x:.0f}×"), N=t.trades.astype(int), K=t.tickers.astype(int),
+                      D=t.dates.astype(int), B=t.mean_net_bp.map(bp), CI=t.apply(lambda r: f"[{num(r.ci_lo, 1)}, {num(r.ci_hi, 1)}]", axis=1),
+                      G=t.mean_gross_bp.map(bp), H=t.hit_rate.map(lambda x: f"{100 * x:.0f}%"))
+    a_all = rg[(rg["set"] == "agreed, event") & (rg.scope == "all closures")].set_index("relation")
+    early, late, whole = a_all.loc[rels[0]], a_all.loc[rels[1]], a_all.loc[rels[2]]
+    return ["## Exploratory follow-up: is the lag in the pre-market? (S4c)", "",
+            "Designed after the S4 run (amendment 2), so it is exploratory and outside the success criterion. Excess move of the "
+            "equity in bp per 1 pp of signed odds move, errors clustered by date:", "",
+            md_table(tbl, {"R": "Interval", "A": "Agreed event links, all closures", "W": "Agreed event links, weekends only",
+                           "T": "Trusted event links, all closures"}), "",
+            f"**By 08:00 the equity already carries the move** ({early.slope:+.1f} of the {whole.slope:+.1f} bp per point, t = {early.t:.1f}); "
+            f"from 08:00 to the open there is nothing significant ({late.slope:+.1f}, t = {late.t:.1f}). Weekend closures show a larger "
+            f"gap relation and the same picture. {meta['weekend_closures']} of the {meta['sessions']} sessions follow a weekend or holiday; "
+            f"{100 * meta['share_of_agreed_event_link_days_with_a_premarket_bar']:.0f}% of link-days have a pre-market bar between 08:00 and 08:30.", "",
+            "Trading it (enter at 08:00 in the direction of the odds, exit at the open, agreed event links):", "",
+            md_table(trades, {"S": "Segment", "C": "Costs", "N": "Trades", "K": "Tickers", "D": "Dates", "B": "Net per trade",
+                              "CI": "95% interval", "G": "Gross per trade", "H": "Winners"}), "",
+            "No edge before costs, and a loss after them. Pre-market costs here are assumptions (5 or 15 bp to enter).", ""]
+
+
 def main() -> int:
     m = pd.read_csv(R / "metrics.csv")
     tr = pd.read_csv(R / "trades.csv") if (R / "trades.csv").stat().st_size > 5 else pd.DataFrame(columns=["variant", "cost_mult", "segment"])
@@ -204,6 +239,7 @@ def main() -> int:
           "open (row 1, not tradable, the move is already in the opening price) and after it (row 2, the trade). Rows 3 and 4 ask "
           "the reverse: whether the odds follow the equity's session move. The Brazil column is the motivating example and is not "
           "part of any test.", "",
+          *premarket_section(),
           "## Costs, in bp of the position", "",
           f"Round trip on the primary's trades: {num(o1.mean_cost_bp, 1)} bp at 1×, {num(o2.mean_cost_bp, 1)} bp at 2×. Per side: SPY hedge "
           f"{cfg.COST_SPY:.0f} bp, liquid ETFs and stocks above $50 billion {cfg.COST_LIQUID:.0f} bp, other tickers {cfg.COST_OTHER:.0f} bp "

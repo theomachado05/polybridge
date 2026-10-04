@@ -13,7 +13,11 @@ All times UTC, 2026-10-04 (Sat 2026-10-03 evening in New York). Commands are run
 | 00:29 | Critic answers and code committed (`25ea1aa`), then `python -m s4_linked_assets.run` | 2.5 s. The numbers in `SUMMARY.md` |
 | 00:31 | `python -m s4_linked_assets.report` | `SUMMARY.md`, charts, `capacity.md` |
 
-The run was made once. No rule was changed after it.
+| 00:34 | Amendment 2 committed (`41633ca`): exploratory pre-market follow-up S4c | After the S4 run, before its own data was pulled |
+| 00:35 | `python -m s4_linked_assets.premarket --pull` | 114 s. Pre-market bars (08:00 to 09:25) for 58 tickers and SPY; the S4c tables in `SUMMARY.md` |
+
+The S4 run was made once and no rule was changed after it. `run.py` was re-run once afterwards, unchanged in its
+rules, only to save the gate by link and day (`gate_days.csv`) for S4c; its numbers are identical.
 
 ## The link agent, stage by stage
 

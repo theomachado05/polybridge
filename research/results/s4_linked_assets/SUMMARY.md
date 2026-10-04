@@ -68,6 +68,29 @@ A $100,000 book; $10,000 per position against a beta-weighted SPY hedge; entry a
 
 Slopes are through the origin with errors clustered by date. Rows 1 and 2 ask whether the equity follows the odds: at the open (row 1, not tradable, the move is already in the opening price) and after it (row 2, the trade). Rows 3 and 4 ask the reverse: whether the odds follow the equity's session move. The Brazil column is the motivating example and is not part of any test.
 
+## Exploratory follow-up: is the lag in the pre-market? (S4c)
+
+Designed after the S4 run (amendment 2), so it is exploratory and outside the success criterion. Excess move of the equity in bp per 1 pp of signed odds move, errors clustered by date:
+
+| Interval | Agreed event links, all closures | Agreed event links, weekends only | Trusted event links, all closures |
+|---|---|---|---|
+| previous close to 08:00, on the odds move to 07:59 | +3.98 (t +3.0, n 2,889) | +4.29 (t +2.5, n 598) | +9.65 (t +1.4, n 101) |
+| 08:00 to the open, on the odds move to 07:59 | +0.51 (t +0.7, n 2,889) | +1.31 (t +1.3, n 598) | -2.56 (t -1.2, n 101) |
+| whole gap, on the odds move to 09:29 | +4.69 (t +4.0, n 3,504) | +6.20 (t +3.8, n 711) | +6.45 (t +1.7, n 166) |
+
+**By 08:00 the equity already carries the move** (+4.0 of the +4.7 bp per point, t = 3.0); from 08:00 to the open there is nothing significant (+0.5, t = 0.7). Weekend closures show a larger gap relation and the same picture. 39 of the 189 sessions follow a weekend or holiday; 82% of link-days have a pre-market bar between 08:00 and 08:30.
+
+Trading it (enter at 08:00 in the direction of the odds, exit at the open, agreed event links):
+
+| Segment | Costs | Trades | Tickers | Dates | Net per trade | 95% interval | Gross per trade | Winners |
+|---|---|---|---|---|---|---|---|---|
+| IS | 1× | 309 | 13 | 106 | -26.9 bp | [-42.9, -11.2] | -2.1 bp | 38% |
+| OOS | 1× | 87 | 19 | 31 | -16.0 bp | [-37.4, 6.2] | +3.1 bp | 36% |
+| IS | 2× | 309 | 13 | 106 | -51.8 bp | [-67.8, -36.3] | -2.1 bp | 26% |
+| OOS | 2× | 87 | 19 | 31 | -35.0 bp | [-56.5, -12.6] | +3.1 bp | 32% |
+
+No edge before costs, and a loss after them. Pre-market costs here are assumptions (5 or 15 bp to enter).
+
 ## Costs, in bp of the position
 
 Round trip on the primary's trades: 6.0 bp at 1×, 12.1 bp at 2×. Per side: SPY hedge 1 bp, liquid ETFs and stocks above $50 billion 2 bp, other tickers 5 bp (half the quoted spread plus Interactive Brokers tiered commission and SEC and FINRA fees, widened for fills at the open; `research/strategy_backtest/METHOD.md` section 5).

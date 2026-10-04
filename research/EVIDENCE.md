@@ -44,6 +44,7 @@ Notes on the rows:
 - **Options-versus-PM arbitrage: 5 verified gaps, 0 executable.** Each rests on a single print of 5 to 100 shares. Nothing was traded (section 4; `research/results/arb/SUMMARY.md`).
 - **AI fit scores are in-sample only.** Each is tuned and scored on the same history and is the best of many presets. Median 0.0053; 36 of 122 at or below zero; 14 above 0.1. The walk-forward test shows they do not hold out of sample (section 6; `backend/app/data/fits.json`).
 - **S1 twin spread: not a pass.** 15 of 99 out-of-sample entries are print-verified, against the 50% the criterion required. The modelled backtest's Sharpe of 7.16 is an artifact of an assumed Polymarket spread (section 9; `research/results/s1_twin_spread/SUMMARY.md`).
+- **S4 linked-asset trade: too few observations, and negative.** 12 out-of-sample trades, -47.1 bp net each; the open (and the 08:00 pre-market price) already carries the odds move (section 9; `research/results/s4_linked_assets/SUMMARY.md`).
 - **S3 three-way consistency: no trade.** The primary rule fired 0 times in 60 matched sets on 33 dates (section 9; `research/results/s3_three_way/SUMMARY.md`).
 - Also in the table above: the replication, the fit walk-forward, the 8-K out-of-sample run, R1 hedge A and R3's net residual gap all failed or were NULL.
 
@@ -188,7 +189,7 @@ For the note's "Liquidity and capital" and "Risk management" criteria. This is w
 
 ---
 
-## 9. Weekend and cross-venue alpha: S1 twin spread, S3 three-way (pre-registered; forward tests pending)
+## 9. Weekend and cross-venue alpha: S1 twin spread, S3 three-way, S4 linked assets (pre-registered; forward tests pending)
 
 Added 2026-10-03 evening. Brief: `research/ALPHA_BRIEF.md`. Both methods were committed before any data was pulled for them (`research/s1_twin_spread/METHOD.md`, commit `8260548`; `research/s3_three_way/METHOD.md`, commit `83ce137`; amendments are dated in each file). Sources: `research/results/s1_twin_spread/SUMMARY.md`, `metrics.csv`, `trades.csv`, `RUN_LOG.md`; `research/results/s3_three_way/SUMMARY.md`, `metrics.csv`, `sets.csv`.
 
@@ -202,6 +203,13 @@ Added 2026-10-03 evening. Brief: `research/ALPHA_BRIEF.md`. Both methods were co
 **S3, three-way consistency on "S&P 500 closes above K".** Kalshi (index), Polymarket (SPY) and the options band at 12:00 ET on the resolution day; trade the outlier against the other prediction venue. 60 matched sets on 33 dates (2026-08-17 to 2026-10-02).
 
 - **Verdict: no trade, too few observations.** The primary rule fired 0 times at 1x and at 2x costs. Mean absolute gaps: Polymarket against Kalshi 3.5 points, Kalshi against the options band 3.6, Polymarket against the options band 2.1. No set resolved differently on the two venues (0 of 60).
+
+**S4, odds against the equity they move (the link agent).** Each question is tied to an equity by three checks: the existing text-only map (`ai_map.json`), a blind second model, and a walk-forward data gate. 380 links on 117 Polymarket markets; the blind critic agreed on 194; the data gate confirmed 21 (15 on Bitcoin and Ethereum price questions, 6 on event questions). Window 2026-01-02 to 2026-10-02, out-of-sample the last 38 sessions. Source: `research/results/s4_linked_assets/SUMMARY.md`, `metrics.csv`, `regressions.csv`, `links.csv`; method commit `603f2e8`.
+
+- **Finding with its scope.** On event questions where the two models agree, a 1-point overnight move in odds comes with a **+4.69 bp excess gap in the linked equity at the open** (t = 4.01, 3,504 link-days, 188 dates; in-sample +5.69, t = 3.66; out-of-sample +2.68, t = 2.46; weekends alone +6.20, t = 3.83). The two share a sign on only 51% of days, so it comes from the larger moves. This is co-movement over the same closure, not a forecast.
+- **Not tradable in the equity.** After the open: +0.69 bp per point (t = 0.40). In the pre-market the move is already there by 08:00 (+3.98, t = 3.02) and nothing follows to the open (+0.51, t = 0.75; exploratory, added after the main run). The odds do not follow the equity's session move either (-0.05 pp per 100 bp, t = -0.90).
+- **Verdict on the pre-registered trade: too few observations, and negative.** Trusted links, entry at the open, exit at the close: 12 out-of-sample trades on 5 tickers, -47.1 bp net per trade [-93.3, -7.4]. Without the data gate: 113 trades, +19.2 bp [-46.7, +67.5]. On every original link, unchecked: 223 trades, -8.8 bp [-61.1, +41.5].
+- **The Brazil case** (Flávio Bolsonaro and Lula first-round markets against EWZ) was the motivating example, seen before the method and excluded from the test: no relation in either direction (gap on odds -0.78 bp per point, t = -0.34, 206 link-days).
 
 **Forward tests.** Live order books of the 33 twin pairs (every 15 s) and of 660 threshold markets (every 30 s) have been recorded since Sat 2026-10-03 19:09:48 ET (`research/forward/README.md`). S1 and S3 are run on them as paper tests with rules frozen before the window (Sat 20:00 ET to Sun 07:00 ET); results go into the two SUMMARY files.
 
@@ -220,7 +228,9 @@ Added 2026-10-03 evening. Brief: `research/ALPHA_BRIEF.md`. Both methods were co
 
 9. **Cross-venue gaps on the same question exist but are small and rare** (S1): 15 print-verified out-of-sample entries on 5 pairs lock in +$47.50 on $1,177 of capital after every cost (+$32.28 on 9 entries at 2x costs). The pre-registered test is not a pass, and S3 found no trade.
 
-Do not write that the twin spread has a Sharpe ratio of 7, or that it is a strategy with capacity. Do not write that prediction markets predict the open or lead equities, that the PM beats futures, that news nights are special, that the 380-closure relation is pre-registered, confirmed or replicated, that options at the open are an arbitrage, that the expected gap works beyond the recession market, that hedge B reduces the gap, that the PM-contract hedge protects, that the fit predicts returns or works out of sample, that the 8-K signal works, or that the scan found arbitrage.
+10. **Linked equities do respond to prediction-market odds while they are closed** (S4): +4.69 bp of excess opening gap per point of overnight odds move on links two models agree on (t = 4.01, positive in and out of sample). The response is complete by the open, so it is information, not a trade.
+
+Do not write that the equity lags the odds after the open, or that S4 found a tradable edge. Do not write that the twin spread has a Sharpe ratio of 7, or that it is a strategy with capacity. Do not write that prediction markets predict the open or lead equities, that the PM beats futures, that news nights are special, that the 380-closure relation is pre-registered, confirmed or replicated, that options at the open are an arbitrage, that the expected gap works beyond the recession market, that hedge B reduces the gap, that the PM-contract hedge protects, that the fit predicts returns or works out of sample, that the 8-K signal works, or that the scan found arbitrage.
 
 ---
 
