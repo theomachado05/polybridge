@@ -135,3 +135,18 @@ reported as that.
 Five-minute regular-session bars are used instead. Nothing in the rules changes: the open is the open of the 09:30
 bar, the 10:00 exit is the close of the 09:55 bar, the 30-minute gate bins are six bars. The capacity figure of
 section 3 uses the first five minutes instead of the first minute. Polymarket odds stay at 1 minute.
+
+**Amendment 2, 2026-10-04 00:34 UTC, after the S4 run: an exploratory follow-up, S4c (pre-market).** The run showed
+that the linked equity's opening gap lines up with the overnight move in odds and that nothing follows after 09:30.
+The open question is whether the equity already reflects the odds *before* the open, in the pre-market, where it can
+be traded. S4c was designed after seeing the S4 result, so it is **exploratory** and is not part of the success
+criterion of section 7. Its rules, fixed before its data is pulled:
+- **Entry:** the open of the first 5-minute pre-market bar starting between 08:00 and 08:30 New York time (no bar, no
+  trade). **Signal:** the signed move in odds from the previous close to 07:59, `|x| ≥ 2 pp`, one signal per ticker,
+  at most 10 a day. **Exit:** the 09:30 open. Beta hedge with SPY over the same interval.
+- **Links:** reported for the agreed event links (the trusted set proved too small to say anything) and for the
+  trusted event links.
+- **Costs per side:** entry in the pre-market at 5 bp (liquid), 15 bp (other), 2 bp (SPY); exit at the open at the
+  section 3 figures. These are assumptions: pre-market spreads are several times the regular session's. 2× doubles them.
+- **Also reported:** the slope of the equity's excess move on the odds move, split into previous close to 08:00 and
+  08:00 to the open; and the same for weekend closures alone.
