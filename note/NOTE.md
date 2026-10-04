@@ -23,7 +23,7 @@ Prediction markets now price elections, macro events and stock levels around the
 | Brier | 0.0938 | 0.0831 | +0.0108 [+0.0064, +0.0158] |
 | Log score | 0.3044 | 0.2726 | +0.0318 [+0.0170, +0.0471] |
 
-The result holds on daily and weekly markets, at both snapshots, with equal weight per date, after dropping the five most influential dates (+0.0064 [+0.0036, +0.0093]) and with a symmetric price filter (+0.0077 [+0.0038, +0.0125]), the safer magnitude. Two limits: the Polymarket price series is about 47 seconds older than the option quote on average, and where it is under 30 seconds old (669 rows) the gap is not significant. Polymarket still adds information (encompassing logit: options +0.85 [+0.63, +1.07], Polymarket +0.30 [+0.15, +0.45]) and leans toward 0.5 relative to options (slope −0.105 [−0.133, −0.076]). This is a statement about prices, not traders, and it tells both mechanisms below which reference to use.
+The result holds on daily and weekly markets, at both snapshots, with equal weight per date, after dropping the five most influential dates (+0.0064 [+0.0036, +0.0093]) and with a symmetric price filter (+0.0077 [+0.0038, +0.0125]), the safer magnitude. Two limits: the Polymarket price is about 47 seconds old on average, 27 seconds older than the option quote, and where it is under 30 seconds old (669 rows) the gap is not significant. Polymarket still adds information (encompassing logit: options +0.85 [+0.63, +1.07], Polymarket +0.30 [+0.15, +0.45]) and leans toward 0.5 relative to options (slope −0.105 [−0.133, −0.076]). This is a statement about prices, not traders, and it tells both mechanisms below which reference to use.
 
 ## 3. Mechanism 1: date ladders that break their own logic
 
