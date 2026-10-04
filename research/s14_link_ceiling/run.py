@@ -121,8 +121,10 @@ def main() -> int:
         _, t_gap_is[i], _ = slope_t(l["x"][~oos], l["gap"][~oos])
         b_all, t_all[i], n_all = slope_t(l["x"], l["after"])
         g_all, t_gap_all[i], _ = slope_t(l["x"], l["gap"])
+        okx = np.isfinite(l["x"]) & np.isfinite(l["after"])
+        sxx = float(np.sum(l["x"][okx] ** 2))
         link_rows.append({"market": l["market"], "question": l["question"], "ticker": l["ticker"], "direction": l["direction"], "source": l["source"],
-                          "sessions_with_a_move": n_all, "gap_slope": g_all, "gap_t": t_gap_all[i], "after_slope": b_all, "after_t": t_all[i],
+                          "sessions_with_a_move": n_all, "largest_day_share_of_odds_variation": float(np.max(l["x"][okx] ** 2) / sxx) if sxx > 0 else float("nan"), "gap_slope": g_all, "gap_t": t_gap_all[i], "after_slope": b_all, "after_t": t_all[i],
                           "in_sample_sessions_with_a_move": n_is, "in_sample_after_slope": b_is, "in_sample_after_t": t_is[i],
                           "in_sample_gap_t": t_gap_is[i]})
 
