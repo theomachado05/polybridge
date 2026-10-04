@@ -597,3 +597,41 @@ def test_the_bridge_books_the_filled_sell_leg_of_a_split_whose_short_leg_failed(
     assert run(go()) is True
     assert bridge.resting is None
     assert bridge.broker_hedge == 4.0 and bridge.account_hedge == 4.0  # never dropped as "unknown, nothing traded"
+
+
+def test_account_serves_the_last_good_read_when_webull_rate_limits(tmp_path):
+    """The nav polls /account on every page; a Webull 429 must not turn the header into a broker error."""
+    calls = {"n": 0}
+
+    def h(r):
+        if r.url.path == "/trading/assets/balances/get":
+            calls["n"] += 1
+            if calls["n"] == 1:
+                return httpx.Response(200, json={"cash_balance": 5.0, "total_net_liquidation_value": 7.0})
+            return httpx.Response(429, json={"message": "Too many requests"})
+        return httpx.Response(200, json=[{"account_id": "A"}])
+
+    async def go():
+        b = WebullBroker(WebullClient("K", "S", http=httpx.AsyncClient(transport=httpx.MockTransport(h))), SimBroker(None))
+        first = await b.account()
+        second = await b.account()
+        b._last_account = (b._last_account[0] - 10_000, b._last_account[1])  # too old: the 429 comes through
+        with pytest.raises(BrokerError):
+            await b.account()
+        return first, second
+    first, second = run(go())
+    assert first.cash == second.cash == 5.0
+    assert "rate-limited" in (second.note or "") and "rate-limited" not in (first.note or "")
+
+
+def test_account_without_a_good_read_still_reports_the_429(tmp_path):
+    def h(r):
+        if r.url.path == "/trading/assets/balances/get":
+            return httpx.Response(429, json={"message": "Too many requests"})
+        return httpx.Response(200, json=[{"account_id": "A"}])
+
+    async def go():
+        b = WebullBroker(WebullClient("K", "S", http=httpx.AsyncClient(transport=httpx.MockTransport(h))), SimBroker(None))
+        await b.account()
+    with pytest.raises(BrokerError):
+        run(go())

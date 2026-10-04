@@ -264,6 +264,14 @@ export function ticketGap(t: Ticket): { mid: number; lo: number; hi: number } | 
 
 /** "Friday's close" and other off-session wording comes from the backend's session_label; this only decides if the
  *  quote is from a closed session (so the board can flag it). */
+/** Board order: the engine's proposals first, then rows priced against the reference (largest gap first), then
+ *  linked rows, then the rest; touch tickets before close-above within each group. Stable, never mutates. */
+export function sortTickets(ts: readonly Ticket[]): Ticket[] {
+  const rank = (t: Ticket) => (t.engine?.action === "propose" ? 0 : ticketGap(t) ? 1 : t.linkable ? 2 : 3);
+  return ts.map((t, i) => ({ t, i, r: rank(t), g: ticketGap(t)?.mid ?? -Infinity })).sort((a, b) =>
+    a.r - b.r || (a.r <= 1 ? b.g - a.g : 0) || (a.t.type === b.t.type ? 0 : a.t.type === "touch_ticket" ? -1 : 1) || a.i - b.i).map((x) => x.t);
+}
+
 export const referenceClosed = (r: OptionsReference | null | undefined) => !!r && r.market_open === false;
 
 /** Actions a ticket row may show. Never a hedge: the option-spread hedge for tickets failed (S25) and is not offered. */

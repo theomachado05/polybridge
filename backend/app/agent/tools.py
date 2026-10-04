@@ -11,7 +11,8 @@ from pydantic import BaseModel, ValidationError
 
 CONFIRM_TOOLS = {"approve", "start_bridge"}
 # Screens the browser-only `navigate` tool can open (web routes: / /build /pipeline /bridge /portfolio ...).
-SCREENS = ["landing", "build", "pipeline", "bridge", "portfolio", "library", "profile", "connect"]
+SCREENS = ["landing", "build", "pipeline", "bridge", "portfolio", "library", "profile", "connect",
+           "ladders", "tickets", "tested"]
 Handler = Callable[[Request, dict], Awaitable[tuple[str, Any]]]
 
 
@@ -83,6 +84,27 @@ TOOLS: list[dict] = [
      "parameters": _obj({})},
     {"name": "positions", "method": "GET", "path": "/positions",
      "description": "List what the account currently holds.",
+     "parameters": _obj({})},
+    # The micro-markets product (read-only: nothing is drafted, approved or sent by these).
+    {"name": "show_ladders", "method": "GET", "path": "/ladders",
+     "description": "Open the date-ladder board and summarise its pairs, violations and the C++ engine's decisions. "
+                    "Read-only.",
+     "parameters": _obj({})},
+    {"name": "show_tickets", "method": "GET", "path": "/tickets",
+     "description": "Open the ticket board; filter above_reference lists tickets priced above the options reference. "
+                    "Read-only.",
+     "parameters": _obj({"filter": {"type": "string", "enum": ["all", "above_reference"],
+                                    "description": "above_reference: only tickets priced above the options reference."}})},
+    {"name": "explain_ticket", "method": "GET", "path": "/tickets",
+     "description": "Explain one ticket: prices, options reference band, gap, C++ decision and evidence status. "
+                    "Read-only.",
+     "parameters": _obj({"ticket_id": {"type": "string", "description": "Ticket id from show_tickets."}}, ["ticket_id"])},
+    {"name": "explain_mechanism", "method": "GET", "path": "/evidence/mechanisms",
+     "description": "Explain one tested mechanism: status, claim, numbers with ranges and samples, caveat. Read-only.",
+     "parameters": _obj({"mechanism_id": {"type": "string", "description": "Mechanism id from what_we_tested, for "
+                                          "example foundation, ladders, touch, ticket_option_hedge."}}, ["mechanism_id"])},
+    {"name": "what_we_tested", "method": "GET", "path": "/evidence/mechanisms",
+     "description": "List every mechanism we tested and its status. Read-only.",
      "parameters": _obj({})},
     # Browser-only: the web page moves to that screen itself and never calls the backend for it (no route). The
     # dispatcher echoes it so POST /agent/tool/navigate answers like every other tool.
@@ -284,10 +306,164 @@ async def _navigate(request: Request, a: dict):
     return f"Opening {screen}.", {"screen": screen, "bridge_id": bid}
 
 
+# ---------------------------------------------------------------- micro-markets product (read-only)
+
+def _f(x: Any) -> float | None:
+    try:
+        v = float(x)
+    except (TypeError, ValueError):
+        return None
+    return v if v == v and abs(v) != float("inf") else None
+
+
+def _cents(x: Any) -> str:
+    v = _f(x)
+    return "unknown" if v is None else f"{v * 100:.1f} cents"
+
+
+def ticket_band(t: dict) -> dict | None:
+    """The reference band a ticket is compared with (touch for a touch ticket, finish-beyond otherwise), as the web's
+    ticketReference: None when the reference is unavailable."""
+    r = t.get("reference")
+    if not isinstance(r, dict) or r.get("available") is False or r.get("ok") is False:
+        return None
+    b = r.get("touch") if t.get("type") == "touch_ticket" else r.get("finish_beyond")
+    return b if isinstance(b, dict) and _f(b.get("mid")) is not None else None
+
+
+def ticket_gap(t: dict) -> float | None:
+    """Polymarket mid minus the reference mid, in points (web ticketGap's mid). Positive = priced above."""
+    b, bid, ask = ticket_band(t), _f(t.get("best_bid")), _f(t.get("best_ask"))
+    if b is None or bid is None or ask is None:
+        return None
+    return 100 * ((bid + ask) / 2 - _f(b["mid"]))
+
+
+async def _board(kind: str) -> dict:
+    from ..contracts import router as cr
+    out = await (cr.tickets() if kind == "tickets" else cr.ladders())
+    if not isinstance(out, dict) or not out.get("ok"):
+        raise ToolError(f"The {kind} board is not available right now"
+                        + (f": {out.get('error')}." if isinstance(out, dict) and out.get("error") else "."))
+    return out
+
+
+def _status(ev: Any) -> str:
+    return str(ev.get("status_label")) if isinstance(ev, dict) and ev.get("status_label") else "unknown status"
+
+
+async def _show_ladders(request: Request, a: dict):
+    d = await _board("ladders")
+    c = d.get("counts") or {}
+    ladders = d.get("ladders") or []
+    decided = "the C++ engine" if c.get("decided_by") == "engine" else "the Python fallback rule"
+    names = "; ".join(str(x.get("event_title") or x.get("template") or "")[:60] for x in ladders[:3])
+    summary = (f"{c.get('ladders', len(ladders))} date ladders with {c.get('pairs', 0)} adjacent pairs; "
+               f"{c.get('nested_pairs', 0)} pairs pass the nesting checks, {c.get('violations', 0)} violate their "
+               f"order after fees, {c.get('actionable', 0)} are actionable. Decisions by {decided}. "
+               f"Status: {_status(d.get('evidence'))}." + (f" Ladders include: {names}." if names else ""))
+    return summary, {"counts": c, "evidence": d.get("evidence"), "as_of": d.get("as_of")}
+
+
+def _ticket_row(t: dict) -> dict:
+    b = ticket_band(t) or {}
+    e = t.get("engine") if isinstance(t.get("engine"), dict) else {}
+    g = ticket_gap(t)
+    return {"id": t.get("id"), "question": t.get("question"), "type": t.get("type"),
+            "gap_points": None if g is None else round(g, 1), "engine_action": e.get("action"),
+            "reference_mid": b.get("mid"), "best_bid": t.get("best_bid"), "best_ask": t.get("best_ask")}
+
+
+async def _show_tickets(request: Request, a: dict):
+    d = await _board("tickets")
+    ts = [t for t in d.get("tickets") or [] if isinstance(t, dict)]
+    c = d.get("counts") or {}
+    priced = [t for t in ts if ticket_gap(t) is not None]
+    above = sorted((t for t in priced if ticket_gap(t) > 0), key=lambda t: -ticket_gap(t))
+    proposals = [t for t in ts if isinstance(t.get("engine"), dict) and t["engine"].get("action") == "propose"]
+    touch = _status((d.get("evidence") or {}).get("touch_ticket"))
+    head = (f"{len(ts)} open tickets, {c.get('linked', 0)} linked to option contracts, {len(priced)} priced against "
+            f"the options reference, {len(above)} above it. The engine drafts {len(proposals)} sell-YES "
+            f"proposal{'s' if len(proposals) != 1 else ''} inside the tested rule. Touch tickets are an {touch}; "
+            "no hedge is offered.")
+    if a.get("filter") == "above_reference":
+        top = "; ".join(f"{str(t.get('question'))[:70]} at {ticket_gap(t):+.1f} points" for t in above[:3])
+        head += f" Highest above the reference: {top}." if top else " None is above the reference right now."
+    rows = [_ticket_row(t) for t in (above if a.get("filter") == "above_reference" else priced)[:8]]
+    return head, {"filter": a.get("filter") or "all", "counts": c, "above": len(above), "tickets": rows}
+
+
+async def _explain_ticket(request: Request, a: dict):
+    tid = str(_need(a, "ticket_id")).strip()
+    d = await _board("tickets")
+    t = next((x for x in d.get("tickets") or [] if isinstance(x, dict) and str(x.get("id")) == tid), None)
+    if t is None:
+        raise ToolError(f"I cannot find ticket {tid} on the board. Ask me to show the tickets first.")
+    b, g = ticket_band(t), ticket_gap(t)
+    ev = (d.get("evidence") or {}).get(t.get("type")) if isinstance(d.get("evidence"), dict) else None
+    parts = [f"{t.get('question')}. Polymarket bid {_cents(t.get('best_bid'))}, ask {_cents(t.get('best_ask'))}."]
+    if b:
+        parts.append(f"The options {'touch' if t.get('type') == 'touch_ticket' else 'finish-beyond'} reference is "
+                     f"{_cents(b.get('mid'))}, range {_cents(b.get('lo'))} to {_cents(b.get('hi'))}"
+                     + (f", {g:+.1f} points from the Polymarket mid." if g is not None else "."))
+        sess = (t.get("reference") or {}).get("session_label")
+        if sess:
+            parts.append(f"Reference: {sess}.")
+    else:
+        why = (t.get("reference") or {}).get("reason") if isinstance(t.get("reference"), dict) else None
+        parts.append(f"No options reference{': ' + str(why) if why else ''}.")
+    e = t.get("engine") if isinstance(t.get("engine"), dict) else None
+    if e:
+        who = "the C++ engine" if e.get("source") == "engine" else "the Python fallback rule"
+        lat = f" in {int(e['latency_ns'])} nanoseconds" if isinstance(e.get("latency_ns"), (int, float)) else ""
+        parts.append(f"Decision by {who} ({e.get('family')}){lat}: {e.get('action')}, {e.get('reason')}.")
+    else:
+        parts.append("No engine decision for this ticket.")
+    parts.append(f"Status: {_status(ev)}. A proposal still needs your acknowledgement and approval on screen; "
+                 "nothing is sent.")
+    return " ".join(parts), {"ticket": _ticket_row(t), "evidence": ev}
+
+
+def _registry() -> dict:
+    from ..closed import router as clr
+    return clr.get_mechanisms()
+
+
+def _number_text(n: dict) -> str:
+    v, lo, hi = n.get("value"), n.get("ci_low"), n.get("ci_high")
+    rng = f", range {lo} to {hi} ({n.get('range_kind')})" if lo is not None and hi is not None and n.get("range_kind") != "census" else ""
+    s = n.get("sample") or {}
+    sample = f", sample {s.get('n')} {s.get('units')}" if isinstance(s, dict) and s.get("n") else ""
+    return f"{n.get('label')}: {v} {n.get('unit') or ''}".rstrip() + rng + sample
+
+
+async def _explain_mechanism(request: Request, a: dict):
+    mid = str(_need(a, "mechanism_id")).strip().lower()
+    mechs = [m for m in _registry().get("mechanisms") or [] if isinstance(m, dict)]
+    m = next((x for x in mechs if str(x.get("id")).lower() == mid), None) or next(
+        (x for x in mechs if mid in str(x.get("name", "")).lower()), None)
+    if m is None:
+        raise ToolError(f"I do not know a mechanism called {mid}. I know: {', '.join(str(x.get('id')) for x in mechs)}.")
+    nums = [n for n in m.get("numbers") or [] if isinstance(n, dict)][:2]
+    caveat = (m.get("caveats") or [None])[0]
+    summary = (f"{m.get('name')}. Status: {m.get('status_label') or m.get('status')}. {m.get('claim')}"
+               + (" Numbers: " + "; ".join(_number_text(n) for n in nums) + "." if nums else "")
+               + (f" Caveat: {caveat}" if caveat else ""))
+    return summary, {"id": m.get("id"), "status": m.get("status")}
+
+
+async def _what_we_tested(request: Request, a: dict):
+    mechs = [m for m in _registry().get("mechanisms") or [] if isinstance(m, dict)]
+    lines = "; ".join(f"{m.get('name')}: {m.get('status_label') or m.get('status')}" for m in mechs)
+    return (f"We tested {len(mechs)} mechanisms. {lines}. None of them is a validated trading edge.",
+            {"mechanisms": [{"id": m.get("id"), "status": m.get("status")} for m in mechs]})
+
+
 HANDLERS: dict[str, Handler] = {
     "search_markets": _search_markets, "fit": _fit, "propose": _propose, "approve": _approve,
     "start_bridge": _start_bridge, "bridge_status": _bridge_status, "account": _account, "positions": _positions,
-    "navigate": _navigate,
+    "navigate": _navigate, "show_ladders": _show_ladders, "show_tickets": _show_tickets,
+    "explain_ticket": _explain_ticket, "explain_mechanism": _explain_mechanism, "what_we_tested": _what_we_tested,
 }
 
 

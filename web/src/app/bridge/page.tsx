@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { BridgeScreen } from "@/components/bridge/BridgeScreen";
 import { TicketBoard } from "@/components/micro/TicketBoard";
 import { PageHead, StatusTag, useRegistry } from "@/components/micro/parts";
@@ -13,10 +14,18 @@ type BridgeTab = "tickets" | "bridges";
 /** Bridge: the ticket board (touch and close-above tickets against the options chain), and the running engine
  *  bridges (opened from the generic AI fit on Build). Opens on the running bridges when there are any. */
 export default function BridgePage() {
+  // useSearchParams needs a Suspense boundary in a statically rendered page.
+  return <Suspense fallback={null}><BridgeView /></Suspense>;
+}
+
+function BridgeView() {
   const s = useStore();
+  // ?view=tickets (voice and links open the ticket board even when bridges run), ?filter=above, ?ticket=<id>.
+  const params = useSearchParams();
+  const asked: BridgeTab | null = params.get("view") === "tickets" || params.get("ticket") || params.get("filter") ? "tickets" : null;
   const reg = useRegistry();
   const [pick, setPick] = useState<BridgeTab | null>(null);
-  const tab: BridgeTab = pick ?? (s.bridges.length ? "bridges" : "tickets");
+  const tab: BridgeTab = pick ?? asked ?? (s.bridges.length ? "bridges" : "tickets");
   const touch = mechanismFor(reg.data, "touch_ticket");
   const tabs = (
     <div className="pb-tabs" role="tablist" aria-label="Bridge views">
@@ -42,7 +51,7 @@ export default function BridgePage() {
         {touch?.claim}
       </PageHead>
       {reg.error && <Unavailable what="The evidence registry (GET /evidence/mechanisms)" error={reg.error} onRetry={reg.retry} compact />}
-      <TicketBoard reg={reg.data} />
+      <TicketBoard reg={reg.data} above={params.get("filter") === "above"} focus={params.get("ticket")} />
     </main>
   );
 }

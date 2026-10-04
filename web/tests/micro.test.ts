@@ -8,7 +8,7 @@ import {
   actionPlan, approveEnabled, forwardLine, hasRangeAndSample, latencyLine, latencyView, mechanismById, mechanismFor, numberView, pairGapText,
   mechanismForResult, pairState, recorderLine, rungsInOrder, statusTag, statusTone, ticketActions, ticketGap, ticketReference, ticketStrikes,
   touchProposal, forwardCount, engineLine,
-  type EvNumber, type ForwardStatus, type Ladder, type LadderPair, type Mechanism, type Registry, type Ticket,
+  type EvNumber, type ForwardStatus, type Ladder, type LadderPair, type Mechanism, type Registry, type Ticket, sortTickets,
 } from "../src/lib/micro.ts";
 import { SCREENS, SCREEN_PATH, FIT_PATH, voiceDrive } from "../src/lib/voiceDrive.ts";
 import { evidenceGate, fitAckCopy, fitEvidenceGate } from "../src/lib/risk.ts";
@@ -246,7 +246,7 @@ describe("voice navigation stays consistent", () => {
   });
   it("every screen path has a page", () => {
     for (const p of [...Object.values(SCREEN_PATH), FIT_PATH, "/tested"]) {
-      const f = join(ROOT, "src/app", p === "/" ? "" : p, "page.tsx");
+      const f = join(ROOT, "src/app", p === "/" ? "" : p.split("?")[0], "page.tsx");
       assert.ok(statSync(f).isFile(), f);
     }
   });
@@ -346,5 +346,15 @@ describe("micro families: catalog, library and engine strip", () => {
     assert.ok(readFileSync(join(ROOT, "src/app/pipeline/page.tsx"), "utf8").includes("engineLine(p.engine, mech)"));
     assert.ok(readFileSync(join(ROOT, "src/components/micro/TicketBoard.tsx"), "utf8").includes("engineLine(t.engine, mechanism)"));
     assert.ok(readFileSync(join(ROOT, "src/app/library/page.tsx"), "utf8").includes("lib.micro.map"));
+  });
+});
+
+describe("ticket board order", () => {
+  const tk = (id: string, extra: Record<string, unknown>) => ({ id, question: id, type: "touch_ticket", fields: {}, checks: [], linkable: false, reasons: [], best_bid: 0.5, best_ask: 0.52, ...extra }) as unknown as Ticket;
+  const ref = (mid: number) => ({ available: true, touch: { mid, lo: mid - 0.05, hi: mid + 0.05 } });
+  it("puts the engine's proposals first, then priced rows by gap, then linked, then the rest", () => {
+    const rows = [tk("none", {}), tk("linked", { linkable: true }), tk("small", { linkable: true, reference: ref(0.5) }),
+      tk("big", { linkable: true, reference: ref(0.3) }), tk("prop", { linkable: true, reference: ref(0.45), engine: { action: "propose" } })];
+    assert.deepEqual(sortTickets(rows).map((t) => t.id), ["prop", "big", "small", "linked", "none"]);
   });
 });
