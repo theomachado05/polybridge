@@ -19,10 +19,12 @@ class CompletionSource(OfflineSource):
         self.session=requests.Session()
         self.session.headers["Authorization"]="Bearer "+load_api_key(search_from=HERE,interactive=False)
         self.count=0;self.bytes=0;self.last=0.0;self.log=[]
+        blocked=HERE.parent/"results"/cfg.PACKAGE/"initial_offline/data_completion_attempt_sandbox.json"
+        self.prior_attempts=json.loads(blocked.read_text()).get("requests",0) if blocked.is_file() else 0
     def read(self,path,params):
         got,name=super().read(path,params)
         if got is not None:return got,name
-        if self.count>=cfg.DATA_ONLY_REQUEST_BUDGET:raise RuntimeError("DATA_ONLY request budget exhausted")
+        if self.count+self.prior_attempts>=cfg.DATA_ONLY_REQUEST_BUDGET:raise RuntimeError("DATA_ONLY total-attempt budget exhausted")
         if self.bytes>=cfg.DATA_ONLY_DOWNLOAD_BUDGET_BYTES:raise RuntimeError("DATA_ONLY byte budget exhausted")
         delay=self.last+1/cfg.DATA_ONLY_MAX_RPS-time.monotonic()
         if delay>0:time.sleep(delay)
@@ -58,6 +60,7 @@ def pull():
         src.session.close()
         info=dict(started_utc=started,finished_utc=datetime.now(timezone.utc).isoformat(),requests=src.count,
                   response_bytes=src.bytes,max_rps=cfg.DATA_ONLY_MAX_RPS,error=error,log=src.log)
+        info["total_attempts_including_blocked_sandbox"]=src.count+src.prior_attempts
         OUT.mkdir(parents=True,exist_ok=True)
         (OUT/"data_completion_log.json").write_text(json.dumps(info,indent=2)+"\n")
         print(json.dumps({k:v for k,v in info.items() if k!="log"},indent=2))

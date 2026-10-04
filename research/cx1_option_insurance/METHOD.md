@@ -175,7 +175,7 @@ rollover dates November 28 and December 26 become relevant if their quotes are c
 require full-book daily/event factor reconciliation, and commit this correction before the final run. This is a cash
 accounting repair, not parameter selection or a new variant.
 
-**Amendment 6 (2026-10-04 04:07 UTC, after outcomes): reference-chain limitation.** Independent review noted that the
+**Amendment 6 (2026-10-04 04:06 UTC, after outcomes): reference-chain limitation.** Independent review noted that the
 reused Massive reference requests include expiry and `expired=true` but omit an entry-date `as_of` parameter. The actual
 entry NBBO proves that the selected put existed and traded before its decision instant; it does not establish that
 the cached listing was the exact historical nearest-expiry/nearest-strike chain. This limitation is disclosed in the

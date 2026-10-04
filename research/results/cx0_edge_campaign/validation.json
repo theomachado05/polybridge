@@ -1,0 +1,23 @@
+{
+  "run_utc": "2026-10-04T04:18:44.332812+00:00",
+  "curves_checked": 18,
+  "nav_accounting_reconciles": true,
+  "primary_screen": "INSUFFICIENT",
+  "screen_reasons": [
+    "fewer than 30 independent holdout entry dates",
+    "fewer than 60 holdout daily return observations"
+  ],
+  "primary_economic_gates_pass": false,
+  "primary_observed_oos_profitable": false,
+  "independent_confirmation": false,
+  "accounting_limits": [
+    "normalized fractional contracts",
+    "entry snapshot five minutes before close",
+    "historical NBBO fills are simulated, not a live track record"
+  ],
+  "input_hashes": {
+    "equity.csv": "9fe39a094629c90e5cfee63bc70806b3729bd4fdd09b944f7ab1e1e5dacfcc8c",
+    "metrics.csv": "61f72046285cc3572ef8c49d1142a49896372ebf48c417ffa1565f47621e7928",
+    "trades.csv": "c4ca2cf9458ac70ecb2b22945e735c1897d71ed016cd483432cce76b4ec8b8d7"
+  }
+}

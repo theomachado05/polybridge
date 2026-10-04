@@ -23,14 +23,14 @@ def main():
     complete=bool((c.status=="ok").all())
     status="Complete fixed-rule historical diagnostic; underpowered and not confirmed" if complete else "Incomplete fixed-rule historical diagnostic; missing quotes and underpowered"
     lines=[f"# CX1 option insurance: {status}","",
-           f"Selling fully cashsecured ATM SPY puts over market closures earned {pct(one.total_return)} in the recent period at 1x costs "
+           f"Selling fully cashsecured ATM SPY puts over market closures returned {pct(one.total_return)} in the recent period at 1x costs "
            f"and {pct(two.total_return)} at 2x. The 1x OOS daily Sharpe was {num(one.annualized_sharpe)}. "
            f"There were only {int(one.executed_entry_dates)} independent OOS entry dates and {int(one.daily_observations)} daily observations, "
            f"below the frozen 30/60 minimum. Its mean net closure return was {bp(one.mean_executed_event_return)}, "
            f"with a 95% four-closure block interval [{bp(one.event_ci_low)}, {bp(one.event_ci_high)}]. "
            "This cannot pass the preliminary screen or establish an insurance or prediction-market edge.","",
-           f"The only event sizing variant earned {pct(gate.total_return)} OOS at 1x, with Sharpe {num(gate.annualized_sharpe)}. "
-           f"Its exposure control earned {pct(static.total_return)} with Sharpe {num(static.annualized_sharpe)}. "
+           f"The only event sizing variant returned {pct(gate.total_return)} OOS at 1x, with Sharpe {num(gate.annualized_sharpe)}. "
+           f"Its exposure control returned {pct(static.total_return)} with Sharpe {num(static.annualized_sharpe)}. "
            f"The paired gate-minus-static mean was {bp(gate.gate_minus_static_mean)} "
            f"(95% interval [{bp(gate.gate_minus_static_ci_low)}, {bp(gate.gate_minus_static_ci_high)}]). "
            "The historical evidence does not establish that the event gate improves returns.","",
@@ -56,6 +56,11 @@ def main():
                   "same frozen entry/exit clocks. It has no stock spread, commissions, interest or rebalance costs and is not an executable "
                   "hedged strategy. It is a fixed equity-risk proxy, not another pass candidate. The descriptive beta is not used for sizing. "
                   "A cashsecured put owns stock downside, and these results cannot be described as pure option premium harvesting.","",
+                  "| Net put minus fixed half-SPY proxy | Mean | 95% four-closure block interval |",
+                  "|---|---:|---:|"])
+    for _,r in risk.iterrows():lines.append(f"| {r.segment} | {bp(r.mean_net_put_minus_half_spy)} | [{bp(r.net_residual_ci_low)}, {bp(r.net_residual_ci_high)}] |")
+    lines.extend(["", "The net residual intervals include zero. The stock proxy explains most of the positive full-period put mean; "
+                  "a prediction-market gate advantage or separate premium return is not established.","",
                   "| Event gate state | Planned IS | Planned OOS | Executed IS | Executed OOS |",
                   "|---|---:|---:|---:|---:|"])
     for reason in ["active event","observed quiet event state","unobserved event state"]:
@@ -133,6 +138,7 @@ def log(meta,pull,c,t,aud):
     lines=["# Run log","",f"Generated {datetime.now(timezone.utc).isoformat()}.","",
            "Pre-outcome freeze: 6e33ff0 (2026-10-03 23:46:48 New York). Root sent FREEZE_ACK before prices were read.",
            "Data-only/calendar amendment commit: c77233f, root acknowledged before any Massive request.",
+           "Same-session cash-ledger correction commit: e0b7bb1, acknowledged before final data completion and accounting run.",
            f"Latest method/config commit recorded by runner: {meta['freeze_commit']}.","",
            "Initial offline run started 2026-10-04T03:52:09.658372+00:00 and finished 03:52:11.001579+00:00, before report plotting. "
            "It used 48/55 closures and five OOS entries. Its CSVs are preserved under initial_offline/.",
@@ -140,6 +146,8 @@ def log(meta,pull,c,t,aud):
            f"Completion requests started {pull.get('started_utc','not run')} and finished {pull.get('finished_utc','not run')}. "
            f"HTTP requests {pull['requests']}; response bytes {pull['response_bytes']:,}; cap 60 requests/2,000,000 bytes; max rate0.5/s. "
            f"Completion error: {pull.get('error') or 'none'}.","",
+           "One sandboxed network attempt failed immediately with zero bytes. Its sanitized log is archived; the successful data completion "
+           f"used the approved network sandbox escalation. Total network call attempts including that failed attempt: {meta.get('total_network_call_attempts',pull['requests']+1)}.","",
            "Read-only source paths: research/s5_big_moves/.cache/eq_SPY.npz; S5 labels/universe metadata via merge_links; "
            "the 18 agreed SPY-link pm_<id>.npz odds histories; research/.massive_cache/ cached contract/NBBO responses. "
            "New responses are only in this package's ignored .cache/massive/. No Kalshi or Polymarket requests were made. "
@@ -148,6 +156,9 @@ def log(meta,pull,c,t,aud):
            "generic timestamp helper infer 13:05; the corrected 12:55 entry and12:30 strike/signal cutoff follow the existing actual-close rule.",
            f"All {len(same)} original executable V0 trades retain identical P&L (maximum absolute change ${pnl_diff:.12f}). "
            f"Correcting prior-close timestamps changed the gate exposure on {gate_changes} of those original dates.","",
+           "The same-session rollover repair compounds morning-exit and afternoon-entry factors, uses updated cash NAV for the new lot, and adds "
+           "both turnover flows. A synthetic regression first failed then passed, and independent review checked four cash-ledger fixtures. "
+           "The original initial archive's V0 1x ALL return was overstated by0.001806bp and2x by0.003384bp; corrected costs/signals are unchanged.","",
            "Initial CSV timestamp field expansion accidentally replaced scheduled clocks with earlier SIP timestamps. It never changed quote "
            "requests, age validation or computed fills. Final tables preserve both quote and decision clocks separately.","",
            f"Accounting audit: all short-side signs correct={bool(aud.short_sign_correct.all())}; maximum event/daily compound reconciliation "

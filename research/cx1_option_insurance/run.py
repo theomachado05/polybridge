@@ -151,6 +151,10 @@ def main():
     provenance=[]
     for p in sorted(src.read_paths):
         provenance.append(dict(path=str(p),bytes=p.stat().st_size,sha256=hashlib.sha256(p.read_bytes()).hexdigest()))
+    source_files=[RESEARCH/"s5_big_moves/.cache/eq_SPY.npz",RESEARCH/"s5_big_moves/universe.json",*sorted((RESEARCH/"s5_big_moves").glob("labels_*.json"))]
+    source_files.extend(RESEARCH/"s5_big_moves/.cache"/f"pm_{l['market'].split(':')[1]}.npz" for l in links)
+    for p in sorted(set(source_files)):
+        if p.is_file():provenance.append(dict(path=str(p),bytes=p.stat().st_size,sha256=hashlib.sha256(p.read_bytes()).hexdigest()))
     (OUT/"input_manifest.json").write_text(json.dumps(provenance,indent=2)+"\n")
     freeze=subprocess.run(["git","log","-1","--format=%h %cI %s","--","research/cx1_option_insurance/METHOD.md","research/cx1_option_insurance/config.py"],cwd=RESEARCH.parent,capture_output=True,text=True).stdout.strip()
     meta=dict(started_utc=started,finished_utc=datetime.now(timezone.utc).isoformat(),freeze_commit=freeze,
@@ -158,6 +162,11 @@ def main():
               closures=len(closures),spy_links=len(links),static_is_exposure=static,network_requests=0,download_bytes=0,
               cache_files_read=len(src.read_files),status_counts=pd.Series([r["status"] for r in raw]).value_counts().to_dict(),
               all_data_reused=True,future_reserve_from=cfg.FUTURE_RESERVE_FROM)
+    completion=json.loads((OUT/"data_completion_log.json").read_text()) if (OUT/"data_completion_log.json").is_file() else {}
+    blocked=json.loads((OUT/"initial_offline/data_completion_attempt_sandbox.json").read_text()) if (OUT/"initial_offline/data_completion_attempt_sandbox.json").is_file() else {}
+    meta.update(completion_http_requests=completion.get("requests",0),completion_response_bytes=completion.get("response_bytes",0),
+                total_network_call_attempts=completion.get("requests",0)+blocked.get("requests",0),
+                completed_quote_coverage=bool(all(r["status"]=="ok" for r in raw)))
     (OUT/"run_meta.json").write_text(json.dumps(meta,indent=2)+"\n")
     plot(daily,oos_day)
     print(json.dumps(meta,indent=2))
@@ -189,11 +198,13 @@ def equity_risk_diagnostic(trades,sess,out):
         if not len(x):continue
         beta=float(np.cov(x.stock_closure_return,x.gross_event_return,ddof=1)[0,1]/x.stock_closure_return.var(ddof=1)) if len(x)>1 and x.stock_closure_return.var(ddof=1)>0 else math.nan
         mean,lo,hi=block_mean(x.gross_put_minus_half_spy)
+        net_mean,net_lo,net_hi=block_mean(x.net_put_minus_half_spy)
         records.append(dict(segment=segment,executed_entry_dates=len(x),mean_spy_return=x.stock_closure_return.mean(),
                             mean_fixed_half_spy_return=x.fixed_half_spy_return.mean(),mean_gross_put_return=x.gross_event_return.mean(),
                             mean_net_put_return=x.event_return.mean(),mean_gross_put_minus_half_spy=mean,
                             gross_residual_ci_low=lo,gross_residual_ci_high=hi,
-                            mean_net_put_minus_half_spy=x.net_put_minus_half_spy.mean(),descriptive_gross_put_beta_to_spy=beta,
+                            mean_net_put_minus_half_spy=net_mean,net_residual_ci_low=net_lo,net_residual_ci_high=net_hi,
+                            descriptive_gross_put_beta_to_spy=beta,
                             interpretation="post-run equity-risk proxy; not an executable hedge or pass candidate"))
     pd.DataFrame(records).to_csv(out/"equity_risk_diagnostic.csv",index=False)
 

@@ -1,0 +1,7 @@
+source,folder,files,bytes,timestamp_rows,first_timestamp,last_timestamp,span_days,calendar_dates_with_timestamps,recent20_percent_start,raw_timestamp_dates_recent20_percent,book_depth_records,qualified_portfolio_daily_marks,schemas,read_failures
+S1_PM,s1_twin_spread/.cache,33,14485538,7754432,2025-10-03T23:18:03Z,2026-10-03T23:25:14Z,365.00498842592594,366,2026-07-22T00:00:00Z,74,0,0,"{""p,t"": 33}",0
+S1_Kalshi,s1_twin_spread/.cache,33,2702202,935813,2025-10-03T23:22:00Z,2026-10-03T23:18:00Z,364.9972222222222,366,2026-07-22T00:00:00Z,74,0,0,"{""ask,bid,t,vol"": 33}",0
+S4_PM,s4_linked_assets/.cache,120,23349675,12427837,2025-12-29T00:00:24Z,2026-10-04T00:27:13Z,279.01862268518516,280,2026-08-09T00:00:00Z,57,0,0,"{""p,t"": 120}",0
+S5_PM,s5_big_moves/.cache,148,42295007,22157552,2025-09-18T20:23:03Z,2026-10-04T01:33:22Z,380.2154976851852,382,2026-07-20T00:00:00Z,77,0,0,"{""p,t"": 148}",0
+S9_PM,s9_weekend_price_markets/.cache,391,20827006,10677480,2025-10-31T23:00:05Z,2026-09-28T14:09:16Z,331.6313773148148,170,2026-07-24T00:00:00Z,41,0,0,"{""p,served,t"": 391}",0
+S11_PM,s11_bundles/.cache,1148,207585863,108893973,2025-10-01T00:00:02Z,2026-10-04T03:56:33Z,368.16424768518516,368,2026-07-22T00:00:00Z,74,0,0,"{""p,t"": 1148}",0
