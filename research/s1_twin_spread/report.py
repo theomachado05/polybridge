@@ -144,6 +144,8 @@ def main() -> int:
     ver = xo[xo.verified]
     unv = xo[~xo.verified]
     days_oos = (pd.Timestamp(meta["t1"]) - pd.Timestamp(meta["split"])).days
+    top2 = float(ver.edge_at_entry_verified.nlargest(2).sum())
+    nom = tr[tr.pair.str.startswith("KXPRESNOM")]
     ver_cap = float((ver.verified_qty * ver.cost_in).sum())
 
     head = pd.DataFrame([{
@@ -210,7 +212,7 @@ def main() -> int:
     S = []
     S += ["# S1: Polymarket–Kalshi twin spread", "",
           f"Method, pre-registered before any S1 data was pulled: [`research/s1_twin_spread/METHOD.md`](../../s1_twin_spread/METHOD.md) "
-          "(commit `8260548`; amendments 1 and 2 in `460ffca`, before any run). "
+          "(commit `8260548`; amendments 1 and 2 in `460ffca`, before any run; amendment 3 in `68b49ff`, before the forward window). "
           f"History {meta['t0'][:10]} to {meta['t1'][:10]}, {meta['pairs_used']} of {meta['pairs_in_universe']} verified pairs, 1-minute bars. "
           f"Out-of-sample is the most recent 20%: {meta['split'][:10]} to {meta['t1'][:10]} ({days_oos} days). "
           "Files: [`metrics.csv`](metrics.csv), [`trades.csv`](trades.csv), [`capacity.md`](capacity.md), [`RUN_LOG.md`](RUN_LOG.md).", ""]
@@ -220,9 +222,11 @@ def main() -> int:
           f"trade print at the price the trade needs. Held to resolution they lock in {money(o1.edge_at_entry_verified)} on "
           f"{ver.verified_qty.sum():,.0f} contract pairs (${ver_cap:,.0f} of capital), a mean net edge of "
           f"{100 * o1.edge_at_entry_verified / max(ver.verified_qty.sum(), 1):.1f}¢ per $1 pair after Kalshi fees, Polymarket fees, both "
-          f"spreads and carry. Their mean net P&L per trade is {money(o1.mean_pnl_per_verified_trade)} "
-          f"(pair-bootstrap 95% interval {num(o1.ci_lo_verified)} to {num(o1.ci_hi_verified)}), and it stays positive at 2× costs "
-          f"({int(o2.verified_entries)} entries, {money(o2.mean_pnl_per_verified_trade)} per trade, {num(o2.ci_lo_verified)} to {num(o2.ci_hi_verified)}).", "",
+          f"spreads and carry. At 2× costs {int(o2.verified_entries)} verified entries still lock in {money(o2.edge_at_entry_verified)}. "
+          f"Marked at mid, with exits at modelled prices, their mean net P&L per trade is {money(o1.mean_pnl_per_verified_trade)} "
+          f"(pair-bootstrap 95% interval {num(o1.ci_lo_verified)} to {num(o1.ci_hi_verified)}) at 1× and "
+          f"{money(o2.mean_pnl_per_verified_trade)} ({num(o2.ci_lo_verified)} to {num(o2.ci_hi_verified)}) at 2×. "
+          f"The result is concentrated: the two largest entries carry {money(top2)} of the {money(o1.edge_at_entry_verified)}.", "",
           f"**The strategy as pre-registered does not pass.** Criterion 4 fails: only {int(o1.verified_entries)} of {int(o1.entries)} "
           f"out-of-sample entries ({pct(o1.verified_share)}) are print-verified, against the 50% required. The unverified "
           f"{len(unv)} entries carry {money(unv.pnl_mid.sum())} of the {money(o1.pnl_mid)} modelled P&L. That P&L, and the "
@@ -290,12 +294,14 @@ def main() -> int:
           f"two busiest markets cannot be checked ({pct(1 - i1.prints_reach_share)} of in-sample entries are out of reach and are counted as unverified).",
           "- **Hold-only (V3) is weaker than the primary** on the mid mark: most of the modelled P&L comes from exits at modelled Polymarket prices.",
           f"- **{len(dropped)} of 33 pairs are unusable in history:** " + "; ".join(f"`{r.ticker}` ({r.reason})" for r in dropped.itertuples()) + ".",
-          "- **Long-dated pairs never trade.** The 2028 nomination pairs lock capital for two years; carry of about 9¢ per $1 exceeds any gap seen.", ""]
+          f"- **The 2028 nomination pairs produced {len(nom)} entries in any variant.** They lock capital for two years, so carry "
+          "alone costs about 9¢ per $1.", ""]
     S += ["## Caveats", "",
           "- **Resolution risk.** The twins were verified from their text. No pair has resolved, so a mismatch cannot be measured here.",
           "- **Legging risk.** Both legs are assumed to fill together. A print within ±10 minutes is not a simultaneous fill.",
           "- **Exits use modelled Polymarket prices.** \"Verified edge locked at entry\" avoids that; the mid-mark P&L does not.",
-          f"- **Small sample.** {len(ver)} verified out-of-sample entries on {ver.pair.nunique()} pairs in {days_oos} days.",
+          f"- **Small sample.** {len(ver)} verified out-of-sample entries on {ver.pair.nunique()} pairs in {days_oos} days; "
+          f"two of them carry {money(top2)} of the {money(o1.edge_at_entry_verified)} locked.",
           "- **Coverage.** Under the registered 15-minute rule the two venues are both fresh in "
           f"{pct(used.both_share.median())} of minutes for the median pair ({pct(used.both_share_kalshi_carry_6h.median())} under the 6-hour sensitivity).", ""]
     S += ["## Reproduce", "", "```", "cd research",

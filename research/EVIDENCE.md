@@ -43,6 +43,8 @@ Notes on the rows:
 - **Market-hours lead-lag: no PM lead.** Of 28 usable stress events, 20 had both series move: PM first 9, equity first 9, simultaneous 2; sign test p = 1.000; the pooled tests lean toward equities moving first (section 2; `research/results/leadlag/SUMMARY.md`).
 - **Options-versus-PM arbitrage: 5 verified gaps, 0 executable.** Each rests on a single print of 5 to 100 shares. Nothing was traded (section 4; `research/results/arb/SUMMARY.md`).
 - **AI fit scores are in-sample only.** Each is tuned and scored on the same history and is the best of many presets. Median 0.0053; 36 of 122 at or below zero; 14 above 0.1. The walk-forward test shows they do not hold out of sample (section 6; `backend/app/data/fits.json`).
+- **S1 twin spread: not a pass.** 15 of 99 out-of-sample entries are print-verified, against the 50% the criterion required. The modelled backtest's Sharpe of 7.16 is an artifact of an assumed Polymarket spread (section 9; `research/results/s1_twin_spread/SUMMARY.md`).
+- **S3 three-way consistency: no trade.** The primary rule fired 0 times in 60 matched sets on 33 dates (section 9; `research/results/s3_three_way/SUMMARY.md`).
 - Also in the table above: the replication, the fit walk-forward, the 8-K out-of-sample run, R1 hedge A and R3's net residual gap all failed or were NULL.
 
 ## Product implications
@@ -186,6 +188,25 @@ For the note's "Liquidity and capital" and "Risk management" criteria. This is w
 
 ---
 
+## 9. Weekend and cross-venue alpha: S1 twin spread, S3 three-way (pre-registered; forward tests pending)
+
+Added 2026-10-03 evening. Brief: `research/ALPHA_BRIEF.md`. Both methods were committed before any data was pulled for them (`research/s1_twin_spread/METHOD.md`, commit `8260548`; `research/s3_three_way/METHOD.md`, commit `83ce137`; amendments are dated in each file). Sources: `research/results/s1_twin_spread/SUMMARY.md`, `metrics.csv`, `trades.csv`, `RUN_LOG.md`; `research/results/s3_three_way/SUMMARY.md`, `metrics.csv`, `sets.csv`.
+
+**S1, Polymarket-Kalshi twin spread.** Buy YES on the cheap venue and NO on the rich one when the gap clears Kalshi fees, Polymarket fees, both spreads and carry to resolution. 31 of the 33 verified pairs, 1-minute bars, 2025-10-03 to 2026-10-03; out-of-sample is the last 20% (73 days from 2026-07-22). Kalshi quotes are real (candle bid and ask); the Polymarket spread in history is modelled from this weekend's live books.
+
+- **Finding with its scope.** Out of sample, **15 entries on 5 pairs are confirmed by a public Polymarket trade print**. Held to resolution they lock in **+$47.50 on 1,234 contract pairs ($1,177 of capital)**, 3.8 cents per $1 pair after every cost; at 2x costs, 9 entries and +$32.28. Two entries carry +$26.16 of the +$47.50. Exits are not print-checked, no pair has resolved, and Kalshi's size at those quotes is unknown.
+- **Verdict on the pre-registered criterion: not a pass.** It needed at least half of the out-of-sample entries print-verified; 15 of 99 are (15.2%). In-sample 2 of 61.
+- **The modelled backtest is an artifact, and is reported as one.** All entries, out of sample, 1x costs: +$637.28 on a $3,300 base, Sharpe 7.16, maximum drawdown 2.48%. The pre-registered bug hunt for a Sharpe above 3 found no coding error; 84 of the 99 entries have no trade print at the Polymarket price the model assumes (new markets sitting near 0.50 while Kalshi quotes far away).
+- **Costs at entry, bp of capital (out of sample, 1x):** fees 218, half-spreads 422, carry 114. All eight variant-by-quote-rule runs are in the SUMMARY; the deflated Sharpe uses 8 trials.
+
+**S3, three-way consistency on "S&P 500 closes above K".** Kalshi (index), Polymarket (SPY) and the options band at 12:00 ET on the resolution day; trade the outlier against the other prediction venue. 60 matched sets on 33 dates (2026-08-17 to 2026-10-02).
+
+- **Verdict: no trade, too few observations.** The primary rule fired 0 times at 1x and at 2x costs. Mean absolute gaps: Polymarket against Kalshi 3.5 points, Kalshi against the options band 3.6, Polymarket against the options band 2.1. No set resolved differently on the two venues (0 of 60).
+
+**Forward tests.** Live order books of the 33 twin pairs (every 15 s) and of 660 threshold markets (every 30 s) have been recorded since Sat 2026-10-03 19:09:48 ET (`research/forward/README.md`). S1 and S3 are run on them as paper tests with rules frozen before the window (Sat 20:00 ET to Sun 07:00 ET); results go into the two SUMMARY files.
+
+---
+
 ## What the evidence supports (conservative)
 
 1. **Evidence gating is the product's principle,** and the record shows why: of the six pre-registered tests run today, the four on new data failed or were NULL, and the two passes (R2 on the recession market, R1 hedge B) are on an already-seen panel with stated scope.
@@ -197,7 +218,9 @@ For the note's "Liquidity and capital" and "Risk management" criteria. This is w
 7. **Measured:** the compiled library (17 families, 1,386 presets, 37 blocks) decides in 27.1 to 34.6 ns per `on_tick` on the benchmark tape.
 8. **Not found:** an executable PM versus options arbitrage (5 verified, 0 executable). The 8-K study is null in-sample; out of sample H1 INSUFFICIENT, H2 NULL. The PM-contract hedge (R1 hedge A) shows no evidence and increased variance on the replication panel. The AI fit scores are in-sample; out of sample the picks do not beat a static hedge, including on both demo markets (-0.245, -0.418).
 
-Do not write that prediction markets predict the open or lead equities, that the PM beats futures, that news nights are special, that the 380-closure relation is pre-registered, confirmed or replicated, that options at the open are an arbitrage, that the expected gap works beyond the recession market, that hedge B reduces the gap, that the PM-contract hedge protects, that the fit predicts returns or works out of sample, that the 8-K signal works, or that the scan found arbitrage.
+9. **Cross-venue gaps on the same question exist but are small and rare** (S1): 15 print-verified out-of-sample entries on 5 pairs lock in +$47.50 on $1,177 of capital after every cost (+$32.28 on 9 entries at 2x costs). The pre-registered test is not a pass, and S3 found no trade.
+
+Do not write that the twin spread has a Sharpe ratio of 7, or that it is a strategy with capacity. Do not write that prediction markets predict the open or lead equities, that the PM beats futures, that news nights are special, that the 380-closure relation is pre-registered, confirmed or replicated, that options at the open are an arbitrage, that the expected gap works beyond the recession market, that hedge B reduces the gap, that the PM-contract hedge protects, that the fit predicts returns or works out of sample, that the 8-K signal works, or that the scan found arbitrage.
 
 ---
 
