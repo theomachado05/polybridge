@@ -1,0 +1,618 @@
+{
+ "tickers": [
+  "SPY",
+  "QQQ",
+  "IWM",
+  "DIA",
+  "TLT",
+  "IEF",
+  "SHY",
+  "HYG",
+  "LQD",
+  "UUP",
+  "FXE",
+  "FXY",
+  "USO",
+  "UNG",
+  "GLD",
+  "SLV",
+  "CPER",
+  "URA",
+  "DBA",
+  "CORN",
+  "WEAT",
+  "XLE",
+  "XOP",
+  "XLF",
+  "KRE",
+  "XLK",
+  "SMH",
+  "XLV",
+  "XBI",
+  "XLI",
+  "ITA",
+  "XLU",
+  "XLY",
+  "XLP",
+  "XHB",
+  "XRT",
+  "JETS",
+  "ICLN",
+  "TAN",
+  "EWZ",
+  "EWW",
+  "EWC",
+  "EWJ",
+  "FXI",
+  "KWEB",
+  "MCHI",
+  "EWT",
+  "EWY",
+  "INDA",
+  "EWG",
+  "EWU",
+  "EWQ",
+  "VGK",
+  "EIS",
+  "TUR",
+  "ARGT",
+  "EWA",
+  "EPOL",
+  "GREK",
+  "EZA",
+  "AAPL",
+  "MSFT",
+  "GOOGL",
+  "AMZN",
+  "META",
+  "NVDA",
+  "TSLA",
+  "AMD",
+  "INTC",
+  "TSM",
+  "ORCL",
+  "NFLX",
+  "DIS",
+  "BA",
+  "LMT",
+  "RTX",
+  "NOC",
+  "GD",
+  "XOM",
+  "CVX",
+  "OXY",
+  "JPM",
+  "GS",
+  "BAC",
+  "WFC",
+  "UNH",
+  "PFE",
+  "MRNA",
+  "LLY",
+  "NVO",
+  "WMT",
+  "COST",
+  "TGT",
+  "NKE",
+  "F",
+  "GM",
+  "UBER",
+  "DAL",
+  "UAL",
+  "CCL",
+  "COIN",
+  "MSTR",
+  "MARA",
+  "IBIT",
+  "ETHA",
+  "HOOD",
+  "DJT",
+  "PLTR",
+  "GEO",
+  "CXW",
+  "SMR",
+  "OKLO",
+  "CEG",
+  "VST",
+  "CCJ",
+  "FSLR",
+  "ENPH",
+  "MSOS",
+  "NUE",
+  "CLF",
+  "DE",
+  "CAT",
+  "ZIM",
+  "FRO",
+  "STNG",
+  "BABA",
+  "PDD",
+  "VRT",
+  "DLR",
+  "EQIX",
+  "CRWV",
+  "RKLB"
+ ],
+ "questions": [
+  {
+   "id": "polymarket:601697",
+   "question": "Fed decreases interest rates by 50+ bps after January 2026 meeting?"
+  },
+  {
+   "id": "polymarket:2270330",
+   "question": "US x Iran permanent peace deal by June 15, 2026?"
+  },
+  {
+   "id": "polymarket:570360",
+   "question": "Fed decreases interest rates by 50+ bps after December 2025 meeting?"
+  },
+  {
+   "id": "polymarket:538932",
+   "question": "Will Zohran Mamdani win the 2025 NYC mayoral election?"
+  },
+  {
+   "id": "polymarket:570363",
+   "question": "Fed increases interest rates by 25+ bps after December 2025 meeting?"
+  },
+  {
+   "id": "polymarket:572473",
+   "question": "Will Trump nominate Judy Shelton as the next Fed chair?"
+  },
+  {
+   "id": "polymarket:1484949",
+   "question": "Netanyahu out by March 31?"
+  },
+  {
+   "id": "polymarket:1198423",
+   "question": "US strikes Iran by February 28, 2026?"
+  },
+  {
+   "id": "polymarket:654413",
+   "question": "Will the Fed decrease interest rates by 25 bps after the March 2026 meeting?"
+  },
+  {
+   "id": "polymarket:551963",
+   "question": "Xi Jinping out in 2025?"
+  },
+  {
+   "id": "polymarket:669663",
+   "question": "Will the Fed increase interest rates by 25+ bps after the April 2026 meeting?"
+  },
+  {
+   "id": "polymarket:669660",
+   "question": "Will the Fed decrease interest rates by 50+ bps after the April 2026 meeting?"
+  },
+  {
+   "id": "polymarket:566331",
+   "question": "Will Polymarket US go live in 2025?"
+  },
+  {
+   "id": "polymarket:916732",
+   "question": "Khamenei out as Supreme Leader of Iran by March 31?"
+  },
+  {
+   "id": "polymarket:1171663",
+   "question": "Russia x Ukraine ceasefire by June 30, 2026?"
+  },
+  {
+   "id": "polymarket:572469",
+   "question": "Will Trump nominate Kevin Warsh as the next Fed chair?"
+  },
+  {
+   "id": "polymarket:686122",
+   "question": "Lighter market cap (FDV) >$1B one day after launch?"
+  },
+  {
+   "id": "polymarket:1507751",
+   "question": "Will the Iranian regime fall by April 30?"
+  },
+  {
+   "id": "polymarket:538931",
+   "question": "Will Jim Walden win the 2025 NYC mayoral election?"
+  },
+  {
+   "id": "polymarket:538929",
+   "question": "Will Andrew Cuomo win the 2025 NYC mayoral election?"
+  },
+  {
+   "id": "polymarket:570362",
+   "question": "No change in Fed interest rates after December 2025 meeting?"
+  },
+  {
+   "id": "polymarket:1971905",
+   "question": "Strait of Hormuz traffic returns to normal by end of June?"
+  },
+  {
+   "id": "polymarket:2063133",
+   "question": "Will Shimelis Abdisa be the next Prime Minister of Ethiopia?"
+  },
+  {
+   "id": "polymarket:572481",
+   "question": "Will Trump nominate Scott Bessent as the next Fed chair?"
+  },
+  {
+   "id": "polymarket:1707932",
+   "question": "Will the Iranian regime fall by May 31?"
+  },
+  {
+   "id": "polymarket:906972",
+   "question": "Will the Fed decrease interest rates by 50+ bps after the June 2026 meeting?"
+  },
+  {
+   "id": "polymarket:572470",
+   "question": "Will Trump nominate Kevin Hassett as the next Fed chair?"
+  },
+  {
+   "id": "polymarket:572485",
+   "question": "Will Trump nominate Rick Rieder as the next Fed chair?"
+  },
+  {
+   "id": "polymarket:516947",
+   "question": "Maduro out in 2025?"
+  },
+  {
+   "id": "polymarket:1105754",
+   "question": "Will Richard Grenell be the leader of Venezuela end of 2026?"
+  },
+  {
+   "id": "polymarket:906975",
+   "question": "Will the Fed increase interest rates by 25 bps after the June 2026 meeting?"
+  },
+  {
+   "id": "polymarket:2063130",
+   "question": "Will Berhanu Nega be the next Prime Minister of Ethiopia?"
+  },
+  {
+   "id": "polymarket:538935",
+   "question": "Will Brad Lander win the 2025 NYC mayoral election?"
+  },
+  {
+   "id": "polymarket:1654957",
+   "question": "Will the Fed decrease interest rates by 25 bps after the July 2026 meeting?"
+  },
+  {
+   "id": "polymarket:704339",
+   "question": "Russia x Ukraine ceasefire by January 31, 2026?"
+  },
+  {
+   "id": "polymarket:1105752",
+   "question": "Will Frank Donovan be the leader of Venezuela end of 2026?"
+  },
+  {
+   "id": "polymarket:1819243",
+   "question": "QatarEnergy announces/resumes LNG production in Qatar by April 30?"
+  },
+  {
+   "id": "polymarket:516846",
+   "question": "Will Saudi Aramco be the largest company in the world by market cap on December 31?"
+  },
+  {
+   "id": "polymarket:567561",
+   "question": "Will the next Prime Minister of Hungary be Péter Magyar?"
+  },
+  {
+   "id": "polymarket:1130012",
+   "question": "Will United Russia (ER) gain the most seats in the next Russian parliamentary election?"
+  },
+  {
+   "id": "polymarket:1500755",
+   "question": "Will Judy Shelton be confirmed as Fed Chair?"
+  },
+  {
+   "id": "polymarket:984441",
+   "question": "US strikes Iran by March 31, 2026?"
+  },
+  {
+   "id": "polymarket:947269",
+   "question": "Will Keiko Fujimori win the 2026 Peruvian presidential election?"
+  },
+  {
+   "id": "polymarket:906976",
+   "question": "Will the Fed increase interest rates by 50+ bps after the June 2026 meeting?"
+  },
+  {
+   "id": "polymarket:546262",
+   "question": "Will Octavian Berceanu be the next Mayor of Bucharest?"
+  },
+  {
+   "id": "polymarket:569437",
+   "question": "Will Raul Perestrello win the 2026 Portugal presidential election?"
+  },
+  {
+   "id": "polymarket:516926",
+   "question": "MicroStrategy sells any Bitcoin in 2025?"
+  },
+  {
+   "id": "polymarket:1003798",
+   "question": "Will the Indian National Congress (INC) win the most seats in the 2026 Tamil Nadu Legislative Assembly election?"
+  },
+  {
+   "id": "polymarket:1611267",
+   "question": "Kharg Island no longer under Iranian control by April 30?"
+  },
+  {
+   "id": "polymarket:537892",
+   "question": "Trump declassifies UFO files in 2025?"
+  },
+  {
+   "id": "polymarket:948045",
+   "question": "Will Movement for a Better Hungary (Jobbik) win the most seats in the next Hungarian parliamentary election?"
+  },
+  {
+   "id": "polymarket:546255",
+   "question": "Will Sorin Grindeanu be the next Mayor of Bucharest?"
+  },
+  {
+   "id": "polymarket:948046",
+   "question": "Will LMP – Hungary’s Green Party (LMP) win the most seats in the next Hungarian parliamentary election?"
+  },
+  {
+   "id": "polymarket:571190",
+   "question": "Will T.J. Lavin win the 2025 National Heads-Up Poker Championship?"
+  },
+  {
+   "id": "polymarket:571195",
+   "question": "Will Erick Lindgren win the 2025 National Heads-Up Poker Championship?"
+  },
+  {
+   "id": "polymarket:567687",
+   "question": "Russia x Ukraine ceasefire by end of 2026?"
+  },
+  {
+   "id": "polymarket:2155052",
+   "question": "US x Iran permanent peace deal by December 31, 2026?"
+  },
+  {
+   "id": "polymarket:635246",
+   "question": "Will d4vd be the #1 searched person on Google this year?"
+  },
+  {
+   "id": "polymarket:546259",
+   "question": "Will Marian Vanghelie be the next Mayor of Bucharest?"
+  },
+  {
+   "id": "polymarket:1708086",
+   "question": "Kharg Island no longer under Iranian control by June 30?"
+  },
+  {
+   "id": "polymarket:541625",
+   "question": "Will Ximena Rincón win the Chilean presidential election?"
+  },
+  {
+   "id": "polymarket:571213",
+   "question": "Will Scott Seiver win the 2025 National Heads-Up Poker Championship?"
+  },
+  {
+   "id": "polymarket:706279",
+   "question": "Will Trump visit China by April 30?"
+  },
+  {
+   "id": "polymarket:2099582",
+   "question": "Will Volodymyr Zelenskyy be the next leader out before 2027?"
+  },
+  {
+   "id": "polymarket:520630",
+   "question": "Will China invade Taiwan in 2025?"
+  },
+  {
+   "id": "polymarket:1455604",
+   "question": "Will Trump talk to Xi Jinping in March?"
+  },
+  {
+   "id": "polymarket:2354976",
+   "question": "Strait of Hormuz traffic returns to normal by June 15?"
+  },
+  {
+   "id": "polymarket:516824",
+   "question": "Will Tesla be the largest company in the world by market cap on December 31?"
+  },
+  {
+   "id": "polymarket:540819",
+   "question": "Will Jesus Christ return before GTA VI?"
+  },
+  {
+   "id": "polymarket:623602",
+   "question": "Will the Government shutdown end November 8-11?"
+  },
+  {
+   "id": "polymarket:520930",
+   "question": "Jerome Powell out as Fed Chair in 2025?"
+  },
+  {
+   "id": "polymarket:631220",
+   "question": "Will Tesla be the largest company in the world by market cap on November 30?"
+  },
+  {
+   "id": "polymarket:541627",
+   "question": "Will Marco Enríquez-Ominami win the Chilean presidential election?"
+  },
+  {
+   "id": "polymarket:2034723",
+   "question": "Will the US confirm that aliens exist by June 30?"
+  },
+  {
+   "id": "polymarket:587981",
+   "question": "Will Monad perform an airdrop by October 31? "
+  },
+  {
+   "id": "polymarket:1126504",
+   "question": "Will the US acquire part of Greenland in 2026?"
+  },
+  {
+   "id": "polymarket:1500770",
+   "question": "Will Michelle Bowman be confirmed as Fed Chair?"
+  },
+  {
+   "id": "polymarket:555827",
+   "question": "Will LeBron James be TIME's Person of the Year for 2025?"
+  },
+  {
+   "id": "polymarket:604490",
+   "question": "Will Trump visit China by March 31?"
+  },
+  {
+   "id": "polymarket:623604",
+   "question": "Will the Government shutdown end November 16 or later?"
+  },
+  {
+   "id": "polymarket:1632763",
+   "question": "Netanyahu out by April 30?"
+  },
+  {
+   "id": "polymarket:1439560",
+   "question": "Russia x Ukraine ceasefire by April 30, 2026?"
+  },
+  {
+   "id": "polymarket:1972137",
+   "question": "Will Donald Trump announce that the United States blockade of the Strait of Hormuz has been lifted by May 31, 2026?"
+  },
+  {
+   "id": "polymarket:2099587",
+   "question": "Will Mahmoud Abbas be the next leader out before 2027?"
+  },
+  {
+   "id": "polymarket:1559394",
+   "question": "Trump out as President by June 30?"
+  },
+  {
+   "id": "polymarket:2099595",
+   "question": "Will no listed leader be out before 2027?"
+  },
+  {
+   "id": "polymarket:621018",
+   "question": "US x Venezuela military engagement by November 30?"
+  },
+  {
+   "id": "polymarket:569428",
+   "question": "Will Aristides Teixeira win the 2026 Portugal presidential election?"
+  },
+  {
+   "id": "polymarket:601577",
+   "question": "Lighter market cap (FDV) >$4B one day after launch?"
+  },
+  {
+   "id": "polymarket:541615",
+   "question": "Will Jeannette Jara win the Chilean presidential election?"
+  },
+  {
+   "id": "polymarket:616902",
+   "question": "Will no Fed rate cuts happen in 2026?"
+  },
+  {
+   "id": "polymarket:631279",
+   "question": "Will Saudi Aramco be the second-largest company in the world by market cap on December 31?"
+  },
+  {
+   "id": "polymarket:516969",
+   "question": "Will Microsoft have the top AI model on December 31?"
+  },
+  {
+   "id": "polymarket:1198709",
+   "question": "Will Reza Pahlavi enter Iran by March 31?"
+  },
+  {
+   "id": "polymarket:582313",
+   "question": "Will MrBeast reach 450 million subscribers in 2025?"
+  },
+  {
+   "id": "polymarket:569438",
+   "question": "Will José Cardoso win the 2026 Portugal presidential election?"
+  },
+  {
+   "id": "polymarket:692258",
+   "question": "MicroStrategy sells any Bitcoin by June 30, 2026?"
+  },
+  {
+   "id": "polymarket:956450",
+   "question": "Will the U.S. invade Venezuela by January 31, 2026?"
+  },
+  {
+   "id": "polymarket:661699",
+   "question": "Khamenei out as Supreme Leader of Iran by June 30?"
+  },
+  {
+   "id": "polymarket:555821",
+   "question": "Will Donald Trump be TIME's Person of the Year for 2025?"
+  },
+  {
+   "id": "polymarket:1467765",
+   "question": "Will Crude Oil (CL) hit (HIGH) $110 by end of March?"
+  },
+  {
+   "id": "polymarket:694936",
+   "question": "Will Nebius Group be acquired before 2027?"
+  },
+  {
+   "id": "polymarket:690645",
+   "question": "Will Elon Musk be named in newly released Epstein files?"
+  },
+  {
+   "id": "polymarket:668101",
+   "question": "Will Nasry Juan Asfura Zablah win the 2025 Honduras presidential election?"
+  },
+  {
+   "id": "polymarket:629035",
+   "question": "Will Spencer Pratt win the 2026 Los Angeles mayoral election?"
+  },
+  {
+   "id": "polymarket:1611527",
+   "question": "Will Trump visit China by May 31?"
+  },
+  {
+   "id": "polymarket:635230",
+   "question": "Will Pope Leo XIV be the #1 searched person on Google this year?"
+  },
+  {
+   "id": "polymarket:551137",
+   "question": "Will Mikie Sherrill win the New Jersey Governor Election in 2025"
+  },
+  {
+   "id": "polymarket:556074",
+   "question": "Monad market cap (FDV) >$2B one day after launch?"
+  },
+  {
+   "id": "polymarket:801288",
+   "question": "Will Mistral have the best AI model at the end of January 2026?"
+  },
+  {
+   "id": "polymarket:635229",
+   "question": "Will Vladimir Putin be the #1 searched person on Google this year?"
+  },
+  {
+   "id": "polymarket:948042",
+   "question": "Will Dialogue for Hungary (Párbeszéd) win the most seats in the next Hungarian parliamentary election?"
+  },
+  {
+   "id": "polymarket:923041",
+   "question": "Will People’s Party (PPLE) win the most seats in the 2026 Thai legislative election?"
+  },
+  {
+   "id": "polymarket:555826",
+   "question": "Will Artificial Intelligence be TIME's Person of the Year for 2025?"
+  },
+  {
+   "id": "polymarket:541622",
+   "question": "Will José Antonio Kast win the Chilean presidential election?"
+  },
+  {
+   "id": "polymarket:569366",
+   "question": "Will Abelardo de la Espriella  win the 2026 Colombian presidential election?"
+  },
+  {
+   "id": "polymarket:541626",
+   "question": "Will Michelle Bachelet win the Chilean presidential election?"
+  },
+  {
+   "id": "polymarket:679035",
+   "question": "Will Ségolène Royal win the 2027 French presidential election?"
+  },
+  {
+   "id": "polymarket:1090199",
+   "question": "Will Reza Pahlavi enter Iran by June 30?"
+  },
+  {
+   "id": "polymarket:1501211",
+   "question": "Will La U win the third most seats in the 2026 Colombian Chamber of Representatives election?"
+  }
+ ]
+}

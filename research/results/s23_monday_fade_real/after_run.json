@@ -1,0 +1,80 @@
+{
+ "T2": {
+  "sharpe_all": {
+   "sharpe": 1.7512704555727032,
+   "lo": 0.6030954233605423,
+   "hi": 3.0921387737507064,
+   "share_of_draws_at_or_below_zero": 0.008,
+   "t_stat_closure_returns": 1.6291377461316183,
+   "closures": 45,
+   "closures_traded": 17
+  },
+  "sharpe_best_closure_removed": {
+   "sharpe": 1.9347464976943483,
+   "lo": 0.08339066487453352,
+   "hi": 3.4416345424581967,
+   "share_of_draws_at_or_below_zero": 0.0221,
+   "t_stat_closure_returns": 1.7797079300947112,
+   "closures": 44,
+   "closures_traded": 16
+  }
+ },
+ "T2b first print": {
+  "sharpe_all": {
+   "sharpe": 1.2543912951067793,
+   "lo": -0.8555715085312874,
+   "hi": 3.0540858791920016,
+   "share_of_draws_at_or_below_zero": 0.1087,
+   "t_stat_closure_returns": 1.1669106851968714,
+   "closures": 45,
+   "closures_traded": 17
+  },
+  "sharpe_best_closure_removed": {
+   "sharpe": 0.6791959880552634,
+   "lo": -1.3479429530424567,
+   "hi": 3.3006841406296523,
+   "share_of_draws_at_or_below_zero": 0.2596,
+   "t_stat_closure_returns": 0.624769440064094,
+   "closures": 44,
+   "closures_traded": 16
+  }
+ },
+ "concentration": {
+  "total": 312.6207341564781,
+  "best_closure": "2026-03-09",
+  "best_closure_pnl": 179.816438,
+  "best_closure_share": 0.5751903771999822,
+  "top_two_closures_share": 0.7608223384215712,
+  "closures_up": 12,
+  "closures_down": 5,
+  "largest_single_trade_pnl": 85.5184,
+  "trades_at_the_100_cap": 12,
+  "trades_under_20_contracts": 14
+ },
+ "print_timing": {
+  "within_15_min": {
+   "trades": 19,
+   "pnl": 187.48467661707235
+  },
+  "from_15_to_30_min": {
+   "trades": 13,
+   "pnl": 125.1360575394058
+  },
+  "median_print_minutes": 11.725000000000001
+ },
+ "overlap_with_s6_verified": {
+  "t2_trades_that_s6_verified": 17,
+  "t2_trades_s6_did_not_verify": 15,
+  "pnl_s6_verified": 171.53778746244797,
+  "pnl_not_s6_verified": 141.0829466940301
+ },
+ "duplicate_records_counted_once": {
+  "entries_whose_market_has_duplicates": 0,
+  "trades": 32,
+  "total": 312.620734156478
+ },
+ "independent_replay": {
+  "trades": 32,
+  "total": 312.620734156478
+ }
+}

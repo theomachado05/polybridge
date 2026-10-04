@@ -1,0 +1,9 @@
+{
+  "run_utc": "2026-10-04T03:49:50.717517+00:00",
+  "freeze_commit": "24485b8",
+  "source": "/Users/theomachado/gatorquant/research/results/s12_resting_orders/trades.csv",
+  "source_sha256": "4e898f46b886c3440be56e3bce11c021296c6ce8425fb9e3dfddd7ebb4c9b978",
+  "network_requests": 0,
+  "outcome": "NOT_TESTABLE",
+  "synthetic_fixtures_are_evidence": false
+}

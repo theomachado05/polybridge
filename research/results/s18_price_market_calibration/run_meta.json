@@ -1,0 +1,24 @@
+{
+ "markets_with_an_entry": 1092,
+ "events": 130,
+ "by_universe": {
+  "S15": 772,
+  "S9": 320
+ },
+ "by_class": {
+  "stock": 473,
+  "crude": 231,
+  "gold": 130,
+  "silver": 120,
+  "sp500": 93,
+  "natgas": 45
+ },
+ "share_yes": 0.260989010989011,
+ "mean_price": 0.39076968814645496,
+ "oos_events": 26,
+ "oos_from": "2026-06-27",
+ "first_entry": "2025-11-01",
+ "last_entry": "2026-09-26",
+ "median_days_to_result": 28.146828703703704,
+ "run_seconds": 1.5
+}

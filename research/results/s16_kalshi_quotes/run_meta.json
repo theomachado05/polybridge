@@ -1,0 +1,27 @@
+{
+ "markets": 33,
+ "markets_with_sessions": 31,
+ "sessions_live": 249,
+ "first_session": "2025-10-07",
+ "last_session": "2026-10-02",
+ "oos_from": "2026-07-24",
+ "oos_sessions": 50,
+ "market_sessions_6h": 2886,
+ "market_sessions_15m": 1038,
+ "dropped_no_exit_quote": {
+  "V0": 5,
+  "V1": 9,
+  "V2": 1,
+  "V3": 7
+ },
+ "spread_at_entry_points": {
+  "median": 0.9999997913837433,
+  "p25": 0.9999990463256836,
+  "p75": 1.9999995827674866,
+  "n": 2211
+ },
+ "fee_multipliers": [
+  1.0
+ ],
+ "run_seconds": 1.5
+}

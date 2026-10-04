@@ -1,0 +1,35 @@
+ticker,links,link_days,weight,slope_bp_per_pp,t,example
+COIN,1,182,0.1547042618763368,7.05259928838445,2.3002817751604305,Clarity Act (H.R.3633) signed into law in 2026?
+GLXY,1,182,0.1547042618763368,7.3944824966998,2.406026011753415,Clarity Act (H.R.3633) signed into law in 2026?
+HOOD,1,182,0.1547042618763368,2.721533076178554,1.368013234730801,Clarity Act (H.R.3633) signed into law in 2026?
+GOOGL,3,80,0.13069841814869573,3.21998036113824,3.7074876691968486,"Will Anthropic announce bankruptcy by December 31, 2027?"
+JETS,4,305,0.11880739431989364,13.521421173389562,6.625248685706945,Will the U.S. invade Iran before 2027?
+ITA,2,190,0.0843622192408931,0.04371873961147283,0.07463750366193082,"Russia military action against an EU country by December 31, 2026?"
+SPY,3,191,0.029630948419577332,2.1013941771731876e-16,0.9860379982551082,Will the Fed increase interest rates by 25 bps after the October 2026 
+IWM,3,219,0.02643211156551336,-0.945355333132246,-0.8349850138711342,Will the Fed increase interest rates by 25 bps after the October 2026 
+ZIM,2,132,0.025331206351638876,6.42613761251087,1.5750547442945584,Bab el-Mandeb Strait effectively closed by September 30?
+MSFT,2,45,0.018361566357499408,-3.604597255432516,-1.3174228310212954,"Will OpenAI announce bankruptcy by December 31, 2027?"
+ICLN,5,940,0.016792202012996443,-2.0221996493791656,-0.5420706715031757,"2026 Balance of Power: R Senate, R House"
+AEP,1,3,0.012984412435951583,3.036069075385405,10.377448388826746,"Will Ohio enact a data center moratorium by December 31, 2027?"
+MPC,1,8,0.0098914971700387,-3.4574699115145036,-0.47203058546337834,Will the US announce a diesel export ban by October 31?
+PSX,1,8,0.0098914971700387,-7.188537890563249,-1.0633107222928255,Will the US announce a diesel export ban by October 31?
+VLO,1,8,0.0098914971700387,-4.334798234294926,-0.7721686512550231,Will the US announce a diesel export ban by October 31?
+VRT,1,3,0.009205802481238092,-2.945670842046931,-3.226651201969356,"Will Texas enact a data center moratorium by December 31, 2027?"
+TLT,2,57,0.00790007060173761,3.0164185646501003,1.15042928527541,Another Fed rate hike in 2026?
+XHB,2,85,0.00470123374767364,-3.8036406101084834,-0.982425818860376,Will the Fed decrease interest rates by 25 bps after the October 2026 
+AEE,1,3,0.004581018784812185,3.3751554155254078,3.291854165068297,"Will Missouri enact a data center moratorium by June 30, 2027?"
+FRO,1,29,0.003063738274103335,-14.625747571212374,-0.9597898061600413,Bab el-Mandeb Strait effectively closed by October 31?
+STNG,1,29,0.003063738274103335,2.816030311494098,0.2799821723052519,Bab el-Mandeb Strait effectively closed by October 31?
+USO,1,37,0.002702363073479818,44.224660417609456,4.026297382386859,Strait of Hormuz traffic returns to normal by October 31?
+VGK,1,9,0.0014443339115219093,3.30301407515287,0.5065528284490959,"Russia military action against an EU country by December 31, 2026?"
+SMH,1,188,0.0013051528303195798,-3.126326160757872,-0.20372342646122665,Will China invade Taiwan by end of 2026?
+TSM,1,188,0.0013051528303195798,3.6138246571874992,0.15574335314008755,Will China invade Taiwan by end of 2026?
+GLD,1,73,0.0012941377949428543,7.819445003784087,0.7664801149679368,Will the Fed decrease interest rates by 50+ bps after the October 2026
+ETR,1,3,0.0012254954400791902,-3.188401137499025,-0.47841888502113805,"Will Louisiana enact a data center moratorium by June 30, 2027?"
+META,1,35,0.0009616490671508543,-18.075830973351852,-2.689412334632213,Will Meta have the best AI model at the end of October 2026?
+OKLO,1,10,2.9178448365930915e-05,12.598850270222332,nan,"Will NuScale announce bankruptcy by December 31, 2027?"
+SMR,1,10,2.9178448365930915e-05,-12.661572414589685,nan,"Will NuScale announce bankruptcy by December 31, 2027?"
+AMZN,3,30,0.0,nan,nan,"Will Anthropic announce bankruptcy by December 31, 2027?"
+CRWV,1,10,0.0,nan,nan,"Will OpenAI announce bankruptcy by December 31, 2027?"
+NVDA,2,20,0.0,nan,nan,"Will Anthropic announce bankruptcy by December 31, 2027?"
+ORCL,1,10,0.0,nan,nan,"Will OpenAI announce bankruptcy by December 31, 2027?"

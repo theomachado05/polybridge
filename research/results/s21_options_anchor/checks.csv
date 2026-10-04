@@ -1,0 +1,43 @@
+check,item,value,lo,hi,n,note
+no look-ahead,"seconds from the anchor instant to the start of the traded-price window, minimum",14700.0,nan,nan,387,
+no look-ahead,"oldest leg quote, seconds before the anchor instant",305.0724346637726,nan,nan,387,
+no look-ahead,"youngest leg quote, seconds before the anchor instant",0.0010695457458496,nan,nan,387,
+placebo: anchors shuffled across markets,"taken minus left, observed",19.188341475700316,nan,nan,277,
+placebo: anchors shuffled across markets,"taken minus left, placebo mean and 95% range",3.997064956911553,-3.489796232541345,11.451765427786551,5000,mean markets taken 122
+placebo: anchors shuffled across markets,share of placebo draws at or above the observed difference,0.0,nan,nan,5000,
+regression with the price level held fixed,sellers' P&L on traded price (points) and gap: intercept,3.9906189838717983,-0.6921656226447896,8.673403590388386,277,t = +1.67
+regression with the price level held fixed,sellers' P&L on traded price (points) and gap: traded price,0.09090960964771046,-0.016336678454484513,0.19815589774990544,277,t = +1.66
+regression with the price level held fixed,sellers' P&L on traded price (points) and gap: gap,0.7465759428917974,-0.09596049942558993,1.5891123852091846,277,t = +1.74
+regression with the price level held fixed,buyers' P&L on traded price (points) and gap: intercept,-6.806272948952703,-13.09174613703297,-0.5207997608724355,248,t = -2.12
+regression with the price level held fixed,buyers' P&L on traded price (points) and gap: traded price,-0.07829153057168993,-0.1999953649994501,0.04341230385607024,248,t = -1.26
+regression with the price level held fixed,buyers' P&L on traded price (points) and gap: gap,-0.5685884868704071,-1.0525836303900327,-0.0845933433507815,248,t = -2.30
+within S18's traded-price buckets,sold at 0 to 10%: taken by B0,7.1580576734990755,nan,nan,8,"resolved YES 0%, mean anchor 1%"
+within S18's traded-price buckets,sold at 0 to 10%: left by B0,4.452468861341306,nan,nan,80,"resolved YES 0%, mean anchor 4%"
+within S18's traded-price buckets,sold at 10 to 25%: taken by B0,17.598605378844773,nan,nan,11,"resolved YES 0%, mean anchor 8%"
+within S18's traded-price buckets,sold at 10 to 25%: left by B0,-2.1385659293135855,nan,nan,39,"resolved YES 18%, mean anchor 18%"
+within S18's traded-price buckets,sold at 25 to 50%: taken by B0,16.617586005952212,nan,nan,20,"resolved YES 20%, mean anchor 25%"
+within S18's traded-price buckets,sold at 25 to 50%: left by B0,8.664445444268711,nan,nan,45,"resolved YES 29%, mean anchor 43%"
+within S18's traded-price buckets,sold at 50 to 75%: taken by B0,45.13681547242671,nan,nan,13,"resolved YES 15%, mean anchor 45%"
+within S18's traded-price buckets,sold at 50 to 75%: left by B0,1.9941239815960796,nan,nan,26,"resolved YES 62%, mean anchor 70%"
+within S18's traded-price buckets,sold at 75 to 100%: taken by B0,20.77922874521281,nan,nan,8,"resolved YES 62%, mean anchor 70%"
+within S18's traded-price buckets,sold at 75 to 100%: left by B0,-1.695289141076101,nan,nan,27,"resolved YES 93%, mean anchor 96%"
+subsets of the primary,B0 on anchors with no leg moved outward,21.271012481649556,1.1277256653280674,36.5682734389838,30,17 events
+subsets of the primary,"the markets it leaves, same anchors",12.987037031654998,7.8618355638140525,17.803672060997815,98,49 events
+subsets of the primary,sell only when the traded bid is 5+ points above the TOP of the anchor's band,28.522008846307244,14.078514258138943,40.51923465460264,25,16 events
+subsets of the primary,"B0, printed size of 100 contracts or more",30.226624648165348,11.161389801135885,44.06396976440951,29,21 events
+subsets of the primary,"B0, printed size under 100 contracts",14.827134096154321,2.7328444479914613,26.825674331197455,31,25 events
+subsets of the primary,"B0, stock markets",19.17023526590261,8.797077328928493,29.37202348658427,45,27 events
+subsets of the primary,"B0, S&P 500 markets",31.57017898746411,-10.587161525720587,51.117129094984335,15,6 events
+subsets of the primary,B0 weighted by contracts in the book (up to 100 per market),29.083145441551725,nan,nan,3773.757722,
+subsets of the primary,"B0 worst single market, points",-64.92578462211031,nan,nan,60,
+subsets of the primary,B0 share of markets that made money,0.8166666666666667,nan,nan,60,
+resampling Fridays instead of events,B0 mean P&L per contract,22.270221196292983,11.111445720710877,32.04106167906402,13,Fridays
+resampling Fridays instead of events,taken minus left,19.18834147570031,4.739410572715687,29.244572225577457,17,Fridays
+resampling Fridays instead of events,T1 slope of buyers' P&L on the gap,-0.604990333297386,-1.032814117047852,-0.07555862956365719,17,Fridays
+Sharpe on monthly P&L,B0: annualised Sharpe and a rough 95% range (plus or minus two standard errors),2.704530201571477,0.20195218635547763,5.207108216787477,10,0 losing months of 10; capital base $752
+Sharpe on monthly P&L,B1: annualised Sharpe and a rough 95% range (plus or minus two standard errors),2.8791187374382083,0.33788578061320385,5.420351694263212,10,0 losing months of 10; capital base $442
+Sharpe on monthly P&L,B2: annualised Sharpe and a rough 95% range (plus or minus two standard errors),-3.7787412696771256,-8.830400111626048,1.2729175722717971,3,2 losing months of 3; capital base $3
+Sharpe on monthly P&L,R1: annualised Sharpe and a rough 95% range (plus or minus two standard errors),2.6759437989914185,0.17951934728611496,5.172368250696723,10,0 losing months of 10; capital base $752
+Sharpe on monthly P&L,U: annualised Sharpe and a rough 95% range (plus or minus two standard errors),3.2361445882160553,0.7325968583720077,5.7396923180601025,11,"1 losing months of 11; capital base $3,678"
+Sharpe on monthly P&L,U-all: annualised Sharpe and a rough 95% range (plus or minus two standard errors),3.025622420256079,0.5704093752525132,5.480835465259645,11,"1 losing months of 11; capital base $4,304"
+Sharpe on monthly P&L,U-left: annualised Sharpe and a rough 95% range (plus or minus two standard errors),1.7399430332712431,-0.47682782703349447,3.956713893575981,11,"2 losing months of 11; capital base $2,926"

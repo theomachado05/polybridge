@@ -1,0 +1,20 @@
+test,unit,n,slope,se,t,sign_agree,n_nonzero,clusters,mean,ci_lo,ci_hi,dates
+same 5 minutes: equity on odds,bp per point,1127527,0.4875407534075115,0.1014916746651239,4.803751194530713,0.5030693342399148,155897,253,,,,
+odds jump of 3+ points: equity in the same 5 minutes,"bp, signed by the odds",3978,,,,,,,3.3287406562289306,1.84101727668022,4.896994189184811,167
+equity jump of 50+ bp: odds in the same 5 minutes,"points, signed by the equity",13476,,,,,,,0.07102626614403489,0.035021129393158774,0.11466859955406883,226
+odds first: equity over the next 5 min on this bin's odds move,bp per point,1111391,0.15575599939952958,0.06152580873520485,2.5315554984392517,0.5015016381507099,153832,253,,,,
+equity first: odds over the next 5 min on this bin's equity move,points per 100 bp,1112767,0.06633826995495343,0.015415811200582916,4.303261702663106,0.507631926078509,153893,253,,,,
+odds jump of 3+ points: equity over the next 5 min,"bp, signed by the odds",3914,,,,,,,1.3149590884303213,0.41165142472574184,2.178967247037847,167
+equity jump of 50+ bp: odds over the next 5 min,"points, signed by the equity",13245,,,,,,,0.062057379100200316,0.033634739524390576,0.09693520039391956,226
+odds first: equity over the next 15 min on this bin's odds move,bp per point,1079586,0.2281072880436143,0.1353415030307566,1.6854200887053583,0.502061766101491,149629,253,,,,
+equity first: odds over the next 15 min on this bin's equity move,points per 100 bp,1083280,0.10352161220428864,0.02085532875980486,4.963796706183272,0.5066921529657814,250069,253,,,,
+odds jump of 3+ points: equity over the next 15 min,"bp, signed by the odds",3812,,,,,,,1.8351425646552788,-0.3186260157160689,4.067761138076779,166
+equity jump of 50+ bp: odds over the next 15 min,"points, signed by the equity",12937,,,,,,,0.10775681748308683,0.06732652356274972,0.15413359791286588,226
+odds first: equity over the next 30 min on this bin's odds move,bp per point,1032797,0.33905276387710925,0.13570438239834848,2.498465840858766,0.5056103129524446,143664,253,,,,
+equity first: odds over the next 30 min on this bin's equity move,points per 100 bp,1039148,0.1272400246483691,0.02587006508320948,4.918426924675657,0.5070152198332961,317809,253,,,,
+odds jump of 3+ points: equity over the next 30 min,"bp, signed by the odds",3672,,,,,,,2.05481755323366,-0.20739770574029054,4.563309395107458,166
+equity jump of 50+ bp: odds over the next 30 min,"points, signed by the equity",12733,,,,,,,0.11501217089830904,0.0737059870277918,0.16060460289261033,226
+odds first: equity over the next 60 min on this bin's odds move,bp per point,941308,0.014047890711353678,0.23990207801393704,0.05855676961054739,0.5023574698767738,131709,253,,,,
+equity first: odds over the next 60 min on this bin's equity move,points per 100 bp,950980,0.1304458107834338,0.03169400727717939,4.115787872534459,0.5066706520665811,374701,253,,,,
+odds jump of 3+ points: equity over the next 60 min,"bp, signed by the odds",3290,,,,,,,0.1810501430733907,-4.411018318664238,4.461682406102462,159
+equity jump of 50+ bp: odds over the next 60 min,"points, signed by the equity",12185,,,,,,,0.0980795941463296,0.04675434896105919,0.15221867524312302,226

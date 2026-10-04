@@ -1,0 +1,152 @@
+{
+  "purpose": "Current rule inspection; not historical point-in-time or executable quote evidence",
+  "records": [
+    {
+      "label": "gemini_oct15",
+      "venue": "polymarket",
+      "url": "https://gamma-api.polymarket.com/markets/5084763",
+      "observed_utc": "2026-10-04T04:27:20.408109+00:00",
+      "status": 200,
+      "metadata": {
+        "id": "5084763",
+        "question": "Gemini 4.0 released by October 15, 2026?",
+        "description": "This market will resolve to \"Yes\" if Google's Gemini 4.0 is made available to the general public by the listed date. Otherwise, this market will resolve to \"No\".\n\nFor this market to resolve to \"Yes,\" Gemini 4.0 must be launched and publicly accessible, including via open beta or open rolling waitlist signups. A closed beta or any form of private access will not suffice. The release must be clearly defined and publicly announced by Google as being accessible to the general public.\n\nIf a qualifying model is made publicly accessible and explicitly labeled with the relevant version name within the company\u2019s official website, this will qualify as \u201cpublicly announced\u201d. Labeling errors, placeholder text, or version names displayed on the website that do not correspond to a model that is actually accessible to the general public under the rules will not qualify.\n\nGemini 4.0 refers to a product explicitly named Gemini 4.0 or one that is recognized as a successor to Gemini 3 similar to the progression from Gemini 2.0 to Gemini 3. Products labeled as Gemini 3.0 Flash, Gemini 2.5, or similar will not count for this market's resolution.\n\nThe primary resolution source for this market will be official information from Google, with additional verification from a consensus of credible reporting.",
+        "endDate": "2026-10-16T03:59:00Z",
+        "resolutionSource": "",
+        "slug": "gemini-4pt0-released-by-october-15-2026",
+        "updatedAt": "2026-10-04T04:22:52.802949Z",
+        "closed": false,
+        "active": true
+      }
+    },
+    {
+      "label": "gemini_oct15",
+      "venue": "kalshi",
+      "url": "https://api.elections.kalshi.com/trade-api/v2/markets/KXGEMINI-GEM4-26OCT16",
+      "observed_utc": "2026-10-04T04:27:21.524451+00:00",
+      "status": 200,
+      "metadata": {
+        "ticker": "KXGEMINI-GEM4-26OCT16",
+        "title": "Will Google release Gemini 4 before Oct 16, 2026?",
+        "rules_primary": "If Google releases Gemini 4 before Oct 16, 2026, then the market resolves to Yes.",
+        "rules_secondary": "Release must be to the public, outside of a closed beta, though limiting it to a high-cost subscription tier is acceptable.",
+        "close_time": "2026-10-16T03:59:00Z",
+        "expiration_time": "2026-10-23T14:00:00Z",
+        "expected_expiration_time": "2027-01-01T15:00:00Z",
+        "settlement_timer_seconds": 1800,
+        "early_close_condition": "This market will close and expire early if the event occurs.",
+        "status": "active"
+      }
+    },
+    {
+      "label": "gemini_oct31",
+      "venue": "polymarket",
+      "url": "https://gamma-api.polymarket.com/markets/3584362",
+      "observed_utc": "2026-10-04T04:27:22.636555+00:00",
+      "status": 200,
+      "metadata": {
+        "id": "3584362",
+        "question": "Gemini 4.0 released by October 31, 2026?",
+        "description": "This market will resolve to \"Yes\" if Google's Gemini 4.0 is made available to the general public by the listed date. Otherwise, this market will resolve to \"No\".\n\nFor this market to resolve to \"Yes,\" Gemini 4.0 must be launched and publicly accessible, including via open beta or open rolling waitlist signups. A closed beta or any form of private access will not suffice. The release must be clearly defined and publicly announced by Google as being accessible to the general public.\n\nIf a qualifying model is made publicly accessible and explicitly labeled with the relevant version name within the company\u2019s official website, this will qualify as \u201cpublicly announced\u201d. Labeling errors, placeholder text, or version names displayed on the website that do not correspond to a model that is actually accessible to the general public under the rules will not qualify.\n\nGemini 4.0 refers to a product explicitly named Gemini 4.0 or one that is recognized as a successor to Gemini 3 similar to the progression from Gemini 2.0 to Gemini 3. Products labeled as Gemini 3.0 Flash, Gemini 2.5, or similar will not count for this market's resolution.\n\nThe primary resolution source for this market will be official information from Google, with additional verification from a consensus of credible reporting.",
+        "endDate": "2026-11-01T03:59:00Z",
+        "resolutionSource": "",
+        "slug": "gemini-4pt0-released-by-october-31-2026",
+        "updatedAt": "2026-10-04T04:22:52.802949Z",
+        "closed": false,
+        "active": true
+      }
+    },
+    {
+      "label": "gemini_oct31",
+      "venue": "kalshi",
+      "url": "https://api.elections.kalshi.com/trade-api/v2/markets/KXGEMINI-GEM4-26NOV01",
+      "observed_utc": "2026-10-04T04:27:23.772065+00:00",
+      "status": 200,
+      "metadata": {
+        "ticker": "KXGEMINI-GEM4-26NOV01",
+        "title": "Will Google release Gemini 4 before Nov 1, 2026?",
+        "rules_primary": "If Google releases Gemini 4 before Nov 1, 2026, then the market resolves to Yes.",
+        "rules_secondary": "Release must be to the public, outside of a closed beta, though limiting it to a high-cost subscription tier is acceptable.",
+        "close_time": "2026-11-01T04:59:00Z",
+        "expiration_time": "2026-11-08T15:00:00Z",
+        "expected_expiration_time": "2027-01-01T15:00:00Z",
+        "settlement_timer_seconds": 1800,
+        "early_close_condition": "This market will close and expire early if the event occurs.",
+        "status": "active"
+      }
+    },
+    {
+      "label": "gemini_nextpro_oct31",
+      "venue": "polymarket",
+      "url": "https://gamma-api.polymarket.com/markets/3667937",
+      "observed_utc": "2026-10-04T04:27:24.963378+00:00",
+      "status": 200,
+      "metadata": {
+        "id": "3667937",
+        "question": "Will the next Google Gemini Pro model be released by October 31, 2026?",
+        "description": "This market will resolve to \"Yes\" if Google's next Gemini Pro model is made available to the general public between market creation and the specified date (ET). Otherwise, this market will resolve to \u201cNo\u201d.\n\nAny Gemini model released after market creation and labeled as \"Pro\" may qualify (e.g., gemini-3.2-pro, gemini-3.5-pro, or gemini-4.0-pro-preview). Gemini models labeled only as Flash, Flash-Lite, or another non-Pro variant will not qualify.\n\nProducts labeled as a GA promotion of an already-existing Preview model (e.g., gemini-3.1-pro-ga) may qualify\n\nA qualifying model must be launched and publicly accessible, including via open beta or open rolling waitlist signups. A closed beta or any form of private access will not suffice. The release must be either clearly defined and publicly announced by Google as being accessible to the general public or otherwise made publicly accessible and explicitly labeled within the company's official website. Labeling errors, placeholder text, or version names displayed on the website that do not correspond to a model that is actually accessible to the general public will not qualify.\n\nThe primary resolution source for this market will be official information from Google, with additional verification from a consensus of credible reporting.",
+        "endDate": "2026-11-01T03:59:00Z",
+        "resolutionSource": "",
+        "slug": "will-the-next-google-gemini-pro-model-be-released-by-october-31-2026",
+        "updatedAt": "2026-10-04T04:24:54.03826Z",
+        "closed": false,
+        "active": true
+      }
+    },
+    {
+      "label": "gemini_nextpro_oct31",
+      "venue": "kalshi",
+      "url": "https://api.elections.kalshi.com/trade-api/v2/markets/KXGEMINI-NEXTPRO-26NOV01",
+      "observed_utc": "2026-10-04T04:27:26.191477+00:00",
+      "status": 200,
+      "metadata": {
+        "ticker": "KXGEMINI-NEXTPRO-26NOV01",
+        "title": "Will Google release next Gemini Pro model before Nov 1, 2026?",
+        "rules_primary": "If Google releases next Gemini Pro model before Nov 1, 2026, then the market resolves to Yes.",
+        "rules_secondary": "Release must be to the public, outside of a closed beta, though limiting it to a high-cost subscription tier is acceptable.",
+        "close_time": "2026-11-01T04:59:00Z",
+        "expiration_time": "2026-11-08T15:00:00Z",
+        "expected_expiration_time": "2027-01-15T15:00:00Z",
+        "settlement_timer_seconds": 1800,
+        "early_close_condition": "This market will close and expire early if the event occurs.",
+        "status": "active"
+      }
+    },
+    {
+      "label": "anthropic_ipo",
+      "venue": "polymarket",
+      "url": "https://gamma-api.polymarket.com/markets/676792",
+      "observed_utc": "2026-10-04T04:27:27.294865+00:00",
+      "status": 200,
+      "metadata": {
+        "id": "676792",
+        "question": "Anthropic IPO before 2027?",
+        "description": "This market will resolve to \"Yes\" if the listed company completes an Initial Public Offering (IPO) by December 31, 2026, 11:59 PM ET, as confirmed by official company announcements or credible news sources. The IPO refers to the first sale of stock by the listed company to the public on any recognized stock exchange.\n\nIf the listed company merges with another entity, is acquired, or ceases to exist before the market resolves, the market will also resolve to \"No\".\n\nThis market will resolve early if the listed company completes an IPO by December 31, 2026, 11:59 PM ET.\n\nThe resolution source for this market is a consensus of credible reporting.",
+        "endDate": "2027-01-01T04:59:00Z",
+        "slug": "anthropic-ipo-before-2027",
+        "updatedAt": "2026-10-04T04:24:54.03826Z",
+        "closed": false,
+        "active": true
+      }
+    },
+    {
+      "label": "anthropic_ipo",
+      "venue": "kalshi",
+      "url": "https://api.elections.kalshi.com/trade-api/v2/markets/KXIPO-26-ANTHROPIC",
+      "observed_utc": "2026-10-04T04:27:28.483641+00:00",
+      "status": 200,
+      "metadata": {
+        "ticker": "KXIPO-26-ANTHROPIC",
+        "title": "Who will IPO before 2027?",
+        "rules_primary": "If Anthropic confirms an IPO before Jan 1, 2027, then the market resolves to Yes.",
+        "rules_secondary": "An IPO is confirmed if 1) the SEC declares the company's Form S-1 effective OR 2) the IPO is priced OR 3) a securities exchange has assigned a ticker to it. As long as any of those events occur, the market will immediately resolve to Yes, even if the company does not start trading until after Jan 1, 2027.",
+        "close_time": "2027-01-01T04:59:00Z",
+        "expiration_time": "2027-01-08T15:00:00Z",
+        "expected_expiration_time": "2027-01-01T15:00:00Z",
+        "settlement_timer_seconds": 300,
+        "early_close_condition": "This market will close and expire early if the event occurs.",
+        "status": "active"
+      }
+    }
+  ]
+}

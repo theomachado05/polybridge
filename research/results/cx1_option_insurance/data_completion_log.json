@@ -1,0 +1,157 @@
+{
+  "started_utc": "2026-10-04T04:07:16.627034+00:00",
+  "finished_utc": "2026-10-04T04:07:56.845449+00:00",
+  "requests": 21,
+  "response_bytes": 345096,
+  "max_rps": 0.5,
+  "error": null,
+  "log": [
+    {
+      "request": 1,
+      "cache_key": "fdb26975fa96da5cfa20de9d96b2b3ae8db57edf.json",
+      "path": "/v3/reference/options/contracts",
+      "status": 200,
+      "response_bytes": 28119
+    },
+    {
+      "request": 2,
+      "cache_key": "532cff4894459ef18de396ea198117f5ded5439b.json",
+      "path": "/v3/quotes/O:SPY251205P00682000",
+      "status": 200,
+      "response_bytes": 442
+    },
+    {
+      "request": 3,
+      "cache_key": "2c1a1366f364f853a54cbf03df42cbbfa431ae98.json",
+      "path": "/v3/quotes/O:SPY251205P00682000",
+      "status": 200,
+      "response_bytes": 445
+    },
+    {
+      "request": 4,
+      "cache_key": "20b6f9227c81a9893985f291c708726ed706c097.json",
+      "path": "/v3/reference/options/contracts",
+      "status": 200,
+      "response_bytes": 57987
+    },
+    {
+      "request": 5,
+      "cache_key": "5c1daa63ecbeb18e21906f5f7d8179ba99cbe1de.json",
+      "path": "/v3/quotes/O:SPY251231P00691000",
+      "status": 200,
+      "response_bytes": 445
+    },
+    {
+      "request": 6,
+      "cache_key": "6ecd262720c21fe96784cfde34e79e0893ef344b.json",
+      "path": "/v3/quotes/O:SPY251231P00691000",
+      "status": 200,
+      "response_bytes": 445
+    },
+    {
+      "request": 7,
+      "cache_key": "7c5bd8aa4134659a4c673cd462dfbeb3063b6cfa.json",
+      "path": "/v3/reference/options/contracts",
+      "status": 200,
+      "response_bytes": 55936
+    },
+    {
+      "request": 8,
+      "cache_key": "a4a11fd104a95b3abfb79784d265e08854e0590f.json",
+      "path": "/v3/quotes/O:SPY260904P00770000",
+      "status": 200,
+      "response_bytes": 445
+    },
+    {
+      "request": 9,
+      "cache_key": "39fe0a38f89006b5db2087b57eace5961a9adde7.json",
+      "path": "/v3/quotes/O:SPY260904P00770000",
+      "status": 200,
+      "response_bytes": 443
+    },
+    {
+      "request": 10,
+      "cache_key": "5e575d94687eacc02173da3f2ca06e7be9407b4b.json",
+      "path": "/v3/reference/options/contracts",
+      "status": 200,
+      "response_bytes": 44535
+    },
+    {
+      "request": 11,
+      "cache_key": "d18b0a8113c01dc1a4120a88b3601b011e588812.json",
+      "path": "/v3/quotes/O:SPY260911P00770000",
+      "status": 200,
+      "response_bytes": 444
+    },
+    {
+      "request": 12,
+      "cache_key": "2c10b9471290f13d5df5a83f741a3ac491985016.json",
+      "path": "/v3/quotes/O:SPY260911P00770000",
+      "status": 200,
+      "response_bytes": 443
+    },
+    {
+      "request": 13,
+      "cache_key": "fb0630cb7805a217766677e6ea87f7eca4ff6411.json",
+      "path": "/v3/reference/options/contracts",
+      "status": 200,
+      "response_bytes": 73264
+    },
+    {
+      "request": 14,
+      "cache_key": "b39f188244bec97b180f684fbf787318dda52bf9.json",
+      "path": "/v3/quotes/O:SPY260918P00765000",
+      "status": 200,
+      "response_bytes": 443
+    },
+    {
+      "request": 15,
+      "cache_key": "13c71476ef3a665b8b25fb2b5d395f2fd0f0f8d7.json",
+      "path": "/v3/quotes/O:SPY260918P00765000",
+      "status": 200,
+      "response_bytes": 445
+    },
+    {
+      "request": 16,
+      "cache_key": "f76be4d39cf13f59c9bde8c6ad7df1e0666a3099.json",
+      "path": "/v3/reference/options/contracts",
+      "status": 200,
+      "response_bytes": 39975
+    },
+    {
+      "request": 17,
+      "cache_key": "0c5f4d386f66420e872a7cf9955b6faa81dad82c.json",
+      "path": "/v3/quotes/O:SPY260925P00761000",
+      "status": 200,
+      "response_bytes": 444
+    },
+    {
+      "request": 18,
+      "cache_key": "6013c94293a8de1d428ed7072b3d1d56f53b6536.json",
+      "path": "/v3/quotes/O:SPY260925P00761000",
+      "status": 200,
+      "response_bytes": 447
+    },
+    {
+      "request": 19,
+      "cache_key": "66eeeda2ece4cd3d4fe7d471d71f1e50c12fd002.json",
+      "path": "/v3/reference/options/contracts",
+      "status": 200,
+      "response_bytes": 39063
+    },
+    {
+      "request": 20,
+      "cache_key": "501d558753a8d79e59630f3ea5258dbf1c8d4b8e.json",
+      "path": "/v3/quotes/O:SPY261002P00770000",
+      "status": 200,
+      "response_bytes": 445
+    },
+    {
+      "request": 21,
+      "cache_key": "9590a32bb520670f7010c72e09a4a09adaf76e42.json",
+      "path": "/v3/quotes/O:SPY261002P00770000",
+      "status": 200,
+      "response_bytes": 441
+    }
+  ]
+}

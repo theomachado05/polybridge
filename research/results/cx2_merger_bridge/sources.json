@@ -1,0 +1,42 @@
+[
+  {
+    "url": "https://gamma-api.polymarket.com/events?slug=which-companies-will-be-acquired-before-2027&limit=1",
+    "kind": "current official contract metadata",
+    "finding": "The five matched company markets pay Yes on an agreement announcement, independently of completed acquisition.",
+    "historical_asof_verified": false
+  },
+  {
+    "url": "https://gamma-api.polymarket.com/markets/2154920",
+    "kind": "current official contract metadata",
+    "finding": "eBay/GameStop pays Yes on announced controlling-interest merger/acquisition, even if never completed.",
+    "historical_asof_verified": false
+  },
+  {
+    "url": "https://polymarket.com/event/will-gamestop-acquire-ebay",
+    "kind": "official public rule page",
+    "finding": "Corroborates announcement basis; AI market context ignored.",
+    "historical_asof_verified": false
+  },
+  {
+    "url": "https://polymarket.com/event/which-companies-will-be-acquired-before-2027",
+    "kind": "official public event catalog",
+    "finding": "Confirms candidate basket identity; current odds not used.",
+    "historical_asof_verified": false
+  },
+  {
+    "url": "https://investors.ebayinc.com/investor-news/press-release-details/2026/eBay-Confirms-Receipt-of-Unsolicited-Proposal-from-GameStop/default.aspx",
+    "kind": "issuer announcement",
+    "published_date": "2026-05-04",
+    "finding": "Non-binding unsolicited proposal includes GameStop stock consideration; not the required signed all-cash agreement."
+  },
+  {
+    "url": "https://www.optionseducation.org/referencelibrary/faq/splits-mergers-spinoffs-bankruptcies",
+    "kind": "OCC educational mechanics",
+    "finding": "Cash mergers change option deliverables and trading; OCC adjustment must be checked case by case."
+  },
+  {
+    "url": "https://infomemo.theocc.com/infomemos?number=26853",
+    "kind": "OCC official memorandum",
+    "finding": "All-cash merger options become adjusted cash-delivery contracts and cease exchange trading."
+  }
+]
