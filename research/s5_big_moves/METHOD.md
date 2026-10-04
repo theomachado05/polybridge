@@ -146,7 +146,7 @@ odds, not the equity. Rules, fixed before computing:
 - Not a P&L: historical Polymarket prices are not executable. The result is set against a round-trip cost of about
   2 to 4 points on liquid markets (two half-spreads plus the 0.04 × P × (1 − P) fee each way).
 
-**Correction, 2026-10-04 01:12 UTC, found after the run while breaking the result down by link: links to SPY are
+**Correction, 2026-10-04 01:09 UTC, found after the run while breaking the result down by link: links to SPY are
 empty by construction.** Every equity move is measured in excess of `β ×` SPY. For a link whose ticker is SPY itself
 that excess is zero whatever happens, so those links add weight to the odds side and nothing to the equity side, and
 their trades earn zero before costs. 18 of the 220 links are SPY links (623 link-days, 13% of the weight; 13 of the 94
