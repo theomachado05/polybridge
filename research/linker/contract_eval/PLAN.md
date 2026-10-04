@@ -85,3 +85,18 @@ nested pairs 30 of 30. Reading the errors gave one fault in the measure and four
   (EWY) "other"; such questions stay counted as the plan says and are listed by name. The three nested pairs the
   code refuses because the two rules texts differ are left as they are: refusing is the safe side.
 - Half A is re-scored with the fixed parser as a development figure. Half B is then scored once.
+
+**Note, 2026-10-04 04:38 ET, before half B is scored or read.** The four fixes are in `linker/link_map.py` with tests in
+`linker/tests/test_contract_links.py`; an independent review of them found one wrong-contract fault in the new
+weekly rule (a ticket created mid-week took its year from the Monday and linked a year out) and a negation rule
+that was too wide; both were repaired before this note. Half A with the fixed parser, a development figure: exact
+ticket links 91 of 92, rung dates 64 of 64, nested pairs 30 of 30. Side effects accepted, and known:
+
+- "Will the S&P 500 hit 7000 by December 31?" (no dollar sign, no SPX or SPY written) was a linkable rung and is
+  now an unlinkable touch ticket, as its dollar-sign twin already was.
+- A price question on something that is not a stock ("Will Hyperliquid reach $100 by December 31, 2026?") is now a
+  rung, not a ticket with no ticker. One backend assertion that encoded the old shape was changed to match.
+- Not fixed, left for the owners: a token written with a symbol in parentheses that is also a US stock symbol
+  ("Chainlink (LINK)") still links to that stock's options; a negated ticket ("not close above") is still read as
+  up; "in 2026" and "before 2027" deadlines, which the readers call rungs, stay "other"; one pair's year comes out a
+  year early from the frozen ladder rule (a market created on 2024-12-30 for "by December 31").

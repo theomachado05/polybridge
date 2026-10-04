@@ -51,6 +51,77 @@ TOUCH_RE = re.compile(r"\b(reach(?:es)?|hits?|touch(?:es)?|dips?\s+to|falls?\s+t
 CLOSE_RE = re.compile(r"\b(?:close|finish|settle)s?\s+(?:the\s+day\s+)?(at\s+or\s+above|at\s+or\s+below|above|over|higher\s+than|"
                       r"below|under|lower\s+than)\s+\$\s?([\d,]+(?:\.\d+)?)", re.I)
 
+# Amendment 1 (linker/contract_eval/PLAN.md), fault 1: S11's DATE_RE reads "January 2026" as "January 20" (its optional day
+# takes the first two digits of the year). The frozen pattern is not edited; the parser uses a copy whose day may not be
+# followed by another digit, so "<Month> <Year>" is read as a month and a year. Every phrase with a real day matches as before.
+_S11_DAY = r"(?:\s+\d{1,2}(?:st|nd|rd|th)?)?"
+assert _S11_DAY in s11cfg.DATE_RE
+DATE_RE = s11cfg.DATE_RE.replace(_S11_DAY, r"(?:\s+\d{1,2}(?:st|nd|rd|th)?(?!\d))?")
+_MONTH_RE = "|".join(m.capitalize() for m in s11cfg.MONTHS) + "|" + "|".join(m.capitalize()[:3] for m in s11cfg.MONTHS)
+# a day in the rules text: "October 27-28", "October 28–29", "December 31, 2026" (the last day of a range is taken)
+RULES_DAY_RE = re.compile(rf"\b({_MONTH_RE})\.?\s+(\d{{1,2}})(?:st|nd|rd|th)?(?!\d)(?:\s*[-–]\s*(\d{{1,2}})(?!\d))?(?:,?\s+(20\d\d))?")
+# fault 2: weekly close tickets, "finish week of October 5 above $365" (a level in a bucket, "close at $X-$Y", is not one)
+WEEK_CLOSE_RE = re.compile(r"\b(?:close|finish|settle)s?\s+(?:the\s+)?week\s+of\s+(" + DATE_RE + r")\s+"
+                           r"(at\s+or\s+above|at\s+or\s+below|above|over|higher\s+than|below|under|lower\s+than)\s*\$\s?([\d,]+(?:\.\d+)?)")
+WEEK_OF_RE = re.compile(r"\bweek\s+of\s+(" + DATE_RE + r")", re.I)
+# fault 3: a negated deadline ("will X not happen by <date>"): the earlier deadline is worth more, so the ladder rule would be
+# traded the wrong way round. Read only before the deadline phrase; "not" that qualifies something else is left alone.
+# Verb-phrase negation only (review): "will X not ...", "won't", "fail to", "never", and "no" only as the subject's
+# determiner at the start ("No Fed rate cut ...", "Will no candidate ...", "Will there be no ..."). Mid-question the words
+# count only in lower case (a capitalised "No"/"Not"/"Never" inside is a title: "the No Kings protest"); "no-" compounds
+# ("no-confidence", "no-fly") and "no matter" are not negation; a "not" after a comma qualifies a noun ("Elon Musk, not Sam
+# Altman, win"); quoted titles are removed before matching ("'No Other Land'").
+_AUX = r"(?i:will|would|does|do|did|is|are|was|has|have|had|can|could|should|shall|may|might)"
+_NOT_OTHER = r"(?:including|counting|listed|incl\b|only|just|less|more|later|earlier|fewer)"
+NEGATED_RE = re.compile(
+    r"(?<![,\s])\s+not\b(?!\s+" + _NOT_OTHER + r")"                     # "will X not ...", "still not" (lower case, no comma)
+    r"|^\s*Not\b(?!\s+" + _NOT_OTHER + r")"
+    r"|n[’']t\b"                                                         # won't, doesn't, isn't
+    r"|\bfail(?:s|ed)?\s+to\b|^\s*(?i:fails?)\s+to\b"
+    r"|(?<![\w-])never\b(?!-)|^\s*Never\b"
+    r"|^\s*No\s+(?!-|matter\b)(?=\w)"                                   # "No Fed rate cut by ..."
+    r"|^\s*" + _AUX + r"\s+(?:there\s+be\s+)?no\s+(?!matter\b)(?=\w)"  # "Will no candidate ...", "Will there be no ..."
+)
+_QUOTED_RE = re.compile(r"\"[^\"]*\"|“[^”]*”|‘[^’]*’|(?:(?<=\s)|^)'[^']*'(?=[\s,.?!]|$)")
+
+
+def _negated(before_date: str) -> bool:
+    """Whether the question before its deadline phrase is a negated deadline (fault 3, narrowed after review)."""
+    return bool(NEGATED_RE.search(_QUOTED_RE.sub(" ", before_date)))
+
+
+NEGATED_WHY = "negated deadline: an earlier date is worth more, not less"
+
+
+def _date_template(q: str) -> tuple[str, str | None]:
+    """`s11_bundles.universe.date_template` with the parser's DATE_RE (fault 1): the last date phrase replaced by @D@."""
+    found = list(re.finditer(DATE_RE, q))
+    if not found:
+        return q, None
+    m = found[-1]
+    return q[:m.start()] + "@D@" + q[m.end():], m.group(0)
+
+
+def _has_day(phrase: str) -> bool:
+    """Whether a date phrase names a day: "October 31" and "end of October" do; "October" and "October 2026" do not."""
+    p = phrase.strip()
+    return p.lower().startswith("end of") or bool(re.search(r"\s\d{1,2}(?:st|nd|rd|th)?(?!\d)", p))
+
+
+def _rules_day(phrase: str, rules: str) -> int | None:
+    """The day of a day-less deadline ("by October 2026 meeting") read from the rules text: the latest day the rules name in
+    that month (and year, when both give one), e.g. "currently scheduled for October 27-28" -> 28. None when they name none."""
+    toks = phrase.lower().replace(".", "").replace(",", " ").split()
+    mon = next((i + 1 for i, m in enumerate(s11cfg.MONTHS) if toks and (toks[0] == m or toks[0] == m[:3])), None)
+    y = re.search(r"20\d\d", phrase)
+    days = []
+    for r in RULES_DAY_RE.finditer(rules or ""):
+        rm = next(i + 1 for i, m in enumerate(s11cfg.MONTHS) if r.group(1).lower() in (m, m[:3]))
+        if rm != mon or (y and r.group(4) and r.group(4) != y.group(0)):
+            continue
+        days.append(int(r.group(3) or r.group(2)))
+    return max(days) if days else None
+
 
 def _price(m: dict) -> float | None:
     """The underlying's latest price if the caller supplied one (`underlying_price`, `last_price` or `price`)."""
@@ -118,7 +189,8 @@ for _tk, _nm in UNIVERSE.items():
 def _symbols_in(text: str) -> list[str]:
     """Tickers written in the text: "(AAPL)", "$AAPL", or a bare uppercase universe ticker ("AAPL")."""
     out = [x for x in SYMBOL_RE.findall(text or "") if x not in ("HIGH", "LOW")]
-    out += CASHTAG_RE.findall(text or "")
+    # Amendment 1, fault 4: "$ANSEM" is a token; a cashtag is a ticker only when it is in the stock universe
+    out += [x for x in CASHTAG_RE.findall(text or "") if x in UNIVERSE]
     out += [x for x in BARE_RE.findall(text or "") if x in UNIVERSE and x not in BARE_STOP]
     return list(dict.fromkeys(out))
 
@@ -158,10 +230,44 @@ def _year_date(phrase: str, m: dict) -> tuple[date | None, str]:
     if key is None:
         return None, "date phrase does not parse"
     explicit = re.search(r"20\d\d", phrase)
+    if explicit:
+        # the phrase's own year wins (amendment 5). `replay.deadline` finds it by re-reading the question with S11's DATE_RE,
+        # which cuts "January 2026" to "January 20" (Amendment 1, fault 1), so the year is taken from the phrase here.
+        d = parse_date(phrase, int(explicit.group(0)))
+        return (d, "explicit year") if d is not None else (None, "date phrase does not parse")
     d = lr.deadline(m, key)
     if d is None:
         return None, "no creation date: the year cannot be re-derived"
     return d, "explicit year" if explicit else "re-derived from the creation date"
+
+
+def _friday_on_or_after(d: date) -> date:
+    return date.fromordinal(d.toordinal() + (4 - d.weekday()) % 7)
+
+
+def _week_end(phrase: str, m: dict) -> tuple[date | None, str]:
+    """A weekly ticket's settlement day: the Friday on or after the named day ("week of October 5"). An explicit year names
+    the week's start. Otherwise the year is re-derived from the settlement Friday, not the named Monday (review): the first
+    year in which that Friday falls on or after the day before creation, as `replay.deadline` does for a deadline. A strike
+    added on the Wednesday of the week keeps that week's Friday instead of rolling to the next year's."""
+    if re.search(r"20\d\d", phrase):
+        start, src = _year_date(phrase, m)
+        return (_friday_on_or_after(start) if start else None), src
+    key = parse_date(phrase, 2024)
+    if key is None:
+        return None, "date phrase does not parse"
+    st = _ts(m)
+    if st is None:
+        return None, "no creation date: the year cannot be re-derived"
+    s0 = datetime.fromtimestamp(st - 86400, timezone.utc).date()
+    for y in (s0.year - 1, s0.year, s0.year + 1, s0.year + 2):      # s0.year - 1: a late-December week ending in January
+        try:
+            fri = _friday_on_or_after(date(y, key.month, key.day))
+        except ValueError:
+            continue
+        if fri >= s0:
+            return fri, "re-derived from the creation date"
+    return None, "no creation date: the year cannot be re-derived"
 
 
 def _window_end(question: str, title: str, m: dict) -> tuple[date | None, str]:
@@ -175,7 +281,7 @@ def _window_end(question: str, title: str, m: dict) -> tuple[date | None, str]:
         d = s21.window_end(t, listed or date(2000, 1, 1))
         if d is not None:
             return d, "explicit year" if re.search(r"\b20\d\d\b", t) else "re-derived from the creation date"
-    templ, phrase = date_template(question or "")
+    templ, phrase = _date_template(question or "")
     if phrase and re.search(r"\b(?:by|before|on)\s+(?:the\s+)?@D@", templ, re.I):
         return _year_date(phrase, m)
     if listed is None:
@@ -200,17 +306,24 @@ def classify(question: str, rules: str | None = None, market: dict | None = None
                 "checks": [_check("watch only", False, "15-minute Bitcoin markets are watched against spot, never traded")],
                 "reasons": ["watch only: the gap to spot closes in under a minute"]}
     stockish = not re.search(NOT_STOCK_RE, text, re.I)
-    close = CLOSE_RE.search(q) if stockish else None
+    week = WEEK_CLOSE_RE.search(q) if stockish else None
+    close = (CLOSE_RE.search(q) or week) if stockish else None
     touch = TOUCH_RE.search(q) if stockish and not close else None
     if close or touch:
         ticker, why = ticker_of(q, title)
         checks = [_check("single stock or S&P 500 ticker", ticker is not None, why)]
         if close:
-            word = close.group(1).lower()
-            direction = "down" if re.search(r"below|under|lower", word) else "up"
-            level = float(close.group(2).replace(",", ""))
-            phrases = list(re.finditer(s11cfg.DATE_RE, q))
-            end, year_src = _year_date(phrases[-1].group(0), m) if phrases else (None, "no close date in the question")
+            word, lvl = (week.group(2), week.group(3)) if close is week else (close.group(1), close.group(2))
+            direction = "down" if re.search(r"below|under|lower", word.lower()) else "up"
+            level = float(lvl.replace(",", ""))
+            wk = WEEK_OF_RE.search(q)
+            if wk:
+                # Amendment 1, fault 2: "week of October 5" closes on the week's final trading day (normally Friday): the
+                # Friday on or after the named day (the named Monday's Friday)
+                end, year_src = _week_end(wk.group(1), m)
+            else:
+                phrases = list(re.finditer(DATE_RE, q))
+                end, year_src = _year_date(phrases[-1].group(0), m) if phrases else (None, "no close date in the question")
             kind, mech = "close_above_ticket", "close_above"
         else:
             verb, hl, dollar = touch.group(1).lower(), touch.group(2), touch.group(3)
@@ -252,11 +365,30 @@ def classify(question: str, rules: str | None = None, market: dict | None = None
         if ticker:
             fields["option_root"] = "O:SPXW" if ticker == "SPX" else f"O:{ticker}"
         bad = [c["detail"] or c["check"] for c in checks if not c["ok"]]
-        if ticker is not None or close or (touch and touch.group(3)):
+        # Amendment 1, fault 4: a price question is a ticket only on a named stock or the S&P 500. With no stock ticker
+        # named (a token: "Hyperliquid", "$ANSEM") or a symbol that is not a stock, it falls through to the rung rule or "other";
+        # a stock-like question the parser cannot pin down (two tickers, S&P 500 without (SPX)) stays a ticket and is refused.
+        not_a_stock = ticker is None and (why == "no single stock ticker named" or why.endswith("is not a stock or the S&P 500"))
+        if not not_a_stock:
             return {"type": kind, "mechanism": mech, "fields": fields, "checks": checks, "linkable": not bad, "reasons": bad}
-    templ, phrase = date_template(q)
+    templ, phrase = _date_template(q)
     if phrase and re.search(s11cfg.CUMULATIVE_DATE_RE, templ, re.I):
-        d, year_src = _year_date(phrase, m)
+        if _negated(templ[:templ.index("@D@")]):
+            # Amendment 1, fault 3: "will X not happen by <date>": an earlier deadline is worth more, so the ladder rule
+            # (rich = earlier) would be traded the wrong way round
+            return {"type": "other", "mechanism": "none", "fields": {}, "linkable": False,
+                    "checks": [_check("cumulative deadline, not negated", False, NEGATED_WHY)], "reasons": [NEGATED_WHY]}
+        if _has_day(phrase):
+            d, year_src = _year_date(phrase, m)
+        else:
+            # Amendment 1, fault 1: "by October 2026 meeting" names no day. The day is read from the rules text ("currently
+            # scheduled for October 27-28"); with none there, no day is invented and the rung is not linkable.
+            day = _rules_day(phrase, rules)
+            if day is None:
+                d, year_src = None, "no day in the deadline"
+            else:
+                d, year_src = _year_date(f"{phrase.split()[0]} {day}" + (f", {y.group(0)}" if (y := re.search(r"20\d\d", phrase)) else ""), m)
+                year_src = f"{year_src}; day from the rules text" if d is not None else year_src
         event = str(m.get("event_id") or m.get("event_slug") or title or "")
         checks = [_check("rung date with its year re-derived (amendment 5)", d is not None, year_src if d is None else year_src),
                   _check("event known (a rung links only within its event)", bool(event), "" if event else "no event id, slug or title")]
@@ -303,7 +435,7 @@ def link_ladders(markets: list[dict], event: dict | None = None) -> list[dict]:
         ladder = {"ladder_id": lid, "event": rungs[0][1]["fields"]["event"], "template": rungs[0][1]["fields"]["template"],
                   "rungs": [{"id": str(m.get("id")), "question": m.get("question"), "date": c["fields"]["date"],
                              "year_source": c["fields"]["year_source"],
-                             "year_corrected": (registered_date(c["fields"]["date_phrase"], m) or date.min).isoformat() != c["fields"]["date"]}
+                             "year_corrected": (registered_date(c["fields"]["date_phrase"], m) or date.min).year != int(c["fields"]["date"][:4])}
                             for m, c in rungs],
                   "unplaced": unplaced, "pairs": [], "valid": True, "reasons": []}
         if len(rungs) < 2:

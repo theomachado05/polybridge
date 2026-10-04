@@ -19,7 +19,10 @@ to `contract_eval_<half>_stepone[_<tag>].json`, so no old parser file has to be 
 
 Run from `research/`:
     python -m linker.contract_eval sample [--refresh]
-    python -m linker.contract_eval score --half A|B [--tag NAME] [--stored]
+    python -m linker.contract_eval score --half A|B [--tag NAME] [--stored] [--strict-dates]
+
+Amendment 1: a ticket's date is compared on its end session (the last weekday on or before the parser's window end
+against the same of the readers' date); `--strict-dates` keeps the calendar-day rule as first written.
 """
 from __future__ import annotations
 
@@ -34,6 +37,8 @@ import sys
 from collections import Counter
 from datetime import date
 from pathlib import Path
+
+from s21_options_anchor.engine import last_weekday
 
 from . import link_map as lm
 from .study import binom_ci
@@ -441,12 +446,37 @@ def bar(k: int, n: int, at: float = 0.95) -> dict:
     return {**rate(k, n), "bar": at, "result": ("pass" if k / n >= at else "fail") if n else "no data"}
 
 
+DATE_RULES = ("end session", "calendar day")                          # PLAN Amendment 1; "calendar day" as first written
+FAIL_CAUSES = (("type differs", "type"), ("ticker", "underlying"), ("level", "level"), ("direction", "direction"), ("date", "date"))
+
+
 def field_ok(f: str, parser, truth) -> bool:
     return same(f, parser, truth)
 
 
-def measures(uni: dict, preds: dict, pair_preds: dict, lab_q: tuple[dict, dict], lab_p: tuple[dict, dict]) -> tuple[dict, list[dict]]:
-    """Every measure of PLAN section 3 on one half. `preds` and `pair_preds`: the parser's answers by id (re-run)."""
+def end_session(v) -> str | None:
+    """The last weekday on or before a date (the session the option link uses, link_map end_session); None if unreadable."""
+    try:
+        return last_weekday(date.fromisoformat(str(v or "")[:10])).isoformat()
+    except ValueError:
+        return None
+
+
+def ticket_field_ok(f: str, parser, truth, date_rule: str = "end session") -> bool:
+    """A ticket field against the truth. Under "end session" (Amendment 1) a ticket's date is compared on the last
+    weekday on or before each side; under "calendar day" as first written. Rung and pair dates never come here."""
+    if f == "date" and date_rule == "end session":
+        a, b = end_session(parser), end_session(truth)
+        return a is not None and a == b
+    return field_ok(f, parser, truth)
+
+
+def measures(uni: dict, preds: dict, pair_preds: dict, lab_q: tuple[dict, dict], lab_p: tuple[dict, dict],
+             date_rule: str = "end session") -> tuple[dict, list[dict]]:
+    """Every measure of PLAN section 3 on one half. `preds` and `pair_preds`: the parser's answers by id (re-run).
+    `date_rule` sets how a ticket's date is compared (DATE_RULES); rung and pair dates are always compared exactly."""
+    assert date_rule in DATE_RULES, date_rule
+    tok = lambda f, a, b: ticket_field_ok(f, a, b, date_rule)
     errors: list[dict] = []
     truth, dis_counts, agree = {}, Counter(), Counter()
     qs = uni["questions"]
@@ -475,7 +505,7 @@ def measures(uni: dict, preds: dict, pair_preds: dict, lab_q: tuple[dict, dict],
     # it leaves the bar only when everything agreed matches and some field is undecided (a disagreement drops the field,
     # never a link already shown wrong).
     k = n = 0
-    excluded = Counter()
+    excluded, causes, type_differs = Counter(), Counter(), []
     for q in qs:
         p, t = preds[q["id"]], truth[q["id"]]
         if p["type"] not in TICKETS or not p["linkable"]:
@@ -483,14 +513,22 @@ def measures(uni: dict, preds: dict, pair_preds: dict, lab_q: tuple[dict, dict],
         if "type" not in t:
             excluded["type disagreement"] += 1
             continue
-        wrong = [] if t["type"] != p["type"] else [f for f in TICKET_FIELDS if f in t and not field_ok(f, p[f], t[f])]
+        wrong = [] if t["type"] != p["type"] else [f for f in TICKET_FIELDS if f in t and not tok(f, p[f], t[f])]
         errors += [_err(q["id"], q["question"], f, p[f], t[f], p) for f in wrong]
         if t["type"] == p["type"] and not wrong and any(f not in t for f in TICKET_FIELDS):
             excluded["field disagreement, every agreed field matches"] += 1
             continue
         n += 1
         k += t["type"] == p["type"] and not wrong
-    bar1 = {**bar(k, n), "excluded": dict(excluded)}
+        if t["type"] != p["type"]:                     # each failure once, under the first cause of FAIL_CAUSES
+            causes["type differs"] += 1
+            type_differs.append({"id": q["id"], "question": q["question"], "parser_type": p["type"],
+                                 "parser_ticker": p["underlying"], "truth_type": t["type"]})
+        elif wrong:
+            causes[next(c for c, f in FAIL_CAUSES if f in wrong)] += 1
+    bar1 = {**bar(k, n), "date_rule": date_rule, "excluded": dict(excluded),
+            "failures_by_first_cause": {c: causes[c] for c, _ in FAIL_CAUSES},
+            "type_differs": type_differs}
     # bar 2: rung dates
     both = [q for q in qs if preds[q["id"]]["type"] == "ladder_rung" and truth[q["id"]].get("type") == "ladder_rung"]
     with_date = [q for q in both if "date" in truth[q["id"]]]
@@ -509,7 +547,7 @@ def measures(uni: dict, preds: dict, pair_preds: dict, lab_q: tuple[dict, dict],
         field_acc[tt] = {"questions": len(base), "parser_other_type": sum(preds[q["id"]]["type"] != tt for q in base)}
         for f in ("underlying", "level", "direction", "date"):
             b = [q for q in base if f in truth[q["id"]]]
-            field_acc[tt][f] = rate(sum(preds[q["id"]]["type"] == tt and field_ok(f, preds[q["id"]][f], truth[q["id"]][f]) for q in b), len(b))
+            field_acc[tt][f] = rate(sum(preds[q["id"]]["type"] == tt and tok(f, preds[q["id"]][f], truth[q["id"]][f]) for q in b), len(b))
     # tickets the parser refuses to link
     refused = [q for q in qs if preds[q["id"]]["type"] in TICKETS and not preds[q["id"]]["linkable"]]
     readable = [q for q in refused if _readable(truth[q["id"]])]
@@ -539,7 +577,7 @@ def measures(uni: dict, preds: dict, pair_preds: dict, lab_q: tuple[dict, dict],
                 errors.append(_err(p["pair"], q, f, pp[pf], t[f], pp))
     pair_dates = {f: rate(sum(field_ok("date", pair_preds[p["pair"]][pf], pt[p["pair"]][f]) for p in pairs if f in pt[p["pair"]]),
                           sum(f in pt[p["pair"]] for p in pairs)) for f, pf in (("earlier_date", "rich_date"), ("later_date", "cheap_date"))}
-    out = {"bars": {"exact_ticket_links": bar1, "rung_dates": bar2, "nested_pairs": bar3},
+    out = {"date_rule": date_rule, "bars": {"exact_ticket_links": bar1, "rung_dates": bar2, "nested_pairs": bar3},
            "type_table_parser_rows_truth_columns": table, "precision": prec, "recall_within_sample": rec,
            "recall_weighted_by_stratum": rec_w, "ticket_field_accuracy": field_acc,
            "refused_tickets": refusals,
@@ -582,7 +620,11 @@ def _err(i: str, q: str, field: str, pv, tv, p: dict) -> dict:
     return {"id": i, "question": q, "field": field, "parser": pv, "truth": tv, "parser_reasons": "; ".join(p.get("reasons") or [])}
 
 
-def score(half: str, tag: str | None = None, root: Path = OUT_DIR, results: Path = RESULTS, use_stored: bool = False) -> int:
+def score(half: str, tag: str | None = None, root: Path = OUT_DIR, results: Path = RESULTS, use_stored: bool = False,
+          strict_dates: bool = False) -> int:
+    """Score one half. A ticket's date is compared on its end session (PLAN Amendment 1); `strict_dates` gives the rule
+    as first written (calendar day) and appends "_strictdates" to the file names."""
+    date_rule = "calendar day" if strict_dates else "end session"
     uni = json.loads((root / "universe.json").read_text())
     uni = {**uni, "questions": [q for q in uni["questions"] if q["half"] == half], "pairs": [p for p in uni["pairs"] if p["half"] == half]}
     inputs = {c: json.loads((root / f"input_fields_{half}{c}.json").read_text())["questions"] for c in "12"}
@@ -619,16 +661,16 @@ def score(half: str, tag: str | None = None, root: Path = OUT_DIR, results: Path
     results.mkdir(parents=True, exist_ok=True)
     summary = []
     for label, what, qp, pp, sha in runs:
-        out, errors = measures(uni, qp, pp, tuple(lab_q), tuple(lab_p))
+        out, errors = measures(uni, qp, pp, tuple(lab_q), tuple(lab_p), date_rule)
         out = {"half": half, "tag": tag, "parser": what, "plan": "linker/contract_eval/PLAN.md", "sha256_of_parser_scored": sha,
                "sha256_at_scoring": sha256s(), "sha256_at_sample": stored["sha256"], "parser_changed_answers": changed, **out}
-        stem = f"contract_eval_{half}" + (f"_{label}" if label else "") + (f"_{tag}" if tag else "")
+        stem = f"contract_eval_{half}" + (f"_{label}" if label else "") + (f"_{tag}" if tag else "") + ("_strictdates" if strict_dates else "")
         (results / f"{stem}.json").write_text(json.dumps(out, indent=1))
         with open(results / f"{stem}_errors.csv", "w", newline="") as f:
             w = csv.DictWriter(f, fieldnames=["id", "question", "field", "parser", "truth", "parser_reasons"])
             w.writeheader()
             w.writerows(errors)
-        summary.append({"parser": what, "bars": {k: {x: v[x] for x in ("k", "n", "share", "result")} for k, v in out["bars"].items()},
+        summary.append({"parser": what, "date_rule": date_rule, "bars": {k: {x: v[x] for x in ("k", "n", "share", "result")} for k, v in out["bars"].items()},
                         "errors": len(errors), "written": str(results / f"{stem}.json")})
     print(json.dumps({"half": half, "parser_changed_answers": changed, "scores": summary}, indent=1))
     return 0
@@ -643,8 +685,10 @@ def main(argv: list[str]) -> int:
     c.add_argument("--half", choices=("A", "B"), required=True)
     c.add_argument("--tag")
     c.add_argument("--stored", action="store_true", help="also score the step-1 answers in predictions.json (_stepone)")
+    c.add_argument("--strict-dates", action="store_true",
+                   help="compare ticket dates by calendar day, the rule as first written (_strictdates)")
     a = ap.parse_args(argv)
-    return sample(a.refresh) if a.cmd == "sample" else score(a.half, a.tag, use_stored=a.stored)
+    return sample(a.refresh) if a.cmd == "sample" else score(a.half, a.tag, use_stored=a.stored, strict_dates=a.strict_dates)
 
 
 if __name__ == "__main__":

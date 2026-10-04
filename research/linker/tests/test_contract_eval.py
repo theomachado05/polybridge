@@ -183,3 +183,56 @@ def test_no_input_file_holds_a_parser_field():
 def test_written_input_files_are_blind():
     for f in ce.OUT_DIR.glob("input_*.json"):
         assert ce.leaks(json.loads(f.read_text())) == [], f.name
+
+
+def test_ticket_date_compared_on_the_end_session():
+    # Saturday 2026-10-31 (parser) against Friday 2026-10-30 (readers): the link uses the Friday either way
+    assert ce.ticket_field_ok("date", "2026-10-31", "2026-10-30") and ce.ticket_field_ok("date", "2026-11-01T23:59:00Z", "2026-10-30")
+    assert not ce.ticket_field_ok("date", "2026-10-31", "2026-10-30", "calendar day")
+    assert not ce.ticket_field_ok("date", "2026-10-30", "2026-10-20")                  # a real 10-day difference
+    assert not ce.ticket_field_ok("date", None, None) and not ce.ticket_field_ok("date", "2026-10-30", "")
+    qs = [{"id": "1", "question": "Q1"}, {"id": "2", "question": "Q2"}, {"id": "3", "question": "Q3"}]
+    preds = {"1": pred(type_="close_above_ticket", date="2026-10-31"), "2": pred(date="2026-10-30"),
+             "3": pred(type_="ladder_rung", underlying=None, level=None, direction=None, date="2026-10-31")}
+    labs = {"1": lab(type_="close_above_ticket", date="2026-10-30"), "2": lab(date="2026-10-20"),
+            "3": lab("ladder_rung", "", 0, "none", "2026-10-30")}
+    out, errors = ce.measures({"questions": qs, "pairs": []}, preds, {}, (labs, labs), ({}, {}))
+    b = out["bars"]["exact_ticket_links"]
+    assert (b["k"], b["n"]) == (1, 2) and b["date_rule"] == out["date_rule"] == "end session"
+    assert out["ticket_field_accuracy"]["close_above_ticket"]["date"]["k"] == 1
+    assert (out["bars"]["rung_dates"]["k"], out["bars"]["rung_dates"]["n"]) == (0, 1)     # rung dates stay exact
+    assert ("2", "date") in {(e["id"], e["field"]) for e in errors} and not any(e["id"] == "1" for e in errors)
+    out, _ = ce.measures({"questions": qs, "pairs": []}, preds, {}, (labs, labs), ({}, {}), "calendar day")
+    assert out["bars"]["exact_ticket_links"]["k"] == 0 and out["date_rule"] == "calendar day"
+    assert out["ticket_field_accuracy"]["close_above_ticket"]["date"]["k"] == 0
+
+
+def test_strict_dates_writes_the_first_written_rule_apart(tmp_path):
+    write_half(tmp_path)
+    assert ce.score("A", tag="t", root=tmp_path, results=tmp_path / "out") == 0
+    assert ce.score("A", tag="t", root=tmp_path, results=tmp_path / "out", strict_dates=True) == 0
+    now = json.loads((tmp_path / "out" / "contract_eval_A_t.json").read_text())
+    strict = json.loads((tmp_path / "out" / "contract_eval_A_t_strictdates.json").read_text())
+    assert now["date_rule"] == now["bars"]["exact_ticket_links"]["date_rule"] == "end session"
+    assert strict["date_rule"] == strict["bars"]["exact_ticket_links"]["date_rule"] == "calendar day"
+    assert (tmp_path / "out" / "contract_eval_A_t_strictdates_errors.csv").exists()
+
+def test_strict_dates_flag_reaches_score(monkeypatch):
+    seen = {}
+    monkeypatch.setattr(ce, "score", lambda half, tag, use_stored=False, strict_dates=False: seen.update(h=half, s=strict_dates) or 0)
+    assert ce.main(["score", "--half", "A", "--strict-dates"]) == 0 and seen == {"h": "A", "s": True}
+    assert ce.main(["score", "--half", "A"]) == 0 and seen["s"] is False
+
+
+def test_failure_breakdown_counts_each_failure_once_under_its_first_cause():
+    qs = [{"id": str(i), "question": f"Q{i}"} for i in range(1, 7)]
+    preds = {"1": pred(), "2": pred(type_="close_above_ticket", underlying="EWY"), "3": pred(underlying="AMD", level=1.0),
+             "4": pred(level=1.0, date="2025-01-01"), "5": pred(direction="down", date="2025-01-01"), "6": pred(date="2026-12-01")}
+    labs = {"1": lab(), "2": lab(type_="other"), "3": lab(), "4": lab(), "5": lab(), "6": lab()}
+    out, _ = ce.measures({"questions": qs, "pairs": []}, preds, {}, (labs, labs), ({}, {}))
+    b = out["bars"]["exact_ticket_links"]
+    assert (b["k"], b["n"]) == (1, 6)
+    assert b["failures_by_first_cause"] == {"type differs": 1, "ticker": 1, "level": 1, "direction": 1, "date": 1}
+    assert sum(b["failures_by_first_cause"].values()) == b["n"] - b["k"]
+    assert b["type_differs"] == [{"id": "2", "question": "Q2", "parser_type": "close_above_ticket", "parser_ticker": "EWY",
+                                  "truth_type": "other"}]
