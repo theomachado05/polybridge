@@ -12,6 +12,14 @@ Evidence-gated 24/7 hedging. PolyBridge hedges equity positions using live predi
 | `research/` | Python | Evidence (9 studies): pre-registered 8-K study, lead-lag case studies, closed-market study, options-arbitrage scan, closed-hours replication, AI fit walk-forward, closed-market hedge (R1), expected-gap model (R2), options at the open (R3) |
 | `scripts/`, `replays/`, `web/e2e/` | Python, Node | End-to-end demo driver, recorded Polymarket replays, headless-Chrome UI walk and screenshots |
 
+## Reproduce the quant note
+
+```bash
+make reproduce        # offline: reads committed result files only, no API key, no network; a few seconds
+```
+
+This checks every headline number of [note/NOTE.md](note/NOTE.md) against the committed result files and prints one line per claim: the note's value, the value found, the source file, and MATCH or MISMATCH (exit status 1 on any mismatch). Most claims are recomputed from each study's committed trade list or rows with the study's own functions and seeds; the rest are read from its committed stats file, and the line says which. It also writes the track's metrics table, [note/TABLES.md](note/TABLES.md) (the date-ladder book, in-sample and out-of-sample, net of costs), and the figures in [note/figures/](note/figures/). No study is rerun. The first run creates `research/.venv` with `uv`; to use another Python that has the research dependencies, run `make reproduce PYTHON=/path/to/python`. Code: [research/reproduce.py](research/reproduce.py), [research/note_figures.py](research/note_figures.py).
+
 ## Quickstart
 
 Prerequisites: [uv](https://docs.astral.sh/uv/) (it fetches Python 3.12 for the projects), any `python3` 3.10+ on PATH for the stdlib-only e2e driver, Node 24+ with pnpm, GNU make, a C++20 compiler (Xcode Command Line Tools / clang 16+ or gcc 12+), `cmake` and `ninja` (`uv tool install cmake ninja`) to build the C++ library, Chrome for the screenshot pass.

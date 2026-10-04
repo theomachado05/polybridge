@@ -1,4 +1,4 @@
-.PHONY: setup-research test-research setup-backend test-backend build-engine test-engine test-engine-py setup-web test-web test dev dev-live dev-tlt dev-ita dev-iwm dev-nvda e2e e2e-api e2e-opportunity e2e-weekend e2e-demo webull-check gemini-check voice-agent keys-check
+.PHONY: setup-research test-research reproduce setup-backend test-backend build-engine test-engine test-engine-py setup-web test-web test dev dev-live dev-tlt dev-ita dev-iwm dev-nvda e2e e2e-api e2e-opportunity e2e-weekend e2e-demo webull-check gemini-check voice-agent keys-check
 
 research/.venv:
 	$(MAKE) setup-research
@@ -8,6 +8,14 @@ setup-research:
 
 test-research: research/.venv
 	cd research && .venv/bin/python -m pytest -q
+
+# Reproduce the quant note's headline numbers (note/NOTE.md) from the committed result files: offline, no API key.
+# One MATCH or MISMATCH line per claim; rewrites note/TABLES.md and note/figures/; exits 1 on any mismatch.
+# Uses research/.venv (made by `make setup-research` when missing). Any Python with the research dependencies also
+# works: `make reproduce PYTHON=/path/to/python`.
+PYTHON ?=
+reproduce: $(if $(PYTHON),,research/.venv)
+	cd research && $(if $(PYTHON),$(PYTHON),.venv/bin/python) reproduce.py
 
 setup-backend:
 	cd backend && uv sync --locked
