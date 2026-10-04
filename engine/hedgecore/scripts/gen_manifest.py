@@ -39,7 +39,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     args.out.write_text(text)
     total = json.loads(text)["total"]
-    print(f"wrote {args.out} ({total} presets)")
+    micro = json.loads(text).get("micro_total", 0)
+    print(f"wrote {args.out} ({total} presets; micro families: {micro} presets)")
     return 0
 
 

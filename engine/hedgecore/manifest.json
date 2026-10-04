@@ -3197,5 +3197,330 @@
       },
       "preset_count": 108
     }
-  ]
+  ],
+  "micro_families": [
+    {
+      "id": "ladder_pair",
+      "division": "micro/ladder",
+      "ui_kind": "Gate",
+      "status": "lead",
+      "idea": "One nested ladder pair: when the rich rung's bid clears the cheap rung's ask by both taker fees, one tick and min_edge, sell the rich rung at its bid and buy the cheap rung at its ask, same size, held to the result",
+      "event_classes": [
+        "company_specific",
+        "geopolitics_energy",
+        "elections",
+        "macro_fed"
+      ],
+      "instruments": [
+        "pred_yes"
+      ],
+      "inputs": [
+        "bid_rich",
+        "bid_rich_qty",
+        "ask_cheap",
+        "ask_cheap_qty",
+        "fee_rate_rich",
+        "fee_rate_cheap",
+        "tick",
+        "ts_rich_ns",
+        "ts_cheap_ns",
+        "nested",
+        "event_held"
+      ],
+      "blocks": [
+        {
+          "kind": "gates",
+          "name": "NestedGuard",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "gates",
+          "name": "FreshnessGuard",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "execution",
+          "name": "FeeGate",
+          "ui_kind": "Execution"
+        },
+        {
+          "kind": "sizers",
+          "name": "SizeCap",
+          "ui_kind": "Impact"
+        },
+        {
+          "kind": "risk",
+          "name": "EventCap",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "risk",
+          "name": "LegRiskGuard",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "risk",
+          "name": "CapitalLock",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "gates",
+          "name": "Cooldown",
+          "ui_kind": "Gate"
+        }
+      ],
+      "ui_kinds": [
+        "Execution",
+        "Gate",
+        "Impact"
+      ],
+      "params": [
+        {
+          "name": "min_edge",
+          "min": 0.0,
+          "max": 100.0,
+          "default": 1.0,
+          "grid": [
+            1.0,
+            2.0,
+            3.0
+          ],
+          "tuned": true,
+          "help": "points left after both taker fees and one tick to act"
+        },
+        {
+          "name": "max_age_s",
+          "min": 0.0,
+          "max": 86400.0,
+          "default": 30.0,
+          "grid": [
+            10.0,
+            30.0,
+            60.0
+          ],
+          "tuned": true,
+          "help": "both quotes at most this many seconds old"
+        },
+        {
+          "name": "cap",
+          "min": 0.0,
+          "max": 10000000.0,
+          "default": 100.0,
+          "grid": [
+            100.0,
+            500.0
+          ],
+          "tuned": true,
+          "help": "contracts per entry: the smaller displayed size, up to this"
+        },
+        {
+          "name": "event_cap",
+          "min": 0.0,
+          "max": 1000000000.0,
+          "default": 1000.0,
+          "grid": [
+            1000.0
+          ],
+          "tuned": false,
+          "help": "contracts held across the event's pairs (0 = off)"
+        },
+        {
+          "name": "cooldown_s",
+          "min": 0.0,
+          "max": 10000000.0,
+          "default": 3600.0,
+          "grid": [
+            3600.0
+          ],
+          "tuned": false,
+          "help": "seconds between two entries on this pair (the replayed rule's gap)"
+        }
+      ],
+      "grid": {
+        "min_edge": [
+          1.0,
+          2.0,
+          3.0
+        ],
+        "max_age_s": [
+          10.0,
+          30.0,
+          60.0
+        ],
+        "cap": [
+          100.0,
+          500.0
+        ],
+        "event_cap": [
+          1000.0
+        ],
+        "cooldown_s": [
+          3600.0
+        ]
+      },
+      "preset_count": 18
+    },
+    {
+      "id": "touch_ticket_reference",
+      "division": "micro/ticket",
+      "ui_kind": "Reader",
+      "status": "unvalidated",
+      "idea": "Propose selling a 'will it hit' ticket at its bid when the bid is threshold points or more above the options-derived central touch reference; proposals only until the evidence gate validates the mechanism",
+      "event_classes": [
+        "company_specific"
+      ],
+      "instruments": [
+        "pred_yes"
+      ],
+      "inputs": [
+        "bid",
+        "bid_qty",
+        "ask",
+        "ref_lower",
+        "ref_central",
+        "validated",
+        "underlying_short",
+        "event_short"
+      ],
+      "blocks": [
+        {
+          "kind": "signals",
+          "name": "TouchReferenceGap",
+          "ui_kind": "Reader"
+        },
+        {
+          "kind": "gates",
+          "name": "Staleness",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "gates",
+          "name": "EvidenceGate",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "sizers",
+          "name": "SizeCap",
+          "ui_kind": "Impact"
+        },
+        {
+          "kind": "risk",
+          "name": "UnderlyingCap",
+          "ui_kind": "Gate"
+        },
+        {
+          "kind": "risk",
+          "name": "EventCap",
+          "ui_kind": "Gate"
+        }
+      ],
+      "ui_kinds": [
+        "Gate",
+        "Impact",
+        "Reader"
+      ],
+      "params": [
+        {
+          "name": "threshold",
+          "min": 0.0,
+          "max": 100.0,
+          "default": 5.0,
+          "grid": [
+            5.0
+          ],
+          "tuned": false,
+          "help": "points the bid must sit above the central reference"
+        },
+        {
+          "name": "ticket_cap",
+          "min": 0.0,
+          "max": 10000000.0,
+          "default": 100.0,
+          "grid": [
+            100.0
+          ],
+          "tuned": false,
+          "help": "contracts sold per ticket (0 = off)"
+        },
+        {
+          "name": "underlying_cap",
+          "min": 0.0,
+          "max": 1000000000.0,
+          "default": 300.0,
+          "grid": [
+            300.0
+          ],
+          "tuned": false,
+          "help": "contracts sold across the underlying's tickets (0 = off)"
+        },
+        {
+          "name": "event_cap",
+          "min": 0.0,
+          "max": 1000000000.0,
+          "default": 300.0,
+          "grid": [
+            300.0
+          ],
+          "tuned": false,
+          "help": "contracts sold across the event's tickets (0 = off)"
+        },
+        {
+          "name": "max_age_s",
+          "min": 0.0,
+          "max": 86400.0,
+          "default": 30.0,
+          "grid": [
+            30.0
+          ],
+          "tuned": false,
+          "help": "the ticket quote at most this many seconds old"
+        }
+      ],
+      "grid": {
+        "threshold": [
+          5.0
+        ],
+        "ticket_cap": [
+          100.0
+        ],
+        "underlying_cap": [
+          300.0
+        ],
+        "event_cap": [
+          300.0
+        ],
+        "max_age_s": [
+          30.0
+        ]
+      },
+      "preset_count": 1
+    }
+  ],
+  "micro_total": 19,
+  "micro_reasons": {
+    "520": {
+      "name": "not_nested",
+      "block": "gates"
+    },
+    "774": {
+      "name": "proposal",
+      "block": "sizers"
+    },
+    "1032": {
+      "name": "working",
+      "block": "execution"
+    },
+    "1287": {
+      "name": "event_capped",
+      "block": "risk"
+    },
+    "1288": {
+      "name": "leg_risk",
+      "block": "risk"
+    },
+    "1289": {
+      "name": "position_unknown",
+      "block": "risk"
+    }
+  }
 }
