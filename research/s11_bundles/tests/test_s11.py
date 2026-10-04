@@ -151,3 +151,10 @@ def test_cap_one_open_trade_per_bundle_and_daily_limit():
                        "t_entry": list(range(12)) + [100], "edge": [5, 4] + [1] * 10 + [1], "t_exit": [50, 60] + [None] * 10 + [None]})
     k = R.cap(df, "edge", "t_exit")
     assert len(k[k.date == "d"]) == 10 and (k[k.date == "d"].bundle == "x").sum() == 1 and (k.date == "e").sum() == 1
+
+
+def test_cap_without_bundle_limit_for_propagation():
+    import pandas as pd
+    from s11_bundles import run as R
+    df = pd.DataFrame({"date": ["d"] * 3 + ["e"] * 3, "bundle": ["x"] * 6, "t_entry": [1, 2, 3, 100, 101, 102], "abs_jump": [3, 4, 5, 3, 4, 5]})
+    assert len(R.cap(df, "abs_jump", per_bundle=False)) == 6

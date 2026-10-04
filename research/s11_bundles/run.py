@@ -215,15 +215,15 @@ def set_episodes(b: dict, M: dict, out_of: dict, h: float) -> tuple[list[dict], 
     return recs, exposure
 
 
-def cap(df: pd.DataFrame, size_col: str, hold_col: str | None = None) -> pd.DataFrame:
-    """At most MAX_NEW_TRADES_PER_DAY a day, largest first; one open trade per bundle."""
+def cap(df: pd.DataFrame, size_col: str, hold_col: str | None = None, per_bundle: bool = True) -> pd.DataFrame:
+    """At most MAX_NEW_TRADES_PER_DAY a day, largest first; one open trade per bundle (violations only: METHOD.md section 3)."""
     keep, open_until = [], {}
     for _, day in df.sort_values("t_entry").groupby("date", sort=True):
         n = 0
         for idx, r in day.sort_values(size_col, ascending=False).iterrows():
             if n >= cfg.MAX_NEW_TRADES_PER_DAY:
                 break
-            if open_until.get(r.bundle, -1) >= r.t_entry:
+            if per_bundle and open_until.get(r.bundle, -1) >= r.t_entry:
                 continue
             keep.append(idx)
             n += 1
@@ -302,7 +302,7 @@ def perf(tr: pd.DataFrame, pnl_col: str, cap_col: str, t_col: str = "t_entry") -
     pnl = pnl.reindex(idx, fill_value=0.0)
     r = pnl / K
     eq = K + pnl.cumsum()
-    dd = (eq.cummax() - eq) / eq.cummax()
+    dd = (eq.cummax() - eq) / K                     # in units of the capital base (equity can go below zero)
     sd = r.std(ddof=1)
     months = r.groupby(r.index.to_period("M")).sum()
     years = max(len(idx) / 365.0, 1 / 365)
@@ -407,7 +407,7 @@ def main() -> int:
         if len(p):
             p = p.assign(abs_jump=p.jump_points.abs(), cost_mult=c)
             for variant, sub in (("P0", p), ("P1", p[p.laggard.astype(bool)])):
-                sub = cap(sub.assign(t_entry=sub.t_entry.astype(int)), "abs_jump")
+                sub = cap(sub.assign(t_entry=sub.t_entry.astype(int)), "abs_jump", per_bundle=False)
                 for _, r in sub.iterrows():
                     e = r[f"entry_{c:g}x"]
                     trades.append({"study": variant, "kind": r.kind, "event": r.event, "bundle": r.bundle, "cost_mult": c, "t_entry": int(r.t_entry),

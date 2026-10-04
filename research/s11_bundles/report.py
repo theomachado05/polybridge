@@ -124,7 +124,7 @@ def main() -> int:
         pf = perf(t.assign(_pnl=t[col] * cfg.CONTRACTS, _cap=t.capital * cfg.CONTRACTS), "_pnl", "_cap")
         eq = pf["equity"]
         ax.plot(eq.index, eq / eq.iloc[0], label=f"{lab} (base ${pf['capital_base']:,.0f})")
-        ax2.plot(eq.index, -(eq.cummax() - eq) / eq.cummax(), label=lab)
+        ax2.plot(eq.index, -(eq.cummax() - eq) / pf['capital_base'], label=lab)
         t2 = t[t.prints == "verified"]
         if len(t2):
             pf2 = perf(t2.assign(_pnl=t2[col] * cfg.CONTRACTS, _cap=t2.capital * cfg.CONTRACTS), "_pnl", "_cap")
@@ -135,7 +135,7 @@ def main() -> int:
         a.grid(alpha=0.3)
     ax.set_title("S11: equity, 1× costs, 100 contracts a leg (dotted line: out-of-sample starts)")
     ax.set_ylabel("equity / capital base")
-    ax2.set_title("Drawdown")
+    ax2.set_title("Drawdown, as a share of the capital base")
     fig.tight_layout()
     fig2.tight_layout()
     fig.savefig(RESULTS / "equity_curve.png", dpi=120)
