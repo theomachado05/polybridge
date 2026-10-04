@@ -45,6 +45,41 @@ def outcome_text_check(M: dict, mid: str) -> dict:
             "outcomeIndex_disagrees_with_token": idx_wrong}
 
 
+UP_TEXT = r'"high" price|or higher|or above|at or above'
+DOWN_TEXT = r'"low" price|or lower|or below|at or below'
+
+
+def text_direction(description: str) -> int:
+    """+1 when the first 600 characters of a rung's description say YES needs a high ("High" price, or higher, or above),
+    -1 when they say YES needs a low ("Low" price, or lower, or below), 0 when they say neither or both."""
+    import re
+    d = (description or "").lower()[:600]
+    up, down = bool(re.search(UP_TEXT, d)), bool(re.search(DOWN_TEXT, d))
+    return 1 if up and not down else (-1 if down and not up else 0)
+
+
+def direction() -> int:
+    """METHOD.md amendment 2, POST HOC (added after this study's own results were seen). S11 reads "Will Bitcoin reach
+    $65,000 in November?" as an up level because of the word "reach". In the November 2024 events that wording was also
+    used for levels below the price: the description says YES needs a "Low" price of $65,000 or lower. A strike pair is
+    marked `direction_ok = False` when either rung's description says the opposite of the ladder's direction. Writes
+    direction_checks.csv from the cached texts; no request."""
+    L = json.loads((rn.HERE / "ladders.json").read_text())
+    C = pd.read_csv(rn.RESULTS / "pair_checks.csv", dtype={"rich": str, "cheap": str})
+    g = ne.texts(sorted(set(C.rich) | set(C.cheap), key=int))
+    rows = []
+    for r in C.itertuples():
+        b = L["ladders"][int(r.ladder)]
+        o = int(b.get("orient", 0)) if b["kind"] == "strike" else 0
+        da, db = text_direction((g.get(r.rich) or {}).get("description")), text_direction((g.get(r.cheap) or {}).get("description"))
+        rows.append({"rich": r.rich, "cheap": r.cheap, "ladder_direction": o, "text_direction_rich": da, "text_direction_cheap": db,
+                     "direction_ok": not (b["kind"] == "strike" and (da == -o or db == -o))})
+    D = pd.DataFrame(rows)
+    D.to_csv(rn.RESULTS / "direction_checks.csv", index=False)
+    print(f"{int((~D.direction_ok).sum())} of {len(D)} traded pairs have a description that contradicts the ladder's direction")
+    return 0
+
+
 def main() -> int:
     L = json.loads((rn.HERE / "ladders.json").read_text())
     st = json.loads((rn.CACHE / "pull_state.json").read_text())
@@ -83,4 +118,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(direction() if "direction" in sys.argv[1:] else main())

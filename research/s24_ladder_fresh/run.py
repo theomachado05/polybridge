@@ -176,6 +176,10 @@ def settle() -> int:
     if pc.exists():                      # amendment 1: the secondary analysis' verdict on each pair (text only), carried along
         C = pd.read_csv(pc, dtype={"rich": str, "cheap": str})[["rich", "cheap", "year_ok", "corrected_ok", "corrected_reason", "partner_used"]]
         T = T.merge(C, on=["rich", "cheap"], how="left")
+    dc = RESULTS / "direction_checks.csv"
+    if dc.exists():                      # amendment 2 (post hoc): does a rung's description contradict the ladder's direction?
+        D = pd.read_csv(dc, dtype={"rich": str, "cheap": str})[["rich", "cheap", "direction_ok"]]
+        T = T.merge(D, on=["rich", "cheap"], how="left")
     T.to_csv(RESULTS / "trades.csv", index=False)
     p = T[T.variant == "W600"]
     print(f"{len(T)} rows; primary {len(p)} trades on {p.date.nunique()} dates; broken {int(p.broken.sum())}; "

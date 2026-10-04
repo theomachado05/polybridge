@@ -262,3 +262,23 @@ sizes and statistics. Each row is reported against the same four pass lines, and
 they are fixed before any result or P&L of this study. But they were fixed after the 02:04 detection pass on part of
 the pull, and after the partner's results on an overlapping universe were known. The summary says so wherever the rows
 appear.
+
+**2. Sun 2026-10-04 02:46 New York time: POST HOC, added after this study's results were seen. A direction check.**
+
+`run settle` (02:42:40) showed 86 of 375 registered trades resolving with the ladder's order violated. The 11 pairs
+behind them were read with their descriptions. 8 are the year fault that amendment 1 already covers. 3 are a second
+fault, not in the partner's study: in the November 2024 events "What price will Bitcoin / Ethereum / Solana hit in
+November?", the question "Will Bitcoin reach $65,000 in November?" is a level **below** the price. Its description
+says YES needs a "Low" price of $65,000 or lower. S11's rule reads "reach" as an up word, so it called the higher
+level the rich rung. For two down levels the order is the reverse; for an up level against a down level there is no
+order at all. The partner's nesting rule catches the second kind (the descriptions differ) and not the first (the
+descriptions are identical once the level is masked).
+
+Check added (`secondary.text_direction`, `direction_checks.csv`): the first 600 characters of each rung's description
+are read for `"high" price | or higher | or above | at or above` (up) and `"low" price | or lower | or below | at or
+below` (down). A strike pair fails when either rung's description says the opposite of the ladder's direction. A
+description that says neither, or both, does not fail.
+
+This check was chosen after seeing which trades lost. Every row that uses it is labelled post hoc and is not
+evidence of the same standing as the registered test or the amendment 1 rows. The files committed in `e10f593` before
+any P&L (`oos_cut.json`, `matches.csv`, `coverage.csv`, `pair_checks.csv`) are unchanged.

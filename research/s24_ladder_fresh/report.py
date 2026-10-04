@@ -74,7 +74,8 @@ def row(t: pd.DataFrame, tag: str) -> dict:
             "median_seconds_apart": float(t.seconds_apart.median())}
 
 
-SECONDARY = ("year check", "corrected rule", "corrected rule, unseen sample", "registered rule, unseen sample")
+SECONDARY = ("year check", "corrected rule", "corrected rule, unseen sample", "registered rule, unseen sample",
+             "post hoc: corrected rule + direction check, unseen sample")
 
 
 def scopes(T: pd.DataFrame) -> dict[str, pd.DataFrame]:
@@ -85,6 +86,13 @@ def scopes(T: pd.DataFrame) -> dict[str, pd.DataFrame]:
         yo, co, pu = T.year_ok.astype(bool), T.corrected_ok.astype(bool), T.partner_used.astype(bool)
         out.update({"year check": T[yo], "corrected rule": T[co], "corrected rule, unseen sample": T[co & ~pu],
                     "registered rule, unseen sample": T[~pu]})
+        if "direction_ok" in T:          # amendment 2: post hoc, found in this study's own losing trades
+            do = T.direction_ok.astype(bool)
+            out["post hoc: corrected rule + direction check, unseen sample"] = T[co & ~pu & do]
+            for s in ("a", "b"):
+                out[f"post hoc: corrected rule + direction check, unseen sample, set {s}"] = T[co & ~pu & do & (T.set == s)]
+            for k in ("date", "strike"):
+                out[f"post hoc: corrected rule + direction check, unseen sample, {k} ladders"] = T[co & ~pu & do & (T.kind == k)]
         for s in ("a", "b"):
             out[f"corrected rule, unseen sample, set {s}"] = T[co & ~pu & (T.set == s)]
         for k in ("date", "strike"):
@@ -135,8 +143,12 @@ def curves(T: pd.DataFrame, cut: dict) -> None:
     P = T[T.variant == "W600"]
     fig, ax = plt.subplots(figsize=(9.5, 4.6))
     fig2, ax2 = plt.subplots(figsize=(9.5, 3.4))
-    for lab, t, tag, style in (("pooled, 1× costs", P, "1x", "-"), ("pooled, 2× costs", P, "2x", "--"),
-                               ("set (a), 1×", P[P.set == "a"], "1x", ":"), ("set (b), 1×", P[P.set == "b"], "1x", ":")):
+    rows = [("registered, pooled, 1× costs", P, "1x", "-"), ("registered, pooled, 2× costs", P, "2x", "--"),
+            ("registered, set (a), 1×", P[P.set == "a"], "1x", ":"), ("registered, set (b), 1×", P[P.set == "b"], "1x", ":")]
+    if "direction_ok" in P and "corrected_ok" in P:
+        Q = P[P.corrected_ok.astype(bool) & ~P.partner_used.astype(bool) & P.direction_ok.astype(bool)]
+        rows.append(("real ladders only (post hoc), 1×", Q, "1x", "-."))
+    for lab, t, tag, style in rows:
         if not len(t):
             continue
         pf = en.perf(t.assign(_usd=t[f"usd_capped_{tag}"], _cap=t[f"capital_{tag}"] * t["size_capped"]), "_usd", "_cap", "result", LAST_DAY)
@@ -159,6 +171,15 @@ def curves(T: pd.DataFrame, cut: dict) -> None:
     fig.savefig(RESULTS / "equity_curve.png", dpi=120)
     fig2.savefig(RESULTS / "drawdown.png", dpi=120)
     plt.close("all")
+
+
+def commit_time(h: str) -> str:
+    try:
+        out = subprocess.run(["git", "log", "-1", "--format=%cd", "--date=format:%H:%M:%S", h], cwd=HERE.parent.parent, capture_output=True, text=True,
+                             timeout=20).stdout.strip()
+        return out or "time not readable"
+    except Exception:  # noqa: BLE001
+        return "time not readable"
 
 
 def git_log() -> list[str]:
@@ -250,6 +271,25 @@ def main() -> int:
             cap.append(f"| ({s}) | {int(r.trades)} | {usd(r.usd_capped)} | {usd(r.usd_uncapped)} | {usd(r.capital_base_usd)} | {r.median_days_locked:.0f} |")
         else:
             cap.append(f"| ({s}) | 0 | | | | |")
+    ph = "post hoc: corrected rule + direction check, unseen sample"
+    if ((M.scope == ph) & (M.variant == "W600")).any():
+        c1, c2 = get(M, scope=ph), get(M, scope=ph, costs="2x")
+        Q = P[P.corrected_ok.astype(bool) & ~P.partner_used.astype(bool) & P.direction_ok.astype(bool)]
+        cap += ["", "## Real ladders only (post hoc: corrected rule, direction check, unseen markets)", "",
+                "The registered trades include wrongly built pairs, so their dollars are not a capacity. This table is the cleaned sample. It is post hoc.", "",
+                "| | 100-contract cap | Full printed size |", "|---|---|---|",
+                f"| Trades | {int(c1.trades)} | {int(c1.trades)} |",
+                f"| Net P&L, 1× costs | {usd(c1.usd_capped)} | {usd(c1.usd_uncapped)} |",
+                f"| Net P&L, 2× costs | {usd(c2.usd_capped)} | {usd(c2.usd_uncapped)} |",
+                f"| Of which locked in at entry, 1× | {usd(c1.entry_edge_usd_capped)} | {usd(c1.entry_edge_usd_uncapped)} |",
+                f"| Most capital locked at once | {usd(c1.capital_base_usd)} | |",
+                f"| Median days locked | {c1.median_days_locked:.0f} | |",
+                f"| Net P&L per year on the capital actually locked | {pct(c1.return_on_locked_capital_per_year)} | |",
+                f"| Median trade, contracts | {Q.size_uncapped.median():,.0f} | |",
+                f"| Largest trade, contracts | {Q.size_uncapped.max():,.0f} | |", "",
+                f"- The full-size figure is one trade: the largest carries {usd(Q.usd_uncapped_1x.max())}. Its two prints were "
+                f"{int(Q.loc[Q.usd_uncapped_1x.idxmax(), 'seconds_apart'])} seconds apart.",
+                f"- {int(c1.paid_one_dollar)} trades were paid $1 by the result; the rest average {f((Q.loc[~((Q.outcome_cheap == 1) & (Q.outcome_rich == 0)), 'pnl_1x']).mean() * 100)} points."]
     (RESULTS / "capacity.md").write_text("\n".join(cap) + "\n")
 
     # ---- RUN_LOG.md
@@ -268,7 +308,7 @@ def main() -> int:
             "- Prints: `data-api.polymarket.com/trades`, `market=<conditionId>`, `limit=10000`, `offset=0` and `10000` (S11's call).",
             "- No one-minute price history. No Kalshi call. No key used or printed.",
             "", "## Things that went wrong or limit the result", ""]
-    log += [f"- {x}" for x in notes.WENT_WRONG]
+    log += [f"- {x}" for x in notes.WENT_WRONG + notes.went_wrong(locals())]
     (RESULTS / "RUN_LOG.md").write_text("\n".join(log) + "\n")
 
     # ---- SUMMARY.md
@@ -284,6 +324,11 @@ def main() -> int:
          f"(commit `{notes.PREREG_COMMIT}`). The out-of-sample cut dates were committed before any P&L was computed (`{notes.CUT_COMMIT}`, "
          "[`oos_cut.json`](oos_cut.json)). Files: [`metrics.csv`](metrics.csv), [`trades.csv`](trades.csv), [`coverage.csv`](coverage.csv), "
          "[`capacity.md`](capacity.md), [`RUN_LOG.md`](RUN_LOG.md). This file is written by `report.py` from those files.", "",
+         f"Two amendments. Amendment 1 (`{notes.AMENDMENT_COMMIT}`, before any result or P&L, after a detection smoke test on part of the pull): the "
+         "registered test stays; the partner study's corrected ladder rule is a secondary analysis. Amendment 2 (post hoc, after the results): a direction "
+         f"check. Order of events by commit time (New York): pre-registration `{notes.PREREG_COMMIT}` {commit_time(notes.PREREG_COMMIT)}; detection smoke "
+         f"test on part of the pull 02:04; the partner's finding known here 02:30; amendment 1 `{notes.AMENDMENT_COMMIT}` {commit_time(notes.AMENDMENT_COMMIT)}; "
+         f"cut dates and pair verdicts `{notes.CUT_COMMIT}` {commit_time(notes.CUT_COMMIT)}; first P&L 02:42:40.", "",
          "## Answer", ""]
     S += notes.answer(locals())
     S += ["", f"**Verdict on the pre-registered rule: {verdict}.**" + ("" if passed else " Lines that fail: " + "; ".join(failed) + "."), "",
@@ -315,8 +360,11 @@ def main() -> int:
         b = built[s]
         S.append(f"| ({s}) | {b['ladders']:,} | {b['pairs']:,} | {b['pulled_ladders']:,} | {b['pulled_date']} / {b['pulled_strike']} | {b['pulled_rungs']:,} | "
                  f"{b['pulled_pairs']:,} | {b['pulled_events']:,} | {b['left_ladders']:,} | {b['left_pairs']:,} | {b['requests']:,} | {usd(b['smallest_event_pulled'])} |")
-    S += ["", f"Ladders were pulled in the order fixed before the pull (largest event volume first, the two sets in turns). The pull stopped by: "
-          f"{st.get('stopped_by')}. Requests in all: {rq['n']} of {cfg.MAX_REQUESTS}.", "",
+    S += ["", f"Ladders were pulled in the order fixed before the pull (largest event volume first, the two sets in turns). Set (a) "
+          + ("was pulled whole" if built["a"]["left_ladders"] == 0 else f"left {built['a']['left_ladders']} ladders out")
+          + f"; set (b) stopped at the first ladder that might not fit in the {cfg.MAX_PRINT_REQUESTS:,} print requests "
+          f"({st['used']['a'] + st['used']['b']:,} used). Requests in all: {rq['n']:,} of {cfg.MAX_REQUESTS:,}. The recorder's `fetch failed` count did not move "
+          f"({notes.RECORDER_BEFORE} before, {notes.RECORDER_AFTER} after), so the pull never had to pause.", "",
           "**Pairs that could not be fully checked.** The API serves only a market's latest 20,000 prints.", "",
           "| Set | Pairs pulled | Every print checked | Latest 20,000 prints only (earlier life unseen) | No prints served | Pairs with at least one trade |",
           "|---|---|---|---|---|---|"]

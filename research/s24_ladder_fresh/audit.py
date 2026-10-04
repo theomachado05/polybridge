@@ -98,10 +98,11 @@ def main() -> int:
            "by_event_top": P.groupby("event_title").agg(trades=("pnl_1x", "size"), points=("pnl_1x", lambda x: float(x.sum() * 100)),
                                                          usd_cap=("usd_capped_1x", "sum")).sort_values("trades", ascending=False).head(15).reset_index().to_dict("records"),
            "by_month": P.assign(month=P.date.str[:7]).groupby("month").size().to_dict()}
-    def cut_by(col, edges, labels):
+    def cut_by(col, edges, labels, D=None):
+        D = P if D is None else D
         res = {}
         for (lo, hi), lab in zip(edges, labels):
-            t = P[(P[col] > lo) & (P[col] <= hi)]
+            t = D[(D[col] > lo) & (D[col] <= hi)]
             m, a, b, n, nd = rn.en.boot(t.assign(_p=t.pnl_1x * 100), "_p")
             m2 = float(t.pnl_2x.mean() * 100) if len(t) else None
             res[lab] = {"trades": n, "dates": nd, "points_1x": m if n else None, "lo": a if n else None, "hi": b if n else None, "points_2x": m2,
@@ -119,6 +120,34 @@ def main() -> int:
                                                             "points_2x": float(t.pnl_2x.mean() * 100) if n else None,
                                                             "entry_edge_points": float(t.edge_1x.mean() * 100) if n else None,
                                                             "usd_capped_1x": float(t.usd_capped_1x.sum()), "usd_uncapped_1x": float(t.usd_uncapped_1x.sum())}
+    if "direction_ok" in P and "corrected_ok" in P:        # the cleaned sample of amendments 1 and 2 (real ladders, unseen markets)
+        Q = P[P.corrected_ok.astype(bool) & ~P.partner_used.astype(bool) & P.direction_ok.astype(bool)]
+        out["clean"] = {"trades": int(len(Q)),
+                        "pnl_by_seconds_apart": cut_by("seconds_apart", [(-1, 0), (0, 10), (10, 60), (60, 120), (120, 600)],
+                                                       ["same second", "1 to 10 s", "11 to 60 s", "61 to 120 s", "121 to 600 s"], Q),
+                        "pnl_by_gap": cut_by("gap_points", [(0, 1.0001), (1.0001, 2.0001), (2.0001, 5.0001), (5.0001, 20.0001), (20.0001, 1000)],
+                                             ["1 point or less", "over 1 to 2", "over 2 to 5", "over 5 to 20", "over 20"], Q),
+                        "pnl_by_confirmation": {}, "event_bootstrap": {},
+                        "paid_one_dollar": int(((Q.outcome_cheap == 1) & (Q.outcome_rich == 0)).sum()),
+                        "mean_without_one_dollar_payouts": float(Q.loc[~((Q.outcome_cheap == 1) & (Q.outcome_rich == 0)), "pnl_1x"].mean() * 100),
+                        "mean_2x_without_one_dollar_payouts": float(Q.loc[~((Q.outcome_cheap == 1) & (Q.outcome_rich == 0)), "pnl_2x"].mean() * 100),
+                        "top5_share_of_uncapped_usd": float(Q.usd_uncapped_1x.sort_values(ascending=False).head(5).sum() / Q.usd_uncapped_1x.sum()),
+                        "largest_trade_uncapped_usd": float(Q.usd_uncapped_1x.max()), "median_size": float(Q.size_uncapped.median()),
+                        "under_5_contracts": int((Q.size_uncapped < 5).sum()),
+                        "by_month": Q.assign(month=Q.date.str[:7]).groupby("month").size().to_dict(),
+                        "by_event_top": Q.groupby("event_title").agg(trades=("pnl_1x", "size"), points=("pnl_1x", lambda x: float(x.sum() * 100)),
+                                                                     usd_cap=("usd_capped_1x", "sum")).sort_values("trades", ascending=False).head(10).reset_index().to_dict("records")}
+        for lab in ("same second", "confirmed after", "not confirmed", "moved away"):
+            t = Q[Q.confirmation == lab]
+            m, a, b, n, nd = rn.en.boot(t.assign(_p=t.pnl_1x * 100), "_p")
+            out["clean"]["pnl_by_confirmation"][lab] = {"trades": n, "dates": nd, "points_1x": m if n else None, "lo": a if n else None, "hi": b if n else None,
+                                                        "points_2x": float(t.pnl_2x.mean() * 100) if n else None,
+                                                        "entry_edge_points": float(t.edge_1x.mean() * 100) if n else None,
+                                                        "usd_capped_1x": float(t.usd_capped_1x.sum()), "usd_uncapped_1x": float(t.usd_uncapped_1x.sum())}
+        for seg in ("ALL", "IS", "OOS"):
+            t = Q if seg == "ALL" else Q[Q.segment == seg]
+            m, a, b, n, nd = rn.en.boot(t.assign(_p=t.pnl_1x * 100, date=t.event), "_p")
+            out["clean"]["event_bootstrap"][seg] = {"trades": n, "events": nd, "points_1x": m if n else None, "lo": a if n else None, "hi": b if n else None}
     out["event_bootstrap"] = {}
     for seg in ("ALL", "IS", "OOS"):
         t = P if seg == "ALL" else P[P.segment == seg]

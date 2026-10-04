@@ -1,0 +1,691 @@
+{
+ "side_check": {
+  "pairs_of_prints": 28567,
+  "mean_points": 1.06441889593377,
+  "median_points": 0.20000000000000018,
+  "share_positive": 0.7156859313193545,
+  "share_negative": 0.16816606574018972
+ },
+ "recheck": {
+  "trades": 375,
+  "failed": 0,
+  "cases": []
+ },
+ "gap_points": {
+  "1 or less": 80,
+  "over 1 to 2": 49,
+  "over 2 to 5": 48,
+  "over 5 to 20": 65,
+  "over 20": 133,
+  "median": 6.1,
+  "mean": 19.116053866666665
+ },
+ "seconds_apart": {
+  "same second": 51,
+  "1 to 10": 32,
+  "11 to 60": 45,
+  "61 to 120": 36,
+  "121 to 600": 211,
+  "median": 162.0
+ },
+ "result": {
+  "both NO": 136,
+  "both YES": 133,
+  "rich NO, cheap YES (pays $1)": 13,
+  "rich YES, cheap NO (order violated)": 86,
+  "open": 7
+ },
+ "pnl_points": {
+  "entry_edge_mean": 16.904181890771305,
+  "result_part_mean": -19.466666666666665,
+  "total_mean": -2.5624847758953595,
+  "mean_without_one_dollar_payouts": 7.052311361627682,
+  "negative_entry_edge": 133,
+  "zero_entry_edge": 10,
+  "positive_entry_edge": 235
+ },
+ "print_after_close": 0,
+ "by_event_top": [
+  {
+   "event_title": "Will Trump lower tariffs on China by...?",
+   "trades": 36,
+   "points": -286.6908874900001,
+   "usd_cap": -106.56998297954311
+  },
+  {
+   "event_title": "What price will Bitcoin hit in November?",
+   "trades": 26,
+   "points": -40.46466400000005,
+   "usd_cap": -24.665456707923997
+  },
+  {
+   "event_title": "Fed rate cut by...?",
+   "trades": 22,
+   "points": 35.94366436999989,
+   "usd_cap": 1.012945378534162
+  },
+  {
+   "event_title": "What price will Ethereum hit in November?",
+   "trades": 19,
+   "points": -1045.4851406,
+   "usd_cap": -327.9635767062808
+  },
+  {
+   "event_title": "Will Russia capture Pokrovsk by...?",
+   "trades": 14,
+   "points": -575.24483142,
+   "usd_cap": -286.9998317579744
+  },
+  {
+   "event_title": "Will Russia capture Siversk by...?",
+   "trades": 12,
+   "points": -659.7649296599999,
+   "usd_cap": -177.19974366462273
+  },
+  {
+   "event_title": "What price will Solana hit in November?",
+   "trades": 12,
+   "points": -1.161273019999992,
+   "usd_cap": -6.943617239040339
+  },
+  {
+   "event_title": "When will the Palisades wildfire be fully contained?",
+   "trades": 12,
+   "points": -569.7718531599999,
+   "usd_cap": -146.11590432093112
+  },
+  {
+   "event_title": "GPT-5 released by\u2026?",
+   "trades": 10,
+   "points": -193.76538380999997,
+   "usd_cap": -24.140689635744483
+  },
+  {
+   "event_title": "Will Trump lower tariffs on Canada by...?",
+   "trades": 10,
+   "points": 433.9692718499999,
+   "usd_cap": 152.1268043586892
+  },
+  {
+   "event_title": "Military action against Iran ends by...?",
+   "trades": 9,
+   "points": 95.82519289000004,
+   "usd_cap": 10.123854859319358
+  },
+  {
+   "event_title": "Israeli parliament dissolved by...?",
+   "trades": 8,
+   "points": 139.76346352,
+   "usd_cap": 24.30543917192006
+  },
+  {
+   "event_title": "Israel x Lebanon diplomatic meeting by...?",
+   "trades": 7,
+   "points": -4.302202199999989,
+   "usd_cap": -0.5287444810896751
+  },
+  {
+   "event_title": "Reconciliation bill passed by...?",
+   "trades": 7,
+   "points": 11.08698172,
+   "usd_cap": 3.3049154742159943
+  },
+  {
+   "event_title": "Bitcoin above ___ on August 27?",
+   "trades": 6,
+   "points": 100.40000000000002,
+   "usd_cap": 99.6726
+  }
+ ],
+ "by_month": {
+  "2024-11": 57,
+  "2025-01": 14,
+  "2025-02": 7,
+  "2025-03": 14,
+  "2025-04": 28,
+  "2025-05": 19,
+  "2025-06": 4,
+  "2025-07": 16,
+  "2025-08": 66,
+  "2025-09": 41,
+  "2025-10": 7,
+  "2025-11": 1,
+  "2025-12": 9,
+  "2026-01": 7,
+  "2026-02": 8,
+  "2026-03": 11,
+  "2026-04": 13,
+  "2026-05": 5,
+  "2026-06": 20,
+  "2026-07": 13,
+  "2026-08": 1,
+  "2026-09": 14
+ },
+ "pnl_by_seconds_apart": {
+  "same second": {
+   "trades": 51,
+   "dates": 41,
+   "points_1x": 3.8385471217258496,
+   "lo": 0.30036854624804576,
+   "hi": 8.941040304799474,
+   "points_2x": 0.6998630617884087,
+   "entry_edge_points": 1.8777628080003592,
+   "usd_capped_1x": 78.51256460895755
+  },
+  "1 to 10 s": {
+   "trades": 32,
+   "dates": 31,
+   "points_1x": -6.532708076097882,
+   "lo": -18.62970713923356,
+   "hi": 4.617289674320674,
+   "points_2x": -8.771935080224512,
+   "entry_edge_points": 15.342291923902119,
+   "usd_capped_1x": -93.06981244125694
+  },
+  "11 to 60 s": {
+   "trades": 45,
+   "dates": 36,
+   "points_1x": -0.42815914350900514,
+   "lo": -9.126637439339609,
+   "hi": 9.146702384582436,
+   "points_2x": -2.433553450391521,
+   "entry_edge_points": 17.349618634268772,
+   "usd_capped_1x": -57.56202344749299
+  },
+  "61 to 120 s": {
+   "trades": 36,
+   "dates": 32,
+   "points_1x": 3.143672736666666,
+   "lo": -9.052522871493053,
+   "hi": 15.079710137027588,
+   "points_2x": 1.0992060699999986,
+   "entry_edge_points": 25.36589495888889,
+   "usd_capped_1x": -39.481625449324966
+  },
+  "121 to 600 s": {
+   "trades": 211,
+   "dates": 147,
+   "points_1x": -4.9362847999798145,
+   "lo": -11.210113121116073,
+   "hi": 0.6611462805807885,
+   "points_2x": -6.993762496276516,
+   "entry_edge_points": 19.23433131376426,
+   "usd_capped_1x": -275.63513531601774
+  }
+ },
+ "pnl_by_confirmation": {
+  "same second | ALL": {
+   "trades": 51,
+   "dates": 41,
+   "points_1x": 3.8385471217258496,
+   "lo": 0.30036854624804576,
+   "hi": 8.941040304799474,
+   "points_2x": 0.6998630617884087,
+   "entry_edge_points": 1.8777628080003592,
+   "usd_capped_1x": 78.51256460895755,
+   "usd_uncapped_1x": 74.04207253805944
+  },
+  "same second | IS": {
+   "trades": 40,
+   "dates": 32,
+   "points_1x": 4.198906903386996,
+   "lo": -0.22624635878749508,
+   "hi": 10.587026989282613,
+   "points_2x": 1.0376774183087991,
+   "entry_edge_points": 1.6989069033869968,
+   "usd_capped_1x": 75.3847724330499,
+   "usd_uncapped_1x": 70.9142803621518
+  },
+  "same second | OOS": {
+   "trades": 11,
+   "dates": 9,
+   "points_1x": 2.528147915685313,
+   "lo": -0.21101175862924457,
+   "hi": 6.692962593739849,
+   "points_2x": -0.5285527801039208,
+   "entry_edge_points": 2.528147915685312,
+   "usd_capped_1x": 3.12779217590762,
+   "usd_uncapped_1x": 3.12779217590762
+  },
+  "confirmed after | ALL": {
+   "trades": 67,
+   "dates": 50,
+   "points_1x": -9.032037691492537,
+   "lo": -21.186830741925,
+   "hi": 3.477334849366671,
+   "points_2x": -11.07041607955224,
+   "entry_edge_points": 22.311245890597018,
+   "usd_capped_1x": -311.76821145449253,
+   "usd_uncapped_1x": -1097.160776136956
+  },
+  "confirmed after | IS": {
+   "trades": 60,
+   "dates": 43,
+   "points_1x": -9.806169436333334,
+   "lo": -23.56042964461004,
+   "hi": 4.327776925770086,
+   "points_2x": -11.825497769666667,
+   "entry_edge_points": 23.527163897,
+   "usd_capped_1x": -311.0237574880925,
+   "usd_uncapped_1x": -1092.2121670105562
+  },
+  "confirmed after | OOS": {
+   "trades": 7,
+   "dates": 7,
+   "points_1x": -2.396622735714287,
+   "lo": -19.941295981357147,
+   "hi": 11.318573367142855,
+   "points_2x": -4.598287307142861,
+   "entry_edge_points": 11.88909155,
+   "usd_capped_1x": -0.7444539664000557,
+   "usd_uncapped_1x": -4.9486091264000684
+  },
+  "not confirmed | ALL": {
+   "trades": 197,
+   "dates": 152,
+   "points_1x": -5.999979713790927,
+   "lo": -10.482847621552338,
+   "hi": -1.2645750460223637,
+   "points_2x": -8.059926747681976,
+   "entry_edge_points": 23.949258864889273,
+   "usd_capped_1x": -340.36963456603013,
+   "usd_uncapped_1x": -463.7316030854381
+  },
+  "not confirmed | IS": {
+   "trades": 160,
+   "dates": 122,
+   "points_1x": -7.30718618810508,
+   "lo": -12.62133456448719,
+   "hi": -2.16353317002495,
+   "points_2x": -9.373847223583432,
+   "entry_edge_points": 23.94281381189492,
+   "usd_capped_1x": -278.00445394534756,
+   "usd_uncapped_1x": -326.83862281559016
+  },
+  "not confirmed | OOS": {
+   "trades": 37,
+   "dates": 30,
+   "points_1x": -0.3471949600000015,
+   "lo": -9.859646422578127,
+   "hi": 8.175735346121447,
+   "points_2x": -2.378108473513516,
+   "entry_edge_points": 23.97712936432432,
+   "usd_capped_1x": -62.3651806206826,
+   "usd_uncapped_1x": -136.8929802698481
+  },
+  "moved away | ALL": {
+   "trades": 60,
+   "dates": 35,
+   "points_1x": 10.507413912967248,
+   "lo": 2.855764590825672,
+   "hi": 18.481210542052054,
+   "points_2x": 8.38665250990336,
+   "entry_edge_points": 0.5074139129672457,
+   "usd_capped_1x": 186.3892493664301,
+   "usd_uncapped_1x": 3329.6111605142514
+  },
+  "moved away | IS": {
+   "trades": 45,
+   "dates": 23,
+   "points_1x": 5.108444371624993,
+   "lo": -0.17460001962345192,
+   "hi": 9.705373898750238,
+   "points_2x": 3.0406565741427904,
+   "entry_edge_points": 0.6639999271805485,
+   "usd_capped_1x": 109.07682166700639,
+   "usd_uncapped_1x": 3252.298732814828
+  },
+  "moved away | OOS": {
+   "trades": 15,
+   "dates": 12,
+   "points_1x": 26.704322536994006,
+   "lo": 0.5502540992586492,
+   "hi": 49.736600380292295,
+   "points_2x": 24.42464031718508,
+   "entry_edge_points": 0.03765587032733759,
+   "usd_capped_1x": 77.31242769942378,
+   "usd_uncapped_1x": 77.31242769942378
+  }
+ },
+ "clean": {
+  "trades": 160,
+  "pnl_by_seconds_apart": {
+   "same second": {
+    "trades": 40,
+    "dates": 34,
+    "points_1x": 3.8109529452755218,
+    "lo": -0.34909788319102475,
+    "hi": 10.311171332697569,
+    "points_2x": 0.8223672952371478,
+    "entry_edge_points": 1.3109529452755218,
+    "usd_capped_1x": 66.57817160232005
+   },
+   "1 to 10 s": {
+    "trades": 13,
+    "dates": 12,
+    "points_1x": -0.16485965577939776,
+    "lo": -1.1033590139916616,
+    "hi": 0.7830180947779015,
+    "points_2x": -2.706949204398795,
+    "entry_edge_points": -0.16485965577939768,
+    "usd_capped_1x": -4.103375811840598
+   },
+   "11 to 60 s": {
+    "trades": 19,
+    "dates": 13,
+    "points_1x": 5.148867568004993,
+    "lo": -0.6462918976127536,
+    "hi": 18.387544834600074,
+    "points_2x": 3.136091578020089,
+    "entry_edge_points": -0.11429032673184836,
+    "usd_capped_1x": 10.62947904554747
+   },
+   "61 to 120 s": {
+    "trades": 11,
+    "dates": 10,
+    "points_1x": 11.401892255454548,
+    "lo": 0.33222444612499846,
+    "hi": 33.68249715504998,
+    "points_2x": 9.256364982727273,
+    "entry_edge_points": 2.3109831645454526,
+    "usd_capped_1x": 23.843167632000004
+   },
+   "121 to 600 s": {
+    "trades": 77,
+    "dates": 48,
+    "points_1x": 12.05658495696026,
+    "lo": 4.441668262988334,
+    "hi": 17.910974482425875,
+    "points_2x": 9.950684601452206,
+    "entry_edge_points": 0.3682732686485704,
+    "usd_capped_1x": 327.7754278133857
+   }
+  },
+  "pnl_by_gap": {
+   "1 point or less": {
+    "trades": 59,
+    "dates": 39,
+    "points_1x": 3.6936201878119443,
+    "lo": -1.4435847030340696,
+    "hi": 8.480835349608473,
+    "points_2x": 1.6362471467769029,
+    "entry_edge_points": -1.3911255748999198,
+    "usd_capped_1x": 85.15245502639283
+   },
+   "over 1 to 2": {
+    "trades": 39,
+    "dates": 29,
+    "points_1x": 7.027404173383257,
+    "lo": -0.7254904712247886,
+    "hi": 17.265412236965005,
+    "points_2x": 4.671093857792974,
+    "entry_edge_points": -0.6649035189244339,
+    "usd_capped_1x": 46.43570243284128
+   },
+   "over 2 to 5": {
+    "trades": 34,
+    "dates": 29,
+    "points_1x": 6.81333485700761,
+    "lo": 0.6362790172072647,
+    "hi": 14.064689467100049,
+    "points_2x": 4.145512244455225,
+    "entry_edge_points": 0.9309819158311367,
+    "usd_capped_1x": 126.59935776013438
+   },
+   "over 5 to 20": {
+    "trades": 23,
+    "dates": 18,
+    "points_1x": 23.86638671093907,
+    "lo": 7.287769334363263,
+    "hi": 35.58554623343687,
+    "points_2x": 21.215543895181977,
+    "entry_edge_points": 6.4750823631129855,
+    "usd_capped_1x": 164.14199560255636
+   },
+   "over 20": {
+    "trades": 1,
+    "dates": 1,
+    "points_1x": 37.32864422121438,
+    "lo": NaN,
+    "hi": NaN,
+    "points_2x": 33.69664822207679,
+    "entry_edge_points": 37.32864422121438,
+    "usd_capped_1x": 5.5619679889609435
+   }
+  },
+  "pnl_by_confirmation": {
+   "same second": {
+    "trades": 40,
+    "dates": 34,
+    "points_1x": 3.8109529452755218,
+    "lo": -0.34909788319102475,
+    "hi": 10.311171332697569,
+    "points_2x": 0.8223672952371478,
+    "entry_edge_points": 1.3109529452755218,
+    "usd_capped_1x": 66.57817160232005,
+    "usd_uncapped_1x": 62.107679531421944
+   },
+   "confirmed after": {
+    "trades": 27,
+    "dates": 15,
+    "points_1x": 11.445988357037036,
+    "lo": -1.1359217190522835,
+    "hi": 22.16763498551744,
+    "points_2x": 9.373275320000001,
+    "entry_edge_points": 0.3348772459259259,
+    "usd_capped_1x": 144.9583207422343,
+    "usd_uncapped_1x": 121.67995321154773
+   },
+   "not confirmed": {
+    "trades": 35,
+    "dates": 30,
+    "points_1x": 5.963142219281939,
+    "lo": -0.2542881165193936,
+    "hi": 14.74618523173292,
+    "points_2x": 3.7392536726518766,
+    "entry_edge_points": 0.24885650499622464,
+    "usd_capped_1x": 26.39563523692815,
+    "usd_uncapped_1x": 56.63563523692816
+   },
+   "moved away": {
+    "trades": 58,
+    "dates": 34,
+    "points_1x": 10.891577611173012,
+    "lo": 2.932824118886522,
+    "hi": 19.882613301485268,
+    "points_2x": 8.766652021796578,
+    "entry_edge_points": 0.5467500249661161,
+    "usd_capped_1x": 186.79074269993012,
+    "usd_uncapped_1x": 3330.012653847752
+   }
+  },
+  "event_bootstrap": {
+   "ALL": {
+    "trades": 160,
+    "events": 70,
+    "points_1x": 8.136883016087022,
+    "lo": 4.01213154716759,
+    "hi": 12.3668253423579
+   },
+   "IS": {
+    "trades": 133,
+    "events": 56,
+    "points_1x": 6.738413329378806,
+    "lo": 2.609473618142463,
+    "hi": 11.174984425937936
+   },
+   "OOS": {
+    "trades": 27,
+    "events": 14,
+    "points_1x": 15.02564110246452,
+    "lo": 3.703031257542097,
+    "hi": 33.70027993482852
+   }
+  },
+  "paid_one_dollar": 12,
+  "mean_without_one_dollar_payouts": 0.5554026406346183,
+  "mean_2x_without_one_dollar_payouts": -1.8269518277263297,
+  "top5_share_of_uncapped_usd": 0.9842663688531077,
+  "largest_trade_uncapped_usd": 3263.37,
+  "median_size": 20.0,
+  "under_5_contracts": 10,
+  "by_month": {
+   "2024-11": 2,
+   "2025-02": 1,
+   "2025-03": 1,
+   "2025-04": 4,
+   "2025-05": 2,
+   "2025-06": 3,
+   "2025-07": 6,
+   "2025-08": 51,
+   "2025-09": 9,
+   "2025-10": 2,
+   "2025-12": 3,
+   "2026-01": 7,
+   "2026-02": 5,
+   "2026-03": 11,
+   "2026-04": 13,
+   "2026-05": 4,
+   "2026-06": 18,
+   "2026-07": 8,
+   "2026-09": 10
+  },
+  "by_event_top": [
+   {
+    "event_title": "Military action against Iran ends by...?",
+    "trades": 9,
+    "points": 95.82519289000004,
+    "usd_cap": 10.123854859319358
+   },
+   {
+    "event_title": "Reconciliation bill passed by...?",
+    "trades": 7,
+    "points": 11.08698172,
+    "usd_cap": 3.3049154742159943
+   },
+   {
+    "event_title": "Bitcoin above ___ on August 25?",
+    "trades": 6,
+    "points": 209.7,
+    "usd_cap": 29.749999999999996
+   },
+   {
+    "event_title": "Bitcoin above ___ on August 27?",
+    "trades": 6,
+    "points": 100.40000000000002,
+    "usd_cap": 99.6726
+   },
+   {
+    "event_title": "Israel x Lebanon diplomatic meeting by...?",
+    "trades": 6,
+    "points": -3.30220219999999,
+    "usd_cap": -0.1287444810896714
+   },
+   {
+    "event_title": "What price will Bitcoin hit in August?",
+    "trades": 5,
+    "points": -3.79999810000001,
+    "usd_cap": -1.299188960270327
+   },
+   {
+    "event_title": "SpaceX Starship Flight Test 13",
+    "trades": 5,
+    "points": 13.352513148212001,
+    "usd_cap": -0.3658217536806978
+   },
+   {
+    "event_title": "What price will Zcash hit in 2026?",
+    "trades": 5,
+    "points": 0.29650000000001,
+    "usd_cap": -0.3017487200000008
+   },
+   {
+    "event_title": "Ethereum above ___ on August 22?",
+    "trades": 5,
+    "points": 102.29999999999997,
+    "usd_cap": 102.59427999999998
+   },
+   {
+    "event_title": "What price will XRP hit in April?",
+    "trades": 4,
+    "points": -6.398299999999971,
+    "usd_cap": -2.470659999999989
+   }
+  ]
+ },
+ "event_bootstrap": {
+  "ALL": {
+   "trades": 375,
+   "events": 96,
+   "points_1x": -2.562484775895359,
+   "lo": -10.987682882599104,
+   "hi": 6.214552169431469
+  },
+  "IS": {
+   "trades": 305,
+   "events": 74,
+   "points_1x": -4.457979289895765,
+   "lo": -13.649262750080176,
+   "hi": 4.9540529604190295
+  },
+  "OOS": {
+   "trades": 70,
+   "events": 28,
+   "points_1x": 5.696455606534978,
+   "lo": -9.913361354061621,
+   "hi": 19.178870513983174
+  }
+ },
+ "pnl_by_gap": {
+  "1 point or less": {
+   "trades": 75,
+   "dates": 53,
+   "points_1x": 3.94427213347873,
+   "lo": -0.06335194872893185,
+   "hi": 8.76894650219599,
+   "points_2x": 1.8910306745311634,
+   "entry_edge_points": -1.3890611998546025,
+   "usd_capped_1x": 79.07869671056568
+  },
+  "over 1 to 2": {
+   "trades": 49,
+   "dates": 37,
+   "points_1x": 5.446357609364717,
+   "lo": -0.7079758075278786,
+   "hi": 12.882084112349625,
+   "points_2x": 3.118935112312042,
+   "entry_edge_points": -0.6760913702271198,
+   "usd_capped_1x": 43.880116876664076
+  },
+  "over 2 to 5": {
+   "trades": 48,
+   "dates": 41,
+   "points_1x": 5.019863411940919,
+   "lo": 0.6096276633831423,
+   "hi": 10.46059611396542,
+   "points_2x": 2.2802836236089292,
+   "entry_edge_points": 0.8531967452742509,
+   "usd_capped_1x": 128.5406794723804
+  },
+  "over 5 to 20": {
+   "trades": 65,
+   "dates": 53,
+   "points_1x": 6.539336446693635,
+   "lo": -2.9144732341584714,
+   "hi": 16.36469516388333,
+   "points_2x": 4.23905873436352,
+   "entry_edge_points": 8.077797985155174,
+   "usd_capped_1x": 110.27636468172486
+  },
+  "over 20": {
+   "trades": 133,
+   "dates": 115,
+   "points_1x": -16.38822588156982,
+   "lo": -23.405677964339215,
+   "hi": -9.636839439790648,
+   "points_2x": -18.42314915975882,
+   "entry_edge_points": 44.51402975752792,
+   "usd_capped_1x": -745.8023821890622
+  }
+ }
+}

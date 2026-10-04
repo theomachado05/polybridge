@@ -344,3 +344,11 @@ def test_nesting_rule_as_the_partner_wrote_it():
     t = "This market resolves Yes if Bitcoin trades at or above ${} on Binance."
     gs = {"1": {"question": "q", "description": t.format("100,000"), "resolutionSource": "binance"}, "2": {"question": "q", "description": t.format("110,000"), "resolutionSource": "binance"}}
     assert ne.nested("strike", s, "2", "1", gs)[0]
+
+
+def test_text_direction_post_hoc_check():
+    from s24_ladder_fresh.secondary import text_direction
+    assert text_direction('resolve to "Yes" if any Binance 1 minute candle has a final "Low" price of $65,000.00 or lower.') == -1
+    assert text_direction('resolve to "Yes" if any Binance 1 minute candle has a final "High" price of $3,500.00 or higher.') == 1
+    assert text_direction('resolve to "Yes" if the candle has a final "Close" price higher than $100,000.') == 0
+    assert text_direction("") == 0
