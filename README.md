@@ -4,7 +4,7 @@ PolyBridge compares Polymarket's stock contracts with the probability implied by
 
 - **Paper:** [paper/PolyBridge.pdf](paper/PolyBridge.pdf) (source `paper/main.tex`, figures `paper/figures.py`)
 - **Demo:** `make dev`, then open http://localhost:3000 ([docs/demo.md](docs/demo.md))
-- **8-K notebook (Massive challenge):** [research/polybridge_8k.ipynb](research/polybridge_8k.ipynb), report [note/WRITEUP.md](note/WRITEUP.md), organizers' starter in [research/starter/](research/starter/gqh-massive-8k-starter)
+- **8-K study (Massive challenge):** report [note/PolyBridge_8K_report.pdf](note/PolyBridge_8K_report.pdf) and [note/WRITEUP.md](note/WRITEUP.md), notebook [research/polybridge_8k.ipynb](research/polybridge_8k.ipynb), organizers' starter in [research/starter/](research/starter/gqh-massive-8k-starter)
 - **Every result with its source:** [research/EVIDENCE.md](research/EVIDENCE.md)
 
 | Folder | Role |
@@ -14,7 +14,7 @@ PolyBridge compares Polymarket's stock contracts with the probability implied by
 | `engine/` | hedgecore, the C++20 algo library and order-book engine with pybind11 bindings (`third_party/simdjson` is vendored unchanged) |
 | `backend/` | FastAPI control plane: markets, proposals with the evidence gate, bridges, risk and capital limits, broker (simulated or Webull paper), recorded replays |
 | `web/` | Next.js interface |
-| `note/` | The 8-K report and the earlier quant note |
+| `note/` | The 8-K report (PDF and Markdown) and the earlier quant note |
 | `scripts/` | End-to-end demo driver and forward-test wrappers |
 
 ## Run the demo
@@ -57,7 +57,7 @@ cd ../paper && tectonic main.tex                  # paper/main.pdf
 
 | Paper | Result files (`research/results/`) | Code (`research/`) |
 |---|---|---|
-| Table 1, Figure 1, Appendix A, Kalshi comparison | `fresh_accuracy/` (`rows.csv`, `kalshi_rows.csv`, `stats.json`, `checks.json`, `checks2.json`) | `fresh_accuracy/` |
+| Table 1, Figure 1, Appendix A, Kalshi comparison | `fresh_accuracy/` (`rows.csv`, `kalshi_rows.csv`, `stats.json`, `checks.json`, `checks2.json`), `fresh_accuracy_synced/` (options at the Polymarket timestamp) | `fresh_accuracy/`, `fresh_accuracy_synced/` |
 | Discovery data (Section 2) | `arb/`, `open_options/`, `overshoot/` | `arb/`, `open_options/`, `overshoot/` |
 | Table 2, Figure 2, Appendix B | `ladder_replay/` (registered rule), `ladder_replay/order_check/` (dates corrected), `ladder_replay/v0_void/` (voided first run), `s11_bundles/` (earlier pairs) | `ladder_replay/`, `s11_bundles/` |
 | Section 5, Figure 3, Appendix C | `touch_fresh/`, `s21_options_anchor/` | `touch_fresh/`, `s21_options_anchor/` |
