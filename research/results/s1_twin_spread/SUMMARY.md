@@ -56,6 +56,8 @@ Capital base $3,300 (33 pairs × $100), fully funded. Returns are net of financi
 
 Trade A buys Polymarket YES and Kalshi NO; trade B buys Kalshi YES and Polymarket NO. A print confirms the Polymarket price within ±10 minutes; it does not prove both legs could be filled in the same second, and Kalshi's size at the quote is unknown.
 
+**Someone else was already doing this trade.** The largest entry (Machado, 2026-09-28 18:02 UTC, Kalshi 0.26 / 0.33 against Polymarket 0.52) is verified by takers buying about 450 NO on Polymarket at 0.49 between 18:00:42 and 18:00:57; Kalshi's 18:01 candle shows 450 contracts traded with the ask at 0.34. That is the same arbitrage, done by another trader. The gap was real and it was taken: a paper fill assumes we would have been first. The second largest (Gemini 4.0 by 15 October, 2026-09-30 21:04 UTC) rests on 108 shares printed over the ten minutes before the fill, in a market that moved 20 points in that hour.
+
 ## Costs, in bp of the capital committed (mean at entry, out-of-sample)
 
 | Cost | 1× | 2× | Source |
