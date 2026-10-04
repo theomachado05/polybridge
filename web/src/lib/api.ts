@@ -124,7 +124,7 @@ export interface EquityCard {
 export interface MapItem { ticker: string; direction: string; impact_pct: number | null; rationale: string | null }
 export interface MapCandidate { source_key: string; matched_question: string; score: number; items: MapItem[] }
 export interface MapOut {
-  /** "ai_precomputed" (an LLM ahead of time, ai_map.json), "ai_live:gemini:<model>" (Gemini, now), or "none". */
+  /** "ai_precomputed" (an LLM ahead of time, ai_map.json), "ai_live:<openai|gemini>:<model>" (that LLM, now), or "none". */
   source: "ai_precomputed" | "none" | string;
   label: string;
   match_type: "exact" | "fuzzy" | null;
@@ -443,12 +443,12 @@ export interface FitOut {
   score: number | null;
   alternatives: FitAlternative[];
   rationale: string;
-  /** Which classifier answered this fit: "gemini" (or a Gemini model id) or "rules". The only basis for an "AI" label. */
-  llm: "gemini" | "rules" | string;
-  /** The Gemini model, when the backend reports it. */
+  /** Which classifier answered this fit: "openai:<model>", "gemini:<model>" (or a legacy Gemini id) or "rules". The only basis for an "AI" label. */
+  llm: "rules" | string;
+  /** The LLM model (OpenAI or Gemini), when the backend reports it. */
   model?: string | null;
   /** LLM provenance block (docs/contracts.md "AI provenance"): `steps` says what produced each step
-   *  (classify "gemini" | "rules", explain "gemini" | "template"); `live` alone does not mean Gemini classified. */
+   *  (classify "openai" | "gemini" | "rules", explain "openai" | "gemini" | "template"); `live` alone does not mean an LLM classified. */
   ai?: { live?: boolean | null; model?: string | null; provider?: string | null; cached?: boolean | null;
     steps?: { classify?: string | null; explain?: string | null } | null; fell_back_reason?: string | null } | null;
   ticks_source: "live_history" | "replay" | "none" | string;

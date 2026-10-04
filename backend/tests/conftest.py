@@ -24,20 +24,29 @@ def _isolated_broker(tmp_path, monkeypatch):
 
 @pytest.fixture(autouse=True)
 def _no_llm_keys(monkeypatch):
-    """Hermetic AI: GEMINI_API_KEY / ELEVENLABS_API_KEY in the shared .env must never reach the network from a test.
-    ``gemini_key()`` reads .env when the variable is empty, so it is patched too; tests that exercise Gemini build a
+    """Hermetic AI: GEMINI_API_KEY / OPENAI_API_KEY / ELEVENLABS_API_KEY (and *_MODEL, LLM_PROVIDER) in the shared .env must never reach the network from a test.
+    ``gemini_key()`` / ``openai_key()`` read .env when the variable is empty, so they are patched too; tests that exercise Gemini build a
     GeminiProvider over mocked HTTP themselves."""
-    from app.pipeline import llm
+    from app.pipeline import llm, openai_llm
 
     monkeypatch.setenv("GEMINI_API_KEY", "")
+    monkeypatch.setenv("OPENAI_API_KEY", "")
     monkeypatch.setenv("ELEVENLABS_API_KEY", "")
-    monkeypatch.delenv("GEMINI_MODEL", raising=False)
+    for name in ("GEMINI_MODEL", "OPENAI_MODEL", "LLM_PROVIDER"):
+        monkeypatch.delenv(name, raising=False)
     monkeypatch.setattr(llm, "gemini_key", lambda: None)
-    llm._models_cache.clear()
-    llm._resolved.clear()
+    monkeypatch.setattr(openai_llm, "openai_key", lambda: None)
+
+    def clear():
+        llm._models_cache.clear()
+        llm._resolved.clear()
+        openai_llm._models_cache.clear()
+        openai_llm._clients.clear()
+        openai_llm._no_temperature.clear()
+
+    clear()
     yield
-    llm._models_cache.clear()
-    llm._resolved.clear()
+    clear()
 
 
 def pytest_configure(config):

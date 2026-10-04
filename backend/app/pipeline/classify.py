@@ -1,4 +1,4 @@
-"""Step 1: question -> event class (Gemini first, keyword rules on any failure), and the four contract types.
+"""Step 1: question -> event class (the LLM provider first: OpenAI, then Gemini; keyword rules on any failure), and the four contract types.
 
 Two classifiers live here:
 
@@ -17,9 +17,9 @@ from .llm import LLMError, LLMProvider, RulesProvider
 
 async def classify(question: str, provider: LLMProvider, allowed: list[str] | None = None,
                    ticker: str | None = None, trace: dict | None = None) -> tuple[str, str]:
-    """Returns (event_class, label of what produced it: 'gemini:<model>' | 'rules').
+    """Returns (event_class, label of what produced it: 'openai:<model>' | 'gemini:<model>' | 'rules').
 
-    ``trace`` (optional) receives ``error`` when a Gemini provider was tried and the rules answered instead."""
+    ``trace`` (optional) receives ``error`` when an LLM provider was tried and the rules answered instead."""
     allowed = list(allowed or EVENT_CLASSES)
     if "unsupported" not in allowed:
         allowed.append("unsupported")
@@ -30,7 +30,7 @@ async def classify(question: str, provider: LLMProvider, allowed: list[str] | No
             cls = await provider.classify(question, allowed, ticker)
             if cls in allowed:
                 return cls, getattr(provider, "label", None) or getattr(provider, "name", "gemini")
-            err = "Gemini returned a class outside the allowed set"
+            err = f"{getattr(provider, 'display', 'Gemini')} returned a class outside the allowed set"
         except LLMError as e:
             err = str(e)
         except Exception as e:  # a provider bug must not break the fit
