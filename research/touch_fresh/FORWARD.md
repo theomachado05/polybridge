@@ -42,3 +42,7 @@ verdict only once the minimum is met or the date has passed). The stub reuses `t
 and `touch_fresh.run` unchanged.
 
 ## Amendments
+
+- **2026-10-04 02:05 New York, before any covered market exists.** The window's last session day is stepped back over
+  market holidays (`config.HOLIDAYS`) for τ and for the daily close, because the historical run found S21's parser takes a
+  holiday Friday as a session.

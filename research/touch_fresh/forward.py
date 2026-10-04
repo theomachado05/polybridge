@@ -20,6 +20,7 @@ from s21_options_anchor import engine as eg
 from s21_options_anchor import pull as p21
 from s7_weekend_straddle.run import boot_mean
 
+from . import config as cfg
 from . import forward_config as fc
 from .pull import anchor_epoch, build_anchor, stock_quote
 from .run import matched_touch
@@ -80,6 +81,10 @@ def snapshot() -> int:
         p, why = eg.parse_market(m)
         if p is None:
             continue
+        es = date.fromisoformat(p["end_session"])
+        while es.isoformat() in cfg.HOLIDAYS or es.weekday() >= 5:
+            es = date.fromordinal(es.toordinal() - 1)
+        p["end_session"] = es.isoformat()
         day, at = entry_instant(m["start"])
         if day != today or date.fromisoformat(p["end_session"]) <= day:
             continue

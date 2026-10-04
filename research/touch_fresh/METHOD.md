@@ -110,3 +110,8 @@ event (`s21_options_anchor.engine.ols_cluster`). Reported: intercept (P&L at zer
 result, P&L, hedge), `books.csv`, `exposure.csv`, `RUN_LOG.md`, `.done`.
 
 ## Amendments
+
+- **2026-10-04 02:05 New York, after the run, clerical.** The pull and the run were made once as written; no rule,
+  threshold or sample changed. Found after the run and not repaired: S21's parser takes 2026-06-19 (Juneteenth, a market
+  holiday) as the last session of the "Week of June 15" events, so 2 markets have no daily close (both in B0; they leave
+  the exposure regression and their hedge exits at the level because both resolved YES).
