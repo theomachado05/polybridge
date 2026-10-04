@@ -267,6 +267,12 @@ async def ladders_board(http: httpx.AsyncClient | None = None) -> dict:
             bk = await books(client, toks)
             if time.monotonic() - t_fetch > LADDER_REFETCH_AFTER_S:   # a slow fetch: look again just before deciding
                 bk = await refetch(client, bk, toks)
+            else:
+                # Fetched just now: a quiet book (unchanged for > 60 s) is still the current quote, so the family's max
+                # age measures how long ago we looked, as for tickets (refresh_books: "fetch_time_unchanged").
+                fetch_ms = str(time.time_ns() // 1_000_000)
+                bk = {t: ({**b, "timestamp": fetch_ms, "_age_basis": "fetch_time_just_fetched"} if b else b)
+                      for t, b in bk.items()}
             price_ladders(lads, bk)
             return {"as_of": dt.datetime.now(dt.timezone.utc).isoformat(), "events_read": len(evs), "ladders": lads}
         finally:
@@ -527,7 +533,8 @@ async def tickets_board(http: httpx.AsyncClient | None = None) -> dict:
                     evs += await open_events(client, tag, TICKET_PAGES)
                 except Exception:
                     continue
-            rows = ticket_rows(evs)
+            seen: set = set()
+            rows = [r for r in ticket_rows(evs) if not (r.get("id") in seen or seen.add(r.get("id")))]  # one row per market
             bk = await books(client, sorted({r["token"] for r in rows if r.get("token")}))
         finally:
             if own:

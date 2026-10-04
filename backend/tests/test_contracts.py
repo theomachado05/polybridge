@@ -427,3 +427,24 @@ def test_tickets_refetch_failure_keeps_old_book_for_the_family_to_judge(client, 
     assert len(calls) == 2
     assert seen[0]["bid"] == 0.20 and seen[0]["ts_ns"] == 1_000_000_000      # old book, old timestamp: stale is honest
     assert d["ok"] and d["tickets"][0]["engine"]["age_basis"] == "book_timestamp"
+
+
+def test_quiet_ladder_book_fetched_now_is_not_stale(client, monkeypatch):
+    """A book last changed 10 minutes ago but fetched in this build is the current quote: its age basis is the fetch."""
+    ms = [rung(1, "Will the US strike Iran by December 31?"), rung(2, "Will the US strike Iran by June 30?")]
+    old_ms = "1000"  # epoch milliseconds: far older than any max-age
+
+    async def events(http, extra, pages):
+        return [{**EVENT, "markets": ms}]
+
+    async def books(http, tokens):
+        return {"tok2": {"timestamp": old_ms, "bids": [{"price": "0.40", "size": "50"}], "asks": [{"price": "0.42", "size": "50"}]},
+                "tok1": {"timestamp": old_ms, "bids": [{"price": "0.30", "size": "50"}], "asks": [{"price": "0.35", "size": "50"}]}}
+
+    monkeypatch.setattr(live, "open_events", events)
+    monkeypatch.setattr(live, "books", books)
+    live._cache.clear() if hasattr(live, "_cache") else None
+    d = client.get("/ladders").json()
+    [lad] = d["ladders"]
+    assert all(r["age_basis"] == "fetch_time_just_fetched" for r in lad["rungs"])
+    assert lad["pairs"][0]["engine"]["reason"] != "stale"
