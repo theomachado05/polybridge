@@ -23,11 +23,17 @@ IMPL_NAMES = {"cpp": "old path: Python json.loads and dict books, C++ detector c
               "python": "old path with the pure-Python detector",
               "cpp_book": "new path: one C++ call per frame (simdjson parse, books, detector)",
               "cpp_book+warm": "new path with keep-warm (interactive QoS, one native thread spinning to keep the P cores awake)",
-              "python_book": "fallback path (Python twin of the C++ engine)"}
+              "python_book": "fallback path (Python twin of the C++ engine)",
+              "native_ws": "native path: C++ websocket and TLS client thread calling the engine, blocking in poll()",
+              "native_ws_spin+warm": "native path, busy-polling the sockets, engine kept in cache by rerunning the last frame "
+                                     "when idle"}
+STAGES = (("socket to decision (t2 - ts)", "ts"), ("recv return to decision (t2 - tv)", "tv"),
+          ("after TLS read to decision (t2 - tr)", "tr"))
 
 
-def read(dec_dir: Path):
+def read(dec_dir: Path, w0: int = 0, w1: int = 2 ** 63 - 1):
     lat: dict[str, tuple[array, array, array]] = {}
+    extra: dict[str, dict[str, array]] = {}
     span: dict[str, list[int]] = {}
     t0s: set[int] = set()
     c: Counter = Counter()
@@ -43,6 +49,8 @@ def read(dec_dir: Path):
                         c["bad_lines"] += 1
                         continue
                     t0, t1, t2 = r["t0"], r["t1"], r["t2"]
+                    if not w0 <= t0 <= w1:
+                        continue
                     key = r["impl"] + ("+warm" if r.get("warm") else "")
                     tot, parse, dec = lat.setdefault(key, (array("q"), array("q"), array("q")))
                     w = span.setdefault(key, [t0, t2])
@@ -50,6 +58,9 @@ def read(dec_dir: Path):
                     tot.append(t2 - t0)
                     parse.append(t1 - t0)
                     dec.append(t2 - t1)
+                    for _, k in STAGES:
+                        if r.get(k):
+                            extra.setdefault(key, {}).setdefault(k, array("q")).append(t2 - r[k])
                     t0s.add(t0)
                     tmin = t0 if tmin is None else min(tmin, t0)
                     tmax = t2 if tmax is None else max(tmax, t2)
@@ -67,7 +78,7 @@ def read(dec_dir: Path):
                         flagged_mk.add(r["mid"])
         except EOFError:
             c["truncated_files"] += 1
-    return lat, span, len(t0s), c, flagged_mk, tmin, tmax
+    return lat, span, len(t0s), c, flagged_mk, tmin, tmax, extra
 
 
 def raw_messages(raw_dir: Path, tmin: int, tmax: int) -> int:
@@ -103,8 +114,10 @@ def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", type=Path, default=OUT)
     ap.add_argument("--no-replay", action="store_true")
+    ap.add_argument("--ab", nargs="*", default=[], metavar="OUT_DIR",
+                    help="recorder output dirs run side by side; their common window is reported as a concurrent A/B")
     a = ap.parse_args(argv)
-    lat, spans, n_msg_dec, c, flagged_mk, tmin, tmax = read(a.out / "decisions")
+    lat, spans, n_msg_dec, c, flagged_mk, tmin, tmax, extra = read(a.out / "decisions")
     if not c["decisions"]:
         raise SystemExit("no decisions logged yet")
     span = (tmax - tmin) / 1e9
@@ -126,7 +139,8 @@ def main(argv=None):
               f"{len(tot):,} decisions.", "",
               "| stage | p50 | p90 | p99 | p99.9 | mean |", "|---|---:|---:|---:|---:|---:|"]
         L += [f"| {name} | " + " | ".join(f"{v:,.2f}" for v in pct(x)) + " |" for name, x in
-              (("receive to decision (t2 - t0)", tot), ("receive to parsed (t1 - t0)", parse), ("parsed to decision (t2 - t1)", dec))]
+              [(n, extra[impl][k]) for n, k in STAGES if k in extra.get(impl, {})] +
+              [("receive to decision (t2 - t0)", tot), ("receive to parsed (t1 - t0)", parse), ("parsed to decision (t2 - t1)", dec)]]
         L += [""]
     L += ["t0 is `time.time_ns()` when the websocket frame is handed to the handler. Old path: t1 after `json.loads` (and after "
           "the gzip write of the raw frame, which came first), t2 after the dict book update and the detector call for that "
@@ -135,7 +149,31 @@ def main(argv=None):
           "monotonic clock that `time.perf_counter_ns()` uses and placed on t0's wall clock by the offset from a "
           "`perf_counter_ns()` read taken at receive, so sub-microsecond intervals are resolved; the raw gzip write now "
           "happens after the decisions. A frame that carries several book events is handled in one pass, so its later events "
-          "include the earlier events' processing. Network latency from Polymarket to this machine is not included.", ""]
+          "include the earlier events' processing. Network latency from Polymarket to this machine is not included.", "",
+          "Native path: one C++ thread owns the sockets, the OpenSSL sessions and the websocket framing and calls the engine "
+          "directly, so no Python runs between the socket and the decision; Python only drains the finished frames and "
+          "decisions for logging. ts is the monotonic clock just before the `SSL_read` call that returned the frame's bytes "
+          "(with busy polling this is within one poll iteration, about 0.2 us, of the bytes becoming readable; macOS gives no "
+          "kernel receive timestamps for TCP), tv is when the underlying `recv` returned them, tr is after TLS decryption and "
+          "t0 is after the websocket frame is decoded, all placed on the wall clock like t1 and t2. On the Python paths tr is "
+          "taken in the websockets protocol's `data_received` callback, after asyncio's TLS layer has decrypted the bytes; "
+          "the Python paths have no ts or tv. A frame that arrives in the same read as an earlier one shares its ts, tv and tr.",
+          ""]
+    if a.ab:
+        runs = [read(Path(d) / "decisions") for d in a.ab]
+        w0, w1 = max(r[5] for r in runs), min(r[6] for r in runs)
+        L += ["## Concurrent A/B (microseconds per book update)", "",
+              f"The recorders below ran at the same time on this machine, each with its own connections to the same 400 "
+              f"tokens, so they saw the same market traffic and the same machine load. Common window {fmt(w0)} to {fmt(w1)} "
+              f"({(w1 - w0) / 6e10:.1f} min).", "",
+              "| path | stage | n | p50 | p90 | p99 | p99.9 | mean |", "|---|---|---:|---:|---:|---:|---:|---:|"]
+        for d in a.ab:
+            lat2, _, _, _, _, _, _, extra2 = read(Path(d) / "decisions", w0, w1)
+            for impl, (tot, _, _) in lat2.items():
+                for name, x in [(n, extra2[impl][k]) for n, k in STAGES if k in extra2.get(impl, {})] + [
+                        ("receive to decision (t2 - t0)", tot)]:
+                    L += [f"| `{impl}` | {name} | {len(x):,} | " + " | ".join(f"{v:,.2f}" for v in pct(x)) + " |"]
+        L += [""]
     if not a.no_replay:
         from . import bench_replay as B
         files = sorted((a.out / "raw").glob("raw_*.jsonl.gz"))[:-1]
