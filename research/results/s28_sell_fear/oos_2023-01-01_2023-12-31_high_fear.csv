@@ -1,0 +1,10 @@
+strategy,horizon,n_a,n_b,mean_a,mean_b,difference,ci_lo,ci_hi,p_value
+cash_secured_put,1,2,27,,,,,,
+cash_secured_put,2,2,27,,,,,,
+cash_secured_put,3,2,27,,,,,,
+cash_secured_put,5,2,27,,,,,,
+cash_secured_put,10,2,27,,,,,,
+cash_secured_put,21,2,27,,,,,,
+cash_secured_put,42,2,27,,,,,,
+cash_secured_put,63,2,26,,,,,,
+cash_secured_put,exp,2,25,,,,,,

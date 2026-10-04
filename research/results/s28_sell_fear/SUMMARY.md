@@ -14,3 +14,12 @@ Method committed `f9468bf` (05:16:05) before the high-fear filter touched any wi
 filings in a calm market did not rebound (−1.38% at 21 sessions on 8 events). What separated 2022 looks like market-wide
 stress, not a stock's own implied move, and that condition has not been defined or tested. The judges' sealed window is
 H3's first confirmatory test; no further condition is added here.
+
+## 2023, out of sample (run once with `run_2023.py`, rule unchanged; run before the organizers answered whether 2023 overlaps the sealed window, disclosed here)
+
+| Scope | Verdict | Events | 21 sessions | 42 sessions | Sharpe at 21, events vs ordinary days |
+|---|---|---|---|---|---|
+| all H1 | NULL | 10 | +0.01% [−1.01, +0.90] | +0.66% [−0.37, +1.74] | 1.52 vs 1.24 |
+| high fear | INSUFFICIENT | 2 | | | |
+
+H3 did not confirm on 2023, a mostly calm, rising year apart from March's bank failures. That is consistent with an edge confined to market-wide stress but is not evidence for it. H3 stays a hypothesis found on one stress year.
