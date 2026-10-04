@@ -211,3 +211,10 @@ For the next reopening, **Monday 2026-10-05**, to be run later on new data:
 ## Amendments
 
 None.
+
+**Amendment 1, 2026-10-04 00:52 New York, after the run.** No rule, threshold or verdict changed. Two files were added
+after the results were read: `after.py`, which writes `after_run.json` (checks on the T2 book that passed: an interval
+for its Sharpe, the plain t-statistic, print timing, concentration, duplicated records, an independent replay from the
+raw records), and `report.py`, which writes `SUMMARY.md` and `capacity.md` from the result files. Everything from
+`after.py` is reported under the heading "Looked at after the run". The chart code was changed once to stop labels
+colliding; the result files were byte-identical before and after.

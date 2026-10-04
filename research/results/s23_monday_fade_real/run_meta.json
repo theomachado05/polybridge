@@ -1,0 +1,63 @@
+{
+ "calendar_closures": 45,
+ "first_closure": "2025-11-10",
+ "last_closure": "2026-09-28",
+ "oos_from": "2026-08-03",
+ "oos_closures": 9,
+ "s6_entries": 187,
+ "s6_verified": 21,
+ "partner_rows": 1154,
+ "partner_commit": "fb66dc7a07ff32e47293bc1d4f9c265ed9080d4c",
+ "t1_verdict": {
+  "H1": false,
+  "H2": false,
+  "earlier_80pct_above_zero": true,
+  "recent_20pct_above_zero": false,
+  "recent_trades": 6,
+  "recent_trades_needed": 30,
+  "pass": false
+ },
+ "t2_verdict": {
+  "mean_above_zero": true,
+  "interval_excludes_zero": true,
+  "above_zero_without_best_closure": true,
+  "t2b_above_zero": true,
+  "pass": true,
+  "pass_rests_on_hindsight": false
+ },
+ "t2_cache": {
+  "cache_files_read": 180,
+  "cache_missing": 0,
+  "largest_cache_file": 919
+ },
+ "t2_status_counts": {
+  "best/1x": {
+   "no print on the side": 122,
+   "print, gap gone": 33,
+   "trade": 32
+  },
+  "best/2x": {
+   "no print on the side": 122,
+   "print, gap gone": 38,
+   "trade": 27
+  },
+  "first/1x": {
+   "no print on the side": 122,
+   "print, gap gone": 33,
+   "trade": 32
+  },
+  "first/2x": {
+   "no print on the side": 122,
+   "print, gap gone": 38,
+   "trade": 27
+  }
+ },
+ "t1_window_counts_exact": {
+  "0-15": 74,
+  "15-60": 121,
+  "60-180": 145,
+  "180+": 62
+ },
+ "code_commit": "9764c18",
+ "run_seconds": 0.9
+}

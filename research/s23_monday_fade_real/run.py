@@ -430,8 +430,7 @@ def charts(t1_rows: list[dict], stairs: list[dict], books: dict[str, tuple[list[
     names = [n for n, _, _ in cfg.T1_WINDOWS]
     pr = {r["group"]: r for r in t1_rows if r["variant"].startswith("primary") and r["segment"] == "ALL"}
     fig, ax = plt.subplots(figsize=(7.2, 4.2), facecolor=SURF)
-    _style(ax, "Copying real taker prints toward the options price, by minutes since the 09:45 snapshot\n"
-               "(402 trades at 5+ points from the options price, held to the result, net of 1 cent and the fee)", "points per $1 contract")
+    _style(ax, "Copying real taker prints toward the options price:\nP&L by minutes since the 09:45 options snapshot", "points per $1 contract")
     xs = np.arange(len(names))
     m = np.array([pr[n]["mean"] for n in names])
     lo, hi = np.array([pr[n]["lo"] for n in names]), np.array([pr[n]["hi"] for n in names])
@@ -443,29 +442,30 @@ def charts(t1_rows: list[dict], stairs: list[dict], books: dict[str, tuple[list[
     ax.set_xticks(xs, [f"{n} min" for n in names])
     ax.set_xlim(-0.6, len(names) - 0.4)
     ax.set_ylim(min(lo.min(), 0) - 3, hi.max() + 9)
-    fig.text(0.01, 0.01, "Dot: mean. Line: 95% interval, resampling closures. Both data sets were seen before: a re-analysis.", fontsize=7.5, color=INK2)
-    fig.tight_layout(rect=(0, 0.03, 1, 1))
+    fig.text(0.01, 0.01, "402 trades at 5+ points from the options price, held to the result, net of 1 cent and the fee. Dot: mean.\n"
+                         "Line: 95% interval, resampling closures. The data were seen by earlier studies: a re-analysis.", fontsize=7.5, color=INK2)
+    fig.tight_layout(rect=(0, 0.06, 1, 1))
     fig.savefig(cfg.RESULTS / "decay.png", dpi=160)
     plt.close(fig)
 
     # staircase: two small panels sharing the step order (never two scales on one axis)
-    fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.6), facecolor=SURF)
-    labels = [s["step"].split(" (")[0].replace("1. ", "1 ").replace("2. ", "2 ").replace("3. ", "3 ").replace("4. ", "4 ").replace("5. ", "5 ") for s in stairs]
-    short = ["1 modelled", "2 printed\nprices (T2)", "3 S6 print-\nverified", "4 verified, best\nclosure removed", "5 T2, best\nclosure removed"]
+    fig, axes = plt.subplots(1, 2, figsize=(13.0, 4.8), facecolor=SURF)
+    short = ["1 S6 as modelled", "2 at printed\nprices (T2)", "3 S6's print-\nverified set", "4 verified, best\nclosure removed", "5 T2, best\nclosure removed"]
+    ticks = [f"{n}\n{s['trades']} trades\n{s['closures_traded']} closures\n${s['printed_dollars']:,.0f} printed" for n, s in zip(short, stairs)]
     for ax, key, title, fmt in ((axes[0], "total", "Total P&L, dollars", "{:+,.0f}"), (axes[1], "sharpe", "Sharpe on closure returns (52 a year)", "{:+.2f}")):
         _style(ax, title, "")
         vals = [0.0 if s[key] != s[key] else s[key] for s in stairs]
-        ax.bar(np.arange(len(stairs)), vals, width=0.55, color=BLUE, edgecolor=SURF, linewidth=2)
+        ax.bar(np.arange(len(stairs)), vals, width=0.5, color=BLUE, edgecolor=SURF, linewidth=2)
         for i, s in enumerate(stairs):
-            txt = "n/a" if s[key] != s[key] else fmt.format(s[key])
-            sub = f"{s['trades']} trades, {s['closures_traded']} closures\n${s['printed_dollars']:,.0f} printed"
-            ax.annotate(f"{txt}\n{sub}", (i, max(vals[i], 0)), textcoords="offset points", xytext=(0, 5), ha="center", fontsize=7.5, color=INK)
-        ax.set_xticks(np.arange(len(stairs)), short[:len(stairs)], fontsize=7.5)
+            ax.annotate("n/a" if s[key] != s[key] else fmt.format(s[key]), (i, max(vals[i], 0)), textcoords="offset points", xytext=(0, 4),
+                        ha="center", fontsize=9, color=INK)
+        ax.set_xticks(np.arange(len(stairs)), ticks, fontsize=7.5)
         top = max(max(vals), 0)
-        ax.set_ylim(min(min(vals), 0) * 1.25 - (0.02 * top), top * 1.28 + 1e-9)
+        ax.set_ylim(min(min(vals), 0) * 1.25 - 0.02 * top, top * 1.12 + 1e-9)
     fig.suptitle("S6 Monday fade: from the modelled backtest to prices that printed", x=0.01, ha="left", fontsize=12, color=INK)
-    fig.text(0.01, 0.01, "Printed dollars: capital of the contracts that had a public print behind them. " + " | ".join(labels[:0]), fontsize=7.5, color=INK2)
-    fig.tight_layout(rect=(0, 0.03, 1, 0.94))
+    fig.text(0.01, 0.01, "Printed dollars: capital of the contracts that had a public trade print behind them (up to 100 contracts per entry). "
+                         "Step 1 has prints behind 21 of its 187 entries.", fontsize=7.5, color=INK2)
+    fig.tight_layout(rect=(0, 0.04, 1, 0.94))
     fig.savefig(cfg.RESULTS / "staircase.png", dpi=160)
     plt.close(fig)
 
