@@ -53,3 +53,13 @@ backend/data_logs/*.jsonl
 
 # forward_monday http and massive caches
 research/results/forward_monday/.cache/
+
+# live book recorder: raw websocket and decision logs, caches, process files (LATENCY.md is committed)
+research/results/live_books/raw/
+research/results/live_books/decisions/
+research/results/live_books/.cache/
+research/results/live_books/*.log
+research/results/live_books/*.pid
+research/results/live_books/*.out
+research/results/live_books/gaps.jsonl
+research/live_books/*.so
