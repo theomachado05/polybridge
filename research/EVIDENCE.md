@@ -48,6 +48,7 @@ Notes on the rows:
 - **S5 continuation trade: not a pass.** After an overnight odds move of 10 points or more, buying the linked equity at the open lost 14.0 bp per trade on 94 trades [-50.9, +24.1] (section 9; `research/results/s5_big_moves/SUMMARY.md`).
 - **S6 Monday fade: too few observations.** 16 out-of-sample trades; 21 print-verified entries in the year, +$14.02 each with an interval through zero (section 9; `research/results/s6_monday_fade/SUMMARY.md`).
 - **S7 weekend straddles: a loss.** -17.7% of the premium per flagged trade, no better than ordinary weekends (section 9; `research/results/s7_weekend_straddle/SUMMARY.md`).
+- **S8 open referee: null.** Selling an overnight odds move the linked asset did not confirm loses 1.47 points per trade after costs [-2.42, -0.54]; the asset's vote adds nothing (section 9; `research/results/s8_open_referee/SUMMARY.md`).
 - **S3 three-way consistency: no trade.** The primary rule fired 0 times in 60 matched sets on 33 dates (section 9; `research/results/s3_three_way/SUMMARY.md`).
 - Also in the table above: the replication, the fit walk-forward, the 8-K out-of-sample run, R1 hedge A and R3's net residual gap all failed or were NULL.
 
@@ -192,7 +193,7 @@ For the note's "Liquidity and capital" and "Risk management" criteria. This is w
 
 ---
 
-## 9. Weekend and cross-venue alpha: S1 twin spread, S3 three-way, S4 linked assets, S5 replication, S6 Monday fade, S7 weekend straddles (pre-registered; forward tests pending)
+## 9. Weekend and cross-venue alpha: S1 twin spread, S3 three-way, S4 linked assets, S5 replication, S6 Monday fade, S7 weekend straddles, S8 open referee (pre-registered; forward tests pending)
 
 Added 2026-10-03 evening. Brief: `research/ALPHA_BRIEF.md`. Both methods were committed before any data was pulled for them (`research/s1_twin_spread/METHOD.md`, commit `8260548`; `research/s3_three_way/METHOD.md`, commit `83ce137`; amendments are dated in each file). Sources: `research/results/s1_twin_spread/SUMMARY.md`, `metrics.csv`, `trades.csv`, `RUN_LOG.md`; `research/results/s3_three_way/SUMMARY.md`, `metrics.csv`, `sets.csv`.
 
@@ -235,6 +236,12 @@ Added 2026-10-03 evening. Brief: `research/ALPHA_BRIEF.md`. Both methods were co
 - **Verdict: too few out-of-sample observations (3 trades), and over the whole year a clear loss.** Flagged straddles returned -17.7% of the premium [-20.8, -14.7] on 161 trades, -30.4% at 2x costs; control straddles -17.6%; flagged minus control -0.1% [-3.9, +3.7].
 - **Options were not too cheap.** Mid to mid, with no costs: -1.0% flagged against -2.0% control. The underlying did move more on flagged weekends (129 bp against 105 bp), and the options had priced it.
 
+**S8, the stock market's open as referee of the overnight move in the odds.** After an overnight move of 5 points or more in a question's odds, look at the linked ETFs and stocks at 09:35. If they did not move the way the odds did, sell the move on Polymarket at 09:40 and close at the stock market's close. 128 markets (S5's and S4's), 254 links, 253 sessions. Source: `research/results/s8_open_referee/SUMMARY.md`; method commit `1cb7cb3`.
+
+- **What holds up: the give-back, now on two sets of markets.** After an overnight move of 10 points or more the odds move back 2.63 points between 09:40 and the close (232 market-mornings on 109 dates, date-bootstrap interval -3.90 to -1.47). S5's markets: -2.65 [-4.11, -1.31]. S4's markets, not tested for this before: -2.52 [-4.67, -0.75] on 34 mornings.
+- **It is the size of the cost.** A round trip costs 2.62 points here (spread and Polymarket's fee, both ways). Selling every move of 5 points or more earns +1.46 points before costs and -1.12 after [-1.76, -0.48].
+- **Verdict: null.** The asset's vote does not separate the moves that reverse from those that hold: give-back 1.12 points when the asset did not confirm against 1.45 when it did, difference +0.33 [-0.82, +1.49]; at 10 points -0.19 [-2.94, +2.55]. The primary trade loses 1.47 points per trade [-2.42, -0.54] on 198 trades, 4.09 at 2x costs; 16 out-of-sample trades (-3.16).
+
 **Forward tests.** Live order books of the 33 twin pairs (every 15 s) and of 660 threshold markets (every 30 s) have been recorded since Sat 2026-10-03 19:09:48 ET (`research/forward/README.md`). S1 and S3 are run on them as paper tests with rules frozen before the window (Sat 20:00 ET to Sun 07:00 ET); results go into the two SUMMARY files.
 
 ---
@@ -253,6 +260,8 @@ Added 2026-10-03 evening. Brief: `research/ALPHA_BRIEF.md`. Both methods were co
 9. **Cross-venue gaps on the same question exist but are small and rare** (S1): 15 print-verified out-of-sample entries on 5 pairs lock in +$47.50 on $1,177 of capital after every cost (+$32.28 on 9 entries at 2x costs). The pre-registered test is not a pass, and S3 found no trade.
 
 10. **Linked equities do respond to prediction-market odds while they are closed, and the finding replicated on fresh markets.** S4: +4.69 bp of excess opening gap per point of overnight odds move (t = 4.01). S5, 93 markets S4 never used: +6.88 bp per point (t = 6.01), +137 bp after moves of 10 points or more. The response is complete by the open (after the open: -0.55 bp per point, t = -0.74), so it is information, not a trade.
+
+11. **Polymarket gives back part of a large overnight move once the stock market is open, on two separate sets of markets** (S5 amendment 3 and S8): 2.63 points after a move of 10 points or more [-3.90, -1.47]. A round trip across the spread costs the same 2.6 points, so nothing is left for someone who takes prices. Whether resting orders could earn it is untested.
 
 Do not write that the equity lags the odds after the open, or that S4 found a tradable edge. Do not write that the twin spread has a Sharpe ratio of 7, or that it is a strategy with capacity. Do not write that prediction markets predict the open or lead equities, that the PM beats futures, that news nights are special, that the 380-closure relation is pre-registered, confirmed or replicated, that options at the open are an arbitrage, that the expected gap works beyond the recession market, that hedge B reduces the gap, that the PM-contract hedge protects, that the fit predicts returns or works out of sample, that the 8-K signal works, or that the scan found arbitrage.
 

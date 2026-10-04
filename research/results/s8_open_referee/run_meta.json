@@ -1,0 +1,39 @@
+{
+ "sessions": 253,
+ "first_session": "2025-10-01",
+ "last_session": "2026-10-02",
+ "oos_from": "2026-07-23",
+ "oos_sessions": 51,
+ "weekend_closures": 55,
+ "links": 254,
+ "markets_with_links": 128,
+ "markets_used": 128,
+ "tickers": 48,
+ "mornings_5pt": 667,
+ "mornings_10pt": 233,
+ "votes_5pt": {
+  "confirmed": 463,
+  "not confirmed": 204
+ },
+ "by_source_5pt": {
+  "S5": 554,
+  "S4": 113
+ },
+ "markets_checked_for_prints": 62,
+ "markets_served": 62,
+ "half_spread": 0.005,
+ "cost_snapshot": {
+  "snapshot_utc": "2026-10-04T01:01:35.842000Z",
+  "markets": 36,
+  "two_sided": 36,
+  "mid_10_90": 18,
+  "round_trip_points_median_all": 1.2430999999999952,
+  "round_trip_points_median_mid": 2.0276590000000003,
+  "round_trip_points_p25_mid": 1.1879500000000007,
+  "round_trip_points_p75_mid": 2.4203624999999986,
+  "spread_points_median_mid": 1.0000000000000009,
+  "fee_points_median_mid": 0.5771,
+  "touch_dollars_median_mid": 785.6992
+ },
+ "run_seconds": 224.7
+}
