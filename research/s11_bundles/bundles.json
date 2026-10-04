@@ -1,5 +1,5 @@
 {
- "built_utc": "2026-10-04T02:50:53.923216+00:00",
+ "built_utc": "2026-10-04T02:54:56.483908+00:00",
  "s5_events_read": 355,
  "s9_ladders_superseded": 10,
  "bundles": [
@@ -1224,7 +1224,7 @@
     "2026-09-15",
     "2026-09-30",
     "2026-10-31",
-    "2027-12-31"
+    "2026-12-31"
    ],
    "pairs": [
     [
@@ -1447,26 +1447,30 @@
    "event": "claude-5-released-by",
    "template": "Will Claude 5 be released by @D@?",
    "legs": [
+    "573827",
     "1336694",
     "1333241",
     "1320787",
     "1363116",
     "1748641",
     "1748840",
-    "2169806",
-    "573827"
+    "2169806"
    ],
    "keys": [
+    "2025-12-31",
     "2026-02-06",
     "2026-02-14",
     "2026-02-28",
     "2026-04-30",
     "2026-05-31",
     "2026-06-30",
-    "2026-09-30",
-    "2026-12-31"
+    "2026-09-30"
    ],
    "pairs": [
+    [
+     "573827",
+     "1336694"
+    ],
     [
      "1336694",
      "1333241"
@@ -1490,10 +1494,6 @@
     [
      "1748840",
      "2169806"
-    ],
-    [
-     "2169806",
-     "573827"
     ]
    ],
    "negRiskAugmented": false,
@@ -1624,7 +1624,7 @@
     "2026-05-31",
     "2026-06-30",
     "2026-09-30",
-    "2027-12-31"
+    "2026-12-31"
    ],
    "pairs": [
     [
@@ -2373,42 +2373,26 @@
    "event": "gemini-3pt0-released-by",
    "template": "Will Gemini 3.0 be released by @D@?",
    "legs": [
-    "573809",
-    "580854",
-    "618022",
-    "573811",
     "644471",
     "667232",
     "625811",
-    "664751"
+    "664751",
+    "573809",
+    "580854",
+    "618022",
+    "573811"
    ],
    "keys": [
+    "2024-11-15",
+    "2024-11-22",
+    "2024-11-30",
+    "2024-12-31",
     "2025-08-31",
     "2025-09-30",
     "2025-10-15",
-    "2025-10-31",
-    "2025-11-15",
-    "2025-11-22",
-    "2025-11-30",
-    "2025-12-31"
+    "2025-10-31"
    ],
    "pairs": [
-    [
-     "573809",
-     "580854"
-    ],
-    [
-     "580854",
-     "618022"
-    ],
-    [
-     "618022",
-     "573811"
-    ],
-    [
-     "573811",
-     "644471"
-    ],
     [
      "644471",
      "667232"
@@ -2420,6 +2404,22 @@
     [
      "625811",
      "664751"
+    ],
+    [
+     "664751",
+     "573809"
+    ],
+    [
+     "573809",
+     "580854"
+    ],
+    [
+     "580854",
+     "618022"
+    ],
+    [
+     "618022",
+     "573811"
     ]
    ],
    "negRiskAugmented": false,
@@ -2438,7 +2438,7 @@
    ],
    "keys": [
     "2026-06-30",
-    "2027-12-31"
+    "2026-12-31"
    ],
    "pairs": [
     [
@@ -2772,7 +2772,7 @@
     "2026-08-31",
     "2026-09-30",
     "2026-10-31",
-    "2027-12-31"
+    "2026-12-31"
    ],
    "pairs": [
     [
@@ -2914,7 +2914,7 @@
    ],
    "keys": [
     "2026-06-30",
-    "2027-12-31"
+    "2026-12-31"
    ],
    "pairs": [
     [
@@ -2941,8 +2941,8 @@
     "2686770",
     "2976202",
     "2686771",
-    "4620250",
     "3128769",
+    "4620250",
     "3128768"
    ],
    "keys": [
@@ -2954,9 +2954,9 @@
     "2026-07-31",
     "2026-08-15",
     "2026-08-31",
+    "2026-09-30",
     "2026-10-31",
-    "2027-09-30",
-    "2027-12-31"
+    "2026-12-31"
    ],
    "pairs": [
     [
@@ -2989,14 +2989,14 @@
     ],
     [
      "2686771",
-     "4620250"
-    ],
-    [
-     "4620250",
      "3128769"
     ],
     [
      "3128769",
+     "4620250"
+    ],
+    [
+     "4620250",
      "3128768"
     ]
    ],
@@ -3022,8 +3022,8 @@
     "2730675",
     "3399450",
     "3399451",
-    "2737233",
-    "1535973"
+    "1535973",
+    "2737233"
    ],
    "keys": [
     "2026-03-31",
@@ -3037,8 +3037,8 @@
     "2026-09-30",
     "2026-10-31",
     "2026-11-30",
-    "2027-06-30",
-    "2027-12-31"
+    "2026-12-31",
+    "2027-06-30"
    ],
    "pairs": [
     [
@@ -3083,11 +3083,11 @@
     ],
     [
      "3399451",
-     "2737233"
+     "1535973"
     ],
     [
-     "2737233",
-     "1535973"
+     "1535973",
+     "2737233"
     ]
    ],
    "negRiskAugmented": false,
@@ -3101,20 +3101,28 @@
    "event": "iran-strike-on-israel-by",
    "template": "Iran Strike on Israel by @D@?",
    "legs": [
+    "1394436",
+    "1394437",
     "1169203",
     "1169204",
-    "1169205",
-    "1394436",
-    "1394437"
+    "1169205"
    ],
    "keys": [
+    "2025-03-31",
+    "2025-12-31",
     "2026-01-15",
     "2026-01-31",
-    "2026-02-28",
-    "2026-03-31",
-    "2026-12-31"
+    "2026-02-28"
    ],
    "pairs": [
+    [
+     "1394436",
+     "1394437"
+    ],
+    [
+     "1394437",
+     "1169203"
+    ],
     [
      "1169203",
      "1169204"
@@ -3122,14 +3130,6 @@
     [
      "1169204",
      "1169205"
-    ],
-    [
-     "1169205",
-     "1394436"
-    ],
-    [
-     "1394436",
-     "1394437"
     ]
    ],
    "negRiskAugmented": false,
@@ -3143,24 +3143,28 @@
    "event": "iran-x-israelus-conflict-ends-by",
    "template": "Iran x Israel/US conflict ends by @D@?",
    "legs": [
+    "1571571",
     "1466150",
     "1706766",
     "1567746",
     "1567747",
     "1484914",
-    "1484915",
-    "1571571"
+    "1484915"
    ],
    "keys": [
+    "2025-12-31",
     "2026-03-31",
     "2026-04-07",
     "2026-04-15",
     "2026-04-30",
     "2026-05-15",
-    "2026-06-30",
-    "2026-12-31"
+    "2026-06-30"
    ],
    "pairs": [
+    [
+     "1571571",
+     "1466150"
+    ],
     [
      "1466150",
      "1706766"
@@ -3180,10 +3184,6 @@
     [
      "1484914",
      "1484915"
-    ],
-    [
-     "1484915",
-     "1571571"
     ]
    ],
    "negRiskAugmented": false,
@@ -3467,18 +3467,18 @@
    "event": "israel-x-iran-ceasefire-broken-by",
    "template": "Israel x Iran ceasefire broken by @D@?",
    "legs": [
+    "580847",
     "555833",
     "555834",
-    "580847",
     "566908",
     "566910",
     "666696",
     "958427"
    ],
    "keys": [
+    "2024-09-30",
     "2025-07-31",
     "2025-08-31",
-    "2025-09-30",
     "2025-10-31",
     "2025-12-31",
     "2026-03-31",
@@ -3486,15 +3486,15 @@
    ],
    "pairs": [
     [
+     "580847",
+     "555833"
+    ],
+    [
      "555833",
      "555834"
     ],
     [
      "555834",
-     "580847"
-    ],
-    [
-     "580847",
      "566908"
     ],
     [
@@ -3563,35 +3563,35 @@
    "event": "israel-x-syria-security-agreement-by-september-30",
    "template": "Israel x Syria security agreement by @D@?",
    "legs": [
-    "581165",
     "602010",
-    "675788",
     "1116645",
-    "1116646"
+    "1116646",
+    "581165",
+    "675788"
    ],
    "keys": [
+    "2024-12-31",
+    "2025-03-31",
+    "2025-06-30",
     "2025-09-30",
-    "2025-12-31",
-    "2026-01-31",
-    "2026-03-31",
-    "2026-06-30"
+    "2026-01-31"
    ],
    "pairs": [
     [
-     "581165",
-     "602010"
-    ],
-    [
      "602010",
-     "675788"
-    ],
-    [
-     "675788",
      "1116645"
     ],
     [
      "1116645",
      "1116646"
+    ],
+    [
+     "1116646",
+     "581165"
+    ],
+    [
+     "581165",
+     "675788"
     ]
    ],
    "negRiskAugmented": false,
@@ -3700,7 +3700,7 @@
     "2026-08-31",
     "2026-09-30",
     "2026-10-31",
-    "2027-12-31"
+    "2026-12-31"
    ],
    "pairs": [
     [
@@ -4200,23 +4200,23 @@
    "event": "lisa-cook-out-as-fed-governor-by-september-30",
    "template": "Lisa Cook out as Fed Governor by @D@?",
    "legs": [
+    "581249",
     "581247",
-    "657493",
-    "581249"
+    "657493"
    ],
    "keys": [
+    "2024-12-31",
     "2025-09-30",
-    "2025-11-30",
-    "2025-12-31"
+    "2025-11-30"
    ],
    "pairs": [
     [
-     "581247",
-     "657493"
+     "581249",
+     "581247"
     ],
     [
-     "657493",
-     "581249"
+     "581247",
+     "657493"
     ]
    ],
    "negRiskAugmented": false,
@@ -4640,7 +4640,7 @@
    "keys": [
     "2026-03-31",
     "2026-06-30",
-    "2027-12-31"
+    "2026-12-31"
    ],
    "pairs": [
     [
@@ -4740,7 +4740,7 @@
     "2026-07-31",
     "2026-08-31",
     "2026-09-30",
-    "2027-12-31"
+    "2026-12-31"
    ],
    "pairs": [
     [
@@ -4849,17 +4849,17 @@
    "event": "monad-airdrop-by",
    "template": "Will Monad perform an airdrop by @D@?",
    "legs": [
-    "556112",
-    "556111"
+    "556111",
+    "556112"
    ],
    "keys": [
-    "2026-06-30",
-    "2026-12-31"
+    "2025-12-31",
+    "2026-06-30"
    ],
    "pairs": [
     [
-     "556112",
-     "556111"
+     "556111",
+     "556112"
     ]
    ],
    "negRiskAugmented": false,
@@ -5778,7 +5778,7 @@
    ],
    "keys": [
     "2026-06-30",
-    "2027-12-31"
+    "2026-12-31"
    ],
    "pairs": [
     [
@@ -6294,30 +6294,30 @@
    "event": "tesla-launches-unsupervised-full-self-driving-fsd-by",
    "template": "Tesla launches unsupervised full self driving (FSD) by @D@?",
    "legs": [
+    "548302",
     "548301",
     "565929",
-    "548302",
     "940839",
     "565930"
    ],
    "keys": [
+    "2024-12-31",
     "2025-06-30",
     "2025-10-31",
-    "2025-12-31",
     "2026-03-31",
     "2026-06-30"
    ],
    "pairs": [
+    [
+     "548302",
+     "548301"
+    ],
     [
      "548301",
      "565929"
     ],
     [
      "565929",
-     "548302"
-    ],
-    [
-     "548302",
      "940839"
     ],
     [
@@ -6911,23 +6911,23 @@
    "event": "us-escorts-commercial-ship-through-hormuz-by-march-31",
    "template": "US escorts commercial ship through Hormuz by @D@?",
    "legs": [
+    "1653794",
     "1554932",
-    "1706823",
-    "1653794"
+    "1706823"
    ],
    "keys": [
+    "2025-04-30",
     "2026-03-31",
-    "2026-04-15",
-    "2026-04-30"
+    "2026-04-15"
    ],
    "pairs": [
     [
-     "1554932",
-     "1706823"
+     "1653794",
+     "1554932"
     ],
     [
-     "1706823",
-     "1653794"
+     "1554932",
+     "1706823"
     ]
    ],
    "negRiskAugmented": false,
@@ -7110,7 +7110,7 @@
     "2026-06-30",
     "2026-08-31",
     "2026-09-30",
-    "2027-12-31"
+    "2026-12-31"
    ],
    "pairs": [
     [
@@ -7145,22 +7145,22 @@
    "event": "us-strike-on-colombia-by-january-31",
    "template": "US strike on Colombia by @D@?",
    "legs": [
-    "1107284",
     "1107306",
+    "1107284",
     "1107307"
    ],
    "keys": [
+    "2025-03-31",
     "2026-01-31",
-    "2026-03-31",
-    "2027-12-31"
+    "2026-12-31"
    ],
    "pairs": [
     [
-     "1107284",
-     "1107306"
+     "1107306",
+     "1107284"
     ],
     [
-     "1107306",
+     "1107284",
      "1107307"
     ]
    ],
@@ -7182,7 +7182,7 @@
    "keys": [
     "2026-01-31",
     "2026-03-31",
-    "2027-12-31"
+    "2026-12-31"
    ],
    "pairs": [
     [
@@ -7212,7 +7212,7 @@
    "keys": [
     "2026-01-31",
     "2026-03-31",
-    "2027-12-31"
+    "2026-12-31"
    ],
    "pairs": [
     [
@@ -7625,17 +7625,17 @@
    "event": "us-strikes-yemen-by-september-30",
    "template": "US strikes Yemen by @D@?",
    "legs": [
-    "580859",
-    "614699"
+    "614699",
+    "580859"
    ],
    "keys": [
-    "2025-09-30",
-    "2025-12-31"
+    "2024-12-31",
+    "2025-09-30"
    ],
    "pairs": [
     [
-     "580859",
-     "614699"
+     "614699",
+     "580859"
     ]
    ],
    "negRiskAugmented": false,
@@ -8030,9 +8030,47 @@
   },
   {
    "kind": "date",
+   "event": "us-x-russia-military-clash-by",
+   "template": "US x Russia military clash by @D@?",
+   "legs": [
+    "548080",
+    "1127402",
+    "648872",
+    "1124834"
+   ],
+   "keys": [
+    "2025-12-31",
+    "2026-01-31",
+    "2026-06-30",
+    "2026-12-31"
+   ],
+   "pairs": [
+    [
+     "548080",
+     "1127402"
+    ],
+    [
+     "1127402",
+     "648872"
+    ],
+    [
+     "648872",
+     "1124834"
+    ]
+   ],
+   "negRiskAugmented": false,
+   "event_title": "US x Russia military clash by...?",
+   "event_volume": 1806861.8854060005,
+   "source": "s5",
+   "weekend_only": false
+  },
+  {
+   "kind": "date",
    "event": "us-x-venezuela-military-engagement-by",
    "template": "US x Venezuela military engagement by @D@?",
    "legs": [
+    "698378",
+    "956634",
     "588774",
     "646560",
     "648825",
@@ -8052,14 +8090,14 @@
     "621018",
     "798707",
     "838619",
-    "698378",
-    "956634",
     "588775",
     "916438",
     "916439",
     "664747"
    ],
    "keys": [
+    "2024-12-15",
+    "2024-12-23",
     "2025-09-30",
     "2025-10-24",
     "2025-10-27",
@@ -8079,14 +8117,20 @@
     "2025-11-30",
     "2025-12-05",
     "2025-12-09",
-    "2025-12-15",
-    "2025-12-23",
     "2025-12-31",
     "2026-01-15",
     "2026-01-31",
     "2026-03-31"
    ],
    "pairs": [
+    [
+     "698378",
+     "956634"
+    ],
+    [
+     "956634",
+     "588774"
+    ],
     [
      "588774",
      "646560"
@@ -8161,14 +8205,6 @@
     ],
     [
      "838619",
-     "698378"
-    ],
-    [
-     "698378",
-     "956634"
-    ],
-    [
-     "956634",
      "588775"
     ],
     [
@@ -9420,21 +9456,25 @@
    "template": "Will Hamas agree to disarm by @D@?",
    "legs": [
     "657400",
+    "570071",
     "677357",
     "1294921",
-    "570071",
     "2747434"
    ],
    "keys": [
     "2025-11-30",
+    "2025-12-31",
     "2026-03-31",
     "2026-06-30",
-    "2026-12-31",
-    "2027-12-31"
+    "2026-12-31"
    ],
    "pairs": [
     [
      "657400",
+     "570071"
+    ],
+    [
+     "570071",
      "677357"
     ],
     [
@@ -9443,10 +9483,6 @@
     ],
     [
      "1294921",
-     "570071"
-    ],
-    [
-     "570071",
      "2747434"
     ]
    ],
@@ -9461,22 +9497,22 @@
    "event": "will-hezbollah-disarm-by-march-31",
    "template": "Will Hezbollah disarm by @D@?",
    "legs": [
-    "665228",
     "1929172",
+    "665228",
     "1323083"
    ],
    "keys": [
+    "2025-04-30",
     "2026-03-31",
-    "2026-04-30",
-    "2027-12-31"
+    "2026-12-31"
    ],
    "pairs": [
     [
-     "665228",
-     "1929172"
+     "1929172",
+     "665228"
     ],
     [
-     "1929172",
+     "665228",
      "1323083"
     ]
    ],
@@ -9491,35 +9527,35 @@
    "event": "will-khamenei-leave-iran-by-friday",
    "template": "Will Khamenei leave Iran by @D@?",
    "legs": [
-    "1145587",
     "1112029",
-    "1198457",
     "1112030",
-    "1394087"
+    "1394087",
+    "1145587",
+    "1198457"
    ],
    "keys": [
+    "2025-01-31",
+    "2025-03-31",
+    "2025-12-31",
     "2026-01-16",
-    "2026-01-31",
-    "2026-02-28",
-    "2026-03-31",
-    "2026-12-31"
+    "2026-02-28"
    ],
    "pairs": [
     [
-     "1145587",
-     "1112029"
-    ],
-    [
      "1112029",
-     "1198457"
-    ],
-    [
-     "1198457",
      "1112030"
     ],
     [
      "1112030",
      "1394087"
+    ],
+    [
+     "1394087",
+     "1145587"
+    ],
+    [
+     "1145587",
+     "1198457"
     ]
    ],
    "negRiskAugmented": false,
@@ -9746,7 +9782,7 @@
     "2026-04-30",
     "2026-05-31",
     "2026-06-30",
-    "2027-12-31"
+    "2026-12-31"
    ],
    "pairs": [
     [
@@ -9833,50 +9869,30 @@
    "event": "will-russia-capture-all-of-pokrovsk-by-september-30",
    "template": "Will Russia capture all of Pokrovsk by @D@?",
    "legs": [
-    "919767",
-    "956869",
-    "1007260",
-    "1320800",
-    "579452",
     "642530",
     "661694",
     "675485",
     "642529",
-    "595744"
+    "595744",
+    "919767",
+    "956869",
+    "1007260",
+    "1320800",
+    "579452"
    ],
    "keys": [
+    "2024-10-31",
+    "2024-11-14",
+    "2024-11-21",
+    "2024-11-30",
+    "2024-12-31",
     "2025-01-15",
     "2025-01-31",
     "2025-02-28",
     "2025-03-31",
-    "2025-09-30",
-    "2025-10-31",
-    "2025-11-14",
-    "2025-11-21",
-    "2025-11-30",
-    "2025-12-31"
+    "2025-09-30"
    ],
    "pairs": [
-    [
-     "919767",
-     "956869"
-    ],
-    [
-     "956869",
-     "1007260"
-    ],
-    [
-     "1007260",
-     "1320800"
-    ],
-    [
-     "1320800",
-     "579452"
-    ],
-    [
-     "579452",
-     "642530"
-    ],
     [
      "642530",
      "661694"
@@ -9892,6 +9908,26 @@
     [
      "642529",
      "595744"
+    ],
+    [
+     "595744",
+     "919767"
+    ],
+    [
+     "919767",
+     "956869"
+    ],
+    [
+     "956869",
+     "1007260"
+    ],
+    [
+     "1007260",
+     "1320800"
+    ],
+    [
+     "1320800",
+     "579452"
     ]
    ],
    "negRiskAugmented": false,
@@ -9941,10 +9977,10 @@
    "event": "will-russia-capture-kostyantynivka-by",
    "template": "Will Russia capture Kostyantynivka by @D@?",
    "legs": [
-    "546805",
     "575194",
-    "560560",
     "642526",
+    "546805",
+    "560560",
     "546806",
     "898678",
     "956942",
@@ -9958,10 +9994,10 @@
     "677366"
    ],
    "keys": [
+    "2024-09-30",
+    "2024-11-30",
     "2025-08-31",
-    "2025-09-30",
     "2025-10-31",
-    "2025-11-30",
     "2025-12-31",
     "2026-01-31",
     "2026-02-28",
@@ -9976,19 +10012,19 @@
    ],
    "pairs": [
     [
-     "546805",
-     "575194"
-    ],
-    [
      "575194",
-     "560560"
-    ],
-    [
-     "560560",
      "642526"
     ],
     [
      "642526",
+     "546805"
+    ],
+    [
+     "546805",
+     "560560"
+    ],
+    [
+     "560560",
      "546806"
     ],
     [
@@ -10043,41 +10079,41 @@
    "event": "will-russia-capture-kupiansk-by",
    "template": "Will Russia capture Kupiansk by @D@?",
    "legs": [
+    "575195",
+    "537888",
     "522894",
     "522895",
-    "575195",
     "560552",
-    "641872",
-    "537888"
+    "641872"
    ],
    "keys": [
+    "2024-09-30",
+    "2024-12-31",
     "2025-04-30",
     "2025-08-31",
-    "2025-09-30",
     "2025-10-31",
-    "2025-11-30",
-    "2025-12-31"
+    "2025-11-30"
    ],
    "pairs": [
+    [
+     "575195",
+     "537888"
+    ],
+    [
+     "537888",
+     "522894"
+    ],
     [
      "522894",
      "522895"
     ],
     [
      "522895",
-     "575195"
-    ],
-    [
-     "575195",
      "560552"
     ],
     [
      "560552",
      "641872"
-    ],
-    [
-     "641872",
-     "537888"
     ]
    ],
    "negRiskAugmented": false,
@@ -10343,16 +10379,16 @@
     "2009849",
     "2034747",
     "2034723",
-    "5180509",
-    "2034729"
+    "2034729",
+    "5180509"
    ],
    "keys": [
     "2026-03-31",
     "2026-04-30",
     "2026-05-31",
     "2026-06-30",
-    "2026-10-31",
-    "2027-09-30"
+    "2026-09-30",
+    "2026-10-31"
    ],
    "pairs": [
     [
@@ -10369,11 +10405,11 @@
     ],
     [
      "2034723",
-     "5180509"
+     "2034729"
     ],
     [
-     "5180509",
-     "2034729"
+     "2034729",
+     "5180509"
     ]
    ],
    "negRiskAugmented": false,
@@ -10532,37 +10568,25 @@
    "template": "Will Trump visit China by @D@?",
    "legs": [
     "604490",
-    "604489",
-    "706279",
-    "1985665",
     "1985666",
     "1611527",
-    "1611577"
+    "1611577",
+    "604489",
+    "706279",
+    "1985665"
    ],
    "keys": [
     "2025-03-31",
+    "2025-05-15",
+    "2025-05-31",
+    "2025-06-30",
     "2025-10-31",
     "2026-04-30",
-    "2026-05-08",
-    "2026-05-15",
-    "2026-05-31",
-    "2026-06-30"
+    "2026-05-08"
    ],
    "pairs": [
     [
      "604490",
-     "604489"
-    ],
-    [
-     "604489",
-     "706279"
-    ],
-    [
-     "706279",
-     "1985665"
-    ],
-    [
-     "1985665",
      "1985666"
     ],
     [
@@ -10572,6 +10596,18 @@
     [
      "1611527",
      "1611577"
+    ],
+    [
+     "1611577",
+     "604489"
+    ],
+    [
+     "604489",
+     "706279"
+    ],
+    [
+     "706279",
+     "1985665"
     ]
    ],
    "negRiskAugmented": false,
@@ -15383,6 +15419,28 @@
    "fee_rate": 0.04,
    "fee_exponent": 1.0
   },
+  "573827": {
+   "id": "573827",
+   "question": "Will Claude 5 be released by December 31?",
+   "groupItemTitle": "December 31, 2025",
+   "conditionId": "0xeb07ab8bd8f2b94a37869cea9c163ec6eb0fc1471d51fc46b25ba5581b3c3f08",
+   "startDate": "2025-08-07T20:35:43.809Z",
+   "endDate": "2026-02-06T00:00:00Z",
+   "closedTime": "2026-01-01 09:34:35+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": true,
+   "volume": "52055.695036",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "59731756439034982810492261843223367001319868516630202893625162090208237470706",
+   "no_token": "53876814902032290060361150242225953092654596413976825641481961654403513422778",
+   "fee_rate": 0.04,
+   "fee_exponent": 1.0
+  },
   "1336694": {
    "id": "1336694",
    "question": "Will Claude 5 be released by February 6, 2026?",
@@ -15534,28 +15592,6 @@
    "acceptingOrders": false,
    "token": "86407337639158293359389124583768157275690211660096922615528286673949420137237",
    "no_token": "21513506786448755394956010249332586766731685278350676508463808882910902478561",
-   "fee_rate": 0.04,
-   "fee_exponent": 1.0
-  },
-  "573827": {
-   "id": "573827",
-   "question": "Will Claude 5 be released by December 31?",
-   "groupItemTitle": "December 31, 2025",
-   "conditionId": "0xeb07ab8bd8f2b94a37869cea9c163ec6eb0fc1471d51fc46b25ba5581b3c3f08",
-   "startDate": "2025-08-07T20:35:43.809Z",
-   "endDate": "2026-02-06T00:00:00Z",
-   "closedTime": "2026-01-01 09:34:35+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": true,
-   "volume": "52055.695036",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "59731756439034982810492261843223367001319868516630202893625162090208237470706",
-   "no_token": "53876814902032290060361150242225953092654596413976825641481961654403513422778",
    "fee_rate": 0.04,
    "fee_exponent": 1.0
   },
@@ -19930,94 +19966,6 @@
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
-  "573809": {
-   "id": "573809",
-   "question": "Will Gemini 3.0 be released by August 31?",
-   "groupItemTitle": "August 31",
-   "conditionId": "0x007dbf92f1a25cd375383759ccfc1caa37efac0cd4f80a87dd737a55db4a29fb",
-   "startDate": "2025-08-07T20:42:41.178713Z",
-   "endDate": "2025-10-31T00:00:00Z",
-   "closedTime": "2025-09-01 06:24:42+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": false,
-   "volume": "135031.653968",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "15976562663372390436362466603651560646406316890429487634374050662409748953654",
-   "no_token": "50448531176057492231790184485058664364377796898327643901872958088673899784650",
-   "fee_rate": 0.0,
-   "fee_exponent": 1.0
-  },
-  "580854": {
-   "id": "580854",
-   "question": "Will Gemini 3.0 be released by September 30?",
-   "groupItemTitle": "September 30",
-   "conditionId": "0x0e380ea07550bd6b3cfa6707c683ab2969d218fbdaa65339bcfef4292225f7f7",
-   "startDate": "2025-08-25T22:33:43.49036Z",
-   "endDate": "2025-10-31T00:00:00Z",
-   "closedTime": "2025-10-01 06:13:41+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": false,
-   "volume": "85241.649921",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "29932217347421868399583451522001372498343074718916721435942783595829084897101",
-   "no_token": "90606312191373896926811992973431634120460189701214516726893954572757619004144",
-   "fee_rate": 0.0,
-   "fee_exponent": 1.0
-  },
-  "618022": {
-   "id": "618022",
-   "question": "Will Gemini 3.0 be released by October 15?",
-   "groupItemTitle": "October 15",
-   "conditionId": "0xcef1d53c8d5da95df81885e658dd3a30ae937bbe18bbe40cbb166058710fdff1",
-   "startDate": "2025-09-30T22:41:27.636101Z",
-   "endDate": "2025-10-31T00:00:00Z",
-   "closedTime": "2025-10-16 06:09:03+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": false,
-   "volume": "867419.966981",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "26263932589074273696964514703678143689677121346130757022106324168439680078457",
-   "no_token": "19345680502009368969848618092530820509128041634745186615359295125724504821831",
-   "fee_rate": 0.0,
-   "fee_exponent": 1.0
-  },
-  "573811": {
-   "id": "573811",
-   "question": "Will Gemini 3.0 be released by October 31?",
-   "groupItemTitle": "October 31",
-   "conditionId": "0xb65d38b20b1405e0f246ce4ae2d027a17537986d7af927cabf974eff17e0868f",
-   "startDate": "2025-08-07T20:42:35.055Z",
-   "endDate": "2025-10-31T00:00:00Z",
-   "closedTime": "2025-11-01 06:16:02+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": false,
-   "volume": "2951588.21987",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "11884560026541818867074532862160335930627617257772176678343571244360369764268",
-   "no_token": "26995640316426736155119869504185537388579005652312736538276029664453503026428",
-   "fee_rate": 0.0,
-   "fee_exponent": 1.0
-  },
   "644471": {
    "id": "644471",
    "question": "Will Gemini 3.0 be released by November 15?",
@@ -20103,6 +20051,94 @@
    "acceptingOrders": false,
    "token": "64155099883163074121810088697609762818078385671440513320458540237024802068389",
    "no_token": "58406206174818270650110085247480956424192158983288252364930540229573952753398",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
+  "573809": {
+   "id": "573809",
+   "question": "Will Gemini 3.0 be released by August 31?",
+   "groupItemTitle": "August 31",
+   "conditionId": "0x007dbf92f1a25cd375383759ccfc1caa37efac0cd4f80a87dd737a55db4a29fb",
+   "startDate": "2025-08-07T20:42:41.178713Z",
+   "endDate": "2025-10-31T00:00:00Z",
+   "closedTime": "2025-09-01 06:24:42+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "135031.653968",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "15976562663372390436362466603651560646406316890429487634374050662409748953654",
+   "no_token": "50448531176057492231790184485058664364377796898327643901872958088673899784650",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
+  "580854": {
+   "id": "580854",
+   "question": "Will Gemini 3.0 be released by September 30?",
+   "groupItemTitle": "September 30",
+   "conditionId": "0x0e380ea07550bd6b3cfa6707c683ab2969d218fbdaa65339bcfef4292225f7f7",
+   "startDate": "2025-08-25T22:33:43.49036Z",
+   "endDate": "2025-10-31T00:00:00Z",
+   "closedTime": "2025-10-01 06:13:41+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "85241.649921",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "29932217347421868399583451522001372498343074718916721435942783595829084897101",
+   "no_token": "90606312191373896926811992973431634120460189701214516726893954572757619004144",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
+  "618022": {
+   "id": "618022",
+   "question": "Will Gemini 3.0 be released by October 15?",
+   "groupItemTitle": "October 15",
+   "conditionId": "0xcef1d53c8d5da95df81885e658dd3a30ae937bbe18bbe40cbb166058710fdff1",
+   "startDate": "2025-09-30T22:41:27.636101Z",
+   "endDate": "2025-10-31T00:00:00Z",
+   "closedTime": "2025-10-16 06:09:03+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "867419.966981",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "26263932589074273696964514703678143689677121346130757022106324168439680078457",
+   "no_token": "19345680502009368969848618092530820509128041634745186615359295125724504821831",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
+  "573811": {
+   "id": "573811",
+   "question": "Will Gemini 3.0 be released by October 31?",
+   "groupItemTitle": "October 31",
+   "conditionId": "0xb65d38b20b1405e0f246ce4ae2d027a17537986d7af927cabf974eff17e0868f",
+   "startDate": "2025-08-07T20:42:35.055Z",
+   "endDate": "2025-10-31T00:00:00Z",
+   "closedTime": "2025-11-01 06:16:02+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "2951588.21987",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "11884560026541818867074532862160335930627617257772176678343571244360369764268",
+   "no_token": "26995640316426736155119869504185537388579005652312736538276029664453503026428",
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
@@ -23186,28 +23222,6 @@
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
-  "4620250": {
-   "id": "4620250",
-   "question": "Iran full airspace closure by October 31, 2026?",
-   "groupItemTitle": "October 31",
-   "conditionId": "0x3ef582dd2a08ec4df3a237ff16505b0869b92afeb8cbf619ff085695c9bdb542",
-   "startDate": "2026-09-16T17:53:38Z",
-   "endDate": "2026-11-01T03:59:00Z",
-   "closedTime": null,
-   "closed": false,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": false,
-   "volume": "103886.96298100002",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.01,
-   "acceptingOrders": true,
-   "token": "12986041958032490956100187529369728708256259581035618976714497828677868886315",
-   "no_token": "98282689049673050962334818467743727614818971377812348096485339058203693156854",
-   "fee_rate": 0.0,
-   "fee_exponent": 1.0
-  },
   "3128769": {
    "id": "3128769",
    "question": "Iran full airspace closure by September 30?",
@@ -23227,6 +23241,28 @@
    "acceptingOrders": false,
    "token": "93933627431532002514968810193191024181932079727276543084062068006935365748672",
    "no_token": "109719631173196402976582847567817158790560641472932038818342039512045728528798",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
+  "4620250": {
+   "id": "4620250",
+   "question": "Iran full airspace closure by October 31, 2026?",
+   "groupItemTitle": "October 31",
+   "conditionId": "0x3ef582dd2a08ec4df3a237ff16505b0869b92afeb8cbf619ff085695c9bdb542",
+   "startDate": "2026-09-16T17:53:38Z",
+   "endDate": "2026-11-01T03:59:00Z",
+   "closedTime": null,
+   "closed": false,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "103886.96298100002",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.01,
+   "acceptingOrders": true,
+   "token": "12986041958032490956100187529369728708256259581035618976714497828677868886315",
+   "no_token": "98282689049673050962334818467743727614818971377812348096485339058203693156854",
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
@@ -23494,6 +23530,28 @@
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
+  "1535973": {
+   "id": "1535973",
+   "question": "Iran leadership change by December 31?",
+   "groupItemTitle": "December 31",
+   "conditionId": "0x377e7fe65cf198a7fc4fdae3f2136b74729279267858daaf96718b23bc2a5607",
+   "startDate": "2026-03-09T02:58:15.361Z",
+   "endDate": "2027-01-01T04:59:00Z",
+   "closedTime": null,
+   "closed": false,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "4992147.401092001",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.01,
+   "acceptingOrders": true,
+   "token": "18652479948917565296149340091675894865339012333173025944893512396354173886674",
+   "no_token": "60499458684380641857666641513383149627633695110197406276308452075860198022694",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
   "2737233": {
    "id": "2737233",
    "question": "Iran leadership change by June 30, 2027?",
@@ -23516,25 +23574,47 @@
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
-  "1535973": {
-   "id": "1535973",
-   "question": "Iran leadership change by December 31?",
-   "groupItemTitle": "December 31",
-   "conditionId": "0x377e7fe65cf198a7fc4fdae3f2136b74729279267858daaf96718b23bc2a5607",
-   "startDate": "2026-03-09T02:58:15.361Z",
-   "endDate": "2027-01-01T04:59:00Z",
-   "closedTime": null,
-   "closed": false,
+  "1394436": {
+   "id": "1394436",
+   "question": "Iran Strike on Israel by March 31?",
+   "groupItemTitle": "March 31",
+   "conditionId": "0x0c8e90be724ba76a69c5d4dbf543a8afca2218b546d310e94d448f077434d948",
+   "startDate": "2026-02-18T23:40:11.76441Z",
+   "endDate": "2026-02-28T00:00:00Z",
+   "closedTime": "2026-03-01 03:54:59+00",
+   "closed": true,
    "active": true,
    "negRisk": false,
    "negRiskOther": false,
    "feesEnabled": false,
-   "volume": "4992147.401092001",
+   "volume": "251901.427463",
    "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.01,
-   "acceptingOrders": true,
-   "token": "18652479948917565296149340091675894865339012333173025944893512396354173886674",
-   "no_token": "60499458684380641857666641513383149627633695110197406276308452075860198022694",
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "53678394846365317670846972110394788870968223234044254776486112890217851253789",
+   "no_token": "23174819506219828010360124116751697169406214862032299565363063974414957764844",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
+  "1394437": {
+   "id": "1394437",
+   "question": "Iran Strike on Israel by December 31?",
+   "groupItemTitle": "December 31",
+   "conditionId": "0x83ed5d7b328cb98dbb070379ec7184ba9c83fc8b6516c330c921501ad5ecf1a9",
+   "startDate": "2026-02-18T23:40:11.499918Z",
+   "endDate": "2026-02-28T00:00:00Z",
+   "closedTime": "2026-03-01 03:55:01+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "89780.943555",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "75546909271998255299028334017428147658881195662320802511067239369571422978901",
+   "no_token": "98198074495488646868930936517223779258130531204584325508753384955056682293515",
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
@@ -23604,47 +23684,25 @@
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
-  "1394436": {
-   "id": "1394436",
-   "question": "Iran Strike on Israel by March 31?",
-   "groupItemTitle": "March 31",
-   "conditionId": "0x0c8e90be724ba76a69c5d4dbf543a8afca2218b546d310e94d448f077434d948",
-   "startDate": "2026-02-18T23:40:11.76441Z",
-   "endDate": "2026-02-28T00:00:00Z",
-   "closedTime": "2026-03-01 03:54:59+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": false,
-   "volume": "251901.427463",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "53678394846365317670846972110394788870968223234044254776486112890217851253789",
-   "no_token": "23174819506219828010360124116751697169406214862032299565363063974414957764844",
-   "fee_rate": 0.0,
-   "fee_exponent": 1.0
-  },
-  "1394437": {
-   "id": "1394437",
-   "question": "Iran Strike on Israel by December 31?",
+  "1571571": {
+   "id": "1571571",
+   "question": "Iran x Israel/US conflict ends by December 31?",
    "groupItemTitle": "December 31",
-   "conditionId": "0x83ed5d7b328cb98dbb070379ec7184ba9c83fc8b6516c330c921501ad5ecf1a9",
-   "startDate": "2026-02-18T23:40:11.499918Z",
-   "endDate": "2026-02-28T00:00:00Z",
-   "closedTime": "2026-03-01 03:55:01+00",
+   "conditionId": "0x23408daff185f6c89d91bd279ce97142c573454277d72ae882a9d9fd1ae79af4",
+   "startDate": "2026-03-12T21:35:16.83Z",
+   "endDate": "2026-06-30T00:00:00Z",
+   "closedTime": "2026-04-21 18:22:32+00",
    "closed": true,
    "active": true,
    "negRisk": false,
    "negRiskOther": false,
    "feesEnabled": false,
-   "volume": "89780.943555",
+   "volume": "3954777.875154008",
    "enableOrderBook": true,
    "orderPriceMinTickSize": 0.001,
    "acceptingOrders": false,
-   "token": "75546909271998255299028334017428147658881195662320802511067239369571422978901",
-   "no_token": "98198074495488646868930936517223779258130531204584325508753384955056682293515",
+   "token": "30474492153316523915604855839063847245493287455989692695957038531302522868025",
+   "no_token": "72672649490627178259809292941952979051200271014678303501403336114251236535062",
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
@@ -23777,28 +23835,6 @@
    "acceptingOrders": false,
    "token": "23072428889948871919916997912866343746006774483855187447858489211364943872755",
    "no_token": "103799449565939648641249283675043265448904133572321099361316887955408449940585",
-   "fee_rate": 0.0,
-   "fee_exponent": 1.0
-  },
-  "1571571": {
-   "id": "1571571",
-   "question": "Iran x Israel/US conflict ends by December 31?",
-   "groupItemTitle": "December 31",
-   "conditionId": "0x23408daff185f6c89d91bd279ce97142c573454277d72ae882a9d9fd1ae79af4",
-   "startDate": "2026-03-12T21:35:16.83Z",
-   "endDate": "2026-06-30T00:00:00Z",
-   "closedTime": "2026-04-21 18:22:32+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": false,
-   "volume": "3954777.875154008",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "30474492153316523915604855839063847245493287455989692695957038531302522868025",
-   "no_token": "72672649490627178259809292941952979051200271014678303501403336114251236535062",
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
@@ -24409,7 +24445,7 @@
    "negRisk": false,
    "negRiskOther": false,
    "feesEnabled": false,
-   "volume": "246506.34839",
+   "volume": "246506.34838999997",
    "enableOrderBook": true,
    "orderPriceMinTickSize": 0.001,
    "acceptingOrders": true,
@@ -24572,6 +24608,28 @@
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
+  "580847": {
+   "id": "580847",
+   "question": "Israel x Iran ceasefire broken by September 30?",
+   "groupItemTitle": "September 30",
+   "conditionId": "0x772d27149308cf235cc1695ae551b66c291e43f132f93a16358f240c2dc25301",
+   "startDate": "2025-08-25T22:34:24.686Z",
+   "endDate": "2025-09-01T00:00:00Z",
+   "closedTime": "2025-10-01 06:37:45+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "431463.582017",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "12750913396311763697701938971274274495361607490905026402110664360433336652744",
+   "no_token": "96983293991602085294968083530459552381189027160525182391300980177757248945119",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
   "555833": {
    "id": "555833",
    "question": "Israel x Iran ceasefire broken by July 31?",
@@ -24613,28 +24671,6 @@
    "acceptingOrders": false,
    "token": "77153948988789026685289574793532817791311128291371613241208944693852806771680",
    "no_token": "81605478179918703773215377662695372796184132271532327554234437318190909053637",
-   "fee_rate": 0.0,
-   "fee_exponent": 1.0
-  },
-  "580847": {
-   "id": "580847",
-   "question": "Israel x Iran ceasefire broken by September 30?",
-   "groupItemTitle": "September 30",
-   "conditionId": "0x772d27149308cf235cc1695ae551b66c291e43f132f93a16358f240c2dc25301",
-   "startDate": "2025-08-25T22:34:24.686Z",
-   "endDate": "2025-09-01T00:00:00Z",
-   "closedTime": "2025-10-01 06:37:45+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": false,
-   "volume": "431463.582017",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "12750913396311763697701938971274274495361607490905026402110664360433336652744",
-   "no_token": "96983293991602085294968083530459552381189027160525182391300980177757248945119",
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
@@ -24836,28 +24872,6 @@
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
-  "581165": {
-   "id": "581165",
-   "question": "Israel x Syria security agreement by September 30?",
-   "groupItemTitle": "September 30",
-   "conditionId": "0xe0170502a5cecfcd3a3037d700f15b4fec4b9c4988de95e4ed1468eacd23ff29",
-   "startDate": "2025-08-26T01:10:21.209Z",
-   "endDate": "2025-09-30T00:00:00Z",
-   "closedTime": "2025-10-01 07:52:05+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": false,
-   "volume": "235947.811644",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "98025695033408007078618293839613469407056242237693715289449155638631441914762",
-   "no_token": "107037238846351557302149846157499010975883788738160038963608233225029698592135",
-   "fee_rate": 0.0,
-   "fee_exponent": 1.0
-  },
   "602010": {
    "id": "602010",
    "question": "Israel x Syria security agreement by December 31?",
@@ -24877,28 +24891,6 @@
    "acceptingOrders": false,
    "token": "69937757404837539134847827869630253190194635826279524305298284080303291099350",
    "no_token": "40915545402572104319063078951154341685055505136251370847266444891978789198800",
-   "fee_rate": 0.0,
-   "fee_exponent": 1.0
-  },
-  "675788": {
-   "id": "675788",
-   "question": "Israel x Syria security agreement by January 31?",
-   "groupItemTitle": "January 31",
-   "conditionId": "0xa47c3241c8f51d4f02d8c6dea507d8ceee4be1adc425cecc933564c762ee24ad",
-   "startDate": "2025-11-11T03:15:52.763156Z",
-   "endDate": "2026-01-31T00:00:00Z",
-   "closedTime": "2026-02-01 07:40:50+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": false,
-   "volume": "73884.947518",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "36685313325836492969220221488073883383556836789057849866984039832816676096694",
-   "no_token": "57643262113111545914519767810548917432471568830122790555997986340150867482629",
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
@@ -24943,6 +24935,50 @@
    "acceptingOrders": false,
    "token": "84348038402659639941836209260221772039942739491890721010819630693075602597129",
    "no_token": "35052799380906612241653419359721988743807116588205346860506039024527003073301",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
+  "581165": {
+   "id": "581165",
+   "question": "Israel x Syria security agreement by September 30?",
+   "groupItemTitle": "September 30",
+   "conditionId": "0xe0170502a5cecfcd3a3037d700f15b4fec4b9c4988de95e4ed1468eacd23ff29",
+   "startDate": "2025-08-26T01:10:21.209Z",
+   "endDate": "2025-09-30T00:00:00Z",
+   "closedTime": "2025-10-01 07:52:05+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "235947.811644",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "98025695033408007078618293839613469407056242237693715289449155638631441914762",
+   "no_token": "107037238846351557302149846157499010975883788738160038963608233225029698592135",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
+  "675788": {
+   "id": "675788",
+   "question": "Israel x Syria security agreement by January 31?",
+   "groupItemTitle": "January 31",
+   "conditionId": "0xa47c3241c8f51d4f02d8c6dea507d8ceee4be1adc425cecc933564c762ee24ad",
+   "startDate": "2025-11-11T03:15:52.763156Z",
+   "endDate": "2026-01-31T00:00:00Z",
+   "closedTime": "2026-02-01 07:40:50+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "73884.947518",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "36685313325836492969220221488073883383556836789057849866984039832816676096694",
+   "no_token": "57643262113111545914519767810548917432471568830122790555997986340150867482629",
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
@@ -31348,6 +31384,28 @@
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
+  "581249": {
+   "id": "581249",
+   "question": "Lisa Cook out as Fed Governor by December 31?",
+   "groupItemTitle": " December 31",
+   "conditionId": "0xb21c15db48e4c5197b7fdc9bf946a277e2ba8aa2cd0f09631a4b440c689ae7a2",
+   "startDate": "2025-08-26T00:59:43.537Z",
+   "endDate": "2025-09-30T00:00:00Z",
+   "closedTime": "2026-01-01 09:37:45+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "2153774.445234",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "108273461106799243194968535958056255499026165173135604287102518849583967856366",
+   "no_token": "96199010117921207632548458208820026417043630543388600731584176901706480741724",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
   "581247": {
    "id": "581247",
    "question": "Lisa Cook out as Fed Governor by September 30?",
@@ -31389,28 +31447,6 @@
    "acceptingOrders": false,
    "token": "92740600701492934219313848629711119863623065202362543076791206836804394782850",
    "no_token": "105550718594911489113987457503646021727855275434348174676162965560746195127872",
-   "fee_rate": 0.0,
-   "fee_exponent": 1.0
-  },
-  "581249": {
-   "id": "581249",
-   "question": "Lisa Cook out as Fed Governor by December 31?",
-   "groupItemTitle": " December 31",
-   "conditionId": "0xb21c15db48e4c5197b7fdc9bf946a277e2ba8aa2cd0f09631a4b440c689ae7a2",
-   "startDate": "2025-08-26T00:59:43.537Z",
-   "endDate": "2025-09-30T00:00:00Z",
-   "closedTime": "2026-01-01 09:37:45+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": false,
-   "volume": "2153774.445234",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "108273461106799243194968535958056255499026165173135604287102518849583967856366",
-   "no_token": "96199010117921207632548458208820026417043630543388600731584176901706480741724",
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
@@ -34714,28 +34750,6 @@
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
-  "556112": {
-   "id": "556112",
-   "question": "Will Monad perform an airdrop by June 30?",
-   "groupItemTitle": "June 30",
-   "conditionId": "0x0e3c65b0c5a9d8b7f9d3220e559eabcb713c0f99568a8c03cb91e0853785b5d4",
-   "startDate": "2025-06-26T19:50:39.804Z",
-   "endDate": "2026-06-30T00:00:00Z",
-   "closedTime": "2025-11-24 20:47:51+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": false,
-   "volume": "1227801.464404",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "37793513028835483114053554893311742351065410932598733298691460693496507481313",
-   "no_token": "102078346669562093567834693407087684933273386626401557202971191427475012909947",
-   "fee_rate": 0.0,
-   "fee_exponent": 1.0
-  },
   "556111": {
    "id": "556111",
    "question": "Will Monad perform an airdrop by December 31?",
@@ -34755,6 +34769,28 @@
    "acceptingOrders": false,
    "token": "8683643916262438088845569836704745883336747772772657008121614675106320191464",
    "no_token": "39829535956684130460177123824946179851557634885771172821463328084528120171847",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
+  "556112": {
+   "id": "556112",
+   "question": "Will Monad perform an airdrop by June 30?",
+   "groupItemTitle": "June 30",
+   "conditionId": "0x0e3c65b0c5a9d8b7f9d3220e559eabcb713c0f99568a8c03cb91e0853785b5d4",
+   "startDate": "2025-06-26T19:50:39.804Z",
+   "endDate": "2026-06-30T00:00:00Z",
+   "closedTime": "2025-11-24 20:47:51+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "1227801.464404",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "37793513028835483114053554893311742351065410932598733298691460693496507481313",
+   "no_token": "102078346669562093567834693407087684933273386626401557202971191427475012909947",
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
@@ -39875,7 +39911,7 @@
    "negRisk": false,
    "negRiskOther": false,
    "feesEnabled": true,
-   "volume": "1722607.3184350021",
+   "volume": "1722607.3184350017",
    "enableOrderBook": true,
    "orderPriceMinTickSize": 0.01,
    "acceptingOrders": true,
@@ -39897,7 +39933,7 @@
    "negRisk": false,
    "negRiskOther": false,
    "feesEnabled": true,
-   "volume": "638917.2361899986",
+   "volume": "638917.2361899983",
    "enableOrderBook": true,
    "orderPriceMinTickSize": 0.01,
    "acceptingOrders": true,
@@ -39919,7 +39955,7 @@
    "negRisk": false,
    "negRiskOther": false,
    "feesEnabled": true,
-   "volume": "777840.2392529992",
+   "volume": "777840.2392529994",
    "enableOrderBook": true,
    "orderPriceMinTickSize": 0.001,
    "acceptingOrders": true,
@@ -39941,7 +39977,7 @@
    "negRisk": false,
    "negRiskOther": false,
    "feesEnabled": true,
-   "volume": "911300.043151004",
+   "volume": "911300.0431510041",
    "enableOrderBook": true,
    "orderPriceMinTickSize": 0.001,
    "acceptingOrders": true,
@@ -42970,6 +43006,28 @@
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
+  "548302": {
+   "id": "548302",
+   "question": "Tesla launches unsupervised full self driving (FSD) by December 31?",
+   "groupItemTitle": "December 31",
+   "conditionId": "0x19e22d98e7a7f46e08247d359fb446193484e8522125b249ec0ac38a10320697",
+   "startDate": "2025-05-29T21:54:51.386Z",
+   "endDate": "2025-06-30T12:00:00Z",
+   "closedTime": "2026-01-01 09:46:29+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "1086303.0845",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "79257663291735552444286701320835446057647453714432783408786730976056250778611",
+   "no_token": "59026280133399286562532931958455699251934553067653106227325415578360617078156",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
   "548301": {
    "id": "548301",
    "question": "Tesla launches unsupervised full self driving (FSD) by June 30?",
@@ -43011,28 +43069,6 @@
    "acceptingOrders": false,
    "token": "555932461932282561846775721055098362967610526370268802204907329277340510422",
    "no_token": "66263696661341691403498819681930510947244744014831659750910084273327082804964",
-   "fee_rate": 0.0,
-   "fee_exponent": 1.0
-  },
-  "548302": {
-   "id": "548302",
-   "question": "Tesla launches unsupervised full self driving (FSD) by December 31?",
-   "groupItemTitle": "December 31",
-   "conditionId": "0x19e22d98e7a7f46e08247d359fb446193484e8522125b249ec0ac38a10320697",
-   "startDate": "2025-05-29T21:54:51.386Z",
-   "endDate": "2025-06-30T12:00:00Z",
-   "closedTime": "2026-01-01 09:46:29+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": false,
-   "volume": "1086303.0845",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "79257663291735552444286701320835446057647453714432783408786730976056250778611",
-   "no_token": "59026280133399286562532931958455699251934553067653106227325415578360617078156",
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
@@ -46006,6 +46042,28 @@
    "fee_rate": 0.04,
    "fee_exponent": 1.0
   },
+  "1653794": {
+   "id": "1653794",
+   "question": "US escorts commercial ship through Hormuz by April 30?",
+   "groupItemTitle": "April 30",
+   "conditionId": "0x01ffd0acf0d6e42558a7cbd521efde937166a1bf09f3a2dfcdf36950c2dd3635",
+   "startDate": "2026-03-19T18:38:00.602Z",
+   "endDate": "2026-03-31T00:00:00Z",
+   "closedTime": "2026-05-01 07:02:14+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "1094485.188121001",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "39692746408839627006625117454702416483396848777109545915742836472702053280131",
+   "no_token": "48040978383503935282200437732940432868713878504371477146915673656590841115861",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
   "1554932": {
    "id": "1554932",
    "question": "US escorts commercial ship through Hormuz by March 31?",
@@ -46047,28 +46105,6 @@
    "acceptingOrders": false,
    "token": "30791280934025047958914225503915607438491386367206602598648957813347539658202",
    "no_token": "82986721691155664298202077927579257946259078025036550981862169585551772326484",
-   "fee_rate": 0.0,
-   "fee_exponent": 1.0
-  },
-  "1653794": {
-   "id": "1653794",
-   "question": "US escorts commercial ship through Hormuz by April 30?",
-   "groupItemTitle": "April 30",
-   "conditionId": "0x01ffd0acf0d6e42558a7cbd521efde937166a1bf09f3a2dfcdf36950c2dd3635",
-   "startDate": "2026-03-19T18:38:00.602Z",
-   "endDate": "2026-03-31T00:00:00Z",
-   "closedTime": "2026-05-01 07:02:14+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": false,
-   "volume": "1094485.188121001",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "39692746408839627006625117454702416483396848777109545915742836472702053280131",
-   "no_token": "48040978383503935282200437732940432868713878504371477146915673656590841115861",
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
@@ -47194,28 +47230,6 @@
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
-  "1107284": {
-   "id": "1107284",
-   "question": "US strike on Colombia by January 31?",
-   "groupItemTitle": "January 31",
-   "conditionId": "0x34b55645184672ed7de5bb1d10f642c79739f66062d2831b41a77e31f99f0816",
-   "startDate": "2026-01-04T19:56:07.392907Z",
-   "endDate": "2026-01-31T00:00:00Z",
-   "closedTime": "2026-02-01 07:57:44+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": false,
-   "volume": "668338.937842",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "53524977528256405185746242947442173839362887245394744495612722170901977248514",
-   "no_token": "89386018629693096548581536515236072096054133458130131505001738068415769456408",
-   "fee_rate": 0.0,
-   "fee_exponent": 1.0
-  },
   "1107306": {
    "id": "1107306",
    "question": "US strike on Colombia by March 31?",
@@ -47235,6 +47249,28 @@
    "acceptingOrders": false,
    "token": "10298845750983726412841649860615577258778776344736820662407979144832099626759",
    "no_token": "102429182452105632765948403975900162037849144249106060712458946869456096642527",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
+  "1107284": {
+   "id": "1107284",
+   "question": "US strike on Colombia by January 31?",
+   "groupItemTitle": "January 31",
+   "conditionId": "0x34b55645184672ed7de5bb1d10f642c79739f66062d2831b41a77e31f99f0816",
+   "startDate": "2026-01-04T19:56:07.392907Z",
+   "endDate": "2026-01-31T00:00:00Z",
+   "closedTime": "2026-02-01 07:57:44+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "668338.937842",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "53524977528256405185746242947442173839362887245394744495612722170901977248514",
+   "no_token": "89386018629693096548581536515236072096054133458130131505001738068415769456408",
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
@@ -47317,7 +47353,7 @@
    "negRisk": false,
    "negRiskOther": false,
    "feesEnabled": false,
-   "volume": "5386012.435152001",
+   "volume": "5386012.435152002",
    "enableOrderBook": true,
    "orderPriceMinTickSize": 0.01,
    "acceptingOrders": true,
@@ -48778,28 +48814,6 @@
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
-  "580859": {
-   "id": "580859",
-   "question": "US strikes Yemen by September 30?",
-   "groupItemTitle": "September 30",
-   "conditionId": "0x75315fb2833d270da22488d9d15803e5ac8d040c241e1553511856d303ca6a59",
-   "startDate": "2025-08-25T22:30:24.069Z",
-   "endDate": "2025-09-30T00:00:00Z",
-   "closedTime": "2025-10-01 07:40:01+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": false,
-   "volume": "155213.974276",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "8378474931419071117460320221067493271734510239066085487750246204238358136020",
-   "no_token": "106985192969874008169428995051658127777998022786505979864071570836809590848687",
-   "fee_rate": 0.0,
-   "fee_exponent": 1.0
-  },
   "614699": {
    "id": "614699",
    "question": "US strikes Yemen by December 31?",
@@ -48819,6 +48833,28 @@
    "acceptingOrders": false,
    "token": "106250646873610217078090170154281986253419786192535695927313539447264576814478",
    "no_token": "109894292501856812169210728109553245279465744726644016347774699195441227021903",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
+  "580859": {
+   "id": "580859",
+   "question": "US strikes Yemen by September 30?",
+   "groupItemTitle": "September 30",
+   "conditionId": "0x75315fb2833d270da22488d9d15803e5ac8d040c241e1553511856d303ca6a59",
+   "startDate": "2025-08-25T22:30:24.069Z",
+   "endDate": "2025-09-30T00:00:00Z",
+   "closedTime": "2025-10-01 07:40:01+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "155213.974276",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "8378474931419071117460320221067493271734510239066085487750246204238358136020",
+   "no_token": "106985192969874008169428995051658127777998022786505979864071570836809590848687",
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
@@ -50054,6 +50090,138 @@
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
+  "548080": {
+   "id": "548080",
+   "question": "US x Russia military clash by December 31?",
+   "groupItemTitle": "December 31",
+   "conditionId": "0x0d82012de5e3275b934dcf446b1cce93705b37e9ffe22470fd6caf7411d1d1f6",
+   "startDate": "2025-05-28T22:16:01.648Z",
+   "endDate": "2026-01-01T04:59:00Z",
+   "closedTime": "2026-01-01 07:33:45+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "417000.888679",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "66044657638810295187363565799805709250672136616354369296323178255753996444656",
+   "no_token": "66537772931762876120767156840228558556719267427800281171125874580115174588329",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
+  "1127402": {
+   "id": "1127402",
+   "question": "US x Russia military clash by January 31, 2026?",
+   "groupItemTitle": "January 31",
+   "conditionId": "0xb95d5b530e4f51e2b9f8b65ed18259e2cf385d7e320ec5627c8d0eb61df815dc",
+   "startDate": "2026-01-07T05:47:39.104916Z",
+   "endDate": "2026-02-01T04:59:00Z",
+   "closedTime": "2026-02-01 07:52:50+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "106196.260744",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "32439658626108300652372328806838350715850208072865588198812909765816440362394",
+   "no_token": "72596226888468860072947736803305608840998059909337538782899398935621495931307",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
+  "648872": {
+   "id": "648872",
+   "question": "US x Russia military clash by June 30, 2026?",
+   "groupItemTitle": "June 30, 2026",
+   "conditionId": "0xb1311aeea3677808af7f317895208bf9d3f685ab3f946f67afca11d5ed199dd0",
+   "startDate": "2025-10-27T17:52:11.24Z",
+   "endDate": "2026-07-01T03:59:00Z",
+   "closedTime": "2026-07-01 06:54:19+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "200032.4597250006",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "53718143507722222025482708105484979770434331532873527434664602715154372949986",
+   "no_token": "86693363790696751339816050278877877262171227813296099717106615959022457093170",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
+  "1124834": {
+   "id": "1124834",
+   "question": "US x Russia military clash by December 31, 2026?",
+   "groupItemTitle": "December 31, 2026",
+   "conditionId": "0x3373d3750e99d0fd60da842e688d89b71ad92d6bdd42c329f199add1c5bacb06",
+   "startDate": "2026-01-07T05:45:57.05Z",
+   "endDate": "2027-01-01T04:59:00Z",
+   "closedTime": null,
+   "closed": false,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "1083632.276258",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": true,
+   "token": "74580890713477889155778397033413604695248820561928419929239929602538131402272",
+   "no_token": "7257011479626409922035368873631229141341263144294525166015954883117981789975",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
+  "698378": {
+   "id": "698378",
+   "question": "US x Venezuela military engagement by December 15?",
+   "groupItemTitle": "December 15",
+   "conditionId": "0xdb696d4fe889e38e950b9ff13d15f6c3f7fafea2f9dd8265f630385eb8c15367",
+   "startDate": "2025-11-23T14:53:38.713Z",
+   "endDate": "2025-11-30T00:00:00Z",
+   "closedTime": "2025-12-16 07:04:13+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "3803402.88312",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "112640497415274870048785609862289176635257764908997036834711143540471128740829",
+   "no_token": "28683673936942471863375110029357487330012659447245176311148849330237415517527",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
+  "956634": {
+   "id": "956634",
+   "question": "US x Venezuela military engagement by December 23?",
+   "groupItemTitle": "December 23",
+   "conditionId": "0xc4d083666a4637974bdc4ecde5b8160a5719e22ab4ff7c167e2ebb023fc8bc3f",
+   "startDate": "2025-12-17T20:39:19.581602Z",
+   "endDate": "2025-11-30T00:00:00Z",
+   "closedTime": "2025-12-24 07:04:17+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "941598.639902",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "2299755137967058618991481359142463821365172948742639079888846132275663468144",
+   "no_token": "23936091829898723689704886683800151614451576091935336012714937200546640664991",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
   "588774": {
    "id": "588774",
    "question": "US x Venezuela military engagement by September 30?",
@@ -50469,50 +50637,6 @@
    "acceptingOrders": false,
    "token": "3198732639336970450395585452269280893409405751233807115789403488194536872165",
    "no_token": "50223217555011321010715656747749453270232423389758049107391147966450788832208",
-   "fee_rate": 0.0,
-   "fee_exponent": 1.0
-  },
-  "698378": {
-   "id": "698378",
-   "question": "US x Venezuela military engagement by December 15?",
-   "groupItemTitle": "December 15",
-   "conditionId": "0xdb696d4fe889e38e950b9ff13d15f6c3f7fafea2f9dd8265f630385eb8c15367",
-   "startDate": "2025-11-23T14:53:38.713Z",
-   "endDate": "2025-11-30T00:00:00Z",
-   "closedTime": "2025-12-16 07:04:13+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": false,
-   "volume": "3803402.88312",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "112640497415274870048785609862289176635257764908997036834711143540471128740829",
-   "no_token": "28683673936942471863375110029357487330012659447245176311148849330237415517527",
-   "fee_rate": 0.0,
-   "fee_exponent": 1.0
-  },
-  "956634": {
-   "id": "956634",
-   "question": "US x Venezuela military engagement by December 23?",
-   "groupItemTitle": "December 23",
-   "conditionId": "0xc4d083666a4637974bdc4ecde5b8160a5719e22ab4ff7c167e2ebb023fc8bc3f",
-   "startDate": "2025-12-17T20:39:19.581602Z",
-   "endDate": "2025-11-30T00:00:00Z",
-   "closedTime": "2025-12-24 07:04:17+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": false,
-   "volume": "941598.639902",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "2299755137967058618991481359142463821365172948742639079888846132275663468144",
-   "no_token": "23936091829898723689704886683800151614451576091935336012714937200546640664991",
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
@@ -60838,7 +60962,7 @@
    "negRisk": true,
    "negRiskOther": false,
    "feesEnabled": false,
-   "volume": "5775767.180539002",
+   "volume": "5775767.180539001",
    "enableOrderBook": true,
    "orderPriceMinTickSize": 0.01,
    "acceptingOrders": true,
@@ -60882,7 +61006,7 @@
    "negRisk": true,
    "negRiskOther": false,
    "feesEnabled": false,
-   "volume": "1679238.4188900006",
+   "volume": "1679238.41889",
    "enableOrderBook": true,
    "orderPriceMinTickSize": 0.001,
    "acceptingOrders": true,
@@ -60904,7 +61028,7 @@
    "negRisk": true,
    "negRiskOther": false,
    "feesEnabled": false,
-   "volume": "2661531.8993800017",
+   "volume": "2661531.8993800012",
    "enableOrderBook": true,
    "orderPriceMinTickSize": 0.001,
    "acceptingOrders": true,
@@ -60948,7 +61072,7 @@
    "negRisk": true,
    "negRiskOther": false,
    "feesEnabled": false,
-   "volume": "3030649.3434919985",
+   "volume": "3030649.3434919994",
    "enableOrderBook": true,
    "orderPriceMinTickSize": 0.001,
    "acceptingOrders": true,
@@ -60970,7 +61094,7 @@
    "negRisk": true,
    "negRiskOther": false,
    "feesEnabled": false,
-   "volume": "3064008.8873730004",
+   "volume": "3064008.8873729995",
    "enableOrderBook": true,
    "orderPriceMinTickSize": 0.001,
    "acceptingOrders": true,
@@ -61014,7 +61138,7 @@
    "negRisk": true,
    "negRiskOther": false,
    "feesEnabled": false,
-   "volume": "1664481.5069509996",
+   "volume": "1664481.506951",
    "enableOrderBook": true,
    "orderPriceMinTickSize": 0.001,
    "acceptingOrders": true,
@@ -61058,7 +61182,7 @@
    "negRisk": true,
    "negRiskOther": false,
    "feesEnabled": false,
-   "volume": "1929917.881068",
+   "volume": "1929917.8810680003",
    "enableOrderBook": true,
    "orderPriceMinTickSize": 0.001,
    "acceptingOrders": true,
@@ -61102,7 +61226,7 @@
    "negRisk": true,
    "negRiskOther": false,
    "feesEnabled": false,
-   "volume": "1991125.8981320006",
+   "volume": "1991125.8981320001",
    "enableOrderBook": true,
    "orderPriceMinTickSize": 0.001,
    "acceptingOrders": true,
@@ -61124,7 +61248,7 @@
    "negRisk": true,
    "negRiskOther": false,
    "feesEnabled": false,
-   "volume": "1677986.9068799994",
+   "volume": "1677986.9068799997",
    "enableOrderBook": true,
    "orderPriceMinTickSize": 0.001,
    "acceptingOrders": true,
@@ -61168,7 +61292,7 @@
    "negRisk": true,
    "negRiskOther": false,
    "feesEnabled": false,
-   "volume": "1720727.4961330001",
+   "volume": "1720727.496133",
    "enableOrderBook": true,
    "orderPriceMinTickSize": 0.001,
    "acceptingOrders": true,
@@ -62174,6 +62298,28 @@
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
+  "570071": {
+   "id": "570071",
+   "question": "Will Hamas agree to disarm by December 31?",
+   "groupItemTitle": "December 31",
+   "conditionId": "0x11db077700a35d7415b6198c5e5a53adcf1db1819a09831f7eaf148f88243c40",
+   "startDate": "2025-07-30T18:40:07.377Z",
+   "endDate": "2026-01-01T04:59:00Z",
+   "closedTime": "2026-01-01 11:12:23+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "1141374.498639",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "90745857659327148773609688807318558478201557095351383313162258694341091010927",
+   "no_token": "33553945367166725251175374412602170037894165758025042506237379564547625385037",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
   "677357": {
    "id": "677357",
    "question": "Will Hamas agree to disarm by March 31?",
@@ -62218,28 +62364,6 @@
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
-  "570071": {
-   "id": "570071",
-   "question": "Will Hamas agree to disarm by December 31?",
-   "groupItemTitle": "December 31",
-   "conditionId": "0x11db077700a35d7415b6198c5e5a53adcf1db1819a09831f7eaf148f88243c40",
-   "startDate": "2025-07-30T18:40:07.377Z",
-   "endDate": "2026-01-01T04:59:00Z",
-   "closedTime": "2026-01-01 11:12:23+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": false,
-   "volume": "1141374.498639",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "90745857659327148773609688807318558478201557095351383313162258694341091010927",
-   "no_token": "33553945367166725251175374412602170037894165758025042506237379564547625385037",
-   "fee_rate": 0.0,
-   "fee_exponent": 1.0
-  },
   "2747434": {
    "id": "2747434",
    "question": "Will Hamas agree to disarm by December 31?",
@@ -62259,28 +62383,6 @@
    "acceptingOrders": true,
    "token": "3833250547311424992805456252782158332407335422350263044535636678503072819141",
    "no_token": "30676432546818066080538703205639237969080188796746196694446265523208566227883",
-   "fee_rate": 0.0,
-   "fee_exponent": 1.0
-  },
-  "665228": {
-   "id": "665228",
-   "question": "Will Hezbollah disarm by March 31?",
-   "groupItemTitle": "March 31",
-   "conditionId": "0xcfbe2de215f38407317a7ecfff4c13aa591eca2fe428fc203e5669a936009e78",
-   "startDate": "2025-11-05T18:10:54.9Z",
-   "endDate": "2026-03-31T00:00:00Z",
-   "closedTime": "2026-04-01 07:54:21+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": false,
-   "volume": "906592.2227879986",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "13726222412844491860621369391578295764460056456966982436233358302388625569468",
-   "no_token": "10852332002112773763359204434610715394710971181223888185945987959566837502210",
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
@@ -62306,6 +62408,28 @@
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
+  "665228": {
+   "id": "665228",
+   "question": "Will Hezbollah disarm by March 31?",
+   "groupItemTitle": "March 31",
+   "conditionId": "0xcfbe2de215f38407317a7ecfff4c13aa591eca2fe428fc203e5669a936009e78",
+   "startDate": "2025-11-05T18:10:54.9Z",
+   "endDate": "2026-03-31T00:00:00Z",
+   "closedTime": "2026-04-01 07:54:21+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "906592.2227879986",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "13726222412844491860621369391578295764460056456966982436233358302388625569468",
+   "no_token": "10852332002112773763359204434610715394710971181223888185945987959566837502210",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
   "1323083": {
    "id": "1323083",
    "question": "Will Hezbollah disarm by December 31?",
@@ -62328,28 +62452,6 @@
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
-  "1145587": {
-   "id": "1145587",
-   "question": "Will Khamenei leave Iran by Jan 16?",
-   "groupItemTitle": "January 16",
-   "conditionId": "0xd0f3597d979af91ccfce9c3148d402ede5f92901f3575d86729bb43ad4ee0eae",
-   "startDate": "2026-01-09T21:02:42.574944Z",
-   "endDate": "2026-01-09T00:00:00Z",
-   "closedTime": "2026-01-17 07:35:42+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": false,
-   "volume": "1082843.815879",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "55574516333621946396410968308047892161449519019624099965115941271485544411188",
-   "no_token": "21530460365407417517983580054234130280884280081280969617158323320638509571575",
-   "fee_rate": 0.0,
-   "fee_exponent": 1.0
-  },
   "1112029": {
    "id": "1112029",
    "question": "Will Khamenei leave Iran by Jan 31?",
@@ -62369,28 +62471,6 @@
    "acceptingOrders": false,
    "token": "86011597087465728357672618647480093267245367184223038073301355010954968903872",
    "no_token": "29216667039313635286341334802359003919591207895746994392834724637717236729860",
-   "fee_rate": 0.0,
-   "fee_exponent": 1.0
-  },
-  "1198457": {
-   "id": "1198457",
-   "question": "Will Khamenei leave Iran by February 28, 2026?",
-   "groupItemTitle": "February 28",
-   "conditionId": "0xbcd0df4a902df08f0d355349a4f407319cbc7953fc58fd1f96d746c5ad5a42ff",
-   "startDate": "2026-01-19T20:35:45.638224Z",
-   "endDate": "2026-01-09T00:00:00Z",
-   "closedTime": "2026-03-01 08:15:15+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": false,
-   "volume": "1600834.532651",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "107452688487880332315224712529772391818626849491621950148023337133277369746983",
-   "no_token": "90992282830242158595677520509305722608531993318748550824277709095882883537906",
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
@@ -62435,6 +62515,50 @@
    "acceptingOrders": false,
    "token": "80404970200508976565635466827987382204229780478317860514386371965589276928143",
    "no_token": "17534298117009088653925892532629674654011194647421335094162202923073472881781",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
+  "1145587": {
+   "id": "1145587",
+   "question": "Will Khamenei leave Iran by Jan 16?",
+   "groupItemTitle": "January 16",
+   "conditionId": "0xd0f3597d979af91ccfce9c3148d402ede5f92901f3575d86729bb43ad4ee0eae",
+   "startDate": "2026-01-09T21:02:42.574944Z",
+   "endDate": "2026-01-09T00:00:00Z",
+   "closedTime": "2026-01-17 07:35:42+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "1082843.815879",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "55574516333621946396410968308047892161449519019624099965115941271485544411188",
+   "no_token": "21530460365407417517983580054234130280884280081280969617158323320638509571575",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
+  "1198457": {
+   "id": "1198457",
+   "question": "Will Khamenei leave Iran by February 28, 2026?",
+   "groupItemTitle": "February 28",
+   "conditionId": "0xbcd0df4a902df08f0d355349a4f407319cbc7953fc58fd1f96d746c5ad5a42ff",
+   "startDate": "2026-01-19T20:35:45.638224Z",
+   "endDate": "2026-01-09T00:00:00Z",
+   "closedTime": "2026-03-01 08:15:15+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "1600834.532651",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "107452688487880332315224712529772391818626849491621950148023337133277369746983",
+   "no_token": "90992282830242158595677520509305722608531993318748550824277709095882883537906",
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
@@ -63230,116 +63354,6 @@
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
-  "919767": {
-   "id": "919767",
-   "question": "Will Russia capture all of Pokrovsk by January 15?",
-   "groupItemTitle": "January 15",
-   "conditionId": "0xb326f67a9fb3feb7fc007e75871f2496dbac995cb63f4729702822dcff4af51f",
-   "startDate": "2025-12-12T21:03:03.727Z",
-   "endDate": "2025-09-30T00:00:00Z",
-   "closedTime": "2026-01-16 07:20:58+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": false,
-   "volume": "104892.586551",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "80521769754884023655746474111859216446746132821215321421314751716089806253052",
-   "no_token": "4257857646625210939698442379944539746308812190469115912529087878005721427716",
-   "fee_rate": 0.0,
-   "fee_exponent": 1.0
-  },
-  "956869": {
-   "id": "956869",
-   "question": "Will Russia capture all of Pokrovsk by January 31?",
-   "groupItemTitle": "January 31",
-   "conditionId": "0xbb6e02d1b77e26964331305ca9f12da8c6f676e1efe893372485425becbed223",
-   "startDate": "2025-12-17T20:49:16.669Z",
-   "endDate": "2025-09-30T00:00:00Z",
-   "closedTime": "2026-02-01 07:59:38+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": false,
-   "volume": "106573.818106",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "84564904382008311962069365288283225167949742624603481609433520601697502508513",
-   "no_token": "110473274803190513305909771926634978036732087892207534963402259650286946307044",
-   "fee_rate": 0.0,
-   "fee_exponent": 1.0
-  },
-  "1007260": {
-   "id": "1007260",
-   "question": "Will Russia capture all of Pokrovsk by February 28?",
-   "groupItemTitle": "February 28",
-   "conditionId": "0x91e0a718041ddbf0855fb655cfcb5944636b33ce8ccaaee7dce0940aa80465ab",
-   "startDate": "2025-12-23T22:07:45.132Z",
-   "endDate": "2025-09-30T00:00:00Z",
-   "closedTime": "2026-02-27 19:17:57+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": false,
-   "volume": "936339.4719",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "82235234359303790318990338986894673350271665663072939428595924891405248197200",
-   "no_token": "88263981208537093410063459148292369268178576306830494146004574288996908107420",
-   "fee_rate": 0.0,
-   "fee_exponent": 1.0
-  },
-  "1320800": {
-   "id": "1320800",
-   "question": "Will Russia capture all of Pokrovsk by March 31?",
-   "groupItemTitle": "March 31",
-   "conditionId": "0x100f4c96c8ffb376074a4d12bbc5b3c9c4ae77042319de11249096b6cbfbcefc",
-   "startDate": "2026-02-02T17:54:13.988Z",
-   "endDate": "2025-09-30T00:00:00Z",
-   "closedTime": "2026-02-27 19:18:33+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": false,
-   "volume": "498031.400921",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "66269306641072351636961565307986748333577224262245957192572668300728882961637",
-   "no_token": "84921298575469347580540454437533951955834830815691221822388171560096631172626",
-   "fee_rate": 0.0,
-   "fee_exponent": 1.0
-  },
-  "579452": {
-   "id": "579452",
-   "question": "Will Russia capture all of Pokrovsk by September 30?",
-   "groupItemTitle": "September 30",
-   "conditionId": "0x6a9217a221b4e27ed6116059aefa28af4ba16ad7167c18581d83bf8576513183",
-   "startDate": "2025-08-21T21:22:20.282Z",
-   "endDate": "2025-09-30T00:00:00Z",
-   "closedTime": "2025-10-01 06:12:47+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": false,
-   "volume": "62287.679615",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "57866868700938839260894886716071663884023202504584983517176400125596254053588",
-   "no_token": "25798283675202526939916367850504318026992823806399223783580336962289065884768",
-   "fee_rate": 0.0,
-   "fee_exponent": 1.0
-  },
   "642530": {
    "id": "642530",
    "question": "Will Russia capture all of Pokrovsk by October 31?",
@@ -63450,6 +63464,116 @@
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
+  "919767": {
+   "id": "919767",
+   "question": "Will Russia capture all of Pokrovsk by January 15?",
+   "groupItemTitle": "January 15",
+   "conditionId": "0xb326f67a9fb3feb7fc007e75871f2496dbac995cb63f4729702822dcff4af51f",
+   "startDate": "2025-12-12T21:03:03.727Z",
+   "endDate": "2025-09-30T00:00:00Z",
+   "closedTime": "2026-01-16 07:20:58+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "104892.586551",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "80521769754884023655746474111859216446746132821215321421314751716089806253052",
+   "no_token": "4257857646625210939698442379944539746308812190469115912529087878005721427716",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
+  "956869": {
+   "id": "956869",
+   "question": "Will Russia capture all of Pokrovsk by January 31?",
+   "groupItemTitle": "January 31",
+   "conditionId": "0xbb6e02d1b77e26964331305ca9f12da8c6f676e1efe893372485425becbed223",
+   "startDate": "2025-12-17T20:49:16.669Z",
+   "endDate": "2025-09-30T00:00:00Z",
+   "closedTime": "2026-02-01 07:59:38+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "106573.818106",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "84564904382008311962069365288283225167949742624603481609433520601697502508513",
+   "no_token": "110473274803190513305909771926634978036732087892207534963402259650286946307044",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
+  "1007260": {
+   "id": "1007260",
+   "question": "Will Russia capture all of Pokrovsk by February 28?",
+   "groupItemTitle": "February 28",
+   "conditionId": "0x91e0a718041ddbf0855fb655cfcb5944636b33ce8ccaaee7dce0940aa80465ab",
+   "startDate": "2025-12-23T22:07:45.132Z",
+   "endDate": "2025-09-30T00:00:00Z",
+   "closedTime": "2026-02-27 19:17:57+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "936339.4719",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "82235234359303790318990338986894673350271665663072939428595924891405248197200",
+   "no_token": "88263981208537093410063459148292369268178576306830494146004574288996908107420",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
+  "1320800": {
+   "id": "1320800",
+   "question": "Will Russia capture all of Pokrovsk by March 31?",
+   "groupItemTitle": "March 31",
+   "conditionId": "0x100f4c96c8ffb376074a4d12bbc5b3c9c4ae77042319de11249096b6cbfbcefc",
+   "startDate": "2026-02-02T17:54:13.988Z",
+   "endDate": "2025-09-30T00:00:00Z",
+   "closedTime": "2026-02-27 19:18:33+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "498031.400921",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "66269306641072351636961565307986748333577224262245957192572668300728882961637",
+   "no_token": "84921298575469347580540454437533951955834830815691221822388171560096631172626",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
+  "579452": {
+   "id": "579452",
+   "question": "Will Russia capture all of Pokrovsk by September 30?",
+   "groupItemTitle": "September 30",
+   "conditionId": "0x6a9217a221b4e27ed6116059aefa28af4ba16ad7167c18581d83bf8576513183",
+   "startDate": "2025-08-21T21:22:20.282Z",
+   "endDate": "2025-09-30T00:00:00Z",
+   "closedTime": "2025-10-01 06:12:47+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "62287.679615",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "57866868700938839260894886716071663884023202504584983517176400125596254053588",
+   "no_token": "25798283675202526939916367850504318026992823806399223783580336962289065884768",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
   "1060079": {
    "id": "1060079",
    "question": "Will Russia capture all of Stepnohirsk by January 31, 2026?",
@@ -63538,28 +63662,6 @@
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
-  "546805": {
-   "id": "546805",
-   "question": "Will Russia capture Kostyantynivka by August 31?",
-   "groupItemTitle": "August 31",
-   "conditionId": "0x5fa63a3f820801f6bab4f95a9fc4453c004ab1881b6be2c2cb26c812f7efb997",
-   "startDate": "2025-05-22T21:21:03.317115Z",
-   "endDate": "2025-08-31T12:00:00Z",
-   "closedTime": "2025-09-01 06:28:52+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": false,
-   "volume": "820505.02216",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "52764520351434119047034479962184961804730800614485355573059721230866709386316",
-   "no_token": "50939339576833016698573110949129257192038949921900247130555235008970489450900",
-   "fee_rate": 0.0,
-   "fee_exponent": 1.0
-  },
   "575194": {
    "id": "575194",
    "question": "Will Russia capture Kostyantynivka by September 30?",
@@ -63582,28 +63684,6 @@
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
-  "560560": {
-   "id": "560560",
-   "question": "Will Russia capture Kostyantynivka by October 31?",
-   "groupItemTitle": "October 31",
-   "conditionId": "0x19848149723bbd00545b98f45aa239864d8afd2194fec522af4dd2cb222f9766",
-   "startDate": "2025-07-07T04:01:13.354Z",
-   "endDate": "2025-10-31T12:00:00Z",
-   "closedTime": "2025-11-01 06:29:10+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": false,
-   "volume": "701057.717926",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "57509386515638203409676353122070128915263312270689905975542272900147217912507",
-   "no_token": "56204317272716953593028494650753841280461771658055690484625859869098941695564",
-   "fee_rate": 0.0,
-   "fee_exponent": 1.0
-  },
   "642526": {
    "id": "642526",
    "question": "Will Russia capture Kostyantynivka by November 30?",
@@ -63623,6 +63703,50 @@
    "acceptingOrders": false,
    "token": "26340281514116361739177694696142465392610507254614159065410861117730143622187",
    "no_token": "77445434236199640828285894610915168465113925137412738738677921101339333881186",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
+  "546805": {
+   "id": "546805",
+   "question": "Will Russia capture Kostyantynivka by August 31?",
+   "groupItemTitle": "August 31",
+   "conditionId": "0x5fa63a3f820801f6bab4f95a9fc4453c004ab1881b6be2c2cb26c812f7efb997",
+   "startDate": "2025-05-22T21:21:03.317115Z",
+   "endDate": "2025-08-31T12:00:00Z",
+   "closedTime": "2025-09-01 06:28:52+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "820505.02216",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "52764520351434119047034479962184961804730800614485355573059721230866709386316",
+   "no_token": "50939339576833016698573110949129257192038949921900247130555235008970489450900",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
+  "560560": {
+   "id": "560560",
+   "question": "Will Russia capture Kostyantynivka by October 31?",
+   "groupItemTitle": "October 31",
+   "conditionId": "0x19848149723bbd00545b98f45aa239864d8afd2194fec522af4dd2cb222f9766",
+   "startDate": "2025-07-07T04:01:13.354Z",
+   "endDate": "2025-10-31T12:00:00Z",
+   "closedTime": "2025-11-01 06:29:10+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "701057.717926",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "57509386515638203409676353122070128915263312270689905975542272900147217912507",
+   "no_token": "56204317272716953593028494650753841280461771658055690484625859869098941695564",
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
@@ -63868,6 +63992,50 @@
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
+  "575195": {
+   "id": "575195",
+   "question": "Will Russia capture Kupiansk by September 30?",
+   "groupItemTitle": "September 30",
+   "conditionId": "0xa9733c3bed65be317f67ed5f1876373fe170a796bea52df59329e39c05aa8d06",
+   "startDate": "2025-08-12T17:12:26.992Z",
+   "endDate": "2025-08-31T12:00:00Z",
+   "closedTime": "2025-10-01 07:27:51+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "494718.513188",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "60090353620479884328798781010682547891286129126275080593061292737746675028442",
+   "no_token": "32455566628912445198725897011210713445244922840569024345228020784600490007759",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
+  "537888": {
+   "id": "537888",
+   "question": "Will Russia capture Kupiansk by December 31?",
+   "groupItemTitle": "December 31",
+   "conditionId": "0x640938ae857aa2dfaa5aeb2af07ec853ab0eec5395a5d4ab1c31842f1d3ab271",
+   "startDate": "2025-04-17T21:46:52.67Z",
+   "endDate": "2025-08-31T12:00:00Z",
+   "closedTime": "2025-10-29 16:43:39+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": false,
+   "volume": "1555128.092628",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "73849230933275582377306880224601643818067786746445665179175712771203846256478",
+   "no_token": "41964727692296764554008210585272703775169108300473204217434458494013861861124",
+   "fee_rate": 0.0,
+   "fee_exponent": 1.0
+  },
   "522894": {
    "id": "522894",
    "question": "Will Russia capture Kupiansk by April 30?",
@@ -63912,28 +64080,6 @@
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
-  "575195": {
-   "id": "575195",
-   "question": "Will Russia capture Kupiansk by September 30?",
-   "groupItemTitle": "September 30",
-   "conditionId": "0xa9733c3bed65be317f67ed5f1876373fe170a796bea52df59329e39c05aa8d06",
-   "startDate": "2025-08-12T17:12:26.992Z",
-   "endDate": "2025-08-31T12:00:00Z",
-   "closedTime": "2025-10-01 07:27:51+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": false,
-   "volume": "494718.513188",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "60090353620479884328798781010682547891286129126275080593061292737746675028442",
-   "no_token": "32455566628912445198725897011210713445244922840569024345228020784600490007759",
-   "fee_rate": 0.0,
-   "fee_exponent": 1.0
-  },
   "560552": {
    "id": "560552",
    "question": "Will Russia capture Kupiansk by October 31?",
@@ -63975,28 +64121,6 @@
    "acceptingOrders": false,
    "token": "103423789592028539215717503888105788561023690441683750387439012683686427259069",
    "no_token": "73847511449505624901617788437164291082435859851777846759533178543134015549677",
-   "fee_rate": 0.0,
-   "fee_exponent": 1.0
-  },
-  "537888": {
-   "id": "537888",
-   "question": "Will Russia capture Kupiansk by December 31?",
-   "groupItemTitle": "December 31",
-   "conditionId": "0x640938ae857aa2dfaa5aeb2af07ec853ab0eec5395a5d4ab1c31842f1d3ab271",
-   "startDate": "2025-04-17T21:46:52.67Z",
-   "endDate": "2025-08-31T12:00:00Z",
-   "closedTime": "2025-10-29 16:43:39+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": false,
-   "volume": "1555128.092628",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "73849230933275582377306880224601643818067786746445665179175712771203846256478",
-   "no_token": "41964727692296764554008210585272703775169108300473204217434458494013861861124",
    "fee_rate": 0.0,
    "fee_exponent": 1.0
   },
@@ -64101,7 +64225,7 @@
    "negRisk": false,
    "negRiskOther": false,
    "feesEnabled": true,
-   "volume": "991243.4964659996",
+   "volume": "991243.4964659995",
    "enableOrderBook": true,
    "orderPriceMinTickSize": 0.01,
    "acceptingOrders": true,
@@ -64644,28 +64768,6 @@
    "fee_rate": 0.04,
    "fee_exponent": 1.0
   },
-  "5180509": {
-   "id": "5180509",
-   "question": "Will the US confirm that aliens exist by October 31?",
-   "groupItemTitle": "October 31",
-   "conditionId": "0x29d75600ba2e46ce9dd262e813ee710a64c83c2e0c4edfa025019d00a46ae05b",
-   "startDate": "2026-10-01T16:16:58Z",
-   "endDate": "2026-11-01T03:59:00Z",
-   "closedTime": null,
-   "closed": false,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": true,
-   "volume": "148919.92522700003",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": true,
-   "token": "114778773863960651133544528372842265754062506228638835147326321969265556602981",
-   "no_token": "41931473504166418029338631982886893880623259289789668213357613020901641467679",
-   "fee_rate": 0.04,
-   "fee_exponent": 1.0
-  },
   "2034729": {
    "id": "2034729",
    "question": "Will the US confirm that aliens exist by September 30?",
@@ -64685,6 +64787,28 @@
    "acceptingOrders": false,
    "token": "105069795193894788513793544317232573603113601482800430284884125529472460504203",
    "no_token": "36187795093008220558219256261729424135850137511571634448544248306719357578130",
+   "fee_rate": 0.04,
+   "fee_exponent": 1.0
+  },
+  "5180509": {
+   "id": "5180509",
+   "question": "Will the US confirm that aliens exist by October 31?",
+   "groupItemTitle": "October 31",
+   "conditionId": "0x29d75600ba2e46ce9dd262e813ee710a64c83c2e0c4edfa025019d00a46ae05b",
+   "startDate": "2026-10-01T16:16:58Z",
+   "endDate": "2026-11-01T03:59:00Z",
+   "closedTime": null,
+   "closed": false,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": true,
+   "volume": "148919.92522700003",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": true,
+   "token": "114778773863960651133544528372842265754062506228638835147326321969265556602981",
+   "no_token": "41931473504166418029338631982886893880623259289789668213357613020901641467679",
    "fee_rate": 0.04,
    "fee_exponent": 1.0
   },
@@ -64833,7 +64957,7 @@
    "negRisk": false,
    "negRiskOther": false,
    "feesEnabled": false,
-   "volume": "859264.9556610001",
+   "volume": "859264.955661",
    "enableOrderBook": true,
    "orderPriceMinTickSize": 0.001,
    "acceptingOrders": true,
@@ -65062,72 +65186,6 @@
    "fee_rate": 0.04,
    "fee_exponent": 1.0
   },
-  "604489": {
-   "id": "604489",
-   "question": "Will Trump visit China by October 31?",
-   "groupItemTitle": "October 31, 2025",
-   "conditionId": "0x3d69cc559693ee46ba58da16e43c4e75b8da67b99c2e9a9d2f72bb0222d0f137",
-   "startDate": "2025-09-19T21:22:54.912576Z",
-   "endDate": "2025-10-31T00:00:00Z",
-   "closedTime": "2025-11-01 06:28:08+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": true,
-   "volume": "549414.493468",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "45601394554497090173642354630373884477724604907691447337031201817815960365378",
-   "no_token": "102652665954921241745169157447280060113772926009745753029489061659654862632571",
-   "fee_rate": 0.04,
-   "fee_exponent": 1.0
-  },
-  "706279": {
-   "id": "706279",
-   "question": "Will Trump visit China by April 30?",
-   "groupItemTitle": "April 30",
-   "conditionId": "0x48fbf70c1713e71a405052bc4641e26dbba435fa557672c4040763c901cbf606",
-   "startDate": "2025-11-26T22:30:43.843563Z",
-   "endDate": "2026-04-30T00:00:00Z",
-   "closedTime": "2026-05-01 07:05:52+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": true,
-   "volume": "12827468.473153912",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "44446804496889907209027787393532554522900719536131325061789855807185516080089",
-   "no_token": "81197514885731569817347387229955339496528996514718498705783416912577413567672",
-   "fee_rate": 0.04,
-   "fee_exponent": 1.0
-  },
-  "1985665": {
-   "id": "1985665",
-   "question": "Will Trump visit China by May 8?",
-   "groupItemTitle": "May 8",
-   "conditionId": "0xd749f7f15df4d76e621fdc88eabe87198b535b8d49f5b3918bb562701feeb939",
-   "startDate": "2026-04-14T21:55:36.595Z",
-   "endDate": "2026-05-08T00:00:00Z",
-   "closedTime": "2026-05-09 06:32:38+00",
-   "closed": true,
-   "active": true,
-   "negRisk": false,
-   "negRiskOther": false,
-   "feesEnabled": true,
-   "volume": "784051.4217309997",
-   "enableOrderBook": true,
-   "orderPriceMinTickSize": 0.001,
-   "acceptingOrders": false,
-   "token": "45308756906838913434636868433013485374945902565100321173531418104791745026372",
-   "no_token": "106589077582327712956248675413382545120704388296112708664998680816586454887806",
-   "fee_rate": 0.04,
-   "fee_exponent": 1.0
-  },
   "1985666": {
    "id": "1985666",
    "question": "Will Trump visit China by May 15?",
@@ -65191,6 +65249,72 @@
    "acceptingOrders": false,
    "token": "69625364846840598716576766409133467014678469688514096710920250102107522915422",
    "no_token": "22867679359328041307036010075086444013781601266173545655945367675586188506678",
+   "fee_rate": 0.04,
+   "fee_exponent": 1.0
+  },
+  "604489": {
+   "id": "604489",
+   "question": "Will Trump visit China by October 31?",
+   "groupItemTitle": "October 31, 2025",
+   "conditionId": "0x3d69cc559693ee46ba58da16e43c4e75b8da67b99c2e9a9d2f72bb0222d0f137",
+   "startDate": "2025-09-19T21:22:54.912576Z",
+   "endDate": "2025-10-31T00:00:00Z",
+   "closedTime": "2025-11-01 06:28:08+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": true,
+   "volume": "549414.493468",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "45601394554497090173642354630373884477724604907691447337031201817815960365378",
+   "no_token": "102652665954921241745169157447280060113772926009745753029489061659654862632571",
+   "fee_rate": 0.04,
+   "fee_exponent": 1.0
+  },
+  "706279": {
+   "id": "706279",
+   "question": "Will Trump visit China by April 30?",
+   "groupItemTitle": "April 30",
+   "conditionId": "0x48fbf70c1713e71a405052bc4641e26dbba435fa557672c4040763c901cbf606",
+   "startDate": "2025-11-26T22:30:43.843563Z",
+   "endDate": "2026-04-30T00:00:00Z",
+   "closedTime": "2026-05-01 07:05:52+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": true,
+   "volume": "12827468.473153912",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "44446804496889907209027787393532554522900719536131325061789855807185516080089",
+   "no_token": "81197514885731569817347387229955339496528996514718498705783416912577413567672",
+   "fee_rate": 0.04,
+   "fee_exponent": 1.0
+  },
+  "1985665": {
+   "id": "1985665",
+   "question": "Will Trump visit China by May 8?",
+   "groupItemTitle": "May 8",
+   "conditionId": "0xd749f7f15df4d76e621fdc88eabe87198b535b8d49f5b3918bb562701feeb939",
+   "startDate": "2026-04-14T21:55:36.595Z",
+   "endDate": "2026-05-08T00:00:00Z",
+   "closedTime": "2026-05-09 06:32:38+00",
+   "closed": true,
+   "active": true,
+   "negRisk": false,
+   "negRiskOther": false,
+   "feesEnabled": true,
+   "volume": "784051.4217309997",
+   "enableOrderBook": true,
+   "orderPriceMinTickSize": 0.001,
+   "acceptingOrders": false,
+   "token": "45308756906838913434636868433013485374945902565100321173531418104791745026372",
+   "no_token": "106589077582327712956248675413382545120704388296112708664998680816586454887806",
    "fee_rate": 0.04,
    "fee_exponent": 1.0
   },

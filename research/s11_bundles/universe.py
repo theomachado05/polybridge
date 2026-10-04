@@ -93,8 +93,10 @@ def date_ladders(event: str, markets: list[dict]) -> list[dict]:
         templ, phrase = date_template(m["question"])
         if phrase is None or not re.search(cfg.CUMULATIVE_DATE_RE, templ, re.I):
             continue
-        yr = int(str(m.get("endDate") or "2026")[:4])
-        d = parse_date(phrase, yr)
+        end = date.fromisoformat(str(m.get("endDate") or "2026-12-31")[:10])
+        d = parse_date(phrase, end.year)
+        if d is not None and not re.search(r"20\d\d", phrase) and d > date.fromordinal(end.toordinal() + 7):
+            d = parse_date(phrase, end.year - 1)    # amendment 1: an end date just past midnight UTC on Jan 1 is still the old year
         if d is not None:
             groups.setdefault(templ, []).append((d, m))
     out = []

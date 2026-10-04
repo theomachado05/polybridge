@@ -116,3 +116,9 @@ def test_taker_trade():
     assert math.isclose(e, 0.51) and math.isclose(pnl, 0.03)
     e, pnl = en.taker_trade(0.50, 0.55, False, 0.01, NOFEE, 2.0)
     assert math.isclose(e, 0.48) and math.isclose(pnl, 0.48 - 0.57)
+
+
+def test_year_from_an_end_date_just_past_new_year_utc():
+    ms = [mk(1, "Change by December 31?", end="2027-01-01T04:59:00Z"), mk(2, "Change by June 30, 2027?", end="2027-07-01T03:59:00Z"),
+          mk(3, "Change by November 30?", end="2026-12-01T04:59:00Z")]
+    assert uni.date_ladders("e", ms)[0]["legs"] == ["3", "1", "2"]

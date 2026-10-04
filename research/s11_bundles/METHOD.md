@@ -123,4 +123,10 @@ The history window is 2025-10-01 to 2026-10-03. Out-of-sample is the most recent
 
 ## Amendments
 
-(none yet)
+**1. Sat 2026-10-03 23:00 New York time: the year of a date without one.** The first live snapshot (22:51) showed a
+"violation" of 10 points on "Iran leadership change by June 30, 2027?" against "... by December 31?". It was a bug in
+the bundle rule, not a mispricing: a date phrase without a year took the year of the market's end date, and an end date
+of 2027-01-01 04:59 UTC (midnight New York) made "December 31" into 2027-12-31, out of order. Rule now: if the phrase has
+no year and the date it gives falls more than 7 days after the market's end date, the year before is used. Both lists
+were rebuilt (the live list is re-read, so its events are those open at 23:00); the 22:51 snapshot is discarded
+(`.cache/live_v0/`). No history price had been read. History list: 100 date ladders (was 99), 50 strike, 83 one-of-many.
