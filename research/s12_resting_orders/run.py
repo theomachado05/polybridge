@@ -109,7 +109,8 @@ def pull() -> None:
             continue
         rec = {"reach_oldest": None, "served": 0, "exhausted": False, "prints": []}
         try:
-            cond = g.condition.iloc[0] or ds.get_json(f"{ds.GAMMA}/markets/{mid}", throttle=pt)["conditionId"]
+            c0 = g.condition.iloc[0]
+            cond = c0 if isinstance(c0, str) and c0 else ds.get_json(f"{ds.GAMMA}/markets/{mid}", throttle=pt)["conditionId"]
             raw, exhausted = pm_trades(cond, float(g.t_in.min()), pt, max_pages=cfg.PRINT_PAGES)
             ts = np.array([float(t.get("timestamp", 0)) for t in raw])
             keep = keep_window(ts, np.concatenate([g.t_in.to_numpy(), g.t_exit.to_numpy()]), cfg.MAX_WINDOW_S) if len(ts) else np.zeros(0, bool)

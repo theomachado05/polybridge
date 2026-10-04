@@ -1,0 +1,11 @@
+sample,criterion,pass,evidence
+S9,enough OOS fills,True,20 filled on 6 weekends
+S9,"IS net per filled > 0, interval excludes 0",False,"+3.28 [-1.16, +8.56]"
+S9,OOS net per filled > 0,False,-8.07
+S9,ALL net per filled > 0 at 2x,False,-2.05
+S9,VERDICT,False,
+S8,enough OOS fills,False,4 filled on 4 dates
+S8,"IS net per filled > 0, interval excludes 0",False,"+0.10 [-4.20, +3.63]"
+S8,OOS net per filled > 0,False,-0.97
+S8,ALL net per filled > 0 at 2x,False,-2.14
+S8,VERDICT,False,
