@@ -1,10 +1,3 @@
-"""The four-type contract classifier: rule parser first, Gemini as a checked second reader.
-
-Types: ``ladder_rung``, ``touch_ticket``, ``close_above_ticket``, ``other`` (``research/linker/link_map.classify``).
-Gemini may read the question and rule text into the same fields, and compare two rungs' rules. Every Gemini field is
-checked against the rule parser: on any disagreement the rule parser's value is served and the item is flagged.
-Gemini never decides a trade; without a key (or on any Gemini failure) the rule parser answers alone.
-"""
 from __future__ import annotations
 
 import math
@@ -21,7 +14,6 @@ _COMPARED = {"touch_ticket": ("underlying", "level", "direction", "window_end"),
 
 
 def rules_classify(question: str, rules: str | None = None, market: dict | None = None) -> dict:
-    """The rule parser's answer, or type ``other`` with the reason when the research code cannot load."""
     try:
         return research.link_map().classify(question or "", rules, market or {})
     except RuntimeError as e:
@@ -34,7 +26,6 @@ def _is_gemini(provider: Any) -> bool:
 
 
 async def gemini_fields(provider: Any, question: str, rules: str | None, created: str | None) -> dict:
-    """Gemini's reading of the text into the parser's fields. Raises LLMError."""
     prompt = ("Read this prediction-market question and its rules into fields. Do not judge prices or trades.\n"
               "type: ladder_rung (\"X by <date>\" where an earlier date implies a later one), touch_ticket (a stock or "
               "the S&P 500 hitting, reaching or dipping to a $ level within a window), close_above_ticket (a stock or the "
@@ -69,7 +60,6 @@ def _gem_value(g: dict, field: str) -> Any:
 
 
 def compare(rule: dict, gem: dict) -> list[dict]:
-    """Fields where Gemini disagrees with the rule parser (empty = agreement)."""
     out = []
     if gem.get("type") != rule["type"]:
         out.append({"field": "type", "rules": rule["type"], "gemini": gem.get("type")})
@@ -84,7 +74,6 @@ def compare(rule: dict, gem: dict) -> list[dict]:
 
 async def classify_contract(question: str, rules: str | None = None, market: dict | None = None,
                             provider: Any = None) -> dict:
-    """Rule parser result plus ``gemini_agreement``. The served type and fields are always the rule parser's."""
     res = rules_classify(question, rules, market)
     agreement: dict = {"used": False, "provider": "rules", "agree": None, "disagreements": [], "error": None, "note": GEMINI_NOTE}
     if _is_gemini(provider) and (question or "").strip():
@@ -97,14 +86,13 @@ async def classify_contract(question: str, rules: str | None = None, market: dic
             agreement.update(agree=not dis, disagreements=dis)
         except LLMError as e:
             agreement["error"] = str(e)
-        except Exception as e:  # a provider bug must not break classification
+        except Exception as e:
             agreement["error"] = f"provider error: {type(e).__name__}"
     res = dict(res, gemini_agreement=agreement, flagged=bool(agreement["disagreements"]))
     return res
 
 
 async def gemini_same_rules(provider: Any, rules_a: str, rules_b: str) -> bool:
-    """Gemini's reading of whether two rungs' rules define the same event with the same source. Raises LLMError."""
     prompt = ("Two prediction-market rungs of one ladder differ only by their deadline. Ignoring the deadline itself, do "
               "their rules define the same event, the same resolution source and the same window start? Answer only "
               "from the text.\n" f"Rules A: {rules_a[:1500]!r}\nRules B: {rules_b[:1500]!r}\n")
@@ -116,8 +104,6 @@ async def gemini_same_rules(provider: Any, rules_a: str, rules_b: str) -> bool:
 
 
 async def check_pair_with_gemini(provider: Any, pair: dict, rich: dict, cheap: dict) -> dict:
-    """Adds ``gemini`` to a ladder pair: Gemini's same-rules reading against the rule verdict (rule wins; flagged on
-    disagreement). The pair's ``nested`` verdict is never changed."""
     if not _is_gemini(provider):
         return pair
     rule_same = all(c["ok"] for c in pair["checks"][1:])

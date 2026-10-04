@@ -20,26 +20,26 @@ TEST(Risk, PositionCap) {
 TEST(Risk, NotionalCapAndUnknownPrice) {
   NotionalCap c{10'000};
   bool capped = false;
-  EXPECT_DOUBLE_EQ(c.clamp(200, 75.0, 1.0, capped), 133);  // floor(10000/75)
+  EXPECT_DOUBLE_EQ(c.clamp(200, 75.0, 1.0, capped), 133);
   EXPECT_TRUE(capped);
   EXPECT_DOUBLE_EQ(c.clamp(5, 3.0, 100.0, capped), 5);
   EXPECT_TRUE(std::isnan(c.clamp(10, NaN, 1.0, capped)));
-  EXPECT_DOUBLE_EQ((NotionalCap{0}.clamp(1e9, NaN, 1.0, capped)), 1e9);  // disabled
+  EXPECT_DOUBLE_EQ((NotionalCap{0}.clamp(1e9, NaN, 1.0, capped)), 1e9);
 }
 
 TEST(Risk, DrawdownKillLatches) {
   DrawdownKill k{100};
   EXPECT_FALSE(k.update(0));
   EXPECT_FALSE(k.update(250));
-  EXPECT_FALSE(k.update(150));  // dd exactly 100
+  EXPECT_FALSE(k.update(150));
   EXPECT_FALSE(k.update(NaN));
   EXPECT_TRUE(k.update(149));
-  EXPECT_TRUE(k.update(1000));  // latched
+  EXPECT_TRUE(k.update(1000));
 }
 
 TEST(Risk, GapFlipKill) {
   GapFlipKill k{0.01};
-  EXPECT_FALSE(k.update(-0.5));  // not armed
+  EXPECT_FALSE(k.update(-0.5));
   k.arm(0.03);
   EXPECT_FALSE(k.update(0.0));
   EXPECT_FALSE(k.update(-0.01));
@@ -53,6 +53,6 @@ TEST(Risk, DailyLossCapResetsEachDay) {
   EXPECT_FALSE(c.update(day + 1, 1000));
   EXPECT_FALSE(c.update(day + 2, 960));
   EXPECT_TRUE(c.update(day + 3, 949));
-  EXPECT_TRUE(c.update(day + 4, 1000));       // stays tripped for the day
-  EXPECT_FALSE(c.update(2 * day + 1, 949));   // new day, new baseline
+  EXPECT_TRUE(c.update(day + 4, 1000));
+  EXPECT_FALSE(c.update(2 * day + 1, 949));
 }

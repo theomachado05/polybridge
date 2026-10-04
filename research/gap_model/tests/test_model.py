@@ -1,4 +1,3 @@
-"""Synthetic tests for the expected-gap model (no network, no real data)."""
 from __future__ import annotations
 
 import numpy as np
@@ -23,7 +22,6 @@ def test_fit_rate_through_origin_exact():
     f = fit_rate([1, 2, -1, 0], [5, 10, -5, 3])
     assert f["rate"] == pytest.approx(5.0)
     assert f["n"] == 4 and f["n_nonzero"] == 3
-    # residuals 0,0,0,3 -> resid sd sqrt(9/3)
     assert f["resid_sd"] == pytest.approx(np.sqrt(3.0))
     assert f["se"] == pytest.approx(0.0, abs=1e-12)
 
@@ -52,14 +50,12 @@ def test_between_market_sd():
 
 
 def test_walk_forward_no_lookahead():
-    """Changing a later gap must not change any earlier prediction."""
     d = _panel(80)
     a = walk_forward(d, "gap", n_min=10)
     d2 = d.copy()
     d2.loc[d2.index[-1], "gap"] = 1e6
     b = walk_forward(d2, "gap", n_min=10)
     pd.testing.assert_series_equal(a["pred_bp"].iloc[:-1], b["pred_bp"].iloc[:-1])
-    # the training set of each prediction excludes the test closure itself
     first = a.iloc[0]
     tr = d[d["open_day"] <= first["closure"]]
     assert first["train_n"] == len(tr)
@@ -70,19 +66,16 @@ def test_walk_forward_burn_in_and_pooled_fallback():
     a = _panel(60, rate=8, seed=1, market="a", start="2024-01-01")
     b = _panel(60, rate=8, seed=2, market="b", start="2024-06-03")
     pr = walk_forward(pd.concat([a, b], ignore_index=True), "gap", n_min=10)
-    # nothing is predicted before market a has 10 non-zero training closures
     nz_a = (a["x"] != 0).cumsum()
     assert len(pr[pr["market"] == "a"]) < len(a)
     first_a = pr[pr["market"] == "a"].iloc[0]
     assert first_a["source"] == "own" and first_a["train_n_nonzero"] >= 10
     assert nz_a.max() >= 10
-    # market b starts on the pooled rate (from a), then switches to its own
     pb = pr[pr["market"] == "b"]
     assert pb.iloc[0]["source"] == "pooled"
     assert (pb["source"] == "own").any()
     sw = pb["source"].tolist()
     assert sw.index("own") > 0 and "pooled" not in sw[sw.index("own"):]
-    # pooled band uses the inflated SE (tau = |pooled rate| with one own-rate market)
     r0 = pb.iloc[0]
     assert r0["se_eff"] == pytest.approx(np.sqrt(r0["rate_se"] ** 2 + r0["rate"] ** 2))
 

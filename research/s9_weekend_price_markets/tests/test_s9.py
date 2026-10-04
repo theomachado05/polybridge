@@ -1,4 +1,3 @@
-"""S9: the weekend clock, the universe rules, the fills with each market's own fee, settlement, and the cap."""
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -21,16 +20,16 @@ def at(y, m, d, hh, mm):
 def test_weekends_need_a_saturday_and_a_sunday_inside_the_closure():
     w = {}
     for days in (["2026-03-05", "2026-03-06", "2026-03-09"], ["2026-04-01", "2026-04-02", "2026-04-06"],
-                 ["2026-05-21", "2026-05-22", "2026-05-26"], ["2026-11-25", "2026-11-27"]):       # consecutive sessions
+                 ["2026-05-21", "2026-05-22", "2026-05-26"], ["2026-11-25", "2026-11-27"]):
         opens = np.array([at(*map(int, d.split("-")), 9, 30) for d in days])
         w.update({x["key"]: x for x in s9.weekends(days, opens)})
-    assert sorted(w) == ["2026-03-09", "2026-04-06", "2026-05-26"]           # Thursday to Friday and Thanksgiving are not weekends
+    assert sorted(w) == ["2026-03-09", "2026-04-06", "2026-05-26"]
     plain = w["2026-03-09"]
     assert plain["start"] == at(2026, 3, 6, 20, 0) and plain["entry"] == at(2026, 3, 8, 17, 55)
     assert plain["early"] == at(2026, 3, 8, 19, 0) and plain["exit"] == at(2026, 3, 9, 9, 40)
-    assert w["2026-04-06"]["start"] == at(2026, 4, 2, 20, 0)                   # Good Friday: the last session is Thursday
-    assert w["2026-05-26"]["entry"] == at(2026, 5, 24, 17, 55)                 # Memorial Day: still the Sunday
-    assert w["2026-05-26"]["exit"] == at(2026, 5, 26, 9, 40)                   # and the exit is Tuesday
+    assert w["2026-04-06"]["start"] == at(2026, 4, 2, 20, 0)
+    assert w["2026-05-26"]["entry"] == at(2026, 5, 24, 17, 55)
+    assert w["2026-05-26"]["exit"] == at(2026, 5, 26, 9, 40)
 
 
 def test_universe_rules_read_the_asset_and_the_side_from_the_text():
@@ -39,7 +38,7 @@ def test_universe_rules_read_the_asset_and_the_side_from_the_text():
     assert uni.asset_class("What will Tesla (TSLA) hit in November 2025?") == "stock"
     assert uni.asset_class("What will Bitcoin hit in April?") is None
     assert uni.wanted("What will Crude Oil (CL) settle at in March?") and not uni.wanted("Crude Oil all time high by April 30?")
-    assert not uni.wanted("Will Crude Oil reserves fall?")                     # an asset, but no price target
+    assert not uni.wanted("Will Crude Oil reserves fall?")
     assert uni.strike_sign("Will WTI Crude Oil (WTI) hit (HIGH) $105 in April?", "↑ $105") == 1
     assert uni.strike_sign("Will WTI Crude Oil (WTI) hit (LOW) $90 in April?", "↓ $90") == -1
     assert uni.strike_sign("Will Crude Oil (CL) settle at $60-$65 in March?", "$60-$65") == 0
@@ -59,9 +58,9 @@ def test_fade_sells_a_rise_follow_buys_it_and_each_fill_pays_the_markets_own_fee
 
 
 def test_a_market_that_resolves_before_the_exit_settles_at_its_result_without_exit_costs():
-    side, entry, pnl = s9.trade("fade", 8.0, 0.50, 1.0, True, 0.005, 0.04, 1.0, 1.0)     # sold YES, then the target was hit
+    side, entry, pnl = s9.trade("fade", 8.0, 0.50, 1.0, True, 0.005, 0.04, 1.0, 1.0)
     assert pnl == pytest.approx(0.495 - 1.0 - 0.04 * 0.495 * 0.505)
-    side, entry, pnl = s9.trade("fade", -8.0, 0.50, 0.0, True, 0.005, 0.04, 1.0, 1.0)    # bought YES, resolved NO
+    side, entry, pnl = s9.trade("fade", -8.0, 0.50, 0.0, True, 0.005, 0.04, 1.0, 1.0)
     assert pnl == pytest.approx(0.0 - 0.505 - 0.04 * 0.505 * 0.495)
 
 
@@ -76,8 +75,8 @@ def test_select_applies_threshold_band_class_exit_and_cap():
                 {"market": "e", "asset_class": "stock", "w": -12.0}])
     assert list(s9.select(df, V0).market) == ["e", "a"]
     assert list(s9.select(df, V1).market) == ["e"]
-    assert list(s9.select(df, V2).market) == ["a"]                             # crude only
-    assert sorted(s9.select(df, V3).market) == ["a", "d"]                      # Sunday 19:00 exit, no stocks
+    assert list(s9.select(df, V2).market) == ["a"]
+    assert sorted(s9.select(df, V3).market) == ["a", "d"]
     assert s9.select(df, V3).p_out.tolist() == [0.47, 0.47]
     many = frame([{"market": f"m{i:02d}", "w": 5.0 + i} for i in range(13)])
     assert len(s9.select(many, V0)) == cfg.MAX_POSITIONS and s9.select(many, V0).w.min() == 8.0

@@ -1,4 +1,3 @@
-"""Synthetic world for the strategy backtest tests: sessions, SPY bars and measures, two PM markets."""
 from __future__ import annotations
 
 import numpy as np
@@ -16,7 +15,6 @@ def sessions(n: int) -> list[pd.Timestamp]:
 
 
 def world(n: int = 80, seed: int = 0, rate: float = 8.0) -> dict:
-    """Market A (sign +1) drives the gap at `rate` bp per pp; market B (sign -1) is noise."""
     rng = np.random.default_rng(seed)
     days = sessions(n)
     rows, pm, xa = [], {}, {}
@@ -54,7 +52,6 @@ def world(n: int = 80, seed: int = 0, rate: float = 8.0) -> dict:
 
 
 def bars_from(meas: pd.DataFrame) -> pd.DataFrame:
-    """Minute bars 07:30-15:59 ET that reproduce the measures exactly."""
     idx, op, cl = [], [], []
     for d, r in meas.iterrows():
         base = pd.Timestamp(d).tz_localize("America/New_York")

@@ -1,8 +1,3 @@
-"""S9 universe: Polymarket price markets on assets that are shut over the weekend, from catalogue metadata only.
-No price is read. Writes `universe.json`, committed with METHOD.md.
-
-Run from `research/`:  python -m s9_weekend_price_markets.universe
-"""
 from __future__ import annotations
 
 import json
@@ -26,7 +21,6 @@ def asset_class(title: str) -> str | None:
 
 
 def strike_sign(question: str, label: str) -> int:
-    """+1 if YES needs a higher price (a HIGH or ↑ target), -1 for a LOW or ↓ target, 0 for a range or unsigned market."""
     text = f"{question} {label}"
     if "(HIGH)" in text or "↑" in text:
         return 1
@@ -40,7 +34,6 @@ def wanted(title: str) -> bool:
 
 
 def add_outcomes() -> int:
-    """Amendment 1: each market's result (1, 0 or None while open) and closing time, from the catalogue. The list is unchanged."""
     f = HERE / "universe.json"
     u, pt, n = json.loads(f.read_text()), ds.Throttle(4.0), 0
     for m in u["markets"]:

@@ -32,7 +32,7 @@ def test_run_atlas_rows_and_rare_tag():
                       T("2026-09-30"), pl_res, max_events_per_tag=30, max_workers=2)
     assert set(atlas.tag) == {"dividend_declaration", "going_concern"}
     assert atlas.exploratory.all()
-    assert len(atlas[atlas.tag == "dividend_declaration"]) == 5 * 3          # 5 strategies x 3 headline horizons
+    assert len(atlas[atlas.tag == "dividend_declaration"]) == 5 * 3
     rare = atlas[atlas.tag == "going_concern"]
     assert rare.p_value.isna().all() and rare.q_value.isna().all()
     common = atlas[atlas.tag == "dividend_declaration"]

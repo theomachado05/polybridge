@@ -10,15 +10,14 @@ MarketTick vt(std::int64_t ts, double p, double iv) {
   t.opt_mid = 2.0;
   return t;
 }
-// Five flat ticks, then the sixth (window 5) carries the move.
 Intent sixth(F& a, double p6, double iv6) {
   for (int i = 1; i <= 5; ++i) EXPECT_EQ(a.on_tick(vt(i * kSec, 0.50, 0.30), i * kSec).reason, rc(Rc::Warmup));
   return a.on_tick(vt(6 * kSec, p6, iv6), 6 * kSec);
 }
-}  // namespace
+}
 
 TEST(VolVsPmMove, PmRepricesIvStillBuysStraddleThenExitsWhenIvCatchesUp) {
-  F a(params<F>(), Position{});  // window 5, pm_move 0.04, iv_still 0.01, contracts 5
+  F a(params<F>(), Position{});
   const Intent e = sixth(a, 0.55, 0.30);
   ASSERT_TRUE(is_order(e));
   EXPECT_EQ(e.side, +1);
@@ -26,7 +25,7 @@ TEST(VolVsPmMove, PmRepricesIvStillBuysStraddleThenExitsWhenIvCatchesUp) {
   EXPECT_NEAR(e.signal, 0.05, 1e-12);
   a.on_fill(Instrument::Option, 5, 2.05);
   EXPECT_EQ(a.on_tick(vt(7 * kSec, 0.55, 0.31), 7 * kSec).reason, rc(Rc::NoSignal));
-  const Intent x = a.on_tick(vt(8 * kSec, 0.55, 0.32), 8 * kSec);  // +0.02 >= 2 * iv_still
+  const Intent x = a.on_tick(vt(8 * kSec, 0.55, 0.32), 8 * kSec);
   ASSERT_TRUE(is_order(x));
   EXPECT_EQ(x.reason, rc(Rc::Exit));
 }

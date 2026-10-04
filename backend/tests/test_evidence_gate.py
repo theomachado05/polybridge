@@ -1,7 +1,3 @@
-"""The evidence gate, enforced (docs/design.md section 6): a market's signal acts only where it passed its
-out-of-sample test. Closed hours: no staged plan on an unvalidated market without the explicit, acknowledged override
-(act_on_unvalidated), and every plan / order says validated or override. Regular hours: the approved algo runs, but
-the approval needs ack_unvalidated and every decision and fill is labelled."""
 from __future__ import annotations
 
 from fastapi.testclient import TestClient
@@ -19,13 +15,12 @@ def test_no_staged_plan_on_an_unvalidated_market_without_the_override(tmp_path, 
         ev = _events(c, bid)
         s = c.get(f"/bridges/{bid}").json()
         orders = c.get(f"/staged?bridge_id={bid}").json()["orders"]
-    assert orders == []  # the adverse weekend move stages nothing
+    assert orders == []
     refused = [d for k, d in ev if k == "staged" and d.get("event") == "refused"]
-    assert len(refused) == 1 and refused[0]["reason"] == "EVIDENCE_GATE"  # reported once per closure
+    assert len(refused) == 1 and refused[0]["reason"] == "EVIDENCE_GATE"
     assert "act_on_unvalidated" in refused[0]["detail"] and refused[0]["evidence"]["validated"] is False
     assert s["closed_mode"]["plan_note"].startswith("EVIDENCE_GATE")
     assert "plan_refused" in [r["event"] for r in s["closed_mode"]["timeline"]]
-    # the regular-hours algo still ran (approved with the acknowledgement), every decision / fill labelled
     assert s["evidence_label"] == "unvalidated (acknowledged)" and s["act_on_unvalidated"] is False
     assert all(d.get("evidence") == "unvalidated (acknowledged)" for k, d in ev if k in ("decision", "fill"))
 
@@ -65,15 +60,12 @@ def test_a_bridge_on_an_unvalidated_market_needs_the_acknowledged_approval(tmp_p
         p = store.propose(ticker="SPY", family="hedge", strategy="s", shares_held=100, target_coverage=0.5,
                           basis="market_event", market=MarketRef(source="polymarket", id="m-closed",
                                                                  token_id="tok-closed"), direction="down_on_yes")
-        store.approve(p.id)  # approved around the route, without ack_unvalidated
+        store.approve(p.id)
         r = c.post("/bridges", json={"proposal_id": p.id, "source": "replay"})
         assert r.status_code == 409 and r.json()["detail"].startswith("EVIDENCE_UNVALIDATED")
 
 
 def test_the_proposal_override_counts_only_when_the_approval_acknowledged_it(tmp_path):
-    """A proposal on the validated market (US recession 2025 on SPY) approves without the acknowledgement even when it
-    sets act_on_unvalidated; its flag alone must not stage an "override" plan when the signal turns unvalidated (a
-    supplied rate). Only an approval with ack_unvalidated confirms it."""
     recession = {"source": "polymarket", "id": "516710"}
     app = make_app(tmp_path)
     with TestClient(app) as c:
@@ -86,7 +78,6 @@ def test_the_proposal_override_counts_only_when_the_approval_acknowledged_it(tmp
         assert r.status_code == 409 and r.json()["detail"].startswith("EVIDENCE_GATE")
         assert "approved without ack_unvalidated" in r.json()["detail"]
         assert c.get("/staged").json()["orders"] == []
-        # approved WITH the acknowledgement, the same override is confirmed: the plan stages, labelled "override"
         q = c.post("/proposals", json={"ticker": "SPY", "market": recession, "direction": "down_on_yes",
                                        "shares_held": 1000, "act_on_unvalidated": True}).json()
         b = c.post(f"/proposals/{q['id']}/approve", json={"ack_unvalidated": True})

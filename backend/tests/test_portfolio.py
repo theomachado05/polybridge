@@ -79,8 +79,6 @@ def test_exposure_up_on_yes(tmp_path, monkeypatch):
 
 
 def test_seeded_portfolio_shows_fed_exposure_offline(monkeypatch):
-    """The shipped portfolio.json + ai_map.json: IWM is pinned to the Fed October 25 bps hike market, which maps
-    IWM down_on_yes 3%. With both market sources down, the bundled market list still resolves it."""
     c = make(StubClient(market=rf.FakeMarket({"IWM": 200.0})), monkeypatch, http_fail=True)
     d = c.get("/portfolio").json()
     iwm = next(h for h in d["holdings"] if h["ticker"] == "IWM")
@@ -93,8 +91,6 @@ def test_seeded_portfolio_shows_fed_exposure_offline(monkeypatch):
 
 
 def test_seeded_portfolio_pins_the_demo_market_offline(monkeypatch):
-    """The demo holding: TLT is pinned to "Another Fed rate hike in 2026?" (the default demo market, which has its own
-    replay), mapped TLT down_on_yes 2.5%. Resolved from the bundled market list when both market sources are down."""
     c = make(StubClient(market=rf.FakeMarket({"TLT": 80.0})), monkeypatch, http_fail=True)
     d = c.get("/portfolio").json()
     tlt = next(h for h in d["holdings"] if h["ticker"] == "TLT")

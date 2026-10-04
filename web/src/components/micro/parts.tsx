@@ -5,7 +5,6 @@ import { getForwardStatus, getMechanisms } from "@/lib/api";
 import { useAsync, useRetry } from "@/lib/hooks";
 import { approveEnabled, numberView, statusTag, type ActionPlan, type EvNumber, type Mechanism } from "@/lib/micro";
 
-/** GET /evidence/mechanisms: the only source of mechanism labels. */
 export function useRegistry() {
   const [n, retry] = useRetry();
   const r = useAsync(`registry:${n}`, getMechanisms);
@@ -18,14 +17,12 @@ export function useForward() {
   return { ...r, retry };
 }
 
-/** The registry's status words for a mechanism. Renders nothing without the registry: no label is invented. */
 export function StatusTag({ m, prefix }: { m: Mechanism | null | undefined; prefix?: string }) {
   const t = statusTag(m);
   if (!t) return null;
   return <span className={`pb-tag pb-tag-${t.tone}`} title={t.title} data-testid="status-tag">{prefix ? `${prefix} · ` : ""}{t.text}</span>;
 }
 
-/** One registry number with its range and sample. Without a range and a sample it renders nothing. */
 export function NumberRow({ n }: { n: EvNumber }) {
   const v = numberView(n);
   if (!v) return null;
@@ -50,9 +47,6 @@ export function NumberRow({ n }: { n: EvNumber }) {
   );
 }
 
-/** A proposal for the user's decision. The approval step follows the mechanism's actions_allowed: approval always,
- *  the acknowledgement gate when the registry asks for it. No order route exists for these mechanisms yet, so an
- *  approval sends nothing and the panel says so. */
 export function ProposalPanel({ plan, mechanism, title, lines, onClose }: {
   plan: ActionPlan; mechanism: Mechanism | null; title: string; lines: ReactNode[]; onClose: () => void;
 }) {

@@ -1,13 +1,8 @@
-// Voice drives the screen: every client tool result becomes {route, storeUpdate, announcement, scrollTo}, so the
-// screen lands exactly where the mouse flow would have put it (same store state, same route) and the user can carry
-// on with the mouse. Pure, so every tool (and every error) is unit-tested offline. An error never navigates away.
 import type { Direction, FitOut, Market, Proposal } from "./api.ts";
 import type { ToolReply } from "./voice.ts";
 
 export const SCREENS = ["landing", "build", "pipeline", "bridge", "portfolio", "library", "profile", "connect"] as const;
 export type Screen = (typeof SCREENS)[number];
-/** The generic AI fit flow (Build → Connect → fit → approval). /pipeline is the ladder board; the screen name
- *  "pipeline" stays as it is in backend/app/agent/tools.py SCREENS so the navigate tool's enum matches. */
 export const FIT_PATH = "/build/fit";
 export const SCREEN_PATH: Record<Screen, string> = {
   landing: "/", build: "/build", pipeline: "/pipeline", bridge: "/bridge", portfolio: "/portfolio", library: "/library",
@@ -18,22 +13,15 @@ const SCREEN_NAME: Record<Screen, string> = {
   library: "the algo library", profile: "your profile", connect: "Connect",
 };
 
-/** Element ids the screens carry so voice can smooth-scroll to the panel it is talking about. */
 export const VOICE_ANCHOR = {
   steps: "voice-steps", approval: "voice-approval", account: "voice-account", positions: "voice-positions",
 } as const;
 
-/** What the store does for a tool result (StoreProvider.applyVoice), mirroring the mouse flow. */
 export type StoreUpdate =
-  /** Build step 1 with the query typed in (the mouse: edit the question, type the topic). */
   | { kind: "search"; query: string }
-  /** The fit for this market + ticker lands in the store, as if Build had picked them and the pipeline had fitted. */
   | { kind: "fit"; market: Market; ticker: string; direction: Direction | null; sharesHeld: number | null; fit: FitOut }
-  /** This proposal (pending or approved) is the one the pipeline's approval panel shows and approves. */
   | { kind: "proposal"; proposal: Proposal; market: Market }
-  /** A bridge voice started: listed on the Bridge screen and active. */
   | { kind: "bridge"; bridgeId: string; proposalId: string | null }
-  /** Re-read GET /account and GET /portfolio. */
   | { kind: "account" };
 
 export interface VoiceDrive { route: string | null; storeUpdate: StoreUpdate | null; announcement: string; scrollTo: string | null }
@@ -44,14 +32,11 @@ const num = (x: unknown): number | null => (typeof x === "number" && Number.isFi
 const dir = (x: unknown): Direction | null => (x === "down_on_yes" || x === "up_on_yes" ? x : null);
 const isScreen = (x: unknown): x is Screen => typeof x === "string" && (SCREENS as readonly string[]).includes(x);
 
-/** The search rows of a search_markets reply (to resolve the market a later fit or propose names). */
 export function searchedMarkets(reply: ToolReply): Market[] {
   const ms = obj(reply.data).markets;
   return reply.ok && Array.isArray(ms) ? (ms.filter((m) => str(obj(m).id) && str(obj(m).source)) as Market[]) : [];
 }
 
-/** The market row for (source, id): the searched row when the agent found it by search, else a minimal row with
- *  only what the agent knows (no invented price or volume: null and 0, as the backend reports an unknown). */
 export function resolveMarket(source: string | null, id: string, tokenId: string | null, question: string | null, known: readonly Market[] = []): Market {
   const src = source === "kalshi" ? "kalshi" : "polymarket";
   const hit = known.find((m) => m.source === src && String(m.id) === id);
@@ -64,7 +49,6 @@ const TOOL_WHAT: Record<string, string> = {
   bridge_status: "The bridge check", account: "Reading the account", positions: "Reading the positions", navigate: "Opening that screen",
 };
 
-/** The pill's text while a tool runs. */
 export function voiceStartLabel(tool: string, args: Record<string, unknown> | null | undefined): string {
   const a = obj(args);
   switch (tool) {
@@ -83,12 +67,10 @@ export function voiceStartLabel(tool: string, args: Record<string, unknown> | nu
 
 const stay = (announcement: string): VoiceDrive => ({ route: null, storeUpdate: null, announcement, scrollTo: null });
 
-/** One tool result → where the screen goes. `known`: the rows of the last search, to resolve a market by id. */
 export function voiceDrive(tool: string, args: Record<string, unknown> | null | undefined, reply: ToolReply, known: readonly Market[] = []): VoiceDrive {
   const a = obj(args);
   const what = TOOL_WHAT[tool] ?? "That step";
   if (!reply.ok) {
-    // Never navigate away on an error: the screen stays where the user is.
     return stay(reply.needs_confirmation ? "Waiting for your spoken yes" : `${what} did not work · staying here`);
   }
   const d = obj(reply.data);
@@ -120,7 +102,6 @@ export function voiceDrive(tool: string, args: Record<string, unknown> | null | 
       const id = str(m.id);
       if (!p || !str(p.id)) return stay(tool === "approve" ? "Approved" : "Proposal drafted");
       const label = tool === "approve" ? `Proposal ${p.id} approved` : `Proposal ${p.id} is waiting for your approval`;
-      // A proposal from filing tags (no market) or an opportunity has no hedge approval panel: say it, stay.
       if (!id || p.family !== "hedge") return stay(label);
       if (tool === "approve" && a.confirm !== true) return stay(label);
       const market = resolveMarket(str(m.source), id, str(m.token_id), null, known);
@@ -153,7 +134,6 @@ export function voiceDrive(tool: string, args: Record<string, unknown> | null | 
   }
 }
 
-/** `navigate` runs in the browser only (no backend call): a reply in the backend's shape, for the agent to read. */
 export function navigateReply(args: Record<string, unknown> | null | undefined): ToolReply {
   const a = obj(args);
   if (!isScreen(a.screen)) {

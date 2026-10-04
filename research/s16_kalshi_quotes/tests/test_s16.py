@@ -1,4 +1,3 @@
-"""S16: which Kalshi quote is in force at an instant, and the fade at real quotes with Kalshi's fee."""
 import numpy as np
 import pytest
 
@@ -10,11 +9,11 @@ def test_the_quote_in_force_is_the_last_candle_and_a_one_sided_candle_cancels_it
     bid = np.array([0.40, 0.42, 0.99, 0.50])
     ask = np.array([0.42, 0.44, 1.00, 0.52])
     b, a = s16.standing_quote(np.array([50, 150, 250, 350, 450, 5000]), t, bid, ask, 1000)
-    assert np.isnan(b[0])                                         # before the first candle
+    assert np.isnan(b[0])
     assert (b[1], a[1]) == (0.40, 0.42) and (b[2], a[2]) == (0.42, 0.44)
-    assert np.isnan(b[3]) and np.isnan(a[3])                      # the 0.99 / 1.00 candle is one-sided: the 0.42 / 0.44 quote is gone
+    assert np.isnan(b[3]) and np.isnan(a[3])
     assert (b[4], a[4]) == (0.50, 0.52)
-    assert np.isnan(b[5])                                         # older than the allowed age
+    assert np.isnan(b[5])
 
 
 def test_fade_sells_at_the_bid_buys_back_at_the_ask_and_pays_the_fee_twice():
@@ -22,7 +21,7 @@ def test_fade_sells_at_the_bid_buys_back_at_the_ask_and_pays_the_fee_twice():
     fee = lambda p: np.ceil(0.07 * 100 * p * (1 - p) * 100 - 1e-9) / 100 / 100      # noqa: E731
     assert f["side"] == "sell YES" and f["entry"] == 0.60 and f["exit"] == 0.57
     assert f["gross_mid"] == pytest.approx(0.61 - 0.56)
-    assert f["spread_cost"] == pytest.approx(0.02)               # half of each one-cent... two full half-spreads of 1 cent each
+    assert f["spread_cost"] == pytest.approx(0.02)
     assert f["fee_cost"] == pytest.approx(fee(0.60) + fee(0.57))
     assert f["net"] == pytest.approx(0.03 - fee(0.60) - fee(0.57))
     assert f["capital"] == pytest.approx(40.0)

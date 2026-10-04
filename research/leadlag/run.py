@@ -1,8 +1,3 @@
-"""Run the lead-lag study:  cd research && uv run --extra dev --with pyyaml python -m leadlag.run
-
-Writes CSVs, charts, SUMMARY.md and appends to RUN_LOG.md under research/results/leadlag/.
-Missing Massive key: logs it and exits 2 (never prompts, never crashes with a traceback).
-"""
 from __future__ import annotations
 
 import argparse

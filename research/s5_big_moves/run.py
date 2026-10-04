@@ -1,11 +1,3 @@
-"""S5: links from two blind labellers, the data pull, P1 (replication of the opening-gap relation) and P2 (the
-10-point continuation trade) on markets S4 never used (METHOD.md).
-
-Run from `research/`:
-    python -m s5_big_moves.run links     # merge the labels into links.csv (text only)
-    python -m s5_big_moves.run pull      # odds and equity bars for the linked markets and tickers (not committed)
-    python -m s5_big_moves.run           # the tests
-"""
 from __future__ import annotations
 
 import csv
@@ -47,10 +39,7 @@ def write_csv(path: Path, recs: list[dict]) -> None:
         w.writerows(recs)
 
 
-# ---------------------------------------------------------------- links
-
 def load_labels() -> dict[str, dict[str, dict]]:
-    """labeller -> market id -> {family, links{(ticker, direction): confidence}}"""
     out: dict[str, dict[str, dict]] = {}
     for f in sorted(HERE.glob("labels_*.json")):
         d = json.loads(f.read_text())
@@ -62,7 +51,6 @@ def load_labels() -> dict[str, dict[str, dict]]:
 
 
 def merge_links() -> tuple[list[dict], dict]:
-    """A link is a (ticker, direction) both labellers of a chunk named, on a question both classed as an event."""
     uni = {m["id"]: m for m in json.loads((HERE / "universe.json").read_text())["markets"]}
     lab = load_labels()
     links, stats = [], {"questions": 0, "both_event": 0, "named_by_one": 0, "agreed": 0, "opposite_direction": 0, "markets_with_link": 0}
@@ -86,8 +74,6 @@ def merge_links() -> tuple[list[dict], dict]:
                               "end": uni[mid]["end"], "token": uni[mid]["token"]})
     return links, stats
 
-
-# ---------------------------------------------------------------- pull
 
 def pull() -> None:
     CACHE.mkdir(parents=True, exist_ok=True)
@@ -127,8 +113,6 @@ def pull() -> None:
     for f in fails[:8]:
         print("  failure:", f, flush=True)
 
-
-# ---------------------------------------------------------------- tests
 
 def cost_bp(ticker: str, beta: float, mult: float) -> float:
     c = cfg.COST_LIQUID if ticker in cfg.LIQUID else cfg.COST_OTHER
@@ -185,7 +169,6 @@ def run() -> int:
         c = en.clustered_slope(d.x.to_numpy(), d[y].to_numpy(), d.day.to_numpy())
         return c
 
-    # ---- P1
     regs = []
     td = df.groupby(["day", "ticker"]).agg(x=("x", "mean"), gap=("gap", "first"), after=("after", "first"), segment=("segment", "first"),
                                            weekend=("weekend", "first")).reset_index()
@@ -201,7 +184,6 @@ def run() -> int:
             regs.append({"sample": label, "relation": "move after the open on overnight odds move", **fit(d[np.isfinite(d.after)], "after")})
     p1 = regs[0]
 
-    # ---- size buckets (link-days)
     buckets = []
     for scope, d in (("all closures", df), ("weekends only", df[df.weekend])):
         for lo, hi, lab in BUCKETS:
@@ -216,7 +198,6 @@ def run() -> int:
                             "signed_gap_bp": m1[0], "gap_ci_lo": m1[1], "gap_ci_hi": m1[2], "gap_same_sign": float(np.mean(sg > 0)),
                             "signed_after_open_bp": m2[0], "after_ci_lo": m2[1], "after_ci_hi": m2[2]})
 
-    # ---- P2
     sig_all = df.groupby(["day", "ticker"]).agg(x=("x", "mean"), n_links=("x", "size"), after=("after", "first"), after10=("after10", "first"),
                                                 beta=("beta", "first"), segment=("segment", "first"), weekend=("weekend", "first"),
                                                 vol30=("vol30", "first"), question=("question", "first")).reset_index()

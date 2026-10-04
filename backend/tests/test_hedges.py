@@ -20,7 +20,6 @@ def test_prices_and_legs(monkeypatch):
     assert d["spot"] == pytest.approx(100.0, rel=2e-3) and d["expiry"]
     o, sp = by(d), d["spot"]
     assert set(o) == {"protective_put", "collar", "cash_secured_put", "covered_call", "long_call"}
-    # FakeMarket: OTM options trade at 1.0, ATM call at 1.0 (flat spot, intrinsic 0)
     assert o["protective_put"]["premium_per_share"] == pytest.approx(1.0)
     assert o["protective_put"]["premium_total"] == pytest.approx(200.0)
     assert o["protective_put"]["breakeven_price"] == pytest.approx(sp + 1.0)
@@ -52,7 +51,7 @@ def test_ranking_by_label(monkeypatch, label, first_two):
 
 def test_no_edge_cheapest_protection_first(monkeypatch):
     d = menu(monkeypatch, "?label=no_edge")
-    assert d["options"][0]["strategy"] == "collar"  # net 0.0 beats the 1.0 put
+    assert d["options"][0]["strategy"] == "collar"
     assert all("no edge found for this event; hedge only if you want insurance" in o["why"] for o in d["options"])
 
 
@@ -68,9 +67,9 @@ def test_stale_marks_and_pricing_failure(monkeypatch):
     def run(end, qs=""):
         c = make(StubClient(market=rf.FakeMarket({"AAA": 100.0}, end=end)), monkeypatch)
         return c.get(f"/hedges/AAA{qs}").json()
-    d = run("2026-09-30")  # 2 sessions old: used, with a note
+    d = run("2026-09-30")
     assert d["options"] and any("option prices from 2026-09-30" in n for n in d["notes"])
-    d = run("2026-09-25")  # 5 sessions old: no price
+    d = run("2026-09-25")
     assert all(o["premium_per_share"] is None for o in d["options"])
     c = make(StubClient(market=rf.FakeMarket({"AAA": 100.0})), monkeypatch)
     import app.hedges as h

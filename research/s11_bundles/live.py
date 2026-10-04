@@ -1,10 +1,3 @@
-"""S11 live: snapshot the real books of every open bundle every few minutes and record arbitrages at the best bid and ask.
-
-Run from `research/` (in the background, until Sun 07:00 New York time):
-    python -m s11_bundles.live
-Snapshots go to `.cache/live/books.jsonl.gz` (one line per snapshot: every leg's top 10 levels), checks to
-`.cache/live/checks.jsonl` (one line per bundle and snapshot).
-"""
 from __future__ import annotations
 
 import gzip

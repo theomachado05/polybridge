@@ -5,9 +5,6 @@ import { useStore } from "@/lib/store";
 import { forwardCount, latencyView, recorderLine } from "@/lib/micro";
 import { useForward, useRegistry } from "./parts";
 
-/** Global engine strip: the C++ library size (GET /library), live latency (the registry's system number, with its
- *  range and sample), and the recorder and forward-test state (GET /forward/status). Each part hides when its source
- *  is not available; nothing is filled in. */
 export function EngineStrip() {
   const s = useStore();
   const reg = useRegistry();

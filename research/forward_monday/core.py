@@ -1,5 +1,3 @@
-"""Pure pieces of the forward test (METHOD.md sections 1, 2, 4, 6). Print handling, the option spread and P&L come from
-pm_taker.core unchanged. No network here."""
 from __future__ import annotations
 
 import json
@@ -41,14 +39,12 @@ def _jl(x) -> list:
 
 
 def strip_meta(m: dict, event_title: str = "") -> dict:
-    """Keep listing metadata only; price and outcome fields never leave this function."""
     out = {k: m.get(k) for k in C.META_FIELDS}
     out["event_title"] = event_title
     return out
 
 
 def select(m: dict, d: date, sessions: set[date]) -> tuple[dict | None, str]:
-    """Section 2 without the expiry check, for reopening d. m is a strip_meta row."""
     th, why = parse_pm_question(m.get("question") or "", m.get("event_title") or "")
     if th is None:
         return None, f"parse_{why}"

@@ -15,21 +15,21 @@ HedgeSpec spec() {
   s.band_shares = 10;
   return s;
 }
-}  // namespace
+}
 
 TEST(Engine, FirstTickSizesInitialHedge) {
   Engine e(spec());
   auto d = e.on_tick({kSec, 0.20}, kSec);
   EXPECT_EQ(d.action, Action::Order);
   EXPECT_EQ(d.reason, Reason::Rebalance);
-  EXPECT_DOUBLE_EQ(d.target_hedge, 100.0);   // 0.5 * 1000 * 0.20
+  EXPECT_DOUBLE_EQ(d.target_hedge, 100.0);
   EXPECT_DOUBLE_EQ(d.order_qty, 100.0);
   EXPECT_GE(d.latency_ns, 0);
 }
 
 TEST(Engine, StaleTickHolds) {
   Engine e(spec());
-  auto d = e.on_tick({kSec, 0.20}, 5 * kSec);  // 4 s old > 2 s limit
+  auto d = e.on_tick({kSec, 0.20}, 5 * kSec);
   EXPECT_EQ(d.action, Action::Hold);
   EXPECT_EQ(d.reason, Reason::Stale);
 }
@@ -45,10 +45,10 @@ TEST(Engine, BandSuppressesSmallRebalances) {
   Engine e(spec());
   e.on_tick({kSec, 0.20}, kSec);
   e.on_fill(100);
-  auto d = e.on_tick({2 * kSec, 0.21}, 2 * kSec);  // target 105, |105-100| < 10
+  auto d = e.on_tick({2 * kSec, 0.21}, 2 * kSec);
   EXPECT_EQ(d.action, Action::Hold);
   EXPECT_EQ(d.reason, Reason::InsideBand);
-  d = e.on_tick({3 * kSec, 0.30}, 3 * kSec);       // target 150
+  d = e.on_tick({3 * kSec, 0.30}, 3 * kSec);
   EXPECT_EQ(d.action, Action::Order);
   EXPECT_DOUBLE_EQ(d.order_qty, 50.0);
 }
@@ -58,7 +58,7 @@ TEST(Engine, SigmaGateIgnoresNoise) {
   e.on_tick({kSec, 0.50}, kSec);
   e.on_fill(250);
   double p = 0.50;
-  for (int i = 0; i < 200; ++i) {                  // build a noise level of about 0.001
+  for (int i = 0; i < 200; ++i) {
     p += (i % 2 ? -0.001 : 0.001);
     e.on_tick({(2 + i) * kSec, p}, (2 + i) * kSec);
   }
@@ -70,7 +70,7 @@ TEST(Engine, RiskCapLimitsHedge) {
   auto s = spec();
   s.max_hedge_shares = 120;
   Engine e(s);
-  auto d = e.on_tick({kSec, 0.50}, kSec);          // uncapped target 250
+  auto d = e.on_tick({kSec, 0.50}, kSec);
   EXPECT_EQ(d.reason, Reason::RiskCapped);
   EXPECT_DOUBLE_EQ(d.target_hedge, 120.0);
   EXPECT_DOUBLE_EQ(d.order_qty, 120.0);
@@ -137,20 +137,19 @@ TEST(Engine, ExtremeTimestampsDoNotOverflow) {
 namespace {
 HedgeSpec fee_spec() {
   auto s = spec();
-  s.gap_per_share = 1.0;      // $1 of benefit per share per unit of dp
+  s.gap_per_share = 1.0;
   s.fee_per_share = 0.0035;
   s.half_spread = 0.01;
   return s;
 }
-}  // namespace
+}
 
 TEST(FeeGate, BlocksSmallMove) {
   auto s = fee_spec();
   s.band_shares = 0;
   Engine e(s);
-  e.on_tick({kSec, 0.20}, kSec);  // first order
+  e.on_tick({kSec, 0.20}, kSec);
   e.on_fill(100);
-  // target 105 -> qty 5: benefit = 5*1*0.01 = 0.05 < cost = 5*0.0135 = 0.0675
   auto d = e.on_tick({2 * kSec, 0.21}, 2 * kSec);
   EXPECT_EQ(d.action, Action::Hold);
   EXPECT_EQ(d.reason, Reason::BelowFees);
@@ -163,14 +162,14 @@ TEST(FeeGate, AllowsLargeMove) {
   Engine e(s);
   e.on_tick({kSec, 0.20}, kSec);
   e.on_fill(100);
-  auto d = e.on_tick({2 * kSec, 0.30}, 2 * kSec);  // qty 50: benefit 50*0.10=5 >= cost 0.675
+  auto d = e.on_tick({2 * kSec, 0.30}, 2 * kSec);
   EXPECT_EQ(d.action, Action::Order);
   EXPECT_DOUBLE_EQ(d.order_qty, 50.0);
 }
 
 TEST(FeeGate, FirstOrderSizedWhenBenefitEnough) {
   Engine e(fee_spec());
-  auto d = e.on_tick({kSec, 0.20}, kSec);  // benefit 100*1*0.20=20 >= cost 1.35
+  auto d = e.on_tick({kSec, 0.20}, kSec);
   EXPECT_EQ(d.action, Action::Order);
   EXPECT_DOUBLE_EQ(d.order_qty, 100.0);
 }
@@ -194,7 +193,7 @@ TEST(FeeGate, InvalidNewFieldsHoldInvalid) {
 
 TEST(FeeGate, InactiveWhenGapZero) {
   auto s = spec();
-  s.fee_per_share = 1000.0;  // absurd cost, but the gate is off
+  s.fee_per_share = 1000.0;
   s.half_spread = 1000.0;
   Engine e(s);
   auto d = e.on_tick({kSec, 0.20}, kSec);
@@ -207,13 +206,10 @@ TEST(FeeGate, BelowFeesHoldKeepsReferencePrice) {
   auto s = fee_spec();
   s.band_shares = 0;
   Engine e(s);
-  e.on_tick({kSec, 0.20}, kSec);  // order, reference price 0.20
+  e.on_tick({kSec, 0.20}, kSec);
   e.on_fill(100);
-  // qty 5: benefit 5*1*0.01 = 0.05 < cost 0.0675 -> hold; reference must stay at 0.20
   auto d1 = e.on_tick({2 * kSec, 0.21}, 2 * kSec);
   EXPECT_EQ(d1.reason, Reason::BelowFees);
-  // qty 10: benefit 10*|0.22-0.20| = 0.20 >= cost 0.135 -> order.
-  // (Had the hold moved the reference to 0.21, benefit would be 0.10 < 0.135 and this would hold.)
   auto d2 = e.on_tick({3 * kSec, 0.22}, 3 * kSec);
   EXPECT_EQ(d2.action, Action::Order);
   EXPECT_DOUBLE_EQ(d2.order_qty, 10.0);
@@ -225,7 +221,7 @@ TEST(Engine, ZeroQuantityNeverOrders) {
   Engine e(s);
   e.on_tick({kSec, 0.20}, kSec);
   e.on_fill(100);
-  auto d = e.on_tick({2 * kSec, 0.2001}, 2 * kSec);  // target rounds to 100 again -> qty 0
+  auto d = e.on_tick({2 * kSec, 0.2001}, 2 * kSec);
   EXPECT_EQ(d.action, Action::Hold);
   EXPECT_EQ(d.reason, Reason::InsideBand);
   EXPECT_DOUBLE_EQ(d.order_qty, 0.0);
@@ -235,14 +231,14 @@ TEST(FeeGate, RiskCapAndGateTogether) {
   auto s = fee_spec();
   s.band_shares = 0;
   s.max_hedge_shares = 50;
-  {  // cap binds (target 100 -> 50) and the benefit covers the cost: capped order
+  {
     Engine e(s);
     auto d = e.on_tick({kSec, 0.20}, kSec);
     EXPECT_EQ(d.action, Action::Order);
     EXPECT_EQ(d.reason, Reason::RiskCapped);
     EXPECT_DOUBLE_EQ(d.order_qty, 50.0);
   }
-  {  // cap binds but the benefit (50*0.001*0.2 = 0.01) is below cost (0.675): the gate holds, target stays capped
+  {
     s.gap_per_share = 0.001;
     Engine e(s);
     auto d = e.on_tick({kSec, 0.20}, kSec);

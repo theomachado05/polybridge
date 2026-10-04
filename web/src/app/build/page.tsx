@@ -58,8 +58,6 @@ function User({ text, onClick }: { text: string; onClick: () => void }) {
 
 const signedImpact = (pct: number | null, direction: string) => (pct == null ? 0 : (direction === "up_on_yes" ? 1 : -1) * Math.abs(pct));
 
-/** Real markets that touch the user's real holdings (GET /portfolio), held-first rows for step 1. Ended or
- *  effectively settled markets are left out. */
 function portfolioQuestions(holdings: Holding[]): Question[] {
   const byId = new Map<string, Question>();
   for (const h of holdings) {
@@ -87,7 +85,6 @@ export default function Build() {
   const { question: q, equity: e, inst, query, thinking, portfolio } = s;
   const step = !q ? 1 : !e ? 2 : 3;
   const real = !!q;
-  // After the equity step: "Hedge" (the existing path) vs "Opportunity" (an options family with a real replay score).
   const [mode, setMode] = useState<{ key: string; m: "hedge" | "opportunity" } | null>(null);
   const pickKey = q && e ? `${q.id}|${e.t}` : null;
   const oppData = s.oppFit && pickKey && s.oppFit.key === pickKey && s.oppFit.status === "ok" ? s.oppFit.data : null;
@@ -97,7 +94,6 @@ export default function Build() {
   const chosenMode = mode && mode.key === pickKey ? mode.m : null;
   const showHedge = !opp || chosenMode === "hedge";
 
-  // Debounced live market search (step 1).
   const [debounced, setDebounced] = useState("");
   useEffect(() => {
     const t = setTimeout(() => setDebounced(step === 1 ? query.trim() : ""), 350);
@@ -116,9 +112,7 @@ export default function Build() {
     requestAnimationFrame(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" }));
   }, [q, e, inst, thinking]);
 
-  // ---- step 1 rows
   const ql = query.trim().toLowerCase();
-  // Held-market rows, the featured TLT replay market first so it is one click away.
   const realBase = useMemo(() => featuredFirst(portfolioQuestions(holdings)), [holdings]);
   const searchRows = useMemo(() => (search.data?.markets ?? []).filter((m) => isListedMarket(m)).map((m) => {
     const known = realBase.find((x) => x.id === `${m.source}:${m.id}`);
@@ -128,8 +122,6 @@ export default function Build() {
   const shown = ql ? all.slice(0, 10) : all.slice(0, 5);
   const more = all.length - shown.length;
 
-  // ---- step 2 rows
-  // The weekend replay's SPY pick carries its direction from the recording; keep it listed when the mapping has none.
   const impacts: Impact[] = !q ? [] : [...mapImpacts(map.data, q), ...(e && e.directionSource === "recording" && !map.data?.items.some((i) => i.ticker.toUpperCase() === e.t) ? [e] : [])];
   let elist = impacts;
   if (q && ql && step === 2) {
@@ -145,13 +137,10 @@ export default function Build() {
     return { ...i, name: h?.name ?? i.t, px: h?.spot ?? null, held: h?.shares ?? 0 };
   };
 
-  // ---- step 3 rows
-  // Only the hedge the engine actually runs, priced from a real quote or not at all.
   const instruments = !e ? [] : HEDGE_INSTRUMENTS(e.px);
   const chosen = instruments.find((i) => i.id === inst) ?? null;
   const ilist = q && e && !inst && ql && showHedge ? instruments.filter((i) => (i.name + " " + i.kind + " " + i.phrase).toLowerCase().includes(ql)) : instruments;
 
-  // ---- actions
   const pickQuestion = (x: Question) => s.setQuestion(x);
   const pickEquity = (i: Impact) => {
     const pick = toPick(i);
@@ -170,7 +159,6 @@ export default function Build() {
   const toStep2 = () => { if (q) s.setEquity(null); };
   const toStep3 = () => { if (e) s.setInst(null); };
 
-  // ---- copy
   const top = q ? topImpact(impacts, (t) => heldOf(q, t) > 0) : undefined;
   const heldQ = q ? q.touches.find((t) => heldOf(q, t) > 0) ?? impacts.find((i) => heldOf(q, i.t) > 0)?.t : null;
   const ai1 = "Select a Polymarket or Kalshi market below, or type an event to find a market.";
@@ -409,20 +397,14 @@ export default function Build() {
 
 const pct = (x: number | null | undefined) => (x == null || !Number.isFinite(x) ? "n/a" : `${(x * 100).toFixed(1)}%`);
 
-/** The Opportunity step: the options fit, the PM-vs-options gap (GET /options/implied) and the risk caps the
- *  proposal is approved with. Starting it is an explicit click: propose → approve → options bridge. */
 function OpportunityCard({ q, ticker, fit, opp, idea, onStart, onBack }: { q: NonNullable<ReturnType<typeof useStore>["question"]>; ticker: string; fit: FitOut; opp: NonNullable<ReturnType<typeof opportunityFit>>; idea: string; onStart: (ackUnvalidated: boolean) => Promise<void>; onBack: () => void }) {
   const m = q.real!;
   const implied = useAsync(`oi:${m.source}:${m.id}`, () => getOptionsImplied({ market_source: m.source, market_id: m.id }));
   const [state, setState] = useState<{ busy: boolean; error: string | null }>({ busy: false, error: null });
-  // The pending opportunity proposal (created, not approved): its evidence gate and capital fit before the click.
-  // prepNonce: bumped after an evidence refusal so the stored evidence (rewritten by the backend before its 409) is re-read.
   const [prepNonce, setPrepNonce] = useState(0);
   const prep = useAsync(`oprep:${prepNonce}:${m.source}:${m.id}:${ticker}:${opp.family}:${opp.preset_index}`, () => prepareOpportunityProposal(q, ticker, opp));
   const gate = prep.data ? evidenceGate(prep.data.evidence) : null;
   const [ack, setAck] = useState(false);
-  // Start waits for the evidence read (a click before it lands on an unvalidated market is a certain 409); a failed
-  // read (prep.error) leaves it enabled and the backend's gate still applies.
   const blocked = prep.loading || (!!gate?.needsAck && !ack && prep.data?.status !== "approved");
   const capFit = prep.data ? capitalFitView(prep.data.capacity) : null;
   const d = implied.data;
@@ -479,7 +461,6 @@ function OpportunityCard({ q, ticker, fit, opp, idea, onStart, onBack }: { q: No
   );
 }
 
-/** Which outcome hurts a ticker the mapping does not cover: the user says, so the hedge is never oriented by a guess. */
 function DirectionAsk({ ticker, onPick }: { ticker: string; onPick: (d: "down_on_yes" | "up_on_yes") => void }) {
   return (
     <div data-testid="direction-ask" className="pb-card" style={cardBox}>
@@ -492,7 +473,6 @@ function DirectionAsk({ ticker, onPick }: { ticker: string; onPick: (d: "down_on
   );
 }
 
-/** Spec §7: the fit card (event class, chosen algo, replay score, rationale, alternatives). "AI" only when an LLM answered. */
 function FitCard({ fit, onRetry }: { fit: ReturnType<typeof useStore>["fit"]; onRetry?: () => void }) {
   if (!fit) return null;
   const box = cardBox;
@@ -523,9 +503,6 @@ function FitCard({ fit, onRetry }: { fit: ReturnType<typeof useStore>["fit"]; on
   );
 }
 
-/** U4: Weekend mode, shown while US equities are closed. Hedge B (an equity order staged for the first tradable moment,
- *  approved by you on the Bridge) is the default; hedge A (holding the PM contract over the closure) is an explicit
- *  opt-in, labelled an estimate and never protection, because research R1 found no evidence it reduces the loss. */
 function WeekendModeCard({ market, ticker, session, pmHedge, onPmHedge, override, onOverride }: { market: { source: string; id: string; token_id?: string | null }; ticker: string; session: SessionView | null; pmHedge: boolean; onPmHedge: (on: boolean) => void; override: boolean; onOverride: (on: boolean) => void }) {
   const ev = useAsync(`ce:${market.source}:${market.id}`, () => getClosedEvidence({ market_source: market.source, market_id: market.id, token_id: market.token_id }));
   const copy = weekendModeCopy(ev.data);
@@ -576,10 +553,7 @@ function WeekendModeCard({ market, ticker, session, pmHedge, onPmHedge, override
   );
 }
 
-/** Before connecting: can the market absorb the hedge (GET /liquidity), what each hedge instrument costs
- *  (GET /options/hedge-quote), and the strike ladder on demand (GET /options/chain/{ticker}). */
 function RiskPreview({ ticker, held, maxHedge, notional, fitRuns }: { ticker: string; held: number; maxHedge: string; notional: boolean; fitRuns: boolean }) {
-  // Same coverage the proposal will carry (realBridge.hedgeTerms): Max hedge with a runnable fit, else at most 50%.
   const cap = Math.min(1, (parseInt(maxHedge, 10) || 100) / 100);
   const coverage = fitRuns ? cap : Math.min(0.5, cap);
   const hedge = Math.floor(coverage * held);

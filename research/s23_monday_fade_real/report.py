@@ -1,7 +1,3 @@
-"""S23 report: SUMMARY.md and capacity.md, every number read back from the result files.
-
-    .venv/bin/python -m s23_monday_fade_real.report
-"""
 from __future__ import annotations
 
 import json

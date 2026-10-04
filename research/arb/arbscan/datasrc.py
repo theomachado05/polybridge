@@ -1,4 +1,3 @@
-"""Network layer: cached, counted HTTP for Polymarket / Kalshi, plus the Massive option helpers."""
 from __future__ import annotations
 
 import hashlib
@@ -21,8 +20,6 @@ KALSHI = "https://api.elections.kalshi.com/trade-api/v2"
 RETRY = {429, 500, 502, 503, 504}
 
 
-# Index options settle by root: SPXW / NDXP are the PM-settled weeklies/dailies, SPX / NDX are the AM-settled monthlies.
-# METHOD.md section 1 uses PM-settled legs only, so other roots on the same underlying are dropped.
 PM_SETTLED_ROOT = {"SPX": "O:SPXW", "NDX": "O:NDXP"}
 
 
@@ -51,8 +48,6 @@ class CountingSession(requests.Session):
 
 
 class Http:
-    """JSON GET with an on-disk cache (sha1 of the full URL), retries, and a per-host request counter.
-    `cache=False` is for live data: those responses are never reused."""
 
     def __init__(self, cache_dir: Path, session: requests.Session | None = None, sleep=time.sleep, max_attempts: int = 6):
         self.cache_dir = Path(cache_dir)
@@ -95,8 +90,6 @@ class Http:
         return payload
 
 
-# ---------------- Polymarket ----------------
-
 def gamma_equity_events(http: Http, end_min: str, end_max: str, tag_id: int = 102676) -> list[dict]:
     out: dict[str, dict] = {}
     for closed in ("true", "false"):
@@ -134,13 +127,10 @@ def clob_book(http: Http, token: str) -> dict | None:
 
 
 def book_touch(book: dict) -> dict:
-    """Best bid/ask and the size sitting at exactly that price (shares)."""
     bb, bq = (book["bids"][0] if book["bids"] else (None, None))
     ba, aq = (book["asks"][0] if book["asks"] else (None, None))
     return {"bid": bb, "bid_size": bq, "ask": ba, "ask_size": aq}
 
-
-# ---------------- Kalshi ----------------
 
 def kalshi_markets(http: Http, series: str, status: str, min_close_ts: int | None = None, max_close_ts: int | None = None) -> list[dict]:
     out, cursor = [], None
@@ -176,7 +166,6 @@ def _f(x) -> float | None:
 
 
 def kalshi_bid_ask_at(candles: list[dict], snapshot_ts: float, max_age: float = 900) -> dict | None:
-    """Last 1-minute candle ending at or before the snapshot that carries both yes_bid and yes_ask (closes)."""
     best = None
     for c in candles:
         t = c.get("end_period_ts")
@@ -193,10 +182,7 @@ def kalshi_bid_ask_at(candles: list[dict], snapshot_ts: float, max_age: float = 
     return None
 
 
-# ---------------- Massive options ----------------
-
 class OptionSource:
-    """Listed strikes (per underlying and expiry) and NBBO quotes at an instant, through MassiveClient."""
 
     def __init__(self, client, today: date):
         self.client = client
@@ -208,7 +194,7 @@ class OptionSource:
     def _safe(self, path: str, params: dict) -> dict | None:
         try:
             return self.client.get(path, params)
-        except Exception as e:  # network/HTTP error: degrade, never crash the scan
+        except Exception as e:
             self.failures.append(f"{path} {str(e)[:80]}")
             return None
 

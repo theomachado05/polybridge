@@ -1,7 +1,3 @@
-"""SUMMARY.md, catchup_chart.png and stats.json from events.csv (METHOD.md sections 4-7).
-
-    cd research && uv run --no-project --with pandas --with numpy --with matplotlib python -m open_options.report
-"""
 from __future__ import annotations
 
 import json

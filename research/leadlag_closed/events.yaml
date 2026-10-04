@@ -1,5 +1,3 @@
-# Pre-registered event list (METHOD.md section 2). Committed before any event-window price was fetched.
-# news_et: approximate local time of the news (America/New_York); it only decides which closure the event belongs to.
 markets:
   election:
     market_slug: will-donald-trump-win-the-2024-us-presidential-election

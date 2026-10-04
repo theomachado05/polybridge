@@ -19,7 +19,6 @@ from .security import WEB_ORIGINS, guard_remote_writes
 
 
 async def _validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
-    # Drop echoed `input`/`ctx`: a rejected Infinity/NaN input is not JSON-serializable.
     detail = [{"loc": list(e["loc"]), "msg": e["msg"], "type": e["type"]} for e in exc.errors()]
     return JSONResponse(status_code=422, content={"detail": detail})
 
@@ -27,7 +26,7 @@ async def _validation_error(_: Request, exc: RequestValidationError) -> JSONResp
 def create_app() -> FastAPI:
     app = FastAPI(title="PolyBridge backend", version="0.1.0")
     app.state.store = ProposalStore()
-    app.middleware("http")(guard_remote_writes)  # remote (tunnelled) writes need X-Agent-Secret
+    app.middleware("http")(guard_remote_writes)
     app.add_middleware(CORSMiddleware, allow_origins=list(WEB_ORIGINS), allow_methods=["*"], allow_headers=["*"])
     app.add_exception_handler(RequestValidationError, _validation_error)
     app.include_router(router)

@@ -1,15 +1,4 @@
 #!/usr/bin/env node
-// Drives the real UI in headless Chrome over the DevTools protocol (no dependencies: Node's global WebSocket + fetch).
-// Click path: Landing -> Build chat (search a market, pick the ticker, pick the hedge) -> Connect -> AI pipeline -> approve ->
-// Bridge live (replay) -> Library -> Portfolio -> Profile, saving a screenshot of each of the 8 screens, and checking
-// that what the UI shows is what the backend runs. On the Bridge screen it waits for the bridge's first broker fill (or
-// the end of the replay) up to --fill-deadline-s, instead of sampling after a fixed delay.
-//
-//   node web/e2e/ui_walk.mjs --web http://localhost:3000 --api http://localhost:8000 --out web/e2e/screens \
-//     [--query "fed rate hike 2026" --market "Another Fed rate hike in 2026" --ticker TLT --fill-deadline-s 90]
-//
-// Prints one JSON line per check (`{"check":..., "ok":..., "detail":...}`) and `{"shots":[...]}` at the end; exit 1 if
-// any check fails. Chrome is always killed, even if the page's SSE connection never lets it exit by itself.
 import { spawn } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -24,8 +13,8 @@ const PORT = Number(arg("cdp-port", "9333"));
 const QUERY = arg("query", "fed rate hike 2026");
 const MARKET_TEXT = arg("market", "Another Fed rate hike in 2026");
 const TICKER = arg("ticker", "TLT");
-const MIN_WATCH_S = Number(arg("bridge-watch-s", "6")); // at least this long on the Bridge screen, so the chart has moved
-const FILL_DEADLINE_S = Number(arg("fill-deadline-s", "90")); // then until the first broker fill or the replay ends
+const MIN_WATCH_S = Number(arg("bridge-watch-s", "6"));
+const FILL_DEADLINE_S = Number(arg("fill-deadline-s", "90"));
 
 const results = [];
 const shots = [];
@@ -73,8 +62,7 @@ const waitFor = async (expression, what, timeoutMs = 30_000) => {
   throw new Error(`timed out waiting for: ${what}`);
 };
 const shot = async (n, name) => {
-  await sleep(700); // let transitions settle
-  // Full page (the pipeline and bridge screens are taller than the window), capped so a runaway page stays small.
+  await sleep(700);
   const { contentSize } = await send("Page.getLayoutMetrics");
   const height = Math.min(Math.max(Math.ceil(contentSize.height), 1000), 2400);
   const { data } = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: true, clip: { x: 0, y: 0, width: 1440, height, scale: 1 } });
@@ -82,7 +70,6 @@ const shot = async (n, name) => {
   writeFileSync(file, Buffer.from(data, "base64"));
   shots.push(file);
 };
-// Click the first element of `sel` whose text includes `text` (a real DOM click: React handlers and Next links fire).
 const click = (sel, text) => ev(`(() => { const el = [...document.querySelectorAll(${JSON.stringify(sel)})].find(e => e.innerText && e.innerText.includes(${JSON.stringify(text)})); if (!el) return false; el.click(); return true; })()`);
 const has = (sel, text) => `[...document.querySelectorAll(${JSON.stringify(sel)})].some(e => e.innerText && e.innerText.includes(${JSON.stringify(text)}))`;
 const goto = async (path) => { await send("Page.navigate", { url: WEB + path }); await sleep(800); await waitFor("document.readyState !== 'loading' && document.body && document.body.innerText.length > 20", `${path} renders`, 60_000); };
@@ -93,15 +80,12 @@ try {
   await send("Page.enable"); await send("Runtime.enable");
   await send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
 
-  // `next dev` compiles each route on its first request; do it up front so the walk's clock is not the compiler's.
   for (const p of ["/", "/build", "/connect", "/build/fit", "/pipeline", "/bridge", "/tested", "/library", "/portfolio", "/profile"]) await fetch(WEB + p).catch(() => {});
 
-  // 1. Landing
   await goto("/");
   check("UI: landing shows the library size", await ev("/1,\\d\\d\\d/.test(document.body.innerText)"), "");
   await shot(1, "landing");
 
-  // 2. Build chat: client-side navigation (the store lives in memory), then search, pick the market, the stock, the hedge
   await click("a", "Build a bridge");
   await waitFor(`!!document.querySelector('input[aria-label=Composer]')`, "Build composer", 30_000);
   await ev(`document.querySelector('input[aria-label=Composer]').focus()`);
@@ -114,20 +98,17 @@ try {
   await click("button.pb-row", TICKER);
   await waitFor(`document.querySelectorAll('button.pb-row').length > 0 && !!document.body.innerText.match(/hedge/i)`, "hedge menu", 30_000);
   await sleep(1500);
-  await click("button.pb-row", "hort"); // the dynamic short-shares hedge (the one the engine runs)
+  await click("button.pb-row", "hort");
   await waitFor(has("button", "Connect brokerage"), "Connect brokerage button", 30_000);
-  // Liquidity preview + hedge-instrument comparison (real Massive data; best effort, the walk does not fail on it).
   try { await waitFor(`!!document.querySelector('[data-testid=hedge-compare]') && !/Pricing the four hedges/.test(document.querySelector('[data-testid=hedge-compare]').innerText)`, "hedge comparison answers", 30_000); } catch {}
   check("UI: build shows the liquidity preview and the hedge-instrument comparison", await ev(`!!document.querySelector('[data-testid=risk-preview]') && !!document.querySelector('[data-testid=hedge-compare]')`), "");
   await shot(2, "build");
 
-  // 3. Connect
   await click("button", "Connect brokerage");
-  await waitFor(has("button", "pipeline"), "Connect screen", 30_000);  // "Run the AI pipeline" (Gemini answered) or "Run the fit pipeline"
+  await waitFor(has("button", "pipeline"), "Connect screen", 30_000);
   check("UI: connect names the account orders route to", await ev(`/Simulated account|Webull paper/.test(document.body.innerText)`), "");
   await shot(3, "connect");
 
-  // 4. Pipeline: wait for the fit, read what it says it picked, then approve
   await click("button", "pipeline");
   await waitFor(has("h2", "Approve the"), "pipeline reaches the approval gate", 90_000);
   const pipeText = await ev("document.body.innerText");
@@ -135,11 +116,8 @@ try {
   check("UI: pipeline shows a fit, labelled \"Rules + C++ replay\" or \"AI · Gemini <model>\"", !!fitTag, fitTag ?? "no label");
   const fam = /AI fit for \w+: ([A-Za-z0-9 ]+?)(?: preset|\.|\n)/.exec(pipeText)?.[1]?.trim();
   check("UI: pipeline names the chosen family", !!fam, fam ?? "");
-  // The approval step reads the pending proposal first: evidence gate + liquidity & capacity card.
   await waitFor(`!!document.querySelector('[data-testid=evidence-gate]') && !/checking evidence/i.test(document.querySelector('[data-testid=evidence-gate]').innerText)`, "evidence gate answers", 45_000);
   const unvalidated = await ev(`!!document.querySelector('[data-testid=evidence-ack]')`);
-  // The generic AI fit is unvalidated (registry generic_ai_fit), so the box always carries an unvalidated verdict with the
-  // acknowledgement (or an earlier one recorded), whatever the market's own gap evidence. Anything else fails.
   const gateText = await ev(`(document.querySelector('[data-testid=evidence-gate]') || {}).innerText || ""`);
   const gateOk = /unvalidated/i.test(gateText)
     && (unvalidated || await ev(`!!document.querySelector('[data-testid=evidence-acknowledged]')`));
@@ -147,18 +125,15 @@ try {
   check("UI: approval shows the liquidity & capacity card", await ev(`!!document.querySelector('[data-testid=capacity-card]') || /Checking liquidity/.test(document.body.innerText)`), "");
   await shot(4, "pipeline");
 
-  // 5. Approve -> bridge page (/bridge/<id>). On an unvalidated market the button stays disabled until the box is ticked.
   if (unvalidated) {
     check("UI: approve is disabled before the acknowledgement", await ev(`[...document.querySelectorAll('button')].some(b => b.disabled && /Acknowledge the unvalidated fit/.test(b.innerText))`), "");
     await ev(`document.querySelector('[data-testid=evidence-ack]').click()`);
     await waitFor(has("button", "Approve"), "approve enables after the acknowledgement", 10_000);
   }
-  await click("button", "Approve"); // "Approve the unvalidated fit" or "Approve without the fee gate"
+  await click("button", "Approve");
   await waitFor(`location.pathname.startsWith('/bridge') && /Bridge [0-9a-f]{8,}/.test(document.body.innerText)`, "opens the Bridge screen on a backend bridge", 60_000);
   const bridgeId = await ev("(/Bridge ([0-9a-f]{8,})/.exec(document.body.innerText) || [])[1]");
   check("UI: approve opened a backend bridge", /^[0-9a-f]{8,}$/.test(bridgeId), bridgeId);
-  // Let the replay run until the broker has filled an order (or the replay is over), with a deadline: a fixed early
-  // sample can land before the algo's first order on a quiet stretch of history.
   const t0 = Date.now();
   let sum = null;
   while (Date.now() - t0 < FILL_DEADLINE_S * 1000) {
@@ -172,7 +147,7 @@ try {
     !!sum && (sum.broker_filled > 0 || sum.status !== "running"),
     `after ${waited}s (deadline ${FILL_DEADLINE_S}s): status=${sum?.status} ticks=${sum?.ticks} broker_filled=${sum?.broker_filled}`);
   await waitFor(`/Ticks received/.test(document.body.innerText)`, "bridge screen renders ticks", 30_000);
-  await sleep(1000); // let the stream's latest fill reach the screen
+  await sleep(1000);
   await shot(5, "bridge");
   sum = await (await fetch(`${API}/bridges/${bridgeId}`)).json();
   check("UI bridge runs hedgecore.Algo (engine=algo)", sum.engine === "algo", `engine=${sum.engine}`);
@@ -180,7 +155,6 @@ try {
   check("UI bridge is a replay, labelled as one", sum.source === "replay" && (await ev(`/REPLAY/i.test(document.body.innerText)`)), `source=${sum.source}`);
   check("UI bridge received ticks and the broker took orders", sum.ticks > 0 && sum.broker_filled > 0, `ticks=${sum.ticks} orders=${sum.orders} broker_filled=${sum.broker_filled} scope=${sum.account_scope}`);
 
-  // 6-8. Library, Portfolio, Profile through the nav (client-side, so the bridge keeps running in the store)
   await click("a", "Library");
   await waitFor(`/families|presets|Library/i.test(document.body.innerText) && document.body.innerText.length > 300`, "library renders", 30_000);
   await sleep(1500);

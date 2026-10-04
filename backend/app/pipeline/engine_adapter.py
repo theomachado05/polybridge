@@ -1,13 +1,3 @@
-"""Access to the C++ algo library (spec §3.4), with honest fallbacks.
-
-Order of preference for the library manifest:
-1. the compiled ``hedgecore`` module (``hedgecore.catalog()``)            -> source "engine"
-2. ``engine/hedgecore/manifest.json`` (generated from catalog, committed) -> source "manifest_file"
-3. ``app/data/manifest_fallback.json`` (hand-written from spec §3.2)      -> source "fallback"
-
-Replay scoring (``hedgecore.replay_grid``) exists only with the compiled module. Without it the pipeline
-picks by event-class rules and reports ``scored = false``; it never fabricates scores.
-"""
 from __future__ import annotations
 
 import importlib
@@ -27,14 +17,10 @@ EVENT_CLASSES = ["macro_fed", "elections", "tariffs_trade", "geopolitics_energy"
                  "tech_regulation", "crypto", "corporate_8k", "company_specific", "unsupported"]
 WILDCARDS = {"all", "any", "*"}
 DIVISIONS = ("hedge", "opportunity")
-# Requirements no live hedge bridge can meet yet. 'pm_leg_sim': a simulated, labelled prediction-market leg (there is
-# no Polymarket trading account and a hedge bridge routes equity intents only). Until a bridge provides it, a family
-# that needs it is never offered (no tick set satisfies it, see ticks.available_requirements) and never bridged.
 BRIDGE_UNMET = frozenset({"pm_leg_sim"})
 
 
 def _divisions(raw: Any) -> list[str]:
-    """'hedge' | 'opportunity' | 'hedge/opp' | ['hedge', 'opportunity'] -> a list of known divisions."""
     items = raw if isinstance(raw, (list, tuple)) else str(raw or "").replace(",", "/").split("/")
     out = []
     for x in items:
@@ -46,7 +32,6 @@ def _divisions(raw: Any) -> list[str]:
 
 
 def _params(raw: Any) -> list[dict]:
-    """Accepts [{name, min, max, grid}] or {name: {min, max, grid}} or {name: [grid]}."""
     if isinstance(raw, dict):
         raw = [{"name": k, **(v if isinstance(v, dict) else {"grid": list(v)})} for k, v in raw.items()]
     out = []
@@ -61,7 +46,6 @@ def _params(raw: Any) -> list[dict]:
 
 
 def _block_names(blocks: Any) -> set[str]:
-    """Block names from either ['Name', ...] (fallback manifest) or [{kind, name}, ...] (compiled catalog)."""
     out = set()
     for b in blocks or []:
         name = b.get("name") if isinstance(b, dict) else b
@@ -71,14 +55,6 @@ def _block_names(blocks: Any) -> set[str]:
 
 
 def derive_requires(family: dict) -> list[str]:
-    """Data a family cannot run without, derived from what the compiled catalog declares (its blocks and
-    instruments) when the manifest does not list ``requires`` itself:
-
-    - a ``CrossVenueGap`` signal needs the other venue's price      -> 'both_venues'
-    - any ``option:*`` instrument needs a listed option chain        -> 'listed_options'
-    - a hedge-only family that trades a prediction-market leg        -> 'pm_leg_sim'
-      (closed_session_hedge buys the adverse YES while equities are closed; its fills must be simulated and labelled)
-    """
     req = []
     if "CrossVenueGap" in _block_names(family.get("blocks")):
         req.append("both_venues")
@@ -91,8 +67,6 @@ def derive_requires(family: dict) -> list[str]:
 
 
 def derive_proxies(instruments: list) -> list[str]:
-    """Tradable proxy tickers named by the catalog ('etf:SPY', 'equity:COIN'); placeholders like 'etf:sector'
-    or 'equity:megacap_tech' are not tickers and are skipped."""
     out = []
     for i in instruments or []:
         kind, _, sym = str(i).partition(":")
@@ -102,16 +76,6 @@ def derive_proxies(instruments: list) -> list[str]:
 
 
 def normalize_manifest(raw: Any) -> dict:
-    """Coerce whatever catalog()/manifest.json returns into the shape the pipeline uses.
-
-    families: list of {id, divisions, division, event_classes, instruments, blocks, params, preset_count, requires,
-    generic, proxies, ...}.
-
-    The compiled catalog is authoritative but terser than the hand-written fallback: it spells a family that applies
-    to every class as the full list of classes (not 'all') and has no ``requires`` / ``proxies``. So:
-    ``generic`` is True when the family's classes are a wildcard or cover every supported class; ``requires`` and
-    ``proxies`` are derived from blocks and instruments when absent (``derive_requires``, ``derive_proxies``).
-    """
     raw = raw if isinstance(raw, dict) else {}
     fams_raw = raw.get("families") or []
     if isinstance(fams_raw, dict):
@@ -154,13 +118,10 @@ def family_matches(family: dict, event_class: str) -> bool:
 
 
 def is_specific(family: dict, event_class: str) -> bool:
-    """True when the family names this class explicitly and is not a generic family (one that covers every class,
-    whether spelled 'all' or as the full list, as the compiled catalog does)."""
     return event_class in (family.get("event_classes") or []) and not family.get("generic", False)
 
 
 def preset_grid(family: dict) -> list[dict[str, float]]:
-    """All grid points in row-major order (last parameter varies fastest), matching itertools.product."""
     params = family.get("params") or []
     if not params:
         return [{}]
@@ -169,12 +130,6 @@ def preset_grid(family: dict) -> list[dict[str, float]]:
 
 
 def default_preset(family: dict) -> tuple[int, dict[str, float]]:
-    """The family's declared default preset; else, per parameter, its declared ``default`` when that value is on
-    the grid (the compiled catalog declares one for every parameter), else the middle grid value.
-
-    The index uses the compiled library's ordering: mixed radix, last parameter fastest (``ParamSpec::preset``),
-    the same as itertools.product. A manifest may override with ``default_preset`` (int index).
-    """
     params = family.get("params") or []
     declared = family.get("default_preset")
     grid = preset_grid(family)
@@ -195,7 +150,6 @@ def default_preset(family: dict) -> tuple[int, dict[str, float]]:
 
 
 class EngineAdapter:
-    """Thin wrapper; inject ``module`` (a fake hedgecore) or paths in tests."""
 
     def __init__(self, module: Any = "auto", engine_manifest: Path = ENGINE_MANIFEST,
                  fallback_manifest: Path = FALLBACK_MANIFEST) -> None:
@@ -207,7 +161,7 @@ class EngineAdapter:
     def _import() -> Any:
         try:
             return importlib.import_module("hedgecore")
-        except Exception:  # not built, or a broken build: degrade, never crash the API
+        except Exception:
             return None
 
     @property
@@ -244,8 +198,6 @@ class EngineAdapter:
         return result
 
     def replay_grid(self, family_id: str, position: dict, ticks: dict) -> list[dict] | None:
-        """List of ReplayStats dicts (each with preset_index and params), or None when the engine is absent
-        or the call fails. Never raises."""
         if not self.can_score:
             return None
         try:
@@ -262,28 +214,16 @@ class EngineAdapter:
 
 
 class AlgoChoiceError(ValueError):
-    """A requested family/preset/params that the library cannot run on a bridge (the API answers 422)."""
+    pass
 
 
 def is_option_family(family: dict) -> bool:
-    """An Opportunity-division family that trades listed options (an ``option`` / ``option:*`` instrument)."""
     ins = [str(i).lower() for i in family.get("instruments") or []]
     return "opportunity" in (family.get("divisions") or []) and any(i.startswith("option") for i in ins)
 
 
 def resolve_algo(manifest: dict, family_id: str, preset_index: int | None = None,
                  params: dict[str, float] | None = None, division: str = "hedge") -> dict:
-    """Validate a bridge's algo choice against the library and resolve it to concrete params.
-
-    Returns {family, preset_index, params, division}. ``preset_index`` follows the compiled library's ordering
-    (mixed radix, last parameter fastest), so ``preset_grid(f)[i]`` is the preset ``replay_grid`` scored as index i.
-    Explicit ``params`` are checked against the catalog bounds; parameters left out take the family default (as the
-    engine does), and ``preset_index`` is then None.
-
-    ``division="hedge"`` (default): only hedge-division families (a hedge bridge hedges an equity position).
-    ``division="opportunity"``: only the Opportunity division's option families (``is_option_family``), which an
-    approved opportunity proposal runs on listed options; prediction-market-leg families are never bridged.
-    """
     fam = next((f for f in manifest.get("families") or [] if f.get("id") == family_id), None)
     if fam is None:
         raise AlgoChoiceError(f"unknown algo family '{family_id}'")
@@ -324,18 +264,13 @@ def resolve_algo(manifest: dict, family_id: str, preset_index: int | None = None
     return {"family": family_id, "preset_index": None, "params": out, "division": division}
 
 
-# The hedge-size parameters of the hedge families: "coverage" (fraction hedged at p = 1) and "max_cov" (the
-# LinearExposure ceiling). A family without one (election_hedge: beta * (p - p_neutral), capped at 1) is held to the
-# approved coverage by the bridge's own clip on sell intents (bridges._coverage_room).
 COVERAGE_PARAMS = ("coverage", "max_cov")
 
 
-CONTRACT_PARAMS = ("contracts",)  # option families: structures per entry
+CONTRACT_PARAMS = ("contracts",)
 
 
 def cap_contracts(params: dict[str, float], max_contracts: float | None) -> tuple[dict[str, float], dict[str, float] | None]:
-    """An approved opportunity proposal's max_contracts caps the option families' per-entry size the same way
-    target_coverage caps the hedge size. Returns (capped params, {param: original} or None)."""
     out, lowered = dict(params), {}
     if max_contracts is None:
         return out, None
@@ -348,8 +283,6 @@ def cap_contracts(params: dict[str, float], max_contracts: float | None) -> tupl
 
 
 def cap_coverage(params: dict[str, float], target_coverage: float) -> tuple[dict[str, float], dict[str, float] | None]:
-    """The approved target_coverage is a hard cap on what the algo may hedge: every hedge-size parameter above it is
-    lowered to it. Returns (capped params, {param: original value} for the ones lowered, or None)."""
     cap = float(target_coverage)
     out, lowered = dict(params), {}
     for name in COVERAGE_PARAMS:

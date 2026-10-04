@@ -1,4 +1,3 @@
-"""Closures and measurement instants (METHOD.md section 1 and 3). Pure functions, no network."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -57,7 +56,6 @@ class Closure:
 
 
 def build_closures(open_min: str = OPEN_MIN, open_max: str = OPEN_MAX, cal: TradingCalendar | None = None) -> list[Closure]:
-    """Every closure containing at least one whole calendar day without a session, reopening in [open_min, open_max]."""
     cal = cal or TradingCalendar()
     s = cal.sessions
     out = []
@@ -69,7 +67,6 @@ def build_closures(open_min: str = OPEN_MIN, open_max: str = OPEN_MAX, cal: Trad
 
 
 def eligible(c: Closure, listed: datetime | None, end_dt: datetime, res_date: date) -> str:
-    """'' when the (market, closure) pair is eligible (METHOD.md section 2, rules 1-2), else the reason."""
     if listed is None or listed > c.close - timedelta(minutes=15):
         return "listed_after_close"
     if end_dt < c.eod - timedelta(minutes=1) and res_date <= c.open_day:

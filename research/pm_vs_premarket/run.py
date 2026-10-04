@@ -1,10 +1,3 @@
-"""Run study T2 (METHOD.md section 4). Each arm runs once; a .done marker refuses a second run.
-
-    cd research && .venv/bin/python -m pm_vs_premarket.run
-
-Arm K needs no key and no network. Arm M needs MASSIVE_API_KEY (environment, or research/.env only); without it the
-runner exits 2 before any Massive request.
-"""
 from __future__ import annotations
 
 import argparse

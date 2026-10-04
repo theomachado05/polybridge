@@ -1,8 +1,3 @@
-"""Pooled event-fixed-effects regressions with per-event Newey-West errors, and Granger-style F tests (METHOD.md section 6).
-
-Self-contained numpy implementation (no scipy / statsmodels dependency); p-values come from the incomplete
-beta / gamma functions below, unit-tested against known values.
-"""
 from __future__ import annotations
 
 import math
@@ -10,8 +5,6 @@ from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
-
-# ---------------------------------------------------------------- special functions
 
 
 def _betacf(a: float, b: float, x: float) -> float:
@@ -41,7 +34,6 @@ def _betacf(a: float, b: float, x: float) -> float:
 
 
 def betainc(a: float, b: float, x: float) -> float:
-    """Regularized incomplete beta I_x(a, b)."""
     if x <= 0.0:
         return 0.0
     if x >= 1.0:
@@ -54,10 +46,9 @@ def betainc(a: float, b: float, x: float) -> float:
 
 
 def gammaq(a: float, x: float) -> float:
-    """Regularized upper incomplete gamma Q(a, x)."""
     if x <= 0:
         return 1.0
-    if x < a + 1.0:  # series for P
+    if x < a + 1.0:
         ap, s, delta = a, 1.0 / a, 1.0 / a
         for _ in range(2000):
             ap += 1.0
@@ -97,21 +88,17 @@ def f_sf(f: float, d1: float, d2: float) -> float:
 
 
 def binom_two_sided(k: int, n: int, p: float = 0.5) -> float:
-    """Exact two-sided binomial test p-value (sum of probabilities <= P(k))."""
     if n == 0:
         return float("nan")
     pm = [math.comb(n, i) * p ** i * (1 - p) ** (n - i) for i in range(n + 1)]
     return float(min(1.0, sum(v for v in pm if v <= pm[k] * (1 + 1e-12))))
 
 
-# ---------------------------------------------------------------- design building
-
-
 @dataclass
 class Block:
     event_id: str
-    y: np.ndarray   # (T,)
-    X: np.ndarray   # (T, K)
+    y: np.ndarray
+    X: np.ndarray
 
 
 def zscale(s: pd.Series) -> pd.Series:
@@ -125,10 +112,6 @@ def lagged(s: pd.Series, lags: range) -> list[np.ndarray]:
 
 def build_block(event_id: str, frame: pd.DataFrame, dep: str, own_lags: int, other: str | None, other_lags: int,
                 min_rows: int = 40) -> Block | None:
-    """Rows t in the window with the dependent value and every needed lag present. Columns: own lags then other lags.
-
-    `dep`/`other` name columns of `frame` ('x' = equity change, 'ys' = oriented PM change); both are z-scaled per event.
-    """
     z = {c: zscale(frame[c]) for c in ("x", "ys")}
     cols = lagged(z[dep], range(1, own_lags + 1)) if own_lags else []
     if other and other_lags:
@@ -141,13 +124,10 @@ def build_block(event_id: str, frame: pd.DataFrame, dep: str, own_lags: int, oth
     return Block(event_id, d[ok], X[ok])
 
 
-# ---------------------------------------------------------------- fixed-effects OLS with block Newey-West
-
-
 @dataclass
 class FitResult:
     beta: np.ndarray
-    V: np.ndarray        # HAC covariance of beta
+    V: np.ndarray
     se: np.ndarray
     rss: float
     n: int
@@ -195,7 +175,6 @@ def wald(beta: np.ndarray, V: np.ndarray) -> tuple[float, float]:
 
 
 def cumulative(fit: FitResult, idx: slice | None = None) -> tuple[float, float, float]:
-    """Sum of coefficients (over `idx`), HAC SE, t."""
     idx = idx if idx is not None else slice(0, fit.k)
     c = np.zeros(fit.k)
     c[idx] = 1.0
@@ -205,7 +184,6 @@ def cumulative(fit: FitResult, idx: slice | None = None) -> tuple[float, float, 
 
 
 def distributed_lag(frames: dict[str, pd.DataFrame], dep: str, other: str, lags: int, hac_lags: int) -> tuple[FitResult, dict]:
-    """Regression A (dep='x', other='ys') or B (dep='ys', other='x'): dep_t on lags 1..`lags` of the other series."""
     blocks = [b for eid, f in frames.items() if (b := build_block(eid, f, dep, 0, other, lags)) is not None]
     fit = fe_ols(blocks, hac_lags)
     w_stat, w_p = wald(fit.beta, fit.V)
@@ -215,7 +193,6 @@ def distributed_lag(frames: dict[str, pd.DataFrame], dep: str, other: str, lags:
 
 
 def granger(frames: dict[str, pd.DataFrame], dep: str, other: str, p: int, hac_lags: int) -> dict:
-    """Does `other` Granger-cause `dep`?  Event fixed effects; own lags 1..p in both models."""
     blocks_u = {}
     for eid, f in frames.items():
         b = build_block(eid, f, dep, p, other, p)

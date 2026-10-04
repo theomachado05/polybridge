@@ -11,11 +11,11 @@ UNIVERSE = ("AAPL", "MSFT", "BRK.B")
 def _client():
     return FakeClient({
         "material_litigation": [disclosure("a1", "1", ["AAPL"], "2024-03-01"),
-                                disclosure("a9", "9", ["ZZZZ"], "2024-03-01")],          # outside the universe
-        "class_action_filing": [disclosure("a1", "1", ["AAPL"], "2024-03-01")],          # same filing, second H1 tag
-        "restructuring_plan": [disclosure("a2", "2", ["MSFT"], "2024-05-04"),            # a Saturday
+                                disclosure("a9", "9", ["ZZZZ"], "2024-03-01")],
+        "class_action_filing": [disclosure("a1", "1", ["AAPL"], "2024-03-01")],
+        "restructuring_plan": [disclosure("a2", "2", ["MSFT"], "2024-05-04"),
                                disclosure("a3", "3", ["BRK/B"], "2024-06-03")],
-        "asset_impairment": [disclosure("a3", "3", ["BRK/B"], "2024-06-03")],            # a3 is cross-family
+        "asset_impairment": [disclosure("a3", "3", ["BRK/B"], "2024-06-03")],
     })
 
 
@@ -54,39 +54,34 @@ def test_build_tag_events_single_tag():
 
 
 def test_disclosures_without_tickers_key():
-    # Test that disclosures without the tickers key fall back to ticker field
     client = FakeClient({
         "missing_tickers_tag": [
             {"accession_number": "a1", "cik": "1", "filing_date": "2024-03-01",
              "filing_url": "https://www.sec.gov/Archives/edgar/data/1/a1.txt", "supporting_text": "",
-             "ticker": "AAPL"}  # Has ticker but no tickers
+             "ticker": "AAPL"}
         ]
     })
-    # Should use ticker as single-ticker list and include AAPL since it's in the universe
     ev = build_tag_events(client, "missing_tickers_tag", "2024-01-01", "2024-12-31", UNIVERSE, CAL)
     assert list(ev.ticker) == ["AAPL"]
     assert "t_0" in ev.columns
 
 
 def test_mixed_valid_and_missing_tickers():
-    # Test rows mixing valid tickers with missing/None values
     client = FakeClient({
         "mixed_tickers_tag": [
-            disclosure("a1", "1", ["AAPL"], "2024-03-01"),  # Valid
+            disclosure("a1", "1", ["AAPL"], "2024-03-01"),
             {"accession_number": "a2", "cik": "2", "tickers": None, "filing_date": "2024-03-02",
-             "filing_url": "https://www.sec.gov/Archives/edgar/data/2/a2.txt", "supporting_text": ""},  # None tickers
-            disclosure("a3", "3", [], "2024-03-03"),  # Empty list tickers
-            disclosure("a4", "4", ["MSFT"], "2024-03-04"),  # Valid
+             "filing_url": "https://www.sec.gov/Archives/edgar/data/2/a2.txt", "supporting_text": ""},
+            disclosure("a3", "3", [], "2024-03-03"),
+            disclosure("a4", "4", ["MSFT"], "2024-03-04"),
         ]
     })
     ev = build_tag_events(client, "mixed_tickers_tag", "2024-01-01", "2024-12-31", UNIVERSE, CAL)
-    # Should only have AAPL and MSFT (rows with None and empty tickers are filtered out)
     assert set(ev.ticker) == {"AAPL", "MSFT"}
     assert len(ev) == 2
 
 
 def test_ticker_singular_fallback_when_tickers_absent():
-    # Test that ticker (singular) is used as fallback when tickers column is absent
     client = FakeClient({
         "ticker_fallback_tag": [
             {"accession_number": "a1", "cik": "1", "filing_date": "2024-03-01",
@@ -98,6 +93,5 @@ def test_ticker_singular_fallback_when_tickers_absent():
         ]
     })
     ev = build_tag_events(client, "ticker_fallback_tag", "2024-01-01", "2024-12-31", UNIVERSE, CAL)
-    # Should have AAPL and MSFT using the ticker field as fallback
     assert set(ev.ticker) == {"AAPL", "MSFT"}
     assert len(ev) == 2

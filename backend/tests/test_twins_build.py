@@ -1,4 +1,3 @@
-"""Twin builder: fetchers and the end-to-end map build against mocked venue APIs (no network)."""
 from __future__ import annotations
 
 import asyncio
@@ -15,7 +14,7 @@ run = asyncio.run
 
 @pytest.fixture(autouse=True)
 def _no_sleep(monkeypatch):
-    async def instant(_):  # retries and paging pauses must not slow the suite
+    async def instant(_):
         return None
     monkeypatch.setattr(sources.asyncio, "sleep", instant)
 
@@ -37,7 +36,6 @@ def kalshi_market(ticker, title, close="2027-01-01T04:59:00Z", rules="", **kw):
 
 
 class Venues:
-    """MockTransport handler for gamma + Kalshi; records requests; scripted failures."""
 
     def __init__(self, poly_top, poly_by_id, search, kalshi_pages, fail_kalshi_first=0):
         self.poly_top, self.poly_by_id, self.search = poly_top, poly_by_id, search
@@ -84,10 +82,9 @@ def test_fetch_polymarket_ids_top_search_dedup_and_filters():
                search={"recession": [{"slug": "x", "markets": [searched, keep]}]}, kalshi_pages=[[]])
     out = run(sources.fetch_polymarket(client(v), ids=["1"], top_n=300, page=2, search_terms=("recession",)))
     ids = sorted(m["id"] for m in out)
-    assert ids == ["1", "4", "5"]                       # closed and token-less markets dropped, duplicates merged
+    assert ids == ["1", "4", "5"]
     m = next(m for m in out if m["id"] == "1")
     assert m["token_id"] == "tokYES1" and m["event_slug"] == "ev1"
-    # the offset cap (HTTP 422) ends paging instead of failing the build
     assert any(r.url.params.get("offset") for r in v.requests)
 
 
@@ -96,10 +93,10 @@ def test_fetch_kalshi_paginates_skips_sports_and_retries_429():
              [event("Politics", kalshi_market("KXB-1", "B?"), kalshi_market("KXB-2", "B2?", market_type="scalar"))]]
     v = Venues([], [], {}, pages, fail_kalshi_first=2)
     out = run(sources.fetch_kalshi(client(v), pause_s=0))
-    assert [m["ticker"] for m in out] == ["KXA-1", "KXB-1"]     # sports skipped, scalar skipped
+    assert [m["ticker"] for m in out] == ["KXA-1", "KXB-1"]
     assert out[0]["category"] == "Economics" and out[0]["event_title"] == "ev"
-    assert len([r for r in v.requests if r.url.path.endswith("/events")]) == 4  # 2 retries + 2 pages
-    assert "category" not in v.requests[0].url.params  # the API ignores it; filtering is client-side
+    assert len([r for r in v.requests if r.url.path.endswith("/events")]) == 4
+    assert "category" not in v.requests[0].url.params
 
 
 def test_fetch_kalshi_keeps_what_it_has_when_a_later_page_keeps_failing(monkeypatch):
@@ -151,7 +148,6 @@ def test_build_map_only_verified_pairs_are_in_pairs_with_notes_and_ids():
     assert e["polymarket"]["id"] == "1" and e["polymarket"]["token_id"] == "tokYES1"
     assert e["direction"] == "same" and e["verification"]["verified_at"] == "2026-10-03T00:00:00Z"
     assert "deadline" in e["verification"]["note"] and e["verification"]["checks"]["deadline"]["ok"] is True
-    # the BTC pair (different named sources) and the inverted Fed pair are listed separately, flagged, unused
     amb = {a["kalshi"]["ticker"]: a for a in doc["ambiguous"]}
     assert set(amb) == {"KXBTC-100", "KXFEDDECISION-26OCT-H25"}
     assert "source" in amb["KXBTC-100"]["reasons"] and "direction_inverted" in amb["KXFEDDECISION-26OCT-H25"]["reasons"]

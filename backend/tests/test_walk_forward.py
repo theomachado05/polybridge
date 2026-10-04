@@ -1,5 +1,3 @@
-"""Walk-forward split / purge logic (scripts/walk_forward_fits.py), offline with a fake engine: tune sees only the
-train slice, the pick is replayed only on the test slice, and the purge ticks are never seen by either."""
 import asyncio
 import importlib.util
 import math
@@ -29,12 +27,12 @@ def _ticks(n, seed=0):
 
 
 @pytest.mark.parametrize("n,expect", [
-    (100, (60, 5, 65)),     # ceil(5) = 5
-    (721, (432, 37, 469)),  # floor(432.6), ceil(36.05)
-    (44, (26, 3, 29)),      # ceil(2.2) = 3
-    (20, (12, 2, 14)),      # min purge 2
+    (100, (60, 5, 65)),
+    (721, (432, 37, 469)),
+    (44, (26, 3, 29)),
+    (20, (12, 2, 14)),
     (0, (0, 2, 0)),
-    (1, (0, 2, 1)),         # test_start clipped to n
+    (1, (0, 2, 1)),
 ])
 def test_split_indices(n, expect):
     assert wf.split_indices(n) == expect
@@ -57,16 +55,16 @@ def test_split_tickset_slices_every_array_and_drops_the_purge():
     for k, v in ts.ticks.items():
         assert np.array_equal(train.ticks[k], v[:60], equal_nan=True)
         assert np.array_equal(test.ticks[k], v[65:], equal_nan=True)
-    assert test.ticks["ts_ns"][0] - train.ticks["ts_ns"][-1] == 6 * 3600 * 10**9  # 5 purged hourly ticks between
-    train.ticks["under_px"][0] = -1.0  # copies: slicing never aliases the source history
+    assert test.ticks["ts_ns"][0] - train.ticks["ts_ns"][-1] == 6 * 3600 * 10**9
+    train.ticks["under_px"][0] = -1.0
     assert ts.ticks["under_px"][0] != -1.0
 
 
 def test_split_tickset_excludes_short_or_equity_less_slices():
-    short = TickSet(_ticks(25), "live_history", 25, True)  # train 15, purge 2, test 8 < MIN_TICKS
+    short = TickSet(_ticks(25), "live_history", 25, True)
     assert wf.split_tickset(short)[0] is None and "< 10" in wf.split_tickset(short)[2]["reason"]
     t = _ticks(100)
-    t["under_px"][65:] = np.nan  # no equity in the test slice
+    t["under_px"][65:] = np.nan
     _, _, info = wf.split_tickset(TickSet(t, "live_history", 100, True))
     assert info["reason"] == "no equity prices in the test slice"
     assert wf.split_tickset(TickSet(None, "none", 0))[2]["reason"] == "no price history"
@@ -74,7 +72,6 @@ def test_split_tickset_excludes_short_or_equity_less_slices():
 
 
 class FakeEngine(EngineAdapter):
-    """Two presets. On the train window preset 1 wins (0.3 vs 0.1); every call records the ticks it saw."""
 
     def __init__(self, test_scores=(0.05, -0.02), train_scores=(0.1, 0.3)):
         self._module, self.calls = None, []
@@ -114,8 +111,8 @@ def test_tune_sees_only_train_and_the_pick_is_replayed_only_on_test():
     purged = set(ts.ticks["ts_ns"][60:65].tolist())
     assert purged.isdisjoint(seen_train.tolist()) and purged.isdisjoint(seen_test.tolist())
     assert r["status"] == "tested" and r["event_class"] == "crypto"
-    assert r["preset_index"] == 1 and r["train_vs_static"] == pytest.approx(0.3)  # picked on train
-    assert r["test_vs_static"] == pytest.approx(-0.02)  # the SAME preset on test, not the test winner (0.05)
+    assert r["preset_index"] == 1 and r["train_vs_static"] == pytest.approx(0.3)
+    assert r["test_vs_static"] == pytest.approx(-0.02)
     assert r["default_preset_index"] == 0 and r["default_test_vs_static"] == pytest.approx(0.05)
     assert r["test_best_vs_static"] == pytest.approx(0.05)
 

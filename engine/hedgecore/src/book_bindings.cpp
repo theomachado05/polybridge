@@ -35,7 +35,7 @@ void keep_warm(bool on) {
   }).detach();
 }
 
-}  // namespace
+}
 
 PYBIND11_MODULE(hedgecore_book, m) {
   m.doc() = "Frame-to-decision engine (hedgecore/book_engine.hpp): simdjson parse, per-token books, stale-quote rule";

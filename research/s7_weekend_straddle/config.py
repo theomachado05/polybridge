@@ -1,4 +1,3 @@
-"""S7 weekend straddle: every fixed parameter of METHOD.md. Committed with it, before any option price is pulled."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -10,7 +9,7 @@ EXPIRY_MIN_DAYS = 7
 EXPIRY_SEARCH_DAYS = 28
 FRIDAY_QUOTE_MAX_AGE_S = 600
 MONDAY_QUOTE_MAX_AGE_S = 900
-COMMISSION = 0.65            # per contract per leg, each way
+COMMISSION = 0.65
 OOS_FRACTION = 0.20
 N_BOOT, BOOT_SEED = 2000, 0
 
@@ -18,14 +17,14 @@ N_BOOT, BOOT_SEED = 2000, 0
 @dataclass(frozen=True)
 class Variant:
     id: str
-    activity: float          # mean absolute overnight odds move, points
+    activity: float
     lo: float
     hi: float
 
 
 VARIANTS = (
-    Variant("V0", 4.0, 0.10, 0.90),      # primary
-    Variant("V1", 2.0, 0.10, 0.90),      # the loosest: defines which weekends are controls
+    Variant("V0", 4.0, 0.10, 0.90),
+    Variant("V1", 2.0, 0.10, 0.90),
     Variant("V2", 4.0, 0.25, 0.75),
 )
 PRIMARY, LOOSEST = "V0", "V1"

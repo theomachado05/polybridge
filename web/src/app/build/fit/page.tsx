@@ -22,8 +22,6 @@ const FIT_WAIT_MS = 10000;
 const FIT_ID = "generic_ai_fit";
 const NO_PROPOSAL = "no-proposal";
 
-/** The generic AI fit flow (Build → Connect → here). It stays available, labelled by the evidence registry's
- *  generic_ai_fit entry: its walk-forward test failed, so it is unvalidated. */
 function FitEvidence() {
   const reg = useRegistry();
   const m = mechanismById(reg.data, FIT_ID);
@@ -38,8 +36,6 @@ function FitEvidence() {
 
 export default function GenericFit() {
   const s = useStore();
-  // The pick is read once: the pipeline runs on what Build chose when this screen opened. A different pick made
-  // while this screen is open (the voice agent fitted or proposed another market or ticker) restarts it on that pick.
   const [pick, setPick] = useState(() => (s.question && s.equity ? { q: s.question, eq: s.equity } : null));
   const liveKey = pickKey(s.question, s.equity);
   const key = pick ? pickKey(pick.q, pick.eq) : null;
@@ -64,18 +60,12 @@ function PipelineRun({ q, e }: { q: Question; e: EquityPick }) {
   const s = useStore();
   const inst = s.inst ?? "shares";
   const [stepN, setStep] = useState(0);
-  // A proposal the voice agent drafted for this pick: the screen goes straight to its approval panel.
   const voiceProp = proposalForPick(s.voiceProposal, q, e) ? s.voiceProposal : null;
   const step = voiceProp ? 6 : stepN;
-  // Set when the fit misses its deadline: the steps then go on with the facts of the pick (no fit); a fit that lands
-  // later still replaces them (see `mode`), since approval sends it.
   const [timedOut, setTimedOut] = useState(false);
   const [opening, setOpening] = useState(false);
   const [openError, setOpenError] = useState<string | null>(null);
-  // The evidence acknowledgement, per proposal id (a new proposal needs a new tick).
   const [ack, setAck] = useState<{ id: string; on: boolean } | null>(null);
-  // Bumped after an evidence refusal so the approval step re-reads the proposal (the backend rewrites its evidence
-  // before a 409 at approval; a refused bridge start drops it from reuse, so the re-read proposes again).
   const [prepNonce, setPrepNonce] = useState(0);
   const openingRef = useRef(false);
   const { runFit } = s;
@@ -85,7 +75,6 @@ function PipelineRun({ q, e }: { q: Question; e: EquityPick }) {
   const fit = s.fit && s.fit.key === `${q.id}|${e.t}` ? s.fit : null;
   const fitOk = fit?.status === "ok" && !!fit.data;
   const settled = fit != null && fit.status !== "loading";
-  // A fit that lands after the deadline still takes over: approval sends it, so the steps must say so.
   const mode: "fit" | "nofit" | "pending" = fitOk ? "fit" : timedOut || settled ? "nofit" : "pending";
   const fitOkRef = useRef(fitOk);
   useEffect(() => { fitOkRef.current = fitOk; });
@@ -96,21 +85,13 @@ function PipelineRun({ q, e }: { q: Question; e: EquityPick }) {
     return () => clearTimeout(t);
   }, [runFit, q, e]);
 
-  // Approving starts the engine, which sends orders to the account. That needs a click, unless the user turned
-  // on auto-approve in Profile; a bridge that would run with its fee gate off always waits when the edge guard is on.
-  // What approving starts: openBridge sends the runnable fit (hedge family + preset) when the fit answered, else
-  // the engine runs its default delta-bridge spec. Same rule as the store, so the copy matches what runs.
   const applied = runnableFit(fitOk ? fit!.data : null);
   const runs = algoRunLabel(applied);
-  // Only the default spec (legacy Engine) reads gap_per_share; a fitted algo is fee-gated on the tick's under_px.
   const gateOff = feeGateOff(q, e, applied);
   const { guards } = s.settings;
   const acct = brokerLabel(s.account);
-  // A ticker outside the market's mapping: no hedge fit, and startRealBridge refuses (adverse outcome unknown).
   const noDir = !e.direction;
 
-  // The approval step reads the pending proposal first: its evidence status (the gate) and its capacity block
-  // (liquidity caps, estimated cost, capital budget). Creating a proposal approves nothing.
   const done0 = step >= 6;
   const terms = (() => {
     if (noDir || !done0) return null;
@@ -118,23 +99,16 @@ function PipelineRun({ q, e }: { q: Question; e: EquityPick }) {
   })();
   const prep = useAsync(terms && !voiceProp ? `prep:${prepNonce}:${JSON.stringify(terms)}` : null, () => prepareHedgeProposal(terms!));
   const proposal = voiceProp ?? prep.data;
-  // The market's own closed-gap evidence (the backend's gate) and the fit's: the generic AI fit is unvalidated (its
-  // walk-forward test failed, registry entry generic_ai_fit), so this flow always needs the acknowledgement, even on a
-  // market whose gap evidence is validated, and the fit's registry status is the badge shown.
   const marketGate = proposal ? evidenceGate(proposal.evidence) : null;
   const gate = proposal || prep.error ? fitEvidenceGate(marketGate, fitMech) : null;
   const ackId = proposal?.id ?? NO_PROPOSAL;
   const acked = ack?.id === ackId && ack.on;
   const approvedAcked = proposal?.status === "approved" && !!proposal.ack_unvalidated;
-  // Approve waits for the evidence read. If the read fails (prep.error) Approve still needs the acknowledgement.
   const evidencePending = !!terms && prep.loading;
   const ackBlocked = evidencePending || (!!gate?.needsAck && !acked && !approvedAcked);
-  // The Weekend-mode override travels on the proposal (act_on_unvalidated); approving with the acknowledgement confirms it.
   const overrideOn = !!terms?.actOnUnvalidated;
   const capView = proposal ? capacityFromProposal(proposal.capacity) : null;
   const capFit = proposal ? capitalFitView(proposal.capacity) : null;
-  // Auto-approve never covers the generic AI fit: it is unvalidated, so every bridge it starts needs the explicit
-  // acknowledgement and a click.
 
   const goBridge = async () => {
     if (openingRef.current || ackBlocked) return;
@@ -149,7 +123,7 @@ function PipelineRun({ q, e }: { q: Question; e: EquityPick }) {
       setOpening(false);
       const evid = isEvidenceError(err);
       setOpenError(`${evid ? "The evidence gate stopped the approval" : "The bridge did not open"}: ${err instanceof Error ? err.message : String(err)}. ${evid ? "Read the evidence status and try again." : "Try again."}`);
-      if (evid) { setAck(null); setPrepNonce((n) => n + 1); }  // re-read the proposal's evidence
+      if (evid) { setAck(null); setPrepNonce((n) => n + 1); }
     }
   };
 
@@ -193,7 +167,6 @@ function PipelineRun({ q, e }: { q: Question; e: EquityPick }) {
             </Tag>
             {fit.data.family && fit.data.score != null && (() => {
               const sv = fitScoreView(fit.data);
-              // Neutral (never green) when the signal adds nothing over a static hedge of the same size.
               return <Tag tone={sv.tone === "positive" ? "ai" : "neutral"} title={sv.title}>{sv.short}</Tag>;
             })()}
           </>

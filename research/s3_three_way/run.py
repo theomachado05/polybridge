@@ -1,8 +1,3 @@
-"""S3 Part H: three-way consistency on resolved "S&P 500 closes above K" markets (METHOD.md sections 1, 2, 4 to 8).
-
-Polymarket SPY rows and the options band come from the committed arb scan; Kalshi quotes and results are pulled here.
-Run from `research/`:  python -m s3_three_way.run --rate 0.0417
-"""
 from __future__ import annotations
 
 import argparse
@@ -55,7 +50,6 @@ def closes(client, ticker: str, start: str, end: str) -> dict[str, float]:
 
 
 def ratio_for(date: str, spx: dict, spy: dict) -> tuple[str, float] | None:
-    """SPX close / SPY close on the last session strictly before `date`."""
     prior = sorted(d for d in spx if d < date and d in spy)
     return (prior[-1], spx[prior[-1]] / spy[prior[-1]]) if prior else None
 
@@ -67,7 +61,6 @@ def kalshi_event(date: str, kt) -> list[dict]:
 
 
 def kalshi_settlement(markets: list[dict]) -> float | None:
-    """The S&P 500 level the 16:00 event settled on (amendment 1)."""
     vals = {m.get("expiration_value") for m in markets if m.get("expiration_value")}
     try:
         return float(vals.pop()) if len(vals) == 1 else None
@@ -76,7 +69,6 @@ def kalshi_settlement(markets: list[dict]) -> float | None:
 
 
 def map_strike(k_spy: float, ratio: float, listed: list[float]) -> tuple[float, float] | None:
-    """Nearest listed Kalshi strike to ratio x K, kept only within the tolerance. Returns (strike, distance)."""
     if not listed:
         return None
     target = ratio * k_spy
@@ -85,7 +77,6 @@ def map_strike(k_spy: float, ratio: float, listed: list[float]) -> tuple[float, 
 
 
 def kalshi_quote(candles: list[dict], snap: float) -> dict | None:
-    """Bid and ask of the last candle at or before the snapshot, both sides present, at most KALSHI_MAX_AGE_S old."""
     best = None
     for c in candles:
         t = c.get("end_period_ts")
@@ -110,7 +101,6 @@ def widen(bid: float, ask: float, c: float) -> tuple[float, float]:
 
 
 def evaluate(s: dict, v: cfg.Variant, c: float, r: float, k_mult: float, qty: float = cfg.CLIP_HISTORY) -> dict | None:
-    """One set under one variant and cost multiplier: the trade it triggers, or None (METHOD.md section 4)."""
     pb, pa = widen(s["pb"], s["pa"], c)
     kb, ka = widen(s["kb"], s["ka"], c)
     lo, hi = s["lo"], s["hi"]
@@ -160,8 +150,6 @@ def evaluate(s: dict, v: cfg.Variant, c: float, r: float, k_mult: float, qty: fl
 
 
 def verify(prints: list[dict], t: dict, snap: float) -> tuple[int, float]:
-    """A print within the window at a Polymarket price at least as good as assumed. Buying YES (lock A, fade cheap):
-    a taker bought YES at or below our price. Buying NO: a taker sold YES at or above our price."""
     if t["pm_px"] != t["pm_px"]:
         return 0, 0.0
     buy_yes = t["dir"] in ("A", "buy pm YES")
@@ -311,7 +299,7 @@ def main() -> int:
             log.append(f"prints failed for {pid}: {e!r}")
     for t in trades:
         n, size = verify(prints.get(t["pm_id"], []), t, t["snap"])
-        if t["pm_px"] != t["pm_px"]:           # a fade on Kalshi has no Polymarket leg: its quote is a real quote
+        if t["pm_px"] != t["pm_px"]:
             n, size = 1, float(cfg.CLIP_HISTORY)
         t["verify_n"], t["verify_size"], t["verified"] = n, size, n > 0
         t["verified_qty"] = min(size, t["qty"]) if n else 0.0

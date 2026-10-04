@@ -20,13 +20,12 @@ void latency_pcts(V& lat, std::int64_t& p50, std::int64_t& p99) {
   p99 = q(0.99);
 }
 
-// Quantity that fills at the quote: up to the quoted size, nothing without a quoted price and size.
 double at_quote(double want, double px, double size) noexcept {
   if (!prob(px) || !(size > 0) || !(want > 0)) return 0;
   return std::min(want, size);
 }
 
-}  // namespace
+}
 
 LadderReplayStats replay_ladder(const Params& params, std::span<const LadderRow> rows) {
   LadderReplayStats st;
@@ -42,22 +41,20 @@ LadderReplayStats replay_ladder(const Params& params, std::span<const LadderRow>
     if (it == algo.end()) it = algo.emplace(row.pair, algos::LadderPair(params, Position{})).first;
     algos::LadderPair& a = it->second;
     LadderTick t = row.tick;
-    t.event_held = event_held[row.event] - a.held;  // contracts on the event's other pairs
+    t.event_held = event_held[row.event] - a.held;
 
     const PairIntent in = a.on_tick(t, row.now_ns);
     lat.push_back(in.latency_ns);
 
-    if (in.action == MicroAction::Cancel) {  // the venue acknowledges the cancel: the open leg is dead
+    if (in.action == MicroAction::Cancel) {
       a.on_reject(in.cancel);
     } else if (in.action == MicroAction::Unwind) {
-      // The unpaired leg would be flattened at the opposite touch, which a LadderTick does not quote: no fill.
       if (in.rich.side != 0) a.on_reject(Leg::Rich);
       if (in.cheap.side != 0) a.on_reject(Leg::Cheap);
       ++st.n_leg_rejects;
     } else if (in.action == MicroAction::Order) {
       ++st.n_orders;
       const double held_before = a.held;
-      // Each leg fills at its own quote, up to its quoted size; the remainder is rejected.
       const double q_rich = at_quote(in.rich.qty, t.bid_rich, t.bid_rich_qty);
       const double q_cheap = at_quote(in.cheap.qty, t.ask_cheap, t.ask_cheap_qty);
       if (q_rich > 0) a.on_fill(Leg::Rich, q_rich, t.bid_rich);
@@ -113,7 +110,7 @@ TicketReplayStats replay_tickets(const Params& params, std::span<const TicketRow
     if (it == algo.end()) it = algo.emplace(row.ticket, algos::TouchTicketReference(params, Position{})).first;
     auto& a = it->second;
     TicketTick t = row.tick;
-    t.underlying_short = under_short[row.underlying] - a.sold;  // the underlying's other tickets
+    t.underlying_short = under_short[row.underlying] - a.sold;
     t.event_short = event_short[row.event] - a.sold;
 
     const TicketIntent in = a.on_tick(t, row.now_ns);
@@ -128,10 +125,10 @@ TicketReplayStats replay_tickets(const Params& params, std::span<const TicketRow
     d.signal = in.signal;
     d.reason = in.reason;
     if (in.action == MicroAction::Propose) {
-      ++st.n_proposals;  // a proposal never trades
+      ++st.n_proposals;
     } else if (in.action == MicroAction::Order) {
       ++st.n_orders;
-      const double q = (in.limit_px == t.bid) ? at_quote(in.qty, t.bid, t.bid_qty) : 0.0;  // sell at the bid only
+      const double q = (in.limit_px == t.bid) ? at_quote(in.qty, t.bid, t.bid_qty) : 0.0;
       if (q > 0) {
         a.on_fill(q, t.bid);
         under_short[row.underlying] += q;
@@ -148,4 +145,4 @@ TicketReplayStats replay_tickets(const Params& params, std::span<const TicketRow
   return st;
 }
 
-}  // namespace hedgecore
+}

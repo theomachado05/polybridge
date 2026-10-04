@@ -1,8 +1,3 @@
-"""touch_fresh pull: first-weekend prints and results (Polymarket), option legs and underlying quotes (Massive).
-Streamed one market at a time, cached, resumable.
-
-Run from `research/`:  python -m touch_fresh.pull
-"""
 from __future__ import annotations
 
 import json

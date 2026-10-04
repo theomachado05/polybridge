@@ -1,9 +1,3 @@
-"""S8: fade the overnight move in the odds on Polymarket when the linked asset's open does not confirm it (METHOD.md).
-
-Run from `research/`:
-    python -m s8_open_referee.run            # the give-back table, every variant, the print check on the primary's entries
-    python -m s8_open_referee.run --no-prints
-"""
 from __future__ import annotations
 
 import json
@@ -37,10 +31,7 @@ CACHE = HERE / ".cache"
 WINDOWS = (("y_close", "09:40 to the close"), ("y_first", "09:29 to 09:40"), ("y_next", "09:40 to the next 09:40"))
 
 
-# ---------------------------------------------------------------- links, votes, fills
-
 def links() -> list[dict]:
-    """S5's agreed links and S4's agreed event links (motivating markets left out), without links to SPY."""
     out = [{"market": l["market"], "question": l["question"], "ticker": l["ticker"], "direction": int(l["direction"]), "source": "S5"}
            for l in merge_links()[0]]
     critic = load_critic()
@@ -52,7 +43,6 @@ def links() -> list[dict]:
 
 
 def first_bar_close(bars: dict, opens: np.ndarray) -> np.ndarray:
-    """The close of the five-minute bar that starts at the open (the 09:35 price); NaN when that bar is missing."""
     t, c = bars["t"], bars["c"]
     out = np.full(len(opens), np.nan)
     if len(t) == 0:
@@ -64,8 +54,6 @@ def first_bar_close(bars: dict, opens: np.ndarray) -> np.ndarray:
 
 
 def asset_vote(x: np.ndarray, moves: list[np.ndarray], directions: list[int]) -> tuple[np.ndarray, np.ndarray]:
-    """(a, n): a = sign(x) × the mean over linked tickers of direction × excess move, in bp; n = tickers that voted.
-    a > 0 means the assets moved the way the odds did. NaN when no linked ticker has a first bar."""
     if not moves:
         return np.full(len(x), np.nan), np.zeros(len(x), int)
     m = np.vstack([d * e for d, e in zip(directions, moves)])
@@ -83,7 +71,6 @@ def label(a: float) -> str:
 
 
 def fade(x: float, p_in: float, p_out: float, c: float) -> tuple[str, float, float]:
-    """(side, entry in YES terms, net P&L per contract) of selling the overnight move at p_in and closing at p_out."""
     h = cfg.HALF_SPREAD
     if x > 0:
         side, entry = "sell YES", min(max(p_in - c * h, c6.PRICE_CLIP[0]), c6.PRICE_CLIP[1])
@@ -93,7 +80,6 @@ def fade(x: float, p_in: float, p_out: float, c: float) -> tuple[str, float, flo
 
 
 def select(df: pd.DataFrame, v: cfg.Variant) -> pd.DataFrame:
-    """The mornings a variant trades: threshold, vote, entry band, an exit price, and the daily cap (largest moves first)."""
     out = "p_close" if v.exit == "close" else "p_next"
     ok = (df.x.abs() >= v.threshold) & df.p_0940.between(*cfg.ENTRY_BAND) & df[out].notna()
     ok &= (df.vote == "not confirmed") if v.vote == "not confirmed" else (df.vote != "no vote")
@@ -102,8 +88,6 @@ def select(df: pd.DataFrame, v: cfg.Variant) -> pd.DataFrame:
     s = df[ok].assign(_ax=lambda d: d.x.abs()).sort_values(["day", "_ax", "market"], ascending=[True, False, True])
     return s.groupby("day", sort=True).head(cfg.MAX_POSITIONS).drop(columns="_ax").assign(p_exit=lambda d: d[out])
 
-
-# ---------------------------------------------------------------- the frame of market-mornings
 
 def build() -> tuple[pd.DataFrame, dict]:
     def npz(f: Path):
@@ -172,7 +156,6 @@ def build() -> tuple[pd.DataFrame, dict]:
 
 
 def giveback(df: pd.DataFrame) -> list[dict]:
-    """Before costs: the change in the odds after the open, signed by the overnight move, by the asset's vote."""
     rows = []
     for thr in cfg.TEST_THRESHOLDS:
         for scope, sm in (("all nights", np.ones(len(df), bool)), ("weekends and holidays", df.weekend.to_numpy())):
@@ -190,11 +173,7 @@ def giveback(df: pd.DataFrame) -> list[dict]:
     return rows
 
 
-# ---------------------------------------------------------------- prints
-
 def load_prints(need: dict[str, list[float]]) -> dict[str, dict]:
-    """For each market, the public prints within the check window of any of its entry times, and how far back the
-    data API reached. Only that slice is kept on disk."""
     CACHE.mkdir(parents=True, exist_ok=True)
     pt, out = ds.Throttle(4.0), {}
     for mid, at in sorted(need.items()):
@@ -217,8 +196,6 @@ def load_prints(need: dict[str, list[float]]) -> dict[str, dict]:
         out[mid] = rec
     return out
 
-
-# ---------------------------------------------------------------- run
 
 def main() -> int:
     t_run = time.time()

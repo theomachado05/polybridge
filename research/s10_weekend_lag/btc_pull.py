@@ -1,8 +1,3 @@
-"""S10 Part 3 data: 15-minute Bitcoin Up/Down markets (catalogue, one-minute prices) and Coinbase BTC-USD one-minute
-candles (METHOD.md amendment 2). Resumable; nothing here is committed.
-
-Run from `research/`:  python -m s10_weekend_lag.btc_pull
-"""
 from __future__ import annotations
 
 import json
@@ -63,7 +58,6 @@ def catalogue(pt: ds.Throttle) -> list[dict]:
 
 
 def histories(cat: list[dict], pt: ds.Throttle) -> None:
-    """One file per New York date: {market id: [t list, p list]}."""
     by_day: dict[str, list[dict]] = {}
     for m in cat:
         by_day.setdefault(datetime.fromtimestamp(m["start"], ET).strftime("%Y-%m-%d"), []).append(m)

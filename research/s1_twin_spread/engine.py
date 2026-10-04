@@ -1,6 +1,3 @@
-"""S1 engine: executable prices, edges, entries, exits and marks on 1-minute arrays (METHOD.md sections 2 to 6).
-
-Everything is vectorised per pair; the position logic jumps between candidate minutes with searchsorted."""
 from __future__ import annotations
 
 import math
@@ -13,25 +10,18 @@ from .config import DAYS_PER_YEAR, KALSHI_FEE_COEFF, MAX_QUOTE_AGE_S, PRICE_CLIP
 YEAR_S = DAYS_PER_YEAR * 86400.0
 
 
-# ---------------------------------------------------------------- costs
-
 def kalshi_fee(price, qty: float, multiplier: float = 1.0):
-    """Taker fee per contract: ceil_to_cent(0.07 * multiplier * qty * P * (1 - P)) / qty."""
     p = np.asarray(price, dtype=float)
     cents = np.ceil(KALSHI_FEE_COEFF * multiplier * qty * p * (1.0 - p) * 100.0 - 1e-9)
     return np.where((p > 0) & (p < 1), cents / 100.0 / qty, 0.0)
 
 
 def pm_fee(price, rate: float, exponent: float = 1.0):
-    """Polymarket taker fee per share: rate * (P * (1 - P)) ** exponent. Rate 0 when the market charges none."""
     p = np.asarray(price, dtype=float)
     return np.where((p > 0) & (p < 1), rate * (p * (1.0 - p)) ** exponent, 0.0)
 
 
-# ---------------------------------------------------------------- alignment
-
 def asof(grid: np.ndarray, ts: np.ndarray, values: np.ndarray, max_age: float = MAX_QUOTE_AGE_S) -> np.ndarray:
-    """Last observation at or before each grid time, NaN when there is none or it is older than max_age."""
     out = np.full(len(grid), np.nan)
     if len(ts) == 0:
         return out
@@ -52,13 +42,13 @@ def ffill(a: np.ndarray) -> np.ndarray:
 
 @dataclass
 class Pair:
-    key: str                 # Kalshi ticker
-    t: np.ndarray            # grid, epoch seconds, 60 s apart
-    kb: np.ndarray           # Kalshi YES bid, NaN when stale or the book is one-sided
-    ka: np.ndarray           # Kalshi YES ask
-    pm: np.ndarray           # Polymarket history price, NaN when stale
-    tau: np.ndarray          # years to the deadline
-    h: float                 # modelled Polymarket half-spread
+    key: str
+    t: np.ndarray
+    kb: np.ndarray
+    ka: np.ndarray
+    pm: np.ndarray
+    tau: np.ndarray
+    h: float
     k_mult: float = 1.0
     pm_rate: float = 0.0
     pm_exp: float = 1.0
@@ -68,7 +58,7 @@ def build_pair(key: str, start: int, end: int, k_t, k_bid, k_ask, p_t, p_px, dea
                k_mult: float, pm_rate: float, pm_exp: float, k_max_age: float = MAX_QUOTE_AGE_S) -> Pair:
     grid = np.arange(int(math.ceil(start / 60.0)) * 60, int(end) + 1, 60, dtype=np.int64)
     kb, ka = asof(grid, k_t, k_bid, k_max_age), asof(grid, k_t, k_ask, k_max_age)
-    bad = ~((kb > 0) & (ka < 1) & (ka >= kb))          # an empty side is never a price
+    bad = ~((kb > 0) & (ka < 1) & (ka >= kb))
     kb[bad], ka[bad] = np.nan, np.nan
     pm = asof(grid, p_t, p_px)
     pm[~((pm > 0) & (pm < 1))] = np.nan
@@ -76,12 +66,8 @@ def build_pair(key: str, start: int, end: int, k_t, k_bid, k_ask, p_t, p_px, dea
     return Pair(key, grid, kb, ka, pm, tau, h, k_mult, pm_rate, pm_exp)
 
 
-# ---------------------------------------------------------------- prices, edges, marks
-
 @dataclass
 class Legs:
-    """Per-minute arrays for one pair under one cost multiplier. A = Polymarket YES + Kalshi NO; B = Kalshi YES +
-    Polymarket NO. `cost` is dollars per contract pair including fees; `liq` is what the pair sells for, net of fees."""
     cost: dict = field(default_factory=dict)
     edge: dict = field(default_factory=dict)
     liq: dict = field(default_factory=dict)
@@ -89,10 +75,10 @@ class Legs:
     mid_ff: dict = field(default_factory=dict)
     fees: dict = field(default_factory=dict)
     spread: dict = field(default_factory=dict)
-    pm_px: dict = field(default_factory=dict)      # Polymarket YES-equivalent price the entry trades at
-    k_px: dict = field(default_factory=dict)       # Kalshi YES-equivalent price the entry trades at
+    pm_px: dict = field(default_factory=dict)
+    k_px: dict = field(default_factory=dict)
     pv: np.ndarray | None = None
-    carry_rate: np.ndarray | None = None           # c * r * tau
+    carry_rate: np.ndarray | None = None
 
 
 def legs(P: Pair, c: float, r: float, qty: float) -> Legs:
@@ -123,13 +109,10 @@ def legs(P: Pair, c: float, r: float, qty: float) -> Legs:
 
 
 def two_in_a_row(cond: np.ndarray) -> np.ndarray:
-    """True at t when the condition holds at t-1 and at t (adjacent grid minutes). NaN comparisons are False."""
     out = np.zeros(len(cond), dtype=bool)
     out[1:] = cond[1:] & cond[:-1]
     return out
 
-
-# ---------------------------------------------------------------- positions
 
 @dataclass
 class Trade:
@@ -138,11 +121,11 @@ class Trade:
     i_in: int
     t_in: int
     qty: float
-    cost_in: float           # per contract pair, fees included
-    edge_in: float           # locked edge per contract pair, after carry
+    cost_in: float
+    edge_in: float
     fees_in: float
     spread_in: float
-    carry_in: float          # carry rate at entry times cost
+    carry_in: float
     pm_px: float
     k_px: float
     i_out: int | None = None
@@ -151,7 +134,6 @@ class Trade:
 
 
 def simulate(P: Pair, L: Legs, theta: float, exit_on: bool, i0: int, i1: int, qty: float) -> list[Trade]:
-    """Entries and exits for one pair inside grid indices [i0, i1). Signals never look before i0."""
     with np.errstate(invalid="ignore"):
         ent = {d: two_in_a_row(L.edge[d] >= theta) for d in "AB"}
         ext = {d: two_in_a_row(L.liq[d] >= L.pv) for d in "AB"}
@@ -188,7 +170,6 @@ def simulate(P: Pair, L: Legs, theta: float, exit_on: bool, i0: int, i1: int, qt
 
 
 def pnl_at(P: Pair, L: Legs, tr: Trade, i: int, c: float, r: float, mark: str) -> float:
-    """Net P&L of one trade at grid index i under a mark: 'mid', 'liq' or 'locked'. Financing accrues daily."""
     if i < tr.i_in:
         return 0.0
     j = min(i, tr.i_out) if tr.i_out is not None else i
@@ -204,17 +185,13 @@ def pnl_at(P: Pair, L: Legs, tr: Trade, i: int, c: float, r: float, mark: str) -
     return float(tr.qty * (value - tr.cost_in - accrued))
 
 
-# ---------------------------------------------------------------- portfolio metrics
-
 def day_marks(start: int, end: int) -> np.ndarray:
-    """00:00 UTC boundaries strictly inside (start, end), then the end itself."""
     first = (start // 86400 + 1) * 86400
     days = np.arange(first, end, 86400, dtype=np.int64)
     return np.append(days, end)
 
 
 def metrics(equity: np.ndarray, marks: np.ndarray, capital: float, traded_dollars: float, start: int) -> dict:
-    """Daily-return statistics of an equity path that starts at 0 (dollars of P&L on a fixed capital base)."""
     e = np.concatenate([[0.0], equity]) / capital
     r = np.diff(e)
     n = len(r)
@@ -242,8 +219,7 @@ def _moment(r: np.ndarray, k: int) -> float:
 
 
 def pair_bootstrap(by_pair: dict[str, list[float]], n_boot: int, seed: int) -> tuple[float, float, float]:
-    """Mean P&L per trade and its 95% interval, resampling pairs (trades of one pair are not independent)."""
-    keys = sorted(k for k, v in by_pair.items() if v)      # sorted: the interval must not depend on trade order
+    keys = sorted(k for k, v in by_pair.items() if v)
     allv = [x for k in keys for x in by_pair[k]]
     if not allv:
         return (float("nan"),) * 3

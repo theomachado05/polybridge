@@ -1,4 +1,3 @@
-"""Where forward-test output lives, and the frozen rule files it is labelled with."""
 from __future__ import annotations
 
 import hashlib
@@ -12,7 +11,6 @@ REPO = Path(__file__).resolve().parents[3]
 RESEARCH = REPO / "research"
 DEFAULT_DIR = REPO / "backend" / "data_forward"
 
-# The rule files each forward test is frozen on. Their sha256 and last commit are shown next to every result.
 LADDER_FILES = ("research/ladder_replay/METHOD.md", "research/ladder_replay/live.py", "research/ladder_replay/replay.py",
                 "research/ladder_replay/config.py")
 TOUCH_FILES = ("research/touch_fresh/FORWARD.md", "research/touch_fresh/forward_config.py", "research/touch_fresh/forward.py")
@@ -24,7 +22,6 @@ def data_dir() -> Path:
 
 
 def ensure_research_path() -> None:
-    """The research studies import each other as top-level packages (``python -m ladder_replay.live`` from research/)."""
     p = str(RESEARCH)
     if p not in sys.path:
         sys.path.insert(0, p)
@@ -43,8 +40,6 @@ def _git(*args: str) -> str | None:
 
 
 def frozen_info(files: tuple[str, ...]) -> list[dict]:
-    """For each rule file: its sha256 (always, from the file), its last commit and whether it differs from that commit
-    (``None`` when git is not available). The sha256 is what proves the rules did not change."""
     out = []
     for rel in files:
         f = REPO / rel

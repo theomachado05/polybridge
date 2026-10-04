@@ -1,4 +1,3 @@
-"""Re-export of research/arb/tests/synth.py under a unique module name (keeps pytest module names distinct)."""
 import importlib.util
 from pathlib import Path
 

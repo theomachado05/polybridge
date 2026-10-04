@@ -1,7 +1,5 @@
 "use client";
 
-// Opportunity (options) bridge: the PM-vs-options gap, the option legs the algo traded, and the approved risk caps.
-// Every number says what it is: PM price measured, options-implied probability estimated, option fills simulated.
 import type { BridgeSummary } from "@/lib/api";
 import { fmtMoney, fmtNs, prettyId } from "@/lib/fmt";
 import { gapPts, optionFillText, probPct } from "@/lib/opportunity";
@@ -32,7 +30,6 @@ export function OpportunityBridge({ id, summary, st, question, sourceTag }: {
       tags: fillBadges(f, l.evidence),
     };
   });
-  // The summary is read once when the screen opens; the stream says whether option data has arrived since.
   const optionData = summary?.option_data && summary.option_data !== "none" ? summary.option_data
     : st.lastPriced ? ((st.source ?? summary?.source) === "live" ? "live_chain" : "recorded") : "none";
   const dataTag = optionData === "live_chain"

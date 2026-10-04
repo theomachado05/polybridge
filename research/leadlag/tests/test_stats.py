@@ -15,7 +15,7 @@ def test_special_functions_match_known_values():
     assert math.isclose(chi2_sf(5.991464547107979, 2), 0.05, rel_tol=1e-6)
     assert math.isclose(chi2_sf(43.77297182574219, 30), 0.05, rel_tol=1e-6)
     assert math.isclose(gammaq(1.0, 1.0), math.exp(-1.0), rel_tol=1e-10)
-    assert math.isclose(betainc(2.0, 3.0, 0.4), 0.5248, abs_tol=1e-9)    # I_0.4(2,3) = 0.5248
+    assert math.isclose(betainc(2.0, 3.0, 0.4), 0.5248, abs_tol=1e-9)
     assert math.isclose(f_sf(4.964602743730711, 1, 10), 0.05, rel_tol=1e-6)
     assert math.isclose(f_sf(3.4928284, 2, 20), 0.05, rel_tol=1e-4)
     assert f_sf(0.0, 3, 30) == 1.0
@@ -38,8 +38,8 @@ def test_distributed_lag_recovers_the_lag_and_coefficient():
         frames[f"e{e}"] = pd.DataFrame({"x": x, "ys": ys, "in_window": np.r_[np.zeros(60, bool), np.ones(n - 60, bool)]},
                                        index=pd.date_range(T0, periods=n, freq="1min"))
     fit, st = distributed_lag(frames, "x", "ys", lags=8, hac_lags=8)
-    z_ratio = 0.6 * 1.0 / np.sqrt(1 + 0.36)           # z-scaling: x has sd sqrt(1+.36)
-    assert abs(fit.beta[2] - z_ratio) < 0.08            # lag 3 sits at index 2
+    z_ratio = 0.6 * 1.0 / np.sqrt(1 + 0.36)
+    assert abs(fit.beta[2] - z_ratio) < 0.08
     assert fit.t[2] > 6
     others = np.delete(np.abs(fit.t), 2)
     assert (others < 4).all()
@@ -55,7 +55,7 @@ def test_granger_detects_direction_only():
         n = 600
         pm = rng.normal(0, 1, n)
         eq = rng.normal(0, 1, n) + 2 * e
-        eq[2:] += 0.5 * pm[:-2]          # PM leads equity by 2
+        eq[2:] += 0.5 * pm[:-2]
         frames[f"e{e}"] = pd.DataFrame({"x": eq, "ys": pm, "in_window": np.r_[np.zeros(60, bool), np.ones(n - 60, bool)]},
                                        index=pd.date_range(T0, periods=n, freq="1min"))
     fwd = granger(frames, "x", "ys", p=5, hac_lags=5)

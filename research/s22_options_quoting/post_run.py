@@ -1,10 +1,3 @@
-"""S22, looked at AFTER the run. Nothing here is pre-registered and nothing here changes the verdict.
-
-1. An independent recomputation of the headline in plain pandas (none of run.py's fill code), as the bug check.
-2. Descriptive looks: the direction of the window, concentration, our fills against the blind benchmark.
-
-    cd research && .venv/bin/python -m s22_options_quoting.post_run
-"""
 from __future__ import annotations
 
 import numpy as np
@@ -23,7 +16,6 @@ def main():
     def put(k, v):
         rows.append((k, round(float(v), 4) if isinstance(v, (float, np.floating)) else v))
 
-    # 1. independent recomputation of the primary rule
     ok["offer"], ok["bid"] = ok["p_hi"] + 0.05, ok["p_lo"] - 0.05
     o = ok[(ok["side"] == "BUY") & ok["offer"].between(0.02, 0.98) & (ok["px"] >= ok["offer"] - 1e-9)].copy()
     b = ok[(ok["side"] == "SELL") & ok["bid"].between(0.02, 0.98) & (ok["px"] <= ok["bid"] + 1e-9)].copy()
@@ -37,14 +29,12 @@ def main():
     put("check_y_values", str(sorted(int(x) for x in ok["y"].dropna().unique()))); put("check_y_missing", int(ok["y"].isna().sum()))
     put("check_size_not_positive", int((ok["size"] <= 0).sum()))
 
-    # 2a. direction of the window
     put("prints_share_yes", ok["y"].mean()); put("prints_mean_px", ok["px"].mean()); put("prints_mean_p_mid", ok["p_mid"].mean())
     pm = ok.sort_values("ts").groupby("market_id").first()
     put("per_market_share_yes", pm["y"].mean()); put("per_market_mean_p_mid", pm["p_mid"].mean()); put("per_market_mean_px", pm["px"].mean())
     dd = ok.groupby("res_date").agg(y=("y", "mean"), p=("p_mid", "mean"), px=("px", "mean"))
     put("per_date_share_yes", dd["y"].mean()); put("per_date_mean_p_mid", dd["p"].mean()); put("per_date_mean_px", dd["px"].mean())
 
-    # 2b. our fills against that backdrop, and concentration
     t = pd.read_csv(out / "trades.csv", dtype={"market_id": str})
     for s in ("bid", "offer"):
         g = t[t["our_side"] == s]
@@ -63,7 +53,6 @@ def main():
     put("without_best_market_fills", len(x)); put("without_best_market_mean_pt", x["pnl_pt"].mean()); put("without_best_market_pnl_usd", x["pnl_usd"].sum())
     put("turnover_cash_locked_over_bankroll", t["capital_usd"].sum() / t.groupby("res_date")["capital_usd"].sum().max())
 
-    # 2c. our fills minus the blind benchmark on the same side (day bootstrap of the difference)
     v = pd.read_csv(out / "trades_variants.csv", dtype={"market_id": str})
     bench = v[v["variant"] == "benchmark_every_print_at_px"]
     dates = sorted(bench["res_date"].unique())
@@ -81,7 +70,6 @@ def main():
         put(f"{s}_excess_over_benchmark_pt", f["pnl_pt"].mean() - g["pnl_pt"].mean())
         put(f"{s}_excess_ci_lo_pt", lo); put(f"{s}_excess_ci_hi_pt", hi)
 
-    # 2d. the same fills at the print's own price (what the real counterparties earned)
     at_px = bench.merge(t[["market_id", "ts", "taker_side"]], on=["market_id", "ts", "taker_side"])
     put("our_fills_at_print_price_n", len(at_px)); put("our_fills_at_print_price_mean_pt", at_px["pnl_pt"].mean())
     for s in ("bid", "offer"):

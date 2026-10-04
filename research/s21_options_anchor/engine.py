@@ -1,5 +1,3 @@
-"""S21 pure functions: parsing a price question, the options anchor from two leg quotes, gaps, buckets, the rule, the
-clustered regression. No network, no files. Rules in METHOD.md."""
 from __future__ import annotations
 
 import calendar as _cal
@@ -23,14 +21,11 @@ _LEVEL = re.compile(r"(?:reach|dip to|hit)\s+(?:\((?:HIGH|LOW)\)\s+)?\$?([\d,]+(
 _NUMBER = re.compile(r"\$?([\d,]+(?:\.\d+)?)")
 
 
-# ---------------------------------------------------------------- parsing
-
 def _num(s: str) -> float:
     return float(s.replace(",", ""))
 
 
 def window_end(title: str, listed: date) -> date | None:
-    """The last calendar day of the question's window, from the event title (METHOD.md section 2)."""
     t = title.strip().rstrip("?").strip()
     m = re.search(r"before (\d{4})$", t)
     if m:
@@ -38,13 +33,13 @@ def window_end(title: str, listed: date) -> date | None:
     m = re.search(r"Week of (\w+) (\d{1,2}) (\d{4})$", t)
     if m and m.group(1).lower() in MONTHS:
         d = date(int(m.group(3)), MONTHS[m.group(1).lower()], int(m.group(2)))
-        return d + timedelta(days=(4 - d.weekday()) % 7)          # the Friday of that week
+        return d + timedelta(days=(4 - d.weekday()) % 7)
     m = re.search(r"(?:in|by end of) (\w+)(?: (\d{4}))?$", t)
     if m and m.group(1).lower() in MONTHS:
         mo = MONTHS[m.group(1).lower()]
         if m.group(2):
             y = int(m.group(2))
-        else:                                                     # no year named: the first such month-end on or after the listing day
+        else:
             y = listed.year if date(listed.year, mo, _cal.monthrange(listed.year, mo)[1]) >= listed else listed.year + 1
         return date(y, mo, _cal.monthrange(y, mo)[1])
     return None
@@ -57,7 +52,6 @@ def last_weekday(d: date) -> date:
 
 
 def parse_market(m: dict) -> tuple[dict | None, str]:
-    """(parsed fields, "") or (None, reason). `m` is a universe record: question, event_title, label, sign, start."""
     q, title, label = str(m.get("question", "")), str(m.get("event_title", "")), str(m.get("label", ""))
     sym = _SYMBOL.findall(title)
     if len(sym) != 1:
@@ -93,16 +87,12 @@ def parse_market(m: dict) -> tuple[dict | None, str]:
             "end_session": last_weekday(end).isoformat()}, ""
 
 
-# ---------------------------------------------------------------- the anchor
-
 def put_ticker(call: str) -> str:
-    """The put with the same expiry and strike (OCC symbol: ...YYMMDD C 00038000)."""
     assert call[-9] == "C", call
     return call[:-9] + "P" + call[-8:]
 
 
 def usable(q: Quote | None, at: float) -> bool:
-    """A leg quote that can be used: an offer above zero, a bid of zero or more below it, at most STALE_OPTION_S old."""
     if q is None or not (q.ask > 0 and q.ask >= q.bid >= 0):
         return False
     return not math.isnan(q.ts) and -1.0 <= at - q.ts <= cfg.STALE_OPTION_S
@@ -110,12 +100,6 @@ def usable(q: Quote | None, at: float) -> bool:
 
 def finish_beyond(strikes: Sequence[float], level: float, direction: int, get_quote: Callable[[float], Quote | None],
                   t_years: float, at: float) -> Spread | None:
-    """The spread between the two listed strikes that bracket `level`, as the existing code builds it: `p_mid`, `p_lo`,
-    `p_hi` are the probability that the underlying finishes beyond the level in the question's direction.
-
-    Up: the call spread, long the lower strike. Down: the put spread, long the higher strike. `get_quote(strike)` returns
-    the quote of the right kind of option (call for up, put for down). A leg with no usable quote moves one listed strike
-    outward, at most MAX_STEP_OUT times; None when no pair exists."""
     s = sorted(strikes)
     ij = bracket_indices(s, level)
     if ij is None:
@@ -141,11 +125,8 @@ def finish_beyond(strikes: Sequence[float], level: float, direction: int, get_qu
 
 
 def anchors(p: float) -> tuple[float, float]:
-    """(lower bound, central estimate) of the touch probability from the finish-beyond probability."""
     return p, min(1.0, cfg.CENTRAL_MULTIPLE * p)
 
-
-# ---------------------------------------------------------------- tests
 
 def bucket_label(lo: float | None, hi: float | None) -> str:
     if lo is None:
@@ -156,7 +137,6 @@ def bucket_label(lo: float | None, hi: float | None) -> str:
 
 
 def gap_bucket(gap_points: float) -> str:
-    """The bucket of a gap in points: lower edge included, upper edge excluded."""
     for lo, hi in cfg.GAP_BUCKETS:
         if (lo is None or gap_points >= lo) and (hi is None or gap_points < hi):
             return bucket_label(lo, hi)
@@ -164,7 +144,6 @@ def gap_bucket(gap_points: float) -> str:
 
 
 def selected(book: cfg.Book, traded: float, anchor: float) -> bool:
-    """Does the rule take this market? Prices and anchors as fractions of 1; the threshold in points."""
     if traded != traded or anchor != anchor:
         return False
     gap = 100.0 * (traded - anchor)
@@ -172,8 +151,6 @@ def selected(book: cfg.Book, traded: float, anchor: float) -> bool:
 
 
 def ols_cluster(y: np.ndarray, X: np.ndarray, groups: Sequence) -> tuple[np.ndarray, np.ndarray]:
-    """OLS with an intercept added; (coefficients, standard errors clustered by group). Small-sample factor
-    G/(G-1) * (N-1)/(N-K). The first coefficient is the intercept."""
     y = np.asarray(y, float)
     X = np.column_stack([np.ones(len(y)), np.asarray(X, float)])
     n, k = X.shape

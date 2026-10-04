@@ -1,9 +1,3 @@
-// The two micro-market mechanisms (date ladders, touch tickets) and the evidence registry that labels them.
-// Every status, label and allowed action comes from GET /evidence/mechanisms (backend/app/closed/evidence.py); this
-// file holds no label text of its own for a mechanism. Pure (no React), so `node --test` covers it offline.
-
-// ---------------------------------------------------------------------------------------------------------- registry
-
 export interface EvSample { n: number; units: string; also?: { n: number; units: string }[] }
 export interface EvNumber {
   label: string; value: number; unit?: string; ci_low: number | null; ci_high: number | null; range_kind?: string;
@@ -12,7 +6,6 @@ export interface EvNumber {
 }
 export interface EvActions {
   mode: string; trade: boolean; proposals: boolean; requires_approval: boolean; requires_acknowledgement: boolean; text: string;
-  /** touch entry: sell YES only when the bid is this many points above the central touch reference (S21 book B0) */
   sell_threshold_points?: number;
   side?: string; hedge_offered?: boolean;
 }
@@ -23,26 +16,19 @@ export interface Mechanism {
 export interface Registry {
   source_of_truth: string; statuses: Record<string, string>; mechanisms: Mechanism[]; system: EvNumber[];
   contract_types: Record<string, string>; forward_tests_start: string;
-  /** contract types whose rows show the options reference for information only, and the entry that explains it */
   reference_for?: Record<string, string>;
-  /** S21 book B0 / touch_fresh FORWARD.md: sell YES only when the bid is this many points above the touch reference */
   touch_sell_threshold_points?: number;
-  /** engine/hedgecore/BENCH.md micro section: on_tick latency per family, with its sample and tape */
   micro_bench?: MicroBench[];
 }
 
 export interface MicroBench { family: string; mean_ns: number; step_mean_ns: number; p50_ns: number; p99_ns: number; p999_ns: number; sample: string; tape: string; result_file: string; note?: string }
 
-/** The decision block on a ladder pair or touch ticket: the C++ micro family that decided it (source "engine"), or the
- *  previous Python rule when the compiled module lacks the micro families (source "python_fallback"). */
 export interface EngineDecision {
   family: string; source: "engine" | "python_fallback" | string; preset?: number; action: string; reason: string;
   latency_ns?: number; signal_points?: number | null; sizes?: { rich: number; cheap: number }; limit_prices?: { rich: number | null; cheap: number | null };
   qty?: number; limit_px?: number | null;
 }
 
-/** "decided by C++ · ladder_pair #4 · entry · 42 ns · Lead" (status words from the registry entry), or the fallback
- *  said plainly. Null without a block: nothing is claimed. */
 export function engineLine(e: EngineDecision | null | undefined, m: Mechanism | null | undefined): string | null {
   if (!e) return null;
   const status = m?.status_label ? ` · ${m.status_label}` : "";
@@ -53,7 +39,6 @@ export function engineLine(e: EngineDecision | null | undefined, m: Mechanism | 
 
 export type Tone = "up" | "warn" | "down" | "neutral";
 
-/** Tag tone per registry status code. The words shown are always the registry's `status_label`. */
 export function statusTone(status: string | null | undefined): Tone {
   switch (status) {
     case "CONFIRMED_FOUNDATION": return "up";
@@ -67,21 +52,16 @@ export function mechanismById(reg: Registry | null | undefined, id: string): Mec
   return reg?.mechanisms.find((m) => m.id === id) ?? null;
 }
 
-/** The mechanism behind a classifier contract type (ladder_rung, touch_ticket, close_above_ticket, other), by the
- *  registry's own contract_types map. Unknown types fall to the registry's "other" entry. */
 export function mechanismFor(reg: Registry | null | undefined, contractType: string | null | undefined): Mechanism | null {
   if (!reg) return null;
   const id = reg.contract_types[(contractType ?? "other").toLowerCase()] ?? reg.contract_types.other ?? "other";
   return mechanismById(reg, id);
 }
 
-/** The mechanism behind a classifier result: its `mechanism` when that is the 15-minute Bitcoin watch (the classifier
- *  gives such a market type "other"), else its type. */
 export function mechanismForResult(reg: Registry | null | undefined, res: { type?: string | null; mechanism?: string | null } | null | undefined): Mechanism | null {
   return mechanismFor(reg, res?.mechanism === "btc_15m_watch" ? "btc_15m_watch" : res?.type);
 }
 
-/** The status tag for a mechanism: registry words only. Null when the registry is missing (the UI then shows none). */
 export function statusTag(m: Mechanism | null | undefined): { text: string; tone: Tone; title: string } | null {
   if (!m || !m.status_label) return null;
   return { text: m.status_label, tone: statusTone(m.status), title: `${m.name}: ${m.claim}` };
@@ -89,7 +69,6 @@ export function statusTag(m: Mechanism | null | undefined): { text: string; tone
 
 const fin = (x: unknown): x is number => typeof x === "number" && Number.isFinite(x);
 
-/** A number may be shown only with its range and its sample. */
 export function hasRangeAndSample(n: EvNumber | null | undefined): boolean {
   return !!n && fin(n.value) && fin(n.ci_low) && fin(n.ci_high) && !!n.sample && fin(n.sample.n) && n.sample.n > 0 && !!n.sample.units;
 }
@@ -109,12 +88,10 @@ export function fmtSigned(x: number, d = dec(x), sign = true): string {
 
 export interface NumberView { label: string; value: string; range: string; rangeKind: string; sample: string; source: string; sourceNote: string | null; confirmatory: boolean; note: string | null }
 
-/** One registry number as text: value, range and sample together. Null (never shown) without a range and a sample. */
 export function numberView(n: EvNumber): NumberView | null {
   if (!hasRangeAndSample(n)) return null;
   const d = Math.max(dec(n.value), dec(n.ci_low!), dec(n.ci_high!));
   const census = n.ci_low === n.value && n.ci_high === n.value;
-  // Differences and returns carry a sign (+0.0108); counts, ratios and timings do not.
   const sign = n.ci_low! < 0 || n.value < 0 || (!census && !/second|ratio/i.test(n.unit ?? "") && !/percentile|p99/i.test(n.range_kind ?? ""));
   const unit = n.unit ? ` ${n.unit}` : "";
   const s = n.sample!;
@@ -133,7 +110,6 @@ export function numberView(n: EvNumber): NumberView | null {
   };
 }
 
-/** What a mechanism lets the user do, from its actions_allowed. */
 export interface ActionPlan { propose: boolean; approve: boolean; acknowledge: boolean; trade: boolean; text: string }
 export function actionPlan(m: Mechanism | null | undefined): ActionPlan {
   const a = m?.actions_allowed;
@@ -141,10 +117,7 @@ export function actionPlan(m: Mechanism | null | undefined): ActionPlan {
   return { propose: !!a.proposals, approve: !!a.proposals && !!a.requires_approval, acknowledge: !!a.proposals && !!a.requires_acknowledgement, trade: !!a.trade, text: a.text };
 }
 
-/** Approve is enabled only when the plan allows it and, where the mechanism needs one, the acknowledgement is ticked. */
 export const approveEnabled = (p: ActionPlan, acked: boolean) => p.approve && (!p.acknowledge || acked);
-
-// ------------------------------------------------------------------------------------------------------------ ladders
 
 export interface Check { check: string; ok: boolean; detail?: string | null }
 export interface Rung {
@@ -167,7 +140,6 @@ export interface LaddersOut {
   evidence?: EvidenceRef; elapsed_ms?: number;
 }
 
-/** Rungs in date order (the backend sends them ordered; undated rungs go last and stay visible). */
 export function rungsInOrder(l: Ladder): Rung[] {
   return [...l.rungs].sort((a, b) => (a.date ?? "9999") < (b.date ?? "9999") ? -1 : (a.date ?? "9999") > (b.date ?? "9999") ? 1 : 0);
 }
@@ -180,21 +152,17 @@ export function pairState(p: LadderPair, ladderValid: boolean): PairState {
   return p.nested && ladderValid ? "nested" : "not_nested";
 }
 
-/** Points away from an arbitrage (positive) or the edge after fees and a tick (when the rule is broken). */
 export function pairGapText(p: LadderPair): string {
   if (p.edge_points == null) return "no two-sided book";
   return p.edge_points > 0 ? `${fmtSigned(p.edge_points, 2)} pts after fees` : `${fmtSigned(-p.edge_points, 2, false)} pts from an arbitrage`;
 }
 
-/** Ladders with an actionable pair first, then by most rungs. */
 export function sortLadders(ls: Ladder[]): Ladder[] {
   const score = (l: Ladder) => (l.pairs.some((p) => p.actionable) ? 2 : l.pairs.some((p) => p.violation) ? 1 : 0);
   return [...ls].sort((a, b) => score(b) - score(a) || b.rungs.length - a.rungs.length || a.event_title.localeCompare(b.event_title));
 }
 
 export const pct = (x: number | null | undefined) => (x == null || !fin(x) ? "—" : `${(x * 100).toFixed(1)}¢`);
-
-// ------------------------------------------------------------------------------------------------------------ tickets
 
 export interface Band { mid: number | null; lo: number | null; hi: number | null }
 export interface OptionsReference {
@@ -210,9 +178,7 @@ export interface Ticket {
   id: string; question: string; event_title?: string; type: "touch_ticket" | "close_above_ticket" | string;
   fields: Record<string, unknown>; checks?: Check[]; linkable: boolean; reasons: string[];
   best_bid: number | null; best_ask: number | null; contract?: TicketContract; reference?: OptionsReference | null;
-  /** close-above rows: the reference is shown for information, explained by the registry entry `evidence_id` */
   reference_only?: boolean; evidence_id?: string | null;
-  /** the touch_ticket_reference decision (only on touch tickets with a reference) */
   engine?: EngineDecision; propose?: boolean;
 }
 export interface TicketsOut {
@@ -222,7 +188,6 @@ export interface TicketsOut {
 
 export const refAvailable = (r: OptionsReference | null | undefined) => !!r && r.available !== false && r.ok !== false && !!(r.finish_beyond || r.touch);
 
-/** The reference band a ticket is compared with: touch reference for a touch ticket, finish-beyond for close-above. */
 export function ticketReference(t: Ticket): Band | null {
   const r = t.reference;
   if (!refAvailable(r)) return null;
@@ -230,8 +195,6 @@ export function ticketReference(t: Ticket): Band | null {
   return b && fin(b.mid) ? b : null;
 }
 
-/** Polymarket price against the reference, in points: mid gap, and the band from bid/ask against the reference band.
- *  Null when either side is missing. Positive = the ticket is priced above the reference. */
 export function ticketGap(t: Ticket): { mid: number; lo: number; hi: number } | null {
   const b = ticketReference(t);
   if (!b || !fin(t.best_bid) || !fin(t.best_ask)) return null;
@@ -240,31 +203,22 @@ export function ticketGap(t: Ticket): { mid: number; lo: number; hi: number } | 
   return { mid: 100 * (pm - b.mid!), lo: 100 * (t.best_bid - rhi), hi: 100 * (t.best_ask - rlo) };
 }
 
-/** "Friday's close" and other off-session wording comes from the backend's session_label; this only decides if the
- *  quote is from a closed session (so the board can flag it). */
 export const referenceClosed = (r: OptionsReference | null | undefined) => !!r && r.market_open === false;
 
-/** Actions a ticket row may show. Never a hedge: the option-spread hedge for tickets failed (S25) and is not offered. */
 export function ticketActions(t: Ticket, reg: Registry | null | undefined): { plan: ActionPlan; hedge: false; mechanism: Mechanism | null } {
   const m = mechanismFor(reg, t.type);
   return { plan: actionPlan(m), hedge: false, mechanism: m };
 }
 
-/** A touch-ticket proposal, only inside the tested rule (S21 book B0, touch_fresh FORWARD.md): sell YES at the
- *  traded bid when the bid is at least the registry touch entry's `sell_threshold_points` above the central (touch)
- *  reference mid. Null outside the rule, for any other ticket type, when the registry gives no threshold, or when the
- *  entry does not put proposals behind the acknowledgement gate (fail closed). */
 export function touchProposal(t: Ticket, reg: Registry | null | undefined): { side: "sell_yes"; price: number; gapPoints: number; threshold: number } | null {
   const entry = mechanismFor(reg, "touch_ticket");
   const th = entry?.actions_allowed.sell_threshold_points ?? reg?.touch_sell_threshold_points;
   const plan = actionPlan(entry);
   if (t.type !== "touch_ticket" || !t.linkable || !fin(th) || !plan.propose || !plan.acknowledge) return null;
-  // The decision is the backend's touch_ticket_reference family (or its labelled Python fallback): no block, no draft.
   if (t.engine?.action !== "propose") return null;
   const b = ticketReference(t);
   if (!b || !fin(t.best_bid)) return null;
   const gapPoints = 100 * (t.best_bid - b.mid!);
-  // Registry threshold re-checked: if the backend's family and the registry ever disagree, fail closed.
   return gapPoints >= th - 1e-9 ? { side: "sell_yes", price: t.best_bid, gapPoints, threshold: th } : null;
 }
 
@@ -279,9 +233,6 @@ export function ticketField(t: Ticket, k: string): string | null {
   return v == null || v === "" ? null : String(v);
 }
 
-// ------------------------------------------------------------------------------------------------------ forward + engine
-
-/** Counts every forward section carries: forward-test snapshots (from the start date) and pre-start checks apart. */
 export interface ForwardCounts { snapshots_taken: number; pre_start_checks?: number; forward_starts?: string; pre_start_label?: string }
 
 export interface ForwardStatus {
@@ -295,10 +246,8 @@ export interface ForwardStatus {
   recorder: null | { dir: string; heartbeats: Record<string, { age_s: number } & Record<string, unknown>> };
 }
 
-/** True when the latest snapshot is a pre-start check (taken before the forward test's start date). */
 export const isPreStart = (phase: string | null | undefined) => !!phase && phase.startsWith("pre-start");
 
-/** "N forward-test snapshots" with the pre-start checks counted apart, never added in. */
 export function forwardCount(c: ForwardCounts | null | undefined): string | null {
   if (!c) return null;
   const n = c.snapshots_taken ?? 0, pre = c.pre_start_checks ?? 0;
@@ -306,8 +255,6 @@ export function forwardCount(c: ForwardCounts | null | undefined): string | null
   return pre > 0 ? `${main} · ${pre} pre-start check${pre === 1 ? "" : "s"} (not part of the forward test)` : main;
 }
 
-/** The forward test for a mechanism id: which section of GET /forward/status, as one line. A latest snapshot taken
- *  before the start date is prefixed with its pre-start label. */
 export function forwardLine(fw: ForwardStatus | null | undefined, id: string): string | null {
   if (!fw) return null;
   const line = forwardLineRaw(fw, id);
@@ -339,7 +286,6 @@ export function recorderLine(fw: ForwardStatus | null | undefined): { text: stri
   return { text: `recorder: heartbeat ${age < 120 ? `${Math.round(age)} s ago` : `${Math.round(age / 60)} min ago`}`, ok: age < 300 };
 }
 
-/** The engine strip's latency figure: the registry's system number for the live feed, with its range and sample. */
 export function latencyView(reg: Registry | null | undefined): NumberView | null {
   const n = reg?.system.find((x) => /receive to decision/i.test(x.label));
   return n ? numberView(n) : null;

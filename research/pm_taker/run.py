@@ -1,8 +1,3 @@
-"""P2 orchestrator: frozen universe -> day-one kill test -> taker prints and same-instant option probability -> frozen
-trade list -> outcomes -> research/results/pm_taker/. See METHOD.md. Runs once; `.done` refuses a second run.
-
-    cd research && PM_TAKER_CACHE=<shared cache dir> .venv/bin/python -m pm_taker.run
-"""
 from __future__ import annotations
 
 import argparse

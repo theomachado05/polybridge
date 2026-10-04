@@ -11,15 +11,14 @@ MarketTick nb_tick(std::int64_t ts, double no_bid, double no_ask, double other) 
   t.p_other_venue = other;
   return t;
 }
-}  // namespace
+}
 
 TEST(NoBidSeller, SellsRichNoKellySizedAndRouted) {
-  F a(params<F>(), Position{});  // edge 0.02, kelly cap 0.1, fair from other venue, bankroll 10k
+  F a(params<F>(), Position{});
   const Intent i = a.on_tick(nb_tick(kSec, 0.64, 0.66, 0.40), kSec);
   ASSERT_TRUE(is_order(i));
   EXPECT_EQ(i.instrument, Instrument::PredNo);
   EXPECT_EQ(i.side, -1);
-  // fair NO 0.60, rich 0.04; Kelly on YES at 0.36 with q 0.40: f = 0.04/0.64 = 0.0625 -> floor(625/0.36) = 1736
   EXPECT_DOUBLE_EQ(i.qty, 1736.0);
   EXPECT_EQ(i.reason, rc(Rc::RoutedPoly));
   EXPECT_EQ(i.venue, Venue::Poly);
@@ -31,7 +30,7 @@ TEST(NoBidSeller, IcebergCapsToDisplayedSize) {
   MarketTick t = with_book(nb_tick(kSec, 0.64, 0.66, 0.40), 1000, 1000);
   const Intent i = a.on_tick(t, kSec);
   ASSERT_TRUE(is_order(i));
-  EXPECT_DOUBLE_EQ(i.qty, 500.0);  // 0.5 * displayed 1000
+  EXPECT_DOUBLE_EQ(i.qty, 500.0);
   EXPECT_EQ(i.reason, rc(Rc::IcebergCapped));
 }
 
@@ -39,8 +38,8 @@ TEST(NoBidSeller, KellyCapIsARiskCapAndExitWhenCheap) {
   F a(params<F>(), Position{});
   ASSERT_TRUE(is_order(a.on_tick(nb_tick(kSec, 0.64, 0.66, 0.40), kSec)));
   a.on_fill(Instrument::PredNo, -1736, 0.64);
-  EXPECT_EQ(a.on_tick(nb_tick(2 * kSec, 0.64, 0.66, 0.40), 2 * kSec).reason, rc(Rc::ZeroTarget));  // at the cap
-  const Intent x = a.on_tick(nb_tick(3 * kSec, 0.53, 0.55, 0.40), 3 * kSec);  // fair NO 0.60 - 0.55 >= 0.02
+  EXPECT_EQ(a.on_tick(nb_tick(2 * kSec, 0.64, 0.66, 0.40), 2 * kSec).reason, rc(Rc::ZeroTarget));
+  const Intent x = a.on_tick(nb_tick(3 * kSec, 0.53, 0.55, 0.40), 3 * kSec);
   ASSERT_TRUE(is_order(x));
   EXPECT_EQ(x.side, +1);
   EXPECT_DOUBLE_EQ(x.qty, 1736.0);
@@ -62,7 +61,6 @@ TEST(NoBidSeller, NotRichEnoughAndFairSources) {
 }
 
 TEST(NoBidSeller, NotionalCapLimitsTheShortNo) {
-  // Kelly wants 1736 NO at 0.64 ($1,111); a $640 cap allows floor(640 / 0.64) = 1000.
   F a(params<F>({{"max_notional", 640}}), Position{});
   const Intent i = a.on_tick(nb_tick(kSec, 0.64, 0.66, 0.40), kSec);
   ASSERT_TRUE(is_order(i));
@@ -74,19 +72,16 @@ TEST(NoBidSeller, NotionalCapLimitsTheShortNo) {
 
 TEST(NoBidSeller, DailyLossCapStopsNewSalesButAllowsExit) {
   F a(params<F>({{"daily_loss", 100}}), Position{});
-  ASSERT_TRUE(is_order(a.on_tick(nb_tick(kSec, 0.64, 0.66, 0.40), kSec)));  // day starts flat: equity 0
-  a.on_fill(Instrument::PredNo, -1000, 0.64);                                // cash +640
-  // YES mid falls to 0.20 -> NO marks at 0.80: equity 640 - 800 = -160, a $160 loss > $100. NO is still rich
-  // against the other venue (fair NO 0.70 < bid 0.79), but no new sale is allowed.
+  ASSERT_TRUE(is_order(a.on_tick(nb_tick(kSec, 0.64, 0.66, 0.40), kSec)));
+  a.on_fill(Instrument::PredNo, -1000, 0.64);
   MarketTick t = nb_tick(2 * kSec, 0.79, 0.81, 0.30);
   t.yes_bid = 0.19;
   t.yes_ask = 0.21;
   EXPECT_EQ(a.on_tick(t, 2 * kSec).reason, rc(Rc::DailyLossCap));
-  // Buying back when NO is cheap against fair still goes through.
   MarketTick c = nb_tick(3 * kSec, 0.75, 0.77, 0.10);
   c.yes_bid = 0.19;
   c.yes_ask = 0.21;
-  const Intent x = a.on_tick(c, 3 * kSec);  // fair NO 0.90 - ask 0.77 >= edge
+  const Intent x = a.on_tick(c, 3 * kSec);
   ASSERT_TRUE(is_order(x));
   EXPECT_EQ(x.side, +1);
   EXPECT_EQ(x.reason, rc(Rc::Exit));

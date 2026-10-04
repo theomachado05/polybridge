@@ -1,4 +1,3 @@
-"""Ladder replay runner (METHOD steps 1 to 3). Run from `research/`:  python -m ladder_replay.run [s11|fresh|all]"""
 from __future__ import annotations
 
 import csv

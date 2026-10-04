@@ -1,4 +1,3 @@
-"""Fetch + cache, reusing the wave-1 CLOB fetcher and the closed-market study's Massive month-chunk fetcher."""
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor

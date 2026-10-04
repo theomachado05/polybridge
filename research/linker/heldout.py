@@ -1,12 +1,3 @@
-"""Held-out test of the link agent (linker/heldout/PLAN.md): 120 markets no study has used.
-
-1. The trained scorer scores every held-out link from the labels and the odds alone.
-2. The links of each arm (by question, by event) are then scored against prices like the benchmark.
-
-Run from `research/`:
-    python -m linker.heldout pull     # odds and equity bars for the linked markets and tickers (not committed)
-    python -m linker.heldout          # the comparison
-"""
 from __future__ import annotations
 
 import json
@@ -30,7 +21,7 @@ from . import scorer as sc
 from .benchmark import OUT, link_stats, verdict
 
 HERE = Path(__file__).resolve().parent / "heldout"
-CACHE = r5.CACHE              # shares SPY and any ticker S5 already pulled
+CACHE = r5.CACHE
 ARMS = {"A, by question": ("A1", "A2"), "B, by event": ("B1", "B2")}
 UTC = timezone.utc
 

@@ -1,4 +1,3 @@
-"""S1 engine: fees, the as-of rule, the latency rule, exits and the accounting identities, on synthetic arrays."""
 import math
 
 import numpy as np
@@ -17,9 +16,7 @@ def make_pair(pm, kb, ka, h=0.01, tau_years=0.25, pm_rate=0.0, k_mult=1.0):
 
 
 def test_kalshi_fee_rounds_the_order_up_to_a_cent():
-    # 0.07 * 100 * 0.5 * 0.5 = 1.75 dollars on 100 contracts
     assert en.kalshi_fee(0.5, 100) == pytest.approx(0.0175)
-    # 0.07 * 1 * 0.5 * 0.5 = 1.75 cents, rounded up to 2 cents on a single contract
     assert en.kalshi_fee(0.5, 1) == pytest.approx(0.02)
     assert en.kalshi_fee(0.0, 100) == 0.0 and en.kalshi_fee(1.0, 100) == 0.0
     assert en.kalshi_fee(0.3, 100) == en.kalshi_fee(0.7, 100)
@@ -34,19 +31,19 @@ def test_asof_never_looks_ahead_and_drops_stale_quotes():
     grid = np.array([60, 120, 180, 2000], dtype=np.int64)
     ts = np.array([100, 170], dtype=np.int64)
     out = en.asof(grid, ts, np.array([0.4, 0.5]), max_age=900)
-    assert math.isnan(out[0])                 # nothing yet at t=60
-    assert out[1] == 0.4                      # the 170 point is in the future of t=120
+    assert math.isnan(out[0])
+    assert out[1] == 0.4
     assert out[2] == 0.5
-    assert math.isnan(out[3])                 # 1830 s old
+    assert math.isnan(out[3])
 
 
 def test_build_pair_drops_empty_kalshi_sides():
     P = en.build_pair("K", 0, 240, np.array([0, 60, 120, 180]), np.array([0.0, 0.4, 0.4, 0.5]),
                       np.array([0.5, 1.0, 0.45, 0.45]), np.array([0, 60, 120, 180]), np.array([0.4] * 4),
                       deadline=1e6, h=0.01, k_mult=1.0, pm_rate=0.0, pm_exp=1.0)
-    assert math.isnan(P.kb[0]) and math.isnan(P.ka[1])     # bid 0, ask 1
+    assert math.isnan(P.kb[0]) and math.isnan(P.ka[1])
     assert P.kb[2] == pytest.approx(0.4)
-    assert math.isnan(P.kb[3])                              # crossed 0.5 / 0.45
+    assert math.isnan(P.kb[3])
 
 
 def test_edge_matches_the_hand_calculation():
@@ -82,14 +79,14 @@ def test_entry_fills_at_the_second_observation():
     L = en.legs(P, 1.0, R, 100)
     tr = en.simulate(P, L, 0.01, True, 0, 4, 100)
     assert len(tr) == 1 and tr[0].i_in == 2 and tr[0].dir == "A"
-    assert tr[0].pm_px == pytest.approx(0.43)               # the second minute's price, not the first's 0.41
+    assert tr[0].pm_px == pytest.approx(0.43)
 
 
 def test_signal_does_not_reach_back_before_the_segment_start():
     pm = [0.40, 0.40, 0.50, 0.50]
     P = make_pair(pm, kb=[0.50] * 4, ka=[0.51] * 4)
     L = en.legs(P, 1.0, R, 100)
-    assert en.simulate(P, L, 0.01, True, 1, 4, 100) == []    # index 1 would need index 0, which is outside
+    assert en.simulate(P, L, 0.01, True, 1, 4, 100) == []
     assert len(en.simulate(P, L, 0.01, True, 0, 4, 100)) == 1
 
 
@@ -100,7 +97,6 @@ def test_missing_quote_blocks_entry():
 
 
 def test_exit_when_the_market_pays_the_present_value_and_reentry_is_allowed():
-    #          gap opens ........ gap reverses ...... gap opens again
     pm = [0.40, 0.40, 0.40, 0.60, 0.60, 0.40, 0.40, 0.40]
     P = make_pair(pm, kb=[0.50] * 8, ka=[0.51] * 8, tau_years=0.25)
     L = en.legs(P, 1.0, R, 100)
@@ -117,7 +113,6 @@ def test_locked_pnl_is_the_entry_edge_and_realised_pnl_is_frozen_after_exit():
     L = en.legs(P, 1.0, R, 100)
     hold = en.simulate(P, L, 0.01, False, 0, 6, 100)[0]
     for i in (1, 2, 5):
-        # tau is constant in this fixture, so only the accrued financing moves the locked mark
         accrued = R * hold.cost_in * (P.t[i] - hold.t_in) / en.YEAR_S * 100
         assert en.pnl_at(P, L, hold, i, 1.0, R, "locked") == pytest.approx(100 * hold.edge_in - accrued)
     tr = en.simulate(P, L, 0.01, True, 0, 6, 100)[0]

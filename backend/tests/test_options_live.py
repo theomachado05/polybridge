@@ -1,15 +1,3 @@
-"""Live options chain, hedge quote and option marks with a mocked Massive. Offline; clocks pinned.
-
-Hedge numbers below are hand-computed from the fixture (spot 100, 200 shares -> 2 contracts per leg, notional $20,000):
-  protective put  P95 bid 1.90 / ask 2.10:  upfront 2.10*200 + 0.65*2 = 421.30 (210.65 bp); friction 0.10*200 + 1.30
-                  = 21.30 (10.65 bp)
-  collar          + P95 @ ask 2.10, - C105 @ bid 2.00 (C105 mid 2.10 best funds P95 mid 2.00): net 0.10 -> upfront
-                  20 + 2.60 = 22.60; friction (0.10 - (2.00 - 2.10)) * 200 + 2.60 = 42.60 (21.30 bp)
-  put spread      + P95 @ 2.10, - P90 @ bid 0.90 (mid 1.00): net 1.20 -> upfront 242.60 (121.30 bp); friction
-                  (1.20 - 1.00) * 200 + 2.60 = 42.60 (21.30 bp); max payout (95 - 90) * 200 = 1,000
-  short stock     borrow 200*100*0.003*30/365 = 4.9315; spread 2*0.01*200 = 4.00; fees 2*0.0035*200 = 1.40
-                  -> 10.3315 (5.1658 bp); Reg T initial 0.5*20,000 = 10,000
-"""
 import datetime as dt
 import math
 from urllib.parse import urlparse
@@ -27,8 +15,8 @@ from app.options import quotes as qt
 from app.options import router as rt
 
 UTC = dt.timezone.utc
-WED = dt.datetime(2026, 9, 30, 15, 0, tzinfo=UTC)        # 11:00 ET, regular session
-SAT = dt.datetime(2026, 10, 3, 19, 0, tzinfo=UTC)        # 15:00 ET Saturday
+WED = dt.datetime(2026, 9, 30, 15, 0, tzinfo=UTC)
+SAT = dt.datetime(2026, 10, 3, 19, 0, tzinfo=UTC)
 FRI_CLOSE_NS = int(dt.datetime(2026, 10, 2, 19, 59, 58, tzinfo=UTC).timestamp() * 1e9)
 THU_NS = int(dt.datetime(2026, 10, 1, 15, 0, tzinfo=UTC).timestamp() * 1e9)
 FRESH_NS = int((WED - dt.timedelta(minutes=5)).timestamp() * 1e9)
@@ -57,7 +45,7 @@ ROWS = [
     orow("put", 85, EXP_HEDGE, 0.40), orow("put", 90, EXP_HEDGE, 1.00, delta=-0.15),
     orow("put", 95, EXP_HEDGE, 2.00, delta=-0.30), orow("put", 100, EXP_HEDGE, 4.00, delta=-0.50),
     orow("call", 100, EXP_HEDGE, 4.00), orow("call", 105, EXP_HEDGE, 2.10, delta=0.30),
-    orow("call", 110, EXP_HEDGE, 1.00, iv=None, greeks=False),     # no greeks / IV: computed
+    orow("call", 110, EXP_HEDGE, 1.00, iv=None, greeks=False),
     orow("call", 100, EXP_NEAR, 1.50), orow("put", 100, EXP_NEAR, 1.40),
     orow("call", 105, EXP_NEAR, 0.20, oi=20, vol=0),
 ]
@@ -82,7 +70,6 @@ class _Resp:
 
 
 class FakeMassive:
-    """Routes Massive paths; filters the chain snapshot by the query params like the real API."""
 
     def __init__(self, rows=ROWS, nbbo=NBBO, stock=STOCK, dividends=None, fail=False, nbbo_ts=FRESH_NS):
         self.rows, self.nbbo, self.stock, self.fail, self.nbbo_ts = rows, nbbo, stock, fail, nbbo_ts
@@ -136,8 +123,6 @@ def run(coro):
     return asyncio.run(coro)
 
 
-# ------------------------------------------------------------------------------------------------ helpers
-
 def test_parse_occ():
     assert qt.parse_occ("O:AAPL261023P00300000") == {"ticker": "O:AAPL261023P00300000", "underlying": "AAPL",
                                                      "expiry": "2026-10-23", "right": "put", "strike": 300.0}
@@ -149,8 +134,8 @@ def test_market_state_and_staleness_rules():
     sat, wed = qt.market_state(SAT), qt.market_state(WED)
     assert sat["market_open"] is False and sat["phase"] == "weekend"
     assert wed["market_open"] is True
-    assert qt.is_stale(FRI_CLOSE_NS, sat, SAT) == (False, None)            # Friday close is Saturday's mark
-    assert qt.is_stale(THU_NS, sat, SAT)[0] is True                         # predates the last close
+    assert qt.is_stale(FRI_CLOSE_NS, sat, SAT) == (False, None)
+    assert qt.is_stale(THU_NS, sat, SAT)[0] is True
     assert qt.is_stale(FRESH_NS, wed, WED) == (False, None)
     assert qt.is_stale(int((WED - dt.timedelta(minutes=45)).timestamp() * 1e9), wed, WED)[0] is True
     assert qt.is_stale(None, wed, WED) == (True, "no timestamp")
@@ -184,10 +169,8 @@ def test_parse_spot_prefers_last_trade_when_open_close_otherwise():
     prev = qt.parse_spot(None, {"results": [{"c": 99.5, "t": 1}]}, False)
     assert prev["price"] == 99.5 and prev["source"] == "prev_close"
     wide = {"ticker": {**STOCK["ticker"], "lastQuote": {"p": 90.0, "P": 110.0}}}
-    assert qt.parse_spot(wide, None, False)["bid"] is None   # a 20%-wide after-hours quote is not a spread
+    assert qt.parse_spot(wide, None, False)["bid"] is None
 
-
-# ------------------------------------------------------------------------------------------------ chain
 
 def test_chain_rows_have_quotes_greeks_and_labels():
     fm = FakeMassive()
@@ -203,7 +186,7 @@ def test_chain_rows_have_quotes_greeks_and_labels():
     c100 = next(c for c in r["contracts"] if c["right"] == "call" and c["strike"] == 100)
     assert c100["bid"] is None and c100["mark_source"] == "fmv" and c100["quote_source"] == "nbbo_unavailable"
     assert "no_live_quote" in c100["liquidity_flags"]
-    assert r["n_contracts"] == 4      # P95, P100, C100, C105 (the 3 strikes nearest 100)
+    assert r["n_contracts"] == 4
     assert r["freshness"]["has_quotes"] is True and r["freshness"]["n_quoted"] == 2
     assert "live session snapshot" in r["snapshot_label"]
 
@@ -214,7 +197,7 @@ def test_chain_computes_greeks_when_massive_has_none():
     assert c110["greeks_source"] == "computed" and c110["iv_source"] == "computed"
     T = qt.years_to_expiry(EXP_HEDGE, WED)
     from app.options import bs
-    assert bs.price(100.0, 110.0, T, 0.04, c110["iv"], True) == pytest.approx(1.0, abs=1e-4)  # iv rounded to 6 dp
+    assert bs.price(100.0, 110.0, T, 0.04, c110["iv"], True) == pytest.approx(1.0, abs=1e-4)
     assert c110["delta"] == pytest.approx(bs.greeks(100.0, 110.0, T, 0.04, c110["iv"], True)["delta"], abs=1e-6)
     assert any("computed" in n for n in r["notes"])
 
@@ -224,7 +207,7 @@ def test_chain_defaults_to_nearest_live_expiry_and_weekend_label():
     sat_rows = [orow("call", 100, "2026-10-09", 1.5, ts=FRI_CLOSE_NS), orow("put", 100, "2026-10-09", 1.4, ts=THU_NS)]
     fm = FakeMassive(rows=rows + sat_rows, nbbo={}, nbbo_ts=FRI_CLOSE_NS)
     r = run(lv.live_chain("XYZ", client=fm, now=SAT))
-    assert r["available"] and r["market_open"] is False and r["expiry"] == "2026-10-09"   # 10-02 has expired
+    assert r["available"] and r["market_open"] is False and r["expiry"] == "2026-10-09"
     assert r["snapshot_label"].startswith("last close snapshot")
     stale = {c["right"]: c["stale"] for c in r["contracts"]}
     assert stale == {"call": False, "put": True}
@@ -238,15 +221,13 @@ def test_chain_never_raises_no_key_outage_empty():
     assert empty["available"] is False and empty["contracts"] == []
 
 
-# ------------------------------------------------------------------------------------------------ marks
-
 def test_mark_quote_nbbo_estimated_expired():
     q = ch.parse_result(orow("put", 95, EXP_HEDGE, 2.0))
     m = mk.mark_quote(q, nbbo={"bid": 1.9, "ask": 2.1, "updated_ns": FRESH_NS}, spot=100.0, now=WED)
     assert m["mark"] == pytest.approx(2.0) and m["half_spread"] == pytest.approx(0.1)
     assert m["spread_source"] == "nbbo" and m["exit_long"] == 1.9 and m["exit_short"] == 2.1
     assert m["mark_per_contract"] == pytest.approx(200.0) and m["stale"] is False
-    est = mk.mark_quote(q, spot=100.0, now=WED)                        # OI 1000: max(0.025, 4% of 2.0) = 0.08
+    est = mk.mark_quote(q, spot=100.0, now=WED)
     assert est["spread_source"] == "estimated" and est["half_spread"] == pytest.approx(0.08)
     assert est["bid"] is None and est["exit_long"] == pytest.approx(1.92)
     thin = mk.mark_quote(ch.parse_result(orow("put", 95, EXP_HEDGE, 2.0, oi=50)), spot=100.0, now=WED)
@@ -262,10 +243,10 @@ def test_mark_fetches_caches_and_degrades():
     assert m["available"] and m["mark"] == pytest.approx(2.0) and m["spread_source"] == "nbbo"
     assert m["underlying_price"] == 100.0 and m["delta"] == -0.30 and m["cache_stale"] is False
     n = len(fm.calls)
-    run(mk.mark("XYZ261030P00095000", client=fm, now=WED))             # cached (30 s): no new calls
+    run(mk.mark("XYZ261030P00095000", client=fm, now=WED))
     assert len(fm.calls) == n
     fm.fail = True
-    mk._MARKS._data = {k: (v[0] - 999, v[1]) for k, v in mk._MARKS._data.items()}   # expire the entry
+    mk._MARKS._data = {k: (v[0] - 999, v[1]) for k, v in mk._MARKS._data.items()}
     stale = run(mk.mark("O:XYZ261030P00095000", client=fm, now=WED))
     assert stale["available"] and stale["cache_stale"] is True
     mk.reset_cache()
@@ -274,8 +255,6 @@ def test_mark_fetches_caches_and_degrades():
     assert run(mk.mark("nonsense", client=None))["reason"] == "not an OCC option symbol"
     assert run(mk.mark("O:XYZ261030P00095000", client=None))["reason"] == "MASSIVE_API_KEY not set"
 
-
-# ------------------------------------------------------------------------------------------------ hedge quote
 
 def hedge(fm=None, **kw):
     args = dict(ticker="XYZ", shares=200, horizon_days=30, protection_pct=0.05)
@@ -318,11 +297,10 @@ def test_hedge_quote_hand_computed_costs():
 def test_hedge_scenarios_at_horizon():
     h = hedge()
     pp = {r["move"]: r for r in h["strategies"]["protective_put"]["scenarios"]}
-    # -30%: long loses 6,000; two P95 worth ~25 each per share (5 h left) = 5,000; minus 421.30 entry
     assert pp[-0.3]["pnl_usd"] == pytest.approx(-6000 + 5000 - 421.30, abs=1.0)
-    assert pp[0.2]["pnl_usd"] == pytest.approx(4000 - 421.30, abs=1.0)        # put expires worthless
+    assert pp[0.2]["pnl_usd"] == pytest.approx(4000 - 421.30, abs=1.0)
     co = {r["move"]: r for r in h["strategies"]["collar"]["scenarios"]}
-    assert co[0.2]["pnl_usd"] == pytest.approx(1000 - 22.60, abs=1.0)         # capped at 105
+    assert co[0.2]["pnl_usd"] == pytest.approx(1000 - 22.60, abs=1.0)
     ss = {r["move"]: r["pnl_usd"] for r in h["strategies"]["short_stock"]["scenarios"]}
     assert set(round(v, 6) for v in ss.values()) == {round(-10.331507, 6)}
     assert {r["move"]: r["pnl_usd"] for r in h["unhedged_scenarios"]}[-0.1] == pytest.approx(-2000)
@@ -333,7 +311,7 @@ def test_hedge_estimated_spreads_liquidity_and_caveats():
     h = hedge(FakeMassive(rows=rows, nbbo={}))
     pp = h["strategies"]["protective_put"]
     leg = pp["legs"][0]
-    assert leg["spread_source"] == "estimated" and leg["exec_px"] == pytest.approx(2.0 + 0.16)   # 8% of 2.0
+    assert leg["spread_source"] == "estimated" and leg["exec_px"] == pytest.approx(2.0 + 0.16)
     assert {"no_live_quote", "low_open_interest"} <= set(pp["liquidity_flags"]) and pp["liquidity"] in ("thin", "illiquid")
     assert pp["spread_source"] == "estimated"
     assert any("American" in c for c in h["caveats"]) and any("Borrow" in c for c in h["caveats"])
@@ -354,7 +332,7 @@ def test_hedge_small_position_and_borrow_override_and_dividend():
 
 def test_hedge_ssr_flag_and_no_covering_expiry():
     stock = {"ticker": {**STOCK["ticker"], "todaysChangePerc": -12.0}}
-    h = hedge(FakeMassive(stock=stock), horizon_days=60)          # target 11-29: nothing listed after 10-30
+    h = hedge(FakeMassive(stock=stock), horizon_days=60)
     assert "ssr_uptick_rule_active" in h["strategies"]["short_stock"]["liquidity_flags"]
     assert h["expiry"] == EXP_HEDGE and h["expiry_covers_horizon"] is False
     assert any("rolled" in c for c in h["caveats"])
@@ -365,19 +343,17 @@ def test_hedge_never_raises():
     assert nokey["available"] is False and nokey["strategies"]["collar"]["reason"] == "MASSIVE_API_KEY not set"
     down = hedge(FakeMassive(fail=True))
     assert down["available"] is False and "no underlying price" in down["reason"]
-    no_opts = hedge(FakeMassive(rows=[]))      # spot known, no chain: short stock still quoted (a miss is not cached)
+    no_opts = hedge(FakeMassive(rows=[]))
     assert no_opts["strategies"]["short_stock"]["available"] is True
     assert no_opts["strategies"]["protective_put"]["available"] is False
     assert no_opts["ranking"]["order"] == ["short_stock"]
 
 
-# ------------------------------------------------------------------------------------------------ routes
-
 @pytest.fixture
 def client(monkeypatch):
     def _make(massive):
         monkeypatch.setattr(rt, "make_client", lambda: massive)
-        monkeypatch.setattr(qt, "now_utc", lambda: WED)   # the fixture's expiries are fixed dates
+        monkeypatch.setattr(qt, "now_utc", lambda: WED)
         return TestClient(create_app())
     return _make
 
@@ -406,7 +382,7 @@ def test_routes_validate_and_never_500(client):
 def test_routes_with_mocked_massive(client):
     c = client(FakeMassive())
     r = c.get("/options/chain/XYZ?expiry=2026-10-30&strikes=2").json()
-    assert r["available"] and r["expiry"] == EXP_HEDGE and r["n_contracts"] == 3   # strikes 95, 100
+    assert r["available"] and r["expiry"] == EXP_HEDGE and r["n_contracts"] == 3
     assert all(set(("strike", "right", "bid", "ask", "mid", "last", "volume", "open_interest", "iv", "delta", "gamma",
                     "theta", "vega")) <= set(row) for row in r["contracts"])
     m = c.get("/options/mark/O:XYZ261030P00095000").json()
@@ -418,16 +394,14 @@ def test_hedge_cache_keeps_good_quotes_not_outages(monkeypatch):
     down = run(hq.hedge_quote("XYZ", 200, 30, 0.05, client=FakeMassive(fail=True)))
     assert down["available"] is False
     good_fm = FakeMassive()
-    good = run(hq.hedge_quote("XYZ", 200, 30, 0.05, client=good_fm))     # the outage was not cached
+    good = run(hq.hedge_quote("XYZ", 200, 30, 0.05, client=good_fm))
     assert good["available"] is True
     n = len(good_fm.calls)
     again = run(hq.hedge_quote("XYZ", 200, 30, 0.05, client=good_fm))
-    assert again == good and len(good_fm.calls) == n                       # served from the 30 s cache
+    assert again == good and len(good_fm.calls) == n
 
 
 def test_hedge_quote_says_where_option_orders_go():
-    """Options in the simulator (default): labelled simulated. With WEBULL_OPTIONS=1 the active broker places them at
-    Webull paper, so the label and caveat say so instead of calling every option fill simulated."""
     sim = hedge(FakeMassive())
     assert sim["label"] == hq.LABEL and sim["options_route"] == "simulator"
     assert hq.SIM_OPTIONS_CAVEAT in sim["caveats"] and hq.BROKER_OPTIONS_CAVEAT not in sim["caveats"]

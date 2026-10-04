@@ -1,4 +1,3 @@
-"""Pre-registered parameters of Study A, the options-anchored Polymarket taker on reopening days (METHOD.md). Change only through an Amendment."""
 from __future__ import annotations
 
 from pathlib import Path

@@ -1,27 +1,3 @@
-"""Opportunity at the open (closed-market mode, plan item 6; task P4).
-
-While equities are closed the prediction market keeps trading, but listed option prices stay where Friday's close
-left them. This module:
-
-1. **Friday-close snapshot.** For a threshold market (one ``options.match.match_question`` maps to an underlying,
-   strike and date), store the options-implied P(YES) at the last regular close, the PM YES price, and the quotes of
-   both vertical spreads around the threshold (the YES-equivalent and the NO-equivalent structure).
-2. **Monday-open comparison.** ``evaluate`` compares the weekend PM move with the option move (zero until the options
-   reprice at the open). If the options have not caught up (the residual move is large enough, the option level is
-   still on the far side of the PM price, and a buy at the spread's ask would still sit on the right side of the PM
-   price), the decision is ``stage`` with a reason code; every other outcome has its own reason code.
-3. **Staged option trade for 09:30.** A debit vertical spread (bounded risk: the debit), sized under
-   ``max_contracts`` and ``max_notional``. It needs approval, executes only inside the window after the next regular
-   open, re-checks the comparison against the open's own option quotes (cancels if the options caught up or the PM
-   reverted), refuses quotes not updated since the open, and fills all legs or none through the existing multi-leg
-   options fill path (``SimBroker.place_combo``: Massive quote mid +/- half spread, per-contract fee). Simulated.
-
-Labels: every number is an estimate (options-implied, risk-neutral), fills are simulated, nothing here claims an edge.
-``supported`` means only that the data exist (an option estimate at the close and PM prices at the close and now);
-the R3 study (``research_status``) decides whether the UI may say more than "estimate".
-
-All time logic takes an explicit ``now`` (UTC), so a replay passes the tick's own time.
-"""
 from __future__ import annotations
 
 import asyncio
@@ -54,28 +30,23 @@ LABEL = ("Opportunity at the open: PM price vs the Friday-close options-implied 
 SIM_NOTE = "simulated: opportunity at the open (Massive quote mid +/- half spread, per-contract fee)"
 TAG = "closed-opportunity"
 
-MIN_PM_MOVE = 0.03          # weekend PM move (probability points) below which nothing is staged
-MIN_GAP = 0.03              # residual move (PM move minus option move) below which the options count as caught up
-EXEC_WINDOW_S = 30 * 60     # a staged trade executes only within 30 minutes after the regular open
+MIN_PM_MOVE = 0.03
+MIN_GAP = 0.03
+EXEC_WINDOW_S = 30 * 60
 DEFAULT_CONTRACTS = 1
-OPTION_FALLBACK_HALF = 0.02  # same 2% fallback half spread as the bridge option path when a leg has no quote
+OPTION_FALLBACK_HALF = 0.02
 REPO = Path(__file__).resolve().parents[3]
 DEFAULT_PATH = Path(__file__).resolve().parents[2] / ".closed_opportunity.json"
-# R3 output: research/open_options/report.py writes research/results/open_options/stats.json with
-# verdict PASS | NULL | SAMPLE TOO SMALL; the other locations are kept for a result written by hand.
 R3_RESULT_DIRS = ("research/results/open_options", "research/results/r3_options_catchup",
                   "research/results/options_catchup", "research/results/r3")
 R3_RESULT_FILES = ("stats.json", "tests.json", "summary.json", "result.json")
 R3_VERDICTS = {"PASS": "supported", "NULL": "null", "SAMPLE TOO SMALL": "insufficient"}
-# Total open risk across every opportunity trade (staged, approved, or executed and not yet expired): the per-trade
-# caps alone would let each snapshot carry its own full-size trade. Same figure as the per-trade default.
 BOOK_MAX_NOTIONAL = OPP_DEFAULT_MAX_NOTIONAL
 
 STATUSES = ("staged", "approved", "executed", "cancelled", "expired", "rejected")
 ACTIVE = ("staged", "approved")
 
 REASONS: dict[str, str] = {
-    # snapshot / data availability
     "unsupported_question": "not a threshold question with listed options",
     "no_options_key": "MASSIVE_API_KEY not set: no option data",
     "no_option_chain": "no listed options near the threshold and date, or Massive is unavailable",
@@ -84,7 +55,6 @@ REASONS: dict[str, str] = {
     "no_snapshot": "no Friday-close option snapshot for this market",
     "no_pm_close": "no PM price recorded at the close",
     "pm_unavailable": "no current live PM price (a bundled or recorded price is never used for a decision)",
-    # comparison
     "pm_move_small": "the PM barely moved since the close",
     "gap_small": "the PM move is too small relative to the option estimate to act on",
     "options_caught_up": "the options repriced at the open and absorbed the PM move",
@@ -96,7 +66,6 @@ REASONS: dict[str, str] = {
                         "YES-equivalent debit spread at the open",
     "stage_no_spread": "PM moved down while equities were closed and the options have not caught up: buy the "
                        "NO-equivalent debit spread at the open",
-    # staging / execution
     "no_structure_price": "the spread legs have no price",
     "legs_not_listed": "a spread leg is not listed in the chain",
     "cap_used_up": "the approved max_contracts / max_notional leave room for no whole contract",
@@ -114,7 +83,6 @@ REASONS: dict[str, str] = {
     "broker_rejected": "the simulated broker rejected the combo",
     "filled": "filled (simulated) at the open",
     "cancelled_by_user": "cancelled by the user",
-    # the gates every order passes (docs/design.md sections 6, 10 and 11)
     "evidence_unvalidated": "R3 (do options catch up at the open?) does not support this signal: a trade is staged "
                             "only with ack_unvalidated: true, an explicit acknowledgement that it acts on an "
                             "unvalidated estimate",
@@ -123,10 +91,7 @@ REASONS: dict[str, str] = {
     "capital_budget": "the capital budget (gross / per-event hedge exposure, buying power) refuses this trade's risk, "
                       "or the account cannot be read (fail closed)",
 }
-EVIDENCE_LABEL = "unvalidated (acknowledged)"  # R3 is NULL: every staged trade says so
-
-
-# ------------------------------------------------------------------------------------------------------ helpers
+EVIDENCE_LABEL = "unvalidated (acknowledged)"
 
 
 def _fin(x: Any) -> float | None:
@@ -170,14 +135,12 @@ def _quote_from_row(r: dict) -> ch.OptionQuote:
 
 
 def close_chain(snap: dict) -> ch.Chain:
-    """The snapshot's stored legs as a Chain (network-free), so structure pricing reuses options.fills."""
     rows = [r for r in (snap.get("legs") or []) if r and _fin(r.get("strike")) is not None]
     return ch.Chain(underlying=str(snap.get("underlying_used") or ""), fetched_at=0.0,
                     quotes=[_quote_from_row(r) for r in rows], source="friday_close_snapshot")
 
 
 def yes_structure(direction: str) -> str:
-    """Debit vertical spread paying when YES: call spread for 'above K', put spread for 'below K'."""
     return "call_spread" if direction == "above" else "put_spread"
 
 
@@ -186,7 +149,6 @@ def no_structure(direction: str) -> str:
 
 
 def option_fee(broker=None) -> float:
-    """Per-contract option fee: the simulator's own when given, else its default."""
     from ..broker.sim import Fees, SimBroker
     sim = broker if isinstance(broker, SimBroker) else getattr(broker, "sim", None)
     fee = _fin(getattr(getattr(sim, "fees", None), "option_per_contract", None))
@@ -195,10 +157,6 @@ def option_fee(broker=None) -> float:
 
 def price_structure(chain: ch.Chain, kind: str, expiry: str, k_lo: float, k_hi: float,
                     fee_per_contract: float | None = None) -> dict:
-    """{kind, legs, quote, debit, unit_risk, unit_cost, max_payoff} for buying one spread. ``debit`` is the per-share
-    price paid (mid + half spread, the documented 2%-per-leg fallback when a leg has no quote); ``unit_risk`` = debit
-    x 100 is the most one spread can lose on the premium; ``unit_cost`` adds the per-contract fee on every leg and is
-    what the caps size against. Missing legs or prices give ``reason_code``."""
     fee = option_fee() if fee_per_contract is None else float(fee_per_contract)
     legs = structure_legs(chain, kind, expiry, k_lo, k_hi) or []
     out: dict[str, Any] = {"kind": kind, "expiry": expiry, "k_lo": k_lo, "k_hi": k_hi, "width": k_hi - k_lo,
@@ -223,8 +181,6 @@ def price_structure(chain: ch.Chain, kind: str, expiry: str, k_lo: float, k_hi: 
 
 def size(contracts: int, max_contracts: int, max_notional: float, unit_cost: float | None,
          book_room: float | None = None) -> tuple[int, str | None]:
-    """Whole contracts under every cap; (qty, binding cap or None). ``unit_cost`` is one spread's debit x 100 plus
-    its leg fees; ``book_room`` is what the total cap across opportunity trades still allows (None: no book cap)."""
     if unit_cost is None or unit_cost <= 0:
         return 0, "max_notional"
     by_notional = math.floor(max_notional / unit_cost + 1e-9)
@@ -238,10 +194,6 @@ def size(contracts: int, max_contracts: int, max_notional: float, unit_cost: flo
 
 
 def research_status(root: Path | None = None) -> dict:
-    """R3 (do options catch up at the Monday open?). ``pending`` until a result file exists. The study's own
-    ``stats.json`` carries ``verdict``: PASS -> ``supported``, NULL -> ``null`` (no Opportunity claim), SAMPLE TOO
-    SMALL -> ``insufficient``. An explicit boolean ``supported`` overrides the verdict. Only ``supported`` lets the
-    UI say more than "estimate"."""
     root = REPO if root is None else root
     for d in R3_RESULT_DIRS:
         for name in R3_RESULT_FILES:
@@ -264,13 +216,9 @@ def research_status(root: Path | None = None) -> dict:
     return {"id": "R3", "status": "pending", "path": None, "supports_claim": False}
 
 
-# ------------------------------------------------------------------------------------------------- the snapshot
-
-
 def build_snapshot(market: dict, match, chain: ch.Chain | None, *, now: Any, pm_yes: float | None,
                    cache_stale: bool = False, underlying_used: str | None = None, strike_used: float | None = None,
                    approx: bool = False, reason_code: str | None = None) -> dict:
-    """A close snapshot record from a matched market and the chain fetched for it (network-free)."""
     t = sc.to_utc(now)
     s = sc.session_at(t)
     close = s.last_close
@@ -315,7 +263,6 @@ def build_snapshot(market: dict, match, chain: ch.Chain | None, *, now: Any, pm_
 
 async def fetch_chain(und: str, k: float, expiry: Any, fallback: tuple[str, float] | None, level: float,
                       *, as_of: dt.date, client) -> tuple[ch.Chain, bool, str, float, bool] | None:
-    """Chain for the matched threshold (primary underlying, then the scaled proxy). None when nothing is listed."""
     attempts = [(und, k, False)]
     if fallback:
         attempts.append((fallback[0], round(level * fallback[1], 6), True))
@@ -328,8 +275,6 @@ async def fetch_chain(und: str, k: float, expiry: Any, fallback: tuple[str, floa
 
 async def take_snapshot(market: dict, *, now: Any, pm_yes: float | None, client=None,
                         allow_open: bool = False) -> dict:
-    """Match the market question and snapshot the option-implied estimate at the last close. Returns the record (not
-    yet stored); an unsupported question or an open market gives ``supported: False`` and a reason code."""
     t = sc.to_utc(now)
     s = sc.session_at(t)
     base = {"market": dict(market), "label": LABEL, "supported": False, "available": False}
@@ -353,8 +298,6 @@ async def take_snapshot(market: dict, *, now: Any, pm_yes: float | None, client=
 
 
 def implied_now(snap: dict, chain: ch.Chain | None, *, now: Any, cache_stale: bool = False) -> dict | None:
-    """The options-implied estimate from a chain fetched at (or after) the open, for the snapshot's threshold. Adds
-    ``since_open``: True when every leg of both spreads was updated at or after the next open."""
     if chain is None or not snap.get("match"):
         return None
     t = sc.to_utc(now)
@@ -377,13 +320,8 @@ def implied_now(snap: dict, chain: ch.Chain | None, *, now: Any, cache_stale: bo
     return out
 
 
-# ---------------------------------------------------------------------------------------------- the comparison
-
-
 def evaluate(snap: dict | None, pm_now: float | None, opt_now: dict | None = None, *,
              min_pm_move: float = MIN_PM_MOVE, min_gap: float = MIN_GAP) -> dict:
-    """Compare the weekend PM move with the option move. Pure. ``decision`` is ``stage`` or ``none``; ``supported``
-    is True when the data exist (option estimate at the close, PM prices at the close and now)."""
     opt = (snap or {}).get("option") or {}
     d: dict[str, Any] = {
         "decision": "none", "supported": False, "side": None, "structure": None,
@@ -440,14 +378,11 @@ def evaluate(snap: dict | None, pm_now: float | None, opt_now: dict | None = Non
     return done("stage_yes_spread" if side == "yes" else "stage_no_spread")
 
 
-# ------------------------------------------------------------------------------------------- the staged trade
-
-
 def _event(trade: dict, now: Any, status: str, code: str, **extra) -> None:
     ev = {"at": _iso(sc.to_utc(now)), "status": status, **_reason(code), **extra}
     last = trade["events"][-1] if trade.get("events") else None
     if last and last["status"] == status and last["reason_code"] == code and not extra:
-        last["at"], last["count"] = ev["at"], last.get("count", 1) + 1  # a repeated hold: one row, counted
+        last["at"], last["count"] = ev["at"], last.get("count", 1) + 1
         return
     trade.setdefault("events", []).append(ev)
 
@@ -455,9 +390,6 @@ def _event(trade: dict, now: Any, status: str, code: str, **extra) -> None:
 def stage_trade(snap: dict, decision: dict, *, now: Any, contracts: int = DEFAULT_CONTRACTS,
                 max_contracts: int = OPP_DEFAULT_MAX_CONTRACTS,
                 max_notional: float = OPP_DEFAULT_MAX_NOTIONAL, book_room: float | None = None) -> dict:
-    """A staged (unapproved) option trade for the next open, priced at the close (fees included). ``book_room`` is
-    what the total cap across opportunity trades still allows. Raises ValueError(reason_code) when the decision is
-    not ``stage`` or the spread cannot be priced or sized."""
     if decision.get("decision") != "stage":
         raise ValueError(decision.get("reason_code") or "no_snapshot")
     opt = snap["option"]
@@ -487,8 +419,6 @@ def stage_trade(snap: dict, decision: dict, *, now: Any, contracts: int = DEFAUL
 
 
 def review_trade(trade: dict, snap: dict | None, pm_now: float | None, *, now: Any) -> dict:
-    """Before the open: cancel a staged or approved trade the PM no longer supports (revert rule). Returns the new
-    decision. Leaves the trade alone when the PM is unavailable."""
     t = sc.to_utc(now)
     dec = evaluate(snap, pm_now)
     if trade["status"] not in ACTIVE or dec["reason_code"] == "pm_unavailable":
@@ -506,14 +436,6 @@ def review_trade(trade: dict, snap: dict | None, pm_now: float | None, *, now: A
 
 async def execute_trade(trade: dict, snap: dict, *, now: Any, pm_now: float | None, chain: ch.Chain | None,
                         broker, cache_stale: bool = False, book_room: float | None = None, app=None) -> dict:
-    """Execute an approved trade at the open, simulated, all legs or none. Mutates ``trade`` (status, events,
-    execution) and returns {"outcome": executed|held|cancelled|expired|rejected|refused, reason_code, ...}.
-    ``held`` keeps the trade approved so a later call retries inside the window. ``book_room``: what the total cap
-    across opportunity trades allows this trade (its own staged estimate excluded). The simulated orders carry the
-    decision time (``now``) in their note, since the broker stamps its own wall clock. Before the combo is sent the
-    trade passes the option participation caps (every leg <= 10% of its volume and <= 5% of its open interest; cut to
-    the cap, refused at 0) and, when ``app`` is given, the capital budget at the account the legs fill in (its max loss,
-    the debit plus fees; refused on a breach or an unreadable account)."""
     t = sc.to_utc(now)
 
     def out(outcome: str, code: str, **extra) -> dict:
@@ -623,7 +545,6 @@ async def execute_trade(trade: dict, snap: dict, *, now: Any, pm_now: float | No
         "legs": legs, "net_debit": round(net, 6) if net is not None else None,
         "cost": round(net * 100 * qty + sum(o.fee for o in orders), 2) if net is not None else None,
         "broker": orders[0].broker if orders else None, "simulated": True, "fill_model": SIM_NOTE,
-        # The broker stamps its own wall clock on the orders; in a replay that differs from ``at`` (the tick time).
         "broker_filled_at": orders[0].filled_at if orders else None, "book_room": book_room, "gates": gates,
     }
     if filled:
@@ -637,8 +558,6 @@ async def execute_trade(trade: dict, snap: dict, *, now: Any, pm_now: float | No
 
 
 async def _capital(app, place, broker, trade: dict, risk_usd: float) -> dict:
-    """The capital budget for the trade's max loss, checked at the account the legs fill in (the simulator behind
-    Webull paper, since ``_combo_target`` sends the combo there). Fails closed when the check itself fails."""
     from ..capital import service as cap
     from ..capital.budget import CAPITAL_BUDGET
     acct = getattr(place, "__self__", None) or broker
@@ -655,7 +574,6 @@ async def _capital(app, place, broker, trade: dict, risk_usd: float) -> dict:
 
 
 def _combo_target(broker):
-    """The simulator's multi-leg fill (Webull paper routes options to its sim anyway)."""
     if broker is None:
         return None
     from ..broker.sim import SimBroker
@@ -663,11 +581,7 @@ def _combo_target(broker):
     return getattr(sim, "place_combo", None) if sim is not None else getattr(broker, "place_combo", None)
 
 
-# --------------------------------------------------------------------------------------------------- the store
-
-
 class OpportunityBook:
-    """Snapshots and staged trades, persisted to one JSON file (a Friday snapshot must survive a weekend restart)."""
 
     def __init__(self, path: Path | str | None = DEFAULT_PATH) -> None:
         self.path = Path(path) if path else None
@@ -704,17 +618,10 @@ class OpportunityBook:
         return "snap-" + hashlib.sha1(f"{key}|{close_day}".encode()).hexdigest()[:12]
 
     def in_use(self, snapshot_id: str) -> dict | None:
-        """The staged, approved or executed trade that uses this snapshot, if any."""
         return next((t for t in self.trades.values()
                      if t["snapshot_id"] == snapshot_id and t["status"] in (*ACTIVE, "executed")), None)
 
     def put_snapshot(self, snap: dict, *, pm_explicit: bool = False) -> dict:
-        """Store the snapshot for this market and close; the id is stable per (market, close day).
-
-        A repeat for the same close refreshes the option block but never moves the baseline the weekend move is
-        measured from: the first PM close price (and when it was recorded) is kept unless the caller supplies one
-        explicitly (``pm_explicit``). A snapshot that a staged, approved or executed trade uses is never replaced:
-        ValueError("snapshot_in_use")."""
         sid = self.snapshot_id(snap["key"], snap["close_day"])
         if self.in_use(sid) is not None:
             raise ValueError("snapshot_in_use")
@@ -738,8 +645,6 @@ class OpportunityBook:
         return snap
 
     def exposure(self, now: Any, exclude: str | None = None) -> float:
-        """Open risk across opportunity trades: the staged estimate of every staged or approved trade plus the cost
-        of every executed trade whose spread has not expired (a debit spread's most-lost is its cost until expiry)."""
         today = sc.to_utc(now).astimezone(sc.ET).date().isoformat()
         tot = 0.0
         for t in self.trades.values():
@@ -752,7 +657,6 @@ class OpportunityBook:
         return round(tot, 2)
 
     def book_room(self, now: Any, exclude: str | None = None, cap: float | None = None) -> float:
-        """What the total cap (``BOOK_MAX_NOTIONAL`` unless ``cap``) still allows."""
         cap = BOOK_MAX_NOTIONAL if cap is None else cap
         return round(max(cap - self.exposure(now, exclude), 0.0), 2)
 
@@ -771,6 +675,5 @@ class OpportunityBook:
 
 
 def snapshot_view(snap: dict, pm_now: float | None = None, opt_now: dict | None = None) -> dict:
-    """A snapshot plus its comparison (what the UI card shows)."""
     dec = evaluate(snap, pm_now, opt_now)
     return {**snap, "supported": dec["supported"], "comparison": dec}

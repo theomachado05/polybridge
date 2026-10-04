@@ -1,4 +1,3 @@
-"""Pre-registered parameters of the T4 overshoot study (METHOD.md). Change only through an Amendment."""
 from __future__ import annotations
 
 from dataclasses import dataclass

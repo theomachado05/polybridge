@@ -8,16 +8,16 @@ using hctest::NaN;
 TEST(Sizers, DeltaBridgeRoundsAndRejectsNaN) {
   DeltaBridge s{0.5, 1000};
   EXPECT_DOUBLE_EQ(s.target(0.20), 100.0);
-  EXPECT_DOUBLE_EQ(s.target(0.2031), 102.0);  // round(101.55)
+  EXPECT_DOUBLE_EQ(s.target(0.2031), 102.0);
   EXPECT_TRUE(std::isnan(s.target(NaN)));
   EXPECT_TRUE(std::isnan(s.target(1.2)));
 }
 
 TEST(Sizers, LinearExposureClamps) {
   LinearExposure s{2.0, 0.5, 0.8, 1000};
-  EXPECT_DOUBLE_EQ(s.target(0.6), 200.0);  // 1000 * 2 * 0.1
-  EXPECT_DOUBLE_EQ(s.target(0.4), 0.0);    // below neutral
-  EXPECT_DOUBLE_EQ(s.target(0.99), 800.0); // capped at max_cov
+  EXPECT_DOUBLE_EQ(s.target(0.6), 200.0);
+  EXPECT_DOUBLE_EQ(s.target(0.4), 0.0);
+  EXPECT_DOUBLE_EQ(s.target(0.99), 800.0);
   EXPECT_TRUE(std::isnan(s.target(NaN)));
 }
 
@@ -30,9 +30,9 @@ TEST(Sizers, ConvexExposure) {
 TEST(Sizers, KellyCapped) {
   KellyCapped k{0.25, 1000};
   EXPECT_NEAR(k.fraction(0.6, 0.5), 0.2, 1e-12);
-  EXPECT_DOUBLE_EQ(k.target(0.6, 0.5), 400.0);  // 0.2 * 1000 / 0.5
+  EXPECT_DOUBLE_EQ(k.target(0.6, 0.5), 400.0);
   EXPECT_DOUBLE_EQ(k.fraction(0.95, 0.5), 0.25);
-  EXPECT_DOUBLE_EQ(k.fraction(0.4, 0.5), 0.0);  // no edge
+  EXPECT_DOUBLE_EQ(k.fraction(0.4, 0.5), 0.0);
   EXPECT_TRUE(std::isnan(k.target(NaN, 0.5)));
 }
 

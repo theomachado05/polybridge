@@ -1,4 +1,3 @@
-"""Pre-registered parameters (METHOD.md). Change only through an Amendment in METHOD.md."""
 from __future__ import annotations
 
 import os

@@ -10,13 +10,13 @@ MarketTick ek(std::int64_t ts, double p, double score) {
   t.opt_mid = 1.5;
   return t;
 }
-}  // namespace
+}
 
 TEST(EightKOpportunity, BullishTagConfirmedSellsPutThenClosesAfterWindow) {
-  F a(params<F>(), Position{});  // window 24 h, thr 0.5, confirm 0.01, contracts 1
+  F a(params<F>(), Position{});
   EXPECT_EQ(a.on_tick(ek(kSec, 0.50, 0.8), kSec).reason, rc(Rc::Warmup));
   for (int i = 2; i <= 5; ++i) EXPECT_EQ(a.on_tick(ek(i * kSec, 0.50, 0.0), i * kSec).reason, rc(Rc::Warmup));
-  const Intent e = a.on_tick(ek(6 * kSec, 0.48, 0.0), 6 * kSec);  // adverse prob fell 0.02
+  const Intent e = a.on_tick(ek(6 * kSec, 0.48, 0.0), 6 * kSec);
   ASSERT_TRUE(is_order(e));
   EXPECT_EQ(e.instrument, Instrument::Option);
   EXPECT_EQ(e.side, -1);

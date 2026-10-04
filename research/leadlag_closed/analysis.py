@@ -1,7 +1,3 @@
-"""Apply METHOD.md sections 4-5 to a table of closure rows. Pure pandas/numpy, testable on synthetic data.
-
-Input columns: closure, kind, market, news (bool), dpm_o_pp, dpm_early_o_pp, gap_bp, ret30_bp, resid_bp, reason.
-"""
 from __future__ import annotations
 
 import numpy as np
@@ -12,7 +8,6 @@ from .stats import interaction, pairing_placebo, sign_agreement, slope_test
 
 
 def usable(df: pd.DataFrame) -> pd.DataFrame:
-    """Rows with a PM change and a gap (usability rules 1 and 2)."""
     return df[np.isfinite(df["dpm_o_pp"]) & np.isfinite(df["gap_bp"])]
 
 
@@ -28,7 +23,6 @@ def _t2(df: pd.DataFrame, y: str, x: str = "dpm_o_pp") -> dict:
 
 
 def analyse(rows: pd.DataFrame) -> dict:
-    """Return every number in METHOD.md sections 4-5 plus the verdict."""
     ev = usable(rows[rows["news"]])
     pl = usable(rows[~rows["news"]])
     res: dict = {"n_events_total": int(rows["news"].sum()), "n_events_usable": len(ev), "n_placebo_total": int((~rows["news"]).sum()),
@@ -40,17 +34,14 @@ def analyse(rows: pd.DataFrame) -> dict:
     e4 = ev[np.isfinite(ev["dpm_early_o_pp"]) & np.isfinite(ev["resid_bp"])]
     res["t4_events_t1"] = sign_agreement(e4["dpm_early_o_pp"], e4["resid_bp"], PARAMS.theta_pp)
     res["t4_events_t2"] = slope_test(e4["dpm_early_o_pp"], e4["resid_bp"], PARAMS.n_perm, PARAMS.seed)
-    # gap -> first-30-minute relation (description): reversal vs continuation
     g = ev[np.isfinite(ev["ret30_bp"]) & (ev["gap_bp"] != 0) & (ev["ret30_bp"] != 0)]
     res["gap_vs_ret30"] = {"n": len(g), "continue": int((np.sign(g["gap_bp"]) == np.sign(g["ret30_bp"])).sum())}
-    # subsets
     for name, sub in (("overnight", ev[ev["kind"] == "overnight"]), ("weekend_holiday", ev[ev["kind"] != "overnight"])):
         res[f"t1_{name}"] = sign_agreement(sub["dpm_o_pp"], sub["gap_bp"], PARAMS.theta_pp)
         res[f"t2_{name}"] = slope_test(sub["dpm_o_pp"], sub["gap_bp"], PARAMS.n_perm, PARAMS.seed)
     for name, sub in (("election", ev[ev["market"] == "election"]), ("recession", ev[ev["market"] == "recession"])):
         res[f"t1_{name}"] = sign_agreement(sub["dpm_o_pp"], sub["gap_bp"], PARAMS.theta_pp)
     res["loo"] = leave_one_out(ev)
-    # placebo
     res["p1_t1"] = _t1(pl, "gap_bp")
     res["p1_t2"] = _t2(pl, "gap_bp")
     res["p1_by_panel"] = {m: {"t1": sign_agreement(s["dpm_o_pp"], s["gap_bp"], PARAMS.theta_pp), "n": len(s)}
@@ -61,7 +52,6 @@ def analyse(rows: pd.DataFrame) -> dict:
     res["p2"] = pairing_placebo(ev_p["dpm_o_pp"], ev_p["market"], ev_p["gap_bp"], pools, PARAMS.theta_pp, PARAMS.n_perm, PARAMS.seed)
     both = pd.concat([ev.assign(_n=1.0), pl.assign(_n=0.0)])
     res["p3"] = interaction(both["dpm_o_pp"], both["gap_bp"], both["_n"])
-    # closure-type mix
     res["mix_events"] = ev["kind"].value_counts().to_dict()
     res["mix_placebo"] = pl["kind"].value_counts().to_dict()
     res["median_abs_gap_events"] = float(ev["gap_bp"].abs().median()) if len(ev) else float("nan")
@@ -77,7 +67,6 @@ def _ols_slope(x: np.ndarray, y: np.ndarray) -> float:
 
 
 def leave_one_out(ev: pd.DataFrame) -> dict:
-    """Exploratory (METHOD.md Amendment 2, not in the decision rule): how much does the T2 slope depend on single events?"""
     x, y = ev["dpm_o_pp"].to_numpy(float), ev["gap_bp"].to_numpy(float)
     n = len(x)
     if n < 5:
@@ -94,7 +83,6 @@ def leave_one_out(ev: pd.DataFrame) -> dict:
 
 
 def verdict(res: dict) -> tuple[str, dict]:
-    """Decision rule of METHOD.md section 4, applied literally."""
     a = PARAMS.alpha
     t1 = res["t1_events"][PARAMS.theta_pp]
     c1 = bool(t1["n"] and t1["p"] < a and t1["rate"] > 0.5)

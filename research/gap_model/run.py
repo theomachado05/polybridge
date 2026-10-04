@@ -1,7 +1,3 @@
-"""Run the expected-gap OOS study once (METHOD.md). No network: reads saved closure tables only.
-
-    cd research && uv run --env-file ../.env python -m gap_model.run
-"""
 from __future__ import annotations
 
 import argparse
@@ -85,7 +81,6 @@ def split(pr: pd.DataFrame, col: str, groups=None) -> dict:
 
 
 def export(rows: pd.DataFrame, info: dict, res: dict, commit: str) -> dict:
-    """Full-sample per-market and pooled rates for the product (METHOD.md section 5)."""
     markets = {}
     own_rates = []
     for m, s in rows.groupby("market"):

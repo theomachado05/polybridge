@@ -1,7 +1,3 @@
-"""S9 report: SUMMARY.md, equity_curve.png, drawdown.png and capacity.md from the result CSVs.
-
-Run from `research/`:  python -m s9_weekend_price_markets.report
-"""
 from __future__ import annotations
 
 import json
@@ -115,7 +111,6 @@ def main() -> int:
     gtab = md_table(g.assign(T=g.threshold.map(lambda x: f"{x:.0f}+ points"), M=g.markets.map(CLASS_NAME), W=g.window, N=g.n.astype(int),
                              K=g.weekends.astype(int), A=g["mean"].map(pts), CI=g.apply(lambda r: ci(r.ci_lo, r.ci_hi), axis=1)),
                     {"T": "Weekend move", "M": "Markets", "W": "Window", "N": "Market-weekends", "K": "Weekends", "A": "Change, signed by the move", "CI": "95% interval"})
-    # looked at after the run: the direction of the weekend move, and the drift of all live markets
     big = wk[(wk.w.abs() >= 5) & wk.y.notna()]
     diag = []
     for name, s in (("Markets that rose over the weekend", big[big.w > 0]), ("Markets that fell over the weekend", big[big.w < 0]),

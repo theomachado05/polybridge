@@ -1,4 +1,3 @@
-"""Question parsing and universe filters (METHOD.md section 1). Pure functions."""
 from __future__ import annotations
 
 import re
@@ -14,11 +13,10 @@ _ABOVE = re.compile(r"\b(close|closes|closing|finish|finishes|end|ends)\b.*\babo
 class Threshold:
     ticker: str
     strike: float
-    kind: str          # daily | weekly | monthly | other
+    kind: str
 
 
 def parse_pm_question(question: str, event_title: str = "") -> tuple[Threshold | None, str]:
-    """Returns (Threshold, "") when the market is an in-scope 'close above $K' threshold, else (None, reason)."""
     q = question or ""
     if _EXCLUDE.search(q):
         return None, "out_of_scope_type"
@@ -48,5 +46,4 @@ KALSHI_UNDERLYING = {"KXINXU": "SPX", "INXU": "SPX", "KXINXAB": "SPX", "INXAB": 
 
 
 def kalshi_is_close(event_ticker: str) -> bool:
-    """16:00 ET settlement hourlies (`...H1600`) and the daily close series (no hour suffix)."""
     return event_ticker.endswith("H1600") or not re.search(r"H\d{4}$", event_ticker)

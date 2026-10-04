@@ -1,7 +1,3 @@
-"""Key lookup for the CLI checks (make gemini-check / voice-agent / keys-check). Values are returned, never printed.
-
-The environment wins (``make`` passes ``--env-file ../.env``), then ``.env`` in backend/ or up to three parents (the
-repo-root ``.env``), the same rule the research client and ``app.pipeline.llm.gemini_key`` use."""
 from __future__ import annotations
 
 import os
@@ -10,7 +6,6 @@ from pathlib import Path
 BACKEND = Path(__file__).resolve().parents[1]
 REPO = BACKEND.parent
 
-# (label, accepted names): what keys-check reports, by name only.
 KNOWN_KEYS: list[tuple[str, tuple[str, ...]]] = [
     ("MASSIVE_API_KEY", ("MASSIVE_API_KEY",)),
     ("GEMINI_API_KEY", ("GEMINI_API_KEY",)),
@@ -35,6 +30,5 @@ def env_key(name: str) -> str | None:
 
 
 def mask(value: str | None, keep: int = 4) -> str:
-    """'***' + the last ``keep`` characters (ids only; never call this on a key)."""
     s = str(value or "")
     return "***" + s[-keep:] if len(s) > keep else "***"

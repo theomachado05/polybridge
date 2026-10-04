@@ -1,12 +1,4 @@
 #pragma once
-// ladder_pair: one nested pair of a date (or strike) ladder. The rich rung can never be worth more than the cheap
-// rung (an earlier "by" date, or a further "reach" level, resolves YES only if the other does). When the rich rung's
-// best bid clears the cheap rung's best ask by both taker fees, one tick and min_edge, sell the rich rung at its bid
-// and buy the cheap rung at its ask, the same quantity on both legs, and hold both to the result.
-// Status: lead. See note/NOTE.md section 3: the registered fresh test was NULL; the positive result rests on a
-// year check fixed after the run.
-//
-// Input is LadderTick, not MarketTick: two books, two fee rates, two quote times and the linker's nested flag.
 #include <cmath>
 #include <cstdint>
 #include "hedgecore/algos/common.hpp"
@@ -14,35 +6,32 @@
 
 namespace hedgecore {
 
-struct LadderTick {  // NaN / kNoTime / Tri::Missing = not available (the default for every field)
+struct LadderTick {
   std::int64_t ts_ns = 0;
-  double bid_rich = kNaN, bid_rich_qty = kNaN;    // best YES bid and its size on the rich rung
-  double ask_cheap = kNaN, ask_cheap_qty = kNaN;  // best YES ask and its size on the cheap rung
-  double fee_rate_rich = kNaN, fee_rate_cheap = kNaN;  // taker fee per contract = rate * p * (1 - p)
-  double tick = kNaN;                             // the coarser of the two rungs' price ticks
-  std::int64_t ts_rich_ns = kNoTime, ts_cheap_ns = kNoTime;  // quote times of the two books
-  Tri nested = Tri::Missing;                      // from the linker; anything but True refuses
-  double event_held = kNaN;  // contracts held on the event's OTHER pairs (from the bridge), for the per-event cap
+  double bid_rich = kNaN, bid_rich_qty = kNaN;
+  double ask_cheap = kNaN, ask_cheap_qty = kNaN;
+  double fee_rate_rich = kNaN, fee_rate_cheap = kNaN;
+  double tick = kNaN;
+  std::int64_t ts_rich_ns = kNoTime, ts_cheap_ns = kNoTime;
+  Tri nested = Tri::Missing;
+  double event_held = kNaN;
 };
 
 enum class MicroAction : std::uint8_t { Hold = 0, Order = 1, Propose = 2, Cancel = 3, Unwind = 4 };
 enum class Leg : std::uint8_t { Rich = 0, Cheap = 1 };
 
 struct LegOrder {
-  int side = 0;           // +1 buy YES, -1 sell YES; 0 = no order on this leg
+  int side = 0;
   double qty = 0;
-  double limit_px = kNaN;  // NaN = marketable (only for an Unwind)
+  double limit_px = kNaN;
 };
 
-// Order: both legs together, same qty, limits at the quoted prices (fill at the quote or not at all).
-// Cancel: cancel the leg still out (`cancel` names it); the other leg was rejected.
-// Unwind: flatten the excess of the leg that filled more than the other (marketable).
 struct PairIntent {
   MicroAction action = MicroAction::Hold;
   LegOrder rich{}, cheap{};
   Leg cancel = Leg::Rich;
   std::uint16_t reason = 0;
-  double signal = kNaN;  // net edge at the quotes in points (bid - ask - both fees - one tick)
+  double signal = kNaN;
   std::int64_t latency_ns = 0;
 };
 
@@ -83,21 +72,19 @@ struct LadderPair {
   blocks::ContractCap event_cap{};
   blocks::Cooldown cooldown{};
   blocks::CapitalLock capital{};
-  double min_edge = 0;  // fraction of $1
+  double min_edge = 0;
 
-  // Pairs held to the result (matched contracts on both legs).
   double held = 0;
-  // Leg-risk state. While `working`, both legs of the last entry are out.
   bool working = false;
   double want = 0;
   double filled[2] = {0, 0};
-  double fill_px[2] = {0, 0};  // quantity-weighted fill price of the working entry per leg
+  double fill_px[2] = {0, 0};
   bool done[2] = {false, false};
   bool cancel_sent = false;
-  double fee_pc = 0;           // both taker fees per contract at the entry quotes
-  double excess[2] = {0, 0};   // contracts on one leg with no partner: to unwind
+  double fee_pc = 0;
+  double excess[2] = {0, 0};
   bool unwind_out = false;
-  bool flagged = false;        // legs filled unequally: entries stop (latched, like the other kill switches)
+  bool flagged = false;
   std::uint32_t leg_risk_events = 0;
 
   LadderPair(const Params& p, const Position&) noexcept : valid(kSpec.valid(p)) {
@@ -115,7 +102,7 @@ struct LadderPair {
     return i;
   }
 
-  PairIntent on_tick(const LadderTick& t, std::int64_t now_ns) noexcept {  // AlgoBase::on_tick's latency stamp
+  PairIntent on_tick(const LadderTick& t, std::int64_t now_ns) noexcept {
     const std::int64_t t0 = mono_ns();
     PairIntent i = step(t, now_ns);
     i.latency_ns = mono_ns() - t0;
@@ -125,21 +112,20 @@ struct LadderPair {
   PairIntent step(const LadderTick& t, std::int64_t now) noexcept {
     if (!valid) return hold(Rc::InvalidParams);
     if (bad) return hold(Rc::InvalidState);
-    // Leg-risk guard first: an unpaired leg is flattened before anything else happens.
     if (excess[0] > 0 || excess[1] > 0) {
       if (unwind_out) return hold(Rc::LegRisk);
       PairIntent u;
       u.action = MicroAction::Unwind;
       u.reason = code(Rc::LegRisk);
-      if (excess[0] > 0) u.rich = {+1, excess[0], kNaN};   // buy back rich YES sold without a partner
-      if (excess[1] > 0) u.cheap = {-1, excess[1], kNaN};  // sell cheap YES bought without a partner
+      if (excess[0] > 0) u.rich = {+1, excess[0], kNaN};
+      if (excess[1] > 0) u.cheap = {-1, excess[1], kNaN};
       unwind_out = true;
       return u;
     }
     if (working) {
       if ((done[0] != done[1]) && !cancel_sent) {
         const int open = done[0] ? 1 : 0;
-        if (filled[1 - open] < want - 1e-9) {  // the finished leg came up short: cancel the other one
+        if (filled[1 - open] < want - 1e-9) {
           PairIntent c;
           c.action = MicroAction::Cancel;
           c.cancel = static_cast<Leg>(open);
@@ -162,8 +148,6 @@ struct LadderPair {
     const double gross = t.bid_rich - t.ask_cheap - t.tick;
     const double edge = gross - f_rich - f_cheap;
     const double sig = 100.0 * edge;
-    // FeeGate: what the quotes leave after one tick must pay both fees plus min_edge (a 1e-12 allowance for binary
-    // rounding of prices given in cents).
     if (fee_gate.check(gross - min_edge + 1e-12, f_rich + f_cheap) != Rc::None) return hold(Rc::BelowFees, sig);
     if (cooldown.min_ns > 0 && cooldown.last_ns != kNoTime && now - cooldown.last_ns < cooldown.min_ns)
       return hold(Rc::Cooldown, sig);
@@ -190,23 +174,21 @@ struct LadderPair {
     return o;
   }
 
-  // qty is the absolute quantity filled on that leg at px.
   void on_fill(Leg leg, double qty, double px) noexcept {
     const int k = static_cast<int>(leg);
     if (!num(qty) || !num(px) || qty < 0) { bad = true; return; }
-    if (excess[k] > 0) {  // an unwind fill (only one leg can have an excess)
+    if (excess[k] > 0) {
       excess[k] -= qty;
       if (excess[k] <= 1e-9) { excess[k] = 0; unwind_out = false; }
       return;
     }
-    if (!working) { bad = true; return; }  // a fill for nothing we sent
+    if (!working) { bad = true; return; }
     fill_px[k] = filled[k] + qty > 0 ? (fill_px[k] * filled[k] + px * qty) / (filled[k] + qty) : px;
     filled[k] += qty;
     if (filled[k] >= want - 1e-9) done[k] = true;
     settle_if_done();
   }
 
-  // The leg's remaining quantity is dead (rejected, expired, cancelled). An unwind reject re-sends next tick.
   void on_reject(Leg leg) noexcept {
     const int k = static_cast<int>(leg);
     if (excess[k] > 0) { unwind_out = false; return; }
@@ -227,12 +209,12 @@ struct LadderPair {
     excess[1] = filled[1] - m;
     if (excess[0] <= 1e-9) excess[0] = 0;
     if (excess[1] <= 1e-9) excess[1] = 0;
-    if (excess[0] > 0 || excess[1] > 0) {  // one leg filled more than the other: a single leg was held
+    if (excess[0] > 0 || excess[1] > 0) {
       flagged = true;
       ++leg_risk_events;
     }
   }
 };
 
-}  // namespace algos
-}  // namespace hedgecore
+}
+}

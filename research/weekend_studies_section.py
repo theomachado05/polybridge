@@ -1,10 +1,3 @@
-"""The weekend and linked-asset studies (S3 to S9, S14, and the parallel studies when present) for the scored notebook,
-rebuilt from the COMMITTED result files only.
-
-No network, no API key. For every study with a trade list, the number of trades and the mean net result per trade of
-the pre-registered primary variant are recomputed from the committed `trades.csv` and checked against the committed
-`metrics.csv`. The test statistics shown are read from the committed result files.
-"""
 from __future__ import annotations
 
 from pathlib import Path
@@ -15,7 +8,6 @@ import pandas as pd
 HERE = Path(__file__).resolve().parent
 RESULTS = HERE / "results"
 
-# study -> how to recompute its primary variant from trades.csv and where the same numbers sit in metrics.csv
 STUDIES = {
     "S4 linked assets": {"dir": "s4_linked_assets", "value": "net_bp", "metric": "mean_net_bp", "unit": "bp per trade",
                          "segments": {"IS": "IS", "OOS": "OOS"}},
@@ -40,8 +32,6 @@ PRIMARY = "V0"
 
 
 def recompute(results: Path | str = RESULTS) -> pd.DataFrame:
-    """One row per study, segment and cost level: trades and mean net result of the primary variant, recomputed from
-    the trade list, next to the committed figures."""
     rows = []
     for name, s in STUDIES.items():
         root = Path(results) / s["dir"]
@@ -97,7 +87,6 @@ def _row(df: pd.DataFrame, **eq) -> pd.Series:
 
 
 def findings(results: Path | str = RESULTS) -> pd.DataFrame:
-    """The main statistic of each study, read from its committed result files."""
     R, out = Path(results), []
 
     def add(study, finding, value, verdict):

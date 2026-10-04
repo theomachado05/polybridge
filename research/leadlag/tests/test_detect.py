@@ -28,7 +28,7 @@ def window(idx, start_i, end_i=None):
 
 def test_step_move_detected_at_the_jump_minute():
     idx, chg = series()
-    chg.iloc[250] += 25.0                      # 25 sigma step that persists
+    chg.iloc[250] += 25.0
     lvl = level_of(chg)
     m = first_move(lvl, chg, window(idx, 200), floor=0.1)
     assert m is not None and m.time == idx[250] and m.direction == 1 and m.z > 4
@@ -58,16 +58,16 @@ def test_floor_prevents_tiny_moves_in_a_flat_series_from_counting():
     idx = pd.date_range(T0, periods=N, freq="1min")
     chg = pd.Series(0.0, index=idx)
     chg.iloc[0] = np.nan
-    chg.iloc[250] = 0.5                         # half a point in a dead-flat series
+    chg.iloc[250] = 0.5
     lvl = level_of(chg)
-    assert first_move(lvl, chg, window(idx, 200), floor=0.25) is None     # 3-min change 0.5 < 4*0.25*sqrt(3)=1.73
+    assert first_move(lvl, chg, window(idx, 200), floor=0.25) is None
     chg.iloc[251] = 2.0
     assert first_move(level_of(chg), chg, window(idx, 200), floor=0.25) is not None
 
 
 def test_not_enough_history_means_no_detection():
     idx, chg = series(seed=5)
-    chg.iloc[10] += 40.0                        # fewer than 30 prior valid changes
+    chg.iloc[10] += 40.0
     assert first_move(level_of(chg), chg, window(idx, 0), floor=0.1) is None
 
 

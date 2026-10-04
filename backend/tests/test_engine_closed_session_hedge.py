@@ -1,10 +1,3 @@
-"""Backend guards for the engine family closed_session_hedge (hedge A, plan P2).
-
-- The engine's full NYSE calendar (engine/hedgecore/tests/test_calendar_parity.cpp tables) matches the backend session
-  clock (app/closed/session.py) for 2015-2030, including one-off closures and 13:00 early closes.
-- Until a bridge provides a simulated, labelled PM leg ('pm_leg_sim'), the family is never offered by the fit and never
-  runs on a live hedge bridge (hedge bridges route equity intents only).
-"""
 from __future__ import annotations
 
 import datetime as dt
@@ -51,7 +44,6 @@ def _real() -> dict:
 def test_closed_session_hedge_requires_a_simulated_pm_leg():
     fams = {f["id"]: f for f in _real()["families"]}
     assert fams["closed_session_hedge"]["requires"] == ["pm_leg_sim"]
-    # nothing else changes: the hedge/opportunity PM-spread family keeps its own requirement
     assert fams["poly_kalshi_spread"]["requires"] == ["both_venues"]
     assert all(f["requires"] in ([], ["both_venues"], ["listed_options"])
                for fid, f in fams.items() if fid != "closed_session_hedge")
@@ -67,14 +59,11 @@ def test_no_tick_set_satisfies_pm_leg_sim():
 
 @pytest.mark.parametrize("event_class", ["macro_fed", "corporate_8k", "company_specific", "crypto"])
 def test_fit_never_offers_closed_session_hedge(event_class):
-    """The fit's lists (service.lists_for) drop families with unmet requirements, so hedge A is never offered or
-    auto-picked, even when every other requirement is met."""
     available = {"both_venues", "listed_options"}
     lists = {d: [f for f in fams if not unmet_requirements(f, available)]
              for d, fams in shortlist(_real(), event_class, available).items()}
     assert all(f["id"] != "closed_session_hedge" for fams in lists.values() for f in fams)
     assert lists["hedge"], "other hedge families are still offered"
-    # ranked last when requirements are known, like any family with unmet requirements
     assert shortlist(_real(), event_class, available)["hedge"][-1]["id"] == "closed_session_hedge"
 
 

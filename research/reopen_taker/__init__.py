@@ -1,4 +1,3 @@
-"""Study A: options-anchored Polymarket taker on reopening days. See METHOD.md."""
 import sys
 from pathlib import Path
 

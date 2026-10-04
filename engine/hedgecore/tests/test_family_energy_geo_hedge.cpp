@@ -4,7 +4,7 @@ using namespace hctest;
 using F = hedgecore::algos::EnergyGeoHedge;
 
 TEST(EnergyGeoHedge, CalmJoinsJumpCrosses) {
-  F a(params<F>(), held(1000));  // coverage 0.75, jump 0.04
+  F a(params<F>(), held(1000));
   const Intent calm = a.on_tick(pm(kSec, 0.20), kSec);
   ASSERT_TRUE(is_order(calm));
   EXPECT_DOUBLE_EQ(calm.qty, 150.0);
@@ -20,7 +20,7 @@ TEST(EnergyGeoHedge, CalmJoinsJumpCrosses) {
 
 TEST(EnergyGeoHedge, WidePmSpreadIsSkipped) {
   F a(params<F>({{"max_pm_spread", 0.05}}), held(1000));
-  EXPECT_EQ(a.on_tick(pm(kSec, 0.20, 0.04), kSec).reason, rc(Rc::SpreadTooWide));  // 0.08 wide
+  EXPECT_EQ(a.on_tick(pm(kSec, 0.20, 0.04), kSec).reason, rc(Rc::SpreadTooWide));
 }
 
 TEST(EnergyGeoHedge, Safety) { expect_nan_and_stale_safety<F>(params<F>(), held(1000)); }

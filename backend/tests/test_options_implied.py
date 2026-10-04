@@ -1,4 +1,3 @@
-"""Options-implied probability math vs hand-computed values (app/options/implied.py)."""
 import math
 from statistics import NormalDist
 
@@ -10,7 +9,7 @@ from app.options.implied import (bracket, delta_prob, flip, forward_from_parity,
 
 NAN = math.nan
 T, R = 0.25, 0.04
-DF = math.exp(-R * T)  # 0.990049834
+DF = math.exp(-R * T)
 
 
 def q(mid=NAN, bid=NAN, ask=NAN, iv=NAN, delta=NAN):
@@ -27,7 +26,6 @@ def test_call_spread_centred_on_listed_strike_matches_hand_computation():
     res = implied_prob_above(calls_slice(), 150.0, T, R)
     assert res["method"] == "call_spread"
     assert (res["k_lo"], res["k_hi"], res["center"]) == (145.0, 155.0, 150.0)
-    # (C(145) - C(155)) / (2h) = (8 - 3) / 10 = 0.5 discounted; undiscount by DF
     assert res["prob"] == pytest.approx(0.5 / DF, rel=1e-12)
     assert res["prob"] == pytest.approx(0.5050252, abs=1e-6)
     assert res["spread_mid"] == pytest.approx(5.0)
@@ -36,8 +34,8 @@ def test_call_spread_centred_on_listed_strike_matches_hand_computation():
 
 def test_bid_ask_bounds_bracket_the_mid_estimate():
     res = implied_prob_above(calls_slice(), 150.0, T, R)
-    assert res["lo"] == pytest.approx((7.9 - 3.1) / 10 / DF)   # sell the spread: bid(k1) - ask(k2)
-    assert res["hi"] == pytest.approx((8.1 - 2.9) / 10 / DF)   # buy the spread: ask(k1) - bid(k2)
+    assert res["lo"] == pytest.approx((7.9 - 3.1) / 10 / DF)
+    assert res["hi"] == pytest.approx((8.1 - 2.9) / 10 / DF)
     assert res["lo"] < res["prob"] < res["hi"]
     assert (res["spread_bid"], res["spread_ask"]) == (pytest.approx(4.8), pytest.approx(5.2))
 
@@ -67,7 +65,6 @@ def test_put_call_parity_fallback_from_put_spread():
     sl = {145.0: {"put": q(2.0, 1.9, 2.1)}, 155.0: {"put": q(6.5, 6.4, 6.6)}}
     res = implied_prob_above(sl, 150.0, T, R)
     assert res["method"] == "put_spread_parity"
-    # digital call + digital put = DF  =>  P(above) = 1 - (P(155) - P(145)) / (10 DF)
     assert res["prob"] == pytest.approx(1 - 0.45 / DF)
     assert res["lo"] == pytest.approx(1 - (6.6 - 1.9) / 10 / DF)
     assert res["hi"] == pytest.approx(1 - (6.4 - 2.1) / 10 / DF)
@@ -88,7 +85,7 @@ def test_delta_approximation_n_d2():
     res = implied_prob_above(calls_slice(), 150.0, T, R)
     assert res["delta"] == pytest.approx(0.5)
     assert res["iv"] == pytest.approx(0.30)
-    assert res["delta_prob"] == pytest.approx(NormalDist().cdf(0.0 - 0.30 * math.sqrt(T)))  # N(-0.15) = 0.4404
+    assert res["delta_prob"] == pytest.approx(NormalDist().cdf(0.0 - 0.30 * math.sqrt(T)))
     assert res["delta_prob"] == pytest.approx(0.440382, abs=1e-6)
 
 
@@ -101,15 +98,14 @@ def test_delta_used_when_no_spread_prices():
 
 def test_delta_prob_edge_cases():
     assert math.isnan(delta_prob(NAN, 0.3, T))
-    assert delta_prob(0.42, NAN, T) == pytest.approx(0.42)   # no IV: |delta| proxy
-    assert delta_prob(1.7, 0.3, T) == 1.0                    # clamped, not extrapolated
-    # put delta via parity: call delta = 1 + put delta
+    assert delta_prob(0.42, NAN, T) == pytest.approx(0.42)
+    assert delta_prob(1.7, 0.3, T) == 1.0
     sl = {145.0: {"put": q(delta=-0.4)}, 155.0: {"put": q(delta=-0.6)}}
     assert implied_prob_above(sl, 150.0, T, R)["delta"] == pytest.approx(0.5)
 
 
 def test_arbitrage_violating_spread_is_rejected_not_clamped():
-    sl = {145.0: {"call": q(3.0)}, 155.0: {"call": q(8.0)}}   # call price rising in strike: impossible
+    sl = {145.0: {"call": q(3.0)}, 155.0: {"call": q(8.0)}}
     res = implied_prob_above(sl, 150.0, T, R)
     assert math.isnan(res["prob"]) and res["method"] is None
     assert any("no-arbitrage" in n for n in res["notes"])
@@ -117,7 +113,7 @@ def test_arbitrage_violating_spread_is_rejected_not_clamped():
 
 @pytest.mark.parametrize("sl,K,Tt", [
     ({}, 150.0, T),
-    (calls_slice(), 500.0, T),                        # outside listed strikes
+    (calls_slice(), 500.0, T),
     (calls_slice(), NAN, T),
     (calls_slice(), 150.0, NAN),
     ({145.0: {"call": None}, 155.0: {}}, 150.0, T),
@@ -142,9 +138,9 @@ def test_nearest_expiry_to_resolution_date():
     ex = ["2026-12-18", "2026-12-24", "2027-01-15"]
     assert nearest_expiry(ex, "2026-12-31") == "2026-12-24"
     assert nearest_expiry(ex, "2027-01-10") == "2027-01-15"
-    assert nearest_expiry(["2026-12-28", "2027-01-03"], "2026-12-31") == "2027-01-03"  # tie -> later (covers it)
+    assert nearest_expiry(["2026-12-28", "2027-01-03"], "2026-12-31") == "2027-01-03"
     assert nearest_expiry(ex, "2026-12-31", as_of="2026-12-20") == "2026-12-24"
-    assert nearest_expiry(ex, "2026-12-01", as_of="2027-02-01") is None   # all expired
+    assert nearest_expiry(ex, "2026-12-01", as_of="2027-02-01") is None
     assert nearest_expiry([], "2026-12-31") is None
     assert nearest_expiry(ex, "garbage") is None
 

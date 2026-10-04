@@ -1,5 +1,3 @@
-"""The mechanism registry (backend/app/closed/evidence.py): one entry per mechanism, statuses as the brief sets them,
-and every number with its range, its sample and a result file it was copied from (checked against that file)."""
 from __future__ import annotations
 
 import json
@@ -25,7 +23,7 @@ def _all_numbers():
 
 def _floats(text: str) -> list[float]:
     text = text.replace("−", "-")
-    text = re.sub(r"(?<=\d),(?=\d{3}\b)", "", text)  # 7,111 -> 7111
+    text = re.sub(r"(?<=\d),(?=\d{3}\b)", "", text)
     return [float(x) for x in re.findall(r"-?\d+(?:\.\d+)?(?:[eE]-?\d+)?", text)]
 
 
@@ -48,7 +46,6 @@ def test_one_entry_per_mechanism_with_the_statuses_of_the_brief():
     assert by["touch"]["status"] == ev.OPEN_LEAD
     assert by["btc_15min"]["status"] == ev.WATCH_ONLY
     assert by["other"]["status"] == ev.NO_TESTED_MECHANISM
-    # the generic fit stays available, labelled unvalidated; FAILED is kept for what is never offered (S25)
     assert by["generic_ai_fit"]["status"] == ev.UNVALIDATED_AVAILABLE == "UNVALIDATED"
     assert by["generic_ai_fit"]["status_label"] == "Unvalidated: walk-forward test failed"
     assert by["ticket_option_hedge"]["status"] == ev.FAILED
@@ -65,7 +62,7 @@ def test_actions_allowed_follow_the_brief():
     assert by["ladders"]["mode"] == "proposals_with_approval" and by["ladders"]["requires_approval"]
     assert by["touch"]["mode"] == "proposals_behind_acknowledgement"
     assert by["touch"]["requires_acknowledgement"] and by["touch"]["requires_approval"]
-    assert "hedge" in by["touch"]["text"]  # says the option-spread hedge is not offered
+    assert "hedge" in by["touch"]["text"]
     assert by["btc_15min"] == {**by["btc_15min"], "mode": "watch_only", "trade": False, "proposals": False}
     assert by["other"]["mode"] == "none" and not by["other"]["trade"] and not by["other"]["proposals"]
     assert by["generic_ai_fit"]["mode"] == "available_unvalidated" and by["generic_ai_fit"]["requires_acknowledgement"]
@@ -86,7 +83,7 @@ def test_every_number_has_a_range_a_sample_and_a_result_file(mid, n):
     assert rf.startswith("research/results/")
     on_disk = (REPO / rf).is_file()
     assert n["result_file_on_disk"] is on_disk
-    if not on_disk:  # only two files live off main; both name the branch and commit that hold them
+    if not on_disk:
         assert n.get("source_branch") and n.get("source_commit"), rf
         assert rf in (ev.S25, ev.LATENCY)
 
@@ -163,11 +160,9 @@ def test_mechanism_for_each_contract_type():
     assert ev.mechanism_for("ladder_rung")["trade_mechanism"] is True
     assert ev.mechanism_for("touch_ticket")["id"] == "touch"
     assert ev.mechanism_for("touch_ticket")["actions_allowed"]["requires_acknowledgement"] is True
-    # close-above tickets are not one of the brief's mechanisms: no tested mechanism, never the foundation's tag
     ca = ev.mechanism_for("close_above_ticket")
     assert ca["id"] == "other" and ca["status"] == ev.NO_TESTED_MECHANISM and ca["trade_mechanism"] is False
     assert ev.REFERENCE_FOR["close_above_ticket"] == "foundation"
-    # the classifier's BTC watch mechanism reaches the watch-only entry
     for k in ("btc_15m_watch", "btc_15min"):
         b = ev.mechanism_for(k)
         assert b["id"] == "btc_15min" and b["status"] == ev.WATCH_ONLY and b["trade_mechanism"] is False

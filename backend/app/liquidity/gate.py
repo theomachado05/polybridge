@@ -1,15 +1,3 @@
-"""The liquidity gate every order passes (bridges, staged hedge B, hedge A's PM leg, opportunity option legs).
-
-Each check returns a dict with ``status``:
-  ``within_caps``  the order fits; ``allowed`` = the order
-  ``capped``       ``reason: "liquidity_capped"``, ``allowed`` < the order, ``limit`` names the cap that bound and
-                   ``limit_qty`` its size (``rule`` in words); ``capped_from`` the order as asked
-  ``unknown``      no liquidity numbers (no Massive key, not fetched yet, a replay tick with no book depth): the order
-                   is not capped and says so (``note``)
-
-Equity checks read only cached numbers (``service.cached_equity``); the per-day cap sums every order of the ticker in
-the same ET session date and scope (the account, or one replay sandbox), filled or not (participation is what we send).
-"""
 from __future__ import annotations
 
 import math
@@ -46,7 +34,6 @@ def _capped(qty: float, cap: float, limit: str, rule: str, **extra) -> dict:
 
 
 def equity_check(app, ticker: str, qty: float, *, scope: str = "account", day: str | None = None) -> dict:
-    """Cap one equity order by 10% of the opening 5-minute volume and by what is left of 1% of ADV today."""
     svc = service_for(app)
     raw, age = svc.cached_equity(ticker)
     if raw is None:
@@ -69,13 +56,11 @@ def equity_check(app, ticker: str, qty: float, *, scope: str = "account", day: s
 
 
 def record_equity(app, ticker: str, qty: float, *, scope: str = "account", day: str | None = None) -> None:
-    """Count an order sent toward the ticker's per-day participation (both sides)."""
     if qty and qty > 0:
         _ledger(app)[(scope, ticker.upper(), day or session_day())] += float(qty)
 
 
 def option_check(quotes: Iterable[Any], qty: float) -> dict:
-    """Cap a multi-leg option order: every leg <= 10% of its daily volume and <= 5% of its open interest."""
     caps = []
     for q in quotes:
         lim = m.option_limits(m.fin(getattr(q, "volume", None)), m.fin(getattr(q, "open_interest", None)))
@@ -92,7 +77,6 @@ def option_check(quotes: Iterable[Any], qty: float) -> dict:
 
 
 def pm_check(fields: dict, side: str, qty: float) -> dict:
-    """Cap a PM order at 50% of the depth within 2 cents of the mid on the side taken (the tick's book levels)."""
     bids, asks = m.book_levels(fields, "bid"), m.book_levels(fields, "ask")
     if not bids or not asks:
         return {"status": "unknown", "allowed": qty, "note": UNKNOWN_PM}
@@ -107,8 +91,6 @@ def pm_check(fields: dict, side: str, qty: float) -> dict:
 
 
 def tag(rec: dict, check: dict) -> None:
-    """Attach a check's outcome to an order / fill record: ``liquidity`` always, and a ``gates`` entry
-    ``{reason: "liquidity_capped", limit, limit_qty, capped_from}`` when it capped the order."""
     rec["liquidity"] = {k: v for k, v in check.items() if k not in ("allowed",)}
     if check.get("status") == "capped":
         rec.setdefault("gates", []).append({"reason": LIQUIDITY_CAPPED, "limit": check["limit"],

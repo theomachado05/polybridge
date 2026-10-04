@@ -1,7 +1,3 @@
-"""Frozen Polymarket frame (METHOD.md section 1). Reads listing metadata only, never a price or outcome field.
-
-    cd research && .venv/bin/python -m fresh_accuracy.freeze
-"""
 from __future__ import annotations
 
 import csv

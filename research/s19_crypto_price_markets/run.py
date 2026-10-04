@@ -1,9 +1,3 @@
-"""S19: S18's test at traded prices, on crypto price markets (METHOD.md).
-
-Run from `research/`:
-    python -m s19_crypto_price_markets.run --pull     # prints of at least $50 in each market's first 48 hours (not committed)
-    python -m s19_crypto_price_markets.run            # the sellers' and buyers' tests and the two books
-"""
 from __future__ import annotations
 
 import json

@@ -17,7 +17,6 @@ import { accountPill } from "@/lib/risk";
 interface Row {
   t: string; name: string; shares: number; px: number | null; verdict: string | null;
   engineBridge: string | null; touching: number;
-  /** Broker book for this ticker (not the demo shares) and whether the broker can short it now. */
   brokerQty?: number | null; canShort?: boolean | null; shortReason?: string | null;
 }
 interface Fill { key: string; ts: number; time: string; side: string; color: string; qty: number; ticker: string; px: string; via: string }
@@ -56,7 +55,6 @@ export default function Portfolio() {
   const totalValue = s.portfolio.data?.total_value != null ? s.portfolio.data.total_value : anyPriced ? summed : null;
   const filled = (orders.data ?? []).filter((o) => !o.status || /fill/i.test(o.status));
   const orderFees = (orders.data ?? []).reduce((a, o) => a + (o.fee ?? 0), 0);
-  // Account fees and fills only, and coverage from the real exposure figures.
   const exposures = (realHoldings ?? []).filter((h) => h.exposure);
   const isBridged = (h: Holding) => h.hedge.status === "bridging" || engineBridgeFor(h, s.bridges) != null;
   const realCover = exposures.length

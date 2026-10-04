@@ -1,4 +1,3 @@
-"""Scoring of the frozen trade list (METHOD.md sections 4-5). Pure given data frames."""
 from __future__ import annotations
 
 import numpy as np
@@ -36,7 +35,6 @@ def day_mean_summary(values, days, seed: int = C.SEED) -> dict:
 
 
 def score(trades: pd.DataFrame, evals: pd.DataFrame, mid_trades: pd.DataFrame | None = None) -> dict:
-    """trades: frozen rows with y, fee_enabled, fee_rate, fee_exp. evals: evaluated prints with y."""
     out: dict = {}
     prim = trades[trades["tau"].round(4) == round(C.TAU, 4)]
     prim = add_pnl(prim, C.TICK)

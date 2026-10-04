@@ -1,10 +1,3 @@
-"""Writes the pre-registered event list (events.yaml, before market ids are resolved).
-
-Run once, then `python -m leadlag.resolve` fills in condition ids / token ids from the gamma API.
-The event set, windows, mapped instruments and expected signs below were fixed before any price series was
-looked at (see METHOD.md). Window = [anchor - 60 min, anchor + 150 min] for the scheduled FOMC events; curated
-events carry explicit windows (always inside the extended equity session, 04:00-20:00 ET).
-"""
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
@@ -26,7 +19,6 @@ def fmt(d: datetime) -> str:
 RATE_ETFS = ["SPY", "QQQ", "IWM", "XLF", "TLT"]
 BROAD = ["SPY", "QQQ", "IWM", "XLY", "XLF"]
 
-# (id, anchor UTC, event slug of the NEXT meeting's decision market): scheduled FOMC statements, 14:00 ET
 FOMC = [
     ("fomc-2024-09-18", "2024-09-18 18:00", "fed-interest-rates-november-2024"),
     ("fomc-2024-11-07", "2024-11-07 19:00", "fed-interest-rates-december-2024"),

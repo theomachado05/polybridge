@@ -1,4 +1,3 @@
-"""SUMMARY.md and the decomposition chart (METHOD.md section 6)."""
 from __future__ import annotations
 
 from pathlib import Path

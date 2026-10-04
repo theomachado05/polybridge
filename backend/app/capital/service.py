@@ -1,20 +1,3 @@
-"""Capital controls at run time: the account snapshot, the hedge exposure per event, and the pre-trade check.
-
-Exposure (account scope; a replay sandbox never touches the account):
-  equity hedges     each proposal's short at the account (its latest bridge's ``account_hedge``) at the latest price
-                    the bridge saw (else the cached Massive price), plus the unfilled part of its resting sell
-  staged hedge B    approved / working wall-clock staged sells, the part not filled yet, at their reference price
-  option structures an opportunity bridge's open structures at their risk (premium or max loss)
-  broker shorts     the broker's own short equity positions: the gross figure is never below them (a short left by an
-                    earlier server run is not forgotten because the in-memory bridges are)
-An event is one prediction market (``source:id``).
-
-Contingencies: the account is read with a bound (8 s) and cached 10 s; an account that cannot be read refuses every
-exposure-increasing order (fail closed) and GET /capital says why; an order is priced from the tick / bridge / plan,
-else the cached Massive price, else the broker's own position mark or quote (``order_price``), and an exposure-
-increasing order with no price at all is refused at the account (fail closed, breach ``no_price``); a replay sandbox
-is evaluated against its own simulator and labelled ``enforced: false`` (no account capital is at risk there), and an
-unpriced sandbox order passes labelled unchecked. A broker with no account read (a test fake) is labelled unchecked."""
 from __future__ import annotations
 
 import asyncio
@@ -57,10 +40,6 @@ NO_PRICE = "no_price"
 
 
 async def order_price(app, broker, ticker: str | None, *cands: Any) -> tuple[float | None, str | None]:
-    """(price, source) to size an equity order's notional for the budget: a candidate the caller has (the tick, the
-    bridge's last price, the plan's reference), else the cached Massive price, else the broker's own mark of a
-    position it holds in the ticker (Webull lists last_price on its positions), else the broker's quote provider.
-    (None, None) when nothing gives one: the caller fails closed at the account (``check`` with add_notional None)."""
     for c in cands:
         v = b.fin(c)
         if v is not None and v > 0:
@@ -95,8 +74,6 @@ async def order_price(app, broker, ticker: str | None, *cands: Any) -> tuple[flo
 
 
 def _no_price(scope: str) -> dict:
-    """An exposure-increasing order whose notional is unknown. At the account it is refused (fail closed: an unpriced
-    order would bypass the gross / per-event budget); in a replay sandbox it passes, labelled unchecked."""
     if scope != "account":
         return {"ok": True, "enforced": False, "checked": False, "scope": scope,
                 "note": "replay sandbox: no price for this order, so its notional is unknown; not checked (no account "
@@ -109,8 +86,6 @@ def _no_price(scope: str) -> dict:
 
 
 async def account_snapshot(app, broker, refresh: bool = False) -> dict:
-    """{checked, read_ok, equity, cash, buying_power, broker, short_notional, age_s, error}. ``checked`` False: the
-    broker has no account read (a test fake) or returned nothing; ``read_ok`` False: the read failed (fail closed)."""
     if broker is None:
         return {"checked": False, "read_ok": False, "error": "no broker"}
     cache = getattr(app.state, "capital_accounts", None)
@@ -131,7 +106,7 @@ async def account_snapshot(app, broker, refresh: bool = False) -> dict:
     except Exception as e:
         snap = {"checked": True, "read_ok": False, "broker": getattr(broker, "name", None),
                 "error": f"account read failed ({getattr(e, 'message', None) or type(e).__name__})"}
-        if hit is not None and hit[1].get("read_ok"):  # serve the last good read, labelled, for one TTL more
+        if hit is not None and hit[1].get("read_ok"):
             if now - hit[0] < 6 * ACCOUNT_TTL_S:
                 return {**hit[1], "age_s": round(now - hit[0], 1), "stale": True, "error": snap["error"]}
         return snap
@@ -159,14 +134,11 @@ async def account_snapshot(app, broker, refresh: bool = False) -> dict:
 
 
 def bp_basis(broker) -> str:
-    """How the broker's buying power is denominated: the simulator's is excess cash after 50% short collateral
-    (compare the initial margin); a real margin account's (Webull) is notional purchasing power (compare notional)."""
     from ..broker import SimBroker
     return "margin" if isinstance(broker, SimBroker) else "notional"
 
 
 def exposures(app, exclude_staged: str | None = None) -> dict:
-    """Account-scope hedge exposure: {gross_usd, equity_usd, staged_usd, option_usd, events {key: {...}}, unpriced}."""
     events: dict[str, dict] = {}
     unpriced: list[str] = []
 
@@ -226,15 +198,11 @@ def exposures(app, exclude_staged: str | None = None) -> dict:
 
 
 def _staged_event(o) -> str | None:
-    """A staged order's event: its tracker market key ("source:id")."""
     return o.market_key
 
 
 async def check(app, *, broker, event: str | None, add_notional: float | None, add_margin: float | None,
                 scope: str = "account", sandbox_gross: float = 0.0, exclude_staged: str | None = None) -> dict:
-    """Pre-trade check of one exposure-increasing order. {ok, enforced, scope, checked, breaches, reason?, ...}.
-    ``ok`` False with ``enforced`` True means refuse (reason ``capital_budget``). ``add_notional`` None: the order has
-    no price; refused at an account the broker can read (fail closed), unchecked in a replay sandbox."""
     lim = b.limits(app)
     if add_notional is not None and add_notional <= 0 and (add_margin or 0.0) <= 0:
         return {"ok": True, "enforced": False, "checked": False, "scope": scope, "note": "reduces exposure"}
@@ -252,7 +220,7 @@ async def check(app, *, broker, event: str | None, add_notional: float | None, a
         ex = exposures(app, exclude_staged=exclude_staged)
         gross = max(ex["gross_usd"], (snap.get("short_notional") or 0.0) + ex["staged_usd"] + ex["option_usd"])
         event_now = (ex["events"].get(event or "unattributed") or {}).get("total_usd", 0.0)
-    else:  # a replay sandbox: its own simulator and this bridge's own exposure
+    else:
         gross = event_now = sandbox_gross
     res = b.evaluate(equity=snap.get("equity") if snap.get("read_ok") else None,
                      buying_power=snap.get("buying_power"), gross_now=gross, event_now=event_now,
@@ -274,7 +242,6 @@ def refused(chk: dict) -> bool:
 
 
 def tag(rec: dict, chk: dict) -> None:
-    """Attach a capital check to an order / fill record (``capital``), and a ``gates`` entry when it refused."""
     rec["capital"] = {k: chk.get(k) for k in ("ok", "enforced", "checked", "scope", "breaches", "note", "reason",
                                               "add_notional", "add_margin") if k in chk}
     if not chk.get("ok", True):
@@ -287,7 +254,6 @@ def refusal_text(chk: dict) -> str:
 
 
 async def snapshot(app, broker) -> dict:
-    """GET /capital: the account, the budget in force, the exposure per event, margin used and breaches."""
     lim = b.limits(app)
     snap = await account_snapshot(app, broker, refresh=True)
     ex = exposures(app)
@@ -318,8 +284,6 @@ async def snapshot(app, broker) -> dict:
     if snap.get("checked") and not snap.get("read_ok"):
         breaches.append({"kind": "account_unreadable", "detail": snap.get("error")})
     return {"broker": snap.get("broker") or getattr(broker, "name", None), "account_read": snap.get("read_ok", False),
-            # account_checked False: the broker has no account read, so the budget is not enforced (not fail-closed);
-            # account_stale True: the live read failed and this is the last good read, served for one more TTL.
             "account_checked": bool(snap.get("checked")), "account_stale": bool(snap.get("stale")),
             "account_age_s": snap.get("age_s"),
             "account_error": snap.get("error"), "account_type": snap.get("account_type"),

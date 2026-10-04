@@ -1,15 +1,3 @@
-"""Touch-ticket forward test: the procedure of ``research/touch_fresh/FORWARD.md``, wired here without changing it.
-
-``research/touch_fresh/forward.py`` is the frozen runner (stages snapshot, prints, evaluate). This module:
-
-* ``list_state()``: lists the "will it hit" markets listed from 2026-10-05 (forward.open_markets, unchanged), parses
-  each with the S21 parser, and records which of them can enter the book on their first weekend. Reads only.
-  No order is placed and no option quote is fetched.
-* ``run_stage(stage)``: calls the frozen runner's snapshot / prints / evaluate with its log directory redirected to
-  ``backend/data_forward/touch/`` (the runner writes ``forward_log/`` and ``.cache_forward/`` next to itself by default).
-
-Timing is the runner's: the snapshot is only taken on a market's first Friday at 15:55 New York; prints after Sunday 20:00.
-"""
 from __future__ import annotations
 
 import contextlib
@@ -35,15 +23,13 @@ def _modules() -> dict[str, Any]:
 
 
 def classify_market(m: dict, mods: dict[str, Any]) -> dict:
-    """One listed market's state under FORWARD.md: parsed or why not, its first-weekend entry Friday, and whether its
-    window ends after that Friday (the rule's condition). The Sunday $10,000 volume floor is not applied here."""
     eg, cfg, universe = mods["eg"], mods["cfg"], mods["universe"]
     rec = {k: m.get(k) for k in ("id", "event", "event_title", "asset_class", "question", "label", "start")}
     p, why = eg.parse_market(m)
     if p is None:
         return {**rec, "parsed": False, "reason": why, "eligible": False}
     es = date.fromisoformat(p["end_session"])
-    while es.isoformat() in cfg.HOLIDAYS or es.weekday() >= 5:  # FORWARD.md amendment: step back over holidays
+    while es.isoformat() in cfg.HOLIDAYS or es.weekday() >= 5:
         es -= timedelta(days=1)
     day, at = universe.entry_instant(m["start"])
     ok = es > day
@@ -55,7 +41,6 @@ def classify_market(m: dict, mods: dict[str, Any]) -> dict:
 
 def list_state(now: datetime | None = None, base: Path | None = None, open_markets: Callable[[], list[dict]] | None = None,
                mods: dict[str, Any] | None = None) -> dict:
-    """List the eligible markets and record the state. Returns the summary written to ``snapshots/<stamp>.json``."""
     base = (base or data_dir()) / "touch"
     now = now or datetime.now(timezone.utc)
     st = stamp(now)
@@ -90,8 +75,6 @@ def list_state(now: datetime | None = None, base: Path | None = None, open_marke
 
 
 def run_stage(stage: str, base: Path | None = None, mods: dict[str, Any] | None = None, now: datetime | None = None) -> dict:
-    """Call one frozen stage with its log and cache redirected under ``data_forward/touch``. Returns what it printed and
-    the log row counts; also written to ``snapshots/stage_<stage>_<stamp>.json``."""
     if stage not in STAGES:
         raise ValueError(f"stage must be one of {STAGES}")
     base = (base or data_dir()) / "touch"
@@ -99,7 +82,7 @@ def run_stage(stage: str, base: Path | None = None, mods: dict[str, Any] | None 
     mods = mods or _modules()
     fw = mods["forward"]
     old = (fw.HERE, fw.LOG)
-    fw.HERE, fw.LOG = base, base / mods["fc"].LOG_DIR  # the runner builds its cache path from HERE and logs to LOG
+    fw.HERE, fw.LOG = base, base / mods["fc"].LOG_DIR
     buf = io.StringIO()
     try:
         with contextlib.redirect_stdout(buf):

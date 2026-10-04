@@ -1,4 +1,3 @@
-"""Remote (tunnelled) writes need X-Agent-Secret; local use (browser on localhost, tests) is unchanged."""
 import pytest
 from fastapi.testclient import TestClient
 
@@ -38,14 +37,14 @@ def test_a_cloudflare_or_plain_host_header_counts_as_remote(c, monkeypatch):
     monkeypatch.delenv("AGENT_TOOL_SECRET", raising=False)
     assert c.post("/account/reset", headers={"cf-connecting-ip": "1.2.3.4"}).status_code == 401
     assert c.post("/account/reset", headers={"host": "my-tunnel.trycloudflare.com"}).status_code == 401
-    assert c.post("/account/reset").status_code == 200  # local: unchanged
+    assert c.post("/account/reset").status_code == 200
 
 
 def test_remote_order_with_the_secret_cannot_choose_its_fill_price(c, monkeypatch):
     monkeypatch.setenv("AGENT_TOOL_SECRET", "s3")
     r = c.post("/orders", json={"symbol": "SPY", "asset": "equity", "side": "buy", "qty": 10, "ref_px": 0.01},
                headers={**TUNNEL, "x-agent-secret": "s3"})
-    assert r.status_code == 422 and "no_price" in r.json()["detail"]  # ref_px dropped; tests have no quote source
+    assert r.status_code == 422 and "no_price" in r.json()["detail"]
 
 
 def test_host_name_parsing():

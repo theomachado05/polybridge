@@ -1,11 +1,3 @@
-"""Bar-by-bar engine (METHOD.md sections 1-5). Pure: no network, no file I/O.
-
-Per session D (the open day of closure t = (previous session, D)):
-  1. read each participating market's PM as-of T_close and as-of the signal instant (points after it are never read);
-  2. gate and rate from the RecordStore filtered to records known at or before T_close (look-ahead rule, section 2);
-  3. size the hedge (product rule), trade at the entry price, cover at the exit price, pay costs;
-  4. only then add closure t's records (known at t's 09:30 open) to the store.
-"""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -18,14 +10,10 @@ from leadlag_replication.closures import EARLY_CLOSES
 
 from .config import PARAMS, TZ
 
-RTH_START, RTH_END, RTH_END_EARLY = 570, 960, 780  # minutes after midnight ET
-
-
-# ---------------------------------------------------------------- PM as-of
+RTH_START, RTH_END, RTH_END_EARLY = 570, 960, 780
 
 
 def pm_at(points: list[tuple[int, float]], t: pd.Timestamp, stale_min: int = PARAMS.pm_stale_min) -> float:
-    """Last CLOB point with timestamp <= t (pp); NaN if none within stale_min minutes before t."""
     ts = int(t.timestamp())
     best = None
     for tt, p in points:
@@ -40,13 +28,7 @@ def et_instant(day: pd.Timestamp, hm: tuple[int, int]) -> pd.Timestamp:
     return (pd.Timestamp(day).normalize().tz_localize(TZ) + pd.Timedelta(hours=hm[0], minutes=hm[1])).tz_convert("UTC")
 
 
-# ---------------------------------------------------------------- SPY per-session measures
-
-
 def session_measures(bars: pd.DataFrame, sessions: list[pd.Timestamp], early_closes=EARLY_CLOSES) -> pd.DataFrame:
-    """One row per session: regular-session close and its end instant, first-bar open, 10:00 price, 08:00 price,
-    5-minute opening and pre-market dollar volume. NaN where a bar is missing (never imputed). On 13:00 early-close
-    days the regular session ends at 13:00, so post-market bars are not read as the close."""
     et = bars.index.tz_convert(TZ)
     day = et.normalize().tz_localize(None)
     mins = et.hour * 60 + et.minute
@@ -80,11 +62,7 @@ def session_measures(bars: pd.DataFrame, sessions: list[pd.Timestamp], early_clo
     return pd.DataFrame(rows).set_index("day")
 
 
-# ---------------------------------------------------------------- rate, gate, sizing
-
-
 def fit_rate(x, g) -> dict:
-    """Through-origin rate with HC3 SE (same estimator as research/gap_model/model.py)."""
     x, g = np.asarray(x, float), np.asarray(g, float)
     n_nz = int((x != 0).sum())
     sxx = float((x ** 2).sum())
@@ -99,14 +77,12 @@ def fit_rate(x, g) -> dict:
 
 
 def gate(x, g, n_min: int = PARAMS.n_min, t_min: float = PARAMS.t_min) -> tuple[bool, dict]:
-    """Section 3: >= n_min non-zero records, rate > 0, HC3 t >= t_min."""
     f = fit_rate(x, g)
     ok = f["n_nonzero"] >= n_min and np.isfinite(f["rate"]) and f["rate"] > 0 and np.isfinite(f["t"]) and f["t"] >= t_min
     return bool(ok), f
 
 
 def hedge_fraction(e_bp: float, p=PARAMS) -> float:
-    """Product size_hedge on the point estimate: 0 unless E <= -min_gap; then coverage x min(1, -E/full)."""
     if not np.isfinite(e_bp) or e_bp > -p.min_gap_bp:
         return 0.0
     return p.target_coverage * min(1.0, -e_bp / p.full_size_gap_bp)
@@ -114,7 +90,6 @@ def hedge_fraction(e_bp: float, p=PARAMS) -> float:
 
 @dataclass
 class RecordStore:
-    """Training records (market, x, gap) each stamped with the instant it became known."""
     market: list = field(default_factory=list)
     x: list = field(default_factory=list)
     g: list = field(default_factory=list)
@@ -136,15 +111,12 @@ class RecordStore:
         return np.asarray(self.x)[m], np.asarray(self.g)[m]
 
 
-# ---------------------------------------------------------------- the loop
-
-
 @dataclass(frozen=True)
 class Variant:
     name: str
-    gating: bool = True          # False: V2 rate rule
-    premarket: bool = False      # V1
-    unwind_close: bool = False   # V3
+    gating: bool = True
+    premarket: bool = False
+    unwind_close: bool = False
 
 
 VARIANTS = {
@@ -157,7 +129,6 @@ VARIANTS = {
 
 
 def market_rate(store: RecordStore, market: str, as_of: pd.Timestamp, v: Variant, p=PARAMS) -> tuple[float, str, dict]:
-    """(rate or NaN, source, fit). Primary: gate. V2: own if n_nz >= n_min else pooled if n_nz >= n_min."""
     x, g = store.available(as_of, market)
     if v.gating:
         ok, f = gate(x, g, p.n_min, p.t_min)
@@ -174,9 +145,6 @@ def market_rate(store: RecordStore, market: str, as_of: pd.Timestamp, v: Variant
 
 def run_loop(days: list[pd.Timestamp], meas: pd.DataFrame, markets: list[dict], part: dict, pm: dict,
              v: Variant, p=PARAMS) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Walk the sessions. `part[day]` = list of market slugs participating in the closure ending at `day`;
-    `pm[(slug, close_key)]` = CLOB points. Returns (signals: one row per day with the sizing decision and per-unit
-    prices; records: every training record with its known_at)."""
     sign = {m["market_slug"]: int(m["sign"]) for m in markets}
     store = RecordStore()
     out = []
@@ -217,7 +185,6 @@ def run_loop(days: list[pd.Timestamp], meas: pd.DataFrame, markets: list[dict], 
                     "driver": best["market"] if best else "", "rate": best["rate"] if best else np.nan,
                     "x_pp": best["x"] if best else np.nan, "E_bp": best["E_bp"] if best else np.nan,
                     "entry_px": entry, "exit_px": exit_, "gap_bp": gap})
-        # closure t's records become known at its 09:30 open, after this session's decision
         t_open = et_instant(d, (9, 30))
         for slug, x in new_records:
             store.add(slug, x, gap, t_open)
@@ -225,12 +192,8 @@ def run_loop(days: list[pd.Timestamp], meas: pd.DataFrame, markets: list[dict], 
     return pd.DataFrame(out).set_index("day"), rec
 
 
-# ---------------------------------------------------------------- books
-
-
 def books(days: list[pd.Timestamp], close: pd.Series, divs: pd.Series, sig: pd.DataFrame, cost_entry_bp: float,
           cost_exit_bp: float, book_usd: float = PARAMS.book_usd) -> pd.DataFrame:
-    """Daily equity of buy-and-hold and of the overlay. Shares bought at the first day's close; hedge P&L in cash."""
     shares = book_usd / float(close.loc[days[0]])
     rows, div_cash, hedge_cash = [], 0.0, 0.0
     for i, d in enumerate(days):

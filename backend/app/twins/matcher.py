@@ -1,21 +1,3 @@
-"""Propose candidate Polymarket <-> Kalshi pairs, then VERIFY each by comparing what the two markets resolve on.
-
-Proposal is cheap and loose (idf-weighted word overlap + a deadline window). Verification is strict and explicit:
-every check below must pass for a pair to enter the map.
-
-  subject    every proper noun / ticker in one question appears on the other side
-  threshold  the same numeric thresholds (value and unit); a threshold on one side only is not enough
-  period     explicit dates / months in the questions agree
-  deadline   resolution deadlines (America/New_York calendar date) within 1 day
-  direction  same direction words (above/below/raise/cut/no change), same negation, same boundary inclusivity.
-             An opposite direction is REFUSED (listed as ambiguous with reason ``direction_inverted``): the twin
-             map only ever pairs markets whose YES means the same outcome, so ``p_other_venue`` needs no flip.
-  source     the resolution sources both texts name (BLS, Fed, Binance, ...) overlap; price-snapshot markets
-             (crypto, indices, commodities) additionally need a shared named source, because a different
-             snapshot source or time is a different market.
-
-A hard failure rejects the pair; a soft one (can't tell / inverted / off by a few days) makes it ``ambiguous``.
-"""
 from __future__ import annotations
 
 import math
@@ -25,17 +7,14 @@ from datetime import datetime, timezone
 
 from .claims import Claim, days_between, stem
 
-MAX_DEADLINE_GAP_CANDIDATE = 7      # days: wider than this is never even ambiguous
-MAX_DEADLINE_GAP_VERIFIED = 1       # spec: same deadline within 1 day
+MAX_DEADLINE_GAP_CANDIDATE = 7
+MAX_DEADLINE_GAP_VERIFIED = 1
 MIN_CANDIDATE_SCORE = 0.40
 MIN_VERIFY_SCORE = 0.50
 TOP_K = 5
-MAX_DF = 3000                       # tokens more common than this are not used to propose candidates
+MAX_DF = 3000
 
 
-# Words that carry no resolution meaning, and groups of words that mean the same thing for resolution purposes.
-# Anything else that one question says and the other neither says nor has in its resolution text is a different
-# predicate (nominated vs confirmed, win vs be on the ballot, acquire vs buy) and blocks verification.
 NEUTRAL = frozenset(stem(w) for w in ("when", "become", "next", "about", "another", "new", "again", "still", "also",
                                       "ever", "yet", "case", "market", "question", "official", "officially",
                                       "interest"))
@@ -48,7 +27,6 @@ EQUIVALENT = [frozenset(stem(w) for w in g) for g in (
 
 
 def uncovered(a: Claim, b: Claim) -> list[str]:
-    """Content words of ``a`` that ``b`` neither shares, nor lists in its resolution text, nor has an equivalent of."""
     miss = []
     for t in sorted(a.tokens - b.tokens):
         if t.isdigit() or t in NEUTRAL or t in b.rules_tokens:
@@ -63,7 +41,7 @@ def uncovered(a: Claim, b: Claim) -> list[str]:
 class Check:
     name: str
     ok: bool
-    severity: str       # "hard" | "soft" (what a failure means); "ok" when it passed
+    severity: str
     detail: str
 
     def as_dict(self) -> dict:
@@ -72,10 +50,10 @@ class Check:
 
 @dataclass
 class Verdict:
-    status: str                         # "verified" | "ambiguous" | "rejected"
+    status: str
     score: float
     checks: list[Check] = field(default_factory=list)
-    reasons: list[str] = field(default_factory=list)   # names of failed checks (ambiguous/rejected)
+    reasons: list[str] = field(default_factory=list)
 
     @property
     def note(self) -> str:
@@ -92,7 +70,6 @@ def idf_table(claims: list[Claim]) -> dict[str, float]:
 
 
 def similarity(a: Claim, b: Claim, idf: dict[str, float]) -> float:
-    """idf-weighted Jaccard of the questions' content words."""
     union = a.tokens | b.tokens
     if not union:
         return 0.0
@@ -113,15 +90,12 @@ def verify(poly: Claim, kal: Claim, score: float) -> Verdict:
         f"question similarity {score:.2f}, shared: {' '.join(shared[:8]) or 'none'}",
         "hard" if score < MIN_CANDIDATE_SCORE or len(shared) < 2 else "soft")
 
-    # subject: proper nouns must be visible on the other side (its question or the start of its resolution text)
     miss_p = sorted(e for e in poly.entities if e not in kal.tokens and e not in kal.rules_tokens)
     miss_k = sorted(e for e in kal.entities if e not in poly.tokens and e not in poly.rules_tokens)
     add("subject", not miss_p and not miss_k,
         "entities agree" if not (miss_p or miss_k) else
         f"polymarket-only {miss_p or '-'}, kalshi-only {miss_k or '-'}", "hard")
 
-    # criteria: proper nouns in each side's resolution CONDITION (the opening of its rules) must appear on the other
-    # side ("if Ebola becomes a pandemic" is not "if the WHO declares any disease a pandemic")
     cp = sorted(e for e in poly.cond_entities if e not in kal.tokens and e not in kal.rules_tokens)
     ck = sorted(e for e in kal.cond_entities if e not in poly.tokens and e not in poly.rules_tokens)
     add("criteria", not cp and not ck,
@@ -129,14 +103,12 @@ def verify(poly: Claim, kal: Claim, score: float) -> Verdict:
         f"polymarket condition names {cp or '-'}, kalshi condition names {ck or '-'}, absent from the other side",
         "soft")
 
-    # predicate: what is being asked about the subject (nominated vs confirmed, win vs on the ballot, ...)
     up, uk = uncovered(poly, kal), uncovered(kal, poly)
     add("predicate", not up and not uk,
         "wording agrees" if not (up or uk) else
         f"polymarket-only words {up or '-'} / kalshi-only words {uk or '-'} not found in the other's resolution text",
         "soft")
 
-    # threshold
     if poly.numbers and kal.numbers:
         same = poly.numbers == kal.numbers
         add("threshold", same, f"{_fmt_nums(poly.numbers)} vs {_fmt_nums(kal.numbers)}", "hard")
@@ -145,7 +117,6 @@ def verify(poly: Claim, kal: Claim, score: float) -> Verdict:
     else:
         add("threshold", True, "no numeric threshold (event question)")
 
-    # explicit dates / months written in the questions
     if poly.periods and kal.periods:
         add("period", poly.periods == kal.periods, f"{sorted(poly.periods)} vs {sorted(kal.periods)}", "hard")
     elif poly.dates and kal.dates:
@@ -157,7 +128,6 @@ def verify(poly: Claim, kal: Claim, score: float) -> Verdict:
     else:
         add("period", True, "no explicit date in either question")
 
-    # deadline
     if poly.deadline and kal.deadline:
         gap = days_between(poly.deadline, kal.deadline)
         add("deadline", gap <= MAX_DEADLINE_GAP_VERIFIED,
@@ -166,7 +136,6 @@ def verify(poly: Claim, kal: Claim, score: float) -> Verdict:
     else:
         add("deadline", False, "a resolution deadline is unknown", "soft")
 
-    # direction
     pd, kd = set(poly.directions), set(kal.directions)
     if pd == kd:
         add("direction", True, f"both {'/'.join(sorted(pd)) or 'no direction word'}")
@@ -182,7 +151,6 @@ def verify(poly: Claim, kal: Claim, score: float) -> Verdict:
             and pd == kd and pd & {"up", "down"}):
         add("boundary", False, "one threshold is inclusive (at or above), the other exclusive (above)", "soft")
 
-    # resolution source
     common = poly.sources & kal.sources
     if poly.sources and kal.sources and not common:
         add("source", False, f"resolution sources differ: {sorted(poly.sources)} vs {sorted(kal.sources)}", "soft")
@@ -230,8 +198,6 @@ class Pair:
 
 
 def propose(polys: list[Claim], kals: list[Claim], idf: dict[str, float] | None = None) -> list[tuple[Claim, Claim, float]]:
-    """Candidate (poly, kalshi, score): shares >= 2 content words and a deadline within a week, top-K per Polymarket
-    market by similarity."""
     idf = idf or idf_table(polys + kals)
     index: dict[str, list[int]] = defaultdict(list)
     for i, k in enumerate(kals):
@@ -265,8 +231,6 @@ def propose(polys: list[Claim], kals: list[Claim], idf: dict[str, float] | None 
 
 
 def match_all(polys: list[Claim], kals: list[Claim]) -> list[Pair]:
-    """Propose + verify, then enforce one-to-one: a market that verifies against two different counterparts with
-    near-equal scores is ambiguous on both (we cannot tell which is the twin)."""
     idf = idf_table(polys + kals)
     pairs = [Pair(p, k, verify(p, k, s)) for p, k, s in propose(polys, kals, idf)]
     pairs = [x for x in pairs if x.verdict.status != "rejected"]
@@ -290,11 +254,8 @@ def match_all(polys: list[Claim], kals: list[Claim]) -> list[Pair]:
             for x in group[1:]:
                 if x.verdict.status == "verified":
                     x.verdict = Verdict("ambiguous", x.verdict.score, x.verdict.checks, ["weaker_counterpart"])
-    # a pair demoted via one side's group must stay demoted everywhere (it is the same object, so it already is)
     return pairs
 
 
 def utcnow_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
-
-

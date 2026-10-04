@@ -1,9 +1,3 @@
-"""S23: how much of the Monday fade exists at prices that traded (METHOD.md). No network: reads S6's committed trades,
-S6's cached prints, and the partner's trades through `git show`.
-
-Run from `research/`:
-    .venv/bin/python -m s23_monday_fade_real.run
-"""
 from __future__ import annotations
 
 import csv
@@ -25,9 +19,7 @@ ET = ZoneInfo(cfg.TZ)
 NAN = float("nan")
 
 
-# ----------------------------------------------------------------------------------------------- small pure pieces
 def snapshot_epoch(open_day: str) -> float:
-    """09:45:00 New York on the reopening day, as epoch seconds (daylight saving handled by the zone)."""
     return pd.Timestamp(f"{open_day} {cfg.SNAPSHOT_HM}", tz=ET).timestamp()
 
 
@@ -47,8 +39,6 @@ def window_of(m: float, windows=cfg.T1_WINDOWS) -> str | None:
 
 
 def yes_prints(prints: list[dict], t0: float, window_s: float = cfg.T2_WINDOW_S) -> list[dict]:
-    """Prints with t0 <= time <= t0 + window_s, in YES terms, in time order. A taker buying NO at x sold YES at 1 - x.
-    The API lists newest first, so within one second a later list position is the earlier print."""
     rows = []
     for i, t in enumerate(prints):
         ts = t.get("timestamp")
@@ -72,13 +62,10 @@ def yes_prints(prints: list[dict], t0: float, window_s: float = cfg.T2_WINDOW_S)
 
 
 def edge(side: str, entry: float, lo: float, hi: float, c: float = 1.0) -> float:
-    """How far the entry price is beyond the options band, after the fee."""
     return (entry - fee(entry, c) - hi) if side == "sell YES" else (lo - entry - fee(entry, c))
 
 
 def replay(rows: list[dict], side: str, lo: float, hi: float, c: float = 1.0, mode: str = "best") -> dict:
-    """METHOD.md section 3. mode "best": the lowest taker purchase of YES (for a buy) or the highest taker sale (for a
-    sale) in the window, one cent worse. mode "first": the first print in time order that still clears the threshold."""
     need = "SELL" if side == "sell YES" else "BUY"
     sgn = -1.0 if side == "sell YES" else 1.0
     cand = [r for r in rows if r["side"] == need and r["size"] > 0]
@@ -115,7 +102,6 @@ def capital_per_contract(side: str, entry: float) -> float:
 
 
 def partner_net(side: str, px: float, y: float, enabled: bool, rate: float, exp: float, c: float = 1.0) -> float:
-    """The partner's net P&L per $1 contract (reopen_taker/core.py::net) at c times its costs: c ticks and c fees."""
     q = px if side == "BUY" else 1.0 - px
     win = y if side == "BUY" else 1.0 - y
     f = rate * (q * (1.0 - q)) ** exp if (enabled and 0.0 < q < 1.0) else 0.0
@@ -123,7 +109,6 @@ def partner_net(side: str, px: float, y: float, enabled: bool, rate: float, exp:
 
 
 def boot_mean(values, clusters) -> dict:
-    """Pooled mean with a 95% percentile interval that resamples whole clusters (closures)."""
     v, cl = np.asarray(values, float), np.asarray(clusters)
     if len(v) == 0:
         return {"n": 0, "closures": 0, "mean": NAN, "lo": NAN, "hi": NAN}
@@ -139,7 +124,6 @@ def boot_mean(values, clusters) -> dict:
 
 
 def boot_diff(va, ca, vb, cb) -> dict:
-    """Mean of a minus mean of b; closures resampled jointly for both sides. Draws with an empty side are dropped."""
     va, vb, ca, cb = np.asarray(va, float), np.asarray(vb, float), np.asarray(ca), np.asarray(cb)
     if len(va) == 0 or len(vb) == 0:
         return {"diff": NAN, "lo": NAN, "hi": NAN, "dropped": 0, "closures": 0}
@@ -160,7 +144,6 @@ def boot_diff(va, ca, vb, cb) -> dict:
 
 
 def closure_sharpe(pnl_by_closure: dict[str, float], capital_by_closure: dict[str, float], calendar: list[str]) -> dict:
-    """Sharpe on closure returns (METHOD.md section 4): every closure of the calendar, zero when nothing traded."""
     K = max(capital_by_closure.values()) if capital_by_closure else 0.0
     if K <= 0 or len(calendar) < 3:
         return {"sharpe": NAN, "capital_base": K, "max_drawdown": NAN, "total_return": NAN, "worst_month": NAN, "per_closure_sharpe": NAN}
@@ -177,8 +160,6 @@ def closure_sharpe(pnl_by_closure: dict[str, float], capital_by_closure: dict[st
 
 
 def book(trades: list[dict], calendar: list[str]) -> dict:
-    """Metrics of a book. Each trade: closure, pnl ($), capital ($), printed ($ of printed size counted),
-    printed_uncapped ($ of printed size before the 100-contract cap)."""
     if not trades:
         return {"trades": 0, "closures_traded": 0, "calendar_closures": len(calendar), "mean": NAN, "lo": NAN, "hi": NAN, "total": 0.0,
                 "hit_rate": NAN, "sharpe": NAN, "capital_base": 0.0, "max_drawdown": NAN, "total_return": NAN, "worst_month": NAN,
@@ -229,7 +210,6 @@ def segments(calendar: list[str]) -> dict[str, list[str]]:
     return {"IS": [d for d in calendar if d < cfg.OOS_FROM], "OOS": [d for d in calendar if d >= cfg.OOS_FROM], "ALL": list(calendar)}
 
 
-# ----------------------------------------------------------------------------------------------- T1
 def load_partner() -> pd.DataFrame:
     blob = git("rev-parse", f"{cfg.PARTNER_COMMIT}:{cfg.PARTNER_TRADES}").strip()
     if blob != cfg.PARTNER_TRADES_BLOB:
@@ -303,13 +283,11 @@ def t1(d: pd.DataFrame, calendar: list[str]) -> tuple[list[dict], dict]:
 
 
 def t1_book(d: pd.DataFrame) -> list[dict]:
-    """The first-15-minute book: one contract per trade."""
     p = d[np.isclose(d.tau, cfg.T1_TAU) & (d.window == cfg.T1_EARLY)]
     return [{"closure": a.open_day, "pnl": a.net_1x, "capital": a.q + cfg.T1_TICK, "printed": a.size * (a.q + cfg.T1_TICK),
              "printed_uncapped": a.size * (a.q + cfg.T1_TICK)} for a in p.itertuples()]
 
 
-# ----------------------------------------------------------------------------------------------- T2
 def load_s6() -> pd.DataFrame:
     s = pd.read_csv(cfg.S6_TRADES)
     return s[(s.variant == cfg.S6_PRIMARY) & (s.cost_mult == cfg.S6_COST_MULT)].reset_index(drop=True)
@@ -386,7 +364,6 @@ def t2_metrics(recs: list[dict], calendar: list[str]) -> tuple[list[dict], dict]
     return rows, verdict
 
 
-# ----------------------------------------------------------------------------------------------- T3
 def staircase(s6: pd.DataFrame, t2_recs: list[dict], calendar: list[str]) -> list[dict]:
     modelled = [{"closure": r.closure, "pnl": float(r.pnl), "capital": float(r.capital),
                  "printed": min(float(r.verify_size), cfg.T2_MAX_CONTRACTS) * float(r.capital) / 100.0 if r.verified else 0.0,
@@ -404,7 +381,6 @@ def staircase(s6: pd.DataFrame, t2_recs: list[dict], calendar: list[str]) -> lis
     return [{"step": name, **book(tr, cal)} for name, tr, cal in steps]
 
 
-# ----------------------------------------------------------------------------------------------- charts
 INK, INK2, GRID, SURF, BLUE, GREY = "#0b0b0b", "#52514e", "#e4e3df", "#fcfcfb", "#2a78d6", "#a8a69d"
 
 
@@ -426,7 +402,6 @@ def charts(t1_rows: list[dict], stairs: list[dict], books: dict[str, tuple[list[
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    # decay curve: the primary only, one series, the interval as a thin whisker
     names = [n for n, _, _ in cfg.T1_WINDOWS]
     pr = {r["group"]: r for r in t1_rows if r["variant"].startswith("primary") and r["segment"] == "ALL"}
     fig, ax = plt.subplots(figsize=(7.2, 4.2), facecolor=SURF)
@@ -448,7 +423,6 @@ def charts(t1_rows: list[dict], stairs: list[dict], books: dict[str, tuple[list[
     fig.savefig(cfg.RESULTS / "decay.png", dpi=160)
     plt.close(fig)
 
-    # staircase: two small panels sharing the step order (never two scales on one axis)
     fig, axes = plt.subplots(1, 2, figsize=(13.0, 4.8), facecolor=SURF)
     short = ["1 S6 as modelled", "2 at printed\nprices (T2)", "3 S6's print-\nverified set", "4 verified, best\nclosure removed", "5 T2, best\nclosure removed"]
     ticks = [f"{n}\n{s['trades']} trades\n{s['closures_traded']} closures\n${s['printed_dollars']:,.0f} printed" for n, s in zip(short, stairs)]
@@ -469,7 +443,6 @@ def charts(t1_rows: list[dict], stairs: list[dict], books: dict[str, tuple[list[
     fig.savefig(cfg.RESULTS / "staircase.png", dpi=160)
     plt.close(fig)
 
-    # equity and drawdown: one panel per book, each on its own axis
     for fname, what in (("equity_curve.png", "equity"), ("drawdown.png", "drawdown")):
         fig, axes = plt.subplots(1, len(books), figsize=(5.6 * len(books), 4.0), facecolor=SURF, squeeze=False)
         for ax, (name, (tr, passed, unit)) in zip(axes[0], books.items()):
@@ -487,7 +460,6 @@ def charts(t1_rows: list[dict], stairs: list[dict], books: dict[str, tuple[list[
         plt.close(fig)
 
 
-# ----------------------------------------------------------------------------------------------- main
 def main() -> int:
     t_run = time.time()
     cfg.RESULTS.mkdir(parents=True, exist_ok=True)

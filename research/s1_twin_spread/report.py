@@ -1,7 +1,3 @@
-"""S1 report: metrics.csv, equity_curve.png, drawdown.png, capacity.md and SUMMARY.md, all from the committed CSVs.
-
-Run from `research/`:  python -m s1_twin_spread.report
-"""
 from __future__ import annotations
 
 import json
@@ -20,7 +16,7 @@ from . import config as cfg  # noqa: E402
 
 R = Path(__file__).resolve().parents[1] / "results" / "s1_twin_spread"
 SURFACE, INK, INK2, GRID = "#fcfcfb", "#0b0b0b", "#52514e", "#e7e6e2"
-BLUE, ORANGE = "#2a78d6", "#eb6834"      # categorical slots 1 and 2 (validated pair)
+BLUE, ORANGE = "#2a78d6", "#eb6834"
 RULE, PRIMARY = "registered", cfg.PRIMARY
 
 
@@ -42,7 +38,6 @@ def pick(m: pd.DataFrame, seg: str, cost: float, variant: str = PRIMARY, rule: s
 
 
 def curve(eq: pd.DataFrame, cost: float, mark: str) -> pd.DataFrame:
-    """IS then OOS on one time axis, in % of the capital base. The OOS run starts flat; it is stacked on the IS end."""
     parts, base = [], 0.0
     for seg in ("IS", "OOS"):
         e = eq[(eq.quote_rule == RULE) & (eq.variant == PRIMARY) & (eq.cost_mult == cost) & (eq.segment == seg) & (eq["mark"] == mark)]
@@ -81,7 +76,7 @@ def charts(eq: pd.DataFrame, split: pd.Timestamp) -> None:
                     full = np.concatenate([[0.0], y])
                     y = (full - np.maximum.accumulate(full))[1:]
                 ax.plot(c.t, y, color=color, linewidth=2, solid_capstyle="round", solid_joinstyle="round", label=label)
-                if transform is None:       # the end value is the story of the equity curve; the trough is the drawdown's
+                if transform is None:
                     ax.plot([c.t.iloc[-1]], [y[-1]], "o", color=color, markersize=7, markeredgecolor=SURFACE, markeredgewidth=2)
                     ax.annotate(f"{y[-1]:+.1f}%", (c.t.iloc[-1], y[-1]), xytext=(7, 0), textcoords="offset points",
                                 va="center", fontsize=9, color=INK)
@@ -189,7 +184,6 @@ def main() -> int:
     used = pairs[pairs.used == True]  # noqa: E712
     dropped = pairs[pairs.used != True]  # noqa: E712
 
-    # ---- capacity.md
     cap = ["# S1 capacity", "",
            "## History", "",
            "The historical backtest makes **no capacity claim**: Kalshi candles and Polymarket price history carry no sizes "
@@ -217,7 +211,6 @@ def main() -> int:
         cap += ["## Forward recording", "", "Pending: the forward window closes Sun 2026-10-04 07:00 ET.", ""]
     (R / "capacity.md").write_text("\n".join(cap))
 
-    # ---- SUMMARY.md
     S = []
     S += ["# S1: Polymarket–Kalshi twin spread", "",
           f"Method, pre-registered before any S1 data was pulled: [`research/s1_twin_spread/METHOD.md`](../../s1_twin_spread/METHOD.md) "

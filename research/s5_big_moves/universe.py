@@ -1,8 +1,3 @@
-"""S5 universe: the 240 highest-volume Polymarket markets that pass METHOD.md section 1. Names, dates and volume
-only; no price is read. Writes universe.json and the labellers' question files.
-
-Run from `research/`:  python -m s5_big_moves.universe
-"""
 from __future__ import annotations
 
 import json
@@ -27,7 +22,6 @@ def dropped_by_tag(tags: list[str]) -> bool:
 
 
 def sessions_alive(start: str, end: str, cal: TradingCalendar) -> int:
-    """Trading sessions between a market's start and end that fall inside the window."""
     a = max(pd.Timestamp(start[:10]), pd.Timestamp(cfg.WINDOW_START))
     b = min(pd.Timestamp(end[:10]), pd.Timestamp(cfg.WINDOW_END))
     if b < a:
@@ -46,7 +40,7 @@ def main() -> int:
             evs = ds.get_json(f"{ds.GAMMA}/events", {"closed": closed, "limit": 100, "offset": offset, "order": "volume", "ascending": "false",
                                                      "end_date_min": cfg.EVENT_END_MIN, "end_date_max": cfg.EVENT_END_MAX}, throttle=pt,
                               allow=(422,))
-            if isinstance(evs, dict):          # the API refuses deeper offsets; events come in descending volume, so stop
+            if isinstance(evs, dict):
                 counts[f"stopped_at_offset_{closed}"] = offset
                 counts[f"last_event_volume_{closed}"] = last_vol
                 break
@@ -89,12 +83,12 @@ def main() -> int:
     uniq = {c["id"]: c for c in cands}
     top = sorted(uniq.values(), key=lambda x: -x["volume"])[: cfg.N_MARKETS]
     (HERE / "universe.json").write_text(json.dumps({"counts": counts, "candidates": len(uniq), "markets": top}, indent=1, ensure_ascii=False))
-    if "--keep" in sys.argv:        # the labellers' files already exist: only refresh the ranked list of every candidate
+    if "--keep" in sys.argv:
         (HERE / "candidates.json").write_text(json.dumps(sorted(uniq.values(), key=lambda x: -x["volume"]), indent=1, ensure_ascii=False))
         print("candidates saved:", len(uniq))
         return 0
     half = [top[0::2], top[1::2]]
-    for name, part in zip(("1", "2"), half):       # two chunks; each is read by two independent labellers
+    for name, part in zip(("1", "2"), half):
         (HERE / f"questions_{name}.json").write_text(json.dumps(
             {"tickers": cfg.MENU, "questions": [{"id": m["id"], "question": m["question"]} for m in part]}, indent=1, ensure_ascii=False))
     print(json.dumps(counts), "| candidates", len(uniq), "| kept", len(top))

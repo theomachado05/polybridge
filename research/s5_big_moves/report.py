@@ -1,7 +1,3 @@
-"""S5 report: SUMMARY.md, equity_curve.png, drawdown.png and capacity.md from the result CSVs.
-
-Run from `research/`:  python -m s5_big_moves.report
-"""
 from __future__ import annotations
 
 import json
@@ -82,7 +78,6 @@ def charts(eq: pd.DataFrame, recent_from: str) -> None:
 
 
 def granular_section() -> list[str]:
-    """Which questions are tied to which instruments, by theme; empty until `python -m s5_big_moves.granular` has run."""
     if not (R / "themes.csv").exists():
         return []
     th, z = pd.read_csv(R / "themes.csv"), json.loads((R / "granular.json").read_text())
@@ -124,7 +119,6 @@ def granular_section() -> list[str]:
 
 
 def intraday_section() -> list[str]:
-    """S5b (amendment 2) and the give-back check (amendment 3); empty until `python -m s5_big_moves.intraday` has run."""
     if not (R / "intraday.csv").exists():
         return []
     it, z = pd.read_csv(R / "intraday.csv"), json.loads((R / "intraday.json").read_text())

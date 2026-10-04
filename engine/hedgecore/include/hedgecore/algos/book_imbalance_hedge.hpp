@@ -5,8 +5,6 @@
 
 namespace hedgecore::algos {
 
-// When top-of-book imbalance is strong the microprice leads the mid: size the hedge on the microprice (pre-hedge)
-// and cross; otherwise size on the mid and join. Requires real depth: the Depth gate fails closed without a book.
 struct BookImbalanceHedge : AlgoBase<BookImbalanceHedge> {
   static constexpr const char* id = "book_imbalance_hedge";
   static constexpr const char* division = "hedge";
@@ -61,4 +59,4 @@ struct BookImbalanceHedge : AlgoBase<BookImbalanceHedge> {
   void on_reject(Instrument i) noexcept { core.on_reject(i); }
 };
 
-}  // namespace hedgecore::algos
+}

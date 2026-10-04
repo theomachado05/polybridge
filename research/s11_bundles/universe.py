@@ -1,15 +1,3 @@
-"""S11 universe: bundles of questions that must be consistent with each other, from catalogue text only.
-
-Three kinds, all within one event:
-  strike   same wording apart from the level ("hit $100" / "hit $105"); YES at a further level implies YES at a nearer one
-  date     same wording apart from a "by <date>" date; YES by an earlier date implies YES by a later one
-  negrisk  a one-of-many event (Polymarket's negRisk flag): exactly one member resolves YES
-
-No price is read: every price field of the catalogue record is dropped before anything is stored.
-Writes `bundles.json` (history: S9's strike ladders and S5's events) and `live_bundles.json` (events open tonight).
-
-Run from `research/`:  python -m s11_bundles.universe
-"""
 from __future__ import annotations
 
 import json
@@ -32,10 +20,7 @@ KEEP = ("id", "question", "groupItemTitle", "conditionId", "clobTokenIds", "star
         "negRisk", "negRiskOther", "feesEnabled", "feeSchedule", "volume", "enableOrderBook", "orderPriceMinTickSize", "acceptingOrders")
 
 
-# ---------------------------------------------------------------- text rules (pure)
-
 def date_template(q: str) -> tuple[str, str | None]:
-    """The question with its date phrase replaced by <D>, and the phrase. Only the last date phrase is replaced."""
     found = list(re.finditer(cfg.DATE_RE, q))
     if not found:
         return q, None
@@ -71,8 +56,6 @@ def parse_date(phrase: str, default_year: int) -> date | None:
 
 
 def strike_template(q: str) -> tuple[str, float | None, int]:
-    """The question with its one level replaced by <N>, the level, and the orientation: +1 when YES needs a higher level,
-    -1 when YES needs a lower one, 0 when the wording does not say (left out). Questions with a date phrase keep it."""
     body, _ = date_template(q)
     nums = [m for m in re.finditer(cfg.NUM_RE, body) if m.group(0).strip() and not re.fullmatch(r"(?:19|20)\d\d", m.group(0).strip())]
     if len(nums) != 1:
@@ -96,17 +79,17 @@ def date_ladders(event: str, markets: list[dict]) -> list[dict]:
         end = date.fromisoformat(str(m.get("endDate") or "2026-12-31")[:10])
         d = parse_date(phrase, end.year)
         if d is not None and not re.search(r"20\d\d", phrase) and d > date.fromordinal(end.toordinal() + 7):
-            d = parse_date(phrase, end.year - 1)    # amendment 1: an end date just past midnight UTC on Jan 1 is still the old year
+            d = parse_date(phrase, end.year - 1)
         if d is not None:
             groups.setdefault(templ, []).append((d, m))
     out = []
     for templ, rungs in groups.items():
         rungs.sort(key=lambda x: (x[0], x[1]["id"]))
         if len({d for d, _ in rungs}) != len(rungs) or len(rungs) < 2:
-            continue                    # two markets on one date: not a clean ladder
+            continue
         ids = [m["id"] for _, m in rungs]
         out.append({"kind": "date", "event": event, "template": templ, "legs": ids, "keys": [d.isoformat() for d, _ in rungs],
-                    "pairs": [[ids[i], ids[i + 1]] for i in range(len(ids) - 1)]})       # [rich (earlier), cheap (later)]
+                    "pairs": [[ids[i], ids[i + 1]] for i in range(len(ids) - 1)]})
     return out
 
 
@@ -123,7 +106,6 @@ def strike_ladders(event: str, markets: list[dict]) -> list[dict]:
         if len({v for v, _ in rungs}) != len(rungs) or len(rungs) < 2:
             continue
         ids = [m["id"] for _, m in rungs]
-        # orientation +1: P falls as the level rises, so the higher level is the rich leg; -1 the mirror
         pairs = [[ids[i + 1], ids[i]] if orient > 0 else [ids[i], ids[i + 1]] for i in range(len(ids) - 1)]
         out.append({"kind": "strike", "event": event, "template": templ, "orient": orient, "legs": ids,
                     "keys": [v for v, _ in rungs], "pairs": pairs})
@@ -135,8 +117,6 @@ def negrisk_set(event: str, markets: list[dict], neg_risk: bool) -> list[dict]:
         return []
     return [{"kind": "negrisk", "event": event, "legs": [m["id"] for m in markets], "pairs": []}]
 
-
-# ---------------------------------------------------------------- catalogue
 
 def strip(m: dict) -> dict:
     out = {k: m.get(k) for k in KEEP}
@@ -159,7 +139,7 @@ def event_bundles(e: dict) -> tuple[list[dict], dict]:
     slug = e.get("slug") or str(e["id"])
     big = [m for m in ms if float(m.get("volume") or 0) >= cfg.MIN_MARKET_VOLUME]
     out = date_ladders(slug, big) + strike_ladders(slug, big)
-    if not out:                          # a ladder is never also a one-of-many set
+    if not out:
         out += negrisk_set(slug, [m for m in ms if m.get("enableOrderBook") is not False], neg)
     for b in out:
         b["negRiskAugmented"] = bool(e.get("negRiskAugmented"))
@@ -169,7 +149,6 @@ def event_bundles(e: dict) -> tuple[list[dict], dict]:
 
 
 def s9_strike_bundles() -> tuple[list[dict], dict]:
-    """S9's strike ladders, with S9's own level sign; one ladder per event and sign. 'settle at' ranges are left out."""
     u = json.loads((RESEARCH / "s9_weekend_price_markets" / "universe.json").read_text())
     by: dict[str, list[dict]] = {}
     for m in u["markets"]:
@@ -206,7 +185,6 @@ def s5_slugs() -> list[str]:
 
 def main() -> int:
     pt = ds.Throttle(cfg.PULL_RATE)
-    # history: S9's strike ladders, and S5's events re-read whole from the catalogue
     bundles, meta = s9_strike_bundles()
     s9n = len(bundles)
     for b in bundles:
@@ -225,12 +203,11 @@ def main() -> int:
         bundles += bs
     s5_legs = {i for b in bundles if b["source"] == "s5" for i in b["legs"]}
     dropped = [b for b in bundles if b["source"] == "s9" and set(b["legs"]) & s5_legs]
-    bundles = [b for b in bundles if not (b["source"] == "s9" and set(b["legs"]) & s5_legs)]   # the full-week version wins
+    bundles = [b for b in bundles if not (b["source"] == "s9" and set(b["legs"]) & s5_legs)]
     hist = {"built_utc": datetime.now(timezone.utc).isoformat(), "s5_events_read": n_ev, "s9_ladders_superseded": len(dropped), "bundles": bundles,
             "markets": {i: meta[i] for b in bundles for i in b["legs"]}}
     (HERE / "bundles.json").write_text(json.dumps(hist, indent=1))
 
-    # live: events open tonight, by 24-hour volume, plus S9's still-open price events
     live, lmeta, seen = [], {}, set()
     for page in range(cfg.LIVE_SEARCH_PAGES):
         d = ds.get_json(f"{ds.GAMMA}/events", {"closed": "false", "active": "true", "order": "volume24hr", "ascending": "false",

@@ -1,4 +1,3 @@
-"""Closure calendar and per-closure measures (METHOD.md sections 1 and 3). Pure functions, no network."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -18,9 +17,9 @@ RTH_CLOSE = pd.Timedelta(hours=16)
 
 @dataclass(frozen=True)
 class Closure:
-    close_day: pd.Timestamp  # trading day whose close starts the closure (tz-naive date)
-    open_day: pd.Timestamp   # next trading day
-    kind: str                # overnight | weekend | holiday
+    close_day: pd.Timestamp
+    open_day: pd.Timestamp
+    kind: str
 
     @property
     def nominal_close(self) -> pd.Timestamp:
@@ -45,7 +44,6 @@ def closure_kind(close_day: pd.Timestamp, open_day: pd.Timestamp) -> str:
 
 
 def build_closures(start: str, end: str, cal: TradingCalendar | None = None) -> list[Closure]:
-    """Every closure whose START trading day lies in [start, end] (inclusive)."""
     cal = cal or TradingCalendar()
     s = cal.sessions
     out = []
@@ -58,7 +56,6 @@ def build_closures(start: str, end: str, cal: TradingCalendar | None = None) -> 
 
 
 def closure_for_news(news_et: str | pd.Timestamp, cals_closures: list[Closure]) -> Closure | None:
-    """The closure that contains the news timestamp (naive ET string), by nominal 16:00 / 09:30 times."""
     t = pd.Timestamp(news_et)
     t = t.tz_localize(TZ).tz_convert("UTC") if t.tzinfo is None else t.tz_convert("UTC")
     for c in cals_closures:
@@ -72,15 +69,11 @@ def load_events(path=EVENTS_PATH) -> tuple[dict, list[dict]]:
     return doc["markets"], doc["events"]
 
 
-# ---------------------------------------------------------------- equity bars
-
-
 def _et(index: pd.DatetimeIndex) -> pd.DatetimeIndex:
     return index.tz_convert(TZ)
 
 
 def rth_bars(bars: pd.DataFrame, day: pd.Timestamp) -> pd.DataFrame:
-    """Bars whose START is inside RTH [09:30, 16:00) ET on `day`."""
     if bars.empty:
         return bars
     et = _et(bars.index)
@@ -89,7 +82,6 @@ def rth_bars(bars: pd.DataFrame, day: pd.Timestamp) -> pd.DataFrame:
 
 
 def equity_measures(bars: pd.DataFrame, c: Closure) -> dict:
-    """gap_bp, ret30_bp, px_0800 and the exact close/open instants. NaN where a bar is missing (never imputed)."""
     nan = float("nan")
     out = {"prev_close": nan, "open_px": nan, "gap_bp": nan, "ret30_bp": nan, "px_0800": nan, "resid_bp": nan,
            "t_close": pd.NaT, "t_open": pd.NaT, "t_0800": pd.NaT}
@@ -106,10 +98,9 @@ def equity_measures(bars: pd.DataFrame, c: Closure) -> dict:
     if np.isfinite(out["prev_close"]) and np.isfinite(out["open_px"]):
         out["gap_bp"] = 1e4 * (out["open_px"] / out["prev_close"] - 1)
     if np.isfinite(out["open_px"]):
-        t1000 = c.nominal_open + pd.Timedelta(minutes=29)  # bar starting 09:59
+        t1000 = c.nominal_open + pd.Timedelta(minutes=29)
         if t1000 in nxt.index:
             out["ret30_bp"] = 1e4 * (float(nxt.loc[t1000, "close"]) / out["open_px"] - 1)
-    # last bar ending at or before 08:00 ET on the open day, within tolerance
     cut = (c.open_day.tz_localize(TZ) + pd.Timedelta(hours=PARAMS.resid_cut_hour)).tz_convert("UTC")
     ends = bars.index + pd.Timedelta(minutes=1) if not bars.empty else bars.index
     if not bars.empty:
@@ -123,11 +114,7 @@ def equity_measures(bars: pd.DataFrame, c: Closure) -> dict:
     return out
 
 
-# ------------------------------------------------------------------------ PM
-
-
 def pm_at(points: list[tuple[int, float]], t: pd.Timestamp, stale_min: int | None = None) -> float:
-    """Last CLOB point with timestamp <= t, in percentage points; NaN if none within `stale_min` minutes before t."""
     stale_min = PARAMS.pm_stale_min if stale_min is None else stale_min
     ts = int(t.timestamp())
     best = None
@@ -141,7 +128,6 @@ def pm_at(points: list[tuple[int, float]], t: pd.Timestamp, stale_min: int | Non
 
 def closure_row(c: Closure, bars: pd.DataFrame, bars2: pd.DataFrame | None, points: list[tuple[int, float]],
                 sign: int, market: str) -> dict:
-    """One analysis row: equity measures (SPY), QQQ gap, PM change at the exact instants, oriented."""
     eq = equity_measures(bars, c)
     t_close = eq["t_close"] if pd.notna(eq["t_close"]) else c.nominal_close
     t_open = c.nominal_open

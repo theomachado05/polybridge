@@ -1,8 +1,3 @@
-"""Record one Polymarket market's midpoint to JSONL ({ts_ns, p}) for Wi-Fi-free demos.
-
-Usage: uv run python scripts/record_ticks.py --token-id ID --out replays/slug.jsonl [--minutes 20] [--interval 1.0]
-Failed polls are skipped (no row written); the script exits 0 with whatever it got.
-"""
 from __future__ import annotations
 
 import argparse
@@ -27,7 +22,7 @@ async def record(token_id: str, out: Path, minutes: float, interval: float) -> t
             while time.monotonic() < deadline:
                 try:
                     p = await polymarket_midpoint(http, token_id)
-                except Exception as e:  # network blip: skip this sample
+                except Exception as e:
                     p = None
                     print(f"poll failed: {type(e).__name__}", flush=True)
                 if p is None:

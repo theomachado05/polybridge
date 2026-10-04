@@ -1,5 +1,3 @@
-"""The real compiled hedgecore: bridges running Algo, the orientation contract, and real replay_grid scoring.
-Engine group only (skipped without the module)."""
 from __future__ import annotations
 
 import json
@@ -37,7 +35,6 @@ def test_engine_catalog_matches_the_committed_manifest():
 
 
 def test_replay_grid_preset_order_matches_preset_grid():
-    """preset_index from replay_grid is the same grid point the backend resolves for a bridge."""
     fams = real_families()
     n = 60
     ticks = assemble([(1_790_000_000 + 60 * i, 0.2 + 0.3 * (i % 10) / 10) for i in range(n)],
@@ -69,8 +66,6 @@ def _tick_seq(n=40):
 @pytest.mark.parametrize("family", ["equity_delta_bridge", "book_imbalance_hedge", "stress_lead_hedge",
                                     "macro_fed_hedge", "fig_stress"])
 def test_python_orientation_equals_the_engine_flip_for_hedge_families(family):
-    """The one orientation (orient_to_adverse) gives exactly what hedgecore's own up_on_yes flip gives, so a
-    bridge feeding oriented ticks to Algo(direction='down_on_yes') is the engine's up_on_yes behaviour."""
     pos = {"shares_held": 1000.0}
     flipped = hedgecore.Algo(family, {}, pos, direction="up_on_yes")
     oriented = hedgecore.Algo(family, {}, pos)
@@ -92,17 +87,14 @@ def test_engine_refuses_up_on_yes_for_non_hedge_families():
 
 
 def test_real_algo_bridge_on_replay_orders_fills_and_reports(client, tmp_path):
-    """Replay with recorded SPY bars (under_px) -> the real equity_delta_bridge hedges; every order reaches the
-    broker, fills go back through on_fill, and the reported hedge is what the broker filled."""
     client.app.state.replay_path = str(client.app.state.replay_path)
     client.app.state.broker = SimBroker(tmp_path / "s.json", FakeQuotes(equity={"SPY": Quote(500.0, None, "q")}))
-    # a replay whose original timestamps fall inside the recorded SPY bars
     f = tmp_path / "fed.jsonl"
     ps = [0.20, 0.20, 0.35, 0.35, 0.50, 0.50, 0.65, 0.65, 0.40, 0.40, 0.25, 0.25]
     f.write_text("".join(json.dumps({"ts_ns": (1_790_000_000 + 3600 * i) * 1_000_000_000, "p": p}) + "\n"
                          for i, p in enumerate(ps)))
     client.app.state.replay_path = str(f)
-    write_meta(f, FED)  # a recording of the proposal's market
+    write_meta(f, FED)
     pid = client.post("/proposals", json={"ticker": "SPY", "market": FED, "direction": "down_on_yes",
                                           "shares_held": 1000, "algo": {"family": "equity_delta_bridge",
                                                                          "params": {"sigma_k": 0.0, "fee_ratio": 0.5,
@@ -114,12 +106,11 @@ def test_real_algo_bridge_on_replay_orders_fills_and_reports(client, tmp_path):
     decisions = [d for k, d in ev if k == "decision"]
     assert len(decisions) == len(ps)
     reasons = {d["reason"] for d in decisions}
-    # session_closed is the bridge's own hold (closed-market mode): after 16:00 ET the algo is paused
     assert reasons <= set(v["name"] for v in hedgecore.catalog()["reasons"].values()) | {"session_closed"}
     held = [d for d in decisions if d["reason"] == "session_closed"]
     assert held and all(d["action"] == "hold" and d["qty"] == 0.0 and d["phase"] != "regular" for d in held)
     closed = [d["closed"]["session"]["phase"] for k, d in ev if k == "tick" and d.get("closed")]
-    assert closed[0] == "regular" and "after_hours" in closed  # 12:26 ET to 23:26 ET on Mon 2026-09-21
+    assert closed[0] == "regular" and "after_hours" in closed
     orders = [d for d in decisions if d["action"] == "order"]
     fills = [d for k, d in ev if k == "fill"]
     assert orders and len(fills) == len(orders)
@@ -131,15 +122,13 @@ def test_real_algo_bridge_on_replay_orders_fills_and_reports(client, tmp_path):
 
 
 def test_real_coverage_1_preset_on_a_half_proposal_stays_within_half(client, tmp_path):
-    """The real equity_delta_bridge preset with coverage 1.0, approved at target_coverage 0.5, runs with coverage 0.5
-    and never shorts more than 50% of the shares, even with the adverse odds at 0.95."""
     client.app.state.broker = SimBroker(tmp_path / "s.json", FakeQuotes(equity={"SPY": Quote(500.0, None, "q")}))
     f = tmp_path / "fed.jsonl"
     ps = [0.30, 0.60, 0.80, 0.95, 0.95, 0.95, 0.95, 0.95]
     f.write_text("".join(json.dumps({"ts_ns": (1_790_000_000 + 3600 * i) * 1_000_000_000, "p": p}) + "\n"
                          for i, p in enumerate(ps)))
     client.app.state.replay_path = str(f)
-    write_meta(f, FED)  # a recording of the proposal's market
+    write_meta(f, FED)
     fam = real_families()["equity_delta_bridge"]
     idx = next(i for i, g in enumerate(preset_grid(fam)) if g["coverage"] == 1.0)
     prop = client.post("/proposals", json={"ticker": "SPY", "market": FED, "direction": "down_on_yes",
@@ -156,12 +145,9 @@ def test_real_coverage_1_preset_on_a_half_proposal_stays_within_half(client, tmp
 
 
 def test_pipeline_fit_scores_with_the_real_engine():
-    """POST /pipeline/fit with the compiled library: a real replay score, and the preset it names resolves to the
-    params replay_grid scored."""
     from tests.test_pipeline import N_POINTS, T0, FakeMassive, Router, history, make_client
 
     class WigglyMassive(FakeMassive):
-        """Hourly closes that move by different amounts (a straight line has zero variance: no score defined)."""
         def get_all(self, path, params=None, max_pages=500):
             if "/range/1/hour/" in path:
                 return [{"t": (T0 - 1800 + 3600 * i) * 1000, "c": 500.0 - 3 * ((i * 5) % 7) + 0.1 * i}

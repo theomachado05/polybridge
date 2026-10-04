@@ -32,4 +32,4 @@ StaleQuoteDecision stale_quote(double best_bid, double bid_size, double best_ask
   return d;
 }
 
-}  // namespace hedgecore
+}

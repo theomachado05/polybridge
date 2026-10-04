@@ -1,30 +1,3 @@
-"""From a ticket to its exact option contracts, and (legacy) from a link to an at-the-money option.
-
-**Exact contract link (what the product serves).** A "will it hit" or "close above" ticket names a ticker, a level, a
-direction and a window end. S21's rules (`research/s21_options_anchor/METHOD.md` section 3, imported unchanged from
-`s21_options_anchor.engine` and `.config`) turn it into contracts:
-    end session day  the last weekday on or before the window end
-    expiry           the listed expiry nearest on or after the end session day, at most 45 calendar days later; up to
-                     three listed expiries are tried, in order (the first with two bracketing strikes listed is the
-                     link; quote usability is checked by the options reference service, not here)
-    strikes          the two listed strikes that bracket the level (`arbscan.implied.bracket_indices`): the level's
-                     two neighbours when it is itself listed, else the strikes just below and just above
-    legs             up: the call spread, long the lower strike; down: the put spread, long the higher strike
-    underlying       the ticker itself; S&P 500 index questions (SPX) use the PM-settled index options (root SPXW)
-Every failure returns an explicit reason; nothing is linked silently.
-
-**Legacy (`resolve`).** A link says "this question moves this ticker, this way". The option that carries it is fixed by
-three rules:
-    underlying   the linked ticker
-    expiry       the first listed expiry on or after the day the question resolves (so the option is alive when the
-                 news lands and expires soon after)
-    strike       the listed strike nearest the underlying's last close (at the money)
-    structure    a call if the link is up-on-yes, a put if down-on-yes; the straddle (both) when the bet is on the
-                 size of the move, not its direction
-
-Contracts come from Massive's reference list. Run from `research/` to print the worked examples:
-    python -m linker.options
-"""
 from __future__ import annotations
 
 import csv
@@ -35,7 +8,6 @@ from s4_linked_assets import data as d4
 from s21_options_anchor import config as s21cfg
 from s21_options_anchor import engine as s21
 
-# (question, ticker, direction, the day the question resolves)
 EXAMPLES = (
     ("Will Flávio Bolsonaro win the 2026 Brazilian presidential election? (first round Sun 2026-10-04)", "EWZ", "up_on_yes", "2026-10-05"),
     ("Brazil presidential runoff (Sun 2026-10-25)", "EWZ", "up_on_yes", "2026-10-26"),
@@ -46,7 +18,6 @@ EXAMPLES = (
 
 
 def contracts(s, base: str, ticker: str, resolves: str, horizon_days: int = 45) -> list[dict]:
-    """Listed contracts on the ticker expiring from the resolution day up to `horizon_days` later."""
     y, m, d = (int(x) for x in resolves.split("-"))
     hi = date.fromordinal(date(y, m, d).toordinal() + horizon_days).isoformat()
     return d4.massive_rows(s, f"{base}/v3/reference/options/contracts",
@@ -61,7 +32,6 @@ def last_close(s, base: str, ticker: str, on_or_before: str) -> float:
 
 
 def resolve(s, base: str, ticker: str, direction: str, resolves: str, as_of: str) -> dict | None:
-    """The contract(s) for one link: first expiry on or after the resolution day, strike nearest the last close."""
     rows = [r for r in contracts(s, base, ticker, resolves) if r.get("shares_per_contract", 100) == 100]
     if not rows:
         return None
@@ -76,14 +46,10 @@ def resolve(s, base: str, ticker: str, direction: str, resolves: str, as_of: str
 
 
 def option_root(ticker: str) -> str:
-    """The OCC root prefix of the options that carry a ticket on `ticker` (S21: SPX questions use SPXW)."""
     return s21cfg.INDEX_ROOT.get(ticker.upper(), f"O:{ticker.upper()}")
 
 
 def exact_ticket_link(rows: list[dict], ticker: str, level: float, direction: str, window_end: str) -> dict:
-    """The exact contracts of one ticket from listed contract rows (Massive reference format: expiration_date,
-    strike_price, contract_type, ticker). `direction` is "up" or "down". Returns a dict with `ok` and, when not ok,
-    `reason`; never guesses."""
     out: dict = {"ok": False, "underlying": ticker.upper(), "option_root": option_root(ticker), "level": level,
                  "direction": direction, "window_end": window_end, "rule": "research/s21_options_anchor/METHOD.md section 3"}
     if direction not in ("up", "down"):
@@ -122,7 +88,6 @@ def exact_ticket_link(rows: list[dict], ticker: str, level: float, direction: st
 
 
 def resolve_exact(s, base: str, ticker: str, level: float, direction: str, window_end: str) -> dict:
-    """`exact_ticket_link` on the contracts Massive lists for the ticket's underlying."""
     try:
         end_session = s21.last_weekday(date.fromisoformat(str(window_end)[:10])).isoformat()
     except ValueError:

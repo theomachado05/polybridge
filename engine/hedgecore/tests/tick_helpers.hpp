@@ -10,7 +10,6 @@ using namespace hedgecore;
 inline constexpr std::int64_t kSec = 1'000'000'000;
 inline constexpr double NaN = std::numeric_limits<double>::quiet_NaN();
 
-// A PM tick with a two-sided YES quote around p (spread 2*hs) and an equity quote around u.
 inline MarketTick pm(std::int64_t ts, double p, double hs = 0.005, double u = 100.0, double uhs = 0.01) {
   MarketTick t;
   t.ts_ns = ts;
@@ -28,4 +27,4 @@ inline MarketTick with_book(MarketTick t, double bid_qty, double ask_qty, int le
   }
   return t;
 }
-}  // namespace hctest
+}

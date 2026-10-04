@@ -1,22 +1,3 @@
-"""Options-implied probability that the underlying finishes above a threshold K at expiry.
-
-Math (risk-neutral, European payoff; American single-name calls are treated the same, which is standard for a
-digital estimate because early exercise of a call is rarely optimal):
-
-- A call spread long C(k1), short C(k2) with k1 < K < k2 tends to the cash-or-nothing digital as the width shrinks:
-  D = (C(k1) - C(k2)) / (k2 - k1) is the *discounted* price of $1 paid if S_T > center, so
-  P(S_T > K) ~= D / DF with DF = exp(-r T). When K is listed and has neighbours on both sides the spread is centred
-  on K exactly (k1 = K - h, k2 = K + h, the textbook (C(K-h) - C(K+h)) / 2h).
-- Put-call parity fallback: a digital call plus a digital put is worth DF, so from the put spread
-  P(S_T > K) ~= 1 - (P(k2) - P(k1)) / ((k2 - k1) DF). With only one leg of each kind, missing calls are synthesised
-  as C(k) = P(k) + DF (F - k), F the forward implied by parity at strikes where both mids exist.
-- Bid/ask bounds: buying the spread costs ask(k1) - bid(k2) (upper bound), selling it earns bid(k1) - ask(k2)
-  (lower bound). Without quotes (plan without quotes; mids from fmv/close) the bounds are NaN, not invented.
-- Delta approximation: N(d2) = N(N^-1(delta_call) - sigma sqrt(T)), with delta and IV interpolated at K; if IV is
-  missing, |delta| itself (the usual rough proxy, same as the C++ OptionImpliedProb block).
-
-Every function is NaN-safe: missing or inconsistent inputs give NaN plus a note, never an exception.
-"""
 from __future__ import annotations
 
 import datetime as dt
@@ -25,10 +6,10 @@ from statistics import NormalDist, median
 from typing import Any, Mapping
 
 NAN = math.nan
-RISK_FREE = 0.04   # same constant as the research StudyConfig.risk_free
-ARB_TOL = 0.02     # a spread probability this far outside [0, 1] is an inconsistent chain, not a probability
-GAP_MIN_DAYS = 7   # an expiry this close to the resolution date is always acceptable ...
-GAP_FRAC = 0.2     # ... and so is one within 20% of the horizon (Dec 31 vs the Dec 18 monthly, 3 months out)
+RISK_FREE = 0.04
+ARB_TOL = 0.02
+GAP_MIN_DAYS = 7
+GAP_FRAC = 0.2
 _N = NormalDist()
 
 
@@ -37,7 +18,6 @@ def _fin(x: Any) -> bool:
 
 
 def _g(q: Any, name: str) -> float:
-    """Attribute or key of a quote (OptionQuote or dict), NaN if missing."""
     if q is None:
         return NAN
     v = q.get(name) if isinstance(q, Mapping) else getattr(q, name, NAN)
@@ -62,7 +42,6 @@ def _date(d: Any) -> dt.date | None:
 
 
 def year_frac(expiry: Any, as_of: Any = None) -> float:
-    """ACT/365 years to expiry, floored at one day; NaN on a bad date."""
     e, a = _date(expiry), _date(as_of) or dt.date.today()
     if e is None:
         return NAN
@@ -74,17 +53,12 @@ def discount_factor(r: float, T: float) -> float:
 
 
 def max_expiry_gap_days(target: Any, as_of: Any = None) -> int:
-    """Largest |listed expiry - resolution date| (days) that still prices the same question:
-    max(GAP_MIN_DAYS, GAP_FRAC * days to resolution). Beyond it the estimate is for a different date and callers
-    must not use it (enrich leaves the tick fields NaN; the route says unavailable)."""
     t, a = _date(target), _date(as_of) or dt.date.today()
     horizon = (t - a).days if t else 0
     return int(max(GAP_MIN_DAYS, math.floor(GAP_FRAC * max(horizon, 0))))
 
 
 def nearest_expiry(expiries: list[str], target: Any, as_of: Any = None) -> str | None:
-    """Listed expiry closest to the prediction market's resolution date (ties go to the later expiry, which still
-    covers the resolution). Expiries already past ``as_of`` are ignored."""
     t = _date(target)
     a = _date(as_of)
     cands = [(e, _date(e)) for e in expiries]
@@ -95,8 +69,6 @@ def nearest_expiry(expiries: list[str], target: Any, as_of: Any = None) -> str |
 
 
 def bracket(strikes: list[float], K: float) -> tuple[float, float] | None:
-    """Tightest listed strikes around K: (K - h, K + h) when K is listed with neighbours on both sides, else the
-    nearest k1 < K < k2. None when K is outside the listed range."""
     ks = sorted({float(k) for k in strikes if _fin(k)})
     if not _fin(K) or len(ks) < 2:
         return None
@@ -108,7 +80,6 @@ def bracket(strikes: list[float], K: float) -> tuple[float, float] | None:
 
 
 def forward_from_parity(sl: Mapping[float, Mapping[str, Any]], DF: float) -> float:
-    """Median forward F = k + (C - P) / DF over strikes where both mids exist; NaN if none."""
     if not _fin(DF) or DF <= 0:
         return NAN
     fs = []
@@ -136,11 +107,10 @@ def _call_delta(legs: Mapping[str, Any]) -> float:
     if _fin(d):
         return d
     p = _g(legs.get("put"), "delta")
-    return 1.0 + p if _fin(p) else NAN   # parity on deltas (no dividends): delta_c - delta_p = 1
+    return 1.0 + p if _fin(p) else NAN
 
 
 def delta_prob(delta: float, iv: float, T: float) -> float:
-    """N(d2) from the call delta N(d1) and IV; |delta| when IV/T are missing; NaN without a delta."""
     if not _fin(delta):
         return NAN
     d = min(max(delta, 0.0), 1.0)
@@ -163,9 +133,6 @@ def _bound(x: float) -> float:
 
 
 def implied_prob_above(sl: Mapping[float, Mapping[str, Any]], K: float, T: float, r: float = RISK_FREE) -> dict:
-    """Probability S_T > K from one expiry's slice {strike: {"call": q, "put": q}} (q: OptionQuote or dict with
-    bid/ask/mid/iv/delta). Returns prob, lo, hi, method, k_lo, k_hi, center, spread_* prices, delta, iv,
-    delta_prob and notes. ``prob`` is the spread estimate when one exists, else the delta approximation."""
     out: dict[str, Any] = {"prob": NAN, "lo": NAN, "hi": NAN, "method": None, "k_lo": None, "k_hi": None,
                            "center": None, "spread_mid": NAN, "spread_bid": NAN, "spread_ask": NAN,
                            "delta": NAN, "iv": NAN, "delta_prob": NAN, "T": T, "r": r, "notes": []}
@@ -186,7 +153,6 @@ def implied_prob_above(sl: Mapping[float, Mapping[str, Any]], K: float, T: float
     l1, l2 = sl.get(k1, {}), sl.get(k2, {})
     c1, c2, p1, p2 = l1.get("call"), l2.get("call"), l1.get("put"), l2.get("put")
 
-    # delta approximation (always computed, reported alongside)
     out["delta"] = _interp(k1, _call_delta(l1), k2, _call_delta(l2), K)
     out["iv"] = _interp(k1, _leg_iv(l1), k2, _leg_iv(l2), K)
     out["delta_prob"] = delta_prob(out["delta"], out["iv"], T)
@@ -202,7 +168,7 @@ def implied_prob_above(sl: Mapping[float, Mapping[str, Any]], K: float, T: float
             out["lo"], out["hi"] = _bound((b1 - a2) / w / DF), _bound((a1 - b2) / w / DF)
     elif _fin(P1) and _fin(P2):
         out["method"] = "put_spread_parity"
-        out["spread_mid"] = P2 - P1  # the put spread; YES-equivalent structure is the call spread
+        out["spread_mid"] = P2 - P1
         out["prob"] = _clamp_prob(1.0 - (P2 - P1) / w / DF, notes, "put-spread (parity) probability")
         b1, a1, b2, a2 = (_g(p1, "bid"), _g(p1, "ask"), _g(p2, "bid"), _g(p2, "ask"))
         if all(_fin(x) for x in (b1, a1, b2, a2)):
@@ -229,7 +195,6 @@ def implied_prob_above(sl: Mapping[float, Mapping[str, Any]], K: float, T: float
 
 
 def flip(res: dict) -> dict:
-    """The same estimate for 'below K': prob -> 1 - prob, bounds swap; delta becomes the put-side delta."""
     o = dict(res)
     inv = lambda x: 1.0 - x if _fin(x) else NAN  # noqa: E731
     o["prob"], o["delta_prob"] = inv(res.get("prob", NAN)), inv(res.get("delta_prob", NAN))
@@ -242,8 +207,6 @@ def flip(res: dict) -> dict:
 
 def implied_for_threshold(chain, K: float, target: Any, *, above: bool = True, r: float = RISK_FREE,
                           as_of: Any = None) -> dict:
-    """Pick the listed expiry nearest the resolution date ``target`` and estimate P(YES) for 'above K' (or 'below K'
-    when ``above`` is False). ``chain`` is an app.options.chain.Chain (or anything with expiries() and slice())."""
     as_of_d = _date(as_of) or dt.date.today()
     expiries = chain.expiries() if chain is not None else []
     exp = nearest_expiry(expiries, target, as_of_d)
@@ -271,5 +234,4 @@ def implied_for_threshold(chain, K: float, target: Any, *, above: bool = True, r
 
 
 def jsonable(d: dict) -> dict:
-    """NaN -> None (JSON has no NaN)."""
     return {k: (None if isinstance(v, float) and not math.isfinite(v) else v) for k, v in d.items()}

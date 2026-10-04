@@ -20,7 +20,7 @@ def iso(t):
 
 @pytest.fixture
 def app(tmp_path, monkeypatch):
-    monkeypatch.setattr(G, "GAP_RATES_PATH", tmp_path / "no_gap_rates.json")  # pooled default
+    monkeypatch.setattr(G, "GAP_RATES_PATH", tmp_path / "no_gap_rates.json")
 
     async def no_network(*a):
         raise AssertionError("network fetch in an offline test")
@@ -41,7 +41,6 @@ def test_session_route_at_and_now(app):
     assert c.get("/session").json()["phase"] in ("regular", "pre_market", "after_hours", "overnight", "weekend",
                                                  "holiday")
     assert c.get("/session", params={"at": "tomorrow"}).status_code == 422
-    # never a 500: unrepresentable epochs and instants at the ends of the datetime range are 422
     for bad in ("1e30", "-1e30", "1e400", "9" * 400, "9999-12-31T23:00:00Z", "0001-01-01T00:00:00Z",
                 "1970-06-01T00:00:00Z", "2100-01-01T00:00:00Z"):
         assert c.get("/session", params={"at": bad}).status_code == 422, bad
@@ -71,7 +70,7 @@ def test_expected_gap_seeds_from_history(app):
     async def fetch(source, hid, start, end):
         calls.append((source, hid, start, end))
         close = int(to_utc(et(2026, 10, 2, 16, 0)).timestamp())
-        return [(close - 60, 0.50), (close + 19 * 3600, 0.47), (end + 999, 0.10)]  # point after `at` is dropped
+        return [(close - 60, 0.50), (close + 19 * 3600, 0.47), (end + 999, 0.10)]
 
     app.state.closed_history_fetcher = fetch
     c = TestClient(app)
@@ -81,7 +80,6 @@ def test_expected_gap_seeds_from_history(app):
     assert r["move_source"] == "history_seed" and r["seeded_points"] == 2
     assert r["closure"]["move_pp"] == pytest.approx(-3.0)
     assert r["expected_gap"]["expected_gap_bp"] == pytest.approx(3.0 * G.POOLED_RATE)
-    # second call: anchor now known, no refetch
     c.get("/closed/expected-gap", params={"market_source": "polymarket", "market_id": "g1",
                                           "at": iso(et(2026, 10, 3, 12, 5))})
     assert len(calls) == 1
@@ -137,22 +135,21 @@ def test_no_seed_during_regular_hours_and_failed_seed_not_retried(app):
     app.state.closed_history_fetcher = empty
     c = TestClient(app)
     q = {"market_source": "polymarket", "market_id": "g3", "token_id": "tok"}
-    c.get("/closed/expected-gap", params={**q, "at": iso(et(2026, 10, 5, 11, 0))})  # Monday, regular hours
+    c.get("/closed/expected-gap", params={**q, "at": iso(et(2026, 10, 5, 11, 0))})
     assert calls == []
-    for mm in (0, 1, 2):  # Saturday polls: one fetch, then the miss is remembered for this close
+    for mm in (0, 1, 2):
         r = c.get("/closed/expected-gap", params={**q, "at": iso(et(2026, 10, 3, 12, mm))}).json()
         assert r["closure"]["status"] == "NO_PM_DATA"
     assert len(calls) == 1
-    app.state.closed_seed_misses.clear()  # after the retry window it fetches again
+    app.state.closed_seed_misses.clear()
     c.get("/closed/expected-gap", params={**q, "at": iso(et(2026, 10, 3, 12, 3))})
     assert len(calls) == 2
 
 
 def test_historical_seed_on_market_with_live_ticks(app):
-    """A historical `at` must not seed points into the live key (they would be pruned) and must report truthfully."""
     tr = tracker_for(app)
     k = market_key("polymarket", "g4")
-    tr.observe(k, et(2026, 10, 3, 11, 0), 0.60)  # live tick
+    tr.observe(k, et(2026, 10, 3, 11, 0), 0.60)
     close = int(to_utc(et(2024, 7, 5, 16, 0)).timestamp())
 
     async def fetch(source, hid, start, end):
@@ -164,4 +161,4 @@ def test_historical_seed_on_market_with_live_ticks(app):
         "at": iso(et(2024, 7, 6, 12, 0))}).json()
     assert r["move_source"] == "history_seed" and r["seeded_points"] == 2
     assert r["closure"]["status"] == "TRACKING" and r["closure"]["move_pp"] == pytest.approx(5.0)
-    assert len(tr._t[k]) == 1  # the live series is untouched
+    assert len(tr._t[k]) == 1

@@ -1,10 +1,3 @@
-"""Fetch the two market universes for the twin builder (public endpoints, no keys).
-
-Polymarket: the bundled ``market_universe.json`` ids (re-fetched from gamma for descriptions and token ids) plus the
-top live markets by 24 h volume. Kalshi: every open event with its nested markets from the public trade API,
-minus sports / entertainment / mentions (never twinned; the Polymarket universe excludes sports too).
-All callers pass an ``httpx.AsyncClient``; tests give it a MockTransport.
-"""
 from __future__ import annotations
 
 import asyncio
@@ -16,7 +9,6 @@ import httpx
 
 GAMMA_MARKETS = "https://gamma-api.polymarket.com/markets"
 GAMMA_SEARCH = "https://gamma-api.polymarket.com/public-search"
-# Topics Kalshi lists heavily and a hedger cares about (the live search finds markets outside the volume top list).
 SEARCH_TERMS = ("fed rate decision", "fed funds rate", "cpi inflation", "recession", "unemployment rate", "jobs report",
                 "gdp", "bitcoin price", "ethereum price", "solana price", "s&p 500", "nasdaq", "gold price",
                 "oil price", "senate control", "house control", "balance of power", "government shutdown",
@@ -44,7 +36,6 @@ def _jlist(x: Any) -> list:
 
 
 def slim_polymarket(m: dict) -> dict | None:
-    """Keep what the matcher and the map need; None for markets that cannot be traded (no YES token)."""
     tokens = [str(t) for t in _jlist(m.get("clobTokenIds"))]
     if not tokens or m.get("id") is None or m.get("closed") or m.get("active") is False:
         return None
@@ -59,7 +50,7 @@ def slim_kalshi_market(m: dict, event: dict) -> dict | None:
     if m.get("market_type") not in (None, "binary") or not m.get("ticker"):
         return None
     out = {k: m[k] for k in KALSHI_KEEP if k in m}
-    for k in ("rules_primary", "rules_secondary"):  # the matcher reads the opening of the rules only
+    for k in ("rules_primary", "rules_secondary"):
         if isinstance(out.get(k), str):
             out[k] = out[k][:2000]
     out["event_title"] = event.get("title")
@@ -68,7 +59,6 @@ def slim_kalshi_market(m: dict, event: dict) -> dict | None:
 
 
 async def _get_json(http: httpx.AsyncClient, url: str, params: dict, tries: int = 5) -> Any:
-    """GET with a short backoff on 429/5xx. Raises the last error."""
     err: Exception | None = None
     for i in range(tries):
         try:
@@ -93,7 +83,6 @@ def universe_ids(data_dir: Path = DATA) -> list[str]:
 
 async def fetch_polymarket(http: httpx.AsyncClient, ids: list[str] | None = None, top_n: int = 2000,
                            page: int = 100, search_terms: tuple[str, ...] = SEARCH_TERMS, log: Callable[[str], None] = lambda s: None) -> list[dict]:
-    """Slim gamma markets: first the given ``ids`` (batched), then the top ``top_n`` active ones by 24 h volume."""
     out: dict[str, dict] = {}
     ids = ids or []
     for i in range(0, len(ids), 50):
@@ -144,8 +133,6 @@ async def fetch_polymarket(http: httpx.AsyncClient, ids: list[str] | None = None
 
 async def fetch_kalshi(http: httpx.AsyncClient, max_pages: int = 120, pause_s: float = 0.4,
                        log: Callable[[str], None] = lambda s: None) -> list[dict]:
-    """Slim open binary Kalshi markets from /events?with_nested_markets (the ``category`` query is ignored by the
-    API, so categories are filtered client-side)."""
     out: list[dict] = []
     cur: str | None = None
     for n in range(max_pages):

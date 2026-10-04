@@ -1,5 +1,3 @@
-"""Pure pieces of the taker study (METHOD.md sections 1-5): universe rule, print conversion and thinning, the trade rule,
-P&L and the day-cluster bootstrap. No network here, so everything runs on synthetic data."""
 from __future__ import annotations
 
 import math
@@ -28,7 +26,6 @@ def et(d: date, hm: tuple[int, int]) -> datetime:
 
 
 def frame_row(m: dict, is_session: Callable[[date], bool]) -> tuple[dict | None, str]:
-    """Section 1 without the expiry check. Returns (row, "") or (None, reason)."""
     th, why = parse_pm_question(m.get("q", ""))
     if th is None:
         return None, f"parse_{why}"
@@ -67,8 +64,6 @@ def yes_equiv(t: dict) -> tuple[float, str] | None:
 
 
 def thin(trades: list[dict], w0: int, w1: int) -> list[dict]:
-    """Yes-equivalent prints inside [w0, w1], first Yes-buy and first Yes-sell per clock minute. The data-api lists
-    newest first, so within one second a later list position is the earlier print."""
     rows = []
     for i, t in enumerate(trades):
         ts = t.get("timestamp")
@@ -115,7 +110,6 @@ def qualifies(side: str, px: float, p_mid: float, tau: float) -> bool:
 
 
 def option_spread(chain: dict[float, str], k: float, quote_at: Callable[[str, int], object], t: int, exp_close: int) -> Spread | None:
-    """Narrow call spread from the last NBBO of each leg at or before t - QUOTE_LAG_SEC (METHOD.md section 2)."""
     if not chain:
         return None
     snap = t - C.QUOTE_LAG_SEC
@@ -127,7 +121,6 @@ def option_spread(chain: dict[float, str], k: float, quote_at: Callable[[str, in
 def evaluate_market(prints: Iterable[dict], spread_at: Callable[[int], Spread | None],
                     taus: tuple[float, ...] = (C.TAUS_SECONDARY[0], C.TAU, C.TAUS_SECONDARY[1]),
                     tau_stop: float = C.TAU_STOP) -> tuple[list[dict], dict[float, dict]]:
-    """Evaluate evaluable prints in time order until one qualifies at tau_stop. Returns (evaluated rows, first trade per tau)."""
     evals, trades = [], {}
     for p in prints:
         if not evaluable(p):
@@ -162,7 +155,6 @@ def fee_params(market: dict) -> tuple[bool, float, float]:
 
 
 def net_pnl(side: str, px: float, y: int, tick: float, fee: Callable[[float], float]) -> float:
-    """Per $1 contract. side BUY = we buy YES after a Yes-buy print at px; SELL = we buy NO after a Yes-sell print at px."""
     if side == "BUY":
         return y - (px + tick) - fee(px)
     q = 1.0 - px
@@ -195,7 +187,6 @@ def outcome_from_gamma(market: dict) -> int | None:
 
 
 def cluster_boot(values: np.ndarray, clusters: np.ndarray, draws: int = C.BOOT_DRAWS, seed: int = C.SEED) -> tuple[float, float]:
-    """95% percentile CI of the pooled mean, resampling whole clusters."""
     values = np.asarray(values, dtype=float)
     if len(values) == 0:
         return float("nan"), float("nan")
@@ -249,7 +240,6 @@ def mid_at(points: list[tuple[int, float]], ts: int, max_age: int = C.MID_MAX_AG
 
 
 def mid_variant_trade(evals: list[dict], points: list[tuple[int, float]], tau: float = C.TAU) -> dict | None:
-    """Secondary 6: same evaluated instants, PM mid from prices-history, first qualifying instant."""
     for r in evals:
         if r["status"] != "ok":
             continue

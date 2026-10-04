@@ -1,4 +1,3 @@
-"""predictions.csv, tests.json, chart.png and SUMMARY.md for the expected-gap OOS study. All numbers come from `res`."""
 from __future__ import annotations
 
 import json
@@ -31,7 +30,6 @@ def _p(x):
 
 
 def _pe(x):
-    """'p = 0.123' or 'p < 0.001'."""
     s = _p(x)
     return f"p {s[0]} {s[1:]}" if s.startswith("<") else f"p = {s}"
 

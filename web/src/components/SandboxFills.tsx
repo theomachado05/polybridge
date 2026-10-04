@@ -1,8 +1,5 @@
 "use client";
 
-// Portfolio: fills of UI-started replay bridges. A replay bridge sends its orders to an isolated in-memory sim (the
-// replay sandbox), never the account, so they never appear in GET /orders. This reads them from each bridge's own
-// summary and SSE stream (the server replays the stream's history on connect) and lists them apart from the account.
 import { getBridge } from "@/lib/api";
 import { prettyId } from "@/lib/fmt";
 import { useAsync } from "@/lib/hooks";
@@ -11,7 +8,6 @@ import type { CSSProperties } from "react";
 import { Glass, Tag } from "@/components/pb";
 import { fillBadges, gateCounts } from "@/lib/risk";
 
-/** At most this many bridges are streamed at once (each holds one SSE connection to the backend). */
 const MAX_STREAMS = 4;
 const wrap: CSSProperties = { padding: "var(--sp-4) 0", borderTop: "1px solid var(--border)" };
 
@@ -44,9 +40,7 @@ function BridgeFills({ id, onOpen }: { id: string; onOpen: (id: string) => void 
   const fills = sandboxFills(st.log);
   const scope = sum?.account_scope ?? (fills.length ? "replay_sandbox" : null);
   const filled = fills.filter((f) => f.status === "filled");
-  // The live stream's position events carry the hedge as it moves; the summary is a one-time snapshot (fallback only).
   const hedge = st.brokerHedge ?? sum?.broker_hedge ?? null;
-  // The client log is bounded, so on a long run the oldest fills drop out: then the count is the latest N, not a total.
   const capped = st.fills > st.log.filter((l) => l.fill).length;
   const head = (
     <button type="button" onClick={() => onOpen(id)} style={{ all: "unset", cursor: "pointer", display: "flex", justifyContent: "space-between", gap: "var(--sp-3)", fontSize: "var(--fs-13)", width: "100%" }}>

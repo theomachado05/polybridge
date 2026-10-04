@@ -39,7 +39,6 @@ def known_agent_id(env_local: Path = ENV_LOCAL) -> str | None:
 
 
 def gitignored(path: Path, repo: Path = REPO) -> bool:
-    """True when git ignores ``path`` (read-only ``git check-ignore``)."""
     try:
         r = subprocess.run(["git", "-C", str(repo), "check-ignore", "-q", str(path.relative_to(repo))],
                            capture_output=True, timeout=10)

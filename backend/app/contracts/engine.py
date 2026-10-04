@@ -1,12 +1,3 @@
-"""The C++ micro families (hedgecore ``ladder_pair``, ``touch_ticket_reference``) behind the ladder and ticket boards.
-
-Each board row is turned into the family's own tick (``LadderTick`` / ``TicketTick``) and decided by a fresh instance
-of the compiled family with the preset the evidence registry names (``engine_preset`` on the ``ladders`` and ``touch``
-entries). A fresh instance per row: the boards hold no positions, so cooldown, caps and leg-risk state start empty.
-
-When the compiled module lacks the micro families (the CI backend job installs no engine), the caller's previous
-Python rule decides and the block says ``source: "python_fallback"``; nothing here claims C++ ran when it did not.
-"""
 from __future__ import annotations
 
 import time
@@ -14,8 +5,8 @@ from typing import Any
 
 LADDER = "ladder_pair"
 TICKET = "touch_ticket_reference"
-ACTIONABLE = {"order"}           # LadderPair: both legs at the quotes (shown as a proposal needing approval)
-PROPOSE = {"propose"}            # TouchTicketReference with validated False: proposal only
+ACTIONABLE = {"order"}
+PROPOSE = {"propose"}
 
 
 def _module() -> Any | None:
@@ -31,7 +22,6 @@ def available() -> bool:
 
 
 def preset(mechanism_id: str) -> dict | None:
-    """The registry's ``engine_preset`` for a mechanism ({family, index, params, why}), or None."""
     try:
         from ..closed import evidence as ev  # noqa: PLC0415
         m = ev.mechanism(mechanism_id)
@@ -46,16 +36,12 @@ def _now_ns() -> int:
 
 
 def effective_rate(p: float | None, rate: float, exponent: float) -> float:
-    """The C++ fee is rate * p * (1 - p). A Polymarket schedule with another exponent is passed as the rate that gives
-    the same fee at the quoted price (as the binding test does for the research file)."""
     if p is None or not 0 < p < 1 or rate == 0:
         return 0.0
     return rate * (p * (1.0 - p)) ** exponent / (p * (1.0 - p))
 
 
 def ladder_tick(pair: dict, rich: dict, cheap: dict, nested: bool | None, now_ns: int) -> dict:
-    """LadderTick fields for one pair. ``nested`` is True only when every nesting check passed (False when one
-    failed, None when it could not run); quote times are the books' own timestamps when given, else the fetch time."""
     b, a = rich.get("best_bid"), cheap.get("best_ask")
     return {
         "ts_ns": now_ns,
@@ -70,7 +56,6 @@ def ladder_tick(pair: dict, rich: dict, cheap: dict, nested: bool | None, now_ns
 
 
 def decide_ladder(tick: dict, now_ns: int) -> dict | None:
-    """The C++ decision for one LadderTick, or None without the compiled family."""
     hc = _module()
     pr = preset("ladders")
     if hc is None or pr is None:
@@ -86,7 +71,6 @@ def decide_ladder(tick: dict, now_ns: int) -> dict | None:
 
 
 def ticket_tick(row: dict, ref: dict, now_ns: int) -> dict:
-    """TicketTick fields for one touch ticket. ``validated`` is always False: the registry says unvalidated."""
     central = (ref.get("central") or ref.get("touch") or {}).get("mid")
     return {"ts_ns": row.get("book_ts_ns") or now_ns, "bid": row.get("best_bid"), "bid_qty": row.get("bid_size"),
             "ask": row.get("best_ask"), "ref_lower": ref.get("lower_bound"), "ref_central": central,

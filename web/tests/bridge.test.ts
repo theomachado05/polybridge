@@ -1,4 +1,3 @@
-// Offline tests for opening a live bridge (proposal reuse, approval, fee gate) with the API injected.
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { algoRunLabel, bridgeFeeGateOff, feeGateOff, gapPerShare, runnableFit, startRealBridge, type BridgeApi } from "../src/lib/realBridge.ts";
@@ -102,7 +101,6 @@ describe("startRealBridge with an AI fit", () => {
     const { api, calls } = fitApi([other, none]);
     assert.equal((await startRealBridge(q, eq, "100%", api, fit)).bridgeId, "b-new");
     assert.ok(calls.create);
-    // no fit: a proposal approved with an algo is not reused (the bridge would run that algo, not the default)
     assert.equal((await startRealBridge(q, eq, "100%", fitApi([same, none]).api)).bridgeId, "b-none");
   });
   it("with a fit the approved target_coverage is the user's Max hedge (the backend caps the algo at it)", async () => {
@@ -111,8 +109,7 @@ describe("startRealBridge with an AI fit", () => {
     assert.equal((calls.create as { target_coverage: number }).target_coverage, 0.4);
     const noFit = fitApi([]);
     await startRealBridge(q, eq, "100%", noFit.api);
-    assert.equal((noFit.calls.create as { target_coverage: number }).target_coverage, 0.5); // default Engine: half
-    // a proposal approved at another cap is not reused: the approval bounds what the bridge may hedge
+    assert.equal((noFit.calls.create as { target_coverage: number }).target_coverage, 0.5);
     const atHalf = prop({ id: "half", status: "approved", target_coverage: 0.5, algo: { family: "macro_fed_hedge", preset_index: 5 } });
     assert.equal((await startRealBridge(q, eq, "40%", fitApi([atHalf]).api, fit)).bridgeId, "b-new");
     assert.equal((await startRealBridge(q, eq, "50%", fitApi([atHalf]).api, fit)).bridgeId, "b-half");
@@ -140,11 +137,9 @@ describe("fee gate and real hedge menu", () => {
     assert.equal(feeGateOff(q, eq), false);
   });
   it("never flags a fitted algo bridge: gap_per_share applies only to the legacy Engine (contracts.md)", () => {
-    // No spot quote (Wi-Fi off, no Massive key): the algo's FeeGate still prices orders from the tick's under_px.
     const fit = runnableFit({ family: "equity_delta_bridge", preset_index: 75, division: "hedge" });
     assert.equal(feeGateOff(q, { ...eq, px: null }, fit), false);
     assert.equal(feeGateOff(q, { ...eq, move: 0 }, fit), false);
-    // A fit that does not run (options family, no preset) leaves the default spec, whose gate is off without a quote.
     assert.equal(feeGateOff(q, { ...eq, px: null }, runnableFit({ family: "vol_vs_pm_move", preset_index: 1, division: "opportunity" })), true);
     assert.equal(feeGateOff(q, { ...eq, px: null }, null), true);
   });
@@ -154,7 +149,7 @@ describe("fee gate and real hedge menu", () => {
     assert.equal(bridgeFeeGateOff(0, algo), false);
     assert.equal(bridgeFeeGateOff(0, { family: "equity_delta_bridge", preset_index: null }), false);
     assert.equal(bridgeFeeGateOff(1.5, null), false);
-    assert.equal(bridgeFeeGateOff(null, null), false); // unknown gap (opened from its URL)
+    assert.equal(bridgeFeeGateOff(null, null), false);
     assert.equal(bridgeFeeGateOff(undefined, null), false);
   });
   it("offers only the engine's hedge on live markets, with no invented prices", () => {

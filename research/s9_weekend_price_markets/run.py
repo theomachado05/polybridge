@@ -1,10 +1,3 @@
-"""S9: Polymarket's price markets over the weekend, while the asset is shut (METHOD.md).
-
-Run from `research/`:
-    python -m s9_weekend_price_markets.run --pull     # the markets' prices around every weekend (not committed)
-    python -m s9_weekend_price_markets.run            # the tests, every variant, the print check on the primary's entries
-    python -m s9_weekend_price_markets.run --no-prints
-"""
 from __future__ import annotations
 
 import json
@@ -37,15 +30,12 @@ CACHE = HERE / ".cache"
 ET, UTC = ZoneInfo("America/New_York"), timezone.utc
 
 
-# ---------------------------------------------------------------- the weekend clock
-
 def _at(day: date, hhmm: str) -> float:
     h, m = (int(x) for x in hhmm.split(":"))
     return datetime(day.year, day.month, day.day, h, m, tzinfo=ET).timestamp()
 
 
 def weekends(days: list[str], opens: np.ndarray) -> list[dict]:
-    """Stock-market closures that contain a Saturday and a Sunday. `key` is the session that follows."""
     out = []
     for i in range(1, len(days)):
         a, b = date.fromisoformat(days[i - 1]), date.fromisoformat(days[i])
@@ -72,15 +62,11 @@ def _ts(s: str | None) -> float | None:
     return datetime.fromisoformat(s).timestamp()
 
 
-# ---------------------------------------------------------------- fills
-
 def fee(p: float, rate: float, exponent: float, c: float) -> float:
     return c * rate * (p * (1.0 - p)) ** exponent if 0.0 < p < 1.0 else 0.0
 
 
 def trade(direction: str, w: float, p_in: float, p_out: float, settled: bool, h: float, rate: float, exponent: float, c: float) -> tuple[str, float, float]:
-    """(side, entry in YES terms, net P&L per contract). A fade sells a rise and buys a fall; a follow is the mirror.
-    A settled exit is the market's result: no spread, no fee."""
     lo, hi = cfg.PRICE_CLIP
     sell = (w > 0) == (direction == "fade")
     entry = min(max(p_in - c * h if sell else p_in + c * h, lo), hi)
@@ -94,7 +80,6 @@ def trade(direction: str, w: float, p_in: float, p_out: float, settled: bool, h:
 
 
 def select(df: pd.DataFrame, v: cfg.Variant) -> pd.DataFrame:
-    """The market-weekends a variant trades: threshold, entry band, asset classes, an exit price, the cap."""
     px, st = ("p_exit", "settled") if v.exit == "monday" else ("p_early", "settled_early")
     ok = (df.w.abs() >= v.threshold) & df.p_entry.between(*cfg.ENTRY_BAND) & df[px].notna()
     if v.classes:
@@ -103,15 +88,11 @@ def select(df: pd.DataFrame, v: cfg.Variant) -> pd.DataFrame:
     return s.groupby("weekend", sort=True).head(cfg.MAX_POSITIONS).drop(columns="_aw").assign(p_out=lambda d: d[px], out_settled=lambda d: d[st])
 
 
-# ---------------------------------------------------------------- data
-
 def universe() -> dict:
     return json.loads((HERE / "universe.json").read_text())
 
 
 def pull() -> None:
-    """One-minute prices of every market, kept only inside the weekend windows (an hour before the start to half an
-    hour after the exit)."""
     CACHE.mkdir(parents=True, exist_ok=True)
     cal, pt, t0 = calendar(), ds.Throttle(5.0), time.time()
     lo = np.array([w["start"] - 3600 for w in cal])
@@ -187,7 +168,6 @@ def build() -> tuple[pd.DataFrame, dict]:
     oos_from = live_weekends[len(live_weekends) - n_oos]
     df["segment"] = np.where(df.weekend >= oos_from, "OOS", "IS")
 
-    # the weekend move in the odds of oil-linked event questions (T2)
     by_q: dict[str, dict] = {}
     for l in event_links():
         if l["ticker"] in cfg.OIL_TICKERS:
@@ -214,8 +194,6 @@ def build() -> tuple[pd.DataFrame, dict]:
             "weekends_with_oil_odds": int(np.isfinite(x.x).sum()), "live_weekend_keys": live_weekends}
     return df, meta
 
-
-# ---------------------------------------------------------------- tests before costs
 
 def tests(df: pd.DataFrame) -> list[dict]:
     rows = []
@@ -245,8 +223,6 @@ def tests(df: pd.DataFrame) -> list[dict]:
     return rows
 
 
-# ---------------------------------------------------------------- prints
-
 def load_prints(need: dict[str, list[float]], cond: dict[str, str]) -> dict[str, dict]:
     CACHE.mkdir(parents=True, exist_ok=True)
     pt, out = ds.Throttle(4.0), {}
@@ -268,8 +244,6 @@ def load_prints(need: dict[str, list[float]], cond: dict[str, str]) -> dict[str,
         out[mid] = rec
     return out
 
-
-# ---------------------------------------------------------------- run
 
 def main() -> int:
     if "--pull" in sys.argv:

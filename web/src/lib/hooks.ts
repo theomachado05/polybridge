@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 
 export interface Async<T> { data: T | null; error: string | null; loading: boolean }
 
-/** Fetch whenever `key` changes (null key = idle). Loading is derived, so no synchronous setState in the effect. */
 export function useAsync<T>(key: string | null, fn: () => Promise<T>): Async<T> {
   const [s, setS] = useState<{ key: string | null; data: T | null; error: string | null }>({ key: null, data: null, error: null });
   useEffect(() => {
@@ -22,7 +21,6 @@ export function useAsync<T>(key: string | null, fn: () => Promise<T>): Async<T> 
   return { data: fresh ? s.data : null, error: fresh ? s.error : null, loading: !fresh };
 }
 
-/** A retry counter for useAsync keys: put `n` in the key, call `retry()` to fetch again after a failure. */
 export function useRetry(): [number, () => void] {
   const [n, setN] = useState(0);
   return [n, useCallback(() => setN((x) => x + 1), [])];

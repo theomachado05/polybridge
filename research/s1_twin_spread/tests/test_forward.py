@@ -1,4 +1,3 @@
-"""S1 forward paper test: fills only from recorded levels, the two-snapshot rule, fees, exits."""
 import math
 
 import pytest
@@ -22,7 +21,6 @@ def test_walk_stops_where_the_marginal_edge_falls_below_theta():
     pm_asks = [[0.40, 50], [0.44, 50], [0.60, 50]]
     k_no_asks = [[0.50, 200]]
     w = fw.walk(pm_asks, k_no_asks, 0.0, 1.0, 1.0, 1.0, 0.0, 0.01, 500)
-    # 0.40 + 0.50 + fee 0.0175 -> edge 0.0825; 0.44 + 0.50 + 0.0175 -> 0.0425; 0.60 -> negative
     assert w["qty"] == 100 and [f[0] for f in w["fills"]] == [0.40, 0.44]
     assert w["pm_gross"] == pytest.approx(50 * 0.40 + 50 * 0.44)
     assert w["k_fee"] == pytest.approx(math.ceil(0.07 * 100 * 0.25 * 100 - 1e-9) / 100)
@@ -35,13 +33,13 @@ def test_walk_never_fills_more_than_the_thinner_leg_or_the_cap():
 
 
 def test_entry_needs_two_adjacent_snapshots_and_fills_from_the_second():
-    wide = snap(1_000_000, book(0.38, 0.40), book(0.50, 0.52))        # A: 0.40 + (1 - 0.50) -> edge
+    wide = snap(1_000_000, book(0.38, 0.40), book(0.50, 0.52))
     flat = snap(1_000_015, book(0.48, 0.50), book(0.50, 0.52))
     assert fw.paper_test([wide, flat], M, 0.01, True, 1.0, R, 500)[0] == []
     second = snap(1_000_015, book(0.39, 0.41, size=60), book(0.50, 0.52))
     tr = fw.paper_test([wide, second], M, 0.01, True, 1.0, R, 500)[0]
     assert len(tr) == 1 and tr[0]["dir"] == "A" and tr[0]["qty"] == 60 and tr[0]["pm_avg"] == pytest.approx(0.41)
-    late = snap(1_000_060, book(0.39, 0.41, size=60), book(0.50, 0.52))   # a missed cycle breaks the run
+    late = snap(1_000_060, book(0.39, 0.41, size=60), book(0.50, 0.52))
     assert fw.paper_test([wide, late], M, 0.01, True, 1.0, R, 500)[0] == []
 
 
@@ -64,7 +62,6 @@ def test_locked_pnl_is_payoff_less_cost_and_carry():
 
 def test_exit_when_both_bids_pay_the_present_value_twice_in_a_row():
     open_ = [snap(1_000_000 + 15 * i, book(0.38, 0.40), book(0.50, 0.52)) for i in range(2)]
-    # the gap reverses: Polymarket YES bid 0.60, Kalshi YES ask 0.52 -> NO bid 0.48: 1.08 before fees
     rev = [snap(1_000_030 + 15 * i, book(0.60, 0.62), book(0.50, 0.52)) for i in range(2)]
     tr = fw.paper_test(open_ + rev, M, 0.01, True, 1.0, R, 500)[0]
     assert tr[0]["t_out"] == rev[1][0]
@@ -92,19 +89,19 @@ def test_snapshots_pair_the_two_venues_by_time():
 
 def test_a_one_sided_book_gives_no_signal_on_either_venue():
     no_bid = {"b": [], "a": [[0.40, 100.0]]}
-    s = [snap(1_000_000 + 15 * i, no_bid, book(0.50, 0.52)) for i in range(3)]       # Polymarket has no bid
+    s = [snap(1_000_000 + 15 * i, no_bid, book(0.50, 0.52)) for i in range(3)]
     assert fw.paper_test(s, M, 0.01, True, 1.0, R, 500)[0] == []
     k_no_ask = {"b": [[0.50, 100.0]], "a": []}
-    s = [snap(1_000_000 + 15 * i, book(0.38, 0.40), k_no_ask) for i in range(3)]     # Kalshi has no ask
+    s = [snap(1_000_000 + 15 * i, book(0.38, 0.40), k_no_ask) for i in range(3)]
     assert fw.paper_test(s, M, 0.01, True, 1.0, R, 500)[0] == []
 
 
 def test_mid_mark_carries_the_last_two_sided_snapshot():
     s = [snap(1_000_000 + 15 * i, book(0.38, 0.40), book(0.50, 0.52)) for i in range(2)]
     s.append(snap(1_000_030, book(0.44, 0.46), book(0.50, 0.52)))
-    s.append(snap(1_000_045, {"b": [], "a": [[0.46, 100.0]]}, book(0.50, 0.52)))      # the last book is one-sided
+    s.append(snap(1_000_045, {"b": [], "a": [[0.46, 100.0]]}, book(0.50, 0.52)))
     tr = fw.paper_test(s, M, 0.01, False, 1.0, R, 500)[0][0]
     fw.mark_end(tr, s, M, 1.0, R)
     financing = R * tr["cost"] * (s[-1][0] - tr["t_in"]) / fw.YEAR_S
     assert tr["pnl_mid"] == pytest.approx(100 * (0.45 + 1 - 0.51) - tr["cost"] - financing)
-    assert tr["pnl_liq"] != tr["pnl_liq"]                                              # cannot be sold: no bid
+    assert tr["pnl_liq"] != tr["pnl_liq"]

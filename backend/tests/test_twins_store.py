@@ -1,4 +1,3 @@
-"""Twin map reader, plus invariants of the committed map (offline: only reads files)."""
 from __future__ import annotations
 
 import json
@@ -74,8 +73,6 @@ def test_default_path_is_patchable(tmp_path, monkeypatch):
     assert twin_of("polymarket", "777").id == "KXFOO-26"
 
 
-# ---------------------------------------------------------------- the committed map
-
 def committed():
     return json.loads(DEFAULT_PATH.read_text())
 
@@ -90,7 +87,7 @@ def test_committed_map_exists_and_every_pair_is_verified_complete_and_same_direc
         v = e["verification"]
         assert v["note"] and v["verified_at"] and all(c["ok"] for c in v["checks"].values())
         dp, dk = date.fromisoformat(e["polymarket"]["deadline_et"]), date.fromisoformat(e["kalshi"]["deadline_et"])
-        assert abs((dp - dk).days) <= 1, e["kalshi"]["ticker"]       # spec: same deadline within 1 day
+        assert abs((dp - dk).days) <= 1, e["kalshi"]["ticker"]
         assert e["polymarket"]["id"] not in seen_p and e["kalshi"]["ticker"] not in seen_k, "one twin per market"
         seen_p.add(e["polymarket"]["id"])
         seen_k.add(e["kalshi"]["ticker"])
@@ -103,7 +100,6 @@ def test_committed_map_ambiguous_pairs_are_flagged_and_disjoint_from_pairs():
     for a in doc["ambiguous"]:
         assert a["used"] is False and a["reasons"]
         assert (a["polymarket"]["id"], a["kalshi"]["ticker"]) not in used
-    # none of them is served by the reader
     for a in doc["ambiguous"]:
         t = twin_of("polymarket", a["polymarket"]["id"])
         assert t is None or t.id != a["kalshi"]["ticker"]
@@ -117,7 +113,6 @@ def test_committed_pairs_resolve_through_the_reader(e):
 
 
 def test_tests_get_an_empty_twin_map_unless_they_opt_in():
-    """conftest's autouse fixture: a committed pair is invisible to a test that did not mark itself real_twins."""
     e = committed()["pairs"][0]
     assert twin_of("polymarket", e["polymarket"]["id"]) is None
 

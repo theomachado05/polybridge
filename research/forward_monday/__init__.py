@@ -1,4 +1,3 @@
-"""Forward reopening taker (Study A). See METHOD.md. Reuses pm_taker and arbscan unchanged."""
 import sys
 from pathlib import Path
 

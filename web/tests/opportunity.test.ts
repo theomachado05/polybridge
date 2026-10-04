@@ -1,5 +1,3 @@
-// Offline tests for the Opportunity (options) path: which fits are offered, proposal → approval → bridge with caps,
-// the stream reducer's options fields, and the honest fill text.
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { DEFAULT_OPP_CAPS, opportunityFit, startOpportunityBridge, type BridgeApi } from "../src/lib/realBridge.ts";
@@ -38,8 +36,8 @@ function fakeApi(existing: Proposal[], failLive = false) {
 describe("opportunityFit", () => {
   it("offers only an options family with a real replay score", () => {
     assert.deepEqual(opportunityFit({ division: "opportunity", family: "vol_vs_pm_move", preset_index: 2, score: 0.4 }), { family: "vol_vs_pm_move", preset_index: 2, score: 0.4 });
-    assert.equal(opportunityFit({ division: "opportunity", family: "vol_vs_pm_move", preset_index: 2, score: null }), null);  // rules pick
-    assert.equal(opportunityFit({ division: "opportunity", family: "no_bid_seller", preset_index: 2, score: 0.9 }), null);  // PM legs, not options
+    assert.equal(opportunityFit({ division: "opportunity", family: "vol_vs_pm_move", preset_index: 2, score: null }), null);
+    assert.equal(opportunityFit({ division: "opportunity", family: "no_bid_seller", preset_index: 2, score: 0.9 }), null);
     assert.equal(opportunityFit({ division: "hedge", family: "binary_vs_spread_arb", preset_index: 2, score: 0.9 }), null);
     assert.equal(opportunityFit(null), null);
   });
@@ -80,7 +78,7 @@ describe("stream reducer: options", () => {
     s = reduce(s, { k: "position", option_position: 3, risk_used: 1560, broker: "sim" });
     assert.equal(s.optionPosition, 3);
     assert.equal(s.riskUsed, 1560);
-    assert.equal(s.hedge, 0);  // an options position event leaves the hedge fields alone
+    assert.equal(s.hedge, 0);
   });
 });
 
@@ -127,9 +125,7 @@ describe("opportunityFit with a non-options top pick", () => {
     const fit = { division: "opportunity", family: "no_bid_seller", preset_index: 3, score: 11.1,
       alternatives: [{ family: "binary_vs_spread_arb", preset_index: 6, score: -0.956 }, { family: "no_bid_seller", preset_index: 4, score: 11.1 }] };
     assert.deepEqual(opportunityFit(fit), { family: "binary_vs_spread_arb", preset_index: 6, score: -0.956, instead_of: "no_bid_seller" });
-    // an unscored options alternative is never offered
     assert.equal(opportunityFit({ ...fit, alternatives: [{ family: "binary_vs_spread_arb", preset_index: 6, score: null }] }), null);
-    // an options top pick is offered as is (its alternatives do not matter)
     assert.deepEqual(opportunityFit({ division: "opportunity", family: "binary_vs_spread_arb", preset_index: 1, score: 0.2, alternatives: fit.alternatives }),
       { family: "binary_vs_spread_arb", preset_index: 1, score: 0.2 });
   });
@@ -145,7 +141,7 @@ describe("resolved markets with a recording", () => {
     assert.equal(isRecordedOnly(resolved, now), true);
     assert.equal(isListedMarket({ ...resolved, recorded: null }, now), false);
     const open = { ...resolved, end_date: "2026-12-31T00:00:00Z", yes_price: 0.4 };
-    assert.equal(isRecordedOnly(open, now), false);  // an open market with a recording is a live market
+    assert.equal(isRecordedOnly(open, now), false);
   });
   it("replay directly: no live attempt on a market whose book is gone", async () => {
     const { api, calls } = fakeApi([]);
@@ -159,7 +155,7 @@ describe("stream reducer: last options estimate", () => {
     let s = reduce(init, { k: "open" });
     s = reduce(s, { k: "tick", p: 0.14, options: { pm_mid: 0.14, opt_implied_prob: 0.128, gap: 0.012 } });
     s = reduce(s, { k: "tick", p: 0.15, options: { pm_mid: 0.15, opt_implied_prob: null, gap: null } });
-    assert.equal(s.options?.opt_implied_prob, null);  // the current tick has no estimate
+    assert.equal(s.options?.opt_implied_prob, null);
     assert.equal(s.lastPriced?.opt_implied_prob, 0.128);
     assert.deepEqual(s.gaps, [0.012]);
   });

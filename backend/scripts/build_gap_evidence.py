@@ -1,19 +1,3 @@
-"""Write backend/app/data/gap_evidence.json: which markets' expected-gap numbers are validated out of sample, and what
-the closed-market research found about each hedge (the product's evidence gate, app/closed/evidence.py).
-
-Reads only committed research results (no data is fetched, no statistic is recomputed):
-
-- research/results/gap_model/tests.json (R2): per-market out-of-sample verdicts. The pre-set rule (research/gap_model/
-  METHOD.md): sign accuracy > 50% with binomial p < 0.05 AND slope of realized on predicted > 0 with permutation
-  p < 0.05. The two leadlag_closed panel markets are labelled "election" / "recession" there (research/leadlag_closed/
-  config.py); the 10 replication markets by their slugs.
-- research/results/closed_hedge/results.json (R1): hedge A (PM contract over the closure) and hedge B (equity order
-  at the open) variance reductions, with the replication-panel run of hedge A.
-- research/results/open_options/stats.json (R3): options catch-up at the Monday open and the net residual gap.
-- research/results/leadlag_replication/tests.json: the overnight-gap relation on 10 new markets.
-
-    cd backend && uv run python scripts/build_gap_evidence.py
-"""
 from __future__ import annotations
 
 import datetime as dt
@@ -26,8 +10,6 @@ RESULTS = ROOT / "research" / "results"
 OUT = ROOT / "backend" / "app" / "data" / "gap_evidence.json"
 RATES = ROOT / "backend" / "app" / "data" / "gap_rates.json"
 
-# research/leadlag_closed labels -> the gap_rates.json market keys (Polymarket slugs). The Polymarket numeric id of
-# the recession market (gamma-api.polymarket.com/markets?slug=us-recession-in-2025&closed=true) is 516710.
 PANEL_A = {"election": "will-donald-trump-win-the-2024-us-presidential-election", "recession": "us-recession-in-2025"}
 POLYMARKET_IDS = {"us-recession-in-2025": "516710"}
 PASS = "Accurate out of sample"

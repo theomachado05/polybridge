@@ -1,4 +1,3 @@
-"""SUMMARY.md, RUN_LOG.md and the chart for the fresh-market accuracy study."""
 from __future__ import annotations
 
 import json

@@ -1,4 +1,3 @@
-"""Study configuration. Defaults are the pre-registered values (HYPOTHESIS.md §3) and the starter's mechanics."""
 from __future__ import annotations
 
 import dataclasses

@@ -1,7 +1,3 @@
-"""S11 history: one-minute mids of every bundle leg not already cached by S5 or S9, and every market's result.
-
-Run from `research/`:  python -m s11_bundles.pull
-"""
 from __future__ import annotations
 
 import json
@@ -45,7 +41,6 @@ def source(mid: str, b_source: str) -> Path | None:
 
 
 def plan(h: dict) -> list[str]:
-    """Markets to pull, in the pre-registered order, within the cap."""
     todo: list[str] = []
     have = lambda i: (S5 / f"pm_{i}.npz").exists()      # noqa: E731
     for b in h["bundles"]:
@@ -60,7 +55,6 @@ def plan(h: dict) -> list[str]:
 
 
 def outcomes(h: dict, pt: ds.Throttle) -> dict[str, float | None]:
-    """Each market's result from its event's catalogue record (1, 0, or None while open)."""
     out: dict[str, float | None] = {}
     for slug in sorted({b["event"] for b in h["bundles"] if b["source"] == "s5"}):
         d = ds.get_json(f"{ds.GAMMA}/events", {"slug": slug}, throttle=pt, allow=(400, 404))

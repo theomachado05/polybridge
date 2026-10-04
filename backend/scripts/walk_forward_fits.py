@@ -45,21 +45,16 @@ DATA = BACKEND / "app" / "data"
 REPO = BACKEND.parent
 OUT = REPO / "research" / "results" / "fit_oos"
 
-# Fixed ex ante (research/fit_oos/METHOD.md). Do not change after the run.
 TRAIN_FRAC = 0.60
 PURGE_FRAC = 0.05
 MIN_PURGE = 2
 SHARES = 1000.0
 LONG_TEST = 100
-SYMLOG_LIN = 0.05  # chart only  # secondary: markets whose test slice has at least this many ticks
+SYMLOG_LIN = 0.05
 
-
-# ---------------------------------------------------------------- split / purge
 
 def split_indices(n: int, train_frac: float = TRAIN_FRAC, purge_frac: float = PURGE_FRAC,
                   min_purge: int = MIN_PURGE) -> tuple[int, int, int]:
-    """(n_train, n_purge, test_start) for a history of n ticks: train = [0, n_train), purge = [n_train, test_start),
-    test = [test_start, n). test_start may equal n (empty test) for tiny n; callers check the sizes."""
     if n < 0:
         raise ValueError("n must be >= 0")
     n_train = int(math.floor(train_frac * n))
@@ -69,7 +64,6 @@ def split_indices(n: int, train_frac: float = TRAIN_FRAC, purge_frac: float = PU
 
 
 def slice_ticks(ticks: dict[str, Any], lo: int, hi: int) -> dict[str, Any]:
-    """Every per-tick array cut to [lo, hi) (copied, contiguous); scalars kept as they are."""
     out = {}
     for k, v in ticks.items():
         if isinstance(v, np.ndarray) and v.ndim == 1:
@@ -86,7 +80,6 @@ def _sub(ts: TickSet, lo: int, hi: int) -> TickSet:
 
 
 def split_tickset(ts: TickSet) -> tuple[TickSet | None, TickSet | None, dict]:
-    """(train, test, info) or (None, None, info with "reason") when the market cannot enter the test."""
     n = ts.n if ts.ticks is not None else 0
     n_train, n_purge, test_start = split_indices(n)
     info = {"n": n, "n_train": n_train, "n_purge": test_start - n_train, "n_test": n - test_start,
@@ -99,16 +92,12 @@ def split_tickset(ts: TickSet) -> tuple[TickSet | None, TickSet | None, dict]:
     if not train.has_underlying or not test.has_underlying:
         return None, None, {**info, "reason": "no equity prices in the " + ("train" if not train.has_underlying
                                                                             else "test") + " slice"}
-    if test.ticks["ts_ns"][0] <= train.ticks["ts_ns"][-1]:  # time order guard (build_ticks sorts; never trust it)
+    if test.ticks["ts_ns"][0] <= train.ticks["ts_ns"][-1]:
         return None, None, {**info, "reason": "ticks not in time order"}
     return train, test, info
 
 
-# ---------------------------------------------------------------- one market
-
 def _test_value(row: dict | None) -> tuple[float | None, str | None]:
-    """The pre-registered test value of one replay row: vs_static; 0.0 when the preset never held a hedge;
-    None (excluded) when vs_static is undefined."""
     if row is None:
         return None, "preset missing from the test replay"
     if never_hedged(row):
@@ -121,7 +110,6 @@ def _test_value(row: dict | None) -> tuple[float | None, str | None]:
 
 async def evaluate_market(adapter: EngineAdapter, manifest: dict, question: str, ticker: str, direction: str,
                           ts: TickSet, shares: float = SHARES) -> dict:
-    """Tune on the train slice exactly as service.run_fit does for a hedge fit, replay the pick on test."""
     event_class, _ = await classify(question, RulesProvider(), manifest.get("event_classes"), ticker)
     train, test, info = split_tickset(ts)
     row: dict[str, Any] = {"event_class": event_class, **{k: info[k] for k in ("n", "n_train", "n_purge", "n_test")}}
@@ -159,10 +147,7 @@ async def evaluate_market(adapter: EngineAdapter, manifest: dict, question: str,
     return {**row, "status": "tested", "reason": note}
 
 
-# ---------------------------------------------------------------- statistics (no scipy in the backend env)
-
 def _betacf(a: float, b: float, x: float) -> float:
-    """Continued fraction for the incomplete beta (modified Lentz)."""
     tiny = 1e-300
     qab, qap, qam = a + b, a + 1.0, a - 1.0
     c, d = 1.0, 1.0 - qab * x / qap
@@ -183,7 +168,6 @@ def _betacf(a: float, b: float, x: float) -> float:
 
 
 def betainc(a: float, b: float, x: float) -> float:
-    """Regularized incomplete beta I_x(a, b)."""
     if x <= 0.0:
         return 0.0
     if x >= 1.0:
@@ -195,7 +179,6 @@ def betainc(a: float, b: float, x: float) -> float:
 
 
 def t_sf(t: float, df: float) -> float:
-    """P(T > t) for Student t with df degrees of freedom."""
     tail = 0.5 * betainc(df / 2.0, 0.5, df / (df + t * t))
     return tail if t >= 0 else 1.0 - tail
 
@@ -237,8 +220,6 @@ def _avg_ranks(a: list[float]) -> list[float]:
 
 
 def wilcoxon_greater(x: list[float]) -> dict:
-    """One-sided Wilcoxon signed-rank (H1: location > 0). Zeros dropped; average ranks for ties; normal approximation
-    with tie and continuity correction for n >= 25, else the exact permutation distribution of the given ranks."""
     d = [v for v in x if v != 0]
     n = len(d)
     if n == 0:
@@ -253,7 +234,7 @@ def wilcoxon_greater(x: list[float]) -> dict:
         var = n * (n + 1) * (2 * n + 1) / 24.0 - sum(c ** 3 - c for c in counts.values()) / 48.0
         z = (w - mean - 0.5) / math.sqrt(var)
         return {"n": n, "w_plus": w, "z": z, "p": norm_sf(z), "method": "normal"}
-    r2 = [int(round(2 * rk)) for rk in r]  # doubled ranks are integers even with ties
+    r2 = [int(round(2 * rk)) for rk in r]
     dist = {0: 1}
     for rk in r2:
         nxt = defaultdict(int)
@@ -274,16 +255,11 @@ def describe(x: list[float]) -> dict:
 
 
 def success(desc: dict) -> bool:
-    """Pre-registered: median test vs_static > 0 AND one-sided Wilcoxon p < 0.05."""
     w = (desc.get("wilcoxon") or {}).get("p")
     return bool(desc.get("n")) and desc["median"] > 0 and w is not None and w < 0.05
 
 
-# ---------------------------------------------------------------- data
-
 def load_universe(fits_path: Path, universe: Path, ai_map: Path) -> tuple[list[dict], dict]:
-    """Jobs for every market fits.json scored, with ticker / direction / question from fits.json and the YES token
-    from the universe (precompute_fits.load_jobs)."""
     sys.path.insert(0, str(BACKEND / "scripts"))
     from precompute_fits import load_jobs
     fits = json.loads(fits_path.read_text())["fits"]
@@ -319,7 +295,6 @@ def _load_cache(path: Path) -> TickSet | None:
 
 
 async def fetch(job: dict, http, massive, offline: bool) -> tuple[TickSet, bool]:
-    """build_ticks bounded as service.run_fit bounds it; on overrun, recorded data only. (ticks, timed_out)"""
     market = {"source": job["source"], "id": job["id"], "token_id": job.get("token_id")}
     try:
         return await asyncio.wait_for(build_ticks(market, job["ticker"], http=http, massive=massive, offline=offline),
@@ -327,8 +302,6 @@ async def fetch(job: dict, http, massive, offline: bool) -> tuple[TickSet, bool]
     except asyncio.TimeoutError:
         return await build_ticks(market, job["ticker"], http=None, massive=None, offline=True), True
 
-
-# ---------------------------------------------------------------- outputs
 
 CSV_COLS = ["key", "ticker", "direction", "event_class", "ticks_source", "status", "reason", "n", "n_train", "n_purge",
             "n_test", "family", "preset_index", "default_preset_index", "train_vs_static", "test_vs_static",
@@ -381,7 +354,7 @@ def write_chart(rows: list[dict], path: Path) -> None:
     a1.text(hi, hi, " test = train", color=muted, fontsize=8, va="bottom", ha="right")
     a1.set_xlabel("train vs_static of the chosen preset (in-sample)", color=ink, fontsize=10)
     a1.set_ylabel("test vs_static of the same preset (out-of-sample)", color=ink, fontsize=10)
-    for ax, axis in ((a1, "x"), (a1, "y"), (a2, "y")):  # a few test values reach -14: linear inside +/-0.05 only
+    for ax, axis in ((a1, "x"), (a1, "y"), (a2, "y")):
         (ax.set_xscale if axis == "x" else ax.set_yscale)("symlog", linthresh=SYMLOG_LIN)
     a1.set_title(f"Pick on train, score on test ({len(tested)} markets)", color=ink, fontsize=11, loc="left")
     ys = np.sort(y)
@@ -534,8 +507,6 @@ def write_summary(a: dict, meta: dict, path: Path) -> None:
     lines += ["", "Files: `per_market.csv` (one row per market), `chart.png`, `RUN_LOG.md`."]
     path.write_text("\n".join(lines) + "\n")
 
-
-# ---------------------------------------------------------------- main
 
 async def amain(argv: list[str] | None = None) -> dict:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])

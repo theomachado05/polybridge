@@ -1,4 +1,3 @@
-"""Expected-gap model and its out-of-sample tests (METHOD.md sections 1, 3 and 4). numpy/pandas only."""
 from __future__ import annotations
 
 from math import sqrt
@@ -11,10 +10,7 @@ from leadlag_closed.stats import THETA_TOL, binom_two_sided, ols_hc3
 from .config import PARAMS
 
 
-# ---------------------------------------------------------------- rate (section 1)
-
 def fit_rate(x, g) -> dict:
-    """Through-origin least squares g = rate * x with an HC3 standard error and the residual SD."""
     x, g = np.asarray(x, float), np.asarray(g, float)
     m = np.isfinite(x) & np.isfinite(g)
     x, g = x[m], g[m]
@@ -32,7 +28,6 @@ def fit_rate(x, g) -> dict:
 
 
 def between_market_sd(own_rates: list[float], pooled_rate: float) -> float:
-    """tau: SD (ddof 1) of own-rate markets' rates; |pooled rate| if fewer than two such markets."""
     r = [v for v in own_rates if np.isfinite(v)]
     if len(r) >= 2:
         return float(np.std(r, ddof=1))
@@ -43,15 +38,7 @@ def band_halfwidth(x: float, se_eff: float, resid_sd: float, z: float = PARAMS.z
     return z * sqrt(x ** 2 * se_eff ** 2 + resid_sd ** 2)
 
 
-# ---------------------------------------------------------------- walk-forward (section 3)
-
 def walk_forward(df: pd.DataFrame, outcome: str, n_min: int = PARAMS.n_min, z: float = PARAMS.z80) -> pd.DataFrame:
-    """Expanding-window predictions.
-
-    `df` needs: market, closure (close day, ISO), open_day (ISO), x (oriented PM move, pp), and the `outcome` column.
-    An optional boolean column `test` limits which rows are predicted (training always uses every usable row).
-    Training rows for closure t are rows with open_day <= closure(t). Returns one row per predicted closure.
-    """
     d = df.copy()
     if "test" not in d:
         d["test"] = True
@@ -93,10 +80,7 @@ def walk_forward(df: pd.DataFrame, outcome: str, n_min: int = PARAMS.n_min, z: f
     return pd.DataFrame(out)
 
 
-# ---------------------------------------------------------------- tests (section 4)
-
 def sign_accuracy(pred, gap, x=None, theta: float | None = None) -> dict:
-    """G1: among rows with pred != 0 and gap != 0 (and |x| >= theta if given), share with sign(pred) == sign(gap)."""
     pred, gap = np.asarray(pred, float), np.asarray(gap, float)
     m = np.isfinite(pred) & np.isfinite(gap) & (pred != 0) & (gap != 0)
     if theta is not None:
@@ -113,11 +97,6 @@ def _slope(x, y):
 
 
 def slope_test(pred, gap, n_perm: int = PARAMS.n_perm, seed: int = PARAMS.seed, groups=None) -> dict:
-    """G2: gap = a + c * pred, HC3 t (and t of c - 1), permutation p on |c|.
-
-    groups=None shuffles the gap vector across rows. With `groups` (closure dates), one permutation of the
-    date -> gap map is applied to every row of that date (rows of one date must share one gap).
-    """
     pred, gap = np.asarray(pred, float), np.asarray(gap, float)
     m = np.isfinite(pred) & np.isfinite(gap)
     pred, gap = pred[m], gap[m]

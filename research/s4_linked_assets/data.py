@@ -1,8 +1,3 @@
-"""S4 data: Polymarket 1-minute odds for every proposer-linked market, and 5-minute regular-session equity bars plus
-daily bars for the linked tickers and SPY. Arrays go to `.cache/` as npz; nothing here is committed.
-
-Run from `research/`:  python -m s4_linked_assets.data
-"""
 from __future__ import annotations
 
 import json
@@ -27,11 +22,10 @@ AI_MAP = RESEARCH.parent / "backend" / "app" / "data" / "ai_map.json"
 UTC = timezone.utc
 ET = "America/New_York"
 BAR_MIN = 5
-DAILY_START = "2025-09-01"       # 60 sessions of beta history before the window
+DAILY_START = "2025-09-01"
 
 
 def proposer_links() -> list[dict]:
-    """Every Polymarket link of ai_map.json as committed: one row per (market, ticker)."""
     items = json.loads(AI_MAP.read_text())["items"]
     out = []
     for key, v in items.items():
@@ -57,7 +51,6 @@ def _massive_session():
 
 
 def massive_rows(s: requests.Session, url: str, params: dict | None = None) -> list[dict]:
-    """All pages of a Massive aggregates request, with retries. Responses are not cached to disk."""
     rows: list[dict] = []
     while url:
         for attempt in range(8):
@@ -89,7 +82,6 @@ def month_chunks(start: str, end: str) -> list[tuple[str, str]]:
 
 def equity_bars(s: requests.Session, base: str, ticker: str, start: str = cfg.WINDOW_START,
                 end: str = cfg.WINDOW_END) -> dict[str, np.ndarray]:
-    """5-minute bars of the regular session (09:30 to 16:00 New York): start time, open, close, volume, vwap."""
     rows = []
     for a, b in month_chunks(start, end):
         rows += massive_rows(s, f"{base}/v2/aggs/ticker/{ticker}/range/{BAR_MIN}/minute/{a}/{b}",

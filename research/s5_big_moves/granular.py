@@ -1,9 +1,3 @@
-"""S5, descriptive: which questions are tied to which instruments, and is the link itself the weak point?
-Per theme and per link: the opening-gap relation, what follows after the open, and the big-move nights.
-Same links and cached data as S5; nothing new is pulled. Exploratory.
-
-Run from `research/`:  python -m s5_big_moves.granular
-"""
 from __future__ import annotations
 
 import sys
@@ -15,7 +9,6 @@ from s4_linked_assets import engine as en
 
 from .run import CACHE, RESULTS, merge_links
 
-# First match wins. Themes are for reading the results; no rule uses them.
 THEMES = (
     ("Fed chair", ("fed chair", "powell out", "nominate")),
     ("Fed rate decision", ("fed ", "interest rates", "rate cuts")),
@@ -98,7 +91,6 @@ def main() -> int:
     enough = lk[(lk.link_days >= 30) & np.isfinite(lk.gap_t)]
     check = {"links_with_30_days": int(len(enough)), "gap_slope_positive": int((enough.gap_bp_per_point > 0).sum()),
              "right_and_significant": int((enough.gap_t >= 2).sum()), "wrong_and_significant": int((enough.gap_t <= -2).sum())}
-    # the degenerate SPY links, the weight of the largest theme, and the trade by theme
     def fit(d, y="gap"):
         c = en.clustered_slope(d.x.to_numpy(), d[y].to_numpy(), d.day.to_numpy())
         return {"slope": c["slope"], "t": c["t"], "n": c["n"]}

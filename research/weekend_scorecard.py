@@ -1,9 +1,3 @@
-"""One scorecard for the weekend and cross-venue studies, the way the track scores them, built from the committed
-`metrics.csv` files only. Writes `results/WEEKEND_SCORECARD.md` and refreshes the table between the scorecard markers
-in `EVIDENCE.md`.
-
-Run from `research/`:  python weekend_scorecard.py
-"""
 from __future__ import annotations
 
 from pathlib import Path

@@ -1,13 +1,3 @@
-"""SimBroker: a deterministic simulated account, persisted to a JSON file.
-
-Fills
-  equity      reference price (supplied, else the Massive last price) +/- half-spread, plus a per-share fee
-  option      Massive option quote mid +/- half the quoted spread, plus a per-contract fee (100 shares per contract)
-  prediction  the supplied prediction-market book price for the side taken (no extra spread), plus a fee
-Short selling is allowed (hedges are short). Buying power is cash minus 150% of the short market value
-(the proceeds stay locked as collateral plus 50% extra); an order that would push buying power below zero
-is rejected, and so is any order that has no price. Everything is a pure function of the orders and the
-reference prices: no randomness, no clock in the maths."""
 from __future__ import annotations
 
 import asyncio
@@ -28,7 +18,7 @@ log = logging.getLogger(__name__)
 DEFAULT_PATH = Path(__file__).resolve().parents[2] / ".sim_account.json"
 START_CASH = 1_000_000.0
 MAX_ORDERS = 2000
-SHORT_COLLATERAL = 1.5  # locked per $1 of short market value (proceeds + 50%)
+SHORT_COLLATERAL = 1.5
 EPS = 1e-9
 
 
@@ -37,8 +27,8 @@ class Fees:
     equity_per_share: float = 0.005
     option_per_contract: float = 0.65
     prediction_per_contract: float = 0.0
-    equity_half_spread_bps: float = 1.0  # when the price source has no bid/ask
-    option_half_spread_pct: float = 0.02  # when an option price has no bid/ask
+    equity_half_spread_bps: float = 1.0
+    option_half_spread_pct: float = 0.02
 
 
 def _key(asset: str, symbol: str) -> str:
@@ -51,8 +41,8 @@ def _r(x: float) -> float:
 
 class SimBroker:
     name = "sim"
-    extended_hours = True  # simulated: an extended-hours order fills like any other (at the supplied / quoted price)
-    options_supported = True  # simulated option fills (quote mid +/- half-spread, per-contract fee)
+    extended_hours = True
+    options_supported = True
     ACCOUNT_LABEL = "Simulated account"
 
     def __init__(self, path: Path | str | None = DEFAULT_PATH, quotes: QuoteProvider | None = None,
@@ -62,12 +52,11 @@ class SimBroker:
         self.quotes: QuoteProvider = quotes or NullQuotes()
         self.fees = fees or Fees()
         self._clock = clock
-        self.order_note = order_note  # label stamped on every order (e.g. why it is simulated)
+        self.order_note = order_note
         self._lock = asyncio.Lock()
         self._reset_state(starting_cash)
         self._load()
 
-    # ---- state ------------------------------------------------------------------------------------
     def _reset_state(self, starting_cash: float) -> None:
         self.starting_cash = float(starting_cash)
         self.cash = float(starting_cash)
@@ -76,7 +65,7 @@ class SimBroker:
         self.fees_paid = 0.0
         self.pos: dict[str, dict] = {}
         self._orders: list[Order] = []
-        self._refs: dict[str, float | None] = {}  # order id -> ref_px, for resting limit orders
+        self._refs: dict[str, float | None] = {}
 
     def _load(self) -> None:
         if self.path is None or not self.path.is_file():
@@ -104,10 +93,9 @@ class SimBroker:
             with os.fdopen(fd, "w") as f:
                 json.dump(state, f)
             os.replace(tmp, self.path)
-        except OSError as e:  # the in-memory account stays correct; only persistence is lost
+        except OSError as e:
             log.warning("could not persist the sim account: %s", e)
 
-    # ---- maths ------------------------------------------------------------------------------------
     @staticmethod
     def _short_value(pos: dict[str, dict]) -> float:
         return sum(-p["qty"] * (p["mark_px"] or p["avg_px"]) * p["mult"] for p in pos.values() if p["qty"] < 0)
@@ -128,7 +116,6 @@ class SimBroker:
     @staticmethod
     def _settle(cash: float, pos: dict[str, dict], asset: str, symbol: str, side: str, qty: float,
                 fill_px: float, mid: float, fee: float) -> tuple[float, float]:
-        """Apply a fill to (cash, pos) in place; returns (new cash, realized P&L of the closing part)."""
         mult = MULTIPLIER[asset]
         signed = qty if side == "buy" else -qty
         cash += -signed * fill_px * mult - fee
@@ -138,27 +125,24 @@ class SimBroker:
             pos[k] = {"symbol": symbol, "asset": asset, "qty": signed, "avg_px": fill_px, "mark_px": mid, "mult": mult}
             return cash, realized
         q = p["qty"]
-        if q * signed > 0:  # adding to the same direction: weighted average cost
+        if q * signed > 0:
             p["avg_px"] = (abs(q) * p["avg_px"] + qty * fill_px) / (abs(q) + qty)
             p["qty"] = q + signed
-        else:  # reducing or flipping
+        else:
             closing = min(abs(q), qty)
             realized = (fill_px - p["avg_px"]) * closing * mult * (1 if q > 0 else -1)
             p["qty"] = q + signed
             if abs(p["qty"]) < EPS:
                 del pos[k]
                 return cash, realized
-            if p["qty"] * q < 0:  # flipped through zero: the remainder opens at the fill price
+            if p["qty"] * q < 0:
                 p["avg_px"] = fill_px
         p["mark_px"] = mid
         return cash, realized
 
-    # ---- pricing ----------------------------------------------------------------------------------
     async def _price(self, req: OrderRequest) -> tuple[float, float, str] | str:
-        """(mid, half_spread, source) or a reject reason."""
         a = req.asset
         if a == "prediction":
-            # limit_px is the user's bound, never the book price: without ref_px there is nothing to fill against
             return ((req.ref_px, 0.0, "supplied_book_price") if req.ref_px
                     else "no_price: prediction legs need ref_px (the book price); limit_px is only a bound")
         if req.ref_px:
@@ -186,9 +170,7 @@ class SimBroker:
             return True
         return limit_px >= fill_px if side == "buy" else limit_px <= fill_px
 
-    # ---- execution --------------------------------------------------------------------------------
     def _try_fill(self, o: Order, ref_px: float | None, mid: float, half: float, source: str) -> bool:
-        """Fill `o` (status open) at the given reference if marketable and affordable. Returns True if filled."""
         fill_px = self._fill_px(o.side, mid, half, o.asset)
         if not self._marketable(o.type, o.side, o.limit_px, fill_px):
             return False
@@ -226,7 +208,7 @@ class SimBroker:
                 if self._try_fill(o, req.ref_px, mid, half, src):
                     self._sweep_symbol(o, mid, half, src)
                 elif o.status == "open":
-                    self._refs[o.id] = req.ref_px  # resting limit order
+                    self._refs[o.id] = req.ref_px
                     self._sweep_symbol(o, mid, half, src)
             if len(self._orders) > MAX_ORDERS:
                 for old in self._orders[: len(self._orders) - MAX_ORDERS]:
@@ -242,10 +224,6 @@ class SimBroker:
                      note=" | ".join(n for n in (req.note, self.order_note) if n) or None, combo_id=req.combo_id)
 
     async def place_combo(self, reqs: list[OrderRequest]) -> list[Order]:
-        """A multi-leg option order, all or none: every leg is priced (supplied ref_px +/- ref_half_spread, else the
-        Massive option quote) and filled at market in one step; if any leg has no price, or the whole combination
-        would push buying power below zero, every leg is rejected and nothing trades. Idempotent per leg
-        client_order_id (a retried combo returns the legs already placed)."""
         if not reqs:
             raise BrokerError("A combo needs at least one leg.", 422)
         if any(r.asset != "option" or r.type != "market" for r in reqs):
@@ -288,13 +266,11 @@ class SimBroker:
             return [o.model_copy() for o in orders]
 
     def _sweep_symbol(self, just: Order, mid: float, half: float, src: str) -> None:
-        """Resting limit orders in the same instrument get a chance to fill at the price just seen."""
         for o in self._orders:
             if o.status == "open" and o.id != just.id and (o.asset, o.symbol) == (just.asset, just.symbol):
                 self._try_fill(o, None, mid, half, src)
 
     async def sweep(self, symbol: str, asset: str, mid: float, half_spread: float = 0.0) -> list[Order]:
-        """Re-test resting limit orders in one instrument against a supplied price (tests, and callers with a feed)."""
         async with self._lock:
             probe = Order(id="", client_order_id="", broker=self.name, symbol=symbol, asset=asset, side="buy",
                           qty=1, type="market", status="open", created_at="")
@@ -309,7 +285,6 @@ class SimBroker:
                 return o.model_copy()
         return None
 
-    # ---- Broker protocol --------------------------------------------------------------------------
     async def account(self) -> Account:
         return Account(broker=self.name, cash=_r(self.cash), equity=_r(self._equity(self.cash, self.pos)),
                        buying_power=_r(max(0.0, self._buying_power(self.cash, self.pos))),
@@ -318,7 +293,6 @@ class SimBroker:
                        note="Simulated account: fills are modelled, not real.")
 
     async def can_short(self, symbol: str) -> bool | None:
-        """The simulator models no borrow: every equity can be shorted here (simulated, not a borrow check)."""
         return True
 
     async def positions(self) -> list[Position]:
@@ -332,7 +306,6 @@ class SimBroker:
         return out
 
     async def refresh_marks(self) -> None:
-        """Re-mark equity and option positions to the latest Massive price; failures keep the old mark."""
         async def one(p: dict):
             q = await (self.quotes.equity(p["symbol"]) if p["asset"] == "equity" else self.quotes.option(p["symbol"]))
             return p, q
@@ -349,7 +322,7 @@ class SimBroker:
 
     async def orders(self, status: str | None = None) -> list[Order]:
         rows = [o for o in self._orders if status is None or o.status == status]
-        return [o.model_copy() for o in reversed(rows)]  # newest first
+        return [o.model_copy() for o in reversed(rows)]
 
     async def cancel(self, order_id: str) -> Order:
         async with self._lock:

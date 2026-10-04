@@ -1,4 +1,3 @@
-"""NYSE trading calendar without a stock feed (Massive starter, section 3)."""
 from __future__ import annotations
 
 import pandas as pd
@@ -44,7 +43,6 @@ class TradingCalendar:
         return self.sessions[i]
 
     def between(self, a, b) -> int:
-        """Sessions strictly after `a` up to and including `b`."""
         return int(self.sessions.searchsorted(pd.Timestamp(b), side="right")
                    - self.sessions.searchsorted(pd.Timestamp(a), side="right"))
 

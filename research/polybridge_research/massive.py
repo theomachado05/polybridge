@@ -1,7 +1,3 @@
-"""Massive REST client: key loading that never hangs a non-interactive kernel, on-disk cache, retries, paging.
-
-The cache key is sha1(full URL), the same as the Massive starter notebook's, so both share `.massive_cache/`.
-"""
 from __future__ import annotations
 
 import hashlib
@@ -33,8 +29,6 @@ def _read_dotenv(path: Path, name: str) -> str:
 
 def load_api_key(name: str = "MASSIVE_API_KEY", search_from: Path | None = None,
                  interactive: bool | None = None) -> str:
-    """Environment first, then `.env` in `search_from` and up to three parent folders, then a prompt only
-    when a human is at the terminal. Judges run non-interactively, so they get an error, never a hang."""
     key = (os.environ.get(name) or "").strip()
     if key in _PLACEHOLDERS:
         start = (search_from or Path.cwd()).resolve()

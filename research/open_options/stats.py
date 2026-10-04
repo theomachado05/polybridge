@@ -1,4 +1,3 @@
-"""OLS slope and cluster bootstrap over closures (METHOD.md section 4). Exact resampling via cluster sufficient statistics."""
 from __future__ import annotations
 
 import numpy as np
@@ -21,7 +20,6 @@ def _weights(n_clusters: int, draws: int, seed: int) -> np.ndarray:
 
 
 def cluster_bootstrap(x, y, g, clusters, draws: int = DRAWS, seed: int = SEED) -> dict:
-    """Point estimates and 95% percentile CIs for: OLS slope of y on x, mean g, and the per-cluster-weighted mean of g."""
     x, y, g = (np.asarray(v, float) for v in (x, y, g))
     cl = np.asarray(clusters)
     keys, inv = np.unique(cl, return_inverse=True)

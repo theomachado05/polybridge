@@ -1,4 +1,3 @@
-"""Exploratory atlas (HYPOTHESIS.md §5): every tag, baseline spec, BH q-values. Never a headline."""
 from __future__ import annotations
 
 import numpy as np

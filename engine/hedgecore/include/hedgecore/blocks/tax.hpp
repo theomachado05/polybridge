@@ -1,6 +1,4 @@
 #pragma once
-// Tax blocks (UI kind: Tax). A fixed-capacity lot ledger (no heap) and a wash-sale guard.
-// Not tax advice: the rules are simplified (no lot-level wash adjustment of basis, no constructive sales).
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -15,25 +13,23 @@ namespace hedgecore::blocks {
 inline constexpr std::int64_t kLongTermNs = 365 * kNsPerDay;
 
 struct Lot {
-  double qty = 0;  // > 0; the ledger's sign gives the direction
+  double qty = 0;
   double px = 0;
   std::int64_t ts_ns = 0;
 };
 
 struct Realized {
   double short_term = 0, long_term = 0;
-  int closed_dir = 0;  // +1 closed long lots, -1 closed short lots, 0 nothing closed
+  int closed_dir = 0;
   double total() const noexcept { return short_term + long_term; }
 };
 
-// Selects which lots a closing trade consumes. FIFO (0): oldest first. HIFO (1): the lot with the smallest gain first
-// (highest cost for longs, lowest sale price for shorts). LongTermFirst (2): long-term lots first (HIFO among them).
 struct TaxLotSelector {
   static constexpr const char* name = "TaxLotSelector";
   enum Mode : int { FIFO = 0, HIFO = 1, LongTermFirst = 2 };
   static constexpr int kCap = 32;
   int mode = HIFO;
-  int dir = 0;  // +1 long lots, -1 short lots
+  int dir = 0;
   std::array<Lot, kCap> lots{};
   int n = 0;
 
@@ -70,7 +66,7 @@ struct TaxLotSelector {
   void add(int s, double q, double px, std::int64_t ts) noexcept {
     dir = s;
     if (n < kCap) { lots[static_cast<std::size_t>(n++)] = {q, px, ts}; return; }
-    Lot& last = lots[kCap - 1];  // full: merge into the newest slot at the weighted cost
+    Lot& last = lots[kCap - 1];
     last.px = (last.px * last.qty + px * q) / (last.qty + q);
     last.qty += q;
     last.ts_ns = ts;
@@ -94,8 +90,6 @@ struct TaxLotSelector {
   }
 };
 
-// Blocks re-opening a position in the direction of a loss close within window_ns (30 days by default): after a loss
-// sale of long lots, re-buys are blocked; after a loss cover of short lots, re-shorts are blocked.
 struct WashSaleGuard {
   static constexpr const char* name = "WashSaleGuard";
   static constexpr Rc fail = Rc::WashSale;
@@ -112,4 +106,4 @@ struct WashSaleGuard {
   }
 };
 
-}  // namespace hedgecore::blocks
+}

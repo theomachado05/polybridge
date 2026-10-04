@@ -1,7 +1,3 @@
-"""S18: are Polymarket's price markets fairly priced against how they resolve? (METHOD.md). Cached data only.
-
-Run from `research/`:  python -m s18_price_market_calibration.run
-"""
 from __future__ import annotations
 
 import json
@@ -36,14 +32,12 @@ def half_spread(universe: str, asset_class: str, kind: str) -> float:
 
 
 def first_entry(starts: np.ndarray, t: np.ndarray, p: np.ndarray) -> tuple[float, float] | None:
-    """(instant, price) at the first weekend start with a price reading at most PM_MAX_AGE_S old."""
     px = asof(starts.astype(np.int64), t, p, cfg.PM_MAX_AGE_S)
     ok = np.flatnonzero(np.isfinite(px))
     return (float(starts[ok[0]]), float(px[ok[0]])) if len(ok) else None
 
 
 def hold_to_result(side: str, p: float, outcome: float, h: float, rate: float, exponent: float, c: float) -> tuple[float, float, float]:
-    """(entry in YES terms, net P&L per contract, capital per contract). One fill, one fee, nothing at the result."""
     lo, hi = cfg.PRICE_CLIP
     entry = min(max(p - c * h if side == "sell YES" else p + c * h, lo), hi)
     fee = c * rate * (entry * (1.0 - entry)) ** exponent
@@ -69,7 +63,6 @@ def select(df: pd.DataFrame, v: cfg.Variant) -> pd.DataFrame:
 
 
 def max_locked(trades: list[dict]) -> float:
-    """The largest capital locked at one time: each trade locks its capital from its entry to its result."""
     ev = sorted([(t["entry_epoch"], t["capital"]) for t in trades] + [(t["result_epoch"], -t["capital"]) for t in trades], key=lambda e: (e[0], e[1]))
     cur = best = 0.0
     for _, c in ev:

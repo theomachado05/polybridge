@@ -1,4 +1,3 @@
-// Voice drives the screen: the pure mapping from a client tool result to {route, storeUpdate, announcement}.
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { navigateReply, resolveMarket, SCREENS, SCREEN_PATH, searchedMarkets, VOICE_ANCHOR, voiceDrive, voiceStartLabel } from "../src/lib/voiceDrive.ts";
@@ -29,20 +28,17 @@ describe("voice drives the screen", () => {
     assert.equal(d.scrollTo, VOICE_ANCHOR.steps);
     assert.deepEqual(d.storeUpdate, { kind: "fit", market: MKT, ticker: "SPY", direction: "down_on_yes", sharesHeld: 1000, fit: FIT });
     assert.equal(d.announcement, "SPY fit ready · score 0.31");
-    // A market the agent did not search for: a minimal row with nothing invented.
     const u = voiceDrive("fit", { ticker: "TLT", market_id: "77", question: "Fed cut?" }, ok("fit", { ...FIT, score: null })).storeUpdate;
     assert.ok(u && u.kind === "fit");
     assert.deepEqual(u.market, { source: "polymarket", id: "77", question: "Fed cut?", yes_price: null, volume_24h: 0, end_date: null, url: null, token_id: null });
     assert.equal(u.direction, null);
     assert.match(voiceDrive("fit", { ticker: "TLT", market_id: "77" }, ok("fit", { ...FIT, score: null })).announcement, /unscored/);
-    // No market id: the fit cannot be pinned to a pick, so the screen stays.
     assert.equal(voiceDrive("fit", { ticker: "SPY", question: "recession" }, ok("fit", FIT)).route, null);
   });
 
   it("propose → the pipeline's approval panel with that pending proposal", () => {
     const d = voiceDrive("propose", { ticker: "SPY", shares_held: 1000, market_id: "4620900" }, ok("propose", PROP), [MKT]);
     assert.deepEqual(d, { route: "/build/fit", storeUpdate: { kind: "proposal", proposal: PROP, market: MKT }, announcement: "Proposal p7 is waiting for your approval", scrollTo: VOICE_ANCHOR.approval });
-    // Filing-tag proposals (no market) and opportunities have no hedge approval panel.
     assert.equal(voiceDrive("propose", {}, ok("propose", { ...PROP, market: null })).route, null);
     assert.equal(voiceDrive("propose", {}, ok("propose", { ...PROP, family: "opportunity" })).route, null);
   });
@@ -85,7 +81,6 @@ describe("voice drives the screen", () => {
     assert.deepEqual(b.data, { screen: "bridge", bridge_id: "b9" });
     assert.deepEqual(voiceDrive("navigate", { screen: "bridge", bridge_id: "b9" }, b), { route: "/bridge/b9", storeUpdate: null, announcement: "Opening bridge b9", scrollTo: null });
     assert.equal(voiceDrive("navigate", { screen: "portfolio" }, navigateReply({ screen: "portfolio" })).announcement, "Opening your portfolio");
-    // bridge_id only counts with the bridge screen
     assert.equal(voiceDrive("navigate", { screen: "library", bridge_id: "b9" }, navigateReply({ screen: "library", bridge_id: "b9" })).route, "/library");
     const bad = navigateReply({ screen: "settings" });
     assert.equal(bad.ok, false);
@@ -136,7 +131,6 @@ describe("the mouse continues from a voice proposal", () => {
     const r = await startRealBridge(q, eq, "100%", api, null, { proposal: PROP as Proposal, ackUnvalidated: false });
     assert.equal(r.bridgeId, "b1");
     assert.deepEqual(seen, ["approve:p7:false", "start:p7"]);
-    // Already approved by voice: no second approval.
     seen.length = 0;
     await startRealBridge(q, eq, "100%", api, null, { proposal: { ...(PROP as Proposal), status: "approved" } });
     assert.deepEqual(seen, ["start:p7"]);

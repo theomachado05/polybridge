@@ -1,4 +1,3 @@
-"""End-to-end on synthetic tables and a fake Massive client: no network, no key, no real data."""
 import json
 import zlib
 
@@ -15,7 +14,6 @@ def _u(day: str, salt: str) -> float:
 
 
 class FakeClient:
-    """SPY/QQQ: flat RTH at P_d, pre-market 07:00-09:29 at Q_d. Futures endpoint not entitled."""
 
     def __init__(self):
         self.calls = []

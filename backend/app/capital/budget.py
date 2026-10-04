@@ -1,20 +1,3 @@
-"""Capital controls: the account risk budget and margin requirements (pure functions, no I/O).
-
-Budget (defaults; ``CAPITAL_MAX_GROSS_PCT`` / ``CAPITAL_MAX_EVENT_PCT`` env vars or ``app.state.capital_limits``):
-  gross   the account's gross hedge notional (every short equity hedge at its price, plus the risk of open option
-          structures, plus approved / working staged sells not filled yet) <= 50% of account equity
-  event   the same, summed per event (one prediction market), <= 20% of account equity
-Margin (Reg T on the Individual Margin account; FINRA 4210 maintenance for shorts):
-  short equity      initial 50% of the short's market value, maintenance 30%
-  long option       the premium (debit x 100 x contracts), paid in full
-  short put         cash-secured (default): (strike - credit) x 100 per contract; or ``CAPITAL_SHORT_PUT_MODE=margin``:
-                    the Reg T naked-put rule, (max(20% x spot - out-of-the-money amount, 10% x strike) + premium) x 100
-  short spread      its max loss: (width - credit) x 100 per contract
-Buying power (pre-trade, the active broker's own number): the simulator reports buying power as excess cash after
-its 50% short collateral, so the order's initial margin must fit it; Webull reports buying power in notional terms (2 x
-excess equity overnight on a Reg T margin account), so the order's notional must fit it. An order that breaches any
-check is refused with reason ``capital_budget``; an order that only reduces exposure is never refused.
-"""
 from __future__ import annotations
 
 import math
@@ -40,7 +23,6 @@ def _env_pct(name: str, default: float) -> float:
 
 
 def limits(app=None) -> dict:
-    """The budget in force: defaults, then env vars, then ``app.state.capital_limits`` (tests / an operator)."""
     out = {"max_gross_hedge_pct": _env_pct("CAPITAL_MAX_GROSS_PCT", MAX_GROSS_HEDGE_PCT),
            "max_event_pct": _env_pct("CAPITAL_MAX_EVENT_PCT", MAX_EVENT_PCT),
            "reg_t_initial": REG_T_INITIAL, "reg_t_maintenance": REG_T_MAINTENANCE,
@@ -59,7 +41,6 @@ def short_equity_margin(notional: float, lim: dict | None = None) -> dict:
 
 
 def naked_put_margin(spot: float, strike: float, premium: float) -> float:
-    """Reg T naked short put, per contract (USD): (max(20% S - OTM, 10% K) + premium) x 100."""
     otm = max(0.0, spot - strike)
     return (max(NAKED_PUT_UNDERLYING_PCT * spot - otm, NAKED_PUT_MIN_STRIKE_PCT * strike) + max(0.0, premium)) * OPTION_MULT
 
@@ -67,8 +48,6 @@ def naked_put_margin(spot: float, strike: float, premium: float) -> float:
 def option_requirement(kind: str, side: int, qty: float, net_mid: float | None, net_half: float | None,
                        width: float | None = None, strike: float | None = None, spot: float | None = None,
                        mode: str = "cash_secured") -> float | None:
-    """USD the structure ties up: long = premium at the ask; short spread = width - credit; short put = cash-secured
-    (strike - credit) or Reg T margin; short straddle = its strike notional (cash-secured analogue). None: no price."""
     if net_mid is None or not math.isfinite(net_mid) or qty <= 0:
         return None
     half = net_half or 0.0
@@ -84,8 +63,6 @@ def option_requirement(kind: str, side: int, qty: float, net_mid: float | None, 
 
 def evaluate(*, equity: float | None, buying_power: float | None, gross_now: float, event_now: float,
              add_notional: float, add_margin: float, bp_basis: str, lim: dict, event: str | None = None) -> dict:
-    """Pre-trade check of one exposure-increasing order. {ok, breaches [{kind, detail, limit_usd, after_usd}],
-    gross {...}, event {...}, buying_power {...}}. ``equity`` None: the account could not be read (fail closed)."""
     if equity is None or not math.isfinite(equity):
         return {"ok": False, "breaches": [{"kind": "account_unreadable",
                                            "detail": "the account could not be read, so the budget cannot be checked; "
@@ -114,7 +91,6 @@ def evaluate(*, equity: float | None, buying_power: float | None, gross_now: flo
 
 
 def max_room(equity: float | None, gross_now: float, event_now: float, lim: dict) -> float | None:
-    """Notional (USD) an exposure-increasing order may still add under both budgets (None: account unknown)."""
     if equity is None:
         return None
     return max(0.0, min(lim["max_gross_hedge_pct"] * equity - gross_now, lim["max_event_pct"] * equity - event_now))

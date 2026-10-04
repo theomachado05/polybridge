@@ -1,27 +1,3 @@
-"""Map a prediction-market threshold question to (underlying, K, resolution date) for the options-implied estimate.
-
-Supported: a named listed underlying (a ticker or company name from ``app/data/names.json``, a few liquid ETFs, or
-an index) + one comparator (above / below / over / under / at least / greater than ...) + one numeric level +
-a date (in the text, or the market's resolution date). The question is read as the level *at* that date
-(a terminal digital), which is what a call spread prices.
-
-Refused (returns None, never a guess):
-- path questions (hit / reach / touch / dip to / all-time high, and movement verbs such as "fall below",
-  "drop below", "rise above", "climb above"): a touch probability is not a terminal one;
-- ranges ("between", "$240 to $249.99"), percent moves, market caps, rates, macro prints, crypto, anything without a level or date;
-- more than one candidate underlying, or none.
-
-Dates: a date without a year takes the year from the market's resolution date, read in America/New_York (a
-Kalshi close_time of 2027-01-01T04:59Z is Dec 31 2026 11:59 PM ET): the latest year whose month/day falls on or
-before the resolution date plus ``YEAR_SLACK_DAYS``.
-
-Kalshi threshold markets put the level in the subtitle ("Nvidia price on Dec 31, 2026?" + "$250 or above"): the
-router joins title and yes_sub_title, and a trailing "or above" / "or below" counts as the comparator.
-
-Index proxies: S&P 500 -> I:SPX index options (K unscaled; fallback SPY with K/10, approximate);
-Nasdaq-100 -> I:NDX; Russell 2000 -> I:RUT (fallback IWM, K/10, approximate); Dow Jones -> DIA with K/100
-(approximate: DIA tracks the DJIA at about 1/100).
-"""
 from __future__ import annotations
 
 import calendar
@@ -34,19 +10,17 @@ from pathlib import Path
 try:
     from zoneinfo import ZoneInfo
     _NY: dt.tzinfo = ZoneInfo("America/New_York")
-except Exception:  # no tz database: fixed EST (off by an hour in summer, irrelevant for picking a calendar day)
+except Exception:
     _NY = dt.timezone(dt.timedelta(hours=-5))
 YEAR_SLACK_DAYS = 3
 
 DATA = Path(__file__).resolve().parent.parent / "data"
 
-# Bare upper-case tokens that are also English / clock words ("4 PM ET") count only as "$PM" or "(PM)".
 AMBIGUOUS = {"PM", "NOW", "LOW", "SO", "DE", "MA", "MO", "CAT", "DIS", "MET", "LIN", "ALL", "ET", "ON", "IT", "A"}
 ALIASES = {"Google": "GOOGL", "Facebook": "META", "Berkshire": "BRK.B", "Exxon": "XOM", "Coca Cola": "KO",
            "JP Morgan": "JPM", "Lilly": "LLY", "Walt Disney": "DIS", "Microsoft Corp": "MSFT"}
 ETFS = {"SPY", "QQQ", "IWM", "DIA", "GLD", "SLV", "TLT", "XLF", "XLE", "USO", "KRE", "XLK", "SMH", "ARKK"}
 
-# (pattern, underlying, scale, fallback (ticker, scale) or None, label)
 INDEXES: list[tuple[str, str, float, tuple[str, float] | None, str]] = [
     (r"s\s*&\s*p\s*500|s&p500|\bsp\s*500\b|\bspx\b|\bs\s*&\s*p\b", "I:SPX", 1.0, ("SPY", 0.1), "S&P 500"),
     (r"nasdaq[\s-]*100|\bndx\b", "I:NDX", 1.0, None, "Nasdaq-100"),
@@ -88,17 +62,17 @@ _MON = r"(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y
 class Match:
     underlying: str
     strike: float
-    expiry: dt.date            # the question's resolution date (the listed expiry is chosen later)
-    direction: str = "above"   # "above" | "below"
-    scale: float = 1.0         # strike = level * scale
-    level: float = 0.0         # the level as written in the question
-    label: str = ""            # human name of the underlying
-    fallback: tuple[str, float] | None = None   # (ticker, scale) proxy if the primary chain is empty
-    approx: bool = False       # True when the strike is a scaled proxy
-    date_source: str = "question"   # "question" | "resolution_date"
+    expiry: dt.date
+    direction: str = "above"
+    scale: float = 1.0
+    level: float = 0.0
+    label: str = ""
+    fallback: tuple[str, float] | None = None
+    approx: bool = False
+    date_source: str = "question"
     notes: list[str] = field(default_factory=list)
 
-    def __iter__(self):  # u, k, e = match_question(...)
+    def __iter__(self):
         return iter((self.underlying, self.strike, self.expiry))
 
     def to_dict(self) -> dict:
@@ -135,7 +109,7 @@ def _underlyings(question: str) -> list[tuple[str, float, tuple[str, float] | No
     for pat, u, scale, fb, label in INDEXES:
         if re.search(pat, low):
             found[u] = (u, scale, fb, label)
-            break  # one index per question; "S&P" alone is the S&P 500
+            break
     nm = names()
     tickers = set(nm) | ETFS
     for m in re.finditer(r"(\$|\()?\b([A-Z]{1,5}(?:\.[A-Z])?)\b(\))?", question):
@@ -147,10 +121,9 @@ def _underlyings(question: str) -> list[tuple[str, float, tuple[str, float] | No
         if len(name) < 3 or (tk not in nm and tk not in ETFS):
             continue
         for m in re.finditer(r"\b" + re.escape(name) + r"(?:'s)?(?![\w&])", question, re.IGNORECASE):
-            if m.group(0)[0].isupper() or m.group(0)[0].isdigit():  # a proper noun, not the word "target"
+            if m.group(0)[0].isupper() or m.group(0)[0].isdigit():
                 found.setdefault(tk, (tk, 1.0, None, nm.get(tk, name)))
                 break
-    # A company named in words and by ticker is one underlying; an index and its ETF proxy are one as well.
     if "I:SPX" in found:
         found.pop("SPY", None)
     return list(found.values())
@@ -171,8 +144,6 @@ def _level(question: str) -> tuple[str, float] | None:
             v = float(m.group(1).replace(",", "")) * (1000.0 if m.group(2) else 1.0)
             if v > 0:
                 hits.append((direction, v))
-    # Kalshi subtitle style: "$250 or above", "6,000 or below" (the money sign is required: "2026 or above" is not a
-    # level).
     for direction, post in (("above", _POST_ABOVE), ("below", _POST_BELOW)):
         for m in re.finditer(r"\$\s*(\d[\d,]*(?:\.\d+)?)\s*(k\b)?" + post, low):
             v = float(m.group(1).replace(",", "")) * (1000.0 if m.group(2) else 1.0)
@@ -187,9 +158,6 @@ def _safe_date(y: int, month: int, day: int) -> dt.date:
 
 
 def _year_for(month: int, day: int, resolution: dt.date | None, as_of: dt.date) -> int:
-    """Year for a month/day written without one: with a resolution date, the latest year whose month/day is on or
-    before resolution + YEAR_SLACK_DAYS (a market resolving Jan 1 or Jan 2 still means *this* Dec 31); otherwise
-    the next occurrence on or after ``as_of``."""
     if resolution is not None:
         cap = resolution + dt.timedelta(days=YEAR_SLACK_DAYS)
         y = cap.year
@@ -231,8 +199,6 @@ def _date(question: str, resolution: dt.date | None, as_of: dt.date) -> dt.date 
 
 
 def _to_date(x) -> dt.date | None:
-    """Calendar date in New York. Timestamps with a zone (Kalshi close_time, Gamma endDate: UTC) are converted
-    first; naive timestamps and bare dates are taken as written."""
     if x is None or x == "":
         return None
     if isinstance(x, str) and len(x.strip()) > 10:
@@ -251,8 +217,6 @@ def _to_date(x) -> dt.date | None:
 
 
 def match_question(question: str, resolution_date=None, as_of=None) -> Match | None:
-    """(underlying, K, date) for a supported threshold question; None otherwise. ``resolution_date`` (the market's
-    end date) supplies a missing year or a missing date; ``as_of`` defaults to today."""
     if not question or not isinstance(question, str):
         return None
     if why_unsupported(question):
@@ -281,7 +245,6 @@ def match_question(question: str, resolution_date=None, as_of=None) -> Match | N
 
 
 def why_no_match(question: str, resolution_date=None, as_of=None) -> str:
-    """Plain-language reason a question was refused (for the API response)."""
     if not question:
         return "no question text"
     w = why_unsupported(question)

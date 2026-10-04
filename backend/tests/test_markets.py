@@ -42,7 +42,7 @@ def test_search_parses_and_filters_and_sorts():
     body = r.json()
     assert r.status_code == 200 and body["stale"] is False
     ms = body["markets"]
-    assert [m["id"] for m in ms] == ["KXFED-2", "11", "KXFED-1"]  # by volume desc
+    assert [m["id"] for m in ms] == ["KXFED-2", "11", "KXFED-1"]
     poly = next(m for m in ms if m["source"] == "polymarket")
     assert poly["yes_price"] == 0.165 and poly["token_id"] == "tokYES" and poly["volume_24h"] == 5000.5
     assert next(m for m in ms if m["id"] == "KXFED-1")["yes_price"] == 0.30
@@ -65,7 +65,7 @@ def test_total_failure_returns_stale_cache_then_502():
     c = make_client(h)
     assert c.get("/markets/search", params={"q": "fed"}).json()["stale"] is False
     state["down"] = True
-    c.app.state.cache_search._clock = lambda: 1e12  # expire the entry
+    c.app.state.cache_search._clock = lambda: 1e12
     body = c.get("/markets/search", params={"q": "fed"}).json()
     assert body["stale"] is True and len(body["markets"]) == 3
     assert c.get("/markets/search", params={"q": "never-seen"}).status_code == 502
@@ -88,7 +88,7 @@ def test_ttlcache_stale_and_raise():
 
     async def run():
         assert await cache.get_or_set("k", good) == ("v", False)
-        assert await cache.get_or_set("k", bad) == ("v", False)  # fresh, no fetch
+        assert await cache.get_or_set("k", bad) == ("v", False)
         t["now"] = 100
         assert await cache.get_or_set("k", bad) == ("v", True)
         with pytest.raises(RuntimeError):
@@ -103,6 +103,6 @@ def test_both_sources_raising_falls_back_to_bundled_list():
     body = c.get("/markets/search", params={"q": "FED increase 25 BPS october"}).json()
     assert body["stale"] is True and body["note"] == "offline: cached market list"
     ids = [m["id"] for m in body["markets"]]
-    assert "2589813" in ids  # the Fed October 25 bps hike market, from market_universe.json / ai_map.json
+    assert "2589813" in ids
     assert all("fed" in m["question"].lower() for m in body["markets"])
     assert c.get("/markets/search", params={"q": "zzqx-never-seen"}).status_code == 502

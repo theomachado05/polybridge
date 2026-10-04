@@ -1,4 +1,3 @@
-"""P2 study B: options-anchored Polymarket taker on fresh daily markets. See METHOD.md. Reuses research/arb/arbscan unchanged."""
 import sys
 from pathlib import Path
 

@@ -1,5 +1,3 @@
-"""Forward tests wired to the frozen research runners: offline, with fakes. Rules are never reimplemented here, and
-nothing may be written under research/."""
 import csv
 import json
 import types
@@ -22,7 +20,6 @@ def pair(rich="A by Jan 15", cheap="A by Jan 16", nested=True, edge=-0.1, contra
 
 
 class FakeLive:
-    """Stands in for ladder_replay.live: writes live_pairs.csv and live_totals.json to its (redirected) OUT."""
 
     def __init__(self, rows, fail=False):
         self.OUT, self.rows, self.fail, self.seen_out = Path("/nonexistent/research/results"), rows, fail, None
@@ -51,11 +48,11 @@ def test_ladder_run_redirects_output_and_summarises(tmp_path):
     live = FakeLive(rows)
     original = live.OUT
     rec = ladders.run(now=NOW, base=tmp_path, live=live)
-    assert live.seen_out.is_relative_to(tmp_path) and live.OUT == original  # redirected during the run, restored after
+    assert live.seen_out.is_relative_to(tmp_path) and live.OUT == original
     assert rec["pairs"] == 5 and rec["pairs_with_books"] == 4 and rec["violations_net_of_fees"] == 1
     v = rec["violations"][0]
     assert v["contracts"] == 12 and v["locked_usd"] == 1.5 and v["nested"] is True and v["edge_top_points"] == 2.0
-    g = rec["gap_points_to_arb"]  # sample and range travel with the median
+    g = rec["gap_points_to_arb"]
     assert g["n_pairs"] == 4 and g["min"] == -2.0 and g["max"] == 30.0 and g["p10"] <= g["median"] <= g["p90"]
     saved = json.loads((tmp_path / "ladders" / "snapshots" / "20261004T150000Z.json").read_text())
     assert saved["stamp"] == "20261004T150000Z" and (tmp_path / "ladders" / "raw" / "20261004T150000Z" / "live_pairs.csv").is_file()
@@ -87,15 +84,14 @@ def test_touch_list_state_eligibility(tmp_path):
     mk = [listed(1, month, "Will NVIDIA (NVDA) reach $250 in October?", "↑ 250", 1, "2026-10-05T14:00:00Z"),
           listed(2, month, "Will NVIDIA (NVDA) dip to $90 in October?", "↓ 90", -1, "2026-10-05T14:00:00Z"),
           listed(3, "NVIDIA (NVDA) weird title", "Will NVIDIA (NVDA) reach $250?", "↑ 250", 1, "2026-10-05T14:00:00Z"),
-          # a weekly window ends on its own first Friday: not after it, so not eligible
           listed(4, week, "Will NVIDIA (NVDA) reach $260 on October 5-9?", "↑ 260", 1, "2026-10-05T14:00:00Z")]
     rec = touch.list_state(now=NOW, base=tmp_path, open_markets=lambda: mk, mods=mods)
     assert rec["markets_listed"] == 4 and rec["parsed"] == 3 and rec["eligible_first_weekend"] == 2
     assert [m["id"] for m in rec["eligible"]] == ["1", "2"] and rec["eligible"][0]["entry_day"] == "2026-10-09"
-    assert rec["eligible"][0]["end_session"] == "2026-10-30" and rec["eligible_events"] == 1  # Oct 31 2026 is a Saturday
+    assert rec["eligible"][0]["end_session"] == "2026-10-30" and rec["eligible_events"] == 1
     assert rec["by_entry_day"] == {"2026-10-09": 2}
     assert "window ends on or before" in " ".join(rec["not_eligible_reasons"])
-    assert rec["not_eligible_reasons"]  # why the rest were left out is recorded
+    assert rec["not_eligible_reasons"]
     assert rec["pending"]["verdict_needs"]["markets"] == 30 and rec["pending"]["verdict_needs"]["events"] == 15
     assert (tmp_path / "touch" / "raw" / "state_20261004T150000Z.json").is_file()
 
@@ -108,7 +104,6 @@ def test_touch_list_state_empty_before_first_listing(tmp_path):
 
 
 def test_touch_stage_redirects_runner_dirs(tmp_path):
-    """The frozen runner logs to forward.LOG and builds its cache from forward.HERE: both point under base during a stage."""
     seen = {}
     fw = types.SimpleNamespace(HERE=Path("/research/touch_fresh"), LOG=Path("/research/touch_fresh/forward_log"))
 
@@ -123,7 +118,7 @@ def test_touch_stage_redirects_runner_dirs(tmp_path):
     mods = {"forward": fw, "fc": types.SimpleNamespace(LOG_DIR="forward_log")}
     rec = touch.run_stage("snapshot", base=tmp_path, mods=mods, now=NOW)
     assert seen["here"] == tmp_path / "touch" and seen["log"] == tmp_path / "touch" / "forward_log"
-    assert fw.HERE == Path("/research/touch_fresh") and fw.LOG == Path("/research/touch_fresh/forward_log")  # restored
+    assert fw.HERE == Path("/research/touch_fresh") and fw.LOG == Path("/research/touch_fresh/forward_log")
     assert rec["output"].strip() == "snap ok" and rec["log_rows"] == {"snapshot": 1, "prints": 0}
     with pytest.raises(ValueError):
         touch.run_stage("trade", base=tmp_path, mods=mods)
@@ -153,7 +148,6 @@ def test_status_route_empty_and_after_runs(tmp_path, monkeypatch):
     lt = r["ladders"]["latest"]
     assert lt["violations_net_of_fees"]["count"] == 1 and lt["violations_net_of_fees"]["of_pairs_with_books"] == 2
     assert lt["gap_points_to_arb"]["n_pairs"] == 2
-    # NOW (2026-10-04) is before the forward start: a pre-start check, not counted as a forward-test snapshot
     assert r["ladders"]["snapshots_taken"] == 0 and r["ladders"]["pre_start_checks"] == 1
     assert lt["phase"] == "pre-start check (not part of the forward test)"
     assert r["touch"]["latest"]["markets_listed"] == 0 and r["touch"]["snapshots_taken"] == 0
@@ -163,15 +157,14 @@ def test_status_route_empty_and_after_runs(tmp_path, monkeypatch):
 
 
 def test_nothing_writes_under_research(tmp_path):
-    """Output dirs are never under research/ (the frozen studies and research/results stay untouched)."""
     assert not paths.DEFAULT_DIR.is_relative_to(paths.RESEARCH)
     assert paths.DEFAULT_DIR == paths.REPO / "backend" / "data_forward"
 
 
 def test_forward_counting_starts_2026_10_05_new_york(tmp_path):
     from app.forward import status
-    before = datetime(2026, 10, 5, 3, 59, 59, tzinfo=timezone.utc)      # 23:59:59 New York on 4 October
-    after = datetime(2026, 10, 5, 4, 0, tzinfo=timezone.utc)            # 00:00 New York on 5 October
+    before = datetime(2026, 10, 5, 3, 59, 59, tzinfo=timezone.utc)
+    after = datetime(2026, 10, 5, 4, 0, tzinfo=timezone.utc)
     assert status.phase(before) == status.PRE_START and status.phase(after) == status.IN_TEST
     for t in (NOW, before, after, datetime(2026, 10, 9, 19, 55, tzinfo=timezone.utc)):
         ladders.run(now=t, base=tmp_path, live=FakeLive([pair(edge=-0.2)]))

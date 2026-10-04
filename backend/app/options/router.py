@@ -1,22 +1,3 @@
-"""Opportunity-division data routes.
-
-- ``GET /options/implied?market_source=&market_id=`` (optional ``question=`` / ``end_date=`` overrides): the
-  options-implied probability of the prediction market's YES, next to the market's own price.
-- ``GET /options/chain?ticker=``: the listed chain snapshot (optional expiry / strike window).
-- ``GET /options/eightk?ticker=``: the 8-K score and the filing behind it.
-- ``GET /options/chain/{underlying}?expiry=&strikes=&window=&quotes=``: one expiry, per contract with bid/ask/mid,
-  last, volume, OI, IV and greeks (Massive, else Black–Scholes labelled ``computed``), spot, staleness, market_open.
-- ``GET /options/hedge-quote?ticker=&shares=&horizon_days=&protection_pct=&borrow_rate=``: short stock vs protective
-  put vs collar vs put spread, side by side at executable prices, with liquidity flags and caveats.
-- ``GET /options/mark/{contract}``: one OCC contract's mark (mid, spread, stale flag), as bridges / portfolio use.
-- ``GET /options/reference?ticker=&level=&direction=above|below&window_end=&kind=touch|finish``: the finish-beyond
-  probability from the call / put spread bracketing the level (S21 rules) with its bid/ask band, and the touch
-  reference (2x, capped at 1); outside the session it is the last close, labelled (``reference.py``).
-
-Every response says where the numbers come from (``freshness.source``, ``timeframe``, ``data_age_s``,
-``staleness``, ``mark_sources``) and is labelled an estimate. No key, an unsupported question or a Massive outage
-is a 200 with ``available: false`` and a reason, never a 500.
-"""
 from __future__ import annotations
 
 import datetime as dt
@@ -83,8 +64,6 @@ def _universe(source: str, mid: str, data_dir: Path = DATA) -> dict:
 
 
 def kalshi_question(m: dict) -> str | None:
-    """Kalshi threshold markets carry the level in the subtitle ("Nvidia price on Dec 31, 2026?" + "$250 or
-    above"): join title and yes_sub_title (or subtitle) unless the title already contains it."""
     title = str(m.get("title") or "").strip()
     sub = str(m.get("yes_sub_title") or m.get("subtitle") or "").strip()
     if sub and sub.lower() not in title.lower():
@@ -93,8 +72,6 @@ def kalshi_question(m: dict) -> str | None:
 
 
 async def resolve_market(http: httpx.AsyncClient, source: str, mid: str) -> dict:
-    """{question, end_date, yes_price, origin}; origin "universe" | "live" | "recording" (a replay sidecar, offline) |
-    None when nothing was found."""
     out: dict[str, Any] = {"question": None, "end_date": None, "yes_price": None, "origin": None}
     entry = _universe(source, mid)
     if entry:
@@ -118,8 +95,8 @@ async def resolve_market(http: httpx.AsyncClient, source: str, mid: str) -> dict
                        end_date=m.get("close_time") or m.get("expiration_time") or out["end_date"],
                        yes_price=px if px is not None else out["yes_price"], origin="live")
     except Exception:
-        pass  # the universe entry (if any) stands; the response says where it came from
-    if out["origin"] is None:  # offline and not in the bundled list: the recording's sidecar names the market
+        pass
+    if out["origin"] is None:
         from ..pipeline.ticks import recording_meta
         meta = recording_meta(source, mid)
         if meta.get("question"):
@@ -236,7 +213,7 @@ async def options_eightk(ticker: str, as_of: str | None = None, window_days: int
         a = dt.date.fromisoformat(as_of) if as_of else dt.date.today()
     except ValueError:
         raise HTTPException(422, "as_of must be YYYY-MM-DD.")
-    if a > OOS_END:  # recent dates: load live filings into the shared store (never inside the frozen OOS window)
+    if a > OOS_END:
         client = make_client()
         if client is not None:
             await refresh_eightk(a, window_days, client=client)
@@ -251,8 +228,6 @@ async def options_eightk(ticker: str, as_of: str | None = None, window_days: int
 @router.get("/chain/{underlying}")
 async def options_chain_live(underlying: str, expiry: str | None = None, strikes: int = lv.DEFAULT_STRIKES,
                              window: float = lv.DEFAULT_WINDOW, quotes: bool = True) -> dict:
-    """One expiry of the live chain (nearest listed when ``expiry`` is omitted); ``strikes`` nearest the money;
-    ``window`` = strike window as a fraction of spot; ``quotes`` = fetch the last NBBO per contract (capped)."""
     tk = underlying.strip().upper()
     if not _TICKER.match(tk):
         raise HTTPException(422, "underlying must look like NVDA, BRK.B or I:SPX.")
@@ -268,7 +243,6 @@ async def options_chain_live(underlying: str, expiry: str | None = None, strikes
 
 
 def _options_at_broker(request: Request) -> bool:
-    """The active broker places option orders itself (Webull paper with WEBULL_OPTIONS=1), not its simulator."""
     try:
         from ..broker import SimBroker, get_broker
         b = get_broker(request.app)
@@ -280,8 +254,6 @@ def _options_at_broker(request: Request) -> bool:
 @router.get("/hedge-quote")
 async def options_hedge_quote(request: Request, ticker: str, shares: int, horizon_days: int = 30,
                               protection_pct: float = 0.05, borrow_rate: float | None = None) -> dict:
-    """Short stock vs protective put vs collar vs put spread for ``shares`` long, over ``horizon_days``, protecting
-    below spot x (1 - protection_pct). ``borrow_rate`` (annual, e.g. 0.02) overrides the assumed easy-to-borrow fee."""
     tk = ticker.strip().upper()
     if not _TICKER.match(tk):
         raise HTTPException(422, "ticker must look like NVDA or BRK.B.")
@@ -299,7 +271,6 @@ async def options_hedge_quote(request: Request, ticker: str, shares: int, horizo
 
 @router.get("/mark/{contract}")
 async def options_mark(contract: str) -> dict:
-    """Mark one OCC option contract (e.g. O:AAPL261023P00300000): mid, spread, exit prices, stale flag."""
     if mk.qt.parse_occ(contract) is None:
         raise HTTPException(422, "contract must be an OCC option symbol like O:AAPL261023P00300000.")
     return await mk.mark(contract, client=make_client())
@@ -307,8 +278,6 @@ async def options_mark(contract: str) -> dict:
 
 @router.get("/reference")
 async def options_reference(ticker: str, level: float, direction: str, window_end: str, kind: str = "touch") -> dict:
-    """Options reference of one price ticket (touch tickets: OPEN LEAD, unvalidated). Bad input is a 422; everything
-    else (no key, outage, timeout, nothing listed) is a 200 with ``available: false`` and a reason."""
     tk = ticker.strip().upper()
     if not ref._TICKER.match(tk):
         raise HTTPException(422, "ticker must look like NVDA, SPY or SPX.")

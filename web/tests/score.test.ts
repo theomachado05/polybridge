@@ -1,5 +1,3 @@
-// Pins the hedge score labels (headline = what the PM signal adds over a static hedge, raw cut and hedge ratio
-// secondary) and the replay sidecar alerts on the Bridge screen.
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import type { FitOut } from "../src/lib/api.ts";
@@ -76,12 +74,12 @@ describe("replay sidecar alerts", () => {
     assert.equal(replayMismatch(replayInfo(sum({ source: "polymarket", id: null, token_id: "tok-yes" })), "polymarket", "2589813", "tok-yes"), false);
     assert.equal(replayMismatch(replayInfo(sum({ source: "polymarket", id: "999", token_id: null })), "polymarket", "2589813", "tok-yes"), true);
     assert.equal(replayMismatch(replayInfo(sum({ source: "kalshi", id: "2589813", token_id: null })), "polymarket", "2589813", null), true);
-    assert.equal(replayMismatch(replayInfo(sum(null)), "polymarket", "2589813", null), false);  // unknown: no claim
+    assert.equal(replayMismatch(replayInfo(sum(null)), "polymarket", "2589813", null), false);
   });
   it("reports the market as unknown only when the backend says there is no sidecar", () => {
     assert.equal(replayInfo(sum(null))!.known, false);
     assert.equal(replayInfo(sum(fed))!.known, true);
-    assert.equal(replayInfo({ replay_file: "fed.jsonl" })!.known, undefined);  // older backend: not reported
+    assert.equal(replayInfo({ replay_file: "fed.jsonl" })!.known, undefined);
     assert.equal(replayInfo(null), null);
   });
   it("warns on another market's recording and names it", () => {

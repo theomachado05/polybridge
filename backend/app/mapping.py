@@ -1,16 +1,3 @@
-"""POST /map: which stocks a prediction-market event moves.
-
-Three answers, always labelled by ``source``:
-
-- ``"ai_precomputed"``: the bundled library ``data/ai_map.json`` (generated ahead of time, see its ``generator``),
-  matched exactly by market id or by a confident fuzzy match on the question.
-- ``"ai_live:gemini:<model>"``: the question is not in the library and Gemini is available. Gemini picks tickers
-  ONLY from the candidate universe (``ticker_universe``) under a strict JSON schema; every row is validated
-  (``validate_mappings``: ticker in the universe, direction known, move bounded, one sentence) before it is served,
-  and the answer is cached by question hash.
-- ``"none"``: nothing matched and no live answer was possible; ``note`` says why (no key, Gemini failed, ...).
-  A fake AI answer is never served.
-"""
 from __future__ import annotations
 
 import asyncio
@@ -38,13 +25,11 @@ STOP = frozenset(
     "a an the of in on at to by for or and will be is are was do does did with from as this that it its "
     "before after than then any".split()
 )
-# Direction words are never stopwords; two questions carrying different ones are opposites.
 DIRECTION = frozenset("cut increase hike above below yes no not".split())
 MIN_JACCARD, MIN_SHARED, MARGIN = 0.5, 3, 0.15
-# Live mapping bounds.
 LIVE_MAX_ITEMS = 6
 LIVE_MAX_MOVE_PCT = 20.0
-LIVE_BUDGET_S = 20.0          # covers one Gemini call plus a one-off model fallback
+LIVE_BUDGET_S = 20.0
 LIVE_CACHE_TTL_S = 6 * 3600.0
 LIVE_CACHE_MAX = 512
 DIRECTIONS = ("down_on_yes", "up_on_yes")
@@ -55,7 +40,6 @@ _universe: list[dict] | None = None
 
 
 def _load() -> dict:
-    """Cache a good library by mtime; error states are re-checked on every call."""
     global _cache, _cache_mtime
     try:
         mtime = MAP_PATH.stat().st_mtime
@@ -78,10 +62,6 @@ def _read_json(path: Path, default):
 
 
 def ticker_universe() -> list[dict]:
-    """The candidate tickers live mapping may choose from: [{ticker, name}], sorted.
-
-    Union of the named stock list (names.json), the demo portfolio's holdings, the library families' proxy ETFs and
-    every ticker the precomputed map already uses for the market universe's questions. Built once per process."""
     global _universe
     if _universe is not None:
         return _universe
@@ -118,11 +98,6 @@ def _first_sentence(text: str, limit: int = 240) -> str:
 
 
 def validate_mappings(rows: object, universe: set[str], max_items: int = LIVE_MAX_ITEMS) -> tuple[list[dict], list[str]]:
-    """(valid items, reasons for each dropped row). Pure: the only gate between Gemini's output and the response.
-
-    A row is kept only when its ticker is in ``universe``, its direction is down_on_yes / up_on_yes, its
-    ``impact_pct`` is a finite number in (0, LIVE_MAX_MOVE_PCT] and its rationale is non-empty. Duplicate tickers keep
-    the first row; at most ``max_items`` rows are kept."""
     items: list[dict] = []
     dropped: list[str] = []
     seen: set[str] = set()
@@ -171,7 +146,6 @@ def _tokens(text: str) -> set[str]:
 
 
 def _score(a: set[str], b: set[str]) -> tuple[float, int]:
-    """(Jaccard, shared count), or (0, 0) if the pair is disqualified."""
     shared = a & b
     if not shared:
         return 0.0, 0
@@ -195,7 +169,6 @@ router = APIRouter()
 
 
 def _provider(request: Request):
-    """Tests set app.state.pipeline_provider; otherwise Gemini when GEMINI_API_KEY is set, else rules (no live map)."""
     from .pipeline.llm import default_provider
     p = getattr(request.app.state, "pipeline_provider", None)
     if p is not None:
@@ -226,8 +199,6 @@ def _miss(lib: dict, note: str, cands: list | None = None, ai: dict | None = Non
 
 
 def _resolve(req: MapRequest) -> tuple[dict, dict | None]:
-    """(precomputed answer, live-lookup arguments or None). The live arguments are set when the question is not in
-    the precomputed library (no exact id, no confident fuzzy match)."""
     lib = _load()
     items: dict = {k: v for k, v in lib["items"].items() if isinstance(v, dict)}
 
@@ -258,7 +229,6 @@ def _resolve(req: MapRequest) -> tuple[dict, dict | None]:
 
 
 def lookup_precomputed(req: MapRequest) -> dict:
-    """The precomputed library only (no network, no LLM): what the portfolio's exposure view uses."""
     return _resolve(req)[0]
 
 
@@ -273,7 +243,6 @@ async def map_event(req: MapRequest, request: Request) -> dict:
 
 
 async def _live(request: Request, question: str, cands: list, fallback_note: str, lib: dict) -> dict:
-    """Not in the precomputed library: ask Gemini (validated, cached), or say plainly why there is no AI answer."""
     from .pipeline.llm import NO_KEY_REASON, LLMError, RulesProvider, rules_info
 
     def miss(note: str, c: list, ai: dict) -> dict:
@@ -282,7 +251,7 @@ async def _live(request: Request, question: str, cands: list, fallback_note: str
     err = None
     try:
         provider = _provider(request)
-    except Exception as e:  # never a 500
+    except Exception as e:
         provider, err = RulesProvider(), f"provider error: {type(e).__name__}"
     if isinstance(provider, RulesProvider) or not hasattr(provider, "map_tickers"):
         reason = err or NO_KEY_REASON
@@ -305,7 +274,7 @@ async def _live(request: Request, question: str, cands: list, fallback_note: str
         return miss(f"{fallback_note}; live AI mapping failed ({reason})", cands, rules_info(reason))
     valid, dropped = validate_mappings(rows, allowed)
     n_rows = len(rows) if isinstance(rows, list) else 0
-    if n_rows and not valid:  # Gemini answered, but nothing survived validation: no AI answer, say so
+    if n_rows and not valid:
         reason = f"all {n_rows} rows failed validation: " + "; ".join(dropped[:3])
         return miss(f"{fallback_note}; live AI mapping rejected ({reason})", cands,
                     {**rules_info(reason), "model": getattr(provider, "model", None)})

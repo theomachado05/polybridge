@@ -55,7 +55,7 @@ def test_get_caches_by_full_url(tmp_path):
     session = FakeSession([FakeResponse(200, {"results": [1]})])
     client = MassiveClient("k", cache_dir=tmp_path, session=session, sleep=lambda s: None)
     assert client.get("/x", {"a": 1}) == {"results": [1]}
-    assert client.get("/x", {"a": 1}) == {"results": [1]}  # second call served from disk
+    assert client.get("/x", {"a": 1}) == {"results": [1]}
     assert len(session.urls) == 1
     assert len(list(tmp_path.glob("*.json"))) == 1
 
@@ -119,7 +119,6 @@ def test_concurrent_writes_same_url_never_corrupt_cache(tmp_path):
 
 
 class _FlakySession(FakeSession):
-    """Raises the given exception on the first `fail_times` calls, then answers from `responses`."""
 
     def __init__(self, responses, exc, fail_times):
         super().__init__(responses)

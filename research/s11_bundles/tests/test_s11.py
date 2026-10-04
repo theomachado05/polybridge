@@ -1,4 +1,3 @@
-"""S11: the bundle rules, the consistency checks at real books and at mids, episodes, jumps and the sibling trade."""
 import math
 
 import numpy as np
@@ -19,7 +18,7 @@ def test_date_ladder_orders_by_date_and_needs_by():
     out = uni.date_ladders("e", ms)
     assert len(out) == 1
     assert out[0]["legs"] == ["2", "1", "3"]
-    assert out[0]["pairs"] == [["2", "1"], ["1", "3"]]          # [rich = earlier, cheap = later]
+    assert out[0]["pairs"] == [["2", "1"], ["1", "3"]]
 
 
 def test_date_ladder_drops_duplicate_dates():
@@ -38,10 +37,10 @@ def test_strike_ladder_orientation():
           mk(3, "Will WTI hit (HIGH) $95 by end of March?")]
     out = uni.strike_ladders("e", up)
     assert out[0]["legs"] == ["3", "1", "2"] and out[0]["orient"] == 1
-    assert out[0]["pairs"] == [["1", "3"], ["2", "1"]]          # the higher level is the rich leg
+    assert out[0]["pairs"] == [["1", "3"], ["2", "1"]]
     dn = [mk(1, "Will WTI hit (LOW) $40 by end of March?"), mk(2, "Will WTI hit (LOW) $45 by end of March?")]
     out = uni.strike_ladders("e", dn)
-    assert out[0]["orient"] == -1 and out[0]["pairs"] == [["1", "2"]]   # the lower level is the rich leg
+    assert out[0]["orient"] == -1 and out[0]["pairs"] == [["1", "2"]]
 
 
 def test_strike_levels_and_unsigned_wording_left_out():
@@ -61,9 +60,8 @@ def test_negrisk_bounds():
 
 def test_pair_arb_walks_depth_and_charges_fees():
     r = en.pair_arb([(0.60, 10), (0.55, 50)], [(0.50, 20), (0.58, 100)], NOFEE, NOFEE)
-    # 10 at 0.60-0.50, 10 at 0.55-0.50, then 0.55-0.58 < 0
     assert r["size"] == 20 and math.isclose(r["locked"], 10 * 0.10 + 10 * 0.05)
-    r = en.pair_arb([(0.60, 10)], [(0.50, 20)], (0.25, 1.0), (0.25, 1.0))   # fees 0.06 + 0.0625 eat the 0.10
+    r = en.pair_arb([(0.60, 10)], [(0.50, 20)], (0.25, 1.0), (0.25, 1.0))
     assert r["size"] == 0 and r["edge"] < 0
     assert en.pair_arb([], [(0.5, 1)], NOFEE, NOFEE)["size"] == 0
 
@@ -94,20 +92,20 @@ def test_basket_edge():
 def test_episodes_join_short_gaps():
     t = np.arange(0, 600 * 60, 60.0)
     f = np.zeros(len(t), bool)
-    f[[10, 11, 40, 200]] = True                  # 10-11 and 40 are 29 minutes apart: one episode; 200 is another
+    f[[10, 11, 40, 200]] = True
     assert en.episodes(f, t) == [(10, 40), (200, 200)]
 
 
 def test_jumps_threshold_and_cooldown():
     t = np.arange(0, 200 * 60, 60.0)
     p = np.full(len(t), 0.50)
-    p[10:] = 0.53                                # +3 points: seen at minute 10
-    p[30:] = 0.60                                # inside the hour: ignored
-    p[100:] = 0.50                               # -10 points, after the hour
+    p[10:] = 0.53
+    p[30:] = 0.60
+    p[100:] = 0.50
     j = en.jumps(t, p)
     assert [i for i, _ in j] == [10, 100] and math.isclose(j[0][1], 3.0, abs_tol=1e-6) and j[1][1] < 0
     q = p.copy()
-    q[5:12] = np.nan                             # a stale mid cannot make a jump
+    q[5:12] = np.nan
     assert 10 not in [i for i, _ in en.jumps(t, q)]
 
 
@@ -134,13 +132,13 @@ def test_pair_episode_trade_closes_at_gap_close(monkeypatch):
     t = np.arange(1_780_000_020, 1_780_000_020 + 300 * 60, 60, dtype=np.int64)
     a = np.full(len(t), 0.40)
     b = np.full(len(t), 0.45)
-    a[100:120] = 0.60                            # the earlier date trades 15 points above the later one for 20 minutes
+    a[100:120] = 0.60
     R = _fake(monkeypatch, {"A": (t, a), "B": (t, b)})
     M = {"A": {"question": "x by May?", "fee_rate": 0.0, "fee_exponent": 1.0}, "B": {"question": "x by June?", "fee_rate": 0.0, "fee_exponent": 1.0}}
     recs, x = R.pair_episodes({"kind": "date", "source": "s5", "event": "e", "template": "x"}, "A", "B", M, {"A": 0.0, "B": 1.0}, 0.01)
     r = [r for r in recs if r["cost_mult"] == 1.0][0]
     assert math.isclose(r["edge"], 0.59 - 0.46) and r["minutes_beyond_cost"] == 20 and r["minutes_to_gap_close"] == 20
-    assert math.isclose(r["pnl_close"], 0.13 + (0.45 - 0.01) - (0.40 + 0.01))      # unwind at the gap close
+    assert math.isclose(r["pnl_close"], 0.13 + (0.45 - 0.01) - (0.40 + 0.01))
     assert math.isclose(r["pnl_hold"], 0.13 + 1.0 - 0.0) and r["settled_by"] == "result" and not r["broken"]
 
 

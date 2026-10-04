@@ -104,7 +104,6 @@ def _score_text(res: dict) -> str:
 
 
 def hedge_score_stats(fits: dict) -> dict:
-    """Distribution of the hedge ranking score (variance cut beyond a same-size static hedge) over scored fits."""
     v = sorted(f["score"] for f in fits.values()
                if f.get("score") is not None and f.get("score_basis") == "hedge_var_reduction_vs_static")
     if not v:
@@ -127,9 +126,7 @@ def summarize(fits: dict) -> dict:
         "timed_out": sorted(k for k, f in fits.items() if f.get("timed_out")),
         "families": dict(Counter(f["family"] or "-" for f in fits.values()).most_common()),
         "event_classes": dict(Counter(f["event_class"] for f in fits.values()).most_common()),
-        # score_vs_static: hedge variance cut beyond a static short of the same average size (the ranking score)
         "score_vs_static": hedge_score_stats(fits),
-        # rules picks because no preset had a defined vs-static score (never ranked on raw variance reduction)
         "no_static_benchmark": sorted(k for k, f in fits.items()
                                       if not f["scored"] and f.get("no_static_benchmark")),
     }

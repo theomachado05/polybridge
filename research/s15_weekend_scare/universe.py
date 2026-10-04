@@ -1,8 +1,3 @@
-"""S15 universe: the Polymarket price markets S9 did NOT use, from catalogue metadata only. No price is read.
-Writes `universe.json`, committed with METHOD.md.
-
-Run from `research/`:  python -m s15_weekend_scare.universe
-"""
 from __future__ import annotations
 
 import json

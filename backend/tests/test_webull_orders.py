@@ -1,6 +1,3 @@
-"""Webull paper: order history (bounded windows), reconciliation (broker pass + background task), short-sale
-readiness, margin balances, option positions, option orders behind options_supported, and the routes / portfolio that
-surface them. Offline: every Webull call is a mocked HTTP response in the documented shape."""
 from __future__ import annotations
 
 import asyncio
@@ -20,11 +17,10 @@ from tests.test_broker_support import FakeQuotes, run
 from tests.test_broker_webull import Sandbox, make
 from tests.test_closed_staged import MON_CLOSE, MON_OPEN, SAT_NOON, Clock
 
-NOW = dt.datetime(2026, 10, 3, 12, 0, 0, tzinfo=dt.UTC)  # make()'s client clock
+NOW = dt.datetime(2026, 10, 3, 12, 0, 0, tzinfo=dt.UTC)
 
 
 def group(cid, status="FILLED", symbol="AAPL", side="BUY", qty="10", filled="10", px="189.9", **kw):
-    """One order group as Webull's open-orders / history / detail endpoints return it."""
     return {"client_order_id": cid, "combo_type": "NORMAL",
             "orders": [{"client_order_id": cid, "order_id": f"WB-{cid}", "symbol": symbol, "side": side,
                         "status": status, "order_type": "LIMIT", "instrument_type": "EQUITY", "total_quantity": qty,
@@ -34,7 +30,6 @@ def group(cid, status="FILLED", symbol="AAPL", side="BUY", qty="10", filled="10"
 
 
 class Book(Sandbox):
-    """Sandbox whose order detail answers per client id from ``detail`` (else the base answer)."""
 
     def __init__(self, **kw):
         super().__init__(**kw)
@@ -51,8 +46,6 @@ def paths(sb, path):
     return [r for r in sb.requests if r.url.path == path]
 
 
-# ------------------------------------------------------------------------------------------------ parsing
-
 def test_order_groups_are_flattened_and_parsed_with_their_real_fields():
     payload = {"data": [group("c1", status="PARTIAL_FILLED", filled="4", px="0"),
                         {"client_order_id": "g2", "combo_type": "NORMAL", "orders": [
@@ -65,7 +58,7 @@ def test_order_groups_are_flattened_and_parsed_with_their_real_fields():
     assert (a.symbol, a.status, a.filled_qty, a.fill_px, a.broker_status) == ("AAPL", "open", 4.0, None, "PARTIAL_FILLED")
     assert a.created_at.startswith("2026-10-02T14:31:02.120") and a.origin == "webull_open" and a.type == "limit"
     assert (b.symbol, b.side, b.qty, b.status, b.type) == ("TLT", "sell", 5.0, "open", "market")
-    assert b.created_at.startswith("2025-10-02")  # epoch-ms place_time
+    assert b.created_at.startswith("2025-10-02")
 
 
 @pytest.mark.parametrize("raw,ours", [("PENDING", "open"), ("SUBMITTED", "open"), ("PARTIAL_FILLED", "open"),
@@ -75,8 +68,6 @@ def test_order_groups_are_flattened_and_parsed_with_their_real_fields():
 def test_status_mapping(raw, ours):
     assert map_status(raw) == ours
 
-
-# ------------------------------------------------------------------------------------------------ history
 
 def test_history_reads_bounded_newest_first_windows_in_webull_time_format(tmp_path):
     sb = Sandbox()
@@ -100,7 +91,7 @@ def test_history_days_are_clamped_and_pages_are_capped_and_flagged(tmp_path):
     async def go():
         b = make(sb, tmp_path)
         rows = await b.order_history(1)
-        again = await b.order_history(1)  # cached: no second read inside HISTORY_CACHE_S
+        again = await b.order_history(1)
         return b, rows, again
     b, rows, again = run(go())
     hs = paths(sb, "/trading/orders/historical-orders/list")
@@ -109,12 +100,12 @@ def test_history_days_are_clamped_and_pages_are_capped_and_flagged(tmp_path):
     assert {o.client_order_id for o in again} == {o.client_order_id for o in rows}
     sb2 = Sandbox()
     run(make(sb2, tmp_path).order_history(999))
-    assert len(paths(sb2, "/trading/orders/historical-orders/list")) == 5  # 30 days max = 5 windows of <= 7 days
+    assert len(paths(sb2, "/trading/orders/historical-orders/list")) == 5
 
 
 def test_orders_merge_history_open_list_and_ours_with_the_freshest_state_winning(tmp_path):
     sb = Book(status="SUBMITTED",
-              history=[{"data": [group("app-1", symbol="MSFT"),  # placed in the Webull app, filled
+              history=[{"data": [group("app-1", symbol="MSFT"),
                                  group("ours", status="FILLED", qty="1", filled="1")]}],
               open_groups=[group("app-2", status="SUBMITTED", symbol="XOM", filled="0", px="0")])
 
@@ -127,7 +118,7 @@ def test_orders_merge_history_open_list_and_ours_with_the_freshest_state_winning
     assert placed.status == "open"
     by = {o.client_order_id: o for o in rows}
     assert by["ours"].status == "filled" and by["ours"].tag == "br-1" and by["ours"].origin == "polybridge"
-    assert b._placed["ours"].status == "filled"  # history settled our open order
+    assert b._placed["ours"].status == "filled"
     assert (by["app-1"].origin, by["app-1"].symbol, by["app-1"].status) == ("webull_history", "MSFT", "filled")
     assert (by["app-2"].origin, by["app-2"].status) == ("webull_open", "open")
     assert any(t["client_order_id"] == "ours" and t["to"] == "filled" and t["via"] == "history" for t in b.transitions)
@@ -144,8 +135,6 @@ def test_get_orders_route_passes_days_and_bounds_it(tmp_path):
         assert c.get("/orders", params={"days": 0}).status_code == 422
 
 
-# ------------------------------------------------------------------------------------------------ reconcile
-
 def test_reconcile_settles_fills_partials_and_counts_outside_orders(tmp_path):
     sb = Book(status="SUBMITTED")
 
@@ -159,14 +148,14 @@ def test_reconcile_settles_fills_partials_and_counts_outside_orders(tmp_path):
         sb.detail["a"] = {"data": group("a", status="FILLED", filled="10", px="1.0")}
         sb.detail["c"] = {"data": group("c", status="CANCELLED", filled="0", px="0")}
         r1 = await b.reconcile()
-        r2 = await b.reconcile()  # nothing changed since
+        r2 = await b.reconcile()
         return b, r1, r2
     b, r1, r2 = run(go())
     assert (r1["checked"], r1["open_at_webull"], r1["updated"], r1["external_open"]) == (3, 2, 3, 1)
     moves = {t["client_order_id"]: (t["from"], t["to"], t["filled_qty"]) for t in r1["transitions"]}
     assert moves == {"a": ("open", "filled", 10.0), "b": ("open", "open", 4.0), "c": ("open", "cancelled", 0.0)}
     assert b._placed["a"].fill_px == 1.0 and b._placed["c"].status == "cancelled"
-    assert r2["updated"] == 0 and r2["checked"] == 1  # only "b" is still open
+    assert r2["updated"] == 0 and r2["checked"] == 1
 
 
 def test_reconcile_spends_a_bounded_detail_budget_and_defers_the_rest(tmp_path):
@@ -220,7 +209,7 @@ def test_reconciler_runs_in_session_idles_when_closed_and_makes_one_closing_pass
         open_res = await r.run_once()
         d_open = r._delay()
         clock.t = MON_CLOSE + dt.timedelta(minutes=1)
-        closing = await r.run_once()  # first pass after the close still reads (late fills)
+        closing = await r.run_once()
         idle = await r.run_once()
         d_idle = r._delay()
         clock.t = SAT_NOON
@@ -277,22 +266,22 @@ def test_reconcile_routes_start_stop_status_and_run_and_shutdown_stops(tmp_path,
     app.state.broker = make(sb, tmp_path)
     app.state.staged_clock = Clock(SAT_NOON)
     with TestClient(app) as c:
-        c.get("/account")  # under pytest no auto-start unless WEBULL_RECONCILE=force
+        c.get("/account")
         assert c.get("/broker/reconcile").json()["running"] is False
         s = c.post("/broker/reconcile/start").json()
         assert s["started"] is True and s["running"] is True and s["status_map"]["PARTIAL_FILLED"].startswith("open")
         st = c.get("/broker/reconcile").json()
         assert st["market_open"] is False and st["broker"] == "webull-paper" and st["supported"] is True
-        run_now = c.post("/broker/reconcile/run").json()  # forced pass, read-only
+        run_now = c.post("/broker/reconcile/run").json()
         assert run_now["ran"] and run_now["ok"] and run_now["open_at_webull"] == 0
         assert c.post("/broker/reconcile/stop").json()["stopped"] is True
         monkeypatch.setenv("WEBULL_RECONCILE", "force")
         c.get("/positions")
-        assert c.get("/broker/reconcile").json()["running"] is False  # stopped by the user: no auto-start
+        assert c.get("/broker/reconcile").json()["running"] is False
         c.post("/broker/reconcile/start")
         rec = app.state.reconciler
         assert rec.running
-    assert not rec.running  # the router's shutdown hook stopped it
+    assert not rec.running
     assert not [r for r in sb.requests if r.url.path == "/trading/orders/place"]
 
 
@@ -307,13 +296,11 @@ def test_auto_start_with_force_for_webull_only(tmp_path, monkeypatch):
     sim_app = create_app()
     with TestClient(sim_app) as c:
         c.get("/orders")
-        assert c.get("/broker/reconcile").json()["running"] is False  # the simulator fills synchronously
+        assert c.get("/broker/reconcile").json()["running"] is False
     monkeypatch.setenv("WEBULL_RECONCILE", "0")
     monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
     assert rc.auto_start_enabled() is False
 
-
-# ------------------------------------------------------------------------------------------------ shortability
 
 def test_can_short_true_false_none_and_cached(tmp_path):
     sb = Sandbox(profiles={"GME": {"easy_to_borrow": False}, "XYZ": {"shortable": False}, "OLD": {"status": "NT"},
@@ -329,7 +316,7 @@ def test_can_short_true_false_none_and_cached(tmp_path):
     assert out == {"AAPL": True, "GME": True, "XYZ": False, "OLD": False, "LIQ": False, "UNLISTED": None}
     assert "hard to borrow" in st["GME"]["reason"] and st["AAPL"]["reason"] == "shortable, easy to borrow"
     prof = paths(sb, "/trading/instruments/stocks/profiles/list")
-    assert len(prof) == 6 and prof[0].url.params["category"] == "US_STOCK"  # GME/AAPL/AAPL served from the cache
+    assert len(prof) == 6 and prof[0].url.params["category"] == "US_STOCK"
 
 
 def test_can_short_is_false_for_a_cash_account_and_none_when_the_lookup_fails(tmp_path):
@@ -340,7 +327,6 @@ def test_can_short_is_false_for_a_cash_account_and_none_when_the_lookup_fails(tm
             if r.url.path == "/trading/instruments/stocks/profiles/list":
                 return httpx.Response(500, json={"message": "down"})
             return super().handler(r)
-    # Hours lists the cash account first: make() picks it
     cash = run(make(Hours(closed=False), tmp_path).short_status(["SPY"]))["SPY"]
     assert cash["can_short"] is False and "cash account" in cash["reason"]
     down = run(make(Down(), tmp_path).short_status(["SPY"]))["SPY"]
@@ -383,13 +369,11 @@ def test_shortable_and_capabilities_routes(tmp_path):
         assert cap["can_short"]["XYZ"]["can_short"] is False and "unverified" in cap["note"]
         assert c.get("/broker/shortable/xyz").json()["can_short"] is False
         assert c.get("/broker/capabilities", params={"symbols": "a b"}).status_code == 422
-    with TestClient(create_app()) as c:  # the simulator
+    with TestClient(create_app()) as c:
         cap = c.get("/broker/capabilities", params={"symbols": "SPY"}).json()
         assert cap["options_supported"] is True and cap["can_short"]["SPY"]["can_short"] is True
         assert cap["reconcile"] is False
 
-
-# ------------------------------------------------------------------------------------------------ balances / positions
 
 REAL_BALANCE = {"total_asset_currency": "USD", "total_net_liquidation_value": "1000000.00", "total_market_value": "0.00",
                 "total_cash_balance": "1000000.00", "total_unrealized_profit_loss": "0.00", "day_trades_left": "UNLIMITED",
@@ -404,7 +388,7 @@ def test_margin_balance_uses_overnight_buying_power_and_reports_every_margin_fig
     class Margin(Sandbox):
         def handler(self, r):
             if r.url.path == "/trading/assets/balances/get":
-                return httpx.Response(200, json=REAL_BALANCE)  # the sandbox's real shape (2026-10-03), no buying_power
+                return httpx.Response(200, json=REAL_BALANCE)
             return super().handler(r)
     a = run(make(Margin(), tmp_path).account())
     assert (a.cash, a.equity, a.buying_power) == (1e6, 1e6, 2e6)
@@ -431,8 +415,6 @@ def test_option_and_equity_positions_are_parsed_and_labelled(tmp_path):
     opt = by["O:SPY261016P00560000"]
     assert (opt.asset, opt.qty, opt.multiplier, opt.market_value, opt.strategy) == ("option", 2, 100, 700.0, "SINGLE")
 
-
-# ------------------------------------------------------------------------------------------------ options at Webull
 
 def opt(cid, sym, side, **kw):
     return OrderRequest(symbol=sym, asset="option", side=side, qty=kw.pop("qty", 1), client_order_id=cid, **kw)
@@ -481,7 +463,7 @@ def test_options_supported_single_leg_order_is_sent_to_webull_in_the_documented_
                               "market": "US"}]}
     assert (o.broker, o.asset, o.status, o.filled_qty, o.fill_px, o.id) == ("webull-paper", "option", "filled", 2, 3.4, "WB-9")
     assert any(r.client_order_id == "oc1" and r.broker == "webull-paper" for r in rows)
-    assert not b.sim._orders  # nothing went to the simulator
+    assert not b.sim._orders
 
 
 def test_options_supported_vertical_is_one_net_limit_and_leg_prices_sum_to_webulls_net(tmp_path):
@@ -498,7 +480,7 @@ def test_options_supported_vertical_is_one_net_limit_and_leg_prices_sum_to_webul
     a, c = run(go())
     item = json.loads(paths(sb, "/trading/orders/place")[0].content)["new_orders"][0]
     assert (item["option_strategy"], item["order_type"], item["side"], item["limit_price"], item["quantity"]) == (
-        "VERTICAL", "LIMIT", "BUY", "2.1", "3")  # net debit 2.00 + 0.10 half-spreads
+        "VERTICAL", "LIMIT", "BUY", "2.1", "3")
     assert [(lg["side"], lg["strike_price"], lg["quantity"]) for lg in item["legs"]] == [("BUY", "500", "1"),
                                                                                        ("SELL", "510", "1")]
     assert a.status == c.status == "filled" and a.combo_id == c.combo_id == "cv"
@@ -520,7 +502,7 @@ def test_options_supported_credit_spread_unknown_structures_and_missing_prices(t
         return await b.place_combo(credit), await b.place_combo(odd), await b.place_combo(noprice)
     cr, un, npx = run(go())
     item = json.loads(paths(sb, "/trading/orders/place")[0].content)["new_orders"][0]
-    assert (item["side"], item["limit_price"]) == ("SELL", "1.5")  # net credit, no half-spread given
+    assert (item["side"], item["limit_price"]) == ("SELL", "1.5")
     assert all(o.broker == "sim" and "no option_strategy" in o.note for o in un)
     assert all(o.status == "rejected" and o.reject_reason.startswith("no_price") for o in npx)
     assert len(paths(sb, "/trading/orders/place")) == 1
@@ -571,8 +553,6 @@ def test_factory_reads_the_options_flag(monkeypatch):
     assert isinstance(b, WebullBroker) and b.options_supported is True and b.client.limiter is not None
 
 
-# ------------------------------------------------------------------------------------------------ rate limit
-
 def test_rate_limiter_spaces_calls_to_the_documented_limit():
     now = [0.0]
     slept: list[float] = []
@@ -590,10 +570,8 @@ def test_rate_limiter_spaces_calls_to_the_documented_limit():
     run(go())
     assert slept == [pytest.approx(2.01)] and lim.waited_s == pytest.approx(2.01)
     mocked = WebullClient("K", "S", http=httpx.AsyncClient(transport=httpx.MockTransport(lambda r: httpx.Response(200))))
-    assert mocked.limiter is None  # an injected transport is not paced
+    assert mocked.limiter is None
 
-
-# ------------------------------------------------------------------------------------------------ positions / portfolio
 
 def test_positions_route_separates_the_broker_book_from_demo_holdings(tmp_path, monkeypatch):
     from app import portfolio
@@ -632,7 +610,7 @@ def test_portfolio_shows_the_webull_paper_book_separately_with_short_readiness(t
     h = {x["ticker"]: x for x in d["holdings"]}
     assert (h["AAPL"]["broker_qty"], h["AAPL"]["can_short"], h["AAPL"]["shares"]) == (7.0, True, 10)
     assert h["XYZ"]["can_short"] is False and h["XYZ"]["broker_qty"] == 0.0
-    assert d["total_value"] is None  # demo totals never include the broker book
+    assert d["total_value"] is None
 
 
 def test_portfolio_survives_a_broker_that_cannot_be_read(tmp_path, monkeypatch):

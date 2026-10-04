@@ -1,9 +1,3 @@
-"""R3 orchestrator: closures x threshold markets -> PM closure move -> option-implied probability at Friday close and
-Monday open -> research/results/open_options/events.csv. See METHOD.md.
-
-    cd research && uv run --no-project --env-file /Users/theomachado/gatorquant/.env --with pandas --with numpy \\
-        --with requests --with matplotlib --with pyyaml python -m open_options.run
-"""
 from __future__ import annotations
 
 import argparse
@@ -61,9 +55,7 @@ class Study:
         self.closures = build_closures()
         self.t0 = time.time()
 
-    # ---------------------------------------------------------------- universe
     def polymarket(self) -> list[dict]:
-        # Gamma refuses deep offsets (HTTP 422), so the end-date range is listed in 14-day chunks.
         events, d0, d1 = {}, date.fromisoformat(END_MIN), date.fromisoformat(END_MAX)
         while d0 <= d1:
             e = min(d0 + timedelta(days=13), d1)
@@ -120,13 +112,12 @@ class Study:
         self.scope["kalshi_in_scope"] = len(out)
         return out
 
-    # ---------------------------------------------------------------- pairs
     def pairs(self, markets: list[dict]) -> list[tuple[dict, Closure]]:
         out = []
         for m in markets:
             for c in self.closures:
                 if c.close >= m["end"] or (m["listed"] and c.eod < m["listed"]):
-                    continue                       # closure entirely outside the market's life: not a candidate
+                    continue
                 why = eligible(c, m["listed"], m["end"], m["res_date"])
                 if why:
                     self.scope[f"pair_{why}"] += 1
@@ -146,7 +137,6 @@ class Study:
         self.scope["pairs_eligible"] = len(ok)
         return ok
 
-    # ---------------------------------------------------------------- PM prices
     def _pm_points(self, m: dict, t0: datetime, t1: datetime) -> list[tuple[float, float]] | list[dict]:
         if m["venue"] == "polymarket":
             return ds.clob_history(self.http, m["token"], int(t0.timestamp()), int(t1.timestamp()), 1)
@@ -172,7 +162,6 @@ class Study:
             self.scope[f"status_{r['status'] or 'pass_f1_f3'}"] += 1
         return rows
 
-    # ---------------------------------------------------------------- options
     def _q(self, ticker: str, ts: float):
         return self.opts.quote(ticker, datetime.fromtimestamp(ts, UTC))
 
@@ -206,13 +195,12 @@ class Study:
     def prints_stage(self, rows: list[dict]) -> None:
         ev = [r for r in rows if r.get("status") == "" and r["m"]["venue"] == "polymarket" and r["m"].get("cid")]
         cids = sorted({r["m"]["cid"] for r in ev})
-        with ThreadPoolExecutor(2) as ex:          # data-api rate-limits hard (HTTP 429 with 8 workers)
+        with ThreadPoolExecutor(2) as ex:
             trades = dict(zip(cids, ex.map(lambda c: vf.fetch_trades(self.http, c), cids)))
         for r in ev:
             c = r["c"]
             r["prints_in_closure"] = ms.trade_prints_in(trades.get(r["m"]["cid"], []), c.close.timestamp(), c.open.timestamp())
 
-    # ---------------------------------------------------------------- rows
     @staticmethod
     def flat(r: dict) -> dict:
         m, c = r["m"], r["c"]

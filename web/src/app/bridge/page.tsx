@@ -10,8 +10,6 @@ import { Unavailable } from "@/components/pb";
 
 type BridgeTab = "tickets" | "bridges";
 
-/** Bridge: the ticket board (touch and close-above tickets against the options chain), and the running engine
- *  bridges (opened from the generic AI fit on Build). Opens on the running bridges when there are any. */
 export default function BridgePage() {
   const s = useStore();
   const reg = useRegistry();

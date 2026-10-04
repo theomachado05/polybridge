@@ -37,10 +37,8 @@ TicketTick ticket(double bid, double central, Tri validated, double qty = 80, st
   return t;
 }
 
-}  // namespace
+}
 
-// (a) While validated is not True, no tick can produce a live order: random books, references, sizes, positions and
-// missing fields, with validated False or Missing.
 TEST(TouchTicketReference, NoLiveOrderWhileUnvalidated) {
   std::uint64_t s = 99;
   auto u = [&] {
@@ -61,12 +59,12 @@ TEST(TouchTicketReference, NoLiveOrderWhileUnvalidated) {
         ++proposals;
         EXPECT_EQ(in.reason, code(Rc::Proposal));
         EXPECT_EQ(in.side, -1);
-        EXPECT_DOUBLE_EQ(in.limit_px, t.bid);  // at the quoted bid
+        EXPECT_DOUBLE_EQ(in.limit_px, t.bid);
       }
     }
   }
-  EXPECT_GT(proposals, 1000u);  // the proposal path really ran
-  {  // a caller that records a fill against a proposal does not unlock live orders either
+  EXPECT_GT(proposals, 1000u);
+  {
     TouchTicketReference c(ticket_params(0, 0, 0), Position{});
     for (int k = 0; k < 100; ++k) {
       const TicketIntent in = c.on_tick(ticket(0.60, 0.30, Tri::False), kSec);
@@ -75,25 +73,25 @@ TEST(TouchTicketReference, NoLiveOrderWhileUnvalidated) {
     }
   }
   TicketTick unset = ticket(0.40, 0.30, Tri::True);
-  unset.validated = TicketTick{}.validated;  // the default of a tick nobody filled in
+  unset.validated = TicketTick{}.validated;
   TouchTicketReference b(ticket_params(), Position{});
   EXPECT_EQ(b.on_tick(unset, kSec).action, MicroAction::Propose);
 }
 
 TEST(TouchTicketReference, RuleCapsAndValidatedPath) {
   TouchTicketReference a(ticket_params(), Position{});
-  EXPECT_EQ(a.on_tick(ticket(0.349, 0.30, Tri::False), kSec).reason, code(Rc::NoSignal));  // 4.9 points
-  const TicketIntent p = a.on_tick(ticket(0.35, 0.30, Tri::False), kSec);                // 5 points
+  EXPECT_EQ(a.on_tick(ticket(0.349, 0.30, Tri::False), kSec).reason, code(Rc::NoSignal));
+  const TicketIntent p = a.on_tick(ticket(0.35, 0.30, Tri::False), kSec);
   EXPECT_EQ(p.action, MicroAction::Propose);
   EXPECT_NEAR(p.signal, 5.0, 1e-9);
   EXPECT_DOUBLE_EQ(p.qty, 80);
   TouchTicketReference b(ticket_params(), Position{});
   const TicketIntent o = b.on_tick(ticket(0.40, 0.30, Tri::True, 250), kSec);
   EXPECT_EQ(o.action, MicroAction::Order);
-  EXPECT_DOUBLE_EQ(o.qty, 100);  // ticket cap
+  EXPECT_DOUBLE_EQ(o.qty, 100);
   EXPECT_EQ(o.reason, code(Rc::PositionCapped));
   TicketTick t = ticket(0.40, 0.30, Tri::True);
-  t.underlying_short = 260;  // 40 left under the underlying cap
+  t.underlying_short = 260;
   TouchTicketReference c(ticket_params(), Position{});
   EXPECT_DOUBLE_EQ(c.on_tick(t, kSec).qty, 40);
   t.event_short = 300;
@@ -106,10 +104,6 @@ TEST(TouchTicketReference, RuleCapsAndValidatedPath) {
   EXPECT_EQ(c.on_tick(ticket(0.40, 0.30, Tri::True, 80, kSec), 40 * kSec).reason, code(Rc::Stale));
 }
 
-// (b) Replay of research/results/s21_options_anchor/trades.csv: every market of the U-all book (all 303 stock and
-// S&P markets with a seller P&L) as one tick: bid = its traded price, size = its printed size, central reference = the
-// anchor S21 computed (from the U book; markets with no usable anchor get NaN), validated = False. With the caps off,
-// the markets the family proposes must be exactly the 60 of S21's primary book B0.
 namespace {
 struct S21 {
   std::vector<TicketRow> rows;
@@ -144,7 +138,7 @@ S21 s21_rows() {
   }
   return out;
 }
-}  // namespace
+}
 
 TEST(TouchTicketReference, ReplayOfS21SelectsTheSame60Markets) {
   const S21 d = s21_rows();
@@ -159,7 +153,7 @@ TEST(TouchTicketReference, ReplayOfS21SelectsTheSame60Markets) {
   EXPECT_EQ(st.n_orders, 0u);
   EXPECT_EQ(st.n_fills, 0u);
   EXPECT_EQ(chosen, d.b0);
-  const auto capped = replay_tickets(ticket_params(), d.rows);  // the default caps, for the record
+  const auto capped = replay_tickets(ticket_params(), d.rows);
   std::printf("S21 B0: %zu markets | family, caps off: %zu proposals | default caps: %zu proposals, 0 orders\n",
               d.b0.size(), st.n_proposals, capped.n_proposals);
   EXPECT_EQ(capped.n_orders, 0u);

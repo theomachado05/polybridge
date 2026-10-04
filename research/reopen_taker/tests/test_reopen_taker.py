@@ -1,4 +1,3 @@
-"""Synthetic tests for Study A. No network."""
 import numpy as np
 
 import reopen_taker  # noqa: F401

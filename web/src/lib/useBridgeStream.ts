@@ -21,7 +21,6 @@ export function useBridgeStream(id: string, initialSource: string | null): Strea
       es.addEventListener("decision", (m) => dispatch({ k: "decision", d: json(m as MessageEvent) }));
       es.addEventListener("position", (m) => dispatch({ k: "position", ...json(m as MessageEvent) }));
       es.addEventListener("fill", (m) => dispatch({ k: "fill", f: json(m as MessageEvent) }));
-      // closed-market mode (backend app/closed/bridge_mode.py): the close, staged hedge B, the open handoff, hedge A
       es.addEventListener("staged", (m) => dispatch({ k: "staged", d: json(m as MessageEvent) }));
       es.addEventListener("session", (m) => dispatch({ k: "session", d: json(m as MessageEvent) }));
       es.addEventListener("handoff", (m) => dispatch({ k: "handoff", d: json(m as MessageEvent) }));
@@ -42,7 +41,7 @@ export function useBridgeStream(id: string, initialSource: string | null): Strea
           }
         }, () => {});
         dispatch({ k: "drop" });
-        if (es && es.readyState === EventSource.CLOSED) { timer = setTimeout(connect, 2000); }  // the browser retries CONNECTING itself
+        if (es && es.readyState === EventSource.CLOSED) { timer = setTimeout(connect, 2000); }
       };
     };
     connect();

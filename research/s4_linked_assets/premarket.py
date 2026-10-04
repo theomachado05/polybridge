@@ -1,8 +1,3 @@
-"""S4c, exploratory (METHOD.md amendment 2): does the linked equity already reflect the overnight move in odds in
-the pre-market, where it can be traded? Entry 08:00 New York, exit at the 09:30 open.
-
-Run from `research/`:  python -m s4_linked_assets.premarket [--pull]
-"""
 from __future__ import annotations
 
 import csv
@@ -20,12 +15,11 @@ from . import data as dt
 from . import engine as en
 from .run import RESULTS, eligible, load_critic, verdict
 
-ENTRY_FROM_MIN, ENTRY_TO_MIN = 8 * 60, 8 * 60 + 30       # first bar starting in [08:00, 08:30)
-PRE_COST = {"liquid": 5.0, "other": 15.0, "spy": 2.0}     # per side, bp, pre-market entry
+ENTRY_FROM_MIN, ENTRY_TO_MIN = 8 * 60, 8 * 60 + 30
+PRE_COST = {"liquid": 5.0, "other": 15.0, "spy": 2.0}
 
 
 def pull_premarket() -> None:
-    """5-minute bars starting 08:00 to 09:25 New York for every linked ticker and SPY (not committed)."""
     s, base = dt._massive_session()
     tickers = sorted({l["ticker"] for l in dt.proposer_links()} | {"SPY"})
     for tk in tickers:
@@ -44,11 +38,10 @@ def pull_premarket() -> None:
 
 
 def entry_prices(pre: dict, sess: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
-    """Per session: the open of the first pre-market bar starting in [08:00, 08:30) and that bar's start time."""
     px, at = np.full(len(sess), np.nan), np.full(len(sess), np.nan)
     t, o = pre["t"], pre["o"]
     for i, op in enumerate(sess.open.to_numpy()):
-        lo, hi = op - 90 * 60, op - 60 * 60                       # 08:00 and 08:30 on a 09:30 open
+        lo, hi = op - 90 * 60, op - 60 * 60
         j = np.searchsorted(t, lo)
         if j < len(t) and t[j] < hi:
             px[i], at[i] = o[j], t[j]
@@ -56,7 +49,6 @@ def entry_prices(pre: dict, sess: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]
 
 
 def pre_cost_bp(ticker: str, beta: float, mult: float) -> float:
-    """Round trip, bp: pre-market entry and regular-open exit, on the equity and on the SPY hedge."""
     liquid = ticker in cfg.LIQUID
     entry = PRE_COST["liquid"] if liquid else PRE_COST["other"]
     exit_ = cfg.COST_LIQUID if liquid else cfg.COST_OTHER
@@ -77,7 +69,7 @@ def main() -> int:
     days = list(sess.day)
     op, cl = sess.open.to_numpy(), sess.close.to_numpy()
     prev_cl = np.concatenate([[np.nan], cl[:-1]])
-    weekend = np.concatenate([[False], (op[1:] - cl[:-1]) > 40 * 3600])       # more than one night between sessions
+    weekend = np.concatenate([[False], (op[1:] - cl[:-1]) > 40 * 3600])
     n_oos = int(math.ceil(cfg.OOS_FRACTION * len(days)))
     seg = np.array(["OOS" if i >= len(days) - n_oos else "IS" for i in range(len(days))])
     spy_px = en.session_prices(spy_bars, sess)
@@ -105,8 +97,8 @@ def main() -> int:
             continue
         a = tk[l["ticker"]]
         p_prev = asof(np.nan_to_num(prev_cl, nan=0).astype(np.int64), pm["t"], pm["p"].astype(float), cfg.PM_MAX_AGE_S)
-        p_pre = asof((op - 91 * 60).astype(np.int64), pm["t"], pm["p"].astype(float), cfg.PM_MAX_AGE_S)       # 07:59
-        p_sig = asof((op - 60).astype(np.int64), pm["t"], pm["p"].astype(float), cfg.PM_MAX_AGE_S)            # 09:29
+        p_pre = asof((op - 91 * 60).astype(np.int64), pm["t"], pm["p"].astype(float), cfg.PM_MAX_AGE_S)
+        p_sig = asof((op - 60).astype(np.int64), pm["t"], pm["p"].astype(float), cfg.PM_MAX_AGE_S)
         v = verdict(l, critic)
         rows.append(pd.DataFrame({
             "day": days, "segment": seg, "weekend": weekend, "market": l["market"], "ticker": l["ticker"],
@@ -115,7 +107,6 @@ def main() -> int:
             "agreed": v == "agreed", "family": critic.get(l["market"], {}).get("family", "not reviewed"),
             "motivating": dt.is_motivating(l["market"], l["question"])}))
     df = pd.concat(rows, ignore_index=True)
-    # the walk-forward gate of the main run, by link and day
     gate = pd.read_csv(RESULTS / "gate_days.csv") if (RESULTS / "gate_days.csv").exists() else None
     df["confirmed"] = False
     if gate is not None:

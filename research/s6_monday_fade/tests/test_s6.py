@@ -1,4 +1,3 @@
-"""S6: the entry rule against the options' band, costs, both exits, the print check."""
 import numpy as np
 import pytest
 
@@ -28,9 +27,9 @@ def test_buy_yes_when_polymarket_is_below_the_band_after_costs():
 
 def test_no_trade_inside_the_band_or_when_costs_eat_the_gap():
     assert s6.decide(0.47, 0.45, 0.50, H, 1.0, 0.02) is None
-    assert s6.decide(0.54, 0.45, 0.50, H, 1.0, 0.02) is None            # 0.52 - fee - 0.50 is under 2 points
+    assert s6.decide(0.54, 0.45, 0.50, H, 1.0, 0.02) is None
     assert s6.decide(0.60, 0.40, 0.45, H, 1.0, 0.02) is not None
-    assert s6.decide(0.52, 0.40, 0.45, H, 2.0, 0.02) is None            # doubled costs remove a trade that 1x allowed
+    assert s6.decide(0.52, 0.40, 0.45, H, 2.0, 0.02) is None
     assert s6.decide(0.52, 0.40, 0.45, H, 1.0, 0.02) is not None
 
 
@@ -50,15 +49,15 @@ def test_pnl_closed_at_the_end_of_the_day_pays_the_spread_again():
 
 def test_capital_is_what_the_position_costs():
     assert s6.capital("buy YES", 0.32) == pytest.approx(32.0)
-    assert s6.capital("sell YES", 0.58) == pytest.approx(42.0)            # buying NO at 0.42
+    assert s6.capital("sell YES", 0.58) == pytest.approx(42.0)
 
 
 def test_print_check_side_and_window():
     at = s6.entry_epoch("2026-03-02")
-    prints = [{"timestamp": at + 60, "price": 0.59, "side": "SELL", "outcome": "Yes", "size": 40},       # a YES bid at 0.59 was hit
-              {"timestamp": at + 60, "price": 0.40, "side": "BUY", "outcome": "No", "size": 25},        # = taker sold YES at 0.60
-              {"timestamp": at + 60, "price": 0.57, "side": "SELL", "outcome": "Yes", "size": 99},      # worse than our 0.58
-              {"timestamp": at + 5000, "price": 0.70, "side": "SELL", "outcome": "Yes", "size": 99}]    # outside the window
+    prints = [{"timestamp": at + 60, "price": 0.59, "side": "SELL", "outcome": "Yes", "size": 40},
+              {"timestamp": at + 60, "price": 0.40, "side": "BUY", "outcome": "No", "size": 25},
+              {"timestamp": at + 60, "price": 0.57, "side": "SELL", "outcome": "Yes", "size": 99},
+              {"timestamp": at + 5000, "price": 0.70, "side": "SELL", "outcome": "Yes", "size": 99}]
     assert s6.verify(prints, "sell YES", 0.58, at) == (2, 65.0)
     assert s6.verify(prints, "buy YES", 0.32, at) == (0, 0.0)
     assert s6.verify([{"timestamp": at, "price": 0.31, "side": "BUY", "outcome": "Yes", "size": 10}], "buy YES", 0.32, at) == (1, 10.0)
@@ -66,7 +65,7 @@ def test_print_check_side_and_window():
 
 def test_entry_time_is_0945_new_york():
     import pandas as pd
-    assert pd.Timestamp(s6.entry_epoch("2026-03-09"), unit="s", tz="America/New_York").strftime("%H:%M") == "09:45"   # after the DST change
+    assert pd.Timestamp(s6.entry_epoch("2026-03-09"), unit="s", tz="America/New_York").strftime("%H:%M") == "09:45"
     assert pd.Timestamp(s6.entry_epoch("2026-01-05"), unit="s", tz="America/New_York").strftime("%H:%M") == "09:45"
 
 
@@ -80,11 +79,11 @@ def test_closure_metrics():
 
 def test_forward_fill_walks_only_levels_that_clear_the_band():
     from s6_monday_fade import forward as fw
-    bids = [[0.60, 100.0], [0.55, 100.0], [0.475, 100.0]]                # options band top 0.45
+    bids = [[0.60, 100.0], [0.55, 100.0], [0.475, 100.0]]
     f = fw.fill(bids, 0.45, "sell YES", "pm")
-    assert f["qty"] == 200 and f["avg_price"] == pytest.approx(0.575)   # 0.475 - fee - 0.45 is under 2 points
-    assert f["capital"] == pytest.approx(200 - 115.0)                    # buying NO costs 1 - price
-    asks = [[0.30, 40.0], [0.36, 40.0], [0.60, 40.0]]                    # band bottom 0.40
+    assert f["qty"] == 200 and f["avg_price"] == pytest.approx(0.575)
+    assert f["capital"] == pytest.approx(200 - 115.0)
+    asks = [[0.30, 40.0], [0.36, 40.0], [0.60, 40.0]]
     g = fw.fill(asks, 0.40, "buy YES", "pm")
     assert g["qty"] == 80 and g["capital"] == pytest.approx(40 * 0.30 + 40 * 0.36)
     assert fw.fill([[0.60, 2000.0]], 0.45, "sell YES", "pm")["qty"] == fw.MAX_SIZE
@@ -95,4 +94,4 @@ def test_forward_signal_needs_the_minimum_size():
     assert fw.signal({"b": [[0.60, 3.0]], "a": [[0.62, 50.0]]}, 0.40, 0.45, "pm") is None
     side, f = fw.signal({"b": [[0.60, 30.0]], "a": [[0.62, 50.0]]}, 0.40, 0.45, "pm")
     assert side == "sell YES" and f["qty"] == 30
-    assert fw.signal({"b": [[0.42, 30.0]], "a": [[0.44, 50.0]]}, 0.40, 0.45, "k") is None      # inside the band
+    assert fw.signal({"b": [[0.42, 30.0]], "a": [[0.44, 50.0]]}, 0.40, 0.45, "k") is None

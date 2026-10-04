@@ -1,4 +1,3 @@
-"""Cross-correlation peak lag (METHOD.md section 5). Positive lag = PM leads equity."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -11,20 +10,19 @@ from .config import PARAMS, Params
 
 @dataclass(frozen=True)
 class XCorr:
-    table: pd.DataFrame      # columns lag, rho, n
+    table: pd.DataFrame
     peak_lag: int | None
     peak_rho: float | None
     n: int
-    significant: bool | None  # |peak_rho| > 2/sqrt(n)
-    pm_lead_mass: float | None   # mean rho over lags 1..M
-    eq_lead_mass: float | None   # mean rho over lags -M..-1
+    significant: bool | None
+    pm_lead_mass: float | None
+    eq_lead_mass: float | None
 
 
 def cross_correlation(x: pd.Series, ys: pd.Series, in_window: pd.Series, p: Params = PARAMS) -> XCorr:
-    """rho(l) = corr(x_t, ys_{t-l}) over window minutes where both are valid, l in [-max, max]."""
     rows = []
     for lag in range(-p.xcorr_max_lag, p.xcorr_max_lag + 1):
-        ysl = ys.shift(lag)  # ys_{t-lag}
+        ysl = ys.shift(lag)
         m = in_window & x.notna() & ysl.notna()
         n = int(m.sum())
         rho = np.nan
@@ -37,7 +35,6 @@ def cross_correlation(x: pd.Series, ys: pd.Series, in_window: pd.Series, p: Para
     ok = tab.dropna(subset=["rho"])
     if ok.empty:
         return XCorr(tab, None, None, int(tab["n"].max()), None, None, None)
-    # peak by |rho|; ties go to the smaller |lag|
     order = ok.assign(a=ok["rho"].abs(), l=ok["lag"].abs()).sort_values(["a", "l"], ascending=[False, True])
     best = order.iloc[0]
     n0 = int(tab.loc[tab["lag"] == 0, "n"].iloc[0])

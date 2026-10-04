@@ -21,8 +21,6 @@ def sim(tmp_path):
                                                         option={OCC: Quote(2.0, 0.1, "fake_option_quote")}))
 
 
-# --- fills, fees, cash ----------------------------------------------------------------------------
-
 def test_starting_account(sim):
     a = run(sim.account())
     assert (a.broker, a.cash, a.equity, a.buying_power, a.currency) == ("sim", 1_000_000.0, 1_000_000.0, 1_000_000.0, "USD")
@@ -30,13 +28,12 @@ def test_starting_account(sim):
 
 def test_equity_buy_fills_above_mid_with_per_share_fee(sim):
     o = run(sim.place_order(req()))
-    assert o.status == "filled" and o.fill_px == 100.01  # 100 + 1 bp half-spread
+    assert o.status == "filled" and o.fill_px == 100.01
     assert o.fee == 0.05 and o.price_source == "supplied" and o.id == "sim-000001"
     a = run(sim.account())
     assert a.cash == pytest.approx(1_000_000 - 1000.10 - 0.05)
     p = run(sim.positions())[0]
     assert (p.symbol, p.qty, p.avg_px, p.mark_px) == ("ABNB", 10, 100.01, 100.0)
-    # marked at the mid, so the spread and fee show up as a loss immediately
     assert a.equity == pytest.approx(1_000_000 - 0.10 - 0.05)
 
 
@@ -68,7 +65,7 @@ def test_option_fills_at_quote_mid_plus_half_spread_with_contract_fee_and_multip
     assert p.multiplier == 100 and p.market_value == pytest.approx(2.0 * 3 * 100)
     assert p.unrealized_pnl == pytest.approx((2.0 - 2.1) * 300)
     s = run(sim.place_order(OrderRequest(symbol=OCC, asset="option", side="sell", qty=3)))
-    assert s.fill_px == 1.9  # sells at the bid
+    assert s.fill_px == 1.9
     assert run(sim.positions()) == []
     assert run(sim.account()).realized_pnl == pytest.approx((1.9 - 2.1) * 300)
 
@@ -99,7 +96,7 @@ def test_a_prediction_limit_price_is_a_bound_never_the_book_price(sim):
     assert nobook.status == "rejected" and "ref_px" in nobook.reject_reason and run(sim.positions()) == []
     resting = run(sim.place_order(OrderRequest(symbol="m", asset="prediction", side="buy", qty=10, type="limit",
                                                limit_px=0.4, ref_px=0.5)))
-    assert resting.status == "open"  # the book is above the limit
+    assert resting.status == "open"
     filled = run(sim.place_order(OrderRequest(symbol="m", asset="prediction", side="buy", qty=10, type="limit",
                                               limit_px=0.6, ref_px=0.5)))
     assert filled.status == "filled" and filled.fill_px == 0.5 and filled.price_source == "supplied_book_price"
@@ -110,16 +107,14 @@ def test_the_request_note_is_kept_on_the_order(sim):
     assert o.note == "replay: labelled"
 
 
-# --- shorts ---------------------------------------------------------------------------------------
-
 def test_short_then_cover_realises_the_pnl(sim):
-    run(sim.place_order(req(side="sell", qty=100, ref_px=100.0)))  # short at 99.99
+    run(sim.place_order(req(side="sell", qty=100, ref_px=100.0)))
     p = run(sim.positions())[0]
     assert p.qty == -100 and p.avg_px == 99.99
     a = run(sim.account())
     assert a.cash == pytest.approx(1_000_000 + 9999.0 - 0.5)
-    assert a.buying_power == pytest.approx(a.cash - 1.5 * 100 * 100.0)  # proceeds locked plus 50%
-    run(sim.place_order(req(side="buy", qty=100, ref_px=90.0)))  # cover at 90.009
+    assert a.buying_power == pytest.approx(a.cash - 1.5 * 100 * 100.0)
+    run(sim.place_order(req(side="buy", qty=100, ref_px=90.0)))
     assert run(sim.positions()) == []
     a = run(sim.account())
     assert a.realized_pnl == pytest.approx((99.99 - 90.009) * 100)
@@ -134,10 +129,8 @@ def test_flipping_through_zero_opens_the_remainder_at_the_fill_price(sim):
     assert p.qty == -15 and p.avg_px == pytest.approx(109.989)
 
 
-# --- buying power ---------------------------------------------------------------------------------
-
 def test_insufficient_buying_power_rejects_a_buy(sim):
-    o = run(sim.place_order(req(qty=10_000, ref_px=200.0)))  # $2M against $1M
+    o = run(sim.place_order(req(qty=10_000, ref_px=200.0)))
     assert o.status == "rejected" and o.reject_reason == "insufficient_buying_power"
     assert run(sim.account()).cash == 1_000_000.0 and run(sim.positions()) == []
     ok = run(sim.place_order(req(qty=4_000, ref_px=200.0)))
@@ -146,25 +139,21 @@ def test_insufficient_buying_power_rejects_a_buy(sim):
 
 def test_insufficient_buying_power_rejects_an_oversized_short_but_never_a_cover(tmp_path):
     s = SimBroker(tmp_path / "a.json", starting_cash=10_000.0)
-    assert run(s.place_order(req(side="sell", qty=100, ref_px=100.0))).status == "filled"  # $10k short uses $5k of power
+    assert run(s.place_order(req(side="sell", qty=100, ref_px=100.0))).status == "filled"
     big = run(s.place_order(req(side="sell", qty=100, ref_px=100.0)))
     assert big.status == "rejected" and big.reject_reason == "insufficient_buying_power"
-    # the stock rallies and the account is over-extended; closing the short is still allowed
     s.pos["equity|ABNB"]["mark_px"] = 300.0
     assert run(s.account()).buying_power == 0.0
     assert run(s.place_order(req(qty=100, ref_px=300.0))).status == "filled"
 
 
-# --- limit orders, idempotency, cancel ------------------------------------------------------------
-
 def test_limit_order_rests_then_fills_when_the_price_arrives(sim):
     o = run(sim.place_order(req(type="limit", limit_px=95.0)))
     assert o.status == "open" and run(sim.positions()) == []
     assert [x.id for x in run(sim.orders("open"))] == [o.id]
-    # another order in the same name at a lower price sweeps the resting order
     run(sim.place_order(req(side="sell", qty=1, ref_px=94.0)))
     assert run(sim.orders("open")) == []
-    assert run(sim.positions())[0].qty == 9  # 10 bought, 1 sold
+    assert run(sim.positions())[0].qty == 9
 
 
 def test_explicit_sweep_fills_marketable_resting_orders(sim):
@@ -185,14 +174,14 @@ def test_cancel_open_order_and_errors(sim):
     assert e.value.status_code == 404
     f = run(sim.place_order(req()))
     with pytest.raises(BrokerError):
-        run(sim.cancel(f.id))  # filled orders cannot be cancelled
+        run(sim.cancel(f.id))
 
 
 def test_client_order_id_is_idempotent(sim):
     a = run(sim.place_order(req(client_order_id="c-1")))
     b = run(sim.place_order(req(client_order_id="c-1")))
     assert a.id == b.id and len(run(sim.orders())) == 1
-    assert run(sim.positions())[0].qty == 10  # not doubled
+    assert run(sim.positions())[0].qty == 10
 
 
 def test_orders_are_newest_first_and_filterable(sim):
@@ -202,21 +191,19 @@ def test_orders_are_newest_first_and_filterable(sim):
     assert [o.status for o in run(sim.orders("filled"))] == ["filled"]
 
 
-# --- persistence, determinism, reset --------------------------------------------------------------
-
 def test_state_round_trips_through_the_json_file(tmp_path):
     path = tmp_path / "acct.json"
     a = SimBroker(path, FakeQuotes(option={OCC: Quote(2.0, 0.1, "q")}))
     run(a.place_order(req(side="sell", qty=100)))
     run(a.place_order(OrderRequest(symbol=OCC, asset="option", side="buy", qty=2)))
     run(a.place_order(req(type="limit", limit_px=1.0, qty=1, symbol="LMT")))
-    b = SimBroker(path)  # a fresh process
+    b = SimBroker(path)
     assert run(b.account()) == run(a.account())
     assert run(b.positions()) == run(a.positions())
     assert run(b.orders()) == run(a.orders())
     nxt = run(b.place_order(req(qty=1)))
-    assert nxt.id == "sim-000004"  # the sequence continues
-    assert run(b.cancel(run(b.orders("open"))[0].id)).status == "cancelled"  # resting orders survive a restart
+    assert nxt.id == "sim-000004"
+    assert run(b.cancel(run(b.orders("open"))[0].id)).status == "cancelled"
     assert json.loads(path.read_text())["version"] == 1
 
 
@@ -226,7 +213,7 @@ def test_corrupt_state_file_starts_fresh_instead_of_crashing(tmp_path):
     s = SimBroker(path)
     assert run(s.account()).cash == 1_000_000.0
     run(s.place_order(req()))
-    assert json.loads(path.read_text())["seq"] == 1  # rewritten cleanly
+    assert json.loads(path.read_text())["seq"] == 1
 
 
 def test_same_orders_give_identical_state_and_ids(tmp_path):
@@ -242,7 +229,7 @@ def test_reset_restores_the_starting_account(sim, tmp_path):
     run(sim.place_order(req()))
     a = run(sim.reset())
     assert a.cash == 1_000_000.0 and run(sim.positions()) == [] and run(sim.orders()) == []
-    assert run(SimBroker(tmp_path / "acct.json").account()).cash == 1_000_000.0  # and it is persisted
+    assert run(SimBroker(tmp_path / "acct.json").account()).cash == 1_000_000.0
     assert run(sim.reset(250_000.0)).cash == 250_000.0
     assert run(sim.place_order(req())).id == "sim-000001"
 
@@ -252,8 +239,6 @@ def test_no_state_file_option_keeps_everything_in_memory():
     run(s.place_order(req()))
     assert len(run(s.orders())) == 1
 
-
-# --- Massive quote provider (mocked HTTP) ---------------------------------------------------------
 
 class _Resp:
     def __init__(self, payload, status=200):
@@ -292,7 +277,7 @@ def test_massive_quotes_equity_last_trade_and_prev_close_fallback():
     c2 = _Client({"/v2/aggs/ticker/QQQ/prev": {"results": [{"c": 400.0}]}})
     q2 = run(MassiveQuotes(lambda: c2).equity("QQQ"))
     assert q2.mid == 400.0 and q2.source == "massive_prev_close"
-    assert run(MassiveQuotes(lambda: c2).equity("NOPE")) is None  # 404s degrade to None, never raise
+    assert run(MassiveQuotes(lambda: c2).equity("NOPE")) is None
 
 
 def test_massive_quotes_option_mid_and_half_spread_then_prev_close():

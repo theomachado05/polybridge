@@ -1,4 +1,3 @@
-"""Verdict badges: confirmatory H1/H2 family verdicts and the exploratory atlas (read-only over research/results)."""
 from __future__ import annotations
 
 import os

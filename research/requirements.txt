@@ -1,4 +1,3 @@
-# What judges install. Floors match the Massive starter. Python 3.10+.
 pandas>=2.2
 numpy>=2.0
 requests>=2.31

@@ -1,7 +1,3 @@
-"""Study A orchestrator: R3 events -> gamma metadata -> taker prints -> frozen trades -> P&L with R3 outcomes. Runs once.
-
-    cd research && .venv/bin/python -m reopen_taker.run
-"""
 from __future__ import annotations
 
 import csv

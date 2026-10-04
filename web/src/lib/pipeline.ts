@@ -1,5 +1,3 @@
-// Pipeline screen: the six steps mapped from POST /pipeline/fit (classify, shortlist, history, tune, explain, ready),
-// or, when no fit can run, the real facts of the pick and the engine's default spec (never scripted numbers).
 import type { FitOut } from "./api";
 import { aiLabel, aiStatus, classifiedByGemini } from "./ai.ts";
 import { fmtPct, prettyId } from "./fmt.ts";
@@ -11,59 +9,41 @@ export interface PipeContext {
   question: string; venues: string[]; yes: number; vol: string;
   ticker: string; held: number;
   move: number; rev: number | null; brand: number | null; why: string;
-  shortlisted?: string[];   // family ids from GET /library for the fitted class
-  heldReal?: number;        // shares actually held (real path)
-  libraryTotal?: number;    // preset count GET /library reports (no number is shown without it)
-  noDirection?: boolean;    // live market, ticker outside its mapping: no hedge was fitted (adverse outcome unknown)
+  shortlisted?: string[];
+  heldReal?: number;
+  libraryTotal?: number;
+  noDirection?: boolean;
 }
 
 type ScoredFit = Pick<FitOut, "division" | "score" | "n_ticks"> &
   Partial<Pick<FitOut, "score_basis" | "score_raw" | "score_vs_static" | "avg_hedge_ratio">>;
 const VS_STATIC = "hedge_var_reduction_vs_static";
 const fin = (v: number | null | undefined): v is number => typeof v === "number" && Number.isFinite(v);
-/** One-decimal percent; a nonzero value too small to show reads "<0.1%" / "-<0.1%" rather than a misleading "0.0%". */
 const pct1 = (v: number) => (v !== 0 && Math.abs(v) < 0.0005 ? `${v < 0 ? "-" : ""}<0.1%` : `${(v * 100).toFixed(1)}%`);
 const signedPct = (v: number) => (v > 0 ? `+${pct1(v)}` : pct1(v));
-/** The ranking basis of a fit: the vs-static hedge score, the opportunity score, or a legacy hedge score (an older
- *  backend that ranked by raw variance reduction and sent no score_basis). */
 const basisOf = (f: Pick<ScoredFit, "division" | "score_basis" | "score_vs_static">) =>
   f.division === "opportunity" ? "opportunity" : f.score_basis === VS_STATIC || fin(f.score_vs_static) ? "vs_static" : "legacy";
-/** What the tune step calls the score, per ranking basis (the vs-static headline names itself). */
 const scoreLabel = (basis: "opportunity" | "vs_static" | "legacy") =>
   basis === "opportunity" ? "net P&L per unit risk" : basis === "vs_static" ? "signal vs a static hedge" : "hedge variance reduction";
 const fmtScore = (s: number | null | undefined, basis: "opportunity" | "vs_static" | "legacy") =>
   !fin(s) ? "n/a" : basis === "opportunity" ? s.toFixed(3) : basis === "vs_static" ? `${signedPct(s)} vs static` : pct1(s);
-/** Fit scores are tuned and scored on the same history a replay bridge then plays back: in-sample, not a forecast. */
 export const IN_SAMPLE_NOTE = "The score comes from the same history that the bridge replays (in-sample). It is not a forecast or an out-of-sample result.";
-/** Why the hedge headline is the vs-static number: any static short of a fraction h earns 1 - (1 - h)^2 of the raw cut. */
 export const VS_STATIC_NOTE = "The rank uses the variance cut that is more than a static hedge of the same average size. The prediction-market signal adds this cut. The raw variance reduction mostly shows how much of the position has a hedge, thus the app shows it but does not rank by it.";
-/** Shown, in a neutral tone, when even the best preset did no better than a static hedge of the same size. */
 export const NO_SIGNAL_TEXT = "the PM signal adds nothing over a static hedge on this history";
-/** A plain fit score (opportunity, or a legacy hedge score), labelled in-sample. */
 export const hedgeScoreText = (s: number | null, division: string) =>
   s == null || !Number.isFinite(s) ? "n/a"
   : division === "opportunity" ? `${s.toFixed(3)} in-sample` : `${(s * 100).toFixed(1)}% var. reduction (in-sample replay)`;
 
 export interface FitScoreView {
-  /** "positive": the signal beat a static hedge; "neutral": it did not, or the score is not a vs-static number. */
   tone: "positive" | "neutral";
-  /** False for an unscored (rules) pick. */
   scored: boolean;
-  /** True when this is a vs-static hedge score at or below 0. */
   noSignal: boolean;
-  /** The headline: "signal adds 5.7% vs a static hedge (in-sample replay, 1,440 ticks)". */
   headline: string;
-  /** Compact form for badges: "signal adds 5.7% vs a static hedge" / "PM signal adds nothing over a static hedge". */
   short: string;
-  /** Raw variance reduction and average hedge ratio (hedge vs-static fits only). */
   secondary: string | null;
-  /** Hover text: the headline, the secondary numbers and the in-sample / ranking caveats. */
   title: string;
 }
 
-/** How a fit's score is shown everywhere (Build card, pipeline, Library badge). For a hedge the headline is what the
- *  PM signal adds over a static hedge of the same average size; the raw cut and the hedge ratio are secondary. */
-/** Below this, "signal adds" is shown in neutral tone: the ranking takes the best of many presets in-sample. */
 export const SIGNAL_NOISE_FLOOR = 0.01;
 
 export function fitScoreView(f: ScoredFit): FitScoreView {
@@ -78,7 +58,7 @@ export function fitScoreView(f: ScoredFit): FitScoreView {
       fin(f.avg_hedge_ratio) ? `average hedge ratio ${pct1(f.avg_hedge_ratio)}` : null,
     ].filter((x): x is string => !!x);
     const secondary = parts.length ? parts.join(" · ") : null;
-    const noise = vs > 0 && vs < SIGNAL_NOISE_FLOOR;  // a few tenths of a percent is within selection noise (best of many presets)
+    const noise = vs > 0 && vs < SIGNAL_NOISE_FLOOR;
     const headline = vs > 0 ? `signal adds ${pct1(vs)} vs a static hedge${noise ? ", within noise" : ""} (in-sample replay${ticks})` : `${NO_SIGNAL_TEXT} (in-sample replay${ticks})`;
     return {
       tone: vs >= SIGNAL_NOISE_FLOOR ? "positive" : "neutral", scored: true, noSignal: vs <= 0, headline,
@@ -129,8 +109,6 @@ export function fitSteps(fit: FitOut, c: PipeContext): PipeStep[] {
   ];
 }
 
-/** The steps when no fit can run for a live pick: the fit failed (the screen shows the error and a retry) or the
- *  outcome that hurts the ticker is unknown. Real facts only; approving then runs the engine's default spec. */
 export function noFitSteps(c: PipeContext): PipeStep[] {
   const held = c.heldReal ? `${c.heldReal.toLocaleString("en-US")} shares held` : `no position, sized to a ${c.held.toLocaleString("en-US")}-share notional`;
   return [

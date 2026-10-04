@@ -1,9 +1,3 @@
-"""S11 history: violations (part a) and propagation (part b) on one-minute mids, with half-spreads, fees and prints.
-
-Run from `research/`:
-    python -m s11_bundles.run              # everything, with the print check
-    python -m s11_bundles.run --no-prints
-"""
 from __future__ import annotations
 
 import gzip
@@ -33,10 +27,7 @@ ET = ZoneInfo("America/New_York")
 OOS = pd.Timestamp(cfg.OOS_START, tz=ET).timestamp()
 
 
-# ---------------------------------------------------------------- costs
-
 def calibrate() -> dict:
-    """Half-spread by bundle kind from the first hour of this study's own live snapshots (METHOD.md section 2)."""
     lb = json.loads((HERE / "live_bundles.json").read_text())
     kind = {lb["markets"][i]["token"]: b["kind"] for b in lb["bundles"] for i in b["legs"]}
     per: dict[str, dict[str, list[float]]] = {}
@@ -60,8 +51,6 @@ def calibrate() -> dict:
     out["slice_start_utc"] = datetime.fromtimestamp(t0).astimezone(ET).isoformat() if t0 else None
     return out
 
-
-# ---------------------------------------------------------------- data
 
 _mem: dict[str, tuple[np.ndarray, np.ndarray] | None] = {}
 
@@ -97,8 +86,6 @@ def et_date(t: float) -> str:
     return datetime.fromtimestamp(t, ET).strftime("%Y-%m-%d")
 
 
-# ---------------------------------------------------------------- part (a): violations
-
 def pair_episodes(b: dict, a_id: str, b_id: str, M: dict, out_of: dict, h: float) -> tuple[list[dict], dict]:
     sa, sb = series(a_id, b["source"]), series(b_id, b["source"])
     if sa is None or sb is None:
@@ -108,7 +95,7 @@ def pair_episodes(b: dict, a_id: str, b_id: str, M: dict, out_of: dict, h: float
         return [], {}
     A, B = asof(g, *sa, max_age=cfg.PRICE_MAX_AGE_S), asof(g, *sb, max_age=cfg.PRICE_MAX_AGE_S)
     ok = ~np.isnan(A) & ~np.isnan(B)
-    wk = np.array([is_weekend(x) for x in g[ok][::60]]) if ok.any() else np.array([], bool)   # hourly sample for exposure
+    wk = np.array([is_weekend(x) for x in g[ok][::60]]) if ok.any() else np.array([], bool)
     exposure = {"hours_weekend": float(wk.sum()), "hours_weekday": float((~wk).sum())}
     fa, fb = (M[a_id]["fee_rate"], M[a_id]["fee_exponent"]), (M[b_id]["fee_rate"], M[b_id]["fee_exponent"])
     recs = []
@@ -149,7 +136,6 @@ def pair_episodes(b: dict, a_id: str, b_id: str, M: dict, out_of: dict, h: float
 def set_episodes(b: dict, M: dict, out_of: dict, h: float) -> tuple[list[dict], dict]:
     legs = b["legs"]
     ss = [series(i, b["source"]) for i in legs]
-    # a member that resolved counts at its result after it closed; one with no prices at all and no result: untestable
     live = [s for s in ss if s is not None]
     if len(live) < 2:
         return [], {}
@@ -216,7 +202,6 @@ def set_episodes(b: dict, M: dict, out_of: dict, h: float) -> tuple[list[dict], 
 
 
 def cap(df: pd.DataFrame, size_col: str, hold_col: str | None = None, per_bundle: bool = True) -> pd.DataFrame:
-    """At most MAX_NEW_TRADES_PER_DAY a day, largest first; one open trade per bundle (violations only: METHOD.md section 3)."""
     keep, open_until = [], {}
     for _, day in df.sort_values("t_entry").groupby("date", sort=True):
         n = 0
@@ -231,8 +216,6 @@ def cap(df: pd.DataFrame, size_col: str, hold_col: str | None = None, per_bundle
             open_until[r.bundle] = float(ex) if ex is not None and ex == ex else float("inf")
     return df.loc[keep].sort_values("t_entry")
 
-
-# ---------------------------------------------------------------- part (b): propagation
 
 def propagation(b: dict, M: dict, H: dict) -> list[dict]:
     recs = []
@@ -273,8 +256,6 @@ def propagation(b: dict, M: dict, H: dict) -> list[dict]:
     return recs
 
 
-# ---------------------------------------------------------------- statistics
-
 def boot(df: pd.DataFrame, col: str) -> tuple[float, float, float, int, int]:
     d = df[df[col].notna()]
     if not len(d):
@@ -291,7 +272,6 @@ def boot(df: pd.DataFrame, col: str) -> tuple[float, float, float, int, int]:
 
 
 def perf(tr: pd.DataFrame, pnl_col: str, cap_col: str, t_col: str = "t_entry") -> dict:
-    """Daily P&L over every calendar day of the span; capital base = the most capital opened on one day."""
     if not len(tr):
         return {}
     d = tr.assign(_d=pd.to_datetime(tr["date"]))
@@ -302,7 +282,7 @@ def perf(tr: pd.DataFrame, pnl_col: str, cap_col: str, t_col: str = "t_entry") -
     pnl = pnl.reindex(idx, fill_value=0.0)
     r = pnl / K
     eq = K + pnl.cumsum()
-    dd = (eq.cummax() - eq) / K                     # in units of the capital base (equity can go below zero)
+    dd = (eq.cummax() - eq) / K
     sd = r.std(ddof=1)
     months = r.groupby(r.index.to_period("M")).sum()
     years = max(len(idx) / 365.0, 1 / 365)
@@ -310,8 +290,6 @@ def perf(tr: pd.DataFrame, pnl_col: str, cap_col: str, t_col: str = "t_entry") -
             "max_drawdown": float(dd.max()), "worst_month": float(months.min()), "turnover_per_year": float(d[cap_col].sum() / K / years),
             "days": len(idx), "equity": eq}
 
-
-# ---------------------------------------------------------------- prints
 
 _prints: dict[str, list[dict]] = {}
 
@@ -333,7 +311,6 @@ def prints_for(mid: str, cond: str, oldest: float, pt: ds.Throttle) -> tuple[lis
 
 
 def verify_leg(mid: str, M: dict, side: str, px: float, at: float, pt: ds.Throttle) -> str:
-    """'verified', 'not verified' or 'uncheckable' (the served prints start after the entry)."""
     p, first = prints_for(mid, M[mid].get("conditionId"), at, pt)
     if not p or first > at - cfg.PRINT_WINDOW_S:
         return "uncheckable"
@@ -348,8 +325,6 @@ def combine(states: list[str]) -> str:
         return "uncheckable"
     return "verified"
 
-
-# ---------------------------------------------------------------- main
 
 def main() -> int:
     t_run = time.time()
@@ -389,7 +364,6 @@ def main() -> int:
     P.to_csv(RESULTS / "jumps.csv", index=False)
     pd.to_pickle({"V": V, "P": P, "X": X, "H": H, "coverage": coverage}, CACHE / "run_state.pkl")
 
-    # ---- trades: violation trade (primary exit: gap close or resolution; H: hold), capped
     no_prints = "--no-prints" in sys.argv
     pt = ds.Throttle(cfg.PULL_RATE)
     trades = []
@@ -416,7 +390,6 @@ def main() -> int:
                                    "capital": e if r.jump_points > 0 else 1 - e, "pnl": r[f"pnl_{c:g}x"]})
     T = pd.DataFrame(trades)
 
-    # ---- print check
     if len(T) and not no_prints:
         states = []
         for _, r in T.iterrows():

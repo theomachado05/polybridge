@@ -21,14 +21,14 @@ const char* to_string(Reason r) noexcept {
 }
 
 bool SigmaGate::pass(const Tick& t, std::int64_t) noexcept {
-  if (last_p < 0) {          // first observation: nothing to compare against
+  if (last_p < 0) {
     last_p = t.p;
     return true;
   }
   const double dp = t.p - last_p;
   const double sigma = std::sqrt(var);
   const bool ok = std::abs(dp) >= k * sigma;
-  var = (1 - alpha) * var + alpha * dp * dp;  // update after the decision: the gate judges against the past
+  var = (1 - alpha) * var + alpha * dp * dp;
   last_p = t.p;
   return ok;
 }
@@ -45,7 +45,7 @@ bool spec_ok(const HedgeSpec& s) noexcept {
          s.sigma_alpha <= 1 && s.max_staleness_ns >= 0 &&
          s.gap_per_share >= 0 && s.fee_per_share >= 0 && s.half_spread >= 0 && s.min_benefit_ratio >= 0;
 }
-}  // namespace
+}
 
 Engine::Engine(HedgeSpec spec)
     : spec_(std::move(spec)),
@@ -70,7 +70,6 @@ Decision Engine::on_tick(const Tick& t, std::int64_t now_ns) {
       if (!pass) failed = G::fail_reason;
       return pass;
     }, gate);
-    // The initial position h0 is sized on the first valid tick regardless of the sigma gate.
     if (!ok && !(failed == Reason::BelowSigma && !sized_once_)) return finish(Action::Hold, failed, 0, hedge_);
   }
 
@@ -82,9 +81,9 @@ Decision Engine::on_tick(const Tick& t, std::int64_t now_ns) {
   if (!std::isfinite(qty) || !std::isfinite(target) || !std::isfinite(hedge_))
     return finish(Action::Hold, Reason::Invalid, 0, hedge_);
 
-  if (qty == 0 || std::abs(qty) < spec_.band_shares)  // never emit a zero-quantity order, even with band_shares = 0
+  if (qty == 0 || std::abs(qty) < spec_.band_shares)
     return finish(Action::Hold, Reason::InsideBand, 0, target);
-  if (spec_.gap_per_share > 0) {  // fee gate: expected benefit must cover the per-order cost
+  if (spec_.gap_per_share > 0) {
     const double cost = std::abs(qty) * (spec_.fee_per_share + spec_.half_spread);
     const double benefit = std::abs(qty) * spec_.gap_per_share * std::abs(t.p - p_at_last_order_);
     if (!std::isfinite(cost) || !std::isfinite(benefit)) return finish(Action::Hold, Reason::Invalid, 0, hedge_);
@@ -95,4 +94,4 @@ Decision Engine::on_tick(const Tick& t, std::int64_t now_ns) {
   return finish(Action::Order, capped ? Reason::RiskCapped : Reason::Rebalance, qty, target);
 }
 
-}  // namespace hedgecore
+}

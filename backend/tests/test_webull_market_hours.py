@@ -1,8 +1,3 @@
-"""Webull paper market hours (offline, mocked HTTP): the sandbox refuses every order outside 09:30-16:00 ET with HTTP
-417 "Orders cannot be placed at this time" (tested Sat 2026-10-03). Extended hours are off by default, the refusal is a
-clean rejected order that the staged book holds for the next regular session, cancelling an order Webull does not know
-is a clean "not_found" order, bridges started while the market is closed keep orders away from Webull, GET /account
-reports the account class and market_open, and `make webull-check` stays read-only."""
 from __future__ import annotations
 
 import asyncio
@@ -35,9 +30,6 @@ TUE_OPEN = dt.datetime(2026, 10, 6, 13, 30, tzinfo=dt.timezone.utc)
 
 
 class Hours(Sandbox):
-    """The sandbox with market hours: while ``closed`` every order is refused with Webull's 417. The account list
-    carries the real field names (account_type / account_class / account_label); cancels of unknown ids get 417
-    "Order not present"."""
 
     def __init__(self, closed=True, **kw):
         super().__init__(**kw)
@@ -64,7 +56,7 @@ class Hours(Sandbox):
         if p == "/trading/orders/get" and r.url.params["client_order_id"] not in self.known:
             self.requests.append(r)
             return httpx.Response(417, json={"message": "Order not present"})
-        if p == "/trading/assets/balances/get":  # the paper margin account as the sandbox reports it (2026-10-03)
+        if p == "/trading/assets/balances/get":
             self.requests.append(r)
             return httpx.Response(200, json={
                 "total_asset_currency": "USD", "total_net_liquidation_value": "1000000.00",
@@ -77,7 +69,6 @@ class Hours(Sandbox):
 
 
 def margin(sb, tmp_path, **kw):
-    """WebullBroker on the Individual Margin account (WEBULL_ACCOUNT_ID), sandbox defaults."""
     http = httpx.AsyncClient(transport=httpx.MockTransport(sb.handler))
     client = WebullClient("APPKEY", "SECRET", http=http, nonce=lambda: NONCE)
     return WebullBroker(client, SimBroker(tmp_path / "s.json"), account_id="ACC-MARGIN-0042", **kw)
@@ -85,9 +76,6 @@ def margin(sb, tmp_path, **kw):
 
 def placed(sb):
     return [json.loads(r.content)["new_orders"][0] for r in sb.requests if r.url.path == "/trading/orders/place"]
-
-
-# ------------------------------------------------------------------------------------------------ the broker
 
 
 def test_extended_hours_are_off_by_default_for_the_sandbox(monkeypatch, tmp_path):
@@ -108,7 +96,7 @@ def test_a_417_outside_market_hours_is_a_rejected_market_closed_order_not_an_exc
     async def go():
         first = await wb.place_order(OrderRequest(symbol="SPY", asset="equity", side="buy", qty=1, type="limit",
                                                   limit_px=1.0, client_order_id="c1"))
-        sb.closed = False  # the session opens: the same client id is sent again (Webull never took the first)
+        sb.closed = False
         again = await wb.place_order(OrderRequest(symbol="SPY", asset="equity", side="buy", qty=1, type="limit",
                                                   limit_px=1.0, client_order_id="c1"))
         return first, again
@@ -140,13 +128,13 @@ def test_cancel_of_an_order_webull_reports_not_present_is_a_clean_not_found_orde
     wb = margin(sb, tmp_path)
 
     async def go():
-        gone = await wb.cancel("never-placed")  # 417 "Order not present": no exception
+        gone = await wb.cancel("never-placed")
         o = await wb.place_order(OrderRequest(symbol="SPY", asset="equity", side="buy", qty=1, type="limit",
                                               limit_px=1.0, client_order_id="mine"))
         sb.status = "FILLED"
-        sb.known.discard("mine")  # Webull no longer lists it as cancellable...
+        sb.known.discard("mine")
 
-        def get_filled(r, inner=sb.handler):  # ...but orders/get still reports it filled
+        def get_filled(r, inner=sb.handler):
             if r.url.path == "/trading/orders/get":
                 return httpx.Response(200, json={"data": {"order_id": "WB-1", "status": "FILLED",
                                                           "filled_quantity": "1", "filled_price": "1.0",
@@ -157,7 +145,7 @@ def test_cancel_of_an_order_webull_reports_not_present_is_a_clean_not_found_orde
     gone, o, done = run(go())
     assert gone.status == "rejected" and gone.reject_reason.startswith("not_found:") and gone.broker == "webull-paper"
     assert o.status == "open"
-    assert done.status == "filled" and done.filled_qty == 1  # a finished order is reported as it finished
+    assert done.status == "filled" and done.filled_qty == 1
 
 
 def test_get_account_reports_webull_paper_margin_class_and_market_open(tmp_path):
@@ -175,33 +163,29 @@ def test_get_account_reports_webull_paper_margin_class_and_market_open(tmp_path)
     assert not placed(sb)
 
 
-# ------------------------------------------------------------------------------------------------ staged book
-
-
 def test_staged_orders_for_webull_execute_only_in_the_regular_session_and_a_417_is_held(tmp_path, roomy_capital):
     sb = Hours(closed=True)
     app = make_app(tmp_path, margin(sb, tmp_path), t=SAT_NOON)
     prop = approved_proposal(app)
     with TestClient(app) as c:
         o = c.post("/staged/plan", json={"proposal_id": prop.id, "pm_move_pp": 5.0, "ref_px": 500.0}).json()
-        assert o["broker"] == "webull-paper" and o["session_target"] == "regular_open"  # never pre-market
+        assert o["broker"] == "webull-paper" and o["session_target"] == "regular_open"
         assert o["execute_at"] == "2026-10-05T13:30:00Z" and o["order_type"] == "market" and not o["extended_hours"]
         r = c.post(f"/staged/{o['id']}/approve")
         assert r.status_code == 200, r.text
-        assert r.json()["status"] == "approved" and not placed(sb)  # Saturday: nothing reaches Webull
+        assert r.json()["status"] == "approved" and not placed(sb)
 
-        app.state.staged_clock.t = dt.datetime(2026, 10, 5, 8, 30, tzinfo=dt.timezone.utc)  # Mon pre-market
+        app.state.staged_clock.t = dt.datetime(2026, 10, 5, 8, 30, tzinfo=dt.timezone.utc)
         assert c.post("/staged/run").json()["changed"] == [] and not placed(sb)
 
-        # Monday 09:30 by our clock, but Webull still refuses (a holiday the calendar missed, a clock edge): held
         app.state.staged_clock.t = MON_OPEN + dt.timedelta(seconds=5)
         held = c.post("/staged/run").json()["changed"][0]
         assert held["status"] == "approved" and held["reason"] == "HELD_FOR_NEXT_SESSION" and held["holds"] == 1
         assert held["execute_at"] == TUE_OPEN.isoformat().replace("+00:00", "Z")
         assert held["session_date"] == "2026-10-06" and held["filled_qty"] == 0
         assert held["broker_order"]["reject_reason"] == MARKET_CLOSED_REASON
-        assert "BROKER_REJECTED" not in [d["code"] for d in held["decisions"]]  # not a failure
-        assert c.post("/staged/run").json()["changed"] == []  # waits for Tuesday's open, nothing resent
+        assert "BROKER_REJECTED" not in [d["code"] for d in held["decisions"]]
+        assert c.post("/staged/run").json()["changed"] == []
 
         sb.closed = False
         app.state.staged_clock.t = TUE_OPEN + dt.timedelta(seconds=5)
@@ -211,9 +195,6 @@ def test_staged_orders_for_webull_execute_only_in_the_regular_session_and_a_417_
     sent = placed(sb)
     assert [(i["client_order_id"], i["order_type"], i["support_trading_session"]) for i in sent] == [
         (f"stg-{o['id']}", "MARKET", "CORE"), (f"stg-{o['id']}-h1", "MARKET", "CORE")]
-
-
-# ------------------------------------------------------------------------------------------------ bridges
 
 
 def test_closed_mode_forces_the_hold_only_for_a_regular_session_only_order_broker(tmp_path):
@@ -234,14 +215,14 @@ def test_closed_mode_forces_the_hold_only_for_a_regular_session_only_order_broke
 
     cm = CM()
     cm.bridge = B(wb)
-    assert cm.broker_hold and cm.hold  # session_hold=False, but Webull would refuse: hold anyway
-    cm.bridge = B(SimBroker(None))  # a replay sandbox / the simulator trades at any hour
+    assert cm.broker_hold and cm.hold
+    cm.bridge = B(SimBroker(None))
     assert not cm.broker_hold and not cm.hold
     wb.extended_hours = True
     cm.bridge = B(wb)
     assert not cm.broker_hold
     cm.bridge, cm.sess = B(margin(Hours(), tmp_path)), bridge_mode.session_at(MON_OPEN + dt.timedelta(hours=1))
-    assert cm.broker_hold and not cm.hold  # regular session: the algo trades
+    assert cm.broker_hold and not cm.hold
 
 
 def test_replay_scope_keeps_the_sandbox_while_webull_is_closed(tmp_path):
@@ -253,9 +234,9 @@ def test_replay_scope_keeps_the_sandbox_while_webull_is_closed(tmp_path):
     to_acct, note = bridges._replay_scope(app, live)
     assert to_acct is False and "staged orders go to Webull" in note and "09:30" in note
     app.state.staged_clock.t = MON_OPEN + dt.timedelta(hours=1)
-    assert bridges._replay_scope(app, rep) == (True, None)  # market open: the opt-in stands
+    assert bridges._replay_scope(app, rep) == (True, None)
     sim = make_app(tmp_path, SimBroker(tmp_path / "x.json"), t=SAT_NOON)
-    assert bridges._replay_scope(sim, rep) == (True, None)  # the simulator trades at any hour
+    assert bridges._replay_scope(sim, rep) == (True, None)
 
 
 def test_a_live_bridge_at_webull_on_a_weekend_sends_nothing_even_with_session_hold_off(
@@ -301,19 +282,16 @@ def test_a_replay_bridge_at_webull_while_closed_keeps_its_in_memory_sandbox(tmp_
     sb = Hours(closed=True)
     with make_client(tmp_path, f) as c:
         c.app.state.broker = margin(sb, tmp_path)
-        c.app.state.staged_clock = lambda: SAT_NOON  # the wall clock: Saturday
+        c.app.state.staged_clock = lambda: SAT_NOON
         pid = approved(c)
         bid = c.post("/bridges", json={"proposal_id": pid, "source": "replay", "replay_to_account": True}).json()[
             "bridge_id"]
         ev = _events(c, bid)
         s = c.get(f"/bridges/{bid}").json()
     fills = [x for k, x in ev if k == "fill"]
-    assert fills and all(x["broker"] == bridges.REPLAY_BROKER_NAME for x in fills)  # the sandbox trades the replay
+    assert fills and all(x["broker"] == bridges.REPLAY_BROKER_NAME for x in fills)
     assert s["account_scope"] == "replay_sandbox" and "replay_to_account ignored" in s["broker_note"]
     assert not placed(sb)
-
-
-# ------------------------------------------------------------------------------------------------ recorded prices
 
 
 def test_recorded_prices_switch_makes_a_replay_sandbox_fill_at_the_replayed_price(monkeypatch):
@@ -325,10 +303,10 @@ def test_recorded_prices_switch_makes_a_replay_sandbox_fill_at_the_replayed_pric
     sim = SimBroker(None, FakeQuotes(equity={"SPY": Quote(600.0, None, "today")}))
     br = SimpleNamespace(quote_check=None, proposal=SimpleNamespace(ticker="SPY"))
     monkeypatch.delenv("POLYBRIDGE_REPLAY_PRICES", raising=False)
-    assert asyncio.run(bridges._broker_can_price(br, sim)) is True  # today's quote
+    assert asyncio.run(bridges._broker_can_price(br, sim)) is True
     br.quote_check = None
     monkeypatch.setenv("POLYBRIDGE_REPLAY_PRICES", "recorded")
-    assert asyncio.run(bridges._broker_can_price(br, sim)) is False  # the replayed under_px
+    assert asyncio.run(bridges._broker_can_price(br, sim)) is False
 
 
 def test_an_indexed_recording_plays_at_its_sidecar_speed_the_configured_file_at_the_configured_speed(
@@ -342,19 +320,16 @@ def test_an_indexed_recording_plays_at_its_sidecar_speed_the_configured_file_at_
     other.write_text("")
     app = SimpleNamespace(state=SimpleNamespace(replay_speed=None, replay_path=str(other)))
     monkeypatch.setenv("POLYBRIDGE_REPLAY_SPEED", "21600")
-    assert bridges._replay_speed(app, rec) == 3600.0  # found through the index
-    assert bridges._replay_speed(app, other) == 21600.0  # the configured file
+    assert bridges._replay_speed(app, rec) == 3600.0
+    assert bridges._replay_speed(app, other) == 21600.0
     app.state.replay_path = str(rec)
     assert bridges._replay_speed(app, rec) == 21600.0
     app.state.replay_speed = 0
-    assert bridges._replay_speed(app, rec) == 0  # tests pin it
+    assert bridges._replay_speed(app, rec) == 0
     root = Path(bridges.__file__).resolve().parents[1] / "replays"
     speeds = {p.name: json.loads(p.read_text()).get("replay_speed") for p in root.glob("*.meta.json")}
     assert speeds["us-recession-in-2025-weekend-2025-04-04.jsonl.meta.json"] == 3600
     assert speeds["another-fed-hike-2026-history.jsonl.meta.json"] == 21600
-
-
-# ------------------------------------------------------------------------------------------------ make webull-check
 
 
 def test_webull_check_is_read_only_while_the_market_is_closed_even_with_the_smoke_switch(tmp_path):
@@ -384,7 +359,7 @@ def test_webull_check_needs_the_switch_to_place_an_order_during_market_hours(tmp
     cancel = [json.loads(r.content) for r in sb.requests if r.url.path == "/trading/orders/cancel"]
     assert [x["client_order_id"] for x in cancel] == [sent[0]["client_order_id"]]
     assert res["order_test"] == "placed and cancelled" and res["placed"]["status"] == "open"
-    assert "WB-1" not in "\n".join(lines)  # order ids masked
+    assert "WB-1" not in "\n".join(lines)
 
 
 def test_webull_check_smoke_switch_parsing():
@@ -395,7 +370,6 @@ def test_webull_check_smoke_switch_parsing():
 
 @pytest.fixture(autouse=True)
 def _hermetic(monkeypatch):
-    """No WEBULL_EXTENDED_HOURS from the shell; the gap service sees the pooled research rate only."""
     from app.closed import gap as gapsvc
 
     monkeypatch.delenv("WEBULL_EXTENDED_HOURS", raising=False)

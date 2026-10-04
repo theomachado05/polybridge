@@ -21,12 +21,12 @@ TEST(Catalog, PresetTotalIsTheHonestSumNearDesignFigure) {
   std::size_t sum = 0;
   for (const auto& f : c.families) {
     EXPECT_EQ(f.preset_count, f.spec.preset_count());
-    EXPECT_GE(f.spec.tuned_count(), 2) << f.id;  // 2-5 tuned params
+    EXPECT_GE(f.spec.tuned_count(), 2) << f.id;
     EXPECT_LE(f.spec.tuned_count(), 5) << f.id;
     sum += f.preset_count;
   }
   EXPECT_EQ(c.total, sum);
-  EXPECT_EQ(c.total, 1386u);  // spec §3.2 design figure ~1,284, plus closed_session_hedge (108)
+  EXPECT_EQ(c.total, 1386u);
 }
 
 TEST(Catalog, PresetsAreDistinctAndInsideBounds) {
@@ -39,11 +39,11 @@ TEST(Catalog, PresetsAreDistinctAndInsideBounds) {
     }
     EXPECT_EQ(seen.size(), f.preset_count) << f.id;
     EXPECT_TRUE(f.spec.valid(f.spec.defaults())) << f.id;
-    for (int k = 0; k < f.spec.n; ++k) {  // grid values distinct within a param, 3-6 values when tuned
+    for (int k = 0; k < f.spec.n; ++k) {
       const auto& d = f.spec.defs[k];
       std::set<double> g(d.grid.begin(), d.grid.begin() + d.n_grid);
       EXPECT_EQ(static_cast<int>(g.size()), d.n_grid) << f.id << "." << d.name;
-      EXPECT_TRUE(d.n_grid == 1 || (d.n_grid >= 3 && d.n_grid <= 6)) << f.id << "." << d.name;  // spec §3.2
+      EXPECT_TRUE(d.n_grid == 1 || (d.n_grid >= 3 && d.n_grid <= 6)) << f.id << "." << d.name;
     }
   }
 }
@@ -61,7 +61,7 @@ TEST(Catalog, MetadataUsesKnownKinds) {
       ui_seen.insert(ui_kind_of(b.kind));
     }
   }
-  EXPECT_EQ(ui_seen, ui);  // every UI group is backed by at least one compiled block
+  EXPECT_EQ(ui_seen, ui);
 }
 
 TEST(Catalog, MakeAlgoByIdAndUnknownThrows) {

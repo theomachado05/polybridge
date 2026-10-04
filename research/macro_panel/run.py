@@ -1,9 +1,3 @@
-"""Run the macro-panel study once:  cd research && .venv/bin/python -m macro_panel.run
-
-Order (METHOD.md sections 2 and 8): freeze the gamma selection to markets.json if it is absent (then stop so it can be
-committed), PM coverage walk (PM data only), then equity bars, then the analysis. A missing Massive key exits 2 before
-any equity request. After the full run `.done` is written and a second fetch-and-analyse run is refused.
-"""
 from __future__ import annotations
 
 import argparse
@@ -37,7 +31,6 @@ def load_candidates(path=MARKETS_PATH) -> list[dict]:
 
 
 def trim(points: list[tuple[int, float]], c: Closure) -> list[tuple[int, float]]:
-    """Keep only the points that can serve as the as-of quotes at the close and at 09:30 (memory bound)."""
     a = int(calendar_close(c).timestamp())
     o = int(c.nominal_open.timestamp())
     return [(t, p) for t, p in points if a - 3600 <= t <= a + 60 or o - 1860 <= t <= o]
@@ -45,8 +38,6 @@ def trim(points: list[tuple[int, float]], c: Closure) -> list[tuple[int, float]]
 
 def select_markets(cands: list[dict], pm_session, all_closures=None, fetch_pm=fetch_market_pm,
                    progress=True) -> tuple[list[dict], pd.DataFrame]:
-    """Walk the frozen ranking; per class take markets until max_per_class, if >= min_pm_closures closures are quoted
-    at both ends; at most max_markets in all."""
     all_closures = all_closures if all_closures is not None else window_closures()
     taken = {c: 0 for c in CLASSES}
     selected, cov = [], []

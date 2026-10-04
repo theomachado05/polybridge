@@ -11,10 +11,10 @@ TEST(MicroCatalog, TwoFamiliesWithFixedStatusWordsAndPresets) {
   ASSERT_EQ(m.families.size(), 2u);
   EXPECT_STREQ(m.families[0].id, "ladder_pair");
   EXPECT_STREQ(m.families[0].status, "lead");
-  EXPECT_EQ(m.families[0].preset_count, 18u);  // min_edge 1/2/3 x max_age 10/30/60 x cap 100/500
+  EXPECT_EQ(m.families[0].preset_count, 18u);
   EXPECT_STREQ(m.families[1].id, "touch_ticket_reference");
   EXPECT_STREQ(m.families[1].status, "unvalidated");
-  EXPECT_EQ(m.families[1].preset_count, 1u);   // threshold 5 points; no tuning grid on an unvalidated mechanism
+  EXPECT_EQ(m.families[1].preset_count, 1u);
   EXPECT_EQ(m.total, 19u);
   const auto& g = m.families[0].spec;
   const double want[3][3] = {{1, 2, 3}, {10, 30, 60}, {100, 500, 0}};
@@ -27,7 +27,7 @@ TEST(MicroCatalog, TwoFamiliesWithFixedStatusWordsAndPresets) {
     EXPECT_EQ(find_family(f.id), nullptr) << "micro ids must not collide with the 17-family library";
     EXPECT_FALSE(f.inputs.empty());
   }
-  EXPECT_EQ(catalog().families.size(), 17u);  // the existing library is untouched
+  EXPECT_EQ(catalog().families.size(), 17u);
   EXPECT_EQ(catalog().total, 1386u);
 }
 

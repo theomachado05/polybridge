@@ -1,10 +1,3 @@
-// Golden lock on the 17 families that existed before the micro families were added: preset counts, every preset's
-// replay output and the default preset's intent stream must stay byte-identical. Doubles are written as hex floats
-// (%a), so any change in any bit fails. Latency fields are left out (they are timings, not outputs).
-// The file was recorded on the reference toolchain (Apple clang, arm64); other compilers may contract or round floating
-// point differently in the last bit, so there the file check is skipped and CI's golden step (golden_dump built on the
-// base commit and on the branch with the same compiler and flags, outputs diffed) is the byte-identity check.
-// To regenerate after an intended change: HEDGECORE_WRITE_GOLDEN=1 ./hedgecore_tests --gtest_filter='Golden.*'
 #include <gtest/gtest.h>
 #include <cstdio>
 #include <cstdlib>
@@ -19,7 +12,7 @@ using namespace hctest;
 
 namespace {
 const std::string kGolden = std::string(HEDGECORE_TEST_DIR) + "/golden/existing_families.txt";
-}  // namespace
+}
 
 TEST(Golden, ExistingFamiliesAreByteIdentical) {
 #if !(defined(__APPLE__) && defined(__aarch64__) && defined(__clang__))

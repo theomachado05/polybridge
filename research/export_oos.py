@@ -1,13 +1,3 @@
-"""The single out-of-sample run of the pre-registered 8-K study (HYPOTHESIS.md §4).
-
-Window 2026-01-01 -> 2026-08-31 (StudyConfig.oos_start/oos_end), LAST_SESSION pinned to 2026-10-02, conservative
-timing (user_agent=None), the same StudyConfig and pass rule as the in-sample run. Mirrors export_in_sample.py and
-writes research/results/oos/. Derived aggregates only: no raw API payloads, no cache contents.
-
-It runs ONCE. It refuses to start if results/oos/.done exists, and it writes .done as soon as the study has been
-computed (before export), so a crash during export can never lead to a second look. Run from research/:
-    .venv/bin/python export_oos.py
-"""
 from __future__ import annotations
 
 import sys
@@ -79,7 +69,6 @@ def fam_of(df, fam):
     return df[df["family"] == fam] if len(df) and "family" in df else df.iloc[0:0]
 
 
-# global tables
 if not ev.empty:
     (ev.assign(month=pd.to_datetime(ev["filing_date"]).dt.strftime("%Y-%m")).groupby(["family", "month"]).size()
      .rename("n_events").reset_index().to_csv(OUT / "events_summary.csv", index=False))
@@ -123,7 +112,6 @@ for fam in ("hedge", "opportunity"):
     de, dp = decay_table(ev_r, cfg), decay_table(pl_r, cfg)
     de.to_csv(OUT / f"{fam}_decay_events.csv")
     dp.to_csv(OUT / f"{fam}_decay_placebo.csv")
-    # sensitivity at h=21
     r21, p21 = ev_r[ev_r.horizon == 21], pl_r[pl_r.horizon == 21]
     keys = ["bucket", "entry", "otm"]
     se = r21.groupby(keys)[strat].agg(n_events="count", mean_events="mean")
@@ -131,7 +119,6 @@ for fam in ("hedge", "opportunity"):
     sens = se.join(sp, how="outer")
     sens["edge"] = sens["mean_events"] - sens["mean_placebo"]
     sens.reset_index().to_csv(OUT / f"{fam}_sensitivity.csv", index=False)
-    # costs
     priced_f = [p for p in study["priced"] if str(getattr(p.family, "value", p.family)) == fam]
     pl_priced_f = [p for p in study["placebo_priced"] if str(getattr(p.family, "value", p.family)) == fam]
     summaries = []
@@ -149,7 +136,6 @@ for fam in ("hedge", "opportunity"):
     cs = pd.DataFrame(summaries)
     if summaries:
         cs.to_csv(OUT / f"{fam}_cost_summary.csv", index=False)
-    # in-sample vs out-of-sample sign comparison (committed in-sample CSV, untouched)
     ins_path = IN_SAMPLE / f"{fam}_pass_check.csv"
     cmp_ = None
     if ins_path.exists():
@@ -165,7 +151,6 @@ for fam in ("hedge", "opportunity"):
         cmp_["ratio_same_sign"] = np.sign(cmp_.ratio_diff_in_sample) == np.sign(cmp_.ratio_diff_oos)
         cmp_.to_csv(OUT / f"{fam}_in_sample_vs_oos.csv", index=False)
         comparisons[fam] = cmp_
-    # figures
     sb_e, sb_p = scoreboard(ev_r, cfg, strategies=[strat]), scoreboard(pl_r, cfg, strategies=[strat])
     fig, ax = plt.subplots(figsize=(6, 3.8))
     for sb, label, c in ((sb_e, "events", "tab:red"), (sb_p, "placebo", "tab:gray")):
@@ -200,7 +185,6 @@ for fam in ("hedge", "opportunity"):
     fig.tight_layout()
     fig.savefig(OUT / f"{fam}_decay.png", dpi=120)
     plt.close(fig)
-    # summary section, generated from the computed tables only
     hyp = "H1 hedge, protective put" if fam == "hedge" else "H2 opportunity, cash-secured put"
     pc = t.copy()
     pc["97.5% CI"] = pc.apply(lambda r: f"[{r.ci_lo:+.4f}, {r.ci_hi:+.4f}]", axis=1)
@@ -230,7 +214,6 @@ for fam in ("hedge", "opportunity"):
     summary_sections.append("\n\n".join(sec))
     log(f"[{fam}] verdict {verdict}")
 
-# SUMMARY.md
 n_fam = (ev.groupby("family").size().to_dict() if not ev.empty else {})
 pl_ev = study["placebo_events"]
 n_pl = (pl_ev.groupby("family").size().to_dict() if len(pl_ev) and "family" in pl_ev else {})

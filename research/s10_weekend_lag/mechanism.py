@@ -1,9 +1,3 @@
-"""S10 Part 2: the mechanism (METHOD.md amendment 1). Does the active market lead the thin one, whichever is the news?
-
-Run from `research/`:
-    python -m s10_weekend_lag.mechanism               # M1, M2, M3 with the print check
-    python -m s10_weekend_lag.mechanism --no-prints
-"""
 from __future__ import annotations
 
 import json
@@ -32,10 +26,7 @@ ET = s9.ET
 STOCK_RE = re.compile(r"\((META|TSLA|NVDA|GOOGL|AMZN|MSFT|AAPL|NFLX|PLTR)\)")
 
 
-# ---------------------------------------------------------------- series on a grid
-
 def activity(t: np.ndarray, p: np.ndarray, grid: np.ndarray, window: float) -> np.ndarray:
-    """Minutes in (g - window, g] in which the one-minute price changed."""
     ct = t[1:][np.abs(np.diff(p)) > 1e-9]
     return (np.searchsorted(ct, grid, side="right") - np.searchsorted(ct, grid - window, side="right")).astype(float)
 
@@ -46,10 +37,7 @@ def on_grid(s: dict, grid: np.ndarray, first: int = 3) -> dict:
             "stale": activity(s["t"], s["p"], grid, cfg.STALE_WINDOW_S) == 0, "J": jumps_vec(P, first)}
 
 
-# ---------------------------------------------------------------- slopes with clustered errors from per-cluster sums
-
 class Acc:
-    """Through-origin slopes accumulated as per-cluster sums of x*y and x*x."""
 
     def __init__(self, n_clusters: int):
         self.n, self.s = n_clusters, {}
@@ -73,7 +61,6 @@ class Acc:
         return {"slope": float(b), "se": se, "t": float(b / se) if se > 0 else float("nan"), "n": int(n.sum()), "clusters": int((n > 0).sum())}
 
     def diff(self, k1, k2) -> tuple[float, float, float]:
-        """Slope k1 minus slope k2, 95% interval resampling clusters (the same draw for both)."""
         if k1 not in self.s or k2 not in self.s:
             return (float("nan"),) * 3
         a, b = self.s[k1], self.s[k2]
@@ -86,7 +73,6 @@ class Acc:
 
 
 def pair_bins(acc: Acc, kind: str, group: str, a: dict, b: dict, sign: float, cl: np.ndarray, first: int = 1) -> None:
-    """Add one pair's bins to the accumulators (M1, M2)."""
     Pa, Pb = a["P"], b["P"]
     n = len(Pa)
     lo, hi = 100 * cfg.PAIR_BAND[0], 100 * cfg.PAIR_BAND[1]
@@ -95,11 +81,11 @@ def pair_bins(acc: Acc, kind: str, group: str, a: dict, b: dict, sign: float, cl
     i = i[ref_ok & np.isfinite(Pa[i]) & np.isfinite(Pb[i])]
     if not len(i):
         return
-    da, db = Pa[i] - Pa[i - 1], sign * (Pb[i] - Pb[i - 1])     # b's moves in a's direction
+    da, db = Pa[i] - Pa[i - 1], sign * (Pb[i] - Pb[i - 1])
     a_act = a["A"][i] > b["A"][i]
     b_act = b["A"][i] > a["A"][i]
     sel = a_act | b_act
-    x_act = np.where(a_act, da, db)                          # active member's last-bin move (a's direction)
+    x_act = np.where(a_act, da, db)
     x_thin = np.where(a_act, db, da)
     thin_stale = np.where(a_act, b["stale"][i], a["stale"][i])
     c = cl[i]
@@ -122,10 +108,7 @@ def pair_bins(acc: Acc, kind: str, group: str, a: dict, b: dict, sign: float, cl
                 acc.add((kind, g, "active->thin", h // 60, st), x_act[m], y_thin[m], c[m])
 
 
-# ---------------------------------------------------------------- the pick-off signals
-
 def jumps_vec(P: np.ndarray, first: int) -> dict[int, float]:
-    """The same rule as run.jumps (sign +1), vectorised: {grid index: change in points}."""
     lo, hi = 100 * cfg.JUMP_REF_BAND[0], 100 * cfg.JUMP_REF_BAND[1]
     best = np.zeros(len(P))
     for win, thr in cfg.JUMP_RULES:
@@ -145,8 +128,6 @@ def jumps_vec(P: np.ndarray, first: int) -> dict[int, float]:
 
 
 def pickoffs(kind: str, a: dict, b: dict, sign: float, grid: np.ndarray, cl_keys: np.ndarray) -> list[dict]:
-    """Jumps of the active member while the other is stale; one per pair per 30 minutes. a and b carry "id", "P", "A",
-    "stale" and "J" (their jumps). The implied move of the other member, in its own YES terms, is jump x pair sign."""
     out, last = [], -1e18
     cands = []
     lo, hi = 100 * cfg.PAIR_BAND[0], 100 * cfg.PAIR_BAND[1]
@@ -164,7 +145,6 @@ def pickoffs(kind: str, a: dict, b: dict, sign: float, grid: np.ndarray, cl_keys
 
 
 def settle_trades(sigs: list[dict], series: dict[str, dict], cap_key: str) -> tuple[list[dict], int]:
-    """Fill each signal on the stale member at the next minute; exit 30 minutes later. Cap per date or weekend."""
     seen, by_cl, rows, dropped = set(), {}, [], 0
     for s in sorted(sigs, key=lambda x: (x["t"], x["stale_market"])):
         key = (s["stale_market"], s["t"])
@@ -191,8 +171,6 @@ def settle_trades(sigs: list[dict], series: dict[str, dict], cap_key: str) -> tu
                          "condition": m.get("condition")})
     return rows, dropped
 
-
-# ---------------------------------------------------------------- data
 
 def load_questions() -> tuple[dict[str, dict], dict[str, dict[str, int]]]:
     dirs: dict[str, dict[str, int]] = {}
@@ -273,8 +251,6 @@ def condition_ids(ids: list[str]) -> dict[str, str]:
     return known
 
 
-# ---------------------------------------------------------------- run
-
 def ny_date(t: np.ndarray) -> np.ndarray:
     return np.array([datetime.fromtimestamp(float(x), ET).strftime("%Y-%m-%d") for x in t])
 
@@ -312,7 +288,6 @@ def main() -> int:
     t_run = time.time()
     qs, dirs = load_questions()
     pairs_b = type_b_pairs(dirs)
-    # ---- type B on one global grid, clustered by New York date
     t0 = min(int(s["t"][0]) for s in qs.values()) // cfg.BIN_S * cfg.BIN_S
     t1 = max(int(s["t"][-1]) for s in qs.values())
     grid = np.arange(t0, t1 + 1, cfg.BIN_S)
@@ -324,7 +299,6 @@ def main() -> int:
     for a, b, sign, group in pairs_b:
         pair_bins(acc_b, "B", group, G[a], G[b], sign, cl)
         sig_b += pickoffs("B", G[a], G[b], sign, grid, dates)
-    # ---- type A per weekend, clustered by weekend
     ps = price_series()
     cal = s9.calendar()
     acc_a = Acc(len(cal))
@@ -350,7 +324,6 @@ def main() -> int:
             pair_bins(acc_a, "A", c.split(":")[0], GQ[q], GP[pm], sign, cl_w, first=cfg.LOOKBACK_S // cfg.BIN_S)
             sig_a += pickoffs("A", GQ[q], GP[pm], sign, wg, keys_w)
 
-    # ---- M1, M2 tables
     rows = []
     for kind, acc in (("B", acc_b), ("A", acc_a)):
         for key in sorted(acc.s, key=str):
@@ -366,7 +339,6 @@ def main() -> int:
             d = acc.diff((kind, g, "same bin", 5, "stale"), (kind, g, "same bin", 5, "active"))
             tests.append({"test": "M2 same-bin: stale follower minus active follower", "pairs": kind, "group": g, "horizon_min": 0, "diff": d[0], "ci_lo": d[1], "ci_hi": d[2]})
 
-    # ---- M3, the pick-off trades
     series = {**qs, **ps}
     tr_b, drop_b = settle_trades([{**s, "date": s["cluster"]} for s in sig_b], series, "date")
     tr_a, drop_a = settle_trades([{**s, "weekend": s["cluster"]} for s in sig_a], series, "weekend")

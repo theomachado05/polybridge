@@ -1,11 +1,3 @@
-"""A bridge on a replay makes the same decisions as the engine for the same preset (docs/contracts.md, "Bridge vs
-engine replay"). Engine group only for the parity tests; the replay clock tests need no engine.
-
-Pinned on the default demo recording (Another Fed hike 2026 -> TLT, equity_delta_bridge #75, 1,000 shares, approved
-at 50% coverage): the bridge places 3 orders, and so does the engine replay once its fills are not refused. The
-engine replay's own count (11 orders, 9 of them rejected) differs only because its fill model refuses an equity fill
-at a stale recorded close (outside regular hours, or in a session before a new bar), and the algo re-sends the
-refused order on the next tick; the SimBroker fills a market order at today's quote whenever it arrives."""
 from __future__ import annotations
 
 import asyncio
@@ -24,29 +16,24 @@ FED_REPLAY = REPLAYS / "another-fed-hike-2026-history.jsonl"
 SHARES, COVERAGE, FAMILY, PRESET = 1000.0, 0.5, "equity_delta_bridge", 75
 
 
-# --- replay clock (no engine) -------------------------------------------------------------------------------------
-
 def test_a_slow_consumer_never_makes_replayed_ticks_stale(tmp_path):
-    """The bridge awaits the broker between ticks. A replayed tick is stamped when it is handed over, never at its
-    schedule slot in the past: the backend's own processing time is not data age, so the engine's 2 s staleness gate
-    (measured against the wall clock) never holds a replay tick because an earlier order was slow."""
     f = tmp_path / "hourly.jsonl"
     f.write_text("".join(json.dumps({"ts_ns": 1_790_000_000_000_000_000 + i * 3_600_000_000_000, "p": 0.3}) + "\n"
                          for i in range(6)))
 
     async def go():
         ages, stamps = [], []
-        async for t in ReplaySource(f, speed=360_000):  # 1 h -> 10 ms
+        async for t in ReplaySource(f, speed=360_000):
             ages.append(time.time_ns() - t[0])
             stamps.append(t[0])
-            await asyncio.sleep(0.15)  # a broker round trip 15x longer than the replay gap
+            await asyncio.sleep(0.15)
         return ages, stamps
     ages, stamps = asyncio.run(go())
     assert len(ages) == 6
-    assert max(ages) < 60_000_000, ages  # was ~0.75 s by the last tick (the lag accumulated)
-    assert all(b > a for a, b in zip(stamps, stamps[1:]))  # still strictly increasing
+    assert max(ages) < 60_000_000, ages
+    assert all(b > a for a, b in zip(stamps, stamps[1:]))
     gaps = [b - a for a, b in zip(stamps, stamps[1:])]
-    assert all(g >= 9_000_000 for g in gaps)  # recorded gaps are never shortened below gap / speed
+    assert all(g >= 9_000_000 for g in gaps)
 
 
 def test_an_on_time_replay_keeps_the_recorded_spacing(tmp_path):
@@ -54,13 +41,11 @@ def test_an_on_time_replay_keeps_the_recorded_spacing(tmp_path):
     f.write_text("".join(json.dumps({"ts_ns": 1_000 + i * 20_000_000_000, "p": 0.2}) + "\n" for i in range(4)))
 
     async def go():
-        return [t[0] async for t in ReplaySource(f, speed=1000)]  # 20 s -> 20 ms
+        return [t[0] async for t in ReplaySource(f, speed=1000)]
     st = asyncio.run(go())
     gaps = [b - a for a, b in zip(st, st[1:])]
     assert all(18_000_000 <= g <= 60_000_000 for g in gaps), gaps
 
-
-# --- parity with the engine (compiled hedgecore) -------------------------------------------------------------------
 
 def _replay_fields(path: Path) -> tuple[list[int], list[dict]]:
     rows = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
@@ -72,13 +57,11 @@ def _capped_params(hc) -> dict:
     from app.pipeline.engine_adapter import cap_coverage, normalize_manifest, preset_grid
     fam = next(f for f in normalize_manifest(hc.catalog())["families"] if f["id"] == FAMILY)
     params, lowered = cap_coverage(preset_grid(fam)[PRESET], COVERAGE)
-    assert lowered == {"coverage": 0.75}  # preset #75 hedges 75%; the approval caps it at 50%
+    assert lowered == {"coverage": 0.75}
     return params
 
 
 def _engine_decisions(hc, params: dict) -> list[tuple]:
-    """hedgecore.Algo stepped on tick time (now = the recorded ts, as hedgecore.replay does), every order filled at
-    the recorded under_px: what the engine decides when the broker fills each order on arrival."""
     from app.bridges import engine_tick
     from app.pipeline.ticks import orient_to_adverse
     algo = hc.Algo(FAMILY, dict(params), {"shares_held": SHARES})
@@ -103,8 +86,6 @@ def _array_ticks(quote_half_spread: float | None = None) -> dict:
 
 
 def test_engine_replay_order_count_differs_only_by_refused_stale_close_fills():
-    """The engine replay's 11 orders are 2 fills + 9 refused sends; give every tick a tradable quote (half spread =
-    the fee model's default, so the fee gate prices the same cost) and it places exactly the bridge's 3 orders."""
     hc = pytest.importorskip("hedgecore")
     params = _capped_params(hc)
     pos = {"shares_held": SHARES}
@@ -117,9 +98,6 @@ def test_engine_replay_order_count_differs_only_by_refused_stale_close_fills():
 
 
 def test_bridge_on_the_demo_replay_decides_exactly_like_the_engine(client, tmp_path):  # noqa: F811
-    """POST /bridges on the default demo recording (SimBroker, today's quote): every one of the 401 decisions equals
-    the engine's for the same preset and fills (reason, action, side, qty), and 361 ticks are held by the sigma gate
-    in both. The bridge's wall-clock timestamps at replay speed change nothing."""
     hc = pytest.importorskip("hedgecore")
     from app.broker import SimBroker
     from app.broker.quotes import Quote
@@ -128,13 +106,11 @@ def test_bridge_on_the_demo_replay_decides_exactly_like_the_engine(client, tmp_p
     market = {"source": "polymarket", "id": meta["id"], "token_id": meta["token_id"]}
     client.app.state.broker = SimBroker(tmp_path / "s.json", FakeQuotes(equity={"TLT": Quote(77.5, None, "q")}))
     client.app.state.replay_path = str(FED_REPLAY)
-    client.app.state.replay_speed = 1e9  # wall-clock stamping, as in the demo, without waiting
+    client.app.state.replay_speed = 1e9
     prop = client.post("/proposals", json={"ticker": "TLT", "market": market, "direction": "down_on_yes",
                                            "shares_held": SHARES, "target_coverage": COVERAGE,
                                            "algo": {"family": FAMILY, "preset_index": PRESET}}).json()
     client.post(f"/proposals/{prop['id']}/approve", json={"ack_unvalidated": True})
-    # session_hold False: this contract is the engine's decisions when every order fills, at any hour (closed-market
-    # mode would hold the off-session intents; see tests/test_closed_bridge.py)
     r = client.post("/bridges", json={"proposal_id": prop["id"], "source": "replay", "replay_to_account": True,
                                       "session_hold": False})
     assert r.status_code == 201, r.text
@@ -150,8 +126,6 @@ def test_bridge_on_the_demo_replay_decides_exactly_like_the_engine(client, tmp_p
 
 
 def test_slow_broker_does_not_turn_replay_ticks_stale(client, tmp_path):  # noqa: F811
-    """A broker that takes longer than the engine's 2 s staleness window to price the first order: the replayed
-    ticks after it are still fresh (never held as 'stale'), so the decisions stay the engine's."""
     hc = pytest.importorskip("hedgecore")
     from app.broker import SimBroker
     from app.broker.quotes import Quote
@@ -177,7 +151,7 @@ def test_slow_broker_does_not_turn_replay_ticks_stale(client, tmp_path):  # noqa
     f.write_text("".join(json.dumps({"ts_ns": (1_790_000_000 + 3600 * i) * 1_000_000_000, "p": p,
                                      "under_px": 500.0 + i}) + "\n" for i, p in enumerate(ps)))
     client.app.state.replay_path = str(f)
-    client.app.state.replay_speed = 36_000  # 1 h -> 0.1 s: the 2.3 s stall spans ~23 recorded hours
+    client.app.state.replay_speed = 36_000
     write_meta(f, FED)
     pid = client.post("/proposals", json={"ticker": "SPY", "market": FED, "direction": "down_on_yes",
                                           "shares_held": 1000, "algo": {"family": "equity_delta_bridge",
@@ -191,15 +165,11 @@ def test_slow_broker_does_not_turn_replay_ticks_stale(client, tmp_path):  # noqa
     assert "stale" not in reasons, reasons
 
 
-# --- Russia/EU -> ITA order counts quoted in docs/demo.md ----------------------------------------------------------
-
 ITA_REPLAY = REPLAYS / "russia-eu-military-2026-history.jsonl"
 DEMO_MD = Path(__file__).resolve().parents[2] / "docs" / "demo.md"
 
 
 def _ita_bridge_orders(hc, shares: float, coverage: float) -> int:
-    """hedgecore.Algo (energy_geo_hedge #54, up on YES) stepped over the Russia/EU recording with every order filled,
-    which is what a replay bridge does (the SimBroker fills each order on arrival)."""
     from app.bridges import engine_tick
     from app.pipeline.engine_adapter import cap_coverage, normalize_manifest, preset_grid
     from app.pipeline.ticks import orient_to_adverse
@@ -216,13 +186,10 @@ def _ita_bridge_orders(hc, shares: float, coverage: float) -> int:
 
 
 def test_ita_bridge_order_count_in_demo_doc_matches_the_ui_share_count():
-    """ITA is not held, so the UI sizes the bridge (and the fit) at 500 shares; the demo doc's order count must be the
-    500-share one (17 uncapped), with 31 only at 1,000 shares (backend/replays/README.md)."""
     hc = pytest.importorskip("hedgecore")
     assert _ita_bridge_orders(hc, 500.0, 1.0) == 17
     assert _ita_bridge_orders(hc, 1000.0, 1.0) == 31
     assert _ita_bridge_orders(hc, 1000.0, 0.5) == 17
     doc = DEMO_MD.read_text()
-    # The doc quotes the closed-market-mode default (equity algo held outside regular hours) and the any-hour counts.
     assert "9 orders uncapped at 1,000 shares and 5 at a 50% cap or at the 500 shares the UI sizes" in doc
     assert "it would be 31 and 17" in doc

@@ -26,7 +26,7 @@ def test_columns_rows_and_flat_market_values():
     assert set(base.horizon) == {0, 1, 2, 3, 5, 10, 21, 42, 63, "exp"}
     assert (base.family == "hedge").all()
     h21 = base[base.horizon == 21].iloc[0]
-    assert abs(h21["stock"]) < 5e-3                  # flat fake market: only carry decay in K·e^(−rT) moves it
+    assert abs(h21["stock"]) < 5e-3
     assert abs(h21["protective_put"]) < 5e-3
 
 

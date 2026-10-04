@@ -27,8 +27,8 @@ def test_fair_value_formula():
 
 def test_verify_up_and_down_prints():
     pr = [{"timestamp": 1010, "price": 0.60, "side": "BUY", "outcome": "Up", "size": 10},
-          {"timestamp": 1020, "price": 0.45, "side": "SELL", "outcome": "Down", "size": 5},    # = an Up purchase at 0.55
-          {"timestamp": 1200, "price": 0.50, "side": "BUY", "outcome": "Up", "size": 7}]        # outside two minutes
+          {"timestamp": 1020, "price": 0.45, "side": "SELL", "outcome": "Down", "size": 5},
+          {"timestamp": 1200, "price": 0.50, "side": "BUY", "outcome": "Up", "size": 7}]
     assert verify(pr, True, 0.60, 1000) == (2, 15.0)
     assert verify(pr, True, 0.56, 1000) == (1, 5.0)
     assert verify(pr, False, 0.60, 1000) == (0, 0.0)

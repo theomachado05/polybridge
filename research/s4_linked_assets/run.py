@@ -1,8 +1,3 @@
-"""S4 run: the link agent's verdicts, the closure trade on trusted links, every variant at 1x and 2x costs, and the
-descriptive lead-lag tables (METHOD.md). Reads the cached pull; writes research/results/s4_linked_assets/.
-
-Run from `research/`:  python -m s4_linked_assets.run
-"""
 from __future__ import annotations
 
 import csv
@@ -24,7 +19,6 @@ RESULTS = HERE.parent / "results" / "s4_linked_assets"
 
 
 def load_critic() -> dict[str, dict]:
-    """Blind critic answers by market id: family and the set of (ticker, direction) it named."""
     out = {}
     for f in sorted(HERE.glob("critic_*.json")):
         for a in json.loads(f.read_text())["answers"]:
@@ -118,7 +112,6 @@ def main() -> int:
     ld_all["segment"] = ld_all.day.map(seg_of)
     ld_all[ld_all.confirmed][["day", "market", "ticker", "confirmed"]].to_csv(RESULTS / "gate_days.csv", index=False)
 
-    # ---- trades
     trades, eq_rows, metric_rows = [], [], []
     for v in cfg.VARIANTS:
         el = ld_all[eligible(ld_all, v) & np.isfinite(ld_all.x_night)]
@@ -159,7 +152,6 @@ def main() -> int:
         row["deflated_sharpe_prob"] = deflated_sharpe(row["daily_sharpe"], row["sessions"], len(cfg.VARIANTS), float(np.var(peers)),
                                                       row["skew"], row["kurtosis"]) if row["daily_sharpe"] == row["daily_sharpe"] and len(peers) > 1 else float("nan")
 
-    # ---- regressions (described, not traded)
     regs = []
     for label, mask in (("trusted, event (V0 set)", eligible(ld_all, cfg.VARIANTS[0])),
                         ("agreed, event, no data gate", eligible(ld_all, cfg.VARIANTS[2])),
@@ -178,7 +170,6 @@ def main() -> int:
                 regs.append({"set": label, "segment": seg, "relation": name, "unit": unit, "links": int(s[["market", "ticker"]].drop_duplicates().shape[0]),
                              **en.clustered_slope(x, y, g)})
 
-    # ---- write
     def write_csv(name, recs):
         keys = []
         for rec in recs:

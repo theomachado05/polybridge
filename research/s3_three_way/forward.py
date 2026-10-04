@@ -1,7 +1,3 @@
-"""S3 Part F: Kalshi S&P 500 against Polymarket SPY on Monday's close, on this weekend's recorded books (METHOD.md
-section 3). Fills come only from recorded levels. Run from `research/`:
-    python -m s3_three_way.forward --rate 0.0417 [--final]
-"""
 from __future__ import annotations
 
 import argparse
@@ -21,12 +17,11 @@ from . import config as cfg
 from .run import ARB, CACHE, PM_FEE_EXP, PM_FEE_RATE, RESEARCH, RESULTS, closes, kalshi_event, kalshi_settlement, map_strike
 
 RAW = RESEARCH / "forward" / "raw" / "thresholds"
-CADENCE_GAP_S = 45.0       # consecutive snapshots of the 30 s cadence
-MAX_SKEW_S = 10.0          # the two venues' books of one cycle
+CADENCE_GAP_S = 45.0
+MAX_SKEW_S = 10.0
 
 
 def build_sets(ratio: float) -> list[dict]:
-    """Monday's Polymarket SPY strikes mapped to Kalshi strikes, from the recorder's universe files (names only)."""
     uni = json.loads(sorted(RAW.glob("universe_*.json"))[-1].read_text())
     day = cfg.FORWARD_RESOLUTION.strftime("%Y-%m-%d")
     pm = [m for m in uni["pm"] if m["underlying"] == cfg.PM_UNDERLYING and (m.get("end_date") or "").startswith(day)]
@@ -44,7 +39,6 @@ def build_sets(ratio: float) -> list[dict]:
 
 
 def referee() -> dict[float, tuple[float, float]]:
-    """Friday-close options band per SPY strike, from the arb scan's live rows. Stale all weekend: reported only."""
     arb = pd.read_csv(ARB, low_memory=False)
     day = cfg.FORWARD_RESOLUTION.strftime("%Y-%m-%d")
     r = arb[(arb.venue == "polymarket") & (arb.underlying == cfg.PM_UNDERLYING) & (arb.live == True) & (arb.res_date == day)  # noqa: E712
@@ -53,7 +47,6 @@ def referee() -> dict[float, tuple[float, float]]:
 
 
 def describe(snaps: list, band: tuple[float, float] | None) -> dict:
-    """What the two books looked like over the window: mids, spreads, and where each sat against the stale band."""
     def mid(b):
         return (b["b"][0][0] + b["a"][0][0]) / 2 if b["b"] and b["a"] else np.nan
 
@@ -102,7 +95,7 @@ def main() -> int:
     for s in sets:
         desc.append({"pm_strike": s["pm_strike"], "kalshi_strike": s["kalshi_strike"], "kalshi_ticker": s["ticker"],
                      "strike_gap_pts": s["strike_gap_pts"], **describe(snaps.get(s["ticker"], []), bands.get(s["pm_strike"]))})
-    for v in (x for x in cfg.VARIANTS if x.trade == "lock" and x.id != "V2"):       # in Part F, V0 and V2 coincide
+    for v in (x for x in cfg.VARIANTS if x.trade == "lock" and x.id != "V2"):
         for c in cfg.COST_MULTIPLIERS:
             tt = []
             for s in sets:

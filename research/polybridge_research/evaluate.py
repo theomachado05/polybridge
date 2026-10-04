@@ -1,4 +1,3 @@
-"""Long results table (Massive starter, section 6) with the parity ratio (section 7)."""
 from __future__ import annotations
 
 import numpy as np

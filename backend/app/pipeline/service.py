@@ -1,4 +1,3 @@
-"""POST /pipeline/fit orchestration: classify -> shortlist -> build ticks -> tune -> explain. Never raises."""
 from __future__ import annotations
 
 import asyncio
@@ -42,10 +41,7 @@ class FitRequest(BaseModel):
     ticker: str = Field(min_length=1, max_length=12, pattern=r"^[A-Za-z][A-Za-z0-9.\-]{0,11}$")
     direction: Direction = "down_on_yes"
     shares_held: float | None = Field(default=None, ge=0, allow_inf_nan=False)
-    # Optional (request only; the response keys are unchanged): fit this division instead of the default choice
-    # (hedge when shares are held, else opportunity) -- the Build screen asks for both to offer Hedge vs Opportunity.
     division: Literal["hedge", "opportunity"] | None = None
-    # The market's resolution date (ISO), used to read a threshold question without a date; else the universe's.
     end_date: str | None = Field(default=None, max_length=40)
 
     @field_validator("ticker")
@@ -69,15 +65,6 @@ class Alternative(BaseModel):
 
 
 class AIInfo(BaseModel):
-    """Who wrote the AI parts of this answer, truthfully.
-
-    provider: "gemini" when Gemini produced the event class or the rationale in this response, else "rules".
-    model: the Gemini model that answered (after any 404 fallback); null for rules.
-    live: Gemini answered during the request that produced this response (false for rules).
-    cached: this response was served from the fit cache (its Gemini call, if any, happened earlier, within 5 min).
-    steps: what produced each step: classify "gemini" | "rules", explain "gemini" | "template".
-    fell_back_reason: why rules/templates were used where Gemini was expected (no key, an error), or why the
-        configured model was replaced (it returned 404); null when nothing fell back."""
     provider: Literal["gemini", "rules"]
     model: str | None = None
     live: bool = False
@@ -95,30 +82,16 @@ class FitResponse(BaseModel):
     score: float | None
     alternatives: list[Alternative]
     rationale: str
-    # "gemini:<model>" when Gemini classified the market, else "rules" (the keyword classifier).
     llm: str = Field(pattern=r"^(rules|gemini:[A-Za-z0-9._\-]+)$")
     ticks_source: Literal["live_history", "replay", "none"]
     n_ticks: int
-    # The spec §4 keys above, plus what `score` means. An unscored (rules) pick is visible as score == null;
-    # `scored` stays internal. `score` is always the RANKING score, named by `score_basis`:
-    #   "hedge_var_reduction_vs_static" (hedge): variance cut beyond a static short of the same average size, i.e.
-    #       what the prediction-market signal adds (0 = no better than a static hedge, < 0 = the timing hurt);
-    #   "net_pnl_per_drawdown" (opportunity): replay P&L net of fees / max drawdown (floored at $1);
-    #   null: not scored.
-    # Hedge only (null otherwise): score_vs_static (== score), score_raw = plain hedge variance reduction (any static
-    # short of a fraction h earns 1 - (1 - h)^2 of it, so it is reported, never ranked) and avg_hedge_ratio = the
-    # mean short as a fraction of shares_held over the replay. The same three are in each alternative's stats.
     score_basis: Literal["hedge_var_reduction_vs_static", "net_pnl_per_drawdown"] | None = None
     score_note: str | None = None
     score_raw: float | None = None
     score_vs_static: float | None = None
     avg_hedge_ratio: float | None = None
-    # True when the pick is unscored because no preset had a defined vs-static score (see tune.NO_STATIC_BENCHMARK).
     no_static_benchmark: bool = False
     ai: AIInfo = Field(default_factory=lambda: AIInfo(**rules_info()))
-    # Internal, never serialised: a Gemini call was tried for this response and failed (HTTP error, timeout, an
-    # answer outside the allowed set), so rules or the template stood in. The fit cache skips such answers, so a
-    # transient outage is not pinned for the cache TTL and the next identical request (the UI's Retry) asks again.
     _gemini_failed: bool = PrivateAttr(default=False)
 
     @property
@@ -127,7 +100,6 @@ class FitResponse(BaseModel):
 
 
 def ai_block(provider: LLMProvider, classify_by: str, explain_by_llm: bool, errors: list[str]) -> dict:
-    """The response's `ai` block from what actually answered."""
     steps = {"classify": "gemini" if classify_by.startswith("gemini") else "rules",
              "explain": "gemini" if explain_by_llm else "template"}
     if isinstance(provider, RulesProvider):
@@ -163,7 +135,6 @@ def _num(x: Any) -> float | None:
 
 
 async def _question_for(req: FitRequest, deps: Deps) -> tuple[str, str | None]:
-    """(question, token_id). Uses the request, then the bundled universe, then Gamma (Polymarket) or the Kalshi API."""
     q = (req.question or "").strip()
     token = req.market.token_id if req.market else None
     if q or req.market is None:
@@ -183,16 +154,13 @@ async def _question_for(req: FitRequest, deps: Deps) -> tuple[str, str | None]:
             return (question or ""), token
         except Exception:
             pass
-    meta = recording_meta(req.market.source, req.market.id, token)  # offline: the recording's sidecar names it
+    meta = recording_meta(req.market.source, req.market.id, token)
     if meta.get("question"):
         return str(meta["question"]), token or meta.get("token_id")
     return "", token
 
 
 def choose_division(lists: dict[str, list[dict]], shares_held: float | None, asked: str | None = None) -> str | None:
-    """Hedge when the user holds shares (hedge variance is defined only then); otherwise opportunity.
-    Falls back to the other division when the preferred one has no family for this class. An explicitly asked
-    division is honoured without fallback (None when it has no eligible family)."""
     if asked is not None:
         return asked if lists.get(asked) else None
     preferred = "hedge" if (shares_held or 0) > 0 else "opportunity"
@@ -213,13 +181,11 @@ async def run_fit(req: FitRequest, deps: Deps) -> dict:
                                  or recording_meta(req.market.source, req.market.id, token).get("end_date"))
                                 if req.market else None)
 
-    # Options eligibility only changes an opportunity fit: a hedge fit (asked, or the default with shares held) skips
-    # the chain snapshot + leg bars + 8-K refresh against Massive.
     want_options = req.division == "opportunity" or (req.division is None and not (req.shares_held or 0) > 0)
     opt_info: dict = {}
 
     async def join(ts: TickSet) -> None:
-        if ts.ticks is None or _has_options(ts):  # threshold questions only: options-implied history
+        if ts.ticks is None or _has_options(ts):
             return
         try:
             joined, info = await asyncio.wait_for(
@@ -232,9 +198,6 @@ async def run_fit(req: FitRequest, deps: Deps) -> dict:
             ts.notes.append(f"options history took over {OPTIONS_BUDGET_S:g} s")
 
     async def with_options(ts: TickSet) -> TickSet:
-        """Join options-implied history; when the live history gets none (e.g. a resolved market: its contracts have
-        expired, so today's chain cannot price it) but this market's recording carries option history, fit on the
-        recording instead and say so."""
         await join(ts)
         if _has_options(ts) or ts.source != "live_history" or market is None:
             return ts
@@ -248,7 +211,7 @@ async def run_fit(req: FitRequest, deps: Deps) -> dict:
         return rec
 
     async def ticks() -> TickSet:
-        try:  # bound the whole network chain (Gamma + CLOB + Massive); on overrun use recorded data only
+        try:
             ts = await asyncio.wait_for(
                 build_ticks(market, req.ticker, http=deps.http, massive=deps.massive, offline=deps.offline),
                 TICKS_BUDGET_S)
@@ -270,15 +233,12 @@ async def run_fit(req: FitRequest, deps: Deps) -> dict:
                 for d, fams in shortlist(manifest, event_class, available).items()}
 
     question_unresolved = req.market is not None and not question
-    # Families whose data needs this market cannot meet (second venue, listed options) are left out entirely.
     lists = lists_for(ts)
-    if not want_options and req.division is None and not lists.get("hedge"):  # falls back to opportunity: join now
+    if not want_options and req.division is None and not lists.get("hedge"):
         ts = await with_options(ts)
         lists = lists_for(ts)
     division = choose_division(lists, req.shares_held, req.division)
     families = lists.get(division, []) if division else []
-    # §3.3 Position fields only. The direction reaches the engine through the ticks: for a hedge, YES is re-oriented
-    # to the outcome that hurts the held equity (see ticks.orient_to_adverse), so every family sees one convention.
     position = {"shares_held": float(req.shares_held or 0.0), "equity": 0.0, "pred_yes": 0.0, "pred_no": 0.0,
                 "option": 0.0}
     if division == "hedge" and ts.ticks is not None:
@@ -298,7 +258,6 @@ async def run_fit(req: FitRequest, deps: Deps) -> dict:
         "n_ticks": ts.n, "scored": bool(t["scored"]), "no_static_benchmark": bool(t.get("no_static_benchmark")),
         **{k: (t.get(k) if t["scored"] else None)
            for k in ("score_basis", "score_note", "score_raw", "score_vs_static", "avg_hedge_ratio")},
-        # facts for the rationale only (not part of the response):
         "ticker": req.ticker, "direction": req.direction, "shares_held": req.shares_held,
         "n_shortlisted": len(families), "unscored_reason": t.get("unscored_reason"),
         "family_idea": (fam or {}).get("idea"), "proxies": (fam or {}).get("proxies"),
@@ -318,7 +277,6 @@ async def run_fit(req: FitRequest, deps: Deps) -> dict:
 
 
 def _question_direction(question: str | None, end_date: Any) -> str | None:
-    """"above" / "below" for a threshold question options/match.py can map, else None. Never raises."""
     if not question:
         return None
     try:
@@ -338,7 +296,6 @@ def _no_fit_reason(event_class: str, question_unresolved: bool, t: dict) -> str 
 
 
 def degraded(req: FitRequest | None, err: Exception) -> dict:
-    """Last-resort answer when something unexpected broke: honest, rules-only, never a 500."""
     q = (req.question or "") if req else ""
     return {"event_class": rules_classify(q) if q else "unsupported", "division": None, "family": None,
             "preset_index": None, "params": {}, "score": None, "alternatives": [], "llm": "rules",
@@ -351,7 +308,7 @@ def degraded(req: FitRequest | None, err: Exception) -> dict:
 async def fit(req: FitRequest, deps: Deps) -> FitResponse:
     try:
         r = await run_fit(req, deps)
-    except Exception as e:  # never a 500
+    except Exception as e:
         r = degraded(req, e)
     try:
         resp = FitResponse(**{k: r[k] for k in FitResponse.model_fields if k in r})

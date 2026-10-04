@@ -1,4 +1,3 @@
-"""Liquidity routes: GET /liquidity/{ticker}, /liquidity/option, /liquidity/pm. Bounded, cached, never a 500."""
 from __future__ import annotations
 
 import asyncio
@@ -10,7 +9,7 @@ from . import model as m
 from .service import service_for
 
 router = APIRouter()
-ROUTE_TIMEOUT_S = 12.0  # above one bounded Massive round (8 s); the route answers unavailable past it
+ROUTE_TIMEOUT_S = 12.0
 
 
 async def _bounded(coro, base: dict) -> dict:
@@ -18,7 +17,7 @@ async def _bounded(coro, base: dict) -> dict:
         return m.clean(await asyncio.wait_for(coro, ROUTE_TIMEOUT_S))
     except asyncio.TimeoutError:
         return {**base, "available": False, "reason": f"timed out after {ROUTE_TIMEOUT_S:g} s"}
-    except Exception as e:  # never a 500
+    except Exception as e:
         return {**base, "available": False, "reason": f"liquidity unavailable ({type(e).__name__})"}
 
 

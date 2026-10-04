@@ -1,31 +1,3 @@
-"""``GET /options/hedge-quote``: what it costs to hedge a long stock position, four ways, side by side.
-
-    (a) short stock      sell the shares short against the long (borrow fee + spread + fees; margin; no upside)
-    (b) protective put   buy puts struck near spot x (1 - protection_pct)
-    (c) collar           the same put, funded by selling an OTM call (zero-cost-ish; upside capped at the call)
-    (d) put spread       buy that put, sell a lower put near spot x (1 - 2 x protection_pct) (cheaper; protection
-                         only between the two strikes)
-
-Expiry: the first listed expiry on or after ``today + horizon_days`` (the hedge must outlive the horizon); if none is
-listed in the next 75 days past it, the latest listed before it, with a roll caveat.
-
-Prices are executable, not flattering: every leg is bought at its ask and sold at its bid. Each leg's NBBO is the last
-one from Massive ``/v3/quotes`` (15-min delayed); a leg without one is priced at fmv -/+ the estimated half spread
-(``mark.est_half_spread``) and flagged ``no_live_quote``. With the market closed these are the last session's quotes.
-
-Cost columns (all also in basis points of the position's notional, shares x spot):
-- ``upfront``: cash paid (net debit at bid/ask, plus fees). For puts and spreads also the most the hedge can cost.
-- ``expected_cost``: the friction you expect to lose if options are fairly priced: spread crossed vs mid + fees (for
-  short stock: borrow fee over the horizon + round-trip spread + fees). This is the common yardstick across the four;
-  it ignores the variance risk premium (puts tend to be priced above later realised volatility) and the upside each
-  hedge gives up, both stated in ``caveats`` and in each strategy's ``upside`` / ``protection``.
-- ``scenarios``: P&L of (long shares + hedge) at the horizon for spot moves of -30%..+20%, entry costs included;
-  options still alive at the horizon are repriced by Black–Scholes at each leg's own IV (constant-vol assumption).
-
-Borrow fees are not reported by Massive or the Webull paper account, so short stock uses an assumed easy-to-borrow
-rate (``borrow_rate`` overrides it) and says so. Never raises: no key, an outage, or no listed options give
-``available: false`` per strategy (short stock stays available whenever the spot price is known).
-"""
 from __future__ import annotations
 
 import asyncio
@@ -43,13 +15,13 @@ from .mark import est_half_spread
 
 HEDGE_TTL_S = 30.0
 EXPIRY_SLACK_DAYS = 75
-OPTION_FEE_PER_CONTRACT = 0.65     # per leg contract (the same fee the SimBroker charges)
-STOCK_FEE_PER_SHARE = 0.0035       # per share per side (as app/hedges.py)
-BORROW_RATE_GC = 0.0030            # assumed annual borrow fee for an easy-to-borrow name (general collateral)
-STOCK_HALF_SPREAD_BP = 1.0         # assumed half spread when no sane stock quote is available
-REG_T_INITIAL = 0.50               # Reg T: short sale needs 150% of its value; 50% on top of the proceeds
-MAINT_SHORT = 0.30                 # FINRA 4210 maintenance on a short (>= $5 stock)
-SSR_DROP_PCT = -10.0               # SEC Rule 201: a 10% intraday drop restricts short sales to an uptick
+OPTION_FEE_PER_CONTRACT = 0.65
+STOCK_FEE_PER_SHARE = 0.0035
+BORROW_RATE_GC = 0.0030
+STOCK_HALF_SPREAD_BP = 1.0
+REG_T_INITIAL = 0.50
+MAINT_SHORT = 0.30
+SSR_DROP_PCT = -10.0
 MOVES = (-0.30, -0.20, -0.10, -0.05, 0.0, 0.05, 0.10, 0.20)
 STRATEGIES = ("short_stock", "protective_put", "collar", "put_spread")
 LABEL = ("hedge cost comparison at executable prices from the last Massive quotes; an estimate, not advice; option "
@@ -76,13 +48,11 @@ def _bp(x: float | None, notional: float) -> float | None:
 
 
 def nearest(ks: list[float], target: float, below: float | None = None) -> float | None:
-    """Listed strike nearest ``target`` (ties -> the lower), optionally strictly below ``below``."""
     c = [k for k in ks if below is None or k < below]
     return min(c, key=lambda k: (abs(k - target), k)) if c else None
 
 
 def pick_expiry(expiries: list[str], target: dt.date, now: dt.datetime) -> tuple[str | None, bool]:
-    """(expiry, covers_horizon). The first live expiry >= target, else the latest live one before it."""
     live = [e for e in expiries if qt.years_to_expiry(e, now) > 0]
     after = [e for e in live if dt.date.fromisoformat(e) >= target]
     if after:
@@ -92,7 +62,6 @@ def pick_expiry(expiries: list[str], target: dt.date, now: dt.datetime) -> tuple
 
 def leg_quote(q: ch.OptionQuote, side: int, contracts: int, *, spot: float, now: dt.datetime, market: dict,
               nbbo: dict | None) -> dict:
-    """One leg priced to trade: buy (+1) at the ask, sell (-1) at the bid (or fmv -/+ the estimated half spread)."""
     q = qt.apply_nbbo(q, nbbo)
     quoted = math.isfinite(q.bid) and math.isfinite(q.ask)
     half = (q.ask - q.bid) / 2.0 if quoted else est_half_spread(q.mid, q.open_interest)
@@ -114,7 +83,6 @@ def leg_quote(q: ch.OptionQuote, side: int, contracts: int, *, spot: float, now:
 
 
 def leg_value_at(leg: dict, S: float, t_left: float, r: float = RISK_FREE) -> float:
-    """Per-share value of a leg at a future spot with ``t_left`` years to expiry (intrinsic at/after expiry)."""
     call = leg["right"] == "call"
     if t_left <= 0:
         return bs.intrinsic(S, leg["strike"], call)
@@ -128,13 +96,12 @@ def option_strategy(name: str, legs: list[dict], *, shares: int, spot: float, no
                     t_left: float, horizon_days: int) -> dict:
     mult = 100.0 * contracts
     fees = OPTION_FEE_PER_CONTRACT * contracts * len(legs)
-    net_exec = sum(lg["sign"] * lg["exec_px"] for lg in legs)          # per share, + = debit
+    net_exec = sum(lg["sign"] * lg["exec_px"] for lg in legs)
     net_mid = sum(lg["sign"] * lg["mid"] for lg in legs)
     upfront = net_exec * mult + fees
     friction = (net_exec - net_mid) * mult + fees
     deltas = [lg["delta"] for lg in legs]
     have_delta = all(d is not None and math.isfinite(d) for d in deltas)
-    # shares of stock the hedge is equivalent to selling now (None when a leg has no delta)
     delta_eq = -sum(lg["sign"] * lg["delta"] for lg in legs) * mult if have_delta else None
     grades = [lg["liquidity"] for lg in legs]
     put = next(lg for lg in legs if lg["right"] == "put" and lg["sign"] > 0)
@@ -156,7 +123,6 @@ def option_strategy(name: str, legs: list[dict], *, shares: int, spot: float, no
         "capital": {"cash_upfront_usd": max(upfront, 0.0), "margin_initial_usd": 0.0,
                     "note": "premium paid in cash; no margin needed"},
     }
-    # Payoff shape at the horizon (per covered share)
     prem = net_exec + fees / mult
     if name == "protective_put":
         out["protection"] = {"floor_price": kp, "floor_pct": kp / spot - 1, "ends_at": None,
@@ -249,8 +215,6 @@ def short_stock(*, shares: int, spot: float, notional: float, horizon_days: int,
 
 
 def contracts_for(name: str, shares: int) -> int:
-    """Whole contracts per leg: floor(shares / 100) so a collar's short call is always covered; a long put or put
-    spread may round a sub-100-share position up to 1 contract (flagged over_hedged)."""
     n = shares // 100
     return n if name == "collar" else max(1, n)
 
@@ -291,10 +255,8 @@ def caveats(market: dict, covers: bool, dividends: dict, expiry: str | None, str
 async def hedge_quote(ticker: str, shares: int, horizon_days: int, protection_pct: float, *, client,
                       borrow_rate: float | None = None, now: dt.datetime | None = None,
                       options_at_broker: bool = False) -> dict:
-    """``options_at_broker``: the active broker places option orders itself (Webull paper with WEBULL_OPTIONS=1), so
-    the label and caveats say where option orders go instead of calling them simulated."""
     key = (ticker, shares, horizon_days, round(protection_pct, 6), borrow_rate, bool(options_at_broker))
-    if now is not None:  # tests pin the clock: no cache
+    if now is not None:
         return await _compute(ticker, shares, horizon_days, protection_pct, client=client, borrow_rate=borrow_rate,
                               now=now, options_at_broker=options_at_broker)
     try:
@@ -302,7 +264,7 @@ async def hedge_quote(ticker: str, shares: int, horizon_days: int, protection_pc
                                                                client=client, borrow_rate=borrow_rate, now=None,
                                                                options_at_broker=options_at_broker))
         if not res.get("available"):
-            _CACHE._data.pop(key, None)  # never pin an outage for the TTL: the next request retries
+            _CACHE._data.pop(key, None)
         return res
     except Exception as e:  # noqa: BLE001
         return {"ticker": ticker, "available": False, "reason": f"hedge quote failed ({type(e).__name__})",
@@ -348,7 +310,6 @@ async def _compute_inner(base, ticker, shares, horizon_days, protection_pct, cli
         notes.append(f"option chain unavailable ({type(e).__name__})")
     spot_src = spot_info.get("source")
     if chain is not None and math.isfinite(chain.spot) and chain.spot > 0:
-        # the option snapshot's own underlying price: consistent with the quotes and greeks (as /options/chain/{u})
         spot, spot_src = chain.spot, "massive_option_snapshot"
     if not math.isfinite(spot) or spot <= 0:
         reason = "no underlying price (Massive stock and option snapshots gave none)"
@@ -378,7 +339,6 @@ async def _compute_inner(base, ticker, shares, horizon_days, protection_pct, cli
         else:
             p = puts[kp]
             legs_sel["protective_put"] = [(p, 1)]
-            # collar: the OTM call whose mid best funds the put's mid
             otm_calls = [c for k, c in calls.items() if k > spot]
             if otm_calls:
                 c = min(otm_calls, key=lambda c: (abs(c.mid - p.mid), -c.strike))

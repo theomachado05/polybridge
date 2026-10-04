@@ -1,8 +1,3 @@
-"""Orchestrator: universe -> snapshots -> option chains -> rows (research/results/arb/arb_gaps.csv). See ../METHOD.md.
-
-    uv run --no-project --env-file /Users/theomachado/gatorquant/.env --with pandas --with numpy --with requests \\
-        --with matplotlib python -m arbscan.run            # from research/arb
-"""
 from __future__ import annotations
 
 import argparse
@@ -45,12 +40,10 @@ def et_dt(d: date, hh: int, mm: int) -> datetime:
 
 
 def utc_iso(dt: datetime) -> str:
-    """True UTC wall-clock string for an aware datetime (never relabel a local wall-clock as Z)."""
     return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def snapshot_meta(m: dict, snap_label: str, snap_dt: datetime, exp: str | None) -> dict:
-    """Row metadata for one market at one snapshot. snap_epoch is the exact instant the verifier windows around."""
     return dict(venue=m["venue"], market_id=m["id"], event=m["event"], question=m["question"], underlying=m["underlying"],
                 series=m.get("series"), kind=m["kind"], res_date=m["res_date"].isoformat(), snapshot=snap_label,
                 snap_utc=utc_iso(snap_dt), snap_epoch=snap_dt.timestamp(), expiry=exp,
@@ -97,7 +90,6 @@ class Scan:
         self.half_spread_n = 0
         self.t0 = time.time()
 
-    # ------------------------------------------------------------ universe
     def pm_universe(self) -> list[dict]:
         events = ds.gamma_equity_events(self.http, f"{self.start}T00:00:00Z", f"{self.end}T23:59:59Z")
         self.scope["pm_events"] = len(events)
@@ -159,9 +151,7 @@ class Scan:
         self.scope["kalshi_live_candidates"] = len(live)
         return hist, live
 
-    # ------------------------------------------------------------ option side
     def _option_context(self, m: dict) -> tuple[str | None, dict, bool, float | None]:
-        """(expiry, chain, clean, expiry_close_ts) for the nearest listed expiry on/after the resolution date."""
         ne = self.opts.nearest_expiry(m["underlying"], m["res_date"]) if self.opts else None
         if ne is None:
             return None, {}, False, None
@@ -176,7 +166,6 @@ class Scan:
         return score_row(pm=pm, strike=m["strike"], chain=chain, get_quote=get_quote, snap_ts=snap_dt.timestamp(),
                          expiry_close_ts=exp_close, clean=clean, live=live, fee=m["fee"], meta=meta)
 
-    # ------------------------------------------------------------ live
     def live_rows(self, pm_all: list[dict], kal_live: list[dict]) -> None:
         live_pm = [m for m in pm_all if not m["closed"] and m["end_dt"] > self.now]
         self.scope["pm_live_markets"] = len(live_pm)
@@ -221,7 +210,6 @@ class Scan:
         jobs = [(m, "LIVE", self.now, pm) for m, pm in pm_live_pm + kal_rows]
         self._run_jobs(jobs, live=True)
 
-    # ------------------------------------------------------------ resolved
     def hist_rows_pm(self, pm_all: list[dict]) -> None:
         hist = [m for m in pm_all if m["end_dt"] <= self.now]
         self.scope["pm_resolved_or_ended"] = len(hist)
@@ -284,7 +272,6 @@ class Scan:
         self._run_jobs(jobs, live=False)
 
     def verify_stage(self, pm_all: list[dict]) -> None:
-        """METHOD.md amendment 3: resolved gap_robust rows are promoted to gap_verified only with real evidence."""
         byid = {m["id"]: m for m in pm_all}
         cand = [r for r in self.rows if r.get("venue") == "polymarket" and not r.get("live") and r.get("label") == "gap_robust"]
         cids = sorted({byid[r["market_id"]]["cid"] for r in cand if byid.get(r["market_id"], {}).get("cid")})
@@ -302,7 +289,7 @@ class Scan:
                 r["label"] = "gap_verified"
         for r in self.rows:
             if r.get("venue") == "kalshi" and not r.get("live") and r.get("label") == "gap_robust":
-                r["label"] = "gap_verified"        # real bid/ask candles, no assumption to verify
+                r["label"] = "gap_verified"
         self.scope["verified_poly"] = sum(1 for r in cand if r.get("verified"))
 
     def _run_jobs(self, jobs: list, live: bool) -> None:
@@ -310,7 +297,7 @@ class Scan:
             m, label, snap, pm = j
             try:
                 return self._row(m, label, snap, pm, live)
-            except Exception as e:  # one bad market never kills the scan; it is logged and counted
+            except Exception as e:
                 self.scope["row_errors"] += 1
                 self.http.failures.append(f"row-error {m['id']} {type(e).__name__}: {str(e)[:100]}")
                 return None
@@ -344,7 +331,7 @@ def main(argv=None) -> int:
         return 0
     pm_all = scan.pm_universe()
     kal_hist, kal_live = ([], []) if a.skip_kalshi else scan.kalshi_universe()
-    scan.live_rows(pm_all, kal_live)           # first: sets the assumed half-spread used by resolved PM rows
+    scan.live_rows(pm_all, kal_live)
     scan.hist_rows_pm(pm_all)
     scan.hist_rows_kalshi(kal_hist)
     scan.verify_stage(pm_all)

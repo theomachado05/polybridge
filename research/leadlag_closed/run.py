@@ -1,8 +1,3 @@
-"""Run the closed-market study:  cd research && uv run --env-file ../.env python -m leadlag_closed.run
-
-Writes closures_all.csv, events.csv, tests.json, SUMMARY.md, charts and appends to RUN_LOG.md under
-research/results/leadlag_closed/. A missing Massive key logs a message and exits 2 (never prompts, never prints it).
-"""
 from __future__ import annotations
 
 import argparse
@@ -30,7 +25,6 @@ def _git(*args: str) -> str:
 
 
 def plan_closures(markets: dict, events: list[dict], cal: TradingCalendar | None = None) -> list[dict]:
-    """Every closure to analyse: placebo panels plus event closures. Each plan item carries market, sign, news flag, event."""
     cal = cal or TradingCalendar()
     items: dict[str, dict] = {}
     all_closures: list[Closure] = []

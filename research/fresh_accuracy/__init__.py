@@ -1,4 +1,3 @@
-"""Fresh-market accuracy study: option-implied probability vs Polymarket price (METHOD.md)."""
 import sys
 from pathlib import Path
 

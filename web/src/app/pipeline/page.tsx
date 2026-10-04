@@ -16,7 +16,6 @@ const STATE_TAG: Record<ReturnType<typeof pairState>, { text: string; tone: stri
   no_book: { text: "no two-sided book", tone: "neutral" },
 };
 
-/** Ladder board: live Polymarket date ladders, rungs in date order, the nesting checks, and violations after fees. */
 export default function LadderBoard() {
   const reg = useRegistry();
   const [n, retry] = useRetry();

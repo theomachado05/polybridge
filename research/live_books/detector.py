@@ -1,5 +1,3 @@
-"""Stale-quote decision on one book touch. Uses the C++ hedgecore_stale binding when it is built
-(engine/hedgecore/scripts/build_stale.sh), else the pure-Python twin below. IMPL says which one ran."""
 from __future__ import annotations
 
 NONE, BUY_YES, BUY_NO = 0, 1, 2

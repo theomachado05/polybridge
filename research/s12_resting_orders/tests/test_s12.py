@@ -5,7 +5,6 @@ from s12_resting_orders.run import cboot, cboot_diff, fill, keep_window, post_pr
 
 
 def P(rows):
-    """rows: (t, price, side, size) in YES terms."""
     a = np.array(rows, float).reshape(-1, 4)
     return a[:, 0], a[:, 1], a[:, 2].astype(int), a[:, 3]
 
@@ -13,8 +12,8 @@ def P(rows):
 def test_post_price_passive_side():
     assert post_price(0.555, 1, 0) == 0.56
     assert post_price(0.555, -1, 0) == 0.55
-    assert post_price(0.55, 1, 0) == 0.55          # already on the grid: no move
-    assert post_price(0.55000001, 1, 0) == 0.55    # float noise is not a cent
+    assert post_price(0.55, 1, 0) == 0.55
+    assert post_price(0.55000001, 1, 0) == 0.55
     assert abs(post_price(0.555, 1, 1) - 0.55) < 1e-12
     assert abs(post_price(0.555, -1, 1) - 0.56) < 1e-12
     assert post_price(0.999, 1, 0) == 0.99
@@ -22,10 +21,10 @@ def test_post_price_passive_side():
 
 def test_yes_terms_converts_no_prints():
     ts, px, sd, sz = yes_terms([
-        {"timestamp": 2, "price": 0.40, "side": "SELL", "outcome": "No", "size": 10},   # = taker buys YES at 0.60
+        {"timestamp": 2, "price": 0.40, "side": "SELL", "outcome": "No", "size": 10},
         {"timestamp": 1, "price": 0.60, "side": "BUY", "outcome": "Yes", "size": 5},
-        {"timestamp": 3, "price": 0.30, "side": "BUY", "outcome": "No", "size": 7},     # = taker sells YES at 0.70
-        {"timestamp": 4, "price": 0.5, "side": "BUY", "outcome": "Maybe", "size": 7},   # ignored
+        {"timestamp": 3, "price": 0.30, "side": "BUY", "outcome": "No", "size": 7},
+        {"timestamp": 4, "price": 0.5, "side": "BUY", "outcome": "Maybe", "size": 7},
     ])
     assert list(ts) == [1, 2, 3]
     assert np.allclose(px, [0.60, 0.60, 0.70])
@@ -34,13 +33,12 @@ def test_yes_terms_converts_no_prints():
 
 
 def test_sale_filled_only_by_buys_through_or_beyond_queue():
-    # our sale at 0.56 posted at t=0, 30 s window
-    pr = P([(5, 0.57, -1, 1000),      # a taker SALE: never fills a sale
-            (6, 0.55, 1, 1000),       # a buy below our price: no
-            (7, 0.56, 1, 450),        # at our price: inside the 500 queue allowance
-            (8, 0.56, 1, 80),         # 30 beyond the allowance count
-            (9, 0.57, 1, 50),         # through: counts in full -> 80 so far
-            (40, 0.60, 1, 500)])      # after the window
+    pr = P([(5, 0.57, -1, 1000),
+            (6, 0.55, 1, 1000),
+            (7, 0.56, 1, 450),
+            (8, 0.56, 1, 80),
+            (9, 0.57, 1, 50),
+            (40, 0.60, 1, 500)])
     frac, t, q = fill(*pr, side=1, q=0.56, t0=0, window_s=30, size=100, allowance=500)
     assert np.isclose(q, 80) and np.isclose(frac, 0.8) and t == 9
 
@@ -54,7 +52,6 @@ def test_full_fill_instant_and_print_at_t0_excluded():
 def test_purchase_mirror_and_two_x_shift():
     pr = P([(1, 0.44, -1, 100), (2, 0.45, 1, 1000)])
     assert fill(*pr, side=-1, q=0.45, t0=0, window_s=30, size=100, allowance=500)[0] == 1.0
-    # 2x: must trade through 0.44 -> the print at 0.44 is now "at the threshold", inside the queue allowance
     assert fill(*pr, side=-1, q=0.45, t0=0, window_s=30, size=100, allowance=500, shift=0.01)[0] == 0.0
 
 
@@ -84,7 +81,6 @@ def test_simulate_two_x_crosses_at_exit_with_double_costs():
     s = simulate(_order(), pr, cfg.Variant("x", 30, 0), 2.0, mid_deadline=0.52)
     assert s["exit_how"] == "cross at exit"
     assert np.isclose(s["net"], 0.10 - 0.01 - 2 * 0.04 * 0.25)
-    # 0.61 is not through 0.60 + 1 tick at 2x
     assert not simulate(_order(), P([(10, 0.61, 1, 200)]), cfg.Variant("x", 30, 0), 2.0, 0.52)["filled"]
 
 

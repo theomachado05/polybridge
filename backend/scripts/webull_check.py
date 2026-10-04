@@ -1,17 +1,3 @@
-"""Webull paper smoke check: is the configured Webull paper account reachable, and can it trade right now?
-
-Read-only by default. It reads the account (type / class), its balance and margin figures, Webull positions, open
-orders and order history (last 7 days, bounded windows), runs one reconciliation pass (reads only), reports
-options_supported and short-sale readiness (instrument profiles) for a few tickers, the NYSE session (market_open) and
-the broker's extended-hours capability. It never places an order outside the regular session
-(the paper sandbox refuses every order outside 09:30-16:00 ET with HTTP 417). Only when the regular session is on AND
-WEBULL_SMOKE_ORDER=1 does it place a 1-share SPY limit buy far below the market ($1.00, cannot fill) and cancel it at
-once. Account and order ids are masked in the output; keys are never printed.
-
-    make webull-check                                  # read-only
-    WEBULL_SMOKE_ORDER=1 make webull-check             # + place and cancel one far-from-market limit (market hours)
-
-Exit code: 0 OK, 1 Webull answered with an error, 2 Webull paper is not configured (BROKER=webull + keys)."""
 from __future__ import annotations
 
 import asyncio
@@ -29,12 +15,11 @@ from app.broker.webull import SIM_NOTE, WebullBroker  # noqa: E402
 from app.closed.session import now_utc, session_at  # noqa: E402
 
 SMOKE_SYMBOL = "SPY"
-SMOKE_LIMIT = 1.00  # far below any SPY price: the order rests, it cannot fill
-SHORT_CHECK = ("SPY", "TLT", "IWM")  # tickers the demo hedges short
+SMOKE_LIMIT = 1.00
+SHORT_CHECK = ("SPY", "TLT", "IWM")
 
 
 def mask(v: Any) -> str:
-    """'***' + the last 3 characters: enough to tell accounts apart, never the whole id."""
     s = str(v or "")
     return "***" + s[-3:] if len(s) > 3 else "***"
 
@@ -44,7 +29,6 @@ def smoke_enabled(env: dict | None = None) -> bool:
 
 
 async def check(broker: WebullBroker, now: dt.datetime, smoke: bool, out: Callable[[str], None] = print) -> dict:
-    """Run the check against ``broker`` at ``now``; returns what it found (ids masked)."""
     res: dict[str, Any] = {"broker": broker.name, "host": broker.client.base_url, "order_test": "skipped"}
     sess = session_at(now)
     res.update(market_open=sess.equities_open, session=sess.label, extended_hours=bool(broker.extended_hours))
@@ -137,7 +121,7 @@ async def main() -> int:
         print("Webull paper is not configured: set BROKER=webull, WEBULL_APP_KEY (or WEBULL_API_KEY) and "
               "WEBULL_APP_SECRET (and WEBULL_ACCOUNT_ID) in .env. Nothing was checked.")
         return 2
-    broker.sim = SimBroker(None, order_note=SIM_NOTE)  # never read or write the dev sim account file
+    broker.sim = SimBroker(None, order_note=SIM_NOTE)
     try:
         await check(broker, now_utc(), smoke_enabled())
     except BrokerError as e:

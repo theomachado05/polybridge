@@ -1,4 +1,3 @@
-"""Twin matcher: extraction, proposal and verification (offline; claims built from small market dicts)."""
 from __future__ import annotations
 
 from datetime import date
@@ -35,7 +34,7 @@ def test_extractors():
 
 
 def test_deadlines_are_new_york_calendar_dates():
-    p = poly("1", "Will X happen?", end="2028-01-01T04:59:00Z")  # 11:59 PM ET on Dec 31
+    p = poly("1", "Will X happen?", end="2028-01-01T04:59:00Z")
     assert p.deadline == date(2027, 12, 31)
     k = kal("K-1", "Will X happen?", close="2027-12-31T15:00:00Z")
     assert k.deadline == date(2027, 12, 31)
@@ -145,7 +144,6 @@ def test_price_markets_need_a_shared_named_source():
     assert v.status == "ambiguous" and "source" in v.reasons
     k2 = kal("K11", "Will the price of Bitcoin be above $100,000 on December 31?", close="2027-01-01T04:59:00Z", rules="Per Binance.")
     assert verdict(p, k2).status == "verified"
-    # a price market that names no source on either side cannot be verified either
     bare_p = poly("12", "Will the price of Bitcoin be above $100,000 on December 31?", end="2027-01-01T04:59:00Z")
     bare_k = kal("K12", "Will the price of Bitcoin be above $100,000 on December 31?", close="2027-01-01T04:59:00Z")
     assert verdict(bare_p, bare_k).status == "ambiguous"

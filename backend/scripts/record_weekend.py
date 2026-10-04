@@ -38,14 +38,12 @@ EVIDENCE = BACKEND / "app" / "data" / "gap_evidence.json"
 RATES = BACKEND / "app" / "data" / "gap_rates.json"
 INDEX = BACKEND / "app" / "data" / "replay_index.json"
 REPLAYS = BACKEND / "replays"
-# research/leadlag_closed labels the two panel-A markets; the evidence file keys them by slug
 LABELS = {"us-recession-in-2025": "recession", "will-donald-trump-win-the-2024-us-presidential-election": "election"}
-START_ET, END_ET = dt.time(15, 30), dt.time(10, 1)  # 10:01: the 10:00 point (stamped a few s after) is in
+START_ET, END_ET = dt.time(15, 30), dt.time(10, 1)
 FIDELITY_MIN = BAR_MIN = 5
 
 
 def pick(evidence: dict, closures: list[dict]) -> dict:
-    """The rule above: (slug, row) of the chosen weekend."""
     validated = [slug for slug, m in (evidence.get("markets") or {}).items() if m.get("validated")]
     cands = []
     for slug in validated:
@@ -58,7 +56,7 @@ def pick(evidence: dict, closures: list[dict]) -> dict:
                 cands.append((oriented, r["closure"], slug, r))
     if not cands:
         raise SystemExit("no adverse weekend closure on a validated market")
-    cands.sort(key=lambda c: (c[0], [-ord(ch) for ch in c[1]]))  # most negative, then most recent
+    cands.sort(key=lambda c: (c[0], [-ord(ch) for ch in c[1]]))
     oriented, _, slug, row = cands[0]
     return {"slug": slug, "row": row, "oriented_move_pp": oriented, "n_candidates": len(cands)}
 

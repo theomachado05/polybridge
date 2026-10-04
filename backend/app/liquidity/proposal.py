@@ -1,13 +1,3 @@
-"""The capacity block a proposal carries before approval: will the hedge fit the market and the account?
-
-hedge proposals   the hedge at its approved size (target_coverage x shares_held) against the equity participation
-                  caps (one order at the open: 10% of the opening 5-minute volume; one session: 1% of ADV), its
-                  estimated cost (half spread + square-root impact), the holding size the caps allow
-                  (``book_usd``), how many sessions the full hedge needs inside the caps, the prediction market's book
-                  depth (when fetched), and the capital budget check (gross / per-event / buying power)
-opportunity       the max_notional at risk against the capital budget; option legs are capped per structure at
-                  bridge time (10% of volume, 5% of open interest, each leg)
-"""
 from __future__ import annotations
 
 import asyncio
@@ -52,7 +42,6 @@ def _equity_block(prop, view: dict) -> dict:
 
 
 def cached(app, prop) -> dict:
-    """The block from cached numbers only (no network): the sync proposal path (voice agent) uses this."""
     out: dict[str, Any] = {"label": LABEL, "source": "cache", "caps": m.CAPS}
     if prop.family == "hedge":
         raw, age = service_for(app).cached_equity(prop.ticker)
@@ -72,7 +61,6 @@ def _options_note(prop) -> dict:
 
 
 async def live(app, prop) -> dict:
-    """The block with fresh numbers (bounded; a timeout or a missing key leaves parts unavailable, never an error)."""
     from ..broker import get_broker
     from ..capital import service as cap
     out: dict[str, Any] = {"label": LABEL, "source": "live", "caps": m.CAPS}
@@ -106,7 +94,6 @@ async def live(app, prop) -> dict:
             tw = pm_view["twin"]
             out["pm"]["twin"] = {k: tw.get(k) for k in ("available", "reason", "source", "id", "depth",
                                                         "max_order_contracts")}
-    # capital: would the full hedge (or the opportunity's max_notional) fit the account budget?
     try:
         broker = get_broker(app)
         if prop.family == "hedge":

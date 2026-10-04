@@ -1,5 +1,3 @@
-"""Option-implied reference probability per market: the forward_monday call-spread construction (pm_taker.core and
-arbscan.implied unchanged), either from live Massive NBBO during the session or from the last regular-session close."""
 from __future__ import annotations
 
 import time
@@ -65,7 +63,6 @@ def close_ref(opts, row: dict, d: date) -> Ref:
 
 
 class LiveQuotes:
-    """Latest NBBO per option ticker from Massive /v3/quotes, never written to disk, held at most ttl seconds."""
 
     def __init__(self, api_key: str, ttl: float = 3.0):
         self.s = requests.Session()

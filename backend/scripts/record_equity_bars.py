@@ -35,7 +35,6 @@ def replay_range(path: Path) -> tuple[int, int]:
 
 
 def fetch(client, ticker: str, start_s: int, end_s: int) -> tuple[str, list[dict]]:
-    """(span, [{"t": start_s, "c": close}]) - hourly, else daily. Same request shape as ticks.massive_bars."""
     d0 = datetime.fromtimestamp(start_s, timezone.utc).date() - timedelta(days=5)
     d1 = datetime.fromtimestamp(end_s, timezone.utc).date()
     for span in ("hour", "day"):

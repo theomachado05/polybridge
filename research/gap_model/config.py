@@ -1,4 +1,3 @@
-"""Pre-registered parameters of the expected-gap OOS study (METHOD.md). Change only through an Amendment."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -20,13 +19,12 @@ SECONDARY_ETF = "QQQ"
 
 @dataclass(frozen=True)
 class Params:
-    n_min: int = 20                 # min training closures with x != 0 for a per-market rate (and for any prediction)
-    z80: float = 1.2816             # two-sided 80% normal quantile for the band
-    theta_pp: float = 1.0           # secondary G1 restriction |x| >= theta
+    n_min: int = 20
+    z80: float = 1.2816
+    theta_pp: float = 1.0
     n_perm: int = 10_000
     seed: int = 20261003
     alpha: float = 0.05
-    # calibration buckets on predicted gap (bp); "zero" is its own bucket
     buckets: tuple = ("<= -10", "(-10, -3]", "(-3, 0)", "= 0", "(0, 3)", "[3, 10)", ">= 10")
 
 

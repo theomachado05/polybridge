@@ -1,7 +1,3 @@
-// View logic for the risk controls the backend enforces: the evidence gate, the liquidity participation caps, the
-// capital budget and the broker account (Webull paper). Pure and dependency-free so `node --test` covers it; the
-// screens only render what these functions return. Every number keeps its source and freshness, and the UI never
-// upgrades a backend verdict (an unvalidated market stays unvalidated; an unknown cap stays unknown).
 import type {
   AccountOut, BrokerOrder, BrokerPosition, Capacity, CapitalLimits, CapitalOut, EvidenceStatus, Freshness, LiquidityEquity, ReconcileStatus,
 } from "./api.ts";
@@ -14,7 +10,6 @@ export interface Badge { tone: Tone; text: string; title?: string }
 const MINUS = "−";
 const fin = (x: unknown): x is number => typeof x === "number" && Number.isFinite(x);
 
-/** $1,234 / $12.5k / $191.2M / $35.2B; "n/a" when unknown. */
 export function usd(x: number | null | undefined, opts: { compact?: boolean; sign?: boolean } = {}): string {
   if (!fin(x)) return "n/a";
   const s = x < 0 ? MINUS : opts.sign ? "+" : "";
@@ -28,13 +23,9 @@ export const shares = (x: number | null | undefined) => (fin(x) ? `${Math.round(
 export const bp = (x: number | null | undefined, d = 1) => (fin(x) ? `${x.toFixed(d)} bp` : "n/a");
 export const pctOf = (x: number | null | undefined, d = 0) => (fin(x) ? `${(x * 100).toFixed(d)}%` : "n/a");
 
-// ------------------------------------------------------------------ evidence gate
-
 export interface EvidenceGateView {
-  /** False when the backend did not report the evidence (an older backend): the backend still decides at approval. */
   known: boolean;
   validated: boolean;
-  /** Approval needs the explicit acknowledgement (checkbox) before the Approve button enables. */
   needsAck: boolean;
   badge: Badge;
   reason: string;
@@ -52,18 +43,12 @@ export function evidenceGate(ev: EvidenceStatus | null | undefined): EvidenceGat
   return { known: true, validated: false, needsAck: true, reason, badge: { tone: "caution", text: "unvalidated estimate", title: reason } };
 }
 
-/** The acknowledgement the user ticks before approving on an unvalidated market. Honest: it says what is missing,
- *  what will run anyway and how it is labelled. */
 export function ackCopy(ticker: string, kind: "hedge" | "opportunity" = "hedge", opts: { override?: boolean } = {}): string {
   const runs = kind === "opportunity" ? "the options algo will trade on it" : `the ${ticker} hedge will use it`;
   const base = `I understand that the signal of this market has not passed its out-of-sample test for ${ticker}. It is an unvalidated estimate, but ${runs}. The app will label each decision and fill “unvalidated (acknowledged)”.`;
-  // The backend: approving a proposal that sets act_on_unvalidated with the acknowledgement also confirms the override.
   return opts.override && kind === "hedge" ? `${base} ${OVERRIDE_ACK_COPY}` : base;
 }
 
-/** The gate of the generic AI fit flow (/build/fit). The fit itself is unvalidated (registry entry generic_ai_fit: its
- *  walk-forward test failed), so the acknowledgement is always needed, whatever the market's own closed-gap evidence
- *  says; a "validated" market badge is never shown as the fit's status. The badge words are the registry's. */
 export function fitEvidenceGate(market: EvidenceGateView | null | undefined, fit: Mechanism | null | undefined): EvidenceGateView {
   const fitWhy = fit ? `${fit.name}: ${fit.claim}` : "The evidence registry was not read, so the generic AI fit is treated as unvalidated.";
   const mkt = market?.known
@@ -75,23 +60,17 @@ export function fitEvidenceGate(market: EvidenceGateView | null | undefined, fit
   };
 }
 
-/** The acknowledgement for the generic AI fit: the fit's own status first, then the market's (when it is unvalidated
- *  too, the backend's own acknowledgement is part of the same tick). */
 export function fitAckCopy(ticker: string, fit: Mechanism | null | undefined, market: EvidenceGateView | null | undefined,
   opts: { override?: boolean } = {}): string {
   const fitLine = `I understand that the generic AI fit is not validated (${fit?.status_label || "unvalidated"}) and that the ${ticker} hedge will use it anyway.`;
   return market?.needsAck ? `${fitLine} ${ackCopy(ticker, "hedge", opts)}` : opts.override ? `${fitLine} ${OVERRIDE_ACK_COPY}` : fitLine;
 }
 
-/** What the acknowledgement also confirms when the Weekend-mode override is on (POST /proposals/{id}/approve 409 text). */
 export const OVERRIDE_ACK_COPY = "This also confirms the closed-market override. Staged plans (hedge B) on this market are labelled “override”, and no plan executes until I click Approve plan.";
-/** The approval box line shown whenever the override is on, acknowledged or not. */
 export const OVERRIDE_ON_LINE = "Override on: the app labels staged plans on this market “override”.";
 
-/** The closed-market override: stage hedge B on a market whose expected gap is not validated. */
 export const OVERRIDE_COPY = "Stage the weekend hedge (hedge B) on this market, although its expected gap is not validated. The app labels each staged plan “override”. No plan executes until you click Approve plan.";
 
-/** Badge for the `evidence` label every decision / fill / staged / hedge_a event carries. */
 export function evidenceLabelBadge(label: string | null | undefined): Badge | null {
   if (!label) return null;
   if (label === "validated") return { tone: "measured", text: "validated", title: "The signal of this market passed its out-of-sample test." };
@@ -100,13 +79,10 @@ export function evidenceLabelBadge(label: string | null | undefined): Badge | nu
   return { tone: "neutral", text: label };
 }
 
-/** True for the backend's evidence refusals (409 EVIDENCE_UNVALIDATED at approval / bridge start, EVIDENCE_GATE when staging). */
 export const isEvidenceError = (e: unknown) => {
   const m = e instanceof Error ? e.message : typeof e === "string" ? e : "";
   return /EVIDENCE_(UNVALIDATED|GATE)/.test(m);
 };
-
-// ------------------------------------------------------------------ gates on fills (liquidity, capital)
 
 export interface GateEntry { reason?: string; limit?: string; limit_qty?: number; capped_from?: number; rule?: string; enforced?: boolean; breaches?: string[] }
 export interface GatedFill {
@@ -128,7 +104,6 @@ const breachName = (k: string) => ({
   maintenance_margin: "maintenance margin", account_unreadable: "account unreadable", check_failed: "check failed",
 } as Record<string, string>)[k] ?? k.replaceAll("_", " ");
 
-/** The badges a trade card shows: the evidence label, and each gate that capped or refused the order. */
 export function fillBadges(f: GatedFill | null | undefined, decisionEvidence?: string | null): Badge[] {
   const out: Badge[] = [];
   const ev = evidenceLabelBadge(f?.evidence ?? decisionEvidence);
@@ -153,7 +128,6 @@ export function fillBadges(f: GatedFill | null | undefined, decisionEvidence?: s
   return out;
 }
 
-/** One sentence for the trade log: why a gate capped or refused this order (empty when none did). */
 export function gateSentence(f: GatedFill | null | undefined): string {
   if (!f) return "";
   const parts: string[] = [];
@@ -169,15 +143,12 @@ export function gateSentence(f: GatedFill | null | undefined): string {
   return parts.join(" ");
 }
 
-// ------------------------------------------------------------------ liquidity & capacity
-
 export interface CapacityRow { k: string; v: string; sub?: string; warn?: boolean }
 export interface CapacityView {
   available: boolean;
   reason?: string;
   rows: CapacityRow[];
   binding: string;
-  /** "fits in one order at the open" / "needs N orders" / "unknown". */
   verdict: Badge;
   sources: string[];
   stale: boolean;
@@ -193,7 +164,6 @@ function freshnessText(f: Freshness | null | undefined): { text: string; stale: 
 const spreadSource = (s: string | null | undefined) =>
   s === "quote" ? "Massive last NBBO quote" : s === "corwin_schultz_estimate" ? "Corwin-Schultz estimate (no quote)" : s ?? "unknown";
 
-/** The capacity card from a proposal's capacity block (the hedge at its approved size) — Build approval step. */
 export function capacityFromProposal(c: Capacity | null | undefined): CapacityView {
   const e = c?.equity;
   if (!c || c.error && !e) return { available: false, reason: c?.error ?? "This proposal has no capacity data.", rows: [], binding: "n/a", verdict: { tone: "neutral", text: "capacity unknown" }, sources: [], stale: false };
@@ -221,8 +191,6 @@ export function capacityFromProposal(c: Capacity | null | undefined): CapacityVi
   return { available: true, rows, binding: bindingLabel(e.binding), verdict, sources, stale: fr.stale };
 }
 
-/** The capacity card from GET /liquidity/{ticker} (Bridge screen and the Build preview). `hedgeShares` is the hedge the
- *  bridge is approved for (coverage x shares), when known. */
 export function capacityFromLiquidity(l: LiquidityEquity | null | undefined, hedgeShares?: number | null): CapacityView {
   if (!l) return { available: false, reason: "The app reads the liquidity data…", rows: [], binding: "n/a", verdict: { tone: "neutral", text: "no data yet" }, sources: [], stale: false };
   if (!l.available) return { available: false, reason: l.reason ?? "Liquidity data is not available. The app does not cap orders and labels them “unknown”.", rows: [], binding: "n/a", verdict: { tone: "neutral", text: "caps unknown" }, sources: [], stale: false };
@@ -248,7 +216,6 @@ export function capacityFromLiquidity(l: LiquidityEquity | null | undefined, hed
   return { available: true, rows, binding: bindingLabel(l.binding), verdict, sources, stale: fr.stale };
 }
 
-/** Prediction-market depth line for the capacity card (max order within 2 cents of the mid, both sides). */
 export function pmDepthLine(c: Capacity | null | undefined): string | null {
   const pm = c?.pm;
   if (!pm) return null;
@@ -258,7 +225,6 @@ export function pmDepthLine(c: Capacity | null | undefined): string | null {
   return `Prediction market book (${pm.source ?? "venue"}): max order ${fin(mo?.buy) ? mo!.buy!.toLocaleString("en-US") : "n/a"} buy / ${fin(mo?.sell) ? mo!.sell!.toLocaleString("en-US") : "n/a"} sell contracts (50% of depth within 2¢, with ${usd(at2("buy"))} / ${usd(at2("sell"))} resting).`;
 }
 
-/** The capital line of a proposal: does the full hedge fit the account budget? */
 export function capitalFitView(c: Capacity | null | undefined): { badge: Badge; lines: string[] } {
   const k = c?.capital;
   if (!k) return { badge: { tone: "neutral", text: "capital not checked" }, lines: ["The app does the capital check only for live proposals."] };
@@ -271,19 +237,13 @@ export function capitalFitView(c: Capacity | null | undefined): { badge: Badge; 
   return { badge: k.fits ? { tone: "measured", text: "fits the capital budget" } : { tone: "caution", text: "breaches the capital budget", title: "The app rejects an order that increases exposure and goes over a budget (capital_budget)." }, lines };
 }
 
-// ------------------------------------------------------------------ capital usage (Portfolio)
-
 export interface Meter { k: string; used: number | null; limit: number | null; frac: number | null; text: string; warn: boolean }
 export interface CapitalView {
   read: boolean;
-  /** False: the broker has no account read, so the budget is not enforced (not fail-closed). */
   checked: boolean;
-  /** The live read failed and the backend served its last good read. */
   stale: Badge | null;
-  /** Header tag: breaches, "within budget" (only on a real read) or "budget not checked". */
   status: Badge;
   error: string | null;
-  /** How orders are gated right now, worded by the actual case. */
   enforcement: string;
   tiles: CapacityRow[];
   meters: Meter[];
@@ -298,8 +258,6 @@ function meter(k: string, used: number | null | undefined, limit: number | null 
   return { k, used: u, limit: l, frac, text: `${usd(u)} of ${usd(l)}${frac != null ? ` · ${(frac * 100).toFixed(frac < 0.1 && frac > 0 ? 1 : 0)}%` : ""}`, warn: frac != null && frac > 0.8 };
 }
 
-/** The capital budget in words, from the limits the backend enforces (GET /capital `limits`, CAPITAL_MAX_GROSS_PCT /
- *  CAPITAL_MAX_EVENT_PCT); no numbers when the limits are not known, so the copy never disagrees with the gate. */
 export function budgetPhrase(lim: Pick<CapitalLimits, "max_gross_hedge_pct" | "max_event_pct"> | null | undefined): string {
   if (!lim || !fin(lim.max_gross_hedge_pct) || !fin(lim.max_event_pct)) return "gross hedge, per-event and buying-power limits";
   return `gross hedge ≤ ${pctOf(lim.max_gross_hedge_pct)} of equity, one event ≤ ${pctOf(lim.max_event_pct)}, buying power`;
@@ -308,8 +266,6 @@ export function budgetPhrase(lim: Pick<CapitalLimits, "max_gross_hedge_pct" | "m
 export function capitalView(c: CapitalOut | null | undefined): CapitalView {
   if (!c) return { read: false, checked: false, stale: null, status: { tone: "neutral", text: "budget not read" }, error: "The app reads the capital budget…", enforcement: "", tiles: [], meters: [], events: [], breaches: [], note: "" };
   const read = c.account_read !== false && fin(c.equity);
-  // account_checked is false when the broker has no account read; older payloads: a failed read carries the
-  // account_unreadable breach, so its absence on an unread account means "not checked".
   const checked = c.account_checked ?? (read || (c.breaches ?? []).some((b) => b.kind === "account_unreadable"));
   const tiles: CapacityRow[] = [
     { k: "EQUITY", v: usd(c.equity, { compact: false }), sub: c.account_label ? `${c.account_label}${c.account_type ? ` (${c.account_type})` : ""}` : undefined },
@@ -339,9 +295,6 @@ export function capitalView(c: CapitalOut | null | undefined): CapitalView {
   return { read, checked, stale, status, error, enforcement, tiles, meters, events, breaches, note: c.note ?? "" };
 }
 
-// ------------------------------------------------------------------ broker account (Webull paper)
-
-/** The nav / Portfolio account pill: "Webull paper · Individual Margin · market closed". */
 export function accountPill(a: AccountOut | null | undefined, session?: Pick<SessionView, "equities_open"> | null): { text: string; tone: Tone; title: string } {
   if (!a) return { text: "Account not available", tone: "demo", title: "The app cannot read the account." };
   const webull = (a.broker ?? "").toLowerCase().includes("webull");
@@ -351,8 +304,6 @@ export function accountPill(a: AccountOut | null | undefined, session?: Pick<Ses
   return { text: parts.join(" · "), tone: webull ? "paper" : "sim", title: a.note ?? (webull ? "Webull paper account on the sandbox host. It accepts orders from 09:30 to 16:00 ET." : "Simulated account in the app.") };
 }
 
-/** Which Webull figure BUYING POWER is: webull.py uses an explicit buying_power / stock_buying_power when Webull sends
- *  one and the overnight figure (else intraday) only as a fallback, so the label follows the numbers. */
 function bpBasis(a: AccountOut): string | undefined {
   if (fin(a.overnight_buying_power) && a.buying_power === a.overnight_buying_power) return "overnight figure";
   if (fin(a.day_buying_power) && a.buying_power === a.day_buying_power && !fin(a.overnight_buying_power)) return "intraday figure";
@@ -375,7 +326,6 @@ export function accountRows(a: AccountOut | null | undefined): CapacityRow[] {
   return rows;
 }
 
-/** Broker positions vs demo seed rows (GET /positions?include_demo=true labels each row by `account`). */
 export function splitPositions(ps: BrokerPosition[]): { broker: BrokerPosition[]; demo: BrokerPosition[] } {
   const isDemo = (p: BrokerPosition) => p.broker === "demo" || p.account === "demo holdings";
   return { broker: ps.filter((p) => !isDemo(p) && p.qty !== 0), demo: ps.filter(isDemo) };
@@ -383,7 +333,6 @@ export function splitPositions(ps: BrokerPosition[]): { broker: BrokerPosition[]
 
 export const ORIGIN_LABEL: Record<string, string> = { polybridge: "placed here", webull_open: "open at Webull", webull_history: "Webull history" };
 
-/** Order history rows, newest first, with where each came from and the broker's own status word. */
 export function orderRows(os: BrokerOrder[]): { key: string; when: string; side: string; qty: number; symbol: string; status: string; px: string; origin: string; title: string }[] {
   const ts = (o: BrokerOrder) => Date.parse(o.filled_at ?? o.created_at ?? "") || 0;
   return [...os].sort((a, b) => ts(b) - ts(a)).map((o) => {
@@ -398,7 +347,6 @@ export function orderRows(os: BrokerOrder[]): { key: string; when: string; side:
   });
 }
 
-/** One line on the order reconciler: running / idle (why) / stopped, passes and the last result. */
 export function reconcileView(r: ReconcileStatus | null | undefined): { badge: Badge; line: string } {
   if (!r) return { badge: { tone: "neutral", text: "reconcile n/a" }, line: "The reconciler status is not available." };
   if (r.supported === false) return { badge: { tone: "neutral", text: "no reconciler" }, line: `${r.broker ?? "This broker"} fills orders in the app. There is nothing to reconcile.` };
@@ -410,9 +358,6 @@ export function reconcileView(r: ReconcileStatus | null | undefined): { badge: B
   return { badge: { tone: "live", text: "reconciling" }, line: `The reconciler runs every ${r.interval_s ?? 15} s during the regular session. Passes: ${r.passes ?? 0}.${last}${errs}` };
 }
 
-// ------------------------------------------------------------------ staged plans (hedge B)
-
-/** Badges on a staged order: its evidence gate ("validated" / "override") and any capital or liquidity decision. */
 export function stagedBadges(o: { evidence_gate?: string | null; evidence?: string | null; reason?: string | null; decisions?: { code: string; detail?: string | null }[] | null; liquidity?: { status?: string; rule?: string } | null; capital?: { ok?: boolean; enforced?: boolean } | null }): Badge[] {
   const out: Badge[] = [];
   const ev = evidenceLabelBadge(o.evidence_gate ?? o.evidence);
@@ -425,8 +370,6 @@ export function stagedBadges(o: { evidence_gate?: string | null; evidence?: stri
   return out;
 }
 
-/** How many orders the participation caps cut and the capital budget refused, from the fills seen on the stream
- *  (the summary's counters are read once; the larger of the two is shown). */
 export function gateCounts(fills: (GatedFill | null | undefined)[], summary?: { liquidity_capped?: number; capital_refused?: number } | null): { liquidity: number; capital: number } {
   let liquidity = 0, capital = 0;
   for (const f of fills) {

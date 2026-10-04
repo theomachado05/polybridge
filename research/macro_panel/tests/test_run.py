@@ -1,4 +1,3 @@
-"""Selection walk, rows, the key gate and the .done marker with fake PM and equity data (no network, no key)."""
 import json
 
 import pandas as pd

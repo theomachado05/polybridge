@@ -4,8 +4,6 @@
 
 namespace hedgecore::algos {
 
-// Today's Engine, generalized: DeltaBridge h* = round(c * N * p_adverse) on the de-vigged implied probability,
-// sigma-gated, banded and fee-gated.
 struct EquityDeltaBridge : AlgoBase<EquityDeltaBridge> {
   static constexpr const char* id = "equity_delta_bridge";
   static constexpr const char* division = "hedge";
@@ -51,4 +49,4 @@ struct EquityDeltaBridge : AlgoBase<EquityDeltaBridge> {
   void on_reject(Instrument i) noexcept { core.on_reject(i); }
 };
 
-}  // namespace hedgecore::algos
+}

@@ -43,7 +43,6 @@ SPORTS = re.compile(r"\b(nba|nfl|mlb|nhl|ncaa|fifa|ufc|mma|tennis|counter-strike
 
 
 def row_for(bids, asks, ts_ns: int, under_px: float | None) -> dict | None:
-    """One replay row from a YES book, or None when either side is empty (no mid, so no honest tick)."""
     mid = book_mid(bids, asks)
     if mid is None:
         return None
@@ -51,7 +50,7 @@ def row_for(bids, asks, ts_ns: int, under_px: float | None) -> dict | None:
     row: dict = {"ts_ns": ts_ns, "p": round(mid, 6)}
     for k, v in f.items():
         if k == "eightk_score" or not math.isfinite(v):
-            continue  # unknown stays unknown: NaN fields are omitted, the replay fills them with NaN
+            continue
         row[k] = v
     if under_px is not None:
         row["under_px"] = under_px
@@ -59,7 +58,6 @@ def row_for(bids, asks, ts_ns: int, under_px: float | None) -> dict | None:
 
 
 async def resolve(http: httpx.AsyncClient, spec: str) -> tuple[str, str, str]:
-    """``slug=ID`` -> (slug, YES token id, question)."""
     slug, _, ident = spec.partition("=")
     if not ident:
         raise SystemExit(f"--market needs slug=ID, got {spec!r}")
@@ -112,7 +110,7 @@ async def record_one(http: httpx.AsyncClient, slug: str, token: str, out: Path, 
             try:
                 bids, asks = await polymarket_book(http, token)
                 row = row_for(bids, asks, time.time_ns(), equity.get("px") if equity else None)
-            except Exception as e:  # network blip: skip this sample
+            except Exception as e:
                 row = None
                 print(f"[{slug}] poll failed: {type(e).__name__}", flush=True)
             if row is None:
@@ -146,7 +144,7 @@ async def main_async(a: argparse.Namespace) -> int:
             if ticker:
                 tasks.append(asyncio.create_task(equity_loop(ticker, a.equity_every, st, stop)))
             print(f"[{slug}] YES token {token[:12]}...  {question}  equity={ticker}", flush=True)
-        await asyncio.sleep(2 if a.equity else 0)  # let the first equity quote land
+        await asyncio.sleep(2 if a.equity else 0)
         results = await asyncio.gather(*[record_one(http, slug, token, a.outdir / f"{slug}-book.jsonl", deadline, a.interval, st)
                                          for (slug, token, _), st in zip(specs, states)])
         stop.set()

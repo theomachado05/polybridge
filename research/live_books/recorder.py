@@ -1,10 +1,3 @@
-"""Live recorder for the Polymarket CLOB market websocket on the forward_monday universe. Each frame goes as raw bytes to
-hedgecore_book.BookEngine, which parses it, updates the token books and runs the stale-quote detector on every touched
-token in one C++ call. Raw messages and decisions go to hourly gzip JSONL. No order is ever sent.
-
-    cd research && nohup caffeinate -i .venv/bin/python -m live_books.recorder > results/live_books/nohup.out 2>&1 &
-    research/live_books/stop.sh
-"""
 from __future__ import annotations
 
 import argparse

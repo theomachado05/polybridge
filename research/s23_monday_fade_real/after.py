@@ -1,9 +1,3 @@
-"""S23, looked at AFTER the run (not pre-registered; never changes a verdict). Checks on the T2 book, which passed its line:
-an interval for its Sharpe, the plain t-statistic of its closure returns, duplicated print records, how late the prints
-were, and how concentrated the profit is. Writes after_run.json.
-
-    .venv/bin/python -m s23_monday_fade_real.after
-"""
 from __future__ import annotations
 
 import json
@@ -22,7 +16,6 @@ def sharpe(r: np.ndarray) -> float:
 
 
 def sharpe_interval(pnl_by_closure: dict[str, float], calendar: list[str]) -> dict:
-    """Resample the calendar's closures (idle ones included) and recompute the Sharpe. The capital base cancels."""
     r = np.array([pnl_by_closure.get(d, 0.0) for d in calendar])
     pick = np.random.default_rng(cfg.BOOT_SEED).integers(0, len(r), size=(cfg.N_BOOT, len(r)))
     x = r[pick]
@@ -60,7 +53,6 @@ def main() -> int:
     out["overlap_with_s6_verified"] = {"t2_trades_that_s6_verified": int(b.s6_verified.sum()), "t2_trades_s6_did_not_verify": int((~b.s6_verified).sum()),
                                        "pnl_s6_verified": float(b[b.s6_verified].pnl.sum()), "pnl_not_s6_verified": float(b[~b.s6_verified].pnl.sum())}
 
-    # duplicated print records: the same hash, side, token, price and size listed twice. Count each once and replay.
     s6 = s23.load_s6()
     tot, n, dup_markets = 0.0, 0, 0
     for r in s6.itertuples():
@@ -79,7 +71,6 @@ def main() -> int:
             tot, n = tot + k * s23.pnl_per_contract(r.side, x["entry"], float(r.outcome)), n + 1
     out["duplicate_records_counted_once"] = {"entries_whose_market_has_duplicates": dup_markets, "trades": n, "total": tot}
 
-    # an independent replay of T2 that shares no function with run.py: straight from the raw records
     tot, n = 0.0, 0
     for r in s6.itertuples():
         ps = json.loads((cfg.S6_PRINTS / f"prints_{int(r.market_id)}.json").read_text())

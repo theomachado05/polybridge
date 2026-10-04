@@ -1,4 +1,3 @@
-"""S5: the universe filters, the two-labeller agreement rule, the signal threshold and costs."""
 import json
 
 import pandas as pd
@@ -18,8 +17,8 @@ def test_events_are_dropped_by_tag():
 def test_sessions_alive_counts_only_the_window():
     cal = TradingCalendar("2025-01-01", "2027-12-31")
     assert un.sessions_alive("2026-03-02T00:00:00Z", "2026-03-06T00:00:00Z", cal) == 5
-    assert un.sessions_alive("2025-01-01T00:00:00Z", "2025-09-01T00:00:00Z", cal) == 0           # before the window
-    assert un.sessions_alive("2026-09-28T00:00:00Z", "2027-06-01T00:00:00Z", cal) == 5           # clipped at the window end
+    assert un.sessions_alive("2025-01-01T00:00:00Z", "2025-09-01T00:00:00Z", cal) == 0
+    assert un.sessions_alive("2026-09-28T00:00:00Z", "2027-06-01T00:00:00Z", cal) == 5
 
 
 def test_a_link_needs_both_labellers_and_both_calling_it_an_event(tmp_path, monkeypatch):
@@ -35,8 +34,8 @@ def test_a_link_needs_both_labellers_and_both_calling_it_an_event(tmp_path, monk
                {"id": "polymarket:2", "family": "event", "links": [up]},
                {"id": "polymarket:3", "family": "event", "links": [up]}])
     lab("1B", [{"id": "polymarket:1", "family": "event", "links": [up, {"ticker": "NOT_ON_MENU", "direction": "up_on_yes"}]},
-               {"id": "polymarket:2", "family": "event", "links": [down]},                    # same ticker, opposite direction
-               {"id": "polymarket:3", "family": "spot_proxy", "links": [up]}])               # not an event for one of them
+               {"id": "polymarket:2", "family": "event", "links": [down]},
+               {"id": "polymarket:3", "family": "spot_proxy", "links": [up]}])
     monkeypatch.setattr(r5, "HERE", tmp_path)
     links, stats = r5.merge_links()
     assert [(l["market"], l["ticker"], l["direction"]) for l in links] == [("polymarket:1", "TLT", 1)]

@@ -1,8 +1,3 @@
-"""S1 historical backtest (METHOD.md). Reads the cached pull, runs every variant at 1x and 2x costs on IS and OOS,
-checks entries against Polymarket trade prints, and writes research/results/s1_twin_spread/.
-
-Run from `research/`:  python -m s1_twin_spread.run --rate 0.0417
-"""
 from __future__ import annotations
 
 import argparse
@@ -48,7 +43,6 @@ def coverage(P: en.Pair) -> dict:
 
 
 def seg_index(P: en.Pair, start: int, end: int) -> tuple[int, int]:
-    """Grid indices [i0, i1) of the pair inside [start, end)."""
     return int(np.searchsorted(P.t, start, "left")), int(np.searchsorted(P.t, end, "left"))
 
 
@@ -58,8 +52,6 @@ def age_at(ts: np.ndarray, t: int) -> float:
 
 
 def verify_print(prints: list[dict], tr: en.Trade, window: float = cfg.PRINT_WINDOW_S) -> tuple[int, float]:
-    """Trade prints that show the Polymarket price this entry needs (METHOD.md section 8). A: we buy YES, so a taker
-    bought YES at or below our price. B: we buy NO, which hits the YES bid, so a taker sold YES at or above it."""
     n, size = 0, 0.0
     for t in prints:
         ts = t.get("timestamp")
@@ -92,7 +84,6 @@ def main() -> int:
     calib = calibrate_half_spreads()
     log: list[str] = []
 
-    # ---- pass 1: usable pairs, coverage, the history window
     usable, pair_rows = [], []
     for meta in pull["pairs"]:
         c = calib.get(meta["token"])
@@ -127,7 +118,6 @@ def main() -> int:
     marks = {s: en.day_marks(a_, min(b_, t1)) for s, (a_, b_) in segs.items()}
     log.append(f"history window {iso(t0)} to {iso(t1)}; split {iso(split)}; {len(usable)} pairs used")
 
-    # ---- pass 2: every variant x cost x segment
     runs = [(q, v, c, s) for q, _ in cfg.QUOTE_RULES for v in cfg.VARIANTS for c in cfg.COST_MULTIPLIERS for s in segs]
     equity = {(q, v.id, c, s, m): np.zeros(len(marks[s])) for q, v, c, s in runs for m in MARKS}
     trades: list[dict] = []
@@ -174,7 +164,6 @@ def main() -> int:
                         trades.append(d)
         del P, L
 
-    # ---- trade-print check
     metas = {m["ticker"]: m for m in usable}
     prints: dict[str, list[dict]] = {}
     if not a.skip_prints:
@@ -199,12 +188,11 @@ def main() -> int:
         d["verified_qty"] = share * d["qty"]
         d["pnl_mid_verified"] = d["pnl_mid"] * share
         d["pnl_locked_verified"] = d["pnl_locked"] * share
-        d["edge_at_entry_verified"] = d["edge_in"] * d["verified_qty"]     # needs no modelled exit
+        d["edge_at_entry_verified"] = d["edge_in"] * d["verified_qty"]
         key = (d["quote_rule"], d["variant"], d["cost_mult"], d["segment"], "mid_verified")
         equity.setdefault(key, np.zeros(len(marks[d["segment"]])))
         equity[key] += d.pop("_path") * share
 
-    # ---- metrics
     rows = []
     for q, v, c, s in runs:
         tt = [d for d in trades if (d["quote_rule"], d["variant"], d["cost_mult"], d["segment"]) == (q, v.id, c, s)]
@@ -250,7 +238,6 @@ def main() -> int:
             "entries_pm_price_45_55": sum(1 for d in tt if 0.45 <= d["pm_hist_price"] <= 0.55),
             "median_abs_gap_at_entry": float(np.median([abs(d["pm_hist_price"] - (d["kalshi_bid"] + d["kalshi_ask"]) / 2) for d in tt])) if tt else float("nan"),
         })
-    # deflated Sharpe across the variants of each (segment, cost)
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     from polybridge_research.stats import deflated_sharpe
     for row in rows:
@@ -263,7 +250,6 @@ def main() -> int:
         else:
             row["deflated_sharpe_prob"] = float("nan")
 
-    # ---- write
     def write_csv(name: str, recs: list[dict]) -> None:
         keys: list[str] = []
         for rec in recs:

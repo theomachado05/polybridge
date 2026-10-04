@@ -1,10 +1,3 @@
-"""Venue-neutral description of one binary market ("claim"), extracted from a Polymarket gamma market or a Kalshi
-market. Everything the matcher compares lives here: the question's content words, entities, numeric thresholds,
-explicit dates, direction words, the resolution deadline and the sources named in the resolution text.
-
-Extraction is deliberately conservative: when a feature cannot be read, it is left empty and the matcher treats
-"empty on one side, present on the other" as a reason NOT to verify.
-"""
 from __future__ import annotations
 
 import re
@@ -24,7 +17,6 @@ STOPWORDS = frozenset("""will the a an of in on by before after at to be is are 
 that from as it its who what which how does do did has have if then there their during within least most into over
 under up down above below more less higher lower""".split())
 
-# direction vocabulary -> class. Multi-word phrases are replaced before tokenising.
 UP_WORDS = ("at or above", "or above", "or more", "or higher", "at least", "greater than or equal", "above", "over",
             "exceed", "exceeds", "more than", "greater than", "higher than", "increase", "increases", "raise",
             "raises", "hike", "hikes", "rise", "rises", "rises above", "surpass", "surpasses")
@@ -37,7 +29,6 @@ INCLUSIVE = ("at or above", "or above", "or more", "or higher", "at least", "gre
 
 NEG_WORDS = frozenset({"not", "no", "never", "without", "neither", "nor", "fail", "fails"})
 
-# Canonical names for sources named in resolution text. Longest alternatives first.
 SOURCE_PATTERNS: dict[str, re.Pattern] = {k: re.compile(v, re.I) for k, v in {
     "bls": r"bureau of labor statistics|\bbls\b",
     "bea": r"bureau of economic analysis|\bbea\b",
@@ -90,26 +81,26 @@ _MULT = {"k": 1e3, "thousand": 1e3, "m": 1e6, "mm": 1e6, "million": 1e6, "b": 1e
 
 @dataclass(frozen=True)
 class Claim:
-    venue: str                              # "polymarket" | "kalshi"
-    id: str                                 # gamma market id | Kalshi ticker
+    venue: str
+    id: str
     question: str
     rules: str
-    deadline: date | None                   # resolution deadline, America/New_York calendar date
-    ref: dict = field(default_factory=dict)  # venue ids / urls echoed into the map
+    deadline: date | None
+    ref: dict = field(default_factory=dict)
     tokens: frozenset[str] = frozenset()
     entities: frozenset[str] = frozenset()
-    numbers: frozenset[tuple[float, str]] = frozenset()   # (value, unit) thresholds, dates and years removed
+    numbers: frozenset[tuple[float, str]] = frozenset()
     years: frozenset[int] = frozenset()
-    dates: frozenset[date] = frozenset()    # explicit full dates written in the question
-    periods: frozenset[tuple[int, int]] = frozenset()      # (year, month) written in the question
-    directions: frozenset[str] = frozenset()  # subset of {"up", "down", "flat", "between"}
-    inclusive: bool | None = None           # boundary inclusive (>=) vs exclusive (>), None if unknown/not applicable
+    dates: frozenset[date] = frozenset()
+    periods: frozenset[tuple[int, int]] = frozenset()
+    directions: frozenset[str] = frozenset()
+    inclusive: bool | None = None
     negated: bool = False
     sources: frozenset[str] = frozenset()
     price_like: bool = False
-    clock: frozenset[str] = frozenset()   # snapshot times (ET, HH:MM) named in the resolution text
+    clock: frozenset[str] = frozenset()
     rules_tokens: frozenset[str] = frozenset()
-    cond_entities: frozenset[str] = frozenset()  # proper nouns in the opening of the resolution text (the condition)
+    cond_entities: frozenset[str] = frozenset()
 
 
 def _num(x) -> float | None:
@@ -141,8 +132,6 @@ _UP, _DOWN, _FLAT, _INCL = (_phrase_regex(UP_WORDS), _phrase_regex(DOWN_WORDS), 
 
 
 def extract_dates(text: str, default_year: int | None = None) -> tuple[set[date], set[tuple[int, int]], str]:
-    """(full dates, (year, month) periods, text with those spans removed). A "Month D" without a year takes
-    ``default_year`` when given, else it is dropped."""
     dates: set[date] = set()
     periods: set[tuple[int, int]] = set()
 
@@ -176,8 +165,6 @@ def extract_dates(text: str, default_year: int | None = None) -> tuple[set[date]
 
 
 def extract_numbers(text: str) -> tuple[set[tuple[float, str]], set[int]]:
-    """Numeric thresholds as (value, unit) with k/m/b suffixes expanded, unit in {"", "$", "%", "bp"}; 4-digit
-    19xx-21xx numbers with no unit/suffix are years, returned separately."""
     nums: set[tuple[float, str]] = set()
     years: set[int] = set()
     for m in _NUM.finditer(text):
@@ -202,7 +189,6 @@ def extract_numbers(text: str) -> tuple[set[tuple[float, str]], set[int]]:
 
 
 def stem(w: str) -> str:
-    """Crude stemmer, enough to equate announce/announces/announced/announcement and plurals."""
     for suf in ("ement", "ment", "ing", "ed", "es", "s"):
         if len(w) > len(suf) + 3 and w.endswith(suf) and not (suf == "s" and w.endswith("ss")):
             w = w[: -len(suf)]
@@ -211,7 +197,6 @@ def stem(w: str) -> str:
 
 
 def _canon_phrases(text: str) -> str:
-    """Multi-word names that must tokenise identically on both venues."""
     return re.sub(r"\bfederal reserve(?: board| system)?\b", "Fed", text, flags=re.I)
 
 
@@ -230,7 +215,6 @@ def _tokens(text: str) -> set[str]:
 
 
 def _entities(question: str) -> set[str]:
-    """Capitalised words (not sentence starters) and all-caps tickers: the proper nouns that must agree."""
     out = set()
     words = re.findall(r"[A-Za-z][A-Za-z0-9&.\-']*", _canon_phrases(question))
     for i, w in enumerate(words):
@@ -252,8 +236,6 @@ _GENERIC_CAPS = frozenset({"this", "market", "yes", "no", "otherwise", "if", "fo
 
 
 def _cond_entities(text: str) -> set[str]:
-    """Proper nouns and tickers in the condition sentence(s) of a resolution text, minus boilerplate capitals."""
-    # First sentence only; "U.S." must not split into "U" and "S".
     text = re.sub(r"\bU\.S\.A?\.?", "US", _canon_phrases(text))
     m = re.search(r"(?<=[a-z0-9\"”)])\.\s+(?=[A-Z])|\n", text)
     words = re.findall(r"[A-Za-z][A-Za-z0-9&\-']*|\S", text[: m.start()] if m else text)
@@ -266,7 +248,7 @@ def _cond_entities(text: str) -> set[str]:
             continue
         run = ((i > 0 and words[i - 1][:1].isupper() and words[i - 1].lower() not in _GENERIC_CAPS)
                or (i + 1 < len(words) and words[i + 1][:1].isupper() and words[i + 1].lower() not in _GENERIC_CAPS))
-        if run and not w.isupper():  # a multi-word proper name ("Initial Public Offering") is not judged word by word
+        if run and not w.isupper():
             continue
         out.add(stem(_SYN.get(lw, lw)))
     return out
@@ -288,7 +270,7 @@ def _direction(question: str, strike_type: str | None = None) -> tuple[set[str],
     if re.search(r"\bbetween\b", question, re.I):
         dirs.add("between")
     st = (strike_type or "").lower()
-    if st:  # Kalshi's structured strike beats prose
+    if st:
         table = {"greater": ({"up"}, False), "greater_or_equal": ({"up"}, True), "less": ({"down"}, False),
                  "less_or_equal": ({"down"}, True), "between": ({"between"}, None), "functional": (set(), None),
                  "custom": (set(), None), "structured": (set(), None)}
@@ -303,8 +285,6 @@ _CLOCK = re.compile(r"\b(\d{1,2})(?::(\d{2}))?\s*([ap])\.?m\.?\s*\(?(?:et|est|ed
 
 
 def clock_times(text: str) -> set[str]:
-    """Snapshot times written in ET ("12:00 PM ET" -> "12:00") as HH:MM. The end-of-day deadline phrase
-    ("11:59 PM ET") is a deadline, not a snapshot, and is left out."""
     out = set()
     for m in _CLOCK.finditer(text):
         h, mi = int(m.group(1)) % 12, int(m.group(2) or 0)
@@ -326,17 +306,15 @@ def _build(venue: str, id_: str, question: str, rules: str, deadline: date | Non
     nums, years = extract_numbers(rest)
     nums |= extra_numbers or set()
     dirs, inclusive = _direction(question, strike_type)
-    # comparison symbols are content ("Cut >25bps" is not "Cut 25bps"): spell them so they survive tokenising
     spelled = re.sub(r"[≥]|>=", " gte ", rest)
     spelled = re.sub(r"[≤]|<=", " lte ", spelled)
     spelled = re.sub(r">", " gt ", spelled)
     spelled = re.sub(r"<", " lt ", spelled)
     q_tokens = _tokens(spelled)
-    # direction/negation vocabulary is compared separately, not as content
     dir_vocab = {stem(w) for ws in (UP_WORDS, DOWN_WORDS, FLAT_WORDS, INCLUSIVE) for p in ws for w in p.split()}
     q_tokens = {t for t in q_tokens if t not in dir_vocab and t not in NEG_WORDS} | {str(y) for y in years}
     neg = bool(set(re.findall(r"[a-z]+", question.lower())) & NEG_WORDS) and "flat" not in dirs
-    if "flat" in dirs:  # "no change" is the direction, not a negation of one
+    if "flat" in dirs:
         neg = bool(set(re.findall(r"[a-z]+", _FLAT.sub(" ", question).lower())) & NEG_WORDS)
     ents = {e for e in _entities(question) if e not in dir_vocab}
     r_tokens = _tokens(rules[:1500])
@@ -350,7 +328,6 @@ def _build(venue: str, id_: str, question: str, rules: str, deadline: date | Non
 
 
 def from_polymarket(m: dict) -> Claim | None:
-    """m: a slimmed gamma market (see sources.slim_polymarket)."""
     q = (m.get("question") or "").strip()
     if not q or m.get("id") is None:
         return None
@@ -362,14 +339,12 @@ def from_polymarket(m: dict) -> Claim | None:
 
 
 def from_kalshi(m: dict) -> Claim | None:
-    """m: a slimmed Kalshi market (see sources.slim_kalshi_market) with the event title under ``event_title``."""
     tk = m.get("ticker")
     title = (m.get("title") or "").strip()
     if not tk or not title:
         return None
     sub = (m.get("yes_sub_title") or "").strip()
     st = (m.get("strike_type") or "").lower()
-    # Kalshi titles of multi-outcome events are "Who will win X?" with the outcome in yes_sub_title.
     question = title if not sub or sub.lower() in title.lower() else f"{title} {sub}"
     rules = f"{m.get('rules_primary') or ''} {m.get('rules_secondary') or ''}"
     close = _et_date(m.get("close_time"))
@@ -381,7 +356,6 @@ def from_kalshi(m: dict) -> Claim | None:
     ref = {"ticker": tk, "event_ticker": m.get("event_ticker"), "question": question, "close_time": m.get("close_time"),
            "category": m.get("category")}
     c = _build("kalshi", tk, question, rules, close, ref, strike_type=st or None)
-    # Structured strikes replace prose numbers only when the prose carries none (units are unknown on the API field).
     if extra and not c.numbers:
         c = _replace(c, numbers=frozenset(extra))
     return c

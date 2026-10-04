@@ -1,8 +1,3 @@
-"""Fetch + cache (METHOD.md section 1). Network only here; everything downstream is pure.
-
-PM: Polymarket CLOB prices-history per market x closure (the `leadlag.data` fetcher, cached by URL hash).
-SPY: Massive minute bars (month chunks, extended hours), daily bars and cash dividends (MassiveClient cache).
-"""
 from __future__ import annotations
 
 import json
@@ -20,16 +15,12 @@ from .config import CACHE_DIR, EVENTS_PATH, MARKETS_PATH, PARAMS, SPAN_START, TI
 GAMMA = "https://gamma-api.polymarket.com"
 
 
-# ---------------------------------------------------------------- universe
-
-
 def _utc(s) -> pd.Timestamp:
     t = pd.Timestamp(s)
     return t.tz_localize("UTC") if t.tzinfo is None else t.tz_convert("UTC")
 
 
 def panel_a_markets(session=None) -> list[dict]:
-    """The two panel-A markets with life from gamma metadata (startDate, closedTime else endDate). No prices read."""
     import yaml
 
     doc = yaml.safe_load(open(EVENTS_PATH))["markets"]
@@ -74,7 +65,6 @@ def replication_markets(ranks: range | None = None) -> list[dict]:
 
 
 def market_closures(m: dict, last_session: pd.Timestamp, cal: TradingCalendar) -> list[Closure]:
-    """Closures with close day in [SPAN_START, session before last_session] covered by the market's life."""
     s, e = _utc(m["start"]), _utc(m["end"])
     out = []
     for c in build_closures(SPAN_START, (last_session - pd.Timedelta(days=1)).strftime("%Y-%m-%d"), cal):
@@ -96,9 +86,6 @@ def fetch_pm_for(m: dict, closures: list[Closure], session=None, workers: int = 
 
     with ThreadPoolExecutor(max_workers=workers) as ex:
         return dict(ex.map(one, closures))
-
-
-# ---------------------------------------------------------------- SPY
 
 
 def _chunks(start: str, end: str) -> list[tuple[pd.Timestamp, pd.Timestamp]]:

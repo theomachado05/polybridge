@@ -20,7 +20,7 @@ def ns(t):
 def test_move_since_friday_close_on_saturday():
     tr = ClosureTracker()
     tr.observe(K, ns(et(2026, 10, 2, 15, 50)), 0.40)
-    tr.observe(K, ns(et(2026, 10, 2, 15, 59)), 0.42)   # anchor: last point at or before 16:00
+    tr.observe(K, ns(et(2026, 10, 2, 15, 59)), 0.42)
     tr.observe(K, ns(et(2026, 10, 3, 9, 0)), 0.55)
     tr.observe(K, ns(et(2026, 10, 3, 11, 0)), 0.50)
     s = tr.state(K, et(2026, 10, 3, 12, 0))
@@ -42,7 +42,7 @@ def test_explicit_time_ignores_later_points():
 def test_stale_close_anchor_and_missing_data():
     tr = ClosureTracker()
     assert tr.state(K, et(2026, 10, 3, 12, 0)).status == NO_PM_DATA
-    tr.observe(K, et(2026, 10, 2, 15, 0), 0.42)  # an hour before the close: older than 30 min
+    tr.observe(K, et(2026, 10, 2, 15, 0), 0.42)
     tr.observe(K, et(2026, 10, 3, 11, 0), 0.50)
     s = tr.state(K, et(2026, 10, 3, 12, 0))
     assert s.status == NO_CLOSE_PRICE and s.move_pp is None and s.p_now == 0.50
@@ -61,7 +61,7 @@ def test_out_of_order_duplicate_and_invalid_points():
     tr = ClosureTracker()
     tr.observe(K, et(2026, 10, 3, 11, 0), 0.50)
     tr.observe(K, et(2026, 10, 2, 15, 59), 0.40)
-    tr.observe(K, et(2026, 10, 2, 15, 59), 0.42)  # same time replaces
+    tr.observe(K, et(2026, 10, 2, 15, 59), 0.42)
     assert not tr.observe(K, et(2026, 10, 3, 11, 30), float("nan"))
     assert not tr.observe(K, et(2026, 10, 3, 11, 30), 1.5)
     assert abs(tr.state(K, et(2026, 10, 3, 12, 0)).move_pp - 8.0) < 1e-9
@@ -88,7 +88,6 @@ def test_old_point_behind_live_series_is_rejected_not_silently_dropped():
     assert not tr.observe(K, et(2024, 7, 1, 12, 0), 0.4)
     assert len(tr._t[K]) == 1
     assert not tr.accepts(K, et(2024, 7, 1, 12, 0)) and tr.accepts(K, et(2026, 9, 30, 12, 0))
-    # replays use their own key, so the same old points are kept there
     rk = replay_key("polymarket", "m1")
     assert rk != K and tr.observe(rk, et(2024, 7, 1, 12, 0), 0.4) and tr.has(rk)
 
@@ -103,13 +102,13 @@ def test_bad_timestamp_returns_false_never_raises():
 def test_repeated_price_is_downsampled_but_lookups_hold():
     tr = ClosureTracker()
     t0 = to_utc(et(2026, 10, 2, 15, 0)).timestamp()
-    for s in range(0, 3600):           # one tick per second, constant price, through the 16:00 close
+    for s in range(0, 3600):
         assert tr.observe(K, t0 + s, 0.42)
-    assert len(tr) <= 61               # about one stored point a minute
+    assert len(tr) <= 61
     tr.observe(K, et(2026, 10, 3, 11, 0), 0.50)
     s = tr.state(K, et(2026, 10, 3, 12, 0))
     assert s.status == TRACKING and abs(s.move_pp - 8.0) < 1e-9
-    tr.observe(K, t0 + 3600 + 1, 0.43)  # a change is always stored
+    tr.observe(K, t0 + 3600 + 1, 0.43)
     assert tr.price_at(K, t0 + 3600 + 2)[0] == 0.43
 
 
@@ -123,8 +122,8 @@ def test_high_low_incremental_matches_full_recompute():
         s = tr.state(K, close + 3600 * (i + 1) + 1)
         assert s.high_pp == pytest.approx(100 * max(vals[:i + 1]))
         assert s.low_pp == pytest.approx(100 * min(vals[:i + 1])) and s.n_points == i + 1
-    tr.observe(K, close + 1800, 0.99)   # out-of-order insert invalidates the running values
+    tr.observe(K, close + 1800, 0.99)
     s = tr.state(K, close + 3600 * 8)
     assert s.high_pp == pytest.approx(99.0) and s.low_pp == pytest.approx(36.0)
-    s = tr.state(K, close + 3600 * 2 + 1)  # `at` moving backwards recomputes
+    s = tr.state(K, close + 3600 * 2 + 1)
     assert s.high_pp == pytest.approx(99.0) and s.low_pp == pytest.approx(41.0)

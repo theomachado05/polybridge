@@ -1,4 +1,3 @@
-"""S18: the first entry, the buckets, holding to the result, and the capital locked at one time."""
 import numpy as np
 import pandas as pd
 import pytest
@@ -11,7 +10,7 @@ V0, V1, V2, V3, V4 = cfg.VARIANTS
 
 def test_first_entry_is_the_first_weekend_start_with_a_fresh_price():
     t, p = np.array([1000, 5000, 5100]), np.array([0.30, 0.40, 0.41])
-    assert s18.first_entry(np.array([500, 4000, 5200, 9000]), t, p) == (5200.0, 0.41)    # 4000 is 3000 s after the last reading: too old
+    assert s18.first_entry(np.array([500, 4000, 5200, 9000]), t, p) == (5200.0, 0.41)
     assert s18.first_entry(np.array([1500, 5200]), t, p) == (1500.0, 0.30)
     assert s18.first_entry(np.array([500]), t, p) is None
 
@@ -44,13 +43,13 @@ def test_select_applies_the_price_range_universe_and_class():
 def test_capital_locked_at_one_time_counts_overlapping_trades_only():
     trades = [{"entry_epoch": 0, "result_epoch": 10, "capital": 90.0}, {"entry_epoch": 5, "result_epoch": 20, "capital": 80.0},
               {"entry_epoch": 10, "result_epoch": 30, "capital": 70.0}]
-    assert s18.max_locked(trades) == pytest.approx(170.0)      # at 5 to 10: 90 + 80; at 10 the first is released before the third is locked
+    assert s18.max_locked(trades) == pytest.approx(170.0)
 
 
 def test_prints_are_read_in_yes_terms_and_weighted_by_size():
     from s18_price_market_calibration import prints as pr
     assert pr.yes_terms({"outcome": "Yes", "side": "SELL", "price": 0.30, "size": 10}) == (0.30, "SELL", 10.0)
-    px, side, size = pr.yes_terms({"outcome": "No", "side": "BUY", "price": 0.70, "size": 5})      # buying NO at 0.70 sells YES at 0.30
+    px, side, size = pr.yes_terms({"outcome": "No", "side": "BUY", "price": 0.70, "size": 5})
     assert px == pytest.approx(0.30) and side == "SELL" and size == 5.0
     assert pr.yes_terms({"outcome": "maybe", "side": "BUY", "price": 0.5}) is None
     ps, tot, n = pr.weighted([(0.30, "SELL", 10.0), (0.40, "SELL", 30.0), (0.90, "BUY", 100.0)], "SELL")

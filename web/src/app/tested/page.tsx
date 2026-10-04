@@ -5,8 +5,6 @@ import { Unavailable } from "@/components/pb";
 import { NumberRow, PageHead, StatusTag, useForward, useRegistry } from "@/components/micro/parts";
 import type { ForwardStatus } from "@/lib/micro";
 
-/** What we tested: every mechanism in the evidence registry, with its status, claim, numbers (each with its range,
- *  sample and result file), caveats and forward test. Every label here is read from GET /evidence/mechanisms. */
 export default function Tested() {
   const reg = useRegistry();
   const fw = useForward();

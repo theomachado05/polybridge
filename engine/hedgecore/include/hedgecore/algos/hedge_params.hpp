@@ -1,6 +1,4 @@
 #pragma once
-// Parameter definitions shared by the hedge families. Single-value grids are fixed settings: settable per bridge,
-// never multiplied into the preset count.
 #include "hedgecore/params.hpp"
 
 namespace hedgecore::hp {
@@ -23,4 +21,4 @@ constexpr ParamDef sigma_k() {
   return param("sigma_k", 0, 10, 1, {0.0, 1.0, 2.0}, "trade only when |dp| >= k * EWMA sigma of dp (0 = off)");
 }
 
-}  // namespace hedgecore::hp
+}

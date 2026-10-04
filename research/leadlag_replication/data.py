@@ -1,4 +1,3 @@
-"""Fetch + cache. Reuses the wave-1 CLOB fetcher and the closed-market study's Massive month-chunk fetcher."""
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
@@ -19,8 +18,6 @@ def closure_pm_window(c: Closure) -> tuple[pd.Timestamp, pd.Timestamp]:
 
 def fetch_market_pm(token_id: str, closures: list[Closure], session=None, cache_dir=None, workers: int = 6,
                     fetch=fetch_pm_history) -> dict[str, list | Exception]:
-    """CLOB points for each closure (one fidelity=1 request each), keyed by closure key. A failure is kept as the
-    exception so the row can say `fetch failed` (never imputed)."""
     cache_dir = cache_dir or (CACHE_DIR / "pm")
 
     def one(c: Closure):

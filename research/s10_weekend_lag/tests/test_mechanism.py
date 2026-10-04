@@ -34,7 +34,6 @@ def _g(P, A, stale, id_):
 
 
 def test_pair_bins_active_leads_thin_and_sign():
-    # a is active and moves at bin 1; b (pair sign -1) follows one bin later in the opposite YES direction
     n = 400
     rng = np.random.default_rng(3)
     xa = rng.normal(0, 1, n)

@@ -1,7 +1,3 @@
-"""Fill market identifiers (slug, condition id, Yes token id, question, volume) into events.yaml via gamma API.
-
-Metadata only: this step never touches a price series.   python -m leadlag.resolve
-"""
 from __future__ import annotations
 
 from pathlib import Path
@@ -26,7 +22,7 @@ def _yes_token(market: dict) -> str:
 def resolve_pm(pm: dict) -> dict:
     if "market_slug" in pm and "event_slug" not in pm:
         m = market_by_slug(pm["market_slug"])
-        if m is None:  # the slug may name a single-market event instead
+        if m is None:
             ev = event_by_slug(pm["market_slug"])
             if ev is None or len(ev.get("markets", [])) != 1:
                 raise LookupError(f"market not found: {pm['market_slug']}")
@@ -58,7 +54,7 @@ def main() -> None:
         try:
             e["pm"] = resolve_pm(e["pm"])
             print(f"{e['id']:22s} vol=${e['pm']['volume_usd']:>12,}  {e['pm']['question']}")
-        except Exception as exc:  # report and keep going; unresolved events are dropped with the reason
+        except Exception as exc:
             e["pm"]["unresolved"] = str(exc)[:300]
             bad.append(e["id"])
             print(f"{e['id']:22s} UNRESOLVED {exc}")

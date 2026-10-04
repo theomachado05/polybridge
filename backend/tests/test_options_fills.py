@@ -1,4 +1,3 @@
-"""Structure fill quotes for option intents (app/options/fills.py)."""
 import pytest
 
 from app.options import chain as ch

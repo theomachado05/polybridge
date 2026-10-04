@@ -1,7 +1,3 @@
-"""S6 report: SUMMARY.md, equity_curve.png, drawdown.png and capacity.md from the result CSVs.
-
-Run from `research/`:  python -m s6_monday_fade.report
-"""
 from __future__ import annotations
 
 import json

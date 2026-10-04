@@ -1,49 +1,3 @@
-"""Hedge B: staged session orders (docs/design.md, section 2, Product behaviour 5).
-
-While equities are closed and the prediction market moves, an equity hedge order is *staged* for the next tradable
-session. Nothing is sent before the user approves the plan.
-
-Plan (``plan_for``)
-  expected gap  from P1's gap service (``app.closed.gap``): gap_bp = rate x sign x YES move since the last regular close
-                (pp); the market's own rate and research sign when gap_rates.json lists it with enough closures, else
-                the pooled research rate (7.52 bp/pp, 380 closures) with the wide band; sign from the bridge direction
-                (down_on_yes -1, up_on_yes +1). The plan keeps the band (80%), the rate band and n closures, and adds
-                BAND_INCLUDES_ZERO when the rate band straddles zero (the pooled rate's always does).
-  sizing        on the point estimate, for a long holder (only a negative gap is adverse):
-                  total hedge = target_coverage x shares_held x min(1, |gap_bp| / full_size_gap_bp)
-                  qty = floor(total hedge - equity hedge already held - PM-leg equivalent shares - other working orders)
-                and never above the coverage room (target_coverage x shares_held minus everything already hedged, PM and
-                equity legs combined). Below ``min_gap_bp`` (or not adverse) nothing is staged.
-  timing        the next session's pre-market (04:00 ET) when the executing broker supports extended hours
-                (``Broker.extended_hours``), else the 09:30 ET regular open; immediately when that session is already on.
-Revert / resize (``reassess``)
-  The plan's rate and band are kept; the gap is recomputed from the current PM move. Not adverse beyond min_gap_bp any
-  more: cancelled (PM_REVERTED), at the broker too when the order already rests there. Smaller: an order not yet sent is
-  resized down (PM_PARTIAL_REVERT_RESIZE); an order resting at the broker is not resized (only a full revert cancels
-  it). Larger: a plan not yet approved follows the gap up too (PM_RESIZE_UP, within the coverage room); an approved
-  one is never resized up past what was approved (RESIZE_UP_NEEDS_APPROVAL; a new plan must be approved).
-Coverage (``coverage``, the same room at planning and just before sending)
-  cap (target_coverage x shares_held) minus the bridge's filled hedge, the unfilled part of its resting sell, the
-  unfilled part of this proposal's other staged sells resting at a broker, and hedge A's current PM leg in shares.
-  ``reserved_sell_qty`` is subtracted in bridges._coverage_room (with hedge A's leg) so a bridge never sells that room
-  too. A wall-clock order follows the proposal's current bridge (a restarted run gets the fill and the coverage check).
-  A fill reaches the bridge's ``on_staged_fill`` hook: its own algo and hedge A hear of the equity sold (handoff).
-Execution (``run_due`` on the wall clock; ``on_tick`` from every bridge tick, app/closed/bridge_mode.py)
-  At the session start through the active broker. Pre-market orders are limit orders (Webull takes only limits outside
-  09:30-16:00) with a collar around the lower of the quote and the expected open (a sell); regular-open orders are
-  market orders. A pre-market limit still resting at 09:30 is cancelled and its rest sent as a market order. The
-  model's expected open is never a fill price: a simulator with no quote waits (NO_QUOTE_WAIT) until the session ends.
-  Webull paper takes orders only 09:30-16:00 ET (its ``extended_hours`` capability is off by default, so its orders are
-  scheduled for the regular open). A broker refusal that only says the session is closed (``market_closed: ...``, the
-  sandbox's 417) is not a failure: the order is HELD_FOR_NEXT_SESSION, rescheduled for the next regular open with a
-  fresh client order id, and stays approved.
-Replays
-  A replay order (planned on a replay bridge named by bridge_id) moves only on replayed ticks: the tick's recorded time,
-  its PM move and its recorded equity price (never today's quote or the live tracker), through the replay bridge's own
-  sandbox broker (never the account; it waits while no sandbox is attached). Planning needs a replayed tick time
-  (409 REPLAY_NO_TICK_TIME). The background runner never moves replay orders.
-Every state change appends a reason code to ``decisions``.
-"""
 from __future__ import annotations
 
 import asyncio
@@ -76,7 +30,7 @@ POLL_S = 15.0
 EPS = 1e-9
 
 StagedStatus = Literal["staged", "approved", "working", "filled", "cancelled", "rejected", "skipped"]
-PENDING = ("staged", "approved", "working")  # still able to trade
+PENDING = ("staged", "approved", "working")
 SessionTarget = Literal["pre_market", "regular_open", "regular_now"]
 FIXED = "Fills are simulated by the SimBroker unless the active broker is Webull paper (equities)."
 
@@ -93,9 +47,6 @@ def _fin(x: Any) -> float | None:
     return v if math.isfinite(v) else None
 
 
-# --------------------------------------------------------------------------------------------- pure functions
-
-
 def gap_rate_dict(r: "gapsvc.GapRate") -> dict:
     d = {k: getattr(r, k) for k in ("rate_bp_per_pp", "se", "n_closures", "n_nonzero", "label", "source",
                                    "resid_sd_bp", "se_eff", "sign", "ticker", "use")}
@@ -105,7 +56,6 @@ def gap_rate_dict(r: "gapsvc.GapRate") -> dict:
 def choose(market_source: str | None, market_id: str | None, ticker: str, direction: str,
            token_id: str | None = None, rate_bp_per_pp: float | None = None, rate_se: float | None = None,
            n_closures: int | None = None) -> tuple["gapsvc.GapRate", int, list[str]]:
-    """(rate, sign, reason codes): a supplied rate, else the gap service's choice for the market (own or pooled)."""
     rates = gapsvc.load_rates()
     if rate_bp_per_pp is not None:
         pooled = rates.pooled
@@ -126,8 +76,6 @@ def choose(market_source: str | None, market_id: str | None, ticker: str, direct
 
 def gap_estimate(move_pp: float, rate: "gapsvc.GapRate", sign: int, ticker: str | None = None,
                  codes: list[str] | None = None) -> dict:
-    """Expected open gap (bp, positive = up) for the YES move since the close, through the gap service's formula, with
-    its 80% band, the rate band, and n closures. ``adverse`` is True when the gap hurts a long holder (negative)."""
     g = gapsvc.expected_gap(move_pp, rate, sign=sign, in_closure=True, ticker=ticker, reasons=list(codes or []))
     lo_r, hi_r = g.band_rate
     reasons = list(g.reasons)
@@ -143,7 +91,6 @@ def gap_estimate(move_pp: float, rate: "gapsvc.GapRate", sign: int, ticker: str 
 def size_hedge(gap_bp: float, shares_held: float, target_coverage: float, existing_hedge: float,
                pm_leg_equiv_shares: float, other_pending: float, full_size_gap_bp: float,
                min_gap_bp: float) -> tuple[int, list[str], dict]:
-    """(qty to sell short, reason codes, sizing detail). Coverage counts equity and PM legs together."""
     cap_total = math.floor(target_coverage * shares_held + EPS)
     hedged = max(0.0, existing_hedge) + max(0.0, pm_leg_equiv_shares) + max(0.0, other_pending)
     room = max(0, math.floor(cap_total - hedged + EPS))
@@ -165,7 +112,6 @@ def size_hedge(gap_bp: float, shares_held: float, target_coverage: float, existi
 
 
 def schedule(now: Any, extended: bool) -> tuple[SessionTarget, dt.datetime, dt.date, list[str]]:
-    """(target, execute_at UTC, session ET date, codes) for an order staged at ``now``."""
     sess = session_at(now)
     if sess.equities_open:
         return "regular_now", sess.at, sess.at.astimezone(ET).date(), ["SESSION_OPEN_NOW"]
@@ -177,9 +123,6 @@ def schedule(now: Any, extended: bool) -> tuple[SessionTarget, dt.datetime, dt.d
         return ("pre_market", sess.next_extended_open, sess.next_extended_open.astimezone(ET).date(),
                 ["NEXT_PRE_MARKET"])
     return "regular_open", sess.next_open, sess.next_open.astimezone(ET).date(), ["NO_EXTENDED_HOURS_WAIT_OPEN"]
-
-
-# ------------------------------------------------------------------------------------------------------ models
 
 
 class Decision(BaseModel):
@@ -195,11 +138,11 @@ class StagedOrder(BaseModel):
     bridge_id: str | None = None
     ticker: str
     side: Literal["sell", "buy"] = "sell"
-    qty: int                       # current quantity (after any resize)
-    approved_qty: int | None = None  # ceiling once approved: a resize never goes above it
+    qty: int
+    approved_qty: int | None = None
     planned_qty: int
     direction: str
-    market_key: str | None = None  # tracker key of the PM market whose move drives the plan
+    market_key: str | None = None
     clock: Literal["wall", "replay"] = "wall"
     session_target: SessionTarget
     execute_at: str
@@ -214,28 +157,26 @@ class StagedOrder(BaseModel):
     shares_held: float
     target_coverage: float
     pm_leg_equiv_shares: float = 0.0
-    estimate: dict                 # gap_estimate(...) at plan time
-    current: dict | None = None    # gap_estimate(...) at the latest reassessment
+    estimate: dict
+    current: dict | None = None
     sizing: dict
     planned_at: str
     approved_at: str | None = None
     executed_at: str | None = None
     client_order_id: str
     broker_order: dict | None = None
-    filled_qty: float = 0.0        # total filled over every broker order of this plan
-    prior_filled: float = 0.0      # filled by earlier (cancelled and replaced) broker orders
-    replacements: int = 0          # pre-market limits replaced by a regular-session order at the open
-    holds: int = 0                 # times the broker refused it only because the market was closed (held, resent)
+    filled_qty: float = 0.0
+    prior_filled: float = 0.0
+    replacements: int = 0
+    holds: int = 0
     fill_px: float | None = None
-    ref_source: str | None = None  # where the price sent with the order came from: quote | tick | recorded
-    limit_anchor: str | None = None  # a pre-market limit's anchor: quote | recorded | expected_open_estimate
-    reason: str | None = None      # latest reason code
-    # Evidence gate: "validated" (the market's own OOS record passes, own rate, its own ticker) or "override" (an
-    # unvalidated market staged only because the proposal / bridge set act_on_unvalidated). Carried by every order.
+    ref_source: str | None = None
+    limit_anchor: str | None = None
+    reason: str | None = None
     evidence_gate: Literal["validated", "override"] | None = None
     evidence: dict | None = None
-    liquidity: dict | None = None  # the latest participation check (plan time, then execution)
-    capital: dict | None = None    # the latest capital check (approval, execution)
+    liquidity: dict | None = None
+    capital: dict | None = None
     decisions: list[Decision] = []
     label: str = "Staged session hedge: executes only after approval, at the next tradable session."
 
@@ -243,13 +184,12 @@ class StagedOrder(BaseModel):
 class PlanIn(BaseModel):
     bridge_id: str | None = Field(default=None, max_length=64)
     proposal_id: str | None = Field(default=None, max_length=64)
-    # PM inputs (else read from the closure tracker / gap service for the bridge's market)
     pm_move_pp: float | None = Field(default=None, ge=-100, le=100, allow_inf_nan=False)
     rate_bp_per_pp: float | None = Field(default=None, allow_inf_nan=False)
     rate_se: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     n_closures: int | None = Field(default=None, ge=0)
-    ref_px: float | None = Field(default=None, gt=0, allow_inf_nan=False)  # last equity close / quote
-    pm_leg_equiv_shares: float | None = Field(default=None, ge=0, allow_inf_nan=False)  # hedge A, in shares
+    ref_px: float | None = Field(default=None, gt=0, allow_inf_nan=False)
+    pm_leg_equiv_shares: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     full_size_gap_bp: float = Field(default=DEFAULT_FULL_SIZE_GAP_BP, gt=0, le=10_000, allow_inf_nan=False)
     min_gap_bp: float = Field(default=DEFAULT_MIN_GAP_BP, ge=0, le=10_000, allow_inf_nan=False)
     collar_bps: float = Field(default=DEFAULT_COLLAR_BPS, gt=0, le=1_000, allow_inf_nan=False)
@@ -259,9 +199,6 @@ class PlanIn(BaseModel):
         if not (self.bridge_id or self.proposal_id):
             raise ValueError("Send bridge_id or proposal_id.")
         return self
-
-
-# -------------------------------------------------------------------------------------------- app adapters
 
 
 def _bridges(app) -> list:
@@ -278,7 +215,6 @@ def find_bridge(app, bridge_id: str | None):
 
 
 def bridge_for_proposal(app, proposal_id: str):
-    """The proposal's latest bridge run (running or stopped; a restart replaces it in ``app.state.bridges``)."""
     return (getattr(app.state, "bridges", None) or {}).get(proposal_id)
 
 
@@ -287,14 +223,12 @@ def is_replay(bridge) -> bool:
 
 
 def sandboxed(bridge) -> bool:
-    """A replay bridge trading in its own in-memory sim (never the account)."""
     if not is_replay(bridge):
         return False
     return bool(bridge._sandboxed()) if hasattr(bridge, "_sandboxed") else True
 
 
 def bridge_now(bridge) -> dt.datetime | None:
-    """A replay bridge's "now" is its last replayed tick's recorded time (None until a tick has set it)."""
     if is_replay(bridge):
         ts = getattr(bridge, "last_replay_ts_ns", None)
         return to_utc(ts) if ts else None
@@ -302,14 +236,11 @@ def bridge_now(bridge) -> dt.datetime | None:
 
 
 def wall_now(app) -> dt.datetime:
-    clock = getattr(app.state, "staged_clock", None)  # tests pin the wall clock
+    clock = getattr(app.state, "staged_clock", None)
     return to_utc(clock()) if clock else now_utc()
 
 
 def bridge_of(app, o: "StagedOrder"):
-    """The bridge whose hedge a staged order belongs to *now*. A replay order stays with its own replay run (its
-    sandbox holds the order). A wall-clock order follows the proposal: a bridge restarted after the plan (e.g. stopped
-    over the weekend, restarted Monday) is the one whose coverage and hedge counters must see the fill."""
     orig = find_bridge(app, o.bridge_id)
     if o.clock == "replay":
         return orig
@@ -320,13 +251,10 @@ def bridge_of(app, o: "StagedOrder"):
 
 
 def order_broker(app, bridge, clock: str = "wall") -> Broker | None:
-    """The broker a staged order trades through. Replay: the replay bridge's own broker (its sandbox), never the
-    account; None while a sandboxed replay has no sandbox attached yet (the order waits). Wall clock: a live bridge's
-    broker, else the active (account) broker, never a replay sandbox."""
     if clock == "replay":
         b = bridge.order_broker() if bridge is not None and hasattr(bridge, "order_broker") else None
         if b is None and not sandboxed(bridge):
-            return get_broker(app)  # replay_to_account without an attached broker: the account
+            return get_broker(app)
         return b
     if bridge is not None and not is_replay(bridge) and hasattr(bridge, "order_broker"):
         b = bridge.order_broker()
@@ -338,7 +266,7 @@ def order_broker(app, bridge, clock: str = "wall") -> Broker | None:
 def _summary_field(bridge, *names: str) -> Any:
     try:
         s = bridge.summary()
-    except Exception:  # a half-built bridge never breaks planning
+    except Exception:
         return None
     for n in names:
         if s.get(n) is not None:
@@ -347,8 +275,6 @@ def _summary_field(bridge, *names: str) -> Any:
 
 
 def pm_leg_shares(bridge) -> float | None:
-    """Hedge A's PM leg expressed in equity shares when the bridge reports it (P2/P5); None when it reports nothing
-    (not wired), so callers can tell "no PM leg" from "unknown"."""
     if bridge is None:
         return None
     for name in ("hedge_a", "pm_hedge", "closed_hedge"):
@@ -361,7 +287,6 @@ def pm_leg_shares(bridge) -> float | None:
 
 
 def current_move(app, mkey: str | None, at: dt.datetime) -> tuple[float | None, str]:
-    """(YES move since the last close in points, tracker status) for a market key at an instant."""
     if not mkey:
         return None, NO_PM_DATA
     st = tracker_for(app).state(mkey, at)
@@ -375,17 +300,13 @@ def _ref_px(bridge) -> float | None:
     return None
 
 
-# -------------------------------------------------------------------------------------------------------- book
-
-
 class StagedBook:
-    """In-memory staged orders for one app (like ProposalStore). One event loop; mutations under one asyncio lock."""
 
     def __init__(self) -> None:
         self._items: dict[str, StagedOrder] = {}
         self.lock = asyncio.Lock()
         self.runner: asyncio.Task | None = None
-        self.brokers: dict[str, Broker] = {}  # staged id -> the broker holding its working order
+        self.brokers: dict[str, Broker] = {}
 
     def list(self, bridge_id: str | None = None, proposal_id: str | None = None,
              status: str | None = None) -> list[StagedOrder]:
@@ -417,24 +338,17 @@ def _note(o: StagedOrder, at: dt.datetime, code: str, detail: str | None = None)
 
 
 def _note_once(o: StagedOrder, at: dt.datetime, code: str, detail: str | None = None) -> None:
-    """A waiting state is logged once, not on every runner pass."""
     if o.reason != code:
         _note(o, at, code, detail)
 
 
-# ------------------------------------------------------------------------------------------------- coverage
-
-
 def reserved_sell_qty(app, proposal_id: str, clock: str = "wall", exclude: str | None = None) -> float:
-    """Unfilled shares of this proposal's staged sells resting at a broker (status working). P5: subtract this in
-    bridges._coverage_room so a live bridge never sells room a resting staged order already holds."""
     return sum(max(0.0, o.qty - o.filled_qty) for o in book_for(app).pending()
                if o.proposal_id == proposal_id and o.status == "working" and o.side == "sell" and o.clock == clock
                and o.id != exclude)
 
 
 def _resting_sell(bridge) -> float:
-    """Unfilled shares of the bridge's own resting equity sell (``bridge.resting``)."""
     r = getattr(bridge, "resting", None) if bridge is not None else None
     if not isinstance(r, dict) or r.get("side") != "sell" or (r.get("instrument") or "equity") != "equity":
         return 0.0
@@ -443,13 +357,6 @@ def _resting_sell(bridge) -> float:
 
 def coverage(app, proposal_id: str, shares_held: float, target_coverage: float, bridge, clock: str,
              pm_leg: float, exclude: str | None = None) -> dict:
-    """The one coverage room used for planning and again just before sending: the approved cap (target_coverage x
-    shares_held) minus everything that holds or may still take hedge, PM and equity legs together:
-      held      the bridge's filled equity hedge (its account total when the bridge is a replay sandbox and the order
-                trades at the account)
-      resting   the unfilled part of the bridge's own resting sell (it may still fill)
-      working   the unfilled part of this proposal's other staged sells resting at a broker
-      pm_leg    hedge A's PM leg in equity shares."""
     cap = math.floor(target_coverage * shares_held + EPS)
     held = resting = 0.0
     if bridge is not None:
@@ -465,14 +372,10 @@ def coverage(app, proposal_id: str, shares_held: float, target_coverage: float, 
 
 
 def _liq_scope(clock: str, bridge) -> str:
-    """Per-day participation scope: the account, or a replay's own sandbox (it never trades the account)."""
     return f"sandbox:{getattr(bridge, 'id', None)}" if clock == "replay" and sandboxed(bridge) else "account"
 
 
 def _liq_day(app, clock: str, bridge, day: dt.date | dt.datetime) -> str:
-    """The ET session date an order counts toward in the per-day ledger: ``day`` (the session it trades in), except a
-    replay that trades the account (replay_to_account): its orders reach the account today, so they count toward the
-    wall clock's session date (the account-wide 1%-of-ADV cap that live bridges share), never the replayed date."""
     if clock == "replay" and not sandboxed(bridge):
         return wall_now(app).astimezone(ET).date().isoformat()
     if isinstance(day, dt.datetime):
@@ -480,11 +383,7 @@ def _liq_day(app, clock: str, bridge, day: dt.date | dt.datetime) -> str:
     return day.isoformat()
 
 
-# ------------------------------------------------------------------------------------------------------- plan
-
-
 def plan_for(app, body: PlanIn, store, remote: bool = False) -> StagedOrder:
-    """Build (and store) a staged equity hedge for the next session. Raises HTTPException on bad input."""
     bridge = find_bridge(app, body.bridge_id) if body.bridge_id else None
     if body.bridge_id and bridge is None:
         raise HTTPException(404, f"No bridge {body.bridge_id}.")
@@ -498,13 +397,13 @@ def plan_for(app, body: PlanIn, store, remote: bool = False) -> StagedOrder:
         raise HTTPException(409, f"Proposal {prop.id} is {prop.status}; only approved proposals can stage orders.")
     if prop.family != "hedge":
         raise HTTPException(409, "Staged session orders are equity hedges; this is an opportunity proposal.")
-    if bridge is None:  # by proposal: its live bridge if one runs; a replay is staged only by naming its bridge_id
+    if bridge is None:
         cur = bridge_for_proposal(app, prop.id)
         bridge = None if is_replay(cur) else cur
     clock = "replay" if is_replay(bridge) else "wall"
     if clock == "replay":
         now = bridge_now(bridge)
-        if now is None:  # never fall back to the wall clock for a replay
+        if now is None:
             raise HTTPException(409, "REPLAY_NO_TICK_TIME: this replay bridge has not reported a replayed tick time "
                                      "yet; a replay order is planned on the replayed time only.")
     else:
@@ -536,11 +435,6 @@ def plan_for(app, body: PlanIn, store, remote: bool = False) -> StagedOrder:
                                 getattr(market, "token_id", None) or evid.get("token_id"), body.rate_bp_per_pp,
                                 body.rate_se, body.n_closures)
     est = gap_estimate(move, rate, sign, prop.ticker, gcodes)
-    # The evidence gate (docs/design.md section 6), enforced: an unvalidated market's signal does not stage an order
-    # unless the explicit, labelled override (act_on_unvalidated) is set AND confirmed: on the proposal only when its
-    # approval carried ack_unvalidated (a proposal on a validated market approves without the ack, so its flag alone
-    # confirms nothing: a supplied rate would otherwise stage an "override" plan no one acknowledged); on the bridge
-    # only ever set when the approval acknowledged an unvalidated market (POST /bridges).
     validated, ev_status, ev_why = ev.gate(evid, est["rate_source"], prop.ticker, est["basis_ticker"], est["reasons"])
     prop_flag = bool(getattr(prop, "act_on_unvalidated", False))
     prop_override = prop_flag and bool(getattr(prop, "ack_unvalidated", False))
@@ -569,7 +463,6 @@ def plan_for(app, body: PlanIn, store, remote: bool = False) -> StagedOrder:
                                          pm_eq, cov["staged_working"] + cov["bridge_resting_sell"],
                                          body.full_size_gap_bp, body.min_gap_bp)
     sizing.update(staged_working=cov["staged_working"], bridge_resting_sell=cov["bridge_resting_sell"])
-    # participation: one order at the open <= 10% of the opening 5-minute volume, <= what is left of 1% of ADV
     liq = None
     if qty > 0:
         liq = liquidity.equity_check(app, prop.ticker, float(qty), scope=_liq_scope(clock, bridge),
@@ -619,9 +512,6 @@ def plan_for(app, body: PlanIn, store, remote: bool = False) -> StagedOrder:
 
 
 def reassess(o: StagedOrder, move_pp: float, at: dt.datetime) -> str | None:
-    """Apply the revert / resize rule to a pending order for the current PM move. Returns the code applied (None: no
-    change). A working order (resting at the broker) is never resized; on a full revert it is only marked
-    (PM_REVERTED, logged once) and the caller cancels it at the broker."""
     if o.status not in PENDING:
         return None
     e = o.estimate
@@ -636,17 +526,14 @@ def reassess(o: StagedOrder, move_pp: float, at: dt.datetime) -> str | None:
             if o.reason not in ("PM_REVERTED", "CANCEL_FAILED"):
                 _note(o, at, "PM_REVERTED", detail + f"; {codes[0]}")
             return "PM_REVERTED"
-        o.status = "filled" if o.filled_qty > EPS else "cancelled"  # a replaced order keeps what already filled
+        o.status = "filled" if o.filled_qty > EPS else "cancelled"
         if o.filled_qty > EPS:
             o.qty = math.ceil(o.filled_qty - EPS)
         _note(o, at, "PM_REVERTED", detail + f"; {codes[0]}")
         return "PM_REVERTED"
     if o.status == "working":
-        return None  # resting at the broker: only a full revert cancels it
-    qty = max(qty, math.ceil(o.filled_qty - EPS))  # never below what already filled
-    # An unapproved plan follows the gap both ways (within the coverage room size_hedge applies): what the user
-    # approves is the plan as it stands, and approval freezes it as the ceiling. An approved plan is never resized up
-    # past what was approved.
+        return None
+    qty = max(qty, math.ceil(o.filled_qty - EPS))
     ceiling = o.approved_qty if o.approved_qty is not None else (None if o.status == "staged" else o.planned_qty)
     if qty < o.qty:
         _note(o, at, "PM_PARTIAL_REVERT_RESIZE", detail + f"; qty {o.qty} -> {qty}")
@@ -654,7 +541,7 @@ def reassess(o: StagedOrder, move_pp: float, at: dt.datetime) -> str | None:
         return "PM_PARTIAL_REVERT_RESIZE"
     if qty > o.qty:
         new = qty if ceiling is None else min(qty, ceiling)
-        if new > o.qty:  # back up toward what was planned / approved, never above it
+        if new > o.qty:
             _note(o, at, "PM_RESIZE_UP", detail + f"; qty {o.qty} -> {new} "
                                                   f"({'not yet approved' if ceiling is None else f'ceiling {ceiling}'})")
             o.qty = new
@@ -663,9 +550,6 @@ def reassess(o: StagedOrder, move_pp: float, at: dt.datetime) -> str | None:
             _note(o, at, "RESIZE_UP_NEEDS_APPROVAL", detail + f"; wants {qty}, approved {ceiling}")
             return "RESIZE_UP_NEEDS_APPROVAL"
     return None
-
-
-# ---------------------------------------------------------------------------------------------------- execution
 
 
 async def _quote_mid(broker: Broker, symbol: str) -> float | None:
@@ -681,13 +565,10 @@ async def _quote_mid(broker: Broker, symbol: str) -> float | None:
 
 
 def _prices_itself(broker: Broker) -> bool:
-    """True for a real broker that prices its own fills (Webull); a SimBroker needs a price (supplied or quoted)."""
     return not isinstance(broker, SimBroker)
 
 
 def _apply_fill(o: StagedOrder, bridge, filled_this_order: float, at_account: bool) -> None:
-    """Fold a staged fill into the bridge's hedge so its own coverage cap sees it. ``filled_this_order`` is the current
-    broker order's cumulative fill; ``prior_filled`` holds what earlier (replaced) broker orders filled."""
     total = o.prior_filled + filled_this_order
     new = total - o.filled_qty
     if new <= EPS:
@@ -698,18 +579,16 @@ def _apply_fill(o: StagedOrder, bridge, filled_this_order: float, at_account: bo
     signed = new if o.side == "sell" else -new
     if at_account:
         bridge.account_hedge = getattr(bridge, "account_hedge", 0.0) + signed
-    if not (at_account and sandboxed(bridge)):  # a sandbox does not hold an account fill
+    if not (at_account and sandboxed(bridge)):
         bridge.broker_hedge = getattr(bridge, "broker_hedge", 0.0) + signed
         if getattr(bridge, "algo", None):
             bridge.hedge = bridge.broker_hedge
-        # handoff: the bridge's own algo (and hedge A) hear of the equity this plan sold, so the algo that resumes at
-        # the open manages it and the combined PM + equity coverage stays one cap
         hook = getattr(bridge, "on_staged_fill", None)
         if callable(hook):
             px = _fin((o.broker_order or {}).get("fill_px")) or o.fill_px
             try:
                 hook(signed, px)
-            except Exception as e:  # a bridge-side bookkeeping failure never undoes a broker fill
+            except Exception as e:
                 log.warning("staged fill hook failed: %s", type(e).__name__)
 
 
@@ -718,9 +597,6 @@ def _at_account(o: StagedOrder, bridge) -> bool:
 
 
 def _hold_for_next_session(app, o: StagedOrder, order, at: dt.datetime) -> None:
-    """The broker refused the order only because the regular session is not on (Webull paper: 417 outside 09:30-16:00
-    ET; a holiday the calendar missed, a clock edge). Nothing traded: the plan stays approved and is rescheduled for the
-    next regular open (market order), under a new client order id."""
     nxt = session_at(at).next_open
     book_for(app).brokers.pop(o.id, None)
     o.holds += 1
@@ -750,7 +626,7 @@ def _take_order(app, o: StagedOrder, order, bridge, at: dt.datetime) -> None:
         o.status = "filled"
         _note(o, at, "FILLED", f"{o.filled_qty:g} @ {order.fill_px} via {order.broker}"
                                f"{f' ({order.price_source})' if order.price_source else ''}")
-    elif o.filled_qty > EPS:  # rejected / cancelled after part of it (or an earlier leg) filled
+    elif o.filled_qty > EPS:
         o.status = "filled"
         o.qty = math.ceil(o.filled_qty - EPS)
         _note(o, at, "PARTIAL_FILL_DONE", f"{o.filled_qty:g} filled; broker {order.status}: {order.reject_reason}")
@@ -763,7 +639,6 @@ def _take_order(app, o: StagedOrder, order, bridge, at: dt.datetime) -> None:
 
 
 def _broker_of(app, o: StagedOrder, bridge) -> Broker | None:
-    """The broker holding o's order once sent, else the one it would be sent to."""
     return book_for(app).brokers.get(o.id) or order_broker(app, bridge, o.clock)
 
 
@@ -772,12 +647,9 @@ def _capital_scope(o: StagedOrder, bridge) -> str:
 
 
 async def capital_check(app, o: StagedOrder, bridge, broker, qty: float, px: float | None) -> dict:
-    """The capital budget for this plan's sell of ``qty`` at ``px`` (its own pending part excluded: it is the order)."""
     from ..capital import service as cap
     scope = _capital_scope(o, bridge)
     try:
-        # the order's price, the plan's reference, the cached Massive price, then the broker's own mark or quote;
-        # none: refused at the account (fail closed), unchecked in a replay sandbox
         px, src = await cap.order_price(app, broker, o.ticker, px, o.ref_px)
         sandbox_gross = (max(0.0, float(getattr(bridge, "broker_hedge", 0.0) or 0.0)) * px
                          if scope != "account" and px else 0.0)
@@ -788,7 +660,7 @@ async def capital_check(app, o: StagedOrder, bridge, broker, qty: float, px: flo
         if px and src not in (None, "order"):
             chk = {**chk, "note": "; ".join(x for x in (chk.get("note"), f"priced from {src}") if x)}
         return chk
-    except Exception as e:  # fail closed at the account
+    except Exception as e:
         return {"ok": scope != "account", "enforced": scope == "account", "checked": False,
                 "breaches": [{"kind": "check_failed", "detail": f"capital check failed ({type(e).__name__})"}]}
 
@@ -829,9 +701,7 @@ async def _execute(app, o: StagedOrder, bridge, at: dt.datetime, ref_override: f
             return
         extended = True
     else:
-        return  # not yet tradable
-    # coverage, checked again just before sending, with the same room function as the plan (current bridge hedge,
-    # its resting sell, other working staged sells, and hedge A's current PM leg)
+        return
     pm_now = pm_leg_shares(bridge)
     pm = pm_now if pm_now is not None else o.pm_leg_equiv_shares
     cov = coverage(app, o.proposal_id, o.shares_held, o.target_coverage, bridge, o.clock, pm, exclude=o.id)
@@ -849,7 +719,6 @@ async def _execute(app, o: StagedOrder, bridge, at: dt.datetime, ref_override: f
     if remaining <= 0:
         o.status = "filled"
         return
-    # participation, checked again at the session it trades in (the per-day cap counts every order sent that day)
     scope, day = _liq_scope(o.clock, bridge), _liq_day(app, o.clock, bridge, at)
     liq = liquidity.equity_check(app, o.ticker, float(remaining), scope=scope, day=day)
     o.liquidity = {k: v for k, v in liq.items() if k != "allowed"}
@@ -864,8 +733,6 @@ async def _execute(app, o: StagedOrder, bridge, at: dt.datetime, ref_override: f
         remaining = allowed
         o.qty = math.ceil(o.filled_qty - EPS) + remaining
 
-    # price: a replay prices only from the replayed tick, never today's quote; a live order from the live quote. The
-    # model's expected open is never a fill price: at most the anchor of a pre-market limit.
     from ..bridges import REPLAY_NOTE, REPLAY_RECORDED_NOTE
 
     note = f"staged session hedge (plan {o.id}; evidence: {o.evidence_gate or 'unlabelled'})"
@@ -883,7 +750,6 @@ async def _execute(app, o: StagedOrder, bridge, at: dt.datetime, ref_override: f
         _note_once(o, at, "NO_QUOTE_WAIT", f"no current {o.ticker} price for the simulator; retried each pass until "
                                            "the session closes")
         return
-    # the capital budget, pre-trade (a sell adds to the short): gross / per-event exposure and buying power
     if o.side == "sell" and not await _capital_ok(app, o, bridge, broker, remaining, ref, at):
         return
     limit = anchor_src = None
@@ -897,12 +763,10 @@ async def _execute(app, o: StagedOrder, bridge, at: dt.datetime, ref_override: f
             o.extended_hours, o.order_type = False, "market"
             _note(o, at, "NO_REFERENCE_PRICE_WAIT_OPEN", "a pre-market limit needs a reference price")
             return
-        # a sell anchors on the lower of the quote and the expected open (a stale Friday quote never leaves an
-        # adverse-gap limit unmarketable), a buy on the higher
         anchor, anchor_src = (min if o.side == "sell" else max)(cands, key=lambda c: c[0])
         f = (1 - o.collar_bps / 1e4) if o.side == "sell" else (1 + o.collar_bps / 1e4)
         limit = round(anchor * f, 2)
-    if o.replacements or o.holds:  # a new broker order: never reuse the id of one the broker already answered
+    if o.replacements or o.holds:
         o.client_order_id = (f"stg-{o.id}" + (f"-r{o.replacements}" if o.replacements else "")
                              + (f"-h{o.holds}" if o.holds else ""))
     req = OrderRequest(symbol=o.ticker, asset="equity", side=o.side, qty=remaining,
@@ -919,7 +783,7 @@ async def _execute(app, o: StagedOrder, bridge, at: dt.datetime, ref_override: f
     liquidity.record_equity(app, o.ticker, float(remaining), scope=scope, day=day)
     try:
         order = await asyncio.wait_for(broker.place_order(req), BROKER_TIMEOUT_S)
-    except Exception as e:  # a failure or timeout may still have been accepted: reconcile by client id
+    except Exception as e:
         o.status = "working"
         o.broker_order = None
         _note(o, at, "BROKER_UNCONFIRMED", f"{type(e).__name__}; reconciled by client_order_id next run")
@@ -928,9 +792,7 @@ async def _execute(app, o: StagedOrder, bridge, at: dt.datetime, ref_override: f
 
 
 async def _reconcile(app, o: StagedOrder, bridge, at: dt.datetime) -> None:
-    """Read the working order back (orders() first, then the broker's find-by-client-id, e.g. a Webull split sell
-    or an order whose place call timed out). Only an order neither read knows is treated as never taken."""
-    from ..bridges import _lookup  # the bridge's own order lookup: one pattern for every broker
+    from ..bridges import _lookup
 
     broker = _broker_of(app, o, bridge)
     if broker is None:
@@ -942,7 +804,7 @@ async def _reconcile(app, o: StagedOrder, bridge, at: dt.datetime) -> None:
         log.warning("staged reconcile failed: %s", type(e).__name__)
         return
     if found is None:
-        if o.broker_order is None:  # the place call never reached the broker
+        if o.broker_order is None:
             o.status = "approved"
             book_for(app).brokers.pop(o.id, None)
             _note(o, at, "BROKER_NEVER_TOOK_IT", "will be sent again while the session is on")
@@ -954,8 +816,6 @@ async def _reconcile(app, o: StagedOrder, bridge, at: dt.datetime) -> None:
 
 
 async def _cancel_at_broker(app, o: StagedOrder, bridge, at: dt.datetime) -> bool:
-    """Cancel o's working broker order. True: nothing rests there any more (its fills applied; ``o.status`` may now
-    be filled). False: it may still be working (CANCEL_FAILED, logged once)."""
     broker = _broker_of(app, o, bridge)
     if broker is None:
         return False
@@ -963,7 +823,7 @@ async def _cancel_at_broker(app, o: StagedOrder, bridge, at: dt.datetime) -> boo
     try:
         order = await asyncio.wait_for(broker.cancel(oid), BROKER_TIMEOUT_S)
     except Exception as e:
-        await _reconcile(app, o, bridge, at)  # it may have filled (or never been taken) meanwhile
+        await _reconcile(app, o, bridge, at)
         if o.status == "working":
             _note_once(o, at, "CANCEL_FAILED", e.message if isinstance(e, BrokerError) else type(e).__name__)
             return False
@@ -988,8 +848,6 @@ async def _cancel_working(app, o: StagedOrder, bridge, at: dt.datetime, code: st
 
 
 async def _replace_at_open(app, o: StagedOrder, bridge, at: dt.datetime) -> None:
-    """At the regular open, a pre-market limit still resting (unfilled or partly filled) is cancelled and its rest
-    sent again as a regular-session market order, so a DAY limit left behind by an adverse gap never expires unfilled."""
     if not await _cancel_at_broker(app, o, bridge, at) or o.status != "working":
         return
     remaining = max(0, math.ceil(o.qty - o.filled_qty - EPS))
@@ -1006,13 +864,6 @@ async def _replace_at_open(app, o: StagedOrder, bridge, at: dt.datetime) -> None
 
 async def step(app, o: StagedOrder, at: dt.datetime | None = None, move_pp: float | None = None,
                ref_px: float | None = None) -> None:
-    """One pass over one pending order: reconcile a working order, apply the revert / resize rule for the current PM
-    move, and execute it when approved and its session has started.
-
-    A wall-clock order runs on the wall clock and reads the PM move from the closure tracker when ``move_pp`` is not
-    given. A replay order moves only on replayed ticks: its time is ``at`` (else the bridge's last replayed tick time;
-    with neither it waits), its PM move is only ``move_pp`` and its price only ``ref_px`` (the tick's under_px); the
-    tracker and live quotes follow today's market, never the replayed one."""
     if o.status not in PENDING:
         return
     bridge = bridge_of(app, o)
@@ -1041,8 +892,6 @@ async def step(app, o: StagedOrder, at: dt.datetime | None = None, move_pp: floa
 
 async def on_tick(app, bridge, at: dt.datetime | None = None, move_pp: float | None = None,
                   ref_px: float | None = None) -> list[StagedOrder]:
-    """P5's hook: step this bridge's proposal's pending orders of the bridge's clock on a tick, under the book lock.
-    A replay bridge passes the tick's recorded time, its YES move since the close (pp) and its under_px."""
     book = book_for(app)
     clock = "replay" if is_replay(bridge) else "wall"
     changed = []
@@ -1060,8 +909,6 @@ async def on_tick(app, bridge, at: dt.datetime | None = None, move_pp: float | N
 
 
 async def run_due(app) -> list[StagedOrder]:
-    """Step every pending wall-clock order (replay orders move only on replayed ticks, through ``on_tick``); returns
-    those whose status, quantity or log changed."""
     book = book_for(app)
     changed = []
     async with book.lock:
@@ -1087,7 +934,6 @@ def _runnable(book: StagedBook) -> bool:
 
 
 def ensure_runner(app) -> None:
-    """Start the background runner (wall clock) while approved or working wall-clock orders exist."""
     book = book_for(app)
     if not _autorun(app) or not _runnable(book) or (book.runner is not None and not book.runner.done()):
         return
@@ -1097,14 +943,11 @@ def ensure_runner(app) -> None:
         while _runnable(book):
             try:
                 await run_due(app)
-            except Exception as e:  # one bad pass never kills the runner
+            except Exception as e:
                 log.warning("staged runner pass failed: %s", type(e).__name__)
             await asyncio.sleep(poll)
 
     book.runner = asyncio.get_running_loop().create_task(loop())
-
-
-# ------------------------------------------------------------------------------------------------------ routes
 
 
 def _broker_info(app) -> dict:
@@ -1140,9 +983,6 @@ async def post_run(request: Request) -> dict:
 
 
 class ApproveIn(BaseModel):
-    """What the user saw when they clicked: the plan's quantity. An unapproved plan resizes with the gap on every tick,
-    so the approval names the quantity shown; a plan that changed since then is refused (409 PLAN_CHANGED) and the
-    client re-renders it. Without a body the plan's current quantity is approved (legacy clients)."""
     qty: int | None = Field(default=None, ge=1)
 
 
@@ -1167,7 +1007,7 @@ async def approve_staged(sid: str, request: Request, body: ApproveIn | None = No
             now = bridge_now(find_bridge(app, o.bridge_id)) or to_utc(o.planned_at)
         else:
             now = wall_now(app)
-        if o.side == "sell" and o.clock == "wall":  # pre-trade capital check before the user commits to it
+        if o.side == "sell" and o.clock == "wall":
             from ..capital import service as cap
             br = bridge_of(app, o)
             chk = await capital_check(app, o, br, order_broker(app, br, o.clock), float(o.qty), None)
@@ -1180,7 +1020,7 @@ async def approve_staged(sid: str, request: Request, body: ApproveIn | None = No
         _note(o, now, "APPROVED", f"qty {o.qty}; executes at {o.execute_at} ({o.session_target})"
                                   f"{' on replayed ticks' if o.clock == 'replay' else ''}")
         if o.clock == "wall":
-            await step(app, o, now)  # executes at once when its session is already on
+            await step(app, o, now)
     ensure_runner(app)
     return o.model_dump()
 

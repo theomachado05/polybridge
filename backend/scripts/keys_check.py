@@ -1,13 +1,3 @@
-"""Which keys are configured (names only), and do the AI keys work?
-
-    make keys-check
-
-Prints present / missing for each key the app reads (never a value), and whether web/.env.local names a voice agent.
-When GEMINI_API_KEY is present it runs the full Gemini check (scripts/gemini_check.py). When ELEVENLABS_API_KEY is
-present it makes read-only ElevenLabs calls: GET /v1/user/subscription, and GET /v1/convai/agents/{id} when an agent
-id is known (does it exist, how many tools does it have).
-
-Exit code: 0 every check that could run passed (missing keys are reported, not failed), 1 a check failed."""
 from __future__ import annotations
 
 import asyncio

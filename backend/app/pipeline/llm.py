@@ -1,9 +1,3 @@
-"""LLM providers for the fit pipeline: Gemini over REST (JSON mode) and a deterministic rules fallback.
-
-Gemini never sees anything but the question (classify) or the structured fit result (explain). Every Gemini
-failure (no key, timeout, HTTP error, malformed JSON, a class outside the allowed set) raises ``LLMError``;
-callers then fall back to ``RulesProvider``.
-"""
 from __future__ import annotations
 
 import asyncio
@@ -20,8 +14,8 @@ import httpx
 
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 MODELS_URL = "https://generativelanguage.googleapis.com/v1beta/models"
-DEFAULT_MODEL = "gemini-flash-lite-latest"  # fast alias; 2.5-flash is listed but retired (404) as of 2026-10
-RETRY_ATTEMPTS = 3  # 429 / 503 / timeouts: up to 2 retries with backoff
+DEFAULT_MODEL = "gemini-flash-lite-latest"
+RETRY_ATTEMPTS = 3
 RETRY_STATUS = {429, 500, 502, 503, 504}
 RETRY_BASE_S = 1.5
 RETRY_MAX_WAIT_S = 4.0
@@ -32,7 +26,7 @@ log = logging.getLogger("polybridge.llm")
 
 
 class LLMError(RuntimeError):
-    """The provider could not produce a usable answer."""
+    pass
 
 
 @runtime_checkable
@@ -44,9 +38,6 @@ class LLMProvider(Protocol):
     async def explain(self, result: dict) -> str: ...
 
 
-# ---------------------------------------------------------------- rules (keyword) provider
-
-# (class, weight, patterns). Patterns are regexes matched on the lower-cased question with word boundaries.
 RULES: list[tuple[str, list[str]]] = [
     ("macro_fed", [r"fed", r"fomc", r"interest rates?", r"rate (cut|hike|increase|decrease)s?", r"bps", r"basis points?",
                    r"cpi", r"inflation", r"recession", r"gdp", r"unemployment", r"jobs report", r"nonfarm", r"payrolls?",
@@ -83,7 +74,6 @@ _UNSUPPORTED = [re.compile(rf"\b{p}\b") for p in UNSUPPORTED]
 
 
 def rules_classify(question: str, allowed: list[str] | None = None) -> str:
-    """Highest keyword score wins; ties go to the earlier (more market-moving) class in RULES."""
     q = (question or "").lower()
     allowed_set = set(allowed or [c for c, _ in RULES] + ["unsupported"])
     best, best_score = "unsupported", 0
@@ -105,7 +95,6 @@ def _fmt_params(params: dict) -> str:
 
 
 def template_rationale(r: dict) -> str:
-    """2-3 sentences built only from the structured result."""
     cls, fam, div = r.get("event_class"), r.get("family"), r.get("division")
     if not fam and r.get("question_unresolved"):
         return ("The market's question could not be resolved (it is not in the bundled universe and could not be "
@@ -152,8 +141,6 @@ class RulesProvider:
         return template_rationale(result)
 
 
-# ---------------------------------------------------------------- Gemini provider
-
 def gemini_key() -> str | None:
     key = (os.environ.get("GEMINI_API_KEY") or "").strip()
     if key:
@@ -174,7 +161,6 @@ def _response_text(payload: dict) -> str:
 
 
 def parse_json_text(text: str) -> dict:
-    """Gemini JSON mode returns a JSON string; tolerate a ```json fence just in case."""
     t = (text or "").strip()
     m = re.match(r"^```(?:json)?\s*(.*?)\s*```$", t, re.S)
     if m:
@@ -188,25 +174,17 @@ def parse_json_text(text: str) -> dict:
     return v
 
 
-# ---------------------------------------------------------------- Gemini model list (cached) and fallback
-
-# Specialised Gemini variants that answer generateContent but are not general text models.
 _SPECIAL = re.compile(r"(tts|image|audio|live|embedding|vision|robotics|computer-use|thinking|learnlm|aqa)")
 _FLASH = re.compile(r"^gemini-(\d+(?:\.\d+)?)-flash(?:-(.*))?$")
-_models_cache: dict[str, tuple[float, list[dict]]] = {}   # sha256(key) -> (fetched monotonic, models)
-_resolved: dict[str, str] = {}                            # configured model -> the flash model that replaced it
+_models_cache: dict[str, tuple[float, list[dict]]] = {}
+_resolved: dict[str, str] = {}
 
 
 def _key_id(api_key: str) -> str:
-    return hashlib.sha256(api_key.encode()).hexdigest()[:16]  # never the key itself
+    return hashlib.sha256(api_key.encode()).hexdigest()[:16]
 
 
 def newest_flash(models: list[dict]) -> str | None:
-    """The newest general-purpose "flash" model that supports generateContent, as a bare id ("gemini-2.5-flash").
-
-    Ranked by version number, then stable over preview/experimental, then the full model over "-lite", then the plain
-    name over a dated or suffixed one. Aliases without a version ("gemini-flash-latest") and specialised variants
-    (tts, image, audio, live, ...) are skipped."""
     best: tuple | None = None
     best_id: str | None = None
     for m in models or []:
@@ -230,8 +208,6 @@ def newest_flash(models: list[dict]) -> str | None:
 
 async def list_models(api_key: str, http: httpx.AsyncClient | None = None, timeout_s: float = TIMEOUT_S,
                       use_cache: bool = True) -> list[dict]:
-    """GET /v1beta/models (all pages, bounded), cached per key for an hour. Raises LLMError (never echoes the key);
-    the message carries the HTTP status so a caller can tell an invalid key (400/401/403) from an outage."""
     kid = _key_id(api_key)
     hit = _models_cache.get(kid)
     if use_cache and hit and time.monotonic() - hit[0] < MODELS_TTL_S:
@@ -264,7 +240,6 @@ async def list_models(api_key: str, http: httpx.AsyncClient | None = None, timeo
 
 
 def _round_floats(x: Any, nd: int = 4) -> Any:
-    """Round every float before it reaches the LLM, so the rationale never echoes 17-digit numbers."""
     if isinstance(x, float):
         return round(x, nd)
     if isinstance(x, dict):
@@ -283,7 +258,7 @@ class GeminiProvider:
         self.configured_model = model or os.environ.get("GEMINI_MODEL") or DEFAULT_MODEL
         self.model = self.configured_model
         self.fell_back_reason: str | None = None
-        if self.configured_model in _resolved:  # an earlier call in this process found the configured model gone
+        if self.configured_model in _resolved:
             self.model = _resolved[self.configured_model]
             self.fell_back_reason = (f"configured model {self.configured_model} returned 404; "
                                      f"using {self.model}, the newest flash model this key lists")
@@ -297,7 +272,6 @@ class GeminiProvider:
         return {"provider": "gemini", "model": self.model, "live": live, "fell_back_reason": self.fell_back_reason}
 
     async def _fallback_model(self, http: httpx.AsyncClient) -> str | None:
-        """Once per configured model: the newest flash model from the (cached) model list, or None."""
         try:
             new = newest_flash(await list_models(self.api_key, http, self.timeout_s))
         except LLMError:
@@ -332,9 +306,8 @@ class GeminiProvider:
                     raise
                 if r.status_code == 404 and not fell_back and await self._fallback_model(http):
                     fell_back = True
-                    continue  # retried once on the newest flash model (not counted as a retry)
+                    continue
                 if r.status_code in RETRY_STATUS and retries + 1 < RETRY_ATTEMPTS:
-                    # Rate limited (429) or overloaded (503): back off, honouring Retry-After but never stalling the UI.
                     retries += 1
                     try:
                         wait = float(r.headers.get("retry-after", ""))
@@ -348,8 +321,8 @@ class GeminiProvider:
             raise
         except httpx.HTTPStatusError as e:
             raise LLMError(f"Gemini call failed: HTTP {e.response.status_code}") from None
-        except Exception as e:  # timeout, transport, bad JSON body
-            raise LLMError(f"Gemini call failed: {type(e).__name__}") from None  # never echo the key-bearing request
+        except Exception as e:
+            raise LLMError(f"Gemini call failed: {type(e).__name__}") from None
         finally:
             if self._http is None:
                 await http.aclose()
@@ -389,8 +362,6 @@ class GeminiProvider:
 
 
     async def map_tickers(self, question: str, universe: list[dict], max_items: int = 6) -> list:
-        """Which listed stocks a prediction-market question moves, chosen ONLY from ``universe`` ([{ticker, name}]).
-        Returns Gemini's raw rows; ``app.mapping.validate_mappings`` checks every field before anything is served."""
         tickers = [u["ticker"] for u in universe]
         lines = "\n".join(f"{u['ticker']}: {u.get('name') or u['ticker']}" for u in universe)
         prompt = ("You map a prediction-market question to the US-listed stocks or ETFs whose price would move if the "
@@ -425,7 +396,6 @@ def rules_info(reason: str | None = None) -> dict:
 
 
 def ai_label(provider: object) -> str:
-    """'gemini:<model>' for a Gemini provider, else 'rules'."""
     return getattr(provider, "label", None) or "rules"
 
 

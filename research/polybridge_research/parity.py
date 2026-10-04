@@ -1,9 +1,3 @@
-"""Implied-move parity (Prediction-Price Parity for options), matching the Massive starter, section 7.
-
-implied        = (ATM call + ATM put) / spot, the move priced to expiry
-implied_scaled = implied * sqrt(sessions_held / dte_sessions)
-ratio          = |realized| / implied_scaled; above 1 means the market under-priced the move
-"""
 from __future__ import annotations
 
 import math

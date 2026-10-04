@@ -1,9 +1,3 @@
-"""S21 pull and anchor builder: option contracts and NBBO quotes at the anchor instant from Massive (METHOD.md 3, 8).
-
-One worker, at most 2 requests a second, one small cache line per request, resumable. The recorder's log is read only.
-
-Run from `research/`:  python -m s21_options_anchor.pull
-"""
 from __future__ import annotations
 
 import json
@@ -45,7 +39,6 @@ class FetchError(Exception):
 
 
 def recorder_failures() -> int:
-    """Lines of the recorder's log that say `fetch failed` (read only)."""
     try:
         with open(RECORDER_LOG, "rb") as f:
             return sum(1 for line in f if b"fetch failed" in line)
@@ -54,7 +47,6 @@ def recorder_failures() -> int:
 
 
 class Src:
-    """Cache first; the network only when `offline` is False."""
 
     def __init__(self, offline: bool = True, stop_epoch: float | None = None):
         self.offline, self.stop_epoch = offline, stop_epoch
@@ -67,7 +59,7 @@ class Src:
                     try:
                         d = json.loads(line)
                     except json.JSONDecodeError:
-                        continue          # a line cut by an interrupted write
+                        continue
                     self.cache[d["k"]] = d["v"]
         self.requests, self.errors, self.events = 0, [], []
         self.rps, self._last = cfg.MAX_RPS, 0.0
@@ -134,7 +126,6 @@ class Src:
         self._out.flush()
 
     def contracts(self, und: str, expiry: str) -> dict[str, str]:
-        """{strike: call ticker} of one underlying and one expiry (standard 100-share contracts of the right root)."""
         k = f"c|{und}|{expiry}"
         if k in self.cache:
             return self.cache[k]
@@ -157,7 +148,6 @@ class Src:
         return out
 
     def quote(self, opt: str, at: float) -> dict | None:
-        """The last NBBO at or before `at` (epoch seconds): {"bid", "ask", "bsz", "asz", "ts"}, or None when there is none."""
         iso = datetime.fromtimestamp(at, timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         k = f"q|{opt}|{iso}"
         if k in self.cache:
@@ -174,10 +164,7 @@ class Src:
         return v
 
 
-# ---------------------------------------------------------------- the plan
-
 def anchor_epoch(entry_epoch: float, session_close: dict[str, float]) -> tuple[str, float]:
-    """(anchor day, anchor instant): 15:55 New York on the day of S18's entry instant; 12:55 on a half session."""
     day = datetime.fromtimestamp(entry_epoch, ET).strftime("%Y-%m-%d")
     close = session_close.get(day)
     half = close is not None and datetime.fromtimestamp(close, ET).hour < 15
@@ -185,7 +172,6 @@ def anchor_epoch(entry_epoch: float, session_close: dict[str, float]) -> tuple[s
 
 
 def plan() -> tuple[list[dict], dict[str, int]]:
-    """One record per stock or S&P market of S18's prints file, parsed; and the count of markets dropped by reason."""
     from s4_linked_assets import engine as en
     sess = en.sessions_from(np.load(RESEARCH / "s5_big_moves" / ".cache" / "eq_SPY.npz")["t"])
     close = {d: float(c) for d, c in zip(sess.day, sess.close)}
@@ -223,10 +209,7 @@ def pull_order(markets: list[dict]) -> list[dict]:
     return sorted(markets, key=lambda m: (rank[m["event"]], m["market"]))
 
 
-# ---------------------------------------------------------------- one anchor
-
 def build_anchor(src: Src, m: dict) -> dict:
-    """The anchor of one market, or the reason there is none. Raises NotPulled / StopPull / FetchError from the source."""
     und, at, up = m["ticker"], m["anchor_epoch"], m["direction"] > 0
     d0, a_day = date.fromisoformat(m["end_session"]), date.fromisoformat(m["anchor_day"])
     tried, last = 0, "no listed expiry within 45 days of the window's end"
@@ -283,7 +266,7 @@ def build(src: Src, markets: list[dict], verbose: bool = False) -> list[dict]:
             a = {"status": "not pulled"}
         except StopPull:
             a = {"status": "not pulled"}
-            src.offline = True                      # the stop time has passed: finish from the cache only
+            src.offline = True
         except FetchError as e:
             bad[m["ticker"]] = bad.get(m["ticker"], 0) + 1
             a = {"status": f"fetch error: {str(e)[:160]}"}

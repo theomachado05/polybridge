@@ -1,4 +1,3 @@
-"""Date-level permutation, clustering, collapsing and the verdict rule on synthetic data."""
 import numpy as np
 import pandas as pd
 import pytest
@@ -10,7 +9,7 @@ from leadlag_replication.stats import cluster_t, collapse_by_date, date_gap_inde
 def _panel(beta, n_dates=200, n_markets=3, seed=1, noise=30.0):
     rng = np.random.default_rng(seed)
     dates = pd.bdate_range("2024-01-02", periods=n_dates).strftime("%Y-%m-%d")
-    common = rng.normal(0, 2, n_dates)                      # news shared by all markets on a date
+    common = rng.normal(0, 2, n_dates)
     gap = beta * common + rng.normal(0, noise, n_dates)
     rows = []
     for k in range(n_markets):
@@ -35,7 +34,6 @@ def test_date_perm_null_is_not_significant():
 
 
 def test_date_perm_is_wider_than_row_perm_when_dates_repeat():
-    # with the same gap repeated for several markets, the row-level t overstates; clustered t must be smaller
     df = _panel(beta=8.0, n_markets=6, seed=5)
     c = cluster_t(df["x_pp"], df["gap_spy_bp"], df["closure"])
     r = date_perm_slope(df["x_pp"], df["gap_spy_bp"], df["closure"], 0, 7)

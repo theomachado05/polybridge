@@ -1,4 +1,3 @@
-"""Clustered OLS, the contrast, the verdict and the full analysis on synthetic panels."""
 import numpy as np
 import pandas as pd
 

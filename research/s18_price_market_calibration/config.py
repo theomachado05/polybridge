@@ -1,4 +1,3 @@
-"""S18 price-market calibration: every fixed parameter of METHOD.md. Committed with it, before any entry price is matched to a result."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -17,15 +16,15 @@ N_BOOT, BOOT_SEED = 2000, 0
 @dataclass(frozen=True)
 class Variant:
     id: str
-    side: str                 # "sell YES" or "buy YES"
+    side: str
     lo: float
     hi: float
-    universe: str | None      # None, or "S9"
+    universe: str | None
     classes: tuple[str, ...] | None
 
 
 VARIANTS = (
-    Variant("V0", "sell YES", 0.05, 0.25, None, None),          # primary
+    Variant("V0", "sell YES", 0.05, 0.25, None, None),
     Variant("V1", "buy YES", 0.75, 0.95, None, None),
     Variant("V2", "sell YES", 0.05, 0.25, "S9", None),
     Variant("V3", "sell YES", 0.05, 0.25, None, ("crude",)),

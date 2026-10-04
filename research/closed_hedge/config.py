@@ -1,4 +1,3 @@
-"""Pre-registered parameters (METHOD.md). Change only through an Amendment in METHOD.md."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -18,15 +17,15 @@ CLOB = "https://clob.polymarket.com"
 
 @dataclass(frozen=True)
 class Params:
-    min_prior: int = 20            # earlier closures needed for a rate (section 2)
-    min_prior_nonzero: int = 10    # of which with dpm_o != 0
-    k_bp: float = 100.0            # hedge B: expected loss that hedges the whole position
+    min_prior: int = 20
+    min_prior_nonzero: int = 10
+    k_bp: float = 100.0
     k_sens: tuple = (50.0, 200.0)
-    eq_cost_bp: float = 2.0        # per side, hedged notional
-    eq_cost_pre_bp: float = 10.0   # per side, 08:00 variant sensitivity
-    hs_fallback_pp: float = 0.5    # if fewer than min_books usable live books
+    eq_cost_bp: float = 2.0
+    eq_cost_pre_bp: float = 10.0
+    hs_fallback_pp: float = 0.5
     hs_tick_pp: float = 0.1
-    hs_thin_pp: float = 5.0        # arb run's thin equity-threshold books median
+    hs_thin_pp: float = 5.0
     n_books: int = 100
     min_books: int = 10
     mid_lo: float = 0.02

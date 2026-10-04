@@ -1,5 +1,3 @@
-"""make voice-agent / keys-check / gemini-check: ElevenLabs provisioning (client tools), key reporting, the Gemini
-check. Offline: every HTTP call goes to a MockTransport; no key from .env is ever read (env_key is patched)."""
 from __future__ import annotations
 
 import asyncio
@@ -24,7 +22,6 @@ GEM_KEY = "gem-sekrit-key-456"
 
 
 class FakeEleven:
-    """A tiny in-memory ElevenLabs: tools, agents, subscription. Records every request."""
 
     def __init__(self, tools=None, agents=None, reject_llm=False, status=None):
         self.tools: dict[str, dict] = dict(tools or {})
@@ -101,8 +98,6 @@ def _run(argv, fake, env_local, monkeypatch, **keys):
     return code, "\n".join(lines)
 
 
-# ---------------------------------------------------------------- what is sent
-
 def test_client_tools_mirror_agent_tools_exactly():
     cfgs = el.client_tool_configs()
     assert [c["name"] for c in cfgs] == [t["name"] for t in TOOLS]
@@ -137,8 +132,6 @@ def test_prompt_from_doc_without_markers_is_a_clear_error(tmp_path):
         el.prompt_from_doc(p)
 
 
-# ---------------------------------------------------------------- make voice-agent
-
 def test_create_writes_only_the_agent_id_and_masks_it(env_local, monkeypatch):
     env_local.write_text("NEXT_PUBLIC_API_URL=http://localhost:8000\n")
     fake = FakeEleven()
@@ -163,7 +156,7 @@ def test_rerun_is_idempotent_updates_in_place(env_local, monkeypatch):
     tools_before, agents_before = dict(fake.tools), set(fake.agents)
     code, out = _run([], fake, env_local, monkeypatch, ELEVENLABS_API_KEY=EL_KEY)
     assert code == 0, out
-    assert set(fake.tools) == set(tools_before) and set(fake.agents) == agents_before  # nothing new
+    assert set(fake.tools) == set(tools_before) and set(fake.agents) == agents_before
     assert "agent updated" in out and "0 created, 9 updated" in out
     methods = [(r.method, r.url.path.split("/")[3] if r.url.path.count("/") > 2 else r.url.path) for r in fake.requests]
     assert ("PATCH", "agents") in methods
@@ -222,8 +215,6 @@ def test_web_env_local_is_gitignored_in_this_repo():
     assert elevenlabs_agent.gitignored(elevenlabs_agent.ENV_LOCAL)
 
 
-# ---------------------------------------------------------------- make keys-check
-
 def test_keys_check_names_only_and_read_only_elevenlabs(env_local, monkeypatch):
     env_local.write_text("NEXT_PUBLIC_ELEVENLABS_AGENT_ID=agent_abcd1234\n")
     _keys(monkeypatch, ELEVENLABS_API_KEY=EL_KEY, MASSIVE_API_KEY="massive-sekrit", BROKER="broker-value-xyz")
@@ -244,8 +235,6 @@ def test_keys_check_runs_gemini_check_when_present(env_local, monkeypatch):
     assert keys_check.main(gemini_run=lambda: 1, out=lines.append, env_local=env_local) == 1
     assert "== Gemini" in "\n".join(lines) and "skipped (no ELEVENLABS_API_KEY" in "\n".join(lines)
 
-
-# ---------------------------------------------------------------- make gemini-check
 
 def _gemini_http(models_status=200, generate=None):
     seen: list[httpx.Request] = []

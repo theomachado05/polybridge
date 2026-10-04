@@ -28,35 +28,13 @@ setup-web:
 test-web:
 	cd web && pnpm lint && pnpm test && pnpm build
 
-# Engine group: the hedgecore binding tests AND the whole backend suite, so the tests that skip without the engine
-# (bridge/engine replay parity, test_bridges_engine, test_e2e_engine, ...) really run under `make test`.
 test-engine-py:
 	cd backend && uv sync --locked --group engine && uv run --locked --group engine pytest ../engine/hedgecore/tests tests -q
 
 test: test-research test-backend test-engine test-engine-py test-web
 
-# --- run the demo -----------------------------------------------------------------------------------------------
-# `make dev`: backend (engine group, offline replay of real Polymarket history) on :8000 and the web dev server on :3000.
-# Keys come from ./.env when it exists (MASSIVE_API_KEY, GEMINI_API_KEY, BROKER, WEBULL_*); any missing key degrades
-# gracefully. Open http://localhost:3000 (not 127.0.0.1). Ctrl-C stops both.
-# Default demo (D3): the validated closed-market weekend. "US recession in 2025?" (the one market whose expected-gap model
-# passes out of sample) over Fri 2025-04-04 15:30 ET -> Mon 2025-04-07 10:00 ET, hedging SPY: 799 five-minute points at
-# 3600x, about 67 s (approve the staged plan before Monday 04:00, about 61 s in).
-# Recorded-price fills: REPLAY_PRICES=recorded (POLYBRIDGE_REPLAY_PRICES) makes every replay sandbox fill at the replayed
-# price, so the bridge's own fills and the weekend P&L share one price time while .env stays loaded (Gemini, ElevenLabs
-# and Webull keys are needed for the pitch). This replaces the older `make dev ENVFILE= ... SPEED=3600` recipe, which
-# could not work: the backend finds ../.env on its own. `make dev REPLAY_PRICES=` restores today's-quote fills.
-# With BROKER=webull while the market is closed, GET /account shows webull-paper (market_open false), replays trade their
-# in-memory sandbox, and only approved staged orders reach Webull, executing at the 09:30 ET open.
-# Other recordings play at their own sidecar replay_speed when a bridge picks them through the replay index (no
-# restart). Documented alternatives, as the configured file (fills as before: today's quote when Massive answers,
-# else the recorded price, labelled):
-#   make dev-tlt    "Another Fed rate hike in 2026?" -> TLT (401 hourly points at 21600x, about 67 s)
-#   make dev-ita    Russia/EU military clash -> ITA (18000x, about 69 s)
-#   make dev-iwm    Fed October 25 bps hike -> IWM (36000x, about 72 s)
-#   make dev-nvda   Opportunity division: NVDA > $230 end of September, options call spread (21600x, about 59 s)
 ENVFILE := $(if $(wildcard .env),--env-file ../.env,)
-REPLAY ?= backend/replays/us-recession-in-2025-weekend-2025-04-04.jsonl  # relative to the repo root
+REPLAY ?= backend/replays/us-recession-in-2025-weekend-2025-04-04.jsonl
 SPEED ?= 3600
 REPLAY_PRICES ?= recorded
 
@@ -78,64 +56,39 @@ dev-iwm:
 dev-nvda:
 	$(MAKE) dev REPLAY=backend/replays/nvda-230-sep-2026-history.jsonl SPEED=21600 REPLAY_PRICES=
 
-# Same, without a replay file: bridges start on the live Polymarket book (needs network; falls back per bridge).
 dev-live:
 	@trap 'kill 0' INT TERM EXIT; \
 	(cd backend && uv run --group engine $(ENVFILE) uvicorn app.main:app --port 8000) & \
 	(cd web && pnpm dev) & \
 	wait
 
-# End-to-end: starts both servers, drives search -> map -> fit -> propose -> approve -> bridge -> SSE -> account over
-# HTTP, clicks the real UI in headless Chrome and screenshots the 8 screens into web/e2e/screens/, then stops everything.
 e2e:
 	python3 scripts/e2e_demo.py $(E2E_ARGS)
 
 e2e-api:
 	python3 scripts/e2e_demo.py --no-screens $(E2E_ARGS)
 
-# The Opportunity division over HTTP: the NVDA > $230 recording's options fit -> approved binary_vs_spread_arb proposal ->
-# replay bridge with simulated multi-leg option orders (API only, about 60 s).
 e2e-opportunity:
 	python3 scripts/e2e_demo.py --opportunity $(E2E_ARGS)
 
-# Closed-market mode over HTTP: the recorded 2025-04-04 weekend on the US recession 2025 market (the one market whose
-# expected-gap model is validated out of sample) -> expected gap -> staged order approved -> executes at the first
-# tradable moment -> P&L vs no hedge (API only, recorded prices, about 70 s).
 e2e-weekend:
 	python3 scripts/e2e_demo.py --weekend $(E2E_ARGS)
 
-# The default demo's flow (the validated weekend, `make dev`'s replay), end to end over HTTP. `make e2e` stays on the TLT
-# replay as the regression run.
 e2e-demo:
 	python3 scripts/e2e_demo.py --weekend $(E2E_ARGS)
 
-# Webull paper smoke check, read-only: account (type / class), balance, positions, open orders, market_open, the
-# extended-hours capability. Never places an order outside 09:30-16:00 ET; during the regular session
-# WEBULL_SMOKE_ORDER=1 also places and cancels a 1-share SPY limit at $1.00 (cannot fill). Ids are masked.
 webull-check:
 	cd backend && uv run --locked $(ENVFILE) python scripts/webull_check.py
 
-# --- AI keys (GEMINI_API_KEY, ELEVENLABS_API_KEY in the repo-root .env; values are never printed) ------------------
-# Gemini: lists the models the key can use, picks the newest flash model, runs one classify + one explain + one live
-# ticker mapping through the app's own GeminiProvider; prints model, latency and results. Exit 2 = no key, 1 = failed.
 gemini-check:
 	cd backend && uv run --locked $(ENVFILE) python scripts/gemini_check.py
 
-# ElevenLabs: create (or update) the PolyBridge agent with CLIENT tools matching GET /agent/tools (no tunnel), then
-# write only NEXT_PUBLIC_ELEVENLABS_AGENT_ID into web/.env.local (gitignored). Idempotent. ARGS=--dry-run: no network.
 voice-agent:
 	cd backend && uv run --locked $(ENVFILE) python scripts/elevenlabs_agent.py $(ARGS)
 
-# Which keys are present (names only); runs gemini-check and read-only ElevenLabs calls when their keys are present.
 keys-check:
 	cd backend && uv run --locked $(ENVFILE) python scripts/keys_check.py
 
-# --- forward tests (rules frozen; no trading) -----------------------------------------------------------------------
-# make forward-ladders: research/ladder_replay/live.py once (every open date ladder's real books), a timestamped snapshot
-# under backend/data_forward/ladders/. make forward-touch: list the "will it hit" markets eligible under
-# research/touch_fresh/FORWARD.md (listed from Mon 5 Oct) and record their state under backend/data_forward/touch/.
-# The frozen runner's timed stages: forward-touch-snapshot (Friday 15:55 New York), forward-touch-prints (after Sunday
-# 20:00), forward-touch-evaluate. GET /forward/status shows the latest of each.
 .PHONY: forward-ladders forward-touch forward-touch-snapshot forward-touch-prints forward-touch-evaluate
 forward-ladders:
 	cd backend && uv run $(ENVFILE) python ../scripts/forward_ladders.py

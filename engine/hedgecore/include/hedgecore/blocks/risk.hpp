@@ -1,5 +1,4 @@
 #pragma once
-// Risk blocks (UI kind: Gate, since they cap or stop trading). Kill switches latch: once tripped, the family holds.
 #include <cmath>
 #include <cstdint>
 #include <limits>
@@ -9,7 +8,6 @@
 
 namespace hedgecore::blocks {
 
-// |target| <= max_abs.
 struct PositionCap {
   static constexpr const char* name = "PositionCap";
   double max_abs = 0;
@@ -20,7 +18,6 @@ struct PositionCap {
   }
 };
 
-// |target| * px * multiplier <= max_notional; max_notional <= 0 disables. Unknown px returns NaN (family holds).
 struct NotionalCap {
   static constexpr const char* name = "NotionalCap";
   double max_notional = 0;
@@ -34,7 +31,6 @@ struct NotionalCap {
   }
 };
 
-// Latches when peak equity - equity > max_dd ($). max_dd <= 0 disables.
 struct DrawdownKill {
   static constexpr const char* name = "DrawdownKill";
   double max_dd = 0;
@@ -48,7 +44,6 @@ struct DrawdownKill {
   }
 };
 
-// Armed with the sign of the cross-venue gap at entry; latches when the gap flips past -tol on the other side.
 struct GapFlipKill {
   static constexpr const char* name = "GapFlipKill";
   double tol = 0.0;
@@ -62,7 +57,6 @@ struct GapFlipKill {
   }
 };
 
-// Stops trading for the rest of the UTC day once the day's loss exceeds max_loss ($); resets each day.
 struct DailyLossCap {
   static constexpr const char* name = "DailyLossCap";
   double max_loss = 0;
@@ -78,4 +72,4 @@ struct DailyLossCap {
   }
 };
 
-}  // namespace hedgecore::blocks
+}

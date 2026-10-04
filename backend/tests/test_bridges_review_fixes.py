@@ -1,6 +1,3 @@
-"""Bridge safety fixes from the v4 review: unconfirmed orders are reconciled (never booked as "nothing traded"),
-a fill without a price still counts toward the coverage cap, a live->replay fallback never orphans what the account
-broker holds, and the legacy Engine path is position-aware (no unapproved long, open orders tracked and cancelled)."""
 from __future__ import annotations
 
 import time
@@ -22,7 +19,6 @@ def _order(req, oid, status, filled, px=500.0, limit=None):
 
 
 class AcceptsThenTimesOut:
-    """The order is accepted (and fills) at the broker, but the place call never answers in time."""
     name = "acct"
 
     def __init__(self):
@@ -32,7 +28,7 @@ class AcceptsThenTimesOut:
         self.placed.append(req)
         raise TimeoutError()
 
-    async def orders(self):  # the broker knows every order by our client_order_id, filled in full
+    async def orders(self):
         return [_order(r, f"B{i}", "filled", r.qty) for i, r in enumerate(self.placed)]
 
     async def cancel(self, oid):  # pragma: no cover - nothing is open
@@ -41,7 +37,6 @@ class AcceptsThenTimesOut:
 
 def test_an_accepted_order_whose_place_call_timed_out_is_reconciled_not_resent(client):
     br = pin(client, AcceptsThenTimesOut())
-    # 400 short, then the algo (not having heard a fill) asks for another 400 on 1000 shares at a 0.5 cap
     FakeAlgo.script = {2: {"side": -1, "qty": 400.0}, 5: {"side": -1, "qty": 400.0}}
     p = proposal(client, {"family": "macro_fed_hedge"})
     bid = start(client, p["id"], replay_to_account=True).json()["bridge_id"]
@@ -49,17 +44,14 @@ def test_an_accepted_order_whose_place_call_timed_out_is_reconciled_not_resent(c
     fills = [d for k, d in ev if k == "fill"]
     assert fills[0]["status"] == "error" and fills[0]["kept_resting"] is True
     a = FakeAlgo.instances[0]
-    # the first order is found filled by client_order_id before the second is sent: the algo hears the fill and the
-    # coverage cap sees it, so the second sell is clipped to the 100 shares of room left (never 400 on top)
     assert a.fills[0] == ("equity", -400.0, 500.0)
     assert [r.qty for r in br.placed] == [400.0, 100.0]
     assert fills[1]["capped_from"] == 400.0
     s = client.get(f"/bridges/{bid}").json()
-    assert s["broker_hedge"] == 500.0 and s["broker_coverage"] == 0.5  # reconciled at bridge end too
+    assert s["broker_hedge"] == 500.0 and s["broker_coverage"] == 0.5
 
 
 class FilledWithoutPrice(ScriptedBroker):
-    """Filled orders whose fill price the broker did not report (an unknown price key)."""
 
     def __init__(self, limit=None):
         super().__init__()
@@ -80,8 +72,8 @@ def test_a_fill_without_a_price_still_counts_toward_the_coverage_cap(client):
     bid = start(client, p["id"], replay_to_account=True).json()["bridge_id"]
     ev = _events(client, bid)
     s = client.get(f"/bridges/{bid}").json()
-    assert s["broker_hedge"] == 300.0  # the shares really sold are booked even without a price
-    assert len(br.placed) == 1  # the unpriced order is kept resting, so nothing is stacked on top of it
+    assert s["broker_hedge"] == 300.0
+    assert len(br.placed) == 1
     fills = [d for k, d in ev if k == "fill"]
     assert [f["status"] for f in fills] == ["filled", "held"]
     assert s["resting_order"]["unpriced"] is True
@@ -113,11 +105,11 @@ def _live_then_fail(n_ticks):
 
 def test_live_to_replay_fallback_settles_the_account_order_first(client, replay_file):
     br = pin(client, ScriptedBroker(partial=0.0, final="cancelled", final_filled=0.0))
-    own = replay_file.with_name("2589813.jsonl")  # a recording of the bridge's own market
+    own = replay_file.with_name("2589813.jsonl")
     own.write_text(replay_file.read_text())
     client.app.state.replay_path = str(own)
     client.app.state.live_source_factory = _live_then_fail(3)
-    FakeAlgo.script = {2: {"side": -1, "qty": 100.0, "limit_px": 600.0}}  # rests at the account broker
+    FakeAlgo.script = {2: {"side": -1, "qty": 100.0, "limit_px": 600.0}}
     p = proposal(client, {"family": "macro_fed_hedge"})
     bid = client.post("/bridges", json={"proposal_id": p["id"], "source": "live"}).json()["bridge_id"]
     ev = _events(client, bid)
@@ -125,12 +117,11 @@ def test_live_to_replay_fallback_settles_the_account_order_first(client, replay_
     switch = next(i for i, (k, d) in enumerate(ev) if k == "status" and d.get("note") == "live failed; replaying")
     cancel = next(i for i, (k, d) in enumerate(ev) if k == "cancel")
     assert cancel < switch and ev[cancel][1]["broker"] == "scripted" and ev[cancel][1]["status"] == "cancelled"
-    assert br.cancelled == ["o1"]  # cancelled at the account broker, not "expired" in the empty sandbox
+    assert br.cancelled == ["o1"]
     assert kinds.count("tick") == 3 + 20 and ev[-1][1]["status"] == "finished"
 
 
 def test_a_resting_order_stays_with_its_broker_after_the_source_switch(client):
-    """Even when the pre-switch settle cannot cancel it, the order is looked up where it was placed."""
     acct = ScriptedBroker(partial=0.0, final="cancelled", final_filled=0.0)
     p = proposal(client, {"family": "macro_fed_hedge"})
     b = bridges.Bridge(SimpleNamespace(**{**p, "family": "hedge", "algo": None, "max_contracts": None,
@@ -142,14 +133,12 @@ def test_a_resting_order_stays_with_its_broker_after_the_source_switch(client):
     b.resting_broker = acct
     acct.placed.append(SimpleNamespace(client_order_id="x", symbol="SPY", side="sell", qty=1.0, type="limit",
                                        limit_px=600.0))
-    b.effective_source = "replay"  # order_broker() is now the sandbox
+    b.effective_source = "replay"
     import asyncio
     algo = FakeAlgo("f", {}, {})
     assert asyncio.run(bridges._settle_resting(b, algo, b.order_broker(), "replace")) is True
     assert acct.cancelled == ["o1"] and b.resting is None and algo.rejects == ["equity"]
 
-
-# ---------------------------------------------------------------- legacy Engine path
 
 class ScriptedEngine:
     script: dict[int, float] = {}
@@ -174,7 +163,6 @@ def legacy(monkeypatch):
 
 
 class OpenOrders(ScriptedBroker):
-    """Market orders accepted but not filled (market closed): they stay open until cancelled."""
 
     async def place_order(self, req):
         self.placed.append(req)
@@ -189,7 +177,7 @@ def test_legacy_open_orders_are_replaced_and_cancelled_at_bridge_end(client, leg
     ev = _events(client, bid)
     cancels = [d for k, d in ev if k == "cancel"]
     assert [c["reason"] for c in cancels] == ["replace", "bridge_end"]
-    assert br.cancelled == ["o1", "o2"]  # nothing left queued at the broker (e.g. for Monday's open)
+    assert br.cancelled == ["o1", "o2"]
     s = client.get(f"/bridges/{bid}").json()
     assert s["resting_order"] is None and s["broker_hedge"] == 0.0
 
@@ -199,7 +187,7 @@ def test_legacy_sells_are_clipped_to_the_approved_coverage(client, legacy, tmp_p
     from app.broker.quotes import Quote
     from tests.test_broker_support import FakeQuotes
     pin(client, SimBroker(tmp_path / "s.json", FakeQuotes(equity={"ABNB": Quote(150.0, None, "q")})))
-    ScriptedEngine.script = {1: 500.0, 3: 400.0, 5: 100.0}  # 1000 short on 1200 shares at the default 0.5 coverage
+    ScriptedEngine.script = {1: 500.0, 3: 400.0, 5: 100.0}
     pid = _approved(client)
     ev = _events(client, client.post("/bridges", json=_body(pid, replay_to_account=True)).json()["bridge_id"])
     fills = [d for k, d in ev if k == "fill"]

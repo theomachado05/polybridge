@@ -1,5 +1,3 @@
-"""Tests of METHOD.md section 6 that the closed-market study did not have: date-level permutation, date-clustered
-standard errors and the date-collapsed regression. Everything else is reused from leadlag_closed.stats."""
 from __future__ import annotations
 
 import numpy as np
@@ -20,7 +18,6 @@ def _clean(x, y, dates):
 
 
 def date_gap_index(y: np.ndarray, dates: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """Distinct dates' gaps and each row's index into them. Rows sharing a date must share a gap."""
     uniq, inv = np.unique(dates, return_inverse=True)
     g = np.full(len(uniq), np.nan)
     for i, v in zip(inv, y):
@@ -32,8 +29,6 @@ def date_gap_index(y: np.ndarray, dates: np.ndarray) -> tuple[np.ndarray, np.nda
 
 
 def date_perm_slope(x, y, dates, n_perm: int, seed: int) -> dict:
-    """Pooled OLS slope with HC3 t, plus a permutation p that shuffles the date -> gap map (same shuffle for every
-    market's rows on a date). Two-sided on |b|; p = (count + 1) / (n_perm + 1)."""
     x, y, dates = _clean(x, y, dates)
     n = len(x)
     out = {"n": n, "n_dates": int(len(np.unique(dates))) if n else 0}
@@ -54,7 +49,6 @@ def date_perm_slope(x, y, dates, n_perm: int, seed: int) -> dict:
 
 
 def date_perm_sign(x, y, dates, theta: float, n_perm: int, seed: int) -> dict:
-    """Sign agreement at |x| >= theta with a date-level permutation p (one-sided: agreement at least as high)."""
     x, y, dates = _clean(x, y, dates)
     base = sign_agreement(x, y, theta)
     if base["n"] == 0:
@@ -71,7 +65,6 @@ def date_perm_sign(x, y, dates, theta: float, n_perm: int, seed: int) -> dict:
 
 
 def cluster_t(x, y, dates) -> dict:
-    """Pooled OLS slope with standard errors clustered by closure date (CR1 small-sample factor)."""
     x, y, dates = _clean(x, y, dates)
     n = len(x)
     uniq, inv = np.unique(dates, return_inverse=True)
@@ -92,7 +85,6 @@ def cluster_t(x, y, dates) -> dict:
 
 
 def collapse_by_date(x, y, dates) -> tuple[np.ndarray, np.ndarray]:
-    """One observation per closure date: mean x across markets quoted that date, and the date's gap."""
     x, y, dates = _clean(x, y, dates)
     g, inv = date_gap_index(y, dates)
     sx = np.bincount(inv, weights=x)

@@ -1,7 +1,3 @@
-"""S8 report: SUMMARY.md, equity_curve.png, drawdown.png and capacity.md from the result CSVs.
-
-Run from `research/`:  python -m s8_open_referee.report
-"""
 from __future__ import annotations
 
 import json
@@ -48,7 +44,6 @@ def md_table(df: pd.DataFrame, cols: dict) -> str:
 
 
 def pooled(mo: pd.DataFrame, thr: float, source: str | None = None) -> dict:
-    """Every morning after a move of thr or more, whatever the vote: the change in the odds from 09:40 to the close."""
     s = mo[(mo.x.abs() >= thr) & mo.y_close.notna()]
     if source:
         s = s[s.source == source]

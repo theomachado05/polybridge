@@ -1,4 +1,3 @@
-"""Generate polybridge_8k.ipynb (no outputs). Run: python make_notebook.py"""
 from pathlib import Path
 
 import nbformat
@@ -27,13 +26,12 @@ Timing is frozen to the conservative rule (every filing is treated as public aft
 """
 
 C2 = '''\
-# ---- Window. Judges: set your sealed window here and rerun all cells. ----
 START, END = "2024-01-01", "2025-12-31"
-RUN_OOS = False          # flipped once, after the method freeze (see research/HYPOTHESIS.md §4)
-RUN_ATLAS = False        # exploratory atlas over every 8-K tag (HYPOTHESIS.md §5); stretch goal, slow
+RUN_OOS = False
+RUN_ATLAS = False
 ATLAS_MAX_EVENTS = 15
 MAX_WORKERS = 8
-LAST_SESSION = None      # pinned at the method freeze, e.g. "2026-10-03"; None = today's last completed session
+LAST_SESSION = None
 
 from pathlib import Path
 
@@ -361,7 +359,6 @@ known panel* = the rule was fixed in advance, but the 380-closure panel had alre
 """
 
 CM1 = '''\
-# Closed-market evidence: recompute every headline number from the committed result files (no network, no key)
 import sys
 from pathlib import Path
 
@@ -420,7 +417,6 @@ study's own functions, then checked against the committed `metrics.csv`.
 """
 
 S1_1 = '''\
-# S1 twin spread: recompute the headline numbers from the committed files (no network, no key)
 import sys
 from pathlib import Path
 
@@ -483,7 +479,6 @@ checked against `metrics.csv`. The second table reads each study's main statisti
 """
 
 WS_1 = '''\
-# Weekend studies: recompute the primary variant of each study from its committed trade list (no network, no key)
 import sys
 from pathlib import Path
 

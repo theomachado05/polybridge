@@ -7,12 +7,11 @@ from pydantic import BaseModel, Field, model_validator
 
 FamilyName = Literal["hedge", "opportunity"]
 Status = Literal["proposed", "approved", "rejected"]
-Direction = Literal["down_on_yes", "up_on_yes"]  # which outcome hurts a long holder
+Direction = Literal["down_on_yes", "up_on_yes"]
 Basis = Literal["filing_tags", "market_event"]
 MARKET_EVENT_LABEL = "Product hedge, not a tested claim"
 OPPORTUNITY_LABEL = ("Opportunity trade: PM price compared with the options-implied estimate, not a measured edge. "
                      "Option fills are simulated.")
-# Risk caps an opportunity proposal is approved with when the request names none (stored on the proposal).
 OPP_DEFAULT_MAX_CONTRACTS = 10
 OPP_DEFAULT_MAX_NOTIONAL = 10_000.0
 
@@ -24,15 +23,10 @@ class MarketRef(BaseModel):
 
 
 class AlgoChoice(BaseModel):
-    """Which hedgecore algo a bridge runs: a catalog family plus one preset (``preset_index``, a grid point of the
-    family) or explicit ``params``, never both. Absent: the bridge runs the legacy Engine default spec."""
     family: str = Field(min_length=1, max_length=64, pattern=r"^[a-z][a-z0-9_]*$")
     preset_index: int | None = Field(default=None, ge=0)
     params: dict[str, float] | None = None
-    source: Literal["ai_fit", "user"] = "ai_fit"  # label only: who chose it
-    # Set by the server on the stored proposal (ignored in requests): the exact params that will run, after the
-    # approved target_coverage (hedge) or max_contracts (opportunity) capped the size params, and which params the
-    # cap lowered ({name: original}).
+    source: Literal["ai_fit", "user"] = "ai_fit"
     resolved_params: dict[str, float] | None = None
     coverage_cap: float | None = None
     capped: dict[str, float] | None = None
@@ -58,27 +52,17 @@ class ClassifyOut(BaseModel):
 
 
 class ProposalIn(BaseModel):
-    """Either a filing-tags body ({ticker, tags, ...}) or a market-event body ({ticker, market, direction, ...}).
-
-    A market-event body with ``division: "opportunity"`` proposes an options trade on the market (no shares or
-    direction needed); it must carry an ``algo`` from the Opportunity division's option families. Opportunity
-    proposals carry risk caps (``max_contracts``, ``max_notional`` in USD of premium at risk); defaults apply."""
     ticker: str = Field(min_length=1, max_length=12)
     tags: list[str] | None = None
     market: MarketRef | None = None
     direction: Direction | None = None
-    division: FamilyName = "hedge"  # market-event path only: "opportunity" = an options trade, not a hedge
+    division: FamilyName = "hedge"
     shares_held: float = Field(default=0.0, ge=0, allow_inf_nan=False)
     target_coverage: float = Field(default=0.5, ge=0, le=1, allow_inf_nan=False)
-    algo: AlgoChoice | None = None  # the AI fit (or a user pick) the bridge should run once approved
+    algo: AlgoChoice | None = None
     max_contracts: int | None = Field(default=None, ge=1, le=10_000)
     max_notional: float | None = Field(default=None, gt=0, le=10_000_000, allow_inf_nan=False)
-    # Hedge A (closed-market mode): opt in to a simulated PM-leg estimate while equities are closed. Off by default;
-    # research R1 found no evidence it reduces the open-gap loss (hedge proposals only).
     closed_pm_hedge: bool = False
-    # Closed-market override (evidence gate, docs/design.md section 6): stage hedge B on a market whose signal has NOT
-    # passed out of sample. Off by default; an explicit, labelled override that the approval must confirm
-    # (ack_unvalidated) and that every staged plan / order then carries as "override".
     act_on_unvalidated: bool = False
 
     @model_validator(mode="after")
@@ -101,8 +85,6 @@ class ProposalIn(BaseModel):
 
 
 class ApproveIn(BaseModel):
-    """Body of POST /proposals/{id}/approve. ``ack_unvalidated`` acknowledges that the market's signal has not passed
-    its out-of-sample test (required, 409 otherwise, whenever the proposal's evidence status is not validated)."""
     ack_unvalidated: bool = False
 
 
@@ -119,17 +101,12 @@ class Proposal(BaseModel):
     market: MarketRef | None = None
     direction: Direction | None = None
     algo: AlgoChoice | None = None
-    max_contracts: int | None = None    # opportunity proposals: approved cap on open option structures
-    max_notional: float | None = None   # opportunity proposals: approved cap on premium / max loss at risk, USD
-    # Hedge A opt-in (closed-market mode): while equities are closed, a simulated prediction-market leg sized by the
-    # closed_session_hedge family. An explicit, labelled estimate, never protection (research R1: no evidence).
+    max_contracts: int | None = None
+    max_notional: float | None = None
     closed_pm_hedge: bool = False
-    act_on_unvalidated: bool = False  # closed-market override (staged plans on an unvalidated market), labelled
-    # The evidence gate for this proposal's (market, ticker) at proposal time: {validated, status, evidence, ...}. An
-    # unvalidated proposal is approved only with ack_unvalidated=true (409 otherwise); the flag is stored here.
+    act_on_unvalidated: bool = False
     evidence: dict | None = None
     ack_unvalidated: bool = False
-    # Liquidity and capital before approval: participation caps, est. cost, book-size capacity, budget fit.
     capacity: dict | None = None
     created_at: dt.datetime
     decided_at: dt.datetime | None = None

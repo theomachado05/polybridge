@@ -1,4 +1,3 @@
-"""Pure pieces of Study A (METHOD.md sections 1-4). No network."""
 from __future__ import annotations
 
 from datetime import date, datetime

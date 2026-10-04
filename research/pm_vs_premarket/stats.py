@@ -1,4 +1,3 @@
-"""Benchmark-controlled regression tests (METHOD.md section 3). numpy only."""
 from __future__ import annotations
 
 import numpy as np
@@ -6,7 +5,6 @@ import pandas as pd
 
 
 def ols_cluster(y, X, groups) -> dict:
-    """OLS with CR1 standard errors clustered by `groups`. X includes the constant."""
     y, X = np.asarray(y, float), np.asarray(X, float)
     g = pd.factorize(np.asarray(groups))[0]
     n, k = X.shape
@@ -38,8 +36,6 @@ def _r2(y, X) -> float:
 
 
 def benchmark_test(g, b, x, dates, blocks, n_perm: int, n_boot: int, seed: int) -> dict:
-    """g = a + beta*b + c*x, clustered by date; Freedman-Lane permutation of date residuals within blocks;
-    month-block bootstrap CIs for c and dR2; PM-only slope d."""
     g, b, x = (np.asarray(v, float) for v in (g, b, x))
     dates, blocks = np.asarray(dates).astype(str), np.asarray(blocks).astype(str)
     m = np.isfinite(g) & np.isfinite(b) & np.isfinite(x)

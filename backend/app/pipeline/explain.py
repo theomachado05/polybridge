@@ -1,4 +1,3 @@
-"""Step 5: a 2-3 sentence rationale written from the structured result only (Gemini, else a template)."""
 from __future__ import annotations
 
 from .llm import LLMProvider, RulesProvider, template_rationale
@@ -10,7 +9,6 @@ FACT_KEYS = ("event_class", "division", "family", "preset_index", "params", "sco
 
 
 def facts(result: dict) -> dict:
-    """The only data the LLM may see: the structured result, alternatives reduced to family/preset/score."""
     out = {k: result.get(k) for k in FACT_KEYS if result.get(k) is not None}
     out["alternatives"] = [{k: a.get(k) for k in ("family", "preset_index", "score")}
                            for a in result.get("alternatives") or []]
@@ -18,7 +16,6 @@ def facts(result: dict) -> dict:
 
 
 async def explain(result: dict, provider: LLMProvider, trace: dict | None = None) -> tuple[str, bool]:
-    """(rationale, written_by_llm). ``trace`` (optional) receives ``error`` when Gemini was tried and failed."""
     f = facts(result)
     if not isinstance(provider, RulesProvider):
         try:

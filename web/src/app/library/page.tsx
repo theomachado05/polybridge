@@ -73,13 +73,10 @@ export default function Library() {
   const s = useStore();
   const [fam, setFam] = useState<(typeof FAMS)[number]>("All");
   const lib = s.library.status === "ok" ? s.library.data : null;
-  // Bridges started with a fit run that family and preset (hedgecore.Algo); those families are marked as
-  // running. The latest fit without a bridge is marked separately, as a pick that is not running yet.
   const fitData = s.fit?.status === "ok" ? s.fit.data ?? null : null;
   const fitted = fitData?.family ?? null;
   const fittedView = fitData?.family ? fitScoreView(fitData) : null;
   const fitAi = aiStatus(fitData);
-  // Only backend bridges this session opened count; a family is "running" when one of them runs it.
   const running: Record<string, (number | null)[]> = {};
   for (const b of s.bridges) if (b.fit) (running[b.fit.family] ??= []).push(b.fit.preset_index);
   const rows = lib ? lib.rows.filter((r) => fam === "All" || r.uiFamilies.includes(fam)) : [];

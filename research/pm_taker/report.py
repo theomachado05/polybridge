@@ -1,4 +1,3 @@
-"""After the freeze: outcomes, mid-variant prices, scoring, SUMMARY.md, stats.json, chart.png, .done (METHOD.md 2, 4, 5, 10)."""
 from __future__ import annotations
 
 import json

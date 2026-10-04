@@ -1,5 +1,3 @@
-"""Opportunity division end to end (offline): option fields on ticks, listed_options eligibility in the fit,
-opportunity proposals and bridges (approval gate, multi-leg option orders through the SimBroker, risk caps)."""
 from __future__ import annotations
 
 import asyncio
@@ -65,7 +63,6 @@ def _clean_option_caches(monkeypatch):
 
 @pytest.fixture
 def mocked_chain(monkeypatch):
-    """Massive is replaced by a static chain; the 8-K refresh is a no-op and NVDA scores 0.6."""
     calls = []
 
     async def get_chain(underlying, **kw):
@@ -80,20 +77,18 @@ def mocked_chain(monkeypatch):
     return calls
 
 
-# ---------------------------------------------------------------- 1. ticks: enrich wiring
-
 def test_enricher_fills_option_fields_for_a_mapped_question(mocked_chain):
     e = OptionsEnricher(Q_ABOVE, None, refresh_s=60)
     t = ts_of("2026-10-02")
     out = run(e({"yes_bid": 0.55, "yes_ask": 0.57, "opt_mid": NAN, "opt_implied_prob": NAN}, t))
     for f in ("opt_mid", "opt_delta", "opt_iv", "opt_implied_prob"):
         assert math.isfinite(out[f]), f
-    assert out["opt_mid"] == pytest.approx(8.0 - 3.0)  # call spread C(145) - C(155)
+    assert out["opt_mid"] == pytest.approx(8.0 - 3.0)
     assert out["eightk_score"] == 0.6 and out["yes_bid"] == 0.55 and "ts_ns" not in out
     ctx = e.context()
     assert ctx["k_lo"] == 145.0 and ctx["k_hi"] == 155.0 and ctx["expiry"] == EXP and ctx["above"]
     assert ctx["chain"] is not None and len(mocked_chain) == 1
-    out2 = run(e({"yes_bid": 0.5, "yes_ask": 0.52}, t))  # within refresh_s: network-free re-enrich
+    out2 = run(e({"yes_bid": 0.5, "yes_ask": 0.52}, t))
     assert len(mocked_chain) == 1 and out2["opt_mid"] == pytest.approx(5.0)
 
 
@@ -102,10 +97,10 @@ def test_enricher_leaves_unmapped_and_index_markets_honest(mocked_chain):
     f = {"yes_bid": 0.3, "yes_ask": 0.32, "opt_implied_prob": NAN, "eightk_score": 0.0}
     out = run(e(f, ts_of("2026-10-02")))
     assert math.isnan(out["opt_implied_prob"]) and e.context() is None and not e.supported()
-    assert mocked_chain == []  # no chain fetched for an unsupported question
+    assert mocked_chain == []
     spy = OptionsEnricher("Will SPY close above $600 on December 18, 2026?")
     out = run(spy({"yes_bid": 0.5, "yes_ask": 0.5}, ts_of("2026-10-02")))
-    assert math.isfinite(out["opt_implied_prob"]) and math.isnan(out["eightk_score"])  # ETFs file no 8-Ks
+    assert math.isfinite(out["opt_implied_prob"]) and math.isnan(out["eightk_score"])
 
 
 def test_enricher_never_raises(monkeypatch):
@@ -134,8 +129,6 @@ def test_live_source_applies_the_options_hook(mocked_chain):
     assert seen == [t.ts_ns]
 
 
-# ---------------------------------------------------------------- 2. fit: listed_options eligibility
-
 def _points(n=24, t0=1_790_000_000):
     return [(t0 + 3600 * i, 0.4 + 0.01 * (i % 5)) for i in range(n)]
 
@@ -160,9 +153,8 @@ def test_join_options_builds_the_spread_history_from_leg_bars():
                                  bars=lambda client, tk, s, e: leg_bars[tk], eightk=False,
                                  today=dt.date(2026, 10, 2)))
     assert info["available"] and info["structure"]["kind"] == "call_spread"
-    assert math.isnan(out["opt_mid"][2]) and out["opt_mid"][3] == pytest.approx(5.0)  # as-of: known at bar end
+    assert math.isnan(out["opt_mid"][2]) and out["opt_mid"][3] == pytest.approx(5.0)
     assert out["opt_mid"][12] == pytest.approx(5.5)
-    # no underlying bars in this fixture: opt_iv cannot be implied, and is never back-filled from the snapshot
     assert 0.4 < out["opt_implied_prob"][3] < 0.6 and np.isnan(out["opt_iv"]).all()
     assert "listed_options" in available_requirements(TickSet(out, "replay", len(pts)))
 
@@ -181,19 +173,17 @@ def test_join_options_degrades_without_data(question, massive, offline, why):
 
 
 def test_black_scholes_inversion_hand_numbers():
-    # S = K = 100, T = 1y, r = 4%, sigma = 20%: d1 = 0.3, d2 = 0.1 -> C = 100 N(0.3) - 100 e^-0.04 N(0.1) = 9.9251
     c = float(bs_price(100.0, 100.0, 1.0, 0.04, 0.2, call=True))
     assert c == pytest.approx(9.9251, abs=1e-3)
     p = float(bs_price(100.0, 100.0, 1.0, 0.04, 0.2, call=False))
-    assert c - p == pytest.approx(100.0 - 100.0 * math.exp(-0.04), abs=1e-9)  # put-call parity
+    assert c - p == pytest.approx(100.0 - 100.0 * math.exp(-0.04), abs=1e-9)
     assert float(implied_vol(c, 100.0, 100.0, 1.0, 0.04, call=True)) == pytest.approx(0.2, abs=1e-6)
     assert float(implied_vol(p, 100.0, 100.0, 1.0, 0.04, call=False)) == pytest.approx(0.2, abs=1e-6)
-    # bounded, NaN on failure: below intrinsic, above the no-arb cap (> S), expired, missing spot, zero price
     bad = implied_vol(np.array([1.0, 101.0, 5.0, 5.0, 0.0]), np.array([120.0, 100.0, 100.0, NAN, 100.0]), 100.0,
                       np.array([1.0, 1.0, 0.0, 1.0, 1.0]), 0.04, call=True)
     assert np.isnan(bad).all()
     assert np.isnan(implied_vol(float(bs_price(100.0, 100.0, 1.0, 0.04, IV_HI * 2, call=True)), 100.0, 100.0, 1.0,
-                                0.04, call=True))  # needs a vol above IV_HI: NaN, not a clipped guess
+                                0.04, call=True))
     assert iv_at_strike(np.array([0.3, NAN, NAN]), np.array([0.5, 0.4, NAN]), 145.0, 155.0, 150.0).tolist()[:2] == \
         pytest.approx([0.4, 0.4])
 
@@ -204,7 +194,7 @@ def test_join_options_implies_opt_iv_from_leg_and_underlying_bar_closes():
     t0 = pts[0][0]
     exp_s = dt.datetime(2026, 12, 18, 20, 0, tzinfo=dt.timezone.utc).timestamp()
     known = t0 + 3600 * 3
-    T = (exp_s - (t0 + 3600 * 5)) / (365 * 86400)  # value the bars at tick 5 (all known at tick 3)
+    T = (exp_s - (t0 + 3600 * 5)) / (365 * 86400)
     c145 = float(bs_price(150.0, 145.0, T, 0.04, 0.50, call=True))
     c155 = float(bs_price(150.0, 155.0, T, 0.04, 0.60, call=True))
     bars = {"O:NVDA261218C00145000": [(known, c145)], "O:NVDA261218C00155000": [(known, c155)],
@@ -215,13 +205,12 @@ def test_join_options_implies_opt_iv_from_leg_and_underlying_bar_closes():
     out, info = run(join_options(ticks, Q_ABOVE, None, massive=lambda: object(), refresh=refresh,
                                  bars=lambda client, tk, s, e: bars[tk], eightk=False, today=dt.date(2026, 10, 2)))
     iv = out["opt_iv"]
-    assert np.isnan(iv[:3]).all()  # nothing known before the bars end
-    assert iv[5] == pytest.approx(0.55, abs=1e-6)  # 50% at 145, 60% at 155, interpolated at K = 150
+    assert np.isnan(iv[:3]).all()
+    assert iv[5] == pytest.approx(0.55, abs=1e-6)
     assert info["n_with_iv"] == len(pts) - 3 and np.isnan(out["opt_delta"]).all()
 
 
 def test_opt_iv_is_nan_when_leg_and_spot_bars_are_not_in_sync():
-    """Hourly spot bars, one option bar 3 hours older than the spot bar it would be paired with: NaN, not a vol."""
     pts = _points()
     ticks = assemble(pts)
     t0 = pts[0][0]
@@ -237,14 +226,12 @@ def test_opt_iv_is_nan_when_leg_and_spot_bars_are_not_in_sync():
     out, info = run(join_options(ticks, Q_ABOVE, None, massive=lambda: object(), refresh=refresh,
                                  bars=lambda client, tk, s, e: bars[tk], eightk=False, today=dt.date(2026, 10, 2)))
     iv = out["opt_iv"]
-    assert np.isfinite(iv[0]) and np.isfinite(iv[1])  # option and spot bars within one hour of each other
-    assert np.isnan(iv[2:]).all()  # the option bar is now 2+ hours stale against the spot bar: never inverted
+    assert np.isfinite(iv[0]) and np.isfinite(iv[1])
+    assert np.isnan(iv[2:]).all()
     assert bar_interval(spot) == 3600.0 and np.isnan(asof_known(np.array([t0 - 1]), spot)).all()
 
 
 def test_spread_estimate_is_nan_when_one_leg_is_stale_against_the_other():
-    """k_lo trades every hour; k_hi last traded 3 hours before the window's ticks: that spread never existed at one
-    moment, so opt_mid / opt_implied_prob are NaN there (not a fake PM-vs-options gap), and the notes say so."""
     pts = _points()
     ticks = assemble(pts)
     t0 = pts[0][0]
@@ -256,8 +243,8 @@ def test_spread_estimate_is_nan_when_one_leg_is_stale_against_the_other():
     out, info = run(join_options(ticks, Q_ABOVE, None, massive=lambda: object(), refresh=refresh,
                                  bars=lambda client, tk, s, e: bars[tk], eightk=False, today=dt.date(2026, 10, 2)))
     mid, prob = out["opt_mid"], out["opt_implied_prob"]
-    assert np.isfinite(mid[0]) and np.isfinite(mid[1])  # both legs closed within one hour
-    assert np.isnan(mid[2:12]).all() and np.isnan(prob[2:12]).all()  # k_hi is 2..11 hours stale
+    assert np.isfinite(mid[0]) and np.isfinite(mid[1])
+    assert np.isnan(mid[2:12]).all() and np.isnan(prob[2:12]).all()
     assert np.isfinite(mid[12]) and np.isfinite(mid[13]) and np.isnan(mid[14:]).all()
     assert info["n_unsynced_legs"] == len(pts) - 4 and any("never traded at once" in n for n in info["notes"])
 
@@ -309,13 +296,10 @@ def test_fit_division_override_is_honoured():
     lists = {"hedge": [{"id": "h"}], "opportunity": []}
     assert service.choose_division(lists, 100, "opportunity") is None
     assert service.choose_division(lists, 0, "hedge") == "hedge"
-    assert service.choose_division(lists, 0) == "hedge"  # default falls back
+    assert service.choose_division(lists, 0) == "hedge"
 
-
-# ---------------------------------------------------------------- 3. proposals and the approval gate
 
 class FakeEnricher:
-    """Option fields come from the replay recording; the chain prices the legs."""
 
     def __init__(self, chain=None, above=True, k=150.0):
         self.chain = chain if chain is not None else nvda_chain()
@@ -347,7 +331,7 @@ def opp_client(tmp_path):
     app.state.replay_speed = 0
     app.state.replay_path = str(f)
     from tests.test_bridges import write_meta
-    write_meta(f, MKT)  # a recording of the proposals' market
+    write_meta(f, MKT)
     app.state.broker = SimBroker(None)
     app.state.enricher = FakeEnricher()
     app.state.options_enricher_factory = lambda market: app.state.enricher
@@ -378,19 +362,16 @@ def test_opportunity_proposal_needs_an_options_family_and_carries_caps(opp_clien
         body = {"ticker": "NVDA", "market": MKT, "division": "opportunity", **({"algo": bad} if bad else {})}
         r = c.post("/proposals", json=body)
         assert r.status_code == 422 and msg in json.dumps(r.json()), (bad, r.text)
-    # max_contracts caps the per-entry size param, shown on the approved record
     p = opp_proposal(c, {"family": "binary_vs_spread_arb", "params": {"contracts": 10}}, approve=False,
                      max_contracts=3, max_notional=2500)
     assert p["algo"]["resolved_params"]["contracts"] == 3 and p["algo"]["capped"] == {"contracts": 10.0}
     assert p["max_notional"] == 2500
-    # an options family on a hedge proposal, or caps on a hedge proposal: 422
     r = c.post("/proposals", json={"ticker": "NVDA", "market": MKT, "direction": "down_on_yes", "shares_held": 10,
                                    "algo": {"family": "binary_vs_spread_arb"}})
     assert r.status_code == 422
     r = c.post("/proposals", json={"ticker": "NVDA", "market": MKT, "direction": "down_on_yes", "shares_held": 10,
                                    "max_contracts": 3})
     assert r.status_code == 422
-    # a hedge still needs shares
     r = c.post("/proposals", json={"ticker": "NVDA", "market": MKT, "direction": "down_on_yes"})
     assert r.status_code == 422
 
@@ -400,19 +381,18 @@ def test_opportunity_bridge_keeps_every_approval_gate(opp_client):
     body = lambda pid, src="replay": {"proposal_id": pid, "source": src}  # noqa: E731
     assert c.post("/bridges", json=body("nope")).status_code == 404
     p = opp_proposal(c, approve=False)
-    assert c.post("/bridges", json=body(p["id"])).status_code == 409  # not approved
+    assert c.post("/bridges", json=body(p["id"])).status_code == 409
     c.post(f"/proposals/{p['id']}/approve", json={"ack_unvalidated": True})
     r = c.post("/bridges", json=body(p["id"]))
     assert r.status_code == 201
     bid = r.json()["bridge_id"]
     _events(c, bid)
-    c.app.state.bridges[p["id"]].status = "running"  # as if still running (replays at speed 0 finish at once)
+    c.app.state.bridges[p["id"]].status = "running"
     again = c.post("/bridges", json=body(p["id"]))
-    assert again.status_code == 200 and again.json()["bridge_id"] == bid  # idempotent, same source
-    assert c.post("/bridges", json=body(p["id"], "live")).status_code == 409  # one running bridge per proposal
+    assert again.status_code == 200 and again.json()["bridge_id"] == bid
+    assert c.post("/bridges", json=body(p["id"], "live")).status_code == 409
     other = c.post("/bridges", json={**body(p["id"]), "family": "vol_vs_pm_move"})
-    assert other.status_code == 409  # the approval covers what runs
-    # a filing opportunity proposal without an options algo still never reaches hedgecore
+    assert other.status_code == 409
     pid = c.post("/proposals", json={"ticker": "ABNB", "tags": ["workforce_reduction"], "shares_held": 10}).json()["id"]
     c.post(f"/proposals/{pid}/approve", json={"ack_unvalidated": True})
     r = c.post("/bridges", json={**body(pid), "market": MKT})
@@ -431,8 +411,6 @@ def test_filing_opportunity_with_an_options_algo_can_bridge(opp_client):
     _events(c, r.json()["bridge_id"])
 
 
-# ---------------------------------------------------------------- 4. multi-leg option orders and caps
-
 def _start(c, p):
     r = c.post("/bridges", json={"proposal_id": p["id"], "source": "replay"})
     assert r.status_code == 201, r.text
@@ -450,14 +428,13 @@ def test_option_intent_becomes_a_multi_leg_order_through_the_sim(opp_client):
     assert a.family == "binary_vs_spread_arb" and a.position == {"option": 0.0}
     ticks = [d for k, d in ev if k == "tick"]
     assert ticks[0]["options"]["opt_implied_prob"] == 0.35 and ticks[0]["options"]["gap"] == pytest.approx(0.2 - 0.35)
-    assert a.ticks[0]["yes_bid"] == PS[0]  # opportunity ticks are never oriented
+    assert a.ticks[0]["yes_bid"] == PS[0]
     fills = [d for k, d in ev if k == "fill"]
     assert [f["status"] for f in fills] == ["filled", "filled"]
     entry, exit_ = fills
     assert entry["structure"] == "call_spread" and entry["simulated"] and "simulated" in entry["fill_model"]
     assert [(lg["ticker"], lg["side"]) for lg in entry["legs"]] == [("O:NVDA261218C00145000", "buy"),
                                                                     ("O:NVDA261218C00155000", "sell")]
-    # each leg at its quote mid +/- half the quoted spread; the structure price is the signed sum
     assert entry["legs"][0]["fill_px"] == pytest.approx(8.1) and entry["legs"][1]["fill_px"] == pytest.approx(2.9)
     assert entry["fill_px"] == pytest.approx(5.2) and entry["fee"] == pytest.approx(4 * 0.65)
     assert [(lg["ticker"], lg["side"]) for lg in exit_["legs"]] == [("O:NVDA261218C00145000", "sell"),
@@ -467,8 +444,8 @@ def test_option_intent_becomes_a_multi_leg_order_through_the_sim(opp_client):
     assert s["division"] == "opportunity" and s["option_position"] == 0 and s["option_structure"] is None
     assert s["option_data"] == "recorded" and s["pm_vs_options"]["opt_implied_prob"] == 0.35
     assert s["coverage_cap"] is None and s["equity_price"] is None
-    sandbox = c.app.state.bridges[p["id"]].replay_broker  # replays trade an isolated simulator by default
-    assert run(sandbox.positions()) == [] and len(run(sandbox.orders())) == 4  # round trip closed both legs
+    sandbox = c.app.state.bridges[p["id"]].replay_broker
+    assert run(sandbox.positions()) == [] and len(run(sandbox.orders())) == 4
 
 
 def test_risk_caps_clip_and_hold_option_entries(opp_client):
@@ -484,8 +461,7 @@ def test_risk_caps_clip_and_hold_option_entries(opp_client):
     a = FakeAlgo.instances[0]
     assert a.rejects == ["option"] and a.fills[0][1] == 3.0
     pos = [d for k, d in ev if k == "position"]
-    assert pos[0]["option_position"] == 3 and pos[1]["option_position"] == 3  # the held entry added nothing
-    # bridge end: the open structure is closed on its own legs (simulated, labelled), so nothing stays open
+    assert pos[0]["option_position"] == 3 and pos[1]["option_position"] == 3
     close = fills[-1]
     assert close["close_reason"] == "bridge_end" and "simulated close" in close["close_label"]
     assert close["status"] == "filled" and close["side"] == "sell" and close["qty"] == 3
@@ -496,7 +472,7 @@ def test_risk_caps_clip_and_hold_option_entries(opp_client):
 
     FakeAlgo.script, FakeAlgo.instances = {2: {"instrument": "option", "side": 1, "qty": 5.0},
                                            4: {"instrument": "option", "side": 1, "qty": 5.0}}, []
-    p = opp_proposal(c, max_notional=1100)  # debit at the ask 5.2 -> $520 per spread -> 2 spreads fit
+    p = opp_proposal(c, max_notional=1100)
     bid = _start(c, p)
     fills = [d for k, d in _events(c, bid) if k == "fill"]
     assert fills[0]["qty"] == 2 and fills[0]["cap"] == "max_notional" and fills[0]["unit_risk"] == pytest.approx(520)
@@ -504,13 +480,13 @@ def test_risk_caps_clip_and_hold_option_entries(opp_client):
     ev2 = _events(c, bid)
     assert [d for k, d in ev2 if k == "position"][0]["risk_used"] == pytest.approx(1040)
     s = c.get(f"/bridges/{bid}").json()
-    assert s["option_position"] == 0 and s["risk_used"] == 0 and s["option_structure"] is None  # closed at the end
+    assert s["option_position"] == 0 and s["risk_used"] == 0 and s["option_structure"] is None
 
 
 def test_a_close_that_cannot_be_priced_at_bridge_end_is_reported_and_the_structure_stays(opp_client):
     c = opp_client
 
-    class ChainGoesAway(FakeEnricher):  # the entry is priced; at bridge end Massive is gone (an empty chain)
+    class ChainGoesAway(FakeEnricher):
         def context(self):
             self.n = getattr(self, "n", 0) + 1
             ctx = super().context()
@@ -541,24 +517,21 @@ def test_webull_routes_option_combos_to_the_simulator_labelled(opp_client):
     sim = SimBroker(None, order_note="Routed to the simulator: Webull paper is only used for equities.")
     c.app.state.broker = WebullBroker(object(), sim)
     FakeAlgo.script = {2: {"instrument": "option", "side": 1, "qty": 1.0}}
-    bid = _start(c, opp_proposal(c))  # replay sandbox by default: an isolated simulator
+    bid = _start(c, opp_proposal(c))
     ev = _events(c, bid)
     f = next(d for k, d in ev if k == "fill")
     assert f["status"] == "filled" and f["broker"] == "sim-replay" and f["simulated"]
-    # a live-account replay goes to the Webull wrapper, whose combos land in its simulator with the label
     FakeAlgo.script, FakeAlgo.instances = {2: {"instrument": "option", "side": 1, "qty": 1.0}}, []
     p = opp_proposal(c)
     r = c.post("/bridges", json={"proposal_id": p["id"], "source": "replay", "replay_to_account": True})
     f = next(d for k, d in _events(c, r.json()["bridge_id"]) if k == "fill")
     assert f["status"] == "filled" and f["broker"] == "sim" and "Webull" in f["note"]
     assert f["routed"].startswith("simulator")
-    assert run(sim.positions()) == []  # opened in the Webull wrapper's simulator, closed there at bridge end
+    assert run(sim.positions()) == []
     assert sorted(o.symbol for o in run(sim.orders())) == ["O:NVDA261218C00145000"] * 2 + ["O:NVDA261218C00155000"] * 2
 
 
 def test_webull_options_mode_places_combos_at_webull_labelled_and_only_in_session(opp_client):
-    """WEBULL_OPTIONS=1 (options_supported): the combo goes to Webull, so the fill is not labelled simulated, the
-    capital check reads the Webull account (not its simulator), and outside 09:30-16:00 ET nothing is sent."""
     from types import SimpleNamespace
 
     from app.broker.models import Order, now_iso
@@ -584,7 +557,7 @@ def test_webull_options_mode_places_combos_at_webull_labelled_and_only_in_sessio
         return []
     wb.place_combo, wb.account, wb.positions = combo, account, no_positions
     c.app.state.broker = wb
-    c.app.state.staged_clock = lambda: dt.datetime(2026, 10, 7, 15, 0, tzinfo=dt.timezone.utc)  # Wed 11:00 ET
+    c.app.state.staged_clock = lambda: dt.datetime(2026, 10, 7, 15, 0, tzinfo=dt.timezone.utc)
     FakeAlgo.script, FakeAlgo.instances = {2: {"instrument": "option", "side": 1, "qty": 1.0}}, []
     p = opp_proposal(c)
     r = c.post("/bridges", json={"proposal_id": p["id"], "source": "replay", "replay_to_account": True})
@@ -593,25 +566,22 @@ def test_webull_options_mode_places_combos_at_webull_labelled_and_only_in_sessio
     f = fills[0]
     assert f["status"] == "filled" and f["broker"] == "webull-paper" and f["simulated"] is False
     assert f["routed"] == bridges.ROUTED_BROKER and f["fill_model"] == bridges.OPTION_FILLS_LABEL_BROKER
-    assert f["capital"]["checked"] is True and accounts  # checked against the Webull account
+    assert f["capital"]["checked"] is True and accounts
     assert fills[-1]["close_reason"] == "bridge_end" and fills[-1]["close_label"] == bridges.OPTION_CLOSE_LABEL_BROKER
-    assert len(placed) == 2 and run(sim.orders()) == []  # entry and close at Webull, nothing in its simulator
+    assert len(placed) == 2 and run(sim.orders()) == []
     s = c.get(f"/bridges/{bid}").json()
     assert s["fills_label"] == bridges.OPTION_FILLS_LABEL_BROKER
 
-    # off-session: the opportunity loop holds (broker_hold), and the order path itself never sends to Webull
     br = SimpleNamespace(division="opportunity", order_broker=lambda: wb, app=c.app)
     assert ClosedMode.broker_hold.fget(SimpleNamespace(hedging=False, bridge=br)) is True
-    wb_sim_opts = WebullBroker(object(), sim)  # options in the simulator: an opportunity bridge trades any hour
+    wb_sim_opts = WebullBroker(object(), sim)
     br2 = SimpleNamespace(division="opportunity", order_broker=lambda: wb_sim_opts, app=c.app)
     assert ClosedMode.broker_hold.fget(SimpleNamespace(hedging=False, bridge=br2)) is False
-    c.app.state.staged_clock = lambda: dt.datetime(2026, 10, 3, 16, 0, tzinfo=dt.timezone.utc)  # Saturday
+    c.app.state.staged_clock = lambda: dt.datetime(2026, 10, 3, 16, 0, tzinfo=dt.timezone.utc)
     assert bridges._options_closed_at_broker(br, wb) is True
     assert bridges._options_closed_at_broker(br, wb_sim_opts) is False
     assert bridges._options_closed_at_broker(br, sim) is False
 
-
-# ---------------------------------------------------------------- SimBroker combos
 
 def _legs(*specs):
     return [OrderRequest(symbol=s, asset="option", side=side, qty=q, ref_px=px, ref_half_spread=h,
@@ -629,7 +599,7 @@ def test_sim_combo_fills_all_legs_at_quoted_spreads():
 
 
 def test_sim_combo_is_all_or_none():
-    b = SimBroker(None)  # NullQuotes: a leg without ref_px has no price
+    b = SimBroker(None)
     orders = run(b.place_combo(_legs(("O:A", "buy", 1, 8.0, 0.1), ("O:B", "sell", 1, None, None))))
     assert [o.status for o in orders] == ["rejected", "rejected"] and "combo leg 2" in orders[0].reject_reason
     assert run(b.positions()) == [] and run(b.account()).cash == 1_000_000
@@ -641,8 +611,6 @@ def test_sim_combo_is_all_or_none():
         run(b.place_combo([OrderRequest(symbol="SPY", asset="equity", side="buy", qty=1, ref_px=1.0)]))
 
 
-# ---------------------------------------------------------------- the real engine, when built
-
 def test_real_binary_vs_spread_arb_trades_the_gap(opp_client, monkeypatch):
     hc = pytest.importorskip("hedgecore")
     monkeypatch.setattr(bridges, "_load_engine", lambda: hc)
@@ -653,12 +621,9 @@ def test_real_binary_vs_spread_arb_trades_the_gap(opp_client, monkeypatch):
     decisions = [d for k, d in ev if k == "decision"]
     fills = [d for k, d in ev if k == "fill"]
     assert decisions and all(d["engine"] == "algo" and d["family"] == "binary_vs_spread_arb" for d in decisions)
-    # PS starts at 0.20 vs an options-implied 0.35: PM trails by > entry_gap -> sell the call spread
     assert fills and fills[0]["status"] == "filled" and fills[0]["side"] == "sell" and fills[0]["qty"] == 2
     assert fills[0]["structure"] == "call_spread"
 
-
-# ---------------------------------------------------------------- review fixes: honest scores, eightk orientation
 
 from app.pipeline.ticks import orient_for_family  # noqa: E402
 from app.pipeline.tune import missing_signal, score_row, tune  # noqa: E402
@@ -668,11 +633,10 @@ def test_zero_order_opportunity_replay_is_unscored():
     assert score_row({"n_orders": 0, "pnl": 0.0, "fees": 0.0, "max_dd": 0.0}, "opportunity") is None
     assert score_row({"n_orders": 2, "pnl": -10.0, "fees": 0.0, "max_dd": 20.0}, "opportunity") == pytest.approx(-0.5)
     assert score_row({"n_orders": 2, "hedge_var_reduction_vs_static": 0.3}, "hedge") == 0.3
-    assert score_row({"n_orders": 0, "hedge_var_reduction_vs_static": 0.0}, "hedge") is None  # never hedged
+    assert score_row({"n_orders": 0, "hedge_var_reduction_vs_static": 0.0}, "hedge") is None
 
 
 class _IdleAdapter:
-    """Every preset of one family holds on every tick; another family trades at a loss."""
     can_score = True
 
     def __init__(self, idle=("vol_vs_pm_move",)):
@@ -721,8 +685,6 @@ def test_family_without_its_signal_history_is_not_replayed():
 
 
 def test_eightk_is_never_scored_on_the_yes_spread():
-    """It trades a put / put spread; opt_mid is the YES spread (a call spread on "above K"), so its replay would book
-    the opposite exposure. With an 8-K score but no put price history it is not replayed, and the reason says why."""
     a = _IdleAdapter(idle=())
     ticks = _opt_ticks(eightk=True)
     assert missing_signal("eightk_opportunity", ticks.ticks) == "opt_put_mid"
@@ -739,14 +701,12 @@ def test_fit_skips_vol_vs_pm_move_without_iv_history(monkeypatch):
 
 
 def test_vol_vs_pm_move_is_never_scored_on_the_spread_proxy(monkeypatch):
-    """It trades a straddle; the fit's opt_mid is the spread. With implied vol but no straddle price history it is
-    not replayed, and the reason says the spread proxy is not what it trades."""
     a = _IdleAdapter(idle=())
     ticks = _opt_ticks(straddle=False)
     assert missing_signal("vol_vs_pm_move", ticks.ticks) == "opt_straddle_mid"
     out = tune(a, [{"id": "vol_vs_pm_move"}], "opportunity", {}, ticks)
     assert a.calls == [] and not out["scored"] and "no straddle price history" in out["unscored_reason"]
-    r, hc = _fit(monkeypatch, with_options=True, with_iv=True)  # the real join: opt_iv yes, straddle history no
+    r, hc = _fit(monkeypatch, with_options=True, with_iv=True)
     called = {c[0] for c in hc.calls}
     assert "binary_vs_spread_arb" in called and "vol_vs_pm_move" not in called
 
@@ -772,8 +732,8 @@ def test_fit_feeds_eightk_the_adverse_probability_on_an_above_question():
             return super().replay_grid(family, position, ticks)
     ft = {f["id"]: orient_for_family(ts.ticks, f["id"], "above") for f in fams}
     tune(Rec(idle=()), fams, "opportunity", {}, ts, ft)
-    assert np.allclose(seen["binary_vs_spread_arb"], ts.ticks["yes_bid"])  # raw YES
-    assert np.allclose(seen["eightk_opportunity"], 1.0 - ts.ticks["yes_ask"])  # adverse = NO on "above K"
+    assert np.allclose(seen["binary_vs_spread_arb"], ts.ticks["yes_bid"])
+    assert np.allclose(seen["eightk_opportunity"], 1.0 - ts.ticks["yes_ask"])
 
 
 def test_service_orients_eightk_by_the_matched_question(monkeypatch):
@@ -806,7 +766,7 @@ def test_service_orients_eightk_by_the_matched_question(monkeypatch):
     run(service.run_fit(req, service.Deps(adapter=Rec(idle=()))))
     raw_bid = seen["binary_vs_spread_arb"]
     assert not np.allclose(seen["eightk_opportunity"], raw_bid)
-    assert np.allclose(seen["eightk_opportunity"], 1.0 - raw_bid, atol=0.05)  # NO side of the raw book
+    assert np.allclose(seen["eightk_opportunity"], 1.0 - raw_bid, atol=0.05)
 
 
 def test_hedge_fit_skips_the_options_join(monkeypatch):
@@ -834,20 +794,20 @@ def test_bridge_feeds_eightk_the_adverse_probability(opp_client):
     p = opp_proposal(c, {"family": "eightk_opportunity", "preset_index": 0})
     ev = _events(c, _start(c, p))
     a = FakeAlgo.instances[-1]
-    assert a.ticks[0]["yes_bid"] == pytest.approx(1 - PS[0])  # "above K": YES is bullish, adverse = NO
+    assert a.ticks[0]["yes_bid"] == pytest.approx(1 - PS[0])
     tick = next(d for k, d in ev if k == "tick")
-    assert tick["options"]["gap"] == pytest.approx(PS[0] - 0.35)  # the UI gap stays on raw YES
+    assert tick["options"]["gap"] == pytest.approx(PS[0] - 0.35)
     FakeAlgo.instances = []
     c.app.state.enricher = FakeEnricher(above=False)
     p = opp_proposal(c, {"family": "eightk_opportunity", "preset_index": 1})
     _events(c, _start(c, p))
-    assert FakeAlgo.instances[-1].ticks[0]["yes_bid"] == pytest.approx(PS[0])  # "below K": YES already adverse
+    assert FakeAlgo.instances[-1].ticks[0]["yes_bid"] == pytest.approx(PS[0])
 
 
 def test_zero_risk_quotes_never_bypass_the_notional_cap(opp_client):
     c = opp_client
     crossed = ch.Chain(underlying="NVDA", fetched_at=time.time())
-    for k, m in ((145.0, 3.0), (150.0, 4.0), (155.0, 5.0)):  # stale: the lower call is cheaper than the upper
+    for k, m in ((145.0, 3.0), (150.0, 4.0), (155.0, 5.0)):
         tag = f"{int(k * 1000):08d}"
         crossed.quotes.append(ch.OptionQuote(f"O:NVDA261218C{tag}", "call", k, EXP, bid=m, ask=m, mid=m,
                                              mark_source="quote"))
@@ -859,10 +819,7 @@ def test_zero_risk_quotes_never_bypass_the_notional_cap(opp_client):
     assert FakeAlgo.instances[0].rejects == ["option"]
 
 
-# ---------------------------------------------------------------- 5. replays whose contracts no current chain lists
-
 class NoChainEnricher:
-    """A resolved market: its question no longer maps (the resolution date passed), so there is no live chain."""
     detail = {"supported": False, "reason": "no resolution date (or it has passed)"}
 
     def context(self):
@@ -883,7 +840,7 @@ def test_replay_prices_legs_at_recorded_closes_only_where_the_recording_kept_a_f
     rows = []
     for i, p in enumerate(PS):
         r = {"ts_ns": 1_000_000_000 * (i + 1), "p": p}
-        if i in (2, 3, 8):  # rows where the recording priced the spread (fresh pair)
+        if i in (2, 3, 8):
             r.update(opt_mid=2.0, opt_implied_prob=0.4, opt_legs={lo: 3.0, hi: 1.0})
         rows.append(r)
     f = tmp_path / "rec.jsonl"
@@ -900,7 +857,6 @@ def test_replay_prices_legs_at_recorded_closes_only_where_the_recording_kept_a_f
     app.state.replay_path = str(f)
     app.state.broker = SimBroker(None)
     app.state.options_enricher_factory = lambda market: NoChainEnricher()
-    # tick 2 has no recorded legs (stale): refused; tick 3 is fresh: priced at the closes; tick 9 exits on fresh closes
     FakeAlgo.script = {2: {"instrument": "option", "side": 1, "qty": 2.0, "reason": "entry"},
                        3: {"instrument": "option", "side": 1, "qty": 2.0, "reason": "entry"},
                        9: {"instrument": "option", "side": -1, "qty": 2.0, "reason": "exit"}}
@@ -924,7 +880,6 @@ def test_replay_prices_legs_at_recorded_closes_only_where_the_recording_kept_a_f
 
 
 def _recorded_nvda_app(tmp_path, rows):
-    """An app replaying ``rows`` (with the NVDA 227.5/232.5 call-spread sidecar) and no current chain."""
     from app.main import create_app
     from tests.test_bridges import write_meta
     lo, hi = "O:NVDA260930C00227500", "O:NVDA260930C00232500"
@@ -947,14 +902,12 @@ def _recorded_nvda_app(tmp_path, rows):
 
 
 def test_bridge_end_close_is_refused_at_stale_recorded_closes(tmp_path):
-    """A replay that ends hours after the last fresh leg closes (overnight, a weekend, past expiry with no recorded
-    settlement) does not close at them: the close is a rejected fill and the structure stays open, reported."""
     from fastapi.testclient import TestClient
     lo, hi = "O:NVDA260930C00227500", "O:NVDA260930C00232500"
     rows = []
     for i, p in enumerate(PS):
-        r = {"ts_ns": 3600 * 1_000_000_000 * (i + 1), "p": p}  # hourly rows
-        if i in (2, 3):  # only these two hours carry a fresh pair
+        r = {"ts_ns": 3600 * 1_000_000_000 * (i + 1), "p": p}
+        if i in (2, 3):
             r.update(opt_mid=2.0, opt_implied_prob=0.4, opt_legs={lo: 3.0, hi: 1.0})
         rows.append(r)
     app, lo, hi = _recorded_nvda_app(tmp_path, rows)
@@ -966,12 +919,10 @@ def test_bridge_end_close_is_refused_at_stale_recorded_closes(tmp_path):
     fills = [d for k, d in ev if k == "fill"]
     assert [(x["status"], x.get("close_reason")) for x in fills] == [("filled", None), ("rejected", "bridge_end")]
     assert "h older than the end of the replay" in fills[1]["reject_reason"]
-    assert s["option_position"] == 2 and s["option_structure"] is not None  # never hidden
+    assert s["option_position"] == 2 and s["option_structure"] is not None
 
 
 def test_bridge_end_close_settles_at_the_recorded_expiry_value(tmp_path):
-    """A recording that reaches the expiry close carries the settlement (each leg at intrinsic from the official
-    close): the bridge-end close is priced there with no spread, labelled; an order that would open on it is refused."""
     from fastapi.testclient import TestClient
     lo, hi = "O:NVDA260930C00227500", "O:NVDA260930C00232500"
     rows = []
@@ -985,7 +936,7 @@ def test_bridge_end_close_settles_at_the_recorded_expiry_value(tmp_path):
                     opt_settlement={"expiry": "2026-09-30", "underlying_close": 228.0, "source": "test"})
     app, lo, hi = _recorded_nvda_app(tmp_path, rows)
     FakeAlgo.script = {3: {"instrument": "option", "side": 1, "qty": 2.0, "reason": "entry"},
-                       n: {"instrument": "option", "side": 1, "qty": 1.0, "reason": "entry"}}  # adds on the settlement
+                       n: {"instrument": "option", "side": 1, "qty": 1.0, "reason": "entry"}}
     with TestClient(app) as c:
         bid = _start(c, opp_proposal(c))
         ev = _events(c, bid)
@@ -1003,10 +954,9 @@ def test_bridge_end_close_settles_at_the_recorded_expiry_value(tmp_path):
 
 
 def test_a_live_chain_still_prices_replay_legs_when_it_lists_them(opp_client):
-    """A recording with a structure does not override a current chain: a live market's replay keeps today's quotes."""
     c = opp_client
     FakeAlgo.script = {3: {"instrument": "option", "side": 1, "qty": 1.0, "reason": "entry"}}
     p = opp_proposal(c)
     fills = [d for k, d in _events(c, _start(c, p)) if k == "fill"]
     assert fills[0]["status"] == "filled" and fills[0].get("price_source") != "recorded"
-    assert fills[0]["legs"][0]["quote_mid"] == 8.0  # the FakeEnricher chain, not a recording
+    assert fills[0]["legs"][0]["quote_mid"] == 8.0

@@ -1,16 +1,3 @@
-"""Background order reconciliation for a broker that fills asynchronously (Webull paper).
-
-Every RECONCILE_INTERVAL_S (15 s) during the regular session (09:30-16:00 ET, NYSE calendar from app.closed.session)
-the reconciler calls ``broker.reconcile()``: one read of Webull's open orders, then the final state (order detail) of
-each order this app placed that is no longer open, a few per pass (Webull allows 2 detail reads / 2 s). Our order
-states (and so GET /orders, staged orders and bridges reading the broker) follow Webull's without waiting for a
-request. When the session closes it runs one last pass (orders placed near 16:00 may fill at the close), then idles:
-it sleeps until the next regular open, re-checking at most every RECONCILE_IDLE_S so a clock change or a restarted
-session is noticed. A broker without ``reconcile`` (the simulator, which fills synchronously) makes it idle too.
-
-Start / stop: ``ensure_started(app)`` (called by the broker routes on first use when the active broker is Webull and
-WEBULL_RECONCILE is not 0), POST /broker/reconcile/start, POST /broker/reconcile/stop, GET /broker/reconcile (status).
-The router's shutdown hook stops every running reconciler, so nothing outlives the app."""
 from __future__ import annotations
 
 import asyncio
@@ -25,8 +12,8 @@ from .models import BrokerError, now_iso
 log = logging.getLogger(__name__)
 
 RECONCILE_INTERVAL_S = 15.0
-RECONCILE_IDLE_S = 300.0  # longest idle sleep while the market is closed
-BACKOFF_MAX_S = 120.0  # consecutive failures back off 15 s, 30 s, 60 s, 120 s
+RECONCILE_IDLE_S = 300.0
+BACKOFF_MAX_S = 120.0
 _RUNNING: set["Reconciler"] = set()
 
 
@@ -57,18 +44,17 @@ class Reconciler:
         self.last_run_at: str | None = None
         self.last_result: dict | None = None
         self.last_error: str | None = None
-        self.state = "stopped"  # stopped | active | idle
+        self.state = "stopped"
         self.idle_reason: str | None = None
         self.next_run_in_s: float | None = None
         self._was_open = False
-        self.recent: deque[dict] = deque(maxlen=50)  # transitions seen, newest last
+        self.recent: deque[dict] = deque(maxlen=50)
 
     @property
     def running(self) -> bool:
         return self._task is not None and not self._task.done()
 
     def start(self) -> bool:
-        """Start the loop on the running event loop; False when it was already running."""
         if self.running:
             return False
         self._task = asyncio.get_running_loop().create_task(self._loop(), name="webull-reconcile")
@@ -77,7 +63,6 @@ class Reconciler:
         return True
 
     async def stop(self) -> bool:
-        """Stop the loop and wait for it to end; False when it was not running."""
         _RUNNING.discard(self)
         task, self._task = self._task, None
         self.state, self.next_run_in_s = "stopped", None
@@ -91,8 +76,6 @@ class Reconciler:
         return True
 
     async def run_once(self, force: bool = False) -> dict:
-        """One pass now. Outside the regular session it does nothing (idle) unless ``force`` or it is the pass that
-        follows the close."""
         broker = self._broker()
         rec = getattr(broker, "reconcile", None)
         if rec is None:
@@ -114,7 +97,7 @@ class Reconciler:
             self.consecutive_errors += 1
             self.last_error = e.message
             return {"ran": True, "ok": False, "error": e.message}
-        except Exception as e:  # never let one bad pass kill the loop
+        except Exception as e:
             self.errors += 1
             self.consecutive_errors += 1
             self.last_error = type(e).__name__
@@ -161,7 +144,6 @@ def status_map() -> dict:
 
 
 def get_reconciler(app: Any) -> Reconciler:
-    """The app's reconciler (one per app), reading the app's active broker on every pass."""
     r = getattr(app.state, "reconciler", None)
     if r is None:
         from . import get_broker
@@ -172,7 +154,7 @@ def get_reconciler(app: Any) -> Reconciler:
 
 
 def _app_clock(app: Any) -> dt.datetime:
-    clock = getattr(app.state, "staged_clock", None)  # tests pin the session clock
+    clock = getattr(app.state, "staged_clock", None)
     if clock is not None:
         from ..closed.session import to_utc
 
@@ -181,8 +163,6 @@ def _app_clock(app: Any) -> dt.datetime:
 
 
 def auto_start_enabled() -> bool:
-    """WEBULL_RECONCILE=0 turns auto-start off. Under pytest it is off unless WEBULL_RECONCILE=force, so a test that
-    pins a mocked Webull broker never gets background requests it did not ask for."""
     v = os.environ.get("WEBULL_RECONCILE", "1").strip().lower()
     if v == "force":
         return True
@@ -192,8 +172,6 @@ def auto_start_enabled() -> bool:
 
 
 def ensure_started(app: Any) -> bool:
-    """Start the app's reconciler when the active broker reconciles (Webull) and WEBULL_RECONCILE is not 0. Called
-    from inside a request (a running loop); never raises."""
     try:
         if not auto_start_enabled() or getattr(app.state, "reconcile_stopped_by_user", False):
             return False

@@ -1,4 +1,3 @@
-"""Synthetic option chains for tests: Black-Scholes calls with a chosen bid/ask half-spread."""
 from __future__ import annotations
 
 import math

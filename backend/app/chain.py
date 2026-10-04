@@ -1,4 +1,3 @@
-"""Shared live-chain snapshot: spot, 3-6m expiry, strikes and today's marks for one ticker (sync; call via a thread)."""
 from __future__ import annotations
 
 import asyncio
@@ -15,13 +14,12 @@ from polybridge_research.pricing import _contract, fetch_chain, locate_spot, opt
 
 CACHE_DIR = Path(os.environ.get("MASSIVE_CACHE_DIR", Path(__file__).resolve().parent.parent / ".massive_cache"))
 _CAL: TradingCalendar | None = None
-HTTP_TIMEOUT_S = 6.0  # per Massive HTTP request made by the API (the research client defaults to 60 s)
-MAX_ATTEMPTS = 2      # the research client defaults to 10 with backoff; the API must answer quickly
-CALL_TIMEOUT_S = 8.0  # bound on each threaded Massive call; on timeout the routes degrade gracefully
+HTTP_TIMEOUT_S = 6.0
+MAX_ATTEMPTS = 2
+CALL_TIMEOUT_S = 8.0
 
 
 class _BoundedSession(requests.Session):
-    """requests.Session whose GET timeout is capped, so a stalled Massive call cannot hang a request."""
 
     def get(self, url, **kw):
         t = kw.get("timeout")
@@ -30,11 +28,10 @@ class _BoundedSession(requests.Session):
 
 
 def _short_sleep(s: float) -> None:
-    time.sleep(min(float(s), 1.0))  # never honour a long Retry-After inside an API request
+    time.sleep(min(float(s), 1.0))
 
 
 async def bounded(fn, *args):
-    """Run a blocking Massive call in a thread, giving up after CALL_TIMEOUT_S (raises TimeoutError)."""
     return await asyncio.wait_for(asyncio.to_thread(fn, *args), CALL_TIMEOUT_S)
 
 
@@ -46,7 +43,6 @@ def calendar() -> TradingCalendar:
 
 
 def make_client():
-    """MassiveClient, or None when no key is configured."""
     try:
         key = load_api_key(interactive=False)
     except MissingApiKey:
@@ -56,11 +52,10 @@ def make_client():
 
 
 def snapshot(client, ticker: str, today=None, cfg: StudyConfig | None = None) -> tuple[dict | None, str | None]:
-    """Returns (snap, note). snap has spot, expiry, as_of, strikes, legs {name: {ticker, kind, strike, mark}}."""
     cfg = cfg or StudyConfig()
     cal = calendar()
     today = pd.Timestamp.today().normalize() if today is None else pd.Timestamp(today).normalize()
-    day = cal.before(today)  # last completed session
+    day = cal.before(today)
     lo, hi, target = EXPIRY_BUCKETS["3-6m"]
     chain = fetch_chain(client, ticker, day, 2, hi)
     if chain.empty:
@@ -85,7 +80,7 @@ def snapshot(client, ticker: str, today=None, cfg: StudyConfig | None = None) ->
         mark, mark_date = None, None
         if len(bars):
             last = bars.index[-1]
-            if cal.between(last, day) <= cfg.max_stale_sessions:  # research rule (Leg.max_stale): older is not a price
+            if cal.between(last, day) <= cfg.max_stale_sessions:
                 mark, mark_date = float(bars["close"].iloc[-1]), last.strftime("%Y-%m-%d")
         legs[name] = {"ticker": tk, "kind": kind, "strike": float(k), "mark": mark, "mark_date": mark_date}
     notes = []

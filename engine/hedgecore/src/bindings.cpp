@@ -106,10 +106,6 @@ bool flip_from(const std::string& direction) {
   throw py::value_error("direction must be 'down_on_yes' or 'up_on_yes'");
 }
 
-// The YES/NO flip is defined only for the hedge division: those families trade equity alone, so flipping the tick
-// changes which outcome counts as adverse and nothing else. Prediction-market and option families name real
-// contracts in their intents (pred_yes / pred_no) and compare against option-implied fields, so flipping their
-// input would make them trade the wrong leg; for them direction must stay 'down_on_yes'.
 bool flip_for(const FamilyInfo& f, const std::string& direction) {
   const bool flip = flip_from(direction);
   if (flip && std::string_view(f.division) != "hedge")
@@ -118,7 +114,6 @@ bool flip_for(const FamilyInfo& f, const std::string& direction) {
   return flip;
 }
 
-// Under the flip the position's YES and NO holdings swap too, so replay marks them on the flipped book.
 Position oriented(Position p, bool flip) noexcept {
   if (flip) std::swap(p.pred_yes, p.pred_no);
   return p;
@@ -142,7 +137,6 @@ const Field kFields[] = {{"yes_bid", &MarketTick::yes_bid},
                          {"opt_implied_prob", &MarketTick::opt_implied_prob},
                          {"eightk_score", &MarketTick::eightk_score}};
 
-// bid_px_0..4, bid_qty_0..4, ask_px_0..4, ask_qty_0..4
 double* book_field(MarketTick& t, const std::string& k) {
   if (k.size() < 8) return nullptr;
   const char last = k.back();
@@ -180,7 +174,6 @@ MarketTick tick_from(const py::dict& d) {
 using DArr = py::array_t<double, py::array::c_style | py::array::forcecast>;
 using IArr = py::array_t<std::int64_t, py::array::c_style | py::array::forcecast>;
 
-// ticks: dict of equal-length arrays named like the MarketTick fields; absent arrays mean NaN.
 std::vector<MarketTick> ticks_from(const py::dict& d) {
   if (!d.contains("ts_ns")) throw py::key_error("ticks need a 'ts_ns' array");
   const IArr ts = py::cast<IArr>(d["ts_ns"]);
@@ -315,8 +308,6 @@ py::dict catalog_dict() {
   out["block_kinds"] = block_kinds;
   out["reasons"] = reasons;
   out["families"] = fams;
-  // The micro families take their own ticks and are not in the AnyAlgo library above; listed separately so the keys
-  // above are unchanged.
   out["micro_families"] = micro_families_list();
   out["micro_total"] = micro_catalog().total;
   py::dict micro_reasons;
@@ -330,7 +321,6 @@ py::dict catalog_dict() {
   return out;
 }
 
-// Python-facing algo: owns the variant and applies the YES/NO flip for up_on_yes positions.
 struct PyAlgo {
   const FamilyInfo* info;
   Params params;
@@ -356,8 +346,6 @@ std::vector<MarketTick> prepared_ticks(const py::dict& ticks, bool flip) {
     for (auto& t : v) t = flip_yes_no(t);
   return v;
 }
-
-// ---- micro families (ladder_pair, touch_ticket_reference) ----
 
 const MicroFamilyInfo& micro_or_throw(const std::string& id) {
   for (const auto& f : micro_catalog().families)
@@ -484,7 +472,6 @@ py::dict ticket_intent_dict(const TicketIntent& i) {
   return d;
 }
 
-// Columns of equal length; `nested` / `validated` columns hold True, False or None.
 template <class T>
 std::vector<T> col(const py::dict& d, const char* k, std::size_t n, T missing) {
   std::vector<T> v(n, missing);
@@ -645,7 +632,7 @@ struct PyTouchTicket {
   }
 };
 
-}  // namespace
+}
 
 PYBIND11_MODULE(hedgecore, m) {
   m.doc() = "PolyBridge hedgecore: the C++20 algo library (17 families), the micro families (ladder_pair, touch_ticket_reference) and the legacy Engine";
@@ -692,7 +679,6 @@ PYBIND11_MODULE(hedgecore, m) {
       .def("on_fill", &Engine::on_fill)
       .def_property_readonly("current_hedge", &Engine::current_hedge);
 
-  // ---- v4 algo library ----
   m.def("catalog", &catalog_dict,
         "The compiled algo library (the manifest): families, blocks, params, grids, preset counts and the total.");
   m.def("reason_name", [](int c) { return std::string(reason_name(static_cast<std::uint16_t>(c))); });
@@ -757,7 +743,6 @@ PYBIND11_MODULE(hedgecore, m) {
       py::arg("family"), py::arg("position"), py::arg("ticks"), py::arg("fees") = py::none(),
       py::arg("direction") = "down_on_yes");
 
-  // ---- micro families ----
   py::class_<PyLadderPair>(m, "LadderPair")
       .def(py::init<const py::dict&>(), py::arg("params") = py::dict())
       .def("on_tick", &PyLadderPair::tick, py::arg("tick"), py::arg("now_ns") = py::none(),

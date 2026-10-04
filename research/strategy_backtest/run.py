@@ -1,9 +1,3 @@
-"""Run the strategy backtest once:  cd research && .venv/bin/python -m strategy_backtest.run
-
-Fetches (or reads from cache) SPY bars and Polymarket prices, walks every variant, writes the outputs of METHOD.md
-section 10 under research/results/strategy_backtest/ and a `.done` marker; a second run refuses (exit 3).
-The Massive key is read from research/.env only; a missing key logs a message and exits 2.
-"""
 from __future__ import annotations
 
 import argparse
@@ -42,7 +36,6 @@ def load_key() -> str:
 
 
 def last_complete_session(meas: pd.DataFrame, daily: pd.DataFrame, early_closes) -> pd.Timestamp:
-    """Latest session with a daily bar and minute bars through the final regular minute."""
     for d in reversed(meas.index):
         t = meas.loc[d, "t_close"]
         if pd.isna(t) or d not in daily.index:
@@ -54,9 +47,6 @@ def last_complete_session(meas: pd.DataFrame, daily: pd.DataFrame, early_closes)
 
 
 def trim_points(pts, c):
-    """Keep only CLOB points that any as-of lookup can return: up to the close day's 16:00 and from 07:00 to 09:30 of
-    the open day. Every lookup instant is in those windows and points older than 30 minutes are never used, so lookups
-    are unchanged; this only bounds memory."""
     if not pts or isinstance(pts, Exception):
         return pts
     hi1 = int(c.nominal_close.timestamp())

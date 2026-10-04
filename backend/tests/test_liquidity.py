@@ -1,6 +1,3 @@
-"""Liquidity and capacity (app/liquidity): the caps and cost model, the Massive / venue-book service (mocked HTTP), the
-routes (never a 500), and the liquidity gate on every order path (bridge equity orders, staged hedge B, option legs,
-hedge A's PM leg)."""
 from __future__ import annotations
 
 import asyncio
@@ -21,23 +18,20 @@ from app.main import create_app
 ET = ZoneInfo("America/New_York")
 
 
-# ------------------------------------------------------------------------------------------------- the model
-
-
 def test_equity_caps_are_10pct_of_the_opening_five_minutes_and_1pct_of_adv():
     lim = m.equity_limits(adv_shares=2_000_000, open5_shares=50_000)
     assert (lim["per_order_shares"], lim["per_day_shares"], lim["max_order_shares"]) == (5_000, 20_000, 5_000)
     assert lim["binding"] == "per_order_open5" and lim["max_position_shares"] == 20_000
-    lim = m.equity_limits(adv_shares=100_000, open5_shares=50_000)  # a thin name: the daily cap binds
+    lim = m.equity_limits(adv_shares=100_000, open5_shares=50_000)
     assert (lim["max_order_shares"], lim["binding"]) == (1_000, "per_day_adv")
     assert m.equity_limits(None, None)["max_order_shares"] is None
 
 
 def test_cost_is_half_spread_plus_square_root_impact():
     c = m.equity_cost_bp(10_000, half_spread_bp=1.0, adv_shares=1_000_000, sigma_daily=0.02)
-    assert c["impact_bp"] == pytest.approx(1.0 * 0.02 * math.sqrt(0.01) * 1e4)  # 20 bp
+    assert c["impact_bp"] == pytest.approx(1.0 * 0.02 * math.sqrt(0.01) * 1e4)
     assert c["total_bp"] == pytest.approx(21.0)
-    assert m.equity_cost_bp(10, None, 1e6, 0.02)["total_bp"] is None  # no spread: no total, never invented
+    assert m.equity_cost_bp(10, None, 1e6, 0.02)["total_bp"] is None
 
 
 def test_capacity_is_the_holding_whose_hedge_fits_one_order_at_the_open():
@@ -60,7 +54,7 @@ def test_corwin_schultz_and_daily_stats():
 
 def test_option_caps_need_both_volume_and_open_interest():
     lim = m.option_limits(volume=1_000, open_interest=4_000)
-    assert (lim["per_order_contracts"], lim["binding"]) == (100, "volume")  # 10% of 1,000 vs 5% of 4,000 = 200
+    assert (lim["per_order_contracts"], lim["binding"]) == (100, "volume")
     assert m.option_limits(volume=1_000, open_interest=None)["per_order_contracts"] is None
     cap = m.option_capacity(1_000, 4_000, 2.0, 2.2, 2.1, spot=500.0, delta=-0.4, coverage=0.5)
     assert cap["spread_bp"] == pytest.approx(0.2 / 2.1 * 1e4) and cap["capacity"]["shares_equiv"] == 10_000
@@ -74,13 +68,10 @@ def test_pm_depth_bands_cap_and_book_walk():
     assert d["mid"] == pytest.approx(0.50)
     assert d["buy"]["1c"]["contracts"] == 50 and d["buy"]["2c"]["contracts"] == 200 and d["buy"]["5c"]["contracts"] == 200
     assert d["sell"]["2c"]["contracts"] == 300 and d["sell"]["5c"]["contracts"] == 1_300
-    assert m.pm_cap(d, "buy") == 100 and m.pm_cap(d, "sell") == 150  # 50% of the depth within 2 cents
+    assert m.pm_cap(d, "buy") == 100 and m.pm_cap(d, "sell") == 150
     w = m.walk_cost(asks, 100, d["mid"], "buy")
     assert w["avg_px"] == pytest.approx((50 * 0.51 + 50 * 0.52) / 100) and w["cost_cents"] == pytest.approx(1.5)
     assert m.pm_depth([], asks)["mid"] is None
-
-
-# ------------------------------------------------------------------------------------------- the service
 
 
 class FakeResp:
@@ -109,7 +100,6 @@ def sessions(n: int) -> list[dt.date]:
 
 
 class FakeMassive:
-    """A Massive client: daily bars (1M shares at $100), 5-minute bars (the 09:30 bar 40,000 shares), last quote."""
 
     def __init__(self, quote=True, fail=()):
         days = sessions(25)
@@ -152,24 +142,21 @@ def test_equity_liquidity_from_massive_bars_and_quote():
     assert out["capacity"]["book_usd"] == pytest.approx(4_000 * out["price"] / 0.5)
     assert out["cost_model"]["k"] == 1.0 and "sqrt" in out["cost_model"]["formula"]
     assert out["freshness"]["cache_stale"] is False
-    # the gate reads the cache, no network
     raw, age = s.cached_equity("SPY")
     assert raw["open5_median_shares"] == 40_000 and age is not None
 
 
 def test_the_partial_current_session_bar_is_kept_out_of_adv_and_sigma():
-    """Massive's daily range runs through today: during the session the last bar is a partial day. It is excluded
-    from ADV / sigma (completed sessions only) but still prices the ticker; after the close it counts."""
     mon = dt.date(2026, 10, 5)
     fake = FakeMassive()
     fake.daily.append({"v": 200_000, "vw": 104.0, "c": 105.0, "h": 105.5, "l": 100.0, "t": et_ms(mon, 0, 0)})
     s = LiquidityService(client_factory=lambda: fake)
-    s._wall = lambda: dt.datetime(2026, 10, 5, 11, 0, tzinfo=ET)  # Monday, mid-session
+    s._wall = lambda: dt.datetime(2026, 10, 5, 11, 0, tzinfo=ET)
     raw = run(s._fetch_equity("SPY"))
     assert raw["adv_shares"] == 1_000_000 and raw["adv_sessions"] == 20
     assert raw["price"] == 105.0 and raw["price_basis"] == "current_session_partial_bar"
     assert raw["partial_session_excluded"] is True and raw["bars_as_of"].startswith("2026-10-02")
-    s._wall = lambda: dt.datetime(2026, 10, 5, 16, 30, tzinfo=ET)  # after the close: the bar is complete
+    s._wall = lambda: dt.datetime(2026, 10, 5, 16, 30, tzinfo=ET)
     raw = run(s._fetch_equity("SPY"))
     assert raw["adv_shares"] == pytest.approx((19 * 1_000_000 + 200_000) / 20)
     assert raw["partial_session_excluded"] is False and raw["price_basis"] == "last_completed_close"
@@ -265,11 +252,8 @@ def test_option_route_reads_open_interest_volume_and_spread(client, monkeypatch)
     j = client.get("/liquidity/option", params={"underlying": "spy", "strike": 500, "expiry": "2026-12-18",
                                                 "right": "put", "coverage": 0.5}).json()
     assert j["available"] and j["contract"] == q.ticker and (j["open_interest"], j["volume"]) == (20_000, 3_000)
-    assert j["per_order_contracts"] == 300 and j["binding"] == "volume"  # 10% of 3,000 < 5% of 20,000
+    assert j["per_order_contracts"] == 300 and j["binding"] == "volume"
     assert j["spread_bp"] == pytest.approx(0.4 / 4.2 * 1e4) and j["capacity"]["delta_shares_equiv"] == pytest.approx(9_000)
-
-
-# ------------------------------------------------------------------------------------------------- the gate
 
 
 def pinned_app(open5=1_000.0, adv=50_000.0, price=500.0):
@@ -280,7 +264,7 @@ def pinned_app(open5=1_000.0, adv=50_000.0, price=500.0):
 
 
 def test_equity_check_caps_per_order_then_per_day():
-    app = pinned_app(open5=1_000.0, adv=50_000.0)  # per order 100, per day 500
+    app = pinned_app(open5=1_000.0, adv=50_000.0)
     ok = gate.equity_check(app, "SPY", 80, day="2026-10-05")
     assert ok["status"] == "within_caps" and ok["allowed"] == 80
     c = gate.equity_check(app, "SPY", 300, day="2026-10-05")
@@ -289,7 +273,7 @@ def test_equity_check_caps_per_order_then_per_day():
     gate.record_equity(app, "SPY", 450, day="2026-10-05")
     c = gate.equity_check(app, "SPY", 100, day="2026-10-05")
     assert c["allowed"] == 50 and c["limit"] == "per_day_adv"
-    assert gate.equity_check(app, "SPY", 100, day="2026-10-06")["status"] == "within_caps"  # a new session
+    assert gate.equity_check(app, "SPY", 100, day="2026-10-06")["status"] == "within_caps"
     assert gate.equity_check(app, "SPY", 100, scope="sandbox:b1", day="2026-10-05")["status"] == "within_caps"
     assert gate.equity_check(create_app(), "SPY", 10**6)["status"] == "unknown"
 
@@ -298,7 +282,7 @@ def test_pm_check_on_tick_book_levels():
     f = {"bid_px_0": 0.49, "bid_qty_0": 100.0, "ask_px_0": 0.51, "ask_qty_0": 60.0, "ask_px_1": 0.60, "ask_qty_1": 999}
     c = gate.pm_check(f, "buy", 100)
     assert c["status"] == "capped" and c["allowed"] == 30 and c["limit"] == "pm_depth_2c"
-    assert gate.pm_check({"yes_bid": 0.5, "yes_ask": 0.5}, "buy", 100)["status"] == "unknown"  # mid-only replay tick
+    assert gate.pm_check({"yes_bid": 0.5, "yes_ask": 0.5}, "buy", 100)["status"] == "unknown"
 
 
 def test_option_check_caps_by_the_thinnest_leg():
@@ -310,7 +294,6 @@ def test_option_check_caps_by_the_thinnest_leg():
 
 
 class LiveTicks:
-    """A live source of four ticks with an equity price (the algo needs under_px)."""
 
     def __init__(self, *a, **k):
         pass
@@ -341,7 +324,6 @@ def live_algo_app(tmp_path, monkeypatch, script, **pin):
 
 
 def test_bridge_equity_orders_are_capped_with_reason_liquidity_capped(tmp_path, monkeypatch):
-    """A live algo bridge whose sell is above 10% of the opening 5-minute volume: the order is capped and says so."""
     from tests.test_bridges import _events
     from tests.test_bridges_algo import FakeAlgo, proposal
 
@@ -373,13 +355,12 @@ def test_a_staged_plan_is_capped_by_the_opening_five_minute_volume(tmp_path):
     with TestClient(app) as c:
         o = c.post("/staged/plan", json={"proposal_id": prop.id, "pm_move_pp": 5.0,
                                          "rate_bp_per_pp": 7.523237932200106}).json()
-        assert o["status"] == "staged" and o["qty"] == 200  # 376 wanted, 10% of the 2,000-share opening bar
+        assert o["status"] == "staged" and o["qty"] == 200
         assert "LIQUIDITY_CAPPED" in [d["code"] for d in o["decisions"]]
         assert o["sizing"]["liquidity"]["limit"] == "per_order_open5" and o["liquidity"]["capped_from"] == 376
 
 
 def test_hedge_a_pm_leg_is_capped_at_half_the_depth_within_two_cents():
-    """Hedge A's simulated PM leg obeys the PM participation cap on a tick with book depth."""
     from collections import Counter
 
     from app.closed.bridge_mode import HedgeA
@@ -403,22 +384,19 @@ def test_hedge_a_pm_leg_is_capped_at_half_the_depth_within_two_cents():
     book = {"yes_bid": 0.49, "yes_ask": 0.51, "bid_px_0": 0.49, "bid_qty_0": 100.0, "ask_px_0": 0.51,
             "ask_qty_0": 120.0, "ask_px_1": 0.52, "ask_qty_1": 80.0, "ask_px_2": 0.70, "ask_qty_2": 10_000.0}
     rec = h.step(book, 1, 1, 0, 500.0, lambda f, ts, v: f)
-    assert rec["qty"] == 100.0 and rec["capped_from"] == 500.0  # 50% of the 200 contracts within 2 cents
+    assert rec["qty"] == 100.0 and rec["capped_from"] == 500.0
     assert rec["gates"][0]["reason"] == "liquidity_capped" and rec["gates"][0]["limit"] == "pm_depth_2c"
     assert h.algo.fills == [("pred_yes", 100.0, 0.51)] and h.liquidity_capped == 1
     mid_only = {"yes_bid": 0.5, "yes_ask": 0.5}
     rec = h.step(mid_only, 2, 2, 0, 500.0, lambda f, ts, v: f)
-    assert rec["qty"] == 500.0 and rec["liquidity"]["status"] == "unknown"  # a replay tick: no depth, labelled
+    assert rec["qty"] == 500.0 and rec["liquidity"]["status"] == "unknown"
 
 
 def test_a_replay_trading_the_account_counts_toward_todays_account_ledger():
-    """Participation per day: a sandboxed replay counts under its replayed date (its own ledger); a replay that trades
-    the account (replay_to_account) sends its orders to the account today, so they count under today's wall-clock
-    session date, where live bridges share the account-wide 1%-of-ADV cap."""
     from app import bridges
     from app.closed import staged
 
-    wall = dt.datetime(2026, 10, 7, 15, 0, tzinfo=dt.timezone.utc)  # Wednesday
+    wall = dt.datetime(2026, 10, 7, 15, 0, tzinfo=dt.timezone.utc)
     app = SimpleNamespace(state=SimpleNamespace(staged_clock=lambda: wall))
     replayed = int(dt.datetime(2025, 4, 4, 15, 0, tzinfo=dt.timezone.utc).timestamp() * 1e9)
     tick = SimpleNamespace(recorded_ts_ns=replayed)

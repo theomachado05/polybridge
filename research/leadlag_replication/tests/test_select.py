@@ -1,4 +1,3 @@
-"""Sign rule, stem de-duplication and ranking on synthetic gamma metadata (no network)."""
 import json
 
 import pandas as pd
@@ -14,14 +13,14 @@ from leadlag_replication.select import candidates, classify, question_stem
     ("Will Trump lower tariffs on China?", +1),
     ("Will the EU impose new tariffs on US goods in 2025?", -1),
     ("US recession by end of 2026?", -1),
-    ("Israel x Iran ceasefire broken by December 31?", 0),      # negated
-    ("Next Israel x Hamas ceasefire not in 2024?", 0),         # negated
-    ("Fed decreases interest rates by 25 bps after September 2025 meeting?", 0),  # monetary policy
-    ("Will Trump win the 2024 election?", 0),                  # election
-    ("Will the S&P 500 close above 6000?", 0),                 # the outcome itself
-    ("Will Bitcoin hit $100k?", 0),                            # no sign term / excluded
+    ("Israel x Iran ceasefire broken by December 31?", 0),
+    ("Next Israel x Hamas ceasefire not in 2024?", 0),
+    ("Fed decreases interest rates by 25 bps after September 2025 meeting?", 0),
+    ("Will Trump win the 2024 election?", 0),
+    ("Will the S&P 500 close above 6000?", 0),
+    ("Will Bitcoin hit $100k?", 0),
     ("Nothing Ever Happens: Military Edition", 0),
-    ("Will it rain in Paris?", 0),                             # no sign term
+    ("Will it rain in Paris?", 0),
 ])
 def test_classify(q, sign):
     assert classify(q)[0] == sign
@@ -46,11 +45,11 @@ def test_candidates_dedupe_rank_and_one_per_event():
         {"slug": "e3", "markets": [_m("c", "Russia x Ukraine ceasefire in 2024?", 10, "2024-03-01", "2024-12-31")]},
         {"slug": "e4", "markets": [_m("d", "Will China invade Taiwan in 2025?", 80, "2025-01-01", "2025-12-31"),
                                    _m("d2", "Will China blockade Taiwan in 2025?", 90, "2025-01-01", "2025-12-31")]},
-        {"slug": "e5", "markets": [_m("e", "US recession in 2025?", 70, "2025-03-01", "2025-04-01")]},   # < 92 days
-        {"slug": "e6", "markets": [_m("us-recession-in-2025", "US recession in 2025?", 999, "2025-01-01", "2025-12-31")]},  # original
+        {"slug": "e5", "markets": [_m("e", "US recession in 2025?", 70, "2025-03-01", "2025-04-01")]},
+        {"slug": "e6", "markets": [_m("us-recession-in-2025", "US recession in 2025?", 999, "2025-01-01", "2025-12-31")]},
     ]
     df = candidates(events)
-    assert list(df["market_slug"]) == ["a", "d2", "c"]          # b dropped (same stem, overlaps a); one per event; e too short
+    assert list(df["market_slug"]) == ["a", "d2", "c"]
     assert list(df["rank"]) == [1, 2, 3]
     assert set(df["sign"]) == {1, -1}
     assert (df["window_days"] >= 92).all()

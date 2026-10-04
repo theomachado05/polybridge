@@ -1,18 +1,3 @@
-"""Evidence gate for closed-market numbers (docs/design.md, section 6; research R1, R2, R3).
-
-A closed-market expected gap (and the hedge sized on it) is shown as **validated** only for a market whose OWN
-out-of-sample record passes R2's pre-set rule (``backend/app/data/gap_evidence.json``, written by
-``scripts/build_gap_evidence.py`` from research/results/gap_model/tests.json). Today that is one market: US recession
-in 2025 (sign 64.2% of 151, slope +1.28, permutation p < 0.001). Every other market, including the ten markets of the
-replication panel (pooled sign 50.2%, slope -0.23: not accurate), gets an **unvalidated estimate** with its band and
-the number of closures behind the rate.
-
-The hedges follow R1: hedge B (an equity order staged for the first tradable moment) cut the post-open variance
-(+11.4%, CI +5.1..+18.1) and is the default closed-market action; hedge A (holding the PM contract over the closure)
-showed no evidence (+4.8%, CI -0.8..+10.0; it increased the variance on the replication panel), so it is offered only
-as an explicit, labelled estimate, off by default, never as protection. Opportunity at the open is research-only (R3:
-the net residual gap is NULL).
-"""
 from __future__ import annotations
 
 import json
@@ -51,7 +36,6 @@ def _load(path: str, mtime: float) -> dict:
 
 
 def load(path: Path | str | None = None) -> dict:
-    """The evidence document ({} when missing: nothing is validated)."""
     p = Path(path) if path is not None else EVIDENCE_PATH
     try:
         mtime = p.stat().st_mtime
@@ -67,7 +51,7 @@ def _match(doc: dict, market_source: str | None, market_id: str | None, token_id
             continue
         names = {slug, row.get("token_id"), row.get("polymarket_id")} - {None}
         if market_source not in (None, "polymarket"):
-            continue  # every studied market is a Polymarket market
+            continue
         if keys & names:
             return slug, row
     return None
@@ -75,7 +59,6 @@ def _match(doc: dict, market_source: str | None, market_id: str | None, token_id
 
 def market_evidence(market_source: str | None, market_id: str | None, token_id: str | None = None,
                     doc: dict | None = None) -> dict:
-    """{validated, status, market, evidence (one short reason), oos {...} | None} for one market."""
     doc = load() if doc is None else doc
     hit = _match(doc, market_source, market_id, token_id)
     if hit is None:
@@ -100,12 +83,6 @@ def market_evidence(market_source: str | None, market_id: str | None, token_id: 
 
 def gate(evid: dict, label: str | None, ticker: str | None, basis_ticker: str | None,
          reasons: list[str] | tuple[str, ...] = ()) -> tuple[bool, str, str]:
-    """The evidence gate for one expected gap: (validated, status, evidence text).
-
-    ``validated`` needs all three: the market's own out-of-sample record passes R2, its OWN rate is the one in use
-    (``label == "market"``), and that rate was estimated on the ticker shown (R2 tested SPY gaps only; any other ticker
-    borrows SPY's rate as a proxy). Everything else is an unvalidated estimate, with the reason taken from the rate
-    choice's reason codes."""
     from .gap import GAP_POOLED_RATE, GAP_PROXY_TICKER, GAP_TOO_FEW_CLOSURES
     if not evid.get("validated"):
         return False, UNVALIDATED, str(evid.get("evidence") or "")
@@ -131,18 +108,13 @@ def gate(evid: dict, label: str | None, ticker: str | None, basis_ticker: str | 
 
 NO_MARKET_EVIDENCE = ("No prediction market is named yet (a filing-tags proposal takes its market at bridge start), so "
                       "no market signal has passed an out-of-sample test: unvalidated estimate.")
-# Labels carried by every bridge decision / fill and by every staged plan and order (enforced gate, see section 6).
 LABEL_VALIDATED = "validated"
-LABEL_ACKNOWLEDGED = "unvalidated (acknowledged)"  # regular hours: approved with ack_unvalidated=true
-LABEL_OVERRIDE = "override"                        # closed hours: staged plan on an unvalidated market, act_on_unvalidated
+LABEL_ACKNOWLEDGED = "unvalidated (acknowledged)"
+LABEL_OVERRIDE = "override"
 
 
 def signal_status(market_source: str | None, market_id: str | None, token_id: str | None = None,
                   ticker: str | None = None, doc: dict | None = None) -> dict:
-    """The evidence gate for a (market, ticker) pair before any PM move is known: the same rule as ``gate`` (the
-    market's own out-of-sample record passes R2, its own rate is in use, and the rate was estimated on this ticker),
-    with the rate the gap service would choose. {validated, status, evidence, market, rate_source, basis_ticker,
-    reasons, oos}."""
     if not market_source or not market_id:
         return {"validated": False, "status": UNVALIDATED, "evidence": NO_MARKET_EVIDENCE, "market": None,
                 "rate_source": None, "basis_ticker": None, "reasons": [], "oos": None}
@@ -167,23 +139,11 @@ def _p(p: Any) -> str:
 
 
 def hedge_evidence(doc: dict | None = None) -> dict:
-    """R1/R3 headline numbers for the UI's labels."""
     doc = load() if doc is None else doc
     return {"hedge_a": {**(doc.get("hedge_a") or {}), "label": HEDGE_A_LABEL, "default": False},
             "hedge_b": {**(doc.get("hedge_b") or {}), "label": HEDGE_B_LABEL, "default": True},
             "opportunity": {**(doc.get("opportunity") or {}), "label": OPPORTUNITY_LABEL, "research_only": True}}
 
-
-# ----------------------------------------------------------------------------------------------------------------------
-# Mechanism registry (note/NOTE.md is the source of truth; every number below is copied from the result file it names).
-#
-# One entry per mechanism PolyBridge reports on. The UI reads every status, label and number from here, never from
-# hard-coded text. A number is never shown without its range and its sample: each one carries ``ci_low``/``ci_high``
-# with ``range_kind`` saying what the range is (a 95% date-cluster interval, a percentile span, or "census": a count
-# with no sampling interval, low == high == value), ``sample`` (n and units) and ``result_file`` (repo-relative).
-# Two result files are not on main yet; those numbers also carry ``source_branch`` and ``source_commit`` so a reader can
-# still open them, and ``result_file_on_disk`` (computed when served) says whether this checkout has the file.
-# ----------------------------------------------------------------------------------------------------------------------
 
 REPO = Path(__file__).resolve().parents[3]
 
@@ -193,8 +153,6 @@ OPEN_LEAD = "OPEN_LEAD"
 WATCH_ONLY = "WATCH_ONLY"
 NO_TESTED_MECHANISM = "NO_TESTED_MECHANISM"
 FAILED = "FAILED"
-# Available but its own test failed (the generic AI fit): distinct from FAILED, which is never offered (S25).
-# Named UNVALIDATED_AVAILABLE in Python because UNVALIDATED above is the closed-market gate's label.
 UNVALIDATED_AVAILABLE = "UNVALIDATED"
 STATUSES = (CONFIRMED_FOUNDATION, LEAD, OPEN_LEAD, WATCH_ONLY, NO_TESTED_MECHANISM, UNVALIDATED_AVAILABLE, FAILED)
 
@@ -208,7 +166,6 @@ STATUS_LABELS = {
     FAILED: "Failed its test",
 }
 
-# range kinds
 CI95_DATE = "95% interval, resolution-date cluster bootstrap"
 CI95_DATES = "95% interval over dates"
 CI95_EVENT = "95% interval, event bootstrap"
@@ -323,10 +280,6 @@ MECHANISMS: tuple[dict, ...] = (
         ],
         "forward_test": {"file": "research/ladder_replay/live.py", "starts": FORWARD_START,
                          "method": "research/ladder_replay/METHOD.md"},
-        # The C++ family and preset that decide every ladder pair on the board (backend/app/contracts/engine.py).
-        # METHOD.md: quotes at most 60 s apart, edge after both taker fees and one tick PER LEG > 0. ladder_pair charges
-        # one tick in total plus min_edge, so min_edge 1 point stands in for the second 1-cent tick: preset #4 of the
-        # 18 (min_edge 1, max_age_s 60, cap 100; last parameter fastest) is the closest grid point.
         "engine_preset": {"family": "ladder_pair", "index": 4,
                           "params": {"min_edge": 1.0, "max_age_s": 60.0, "cap": 100.0},
                           "why": ("METHOD.md: 60 s max age; one tick per leg plus both taker fees. ladder_pair counts "
@@ -341,12 +294,10 @@ MECHANISMS: tuple[dict, ...] = (
                   "money for their buyers; a fresh test could not confirm it."),
         "actions_allowed": {"mode": "proposals_behind_acknowledgement", "trade": True, "proposals": True,
                             "requires_approval": True, "requires_acknowledgement": True,
-                            "side": "sell_yes", "sell_threshold_points": 5.0,   # S21 book B0 = TOUCH_SELL_THRESHOLD_POINTS
+                            "side": "sell_yes", "sell_threshold_points": 5.0,
                             "hedge_offered": False,
                             "text": ("Proposals only, behind the acknowledgement gate: unvalidated. No option-spread "
                                      "hedge is offered (tested in S25, it raised risk).")},
-        # touch_ticket_reference's single preset: threshold 5 points = sell_threshold_points above (S21 book B0).
-        # validated is always False on the board, so the family can only propose.
         "engine_preset": {"family": "touch_ticket_reference", "index": 0, "params": {"threshold": 5.0},
                           "why": "threshold 5 points = S21 book B0; validated False (unvalidated): proposals only."},
         "numbers": [
@@ -464,9 +415,6 @@ SYSTEM_NUMBERS: tuple[dict, ...] = (
        ref=LATENCY_REF),
 )
 
-# engine/hedgecore/BENCH.md, "Micro families" section (run 2026-10-04 03:21 ET): on_tick per call in nanoseconds,
-# including its own latency stamp, on a synthetic deterministic tape (LCG seed 42, 1,000,000 ticks per family,
-# default preset). The engine strip shows these only with the sample and tape stated.
 MICRO_BENCH: tuple[dict, ...] = tuple(
     {"family": fam, "mean_ns": mean, "step_mean_ns": step, "p50_ns": 42, "p99_ns": 42, "p999_ns": 84,
      "sample": "1,000,000 ticks, one run, one thread", "tape": tape, "result_file": "engine/hedgecore/BENCH.md",
@@ -477,26 +425,19 @@ MICRO_BENCH: tuple[dict, ...] = tuple(
         ("touch_ticket_reference", 26.3, 3.5, "synthetic ticket tape (LCG seed 42): bid 0.30 + 0.10 z, central "
                                               "reference 0.28, validated on every other tick")))
 
-# classifier contract types -> mechanism id (and whether that mechanism may trade). The brief acts on ladders, touch
-# tickets and (watch only) 15-minute Bitcoin markets; everything else, close-above tickets included, is "no tested
-# mechanism". A close-above row may still show the finish-beyond reference, labelled reference only (``REFERENCE_FOR``).
 CONTRACT_MECHANISM = {
     "ladder_rung": "ladders",
     "touch_ticket": "touch",
     "close_above_ticket": "other",
     "btc_15min": "btc_15min",
-    "btc_15m_watch": "btc_15min",   # the classifier's ``mechanism`` for a 15-minute Bitcoin market (type "other")
+    "btc_15m_watch": "btc_15min",
     "other": "other",
 }
-# contract types whose rows may carry the options reference for information, and the entry that explains it
 REFERENCE_FOR = {"close_above_ticket": "foundation"}
-# S21 book B0 / research/touch_fresh/FORWARD.md THRESHOLD: sell YES only when the traded bid is this many points above
-# the central (touch) reference. Below it a proposal is outside the tested mechanism.
 TOUCH_SELL_THRESHOLD_POINTS = 5.0
 
 
 def contract_key(res: dict | None) -> str:
-    """The registry key for a classifier result: its ``mechanism`` when that is the BTC watch, else its ``type``."""
     res = res or {}
     if res.get("mechanism") == "btc_15m_watch":
         return "btc_15min"
@@ -513,7 +454,6 @@ def _served(m: dict) -> dict:
 
 
 def mechanisms() -> list[dict]:
-    """Every mechanism entry, as served to the UI."""
     return [_served(m) for m in MECHANISMS]
 
 
@@ -525,10 +465,6 @@ def mechanism(mechanism_id: str) -> dict | None:
 
 
 def mechanism_for(contract_type: str | None) -> dict:
-    """The mechanism behind a classified contract (ladder_rung, touch_ticket, close_above_ticket, other) or the
-    classifier's ``btc_15m_watch`` mechanism.
-
-    Unknown types and close-above tickets are "other": no tested mechanism (``trade_mechanism`` False)."""
     mid = CONTRACT_MECHANISM.get((contract_type or "other").strip().lower(), "other")
     m = mechanism(mid)
     assert m is not None
@@ -541,7 +477,6 @@ def system_numbers() -> list[dict]:
 
 
 def registry() -> dict:
-    """GET /evidence/mechanisms: the full registry, source of every label and number the UI shows."""
     return {"source_of_truth": "note/NOTE.md", "statuses": dict(STATUS_LABELS), "mechanisms": mechanisms(),
             "system": system_numbers(), "contract_types": dict(CONTRACT_MECHANISM),
             "reference_for": dict(REFERENCE_FOR), "touch_sell_threshold_points": TOUCH_SELL_THRESHOLD_POINTS,

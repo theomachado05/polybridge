@@ -1,4 +1,3 @@
-"""S15: the groups of the test, the universe rules, the half-spreads, and which risers the trade sells."""
 import numpy as np
 import pandas as pd
 import pytest
@@ -18,7 +17,7 @@ def test_groups_split_at_five_and_two_points():
 def test_universe_rules_add_natural_gas_and_tag_the_kind():
     assert uni.asset_class("What will Natural Gas (NG) hit in May 2026?") == "natgas"
     assert uni.asset_class("What will Rocket Lab (RKLB) hit in November 2025?") == "stock"
-    assert uni.asset_class("Will gas hit __ by end of April?") is None                      # pump prices are not a traded asset
+    assert uni.asset_class("Will gas hit __ by end of April?") is None
     assert uni.wanted("What will WTI Crude Oil (WTI) hit Week of May 4 2026?")
     assert uni.kind("What will WTI Crude Oil (WTI) hit Week of May 4 2026?", False) == "weekly"
     assert uni.kind("What will S&P 500 (SPY) hit in June 2026?", False) == "other event"
@@ -38,7 +37,7 @@ def frame(rows) -> pd.DataFrame:
 def test_the_trade_sells_only_rises_inside_the_band_with_an_exit():
     df = frame([{"market": "a"}, {"market": "b", "w": -9.0}, {"market": "c", "w": 4.0}, {"market": "d", "p_entry": 0.97},
                 {"market": "e", "p_exit": np.nan}, {"market": "f", "w": 15.0, "asset_class": "crude"}])
-    assert list(s15.select(df, V0).market) == ["f", "a"]                       # largest rise first; a fall is never sold
+    assert list(s15.select(df, V0).market) == ["f", "a"]
     assert list(s15.select(df, V1).market) == ["f"]
     assert list(s15.select(df, V2).market) == ["f"]
     many = frame([{"market": f"m{i:02d}", "w": 5.0 + i} for i in range(13)])

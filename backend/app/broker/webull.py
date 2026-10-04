@@ -1,39 +1,3 @@
-"""WebullBroker: the Broker interface against the Webull OpenAPI paper (sandbox) trading endpoints.
-
-Built from Webull's public developer docs and the Apache-2.0 official Python SDK (webull-openapi-python-sdk 3.0.2):
-  host         api.sandbox.webull.com (sandbox, paper money) over https, and nothing else: WebullClient refuses any other
-               host (production is api.webull.com), so an order placed here can only ever reach the paper sandbox.
-  signing      HMAC-SHA256 (HMAC-SHA1 + MD5 body hash is the older documented variant, kept as an option).
-               string to sign = path & sorted "k=v" of (x-app-key, x-signature-algorithm, x-signature-version,
-               x-signature-nonce, x-timestamp, host, and the query params) [& UPPERCASE hex digest of the compact
-               JSON body], percent-encoded; key = app_secret + "&"; signature = base64(HMAC(key, string)).
-  endpoints    GET  /trading/accounts/list           GET  /trading/assets/balances/get
-               GET  /trading/assets/positions/list   POST /trading/orders/place
-               POST /trading/orders/cancel           GET  /trading/orders/get
-               GET  /trading/orders/open-orders/list GET  /trading/orders/historical-orders/list
-               GET  /trading/instruments/stocks/profiles/list   (shortable / easy_to_borrow / margin ratios)
-               Order list payloads are groups {combo_type, combo_order_id, orders: [...]}: flattened by _order_rows.
-  rate limits  balances, positions, order history, open orders and order detail: 2 requests / 2 s each; accounts/list
-               10 / 30 s; instrument profiles 60 / 60 s (developer.webull.com/apis/docs/trade-api/overview). The
-               network client spaces its own calls to stay inside them (RateLimiter).
-  statuses     Webull PENDING / SUBMITTED / PARTIAL_FILLED -> open (filled_qty carries a partial fill), FILLED ->
-               filled, CANCELLED (and CANCELED / EXPIRED) -> cancelled, FAILED (and REJECTED) -> rejected. The raw
-               word is kept on Order.broker_status. See WEBULL_NOTES.md.
-  sessions     support_trading_session: "CORE" (regular hours 09:30-16:00 ET), "ALL" (regular plus pre-market and
-               after-hours), "NIGHT" (overnight only) -- developer.webull.com/apis/docs/trade-api/stock. Webull takes
-               only LIMIT orders outside the regular session, so an extended-hours market order is refused here
-               before it is sent. OrderRequest.extended_hours=True sends "ALL"; everything else sends "CORE".
-  market hours The PAPER SANDBOX refuses every order outside 09:30-16:00 ET (tested Sat 2026-10-03: HTTP 417 "Orders
-               cannot be placed at this time. Please try again during normal market hours 9:30 a.m. - 4:00 p.m. ET",
-               even a CORE limit). So the ``extended_hours`` capability is False by default here
-               (WEBULL_EXTENDED_HOURS=1 turns it on), and that refusal is a rejected order with reject_reason
-               MARKET_CLOSED_REASON, never a crash: the staged-order book reads it as "held for the next regular
-               session". Cancelling an order Webull reports as not present (417 "Order not present") is a clean
-               rejected Order whose reason starts with "not_found:", never an exception.
-Equities go to Webull. Prediction legs always go to the SimBroker. Option orders go to the SimBroker (labelled) unless
-``options_supported`` is on (WEBULL_OPTIONS=1): Webull documents single- and multi-leg US option orders on the same
-place endpoint, but the paper sandbox's option support is unverified (WEBULL_NOTES.md), so it is off by default.
-Enabled only by get_broker() when BROKER=webull and WEBULL_APP_KEY / WEBULL_APP_SECRET are set."""
 from __future__ import annotations
 
 import asyncio
@@ -60,10 +24,7 @@ from .sim import SimBroker
 log = logging.getLogger(__name__)
 
 SANDBOX_HOST = "https://api.sandbox.webull.com"
-SANDBOX_HOSTNAME = "api.sandbox.webull.com"  # the only host this integration talks to (paper money)
-# Hard deadline per HTTP request (connect + send + read). The longest chain inside one place_order is a split sell:
-# positions + accounts/list + 2 x (orders/place + orders/get) = 6 requests, 24 s at most, which stays inside the
-# bridge's BROKER_TIMEOUT_S (30 s), so the bridge never abandons a call that may still place an order.
+SANDBOX_HOSTNAME = "api.sandbox.webull.com"
 TIMEOUT_S = 4.0
 SIM_NOTE = "Routed to the simulator: Webull paper is only used for equities in this integration."
 MARKET_CLOSED = "market_closed"
@@ -71,24 +32,20 @@ MARKET_CLOSED_REASON = f"{MARKET_CLOSED}: Webull paper accepts orders 09:30-16:0
 NOT_FOUND = "not_found"
 NOT_SHORTABLE = "not_shortable"
 _LISTS = ("data", "accounts", "positions", "orders", "holdings", "items", "list", "results")
-ACCOUNT_LABEL = "Webull paper account"  # Position.account for rows held at Webull
+ACCOUNT_LABEL = "Webull paper account"
 
 HISTORY_PATH = "/trading/orders/historical-orders/list"
 OPEN_PATH = "/trading/orders/open-orders/list"
 DETAIL_PATH = "/trading/orders/get"
 PROFILES_PATH = "/trading/instruments/stocks/profiles/list"
-# Order history is read in bounded windows: one request covers at most HISTORY_WINDOW_DAYS (Webull's own default
-# period), GET /orders looks back HISTORY_DEFAULT_DAYS unless asked (at most HISTORY_MAX_DAYS), and each window reads
-# at most HISTORY_MAX_PAGES pages (pagination_key) before it stops and says so (history_truncated).
 HISTORY_WINDOW_DAYS = 7
 HISTORY_DEFAULT_DAYS = 7
 HISTORY_MAX_DAYS = 30
 HISTORY_MAX_PAGES = 5
-HISTORY_CACHE_S = 10.0  # the history endpoint allows 2 calls / 2 s: repeated GET /orders reuse one read
+HISTORY_CACHE_S = 10.0
 OPEN_MAX_PAGES = 3
-DETAIL_BUDGET = 4  # order-detail reads per reconcile pass / GET /orders (2 / 2 s each at Webull)
-SHORT_CACHE_S = 900.0  # shortability per symbol is re-read every 15 minutes
-# Documented per-path limits (requests, seconds).
+DETAIL_BUDGET = 4
+SHORT_CACHE_S = 900.0
 RATE_LIMITS: dict[str, tuple[int, float]] = {
     "/trading/assets/balances/get": (2, 2.0), "/trading/assets/positions/list": (2, 2.0),
     HISTORY_PATH: (2, 2.0), OPEN_PATH: (2, 2.0), DETAIL_PATH: (2, 2.0),
@@ -97,8 +54,6 @@ _OCC = re.compile(r"^(?:O:)?([A-Z][A-Z0-9.]{0,6}?)(\d{6})([CP])(\d{8})$")
 
 
 class WebullAPIError(BrokerError):
-    """Webull answered with an error status. ``http_status`` is Webull's own status: a 4xx other than 429 means the
-    request was understood and refused; a 5xx or 429 says nothing about whether an order was accepted."""
 
     def __init__(self, message: str, status_code: int = 502, http_status: int | None = None) -> None:
         super().__init__(message, status_code)
@@ -110,30 +65,26 @@ class WebullAPIError(BrokerError):
 
 
 def market_closed_refusal(e: "WebullAPIError") -> bool:
-    """Webull's "Orders cannot be placed at this time ... normal market hours" refusal (HTTP 417 on the sandbox)."""
     t = e.message.lower()
     return e.refused and ("cannot be placed at this time" in t or "normal market hours" in t
                           or (e.http_status == 417 and "market hours" in t))
 
 
 def not_present_refusal(e: "WebullAPIError") -> bool:
-    """Webull does not know the order (417 "Order not present" on a cancel; a 404 / "not found" variant too)."""
     t = e.message.lower()
     return e.refused and ("not present" in t or "not found" in t or "not exist" in t or e.http_status == 404)
 
 
 def is_market_closed(order: Order | None) -> bool:
-    """True for an order the broker refused only because the regular session is not on (retry at the next open)."""
     return (order is not None and order.status == "rejected" and order.filled_qty <= 0
             and (order.reject_reason or "").startswith(MARKET_CLOSED))
 
 
 class NotSandboxHost(ValueError):
-    """WEBULL_BASE_URL names a host other than the Webull paper sandbox (real money is out of scope)."""
+    pass
 
 
 def check_sandbox_url(base_url: str) -> str:
-    """The base URL when it is https://api.sandbox.webull.com (any path), else NotSandboxHost."""
     url = httpx.URL(base_url.rstrip("/"))
     if url.scheme != "https" or url.host != SANDBOX_HOSTNAME:
         raise NotSandboxHost(f"Webull base URL {url.scheme}://{url.host} is not the paper sandbox "
@@ -142,12 +93,10 @@ def check_sandbox_url(base_url: str) -> str:
 
 
 def _dec(x: float) -> str:
-    """Exact decimal text for a quantity or price: never scientific notation, never rounded to 6 digits."""
     return format(Decimal(repr(float(x))).normalize(), "f")
 
 
 def _guard(fn):
-    """Any unexpected failure while talking to or parsing Webull becomes a clean 502, never a 500."""
     @functools.wraps(fn)
     async def wrapper(self, *args, **kwargs):
         try:
@@ -166,7 +115,6 @@ def body_json(body: Any) -> str:
 
 def sign(*, app_key: str, app_secret: str, host: str, path: str, query: dict[str, Any] | None, body: Any,
          timestamp: str, nonce: str, algorithm: str = "HMAC-SHA256") -> dict[str, str]:
-    """Signature headers for one request. `host` is the bare host name (no scheme)."""
     if algorithm not in ("HMAC-SHA256", "HMAC-SHA1"):
         raise ValueError(f"unsupported signature algorithm {algorithm}")
     params: dict[str, str] = {"x-app-key": app_key, "x-signature-algorithm": algorithm, "x-signature-version": "1.0",
@@ -185,8 +133,6 @@ def sign(*, app_key: str, app_secret: str, host: str, path: str, query: dict[str
 
 
 class RateLimiter:
-    """Keeps each path inside Webull's documented limit (n requests per window seconds): a call that would exceed it
-    waits for the oldest call in the window to age out. Paths without a documented limit are not delayed."""
 
     def __init__(self, limits: dict[str, tuple[int, float]] | None = None,
                  clock: Callable[[], float] = time.monotonic, sleep: Callable[[float], Any] = asyncio.sleep) -> None:
@@ -194,7 +140,7 @@ class RateLimiter:
         self._clock, self._sleep = clock, sleep
         self._calls: dict[str, deque[float]] = {}
         self._locks: dict[str, asyncio.Lock] = {}
-        self.waited_s = 0.0  # total time spent waiting (reported by the reconciler)
+        self.waited_s = 0.0
 
     async def acquire(self, path: str) -> None:
         lim = self.limits.get(path)
@@ -222,13 +168,11 @@ class WebullClient:
                  now: Callable[[], dt.datetime] | None = None, nonce: Callable[[], str] | None = None,
                  limiter: RateLimiter | None | bool = None) -> None:
         self._key, self._secret, self.algorithm = app_key, app_secret, algorithm
-        self.base_url = check_sandbox_url(base_url)  # never a production (real-money) host
+        self.base_url = check_sandbox_url(base_url)
         self.host = httpx.URL(self.base_url).host
         self._http = http
         self._now = now or (lambda: dt.datetime.now(dt.UTC))
         self._nonce = nonce or (lambda: uuid.uuid4().hex)
-        # The real network client paces itself to Webull's documented limits; an injected (mocked) transport is not
-        # paced unless a limiter is passed. limiter=False turns pacing off.
         if limiter is None:
             limiter = RateLimiter() if http is None else False
         self.limiter: RateLimiter | None = limiter or None
@@ -245,7 +189,7 @@ class WebullClient:
         content = None
         if body is not None:
             headers["Content-Type"] = "application/json"
-            content = body_json(body).encode()  # the exact bytes that were hashed
+            content = body_json(body).encode()
         http = self._http or httpx.AsyncClient(timeout=TIMEOUT_S)
         try:
             r = await asyncio.wait_for(http.request(method, self.base_url + path, params=query or None, headers=headers,
@@ -309,10 +253,8 @@ def _str(d: dict, *names: str) -> str | None:
     return None
 
 
-# Webull order status -> ours. Documented values (order detail / open orders / history): PENDING, SUBMITTED,
-# CANCELLED, FILLED, FAILED, PARTIAL_FILLED. CANCELED / EXPIRED / REJECTED / PENDING_CANCEL are accepted too.
 _STATUS = {"FILLED": "filled", "CANCELLED": "cancelled", "CANCELED": "cancelled", "FAILED": "rejected",
-           "REJECTED": "rejected", "EXPIRED": "cancelled"}  # PENDING / SUBMITTED / PARTIAL_FILLED / other -> open
+           "REJECTED": "rejected", "EXPIRED": "cancelled"}
 STATUS_MAP_DOC = {"PENDING": "open", "SUBMITTED": "open", "PARTIAL_FILLED": "open (filled_qty > 0)",
                   "PENDING_CANCEL": "open", "FILLED": "filled", "CANCELLED": "cancelled", "CANCELED": "cancelled",
                   "EXPIRED": "cancelled", "FAILED": "rejected", "REJECTED": "rejected"}
@@ -323,7 +265,6 @@ def map_status(raw: str | None) -> str:
 
 
 def _iso(d: dict, at_key: str, ms_key: str) -> str | None:
-    """Webull's ISO time (``*_time_at``) or epoch milliseconds (``*_time``) as our ISO-8601 UTC text."""
     v = _str(d, at_key)
     if v:
         try:
@@ -340,8 +281,6 @@ def _iso(d: dict, at_key: str, ms_key: str) -> str | None:
 
 
 def occ_symbol(leg: dict) -> str | None:
-    """A Webull option leg {symbol, option_expire_date, option_type, strike_price|option_exercise_price} as the OCC
-    ticker the rest of the app uses ('O:AAPL261023P00300000'); None when a field is missing."""
     und = _str(leg, "symbol", "underlying_symbol")
     exp = _str(leg, "option_expire_date")
     typ = (_str(leg, "option_type") or "").upper()
@@ -358,7 +297,6 @@ def occ_symbol(leg: dict) -> str | None:
 
 
 def parse_occ(symbol: str) -> dict | None:
-    """'O:AAPL261023P00300000' -> {underlying, expiry (yyyy-mm-dd), right ('CALL'|'PUT'), strike}; None otherwise."""
     m = _OCC.match((symbol or "").strip().upper())
     if not m:
         return None
@@ -372,10 +310,6 @@ def parse_occ(symbol: str) -> dict | None:
 
 
 def _order_rows(payload: Any) -> list[dict]:
-    """Order rows from an open-orders / history / detail payload. Webull returns groups
-    ``{client_order_id, combo_order_id, combo_type, orders: [...]}``: each group is flattened to its orders (the group's
-    combo_order_id / combo_type are kept as ``_combo_order_id`` / ``_combo_type``, its client id fills a missing one).
-    A plain order row (older shape, or a mock) is returned as is."""
     groups: Any = payload
     if isinstance(payload, dict):
         if isinstance(payload.get("data"), (list, dict)):
@@ -430,7 +364,7 @@ def order_from_webull(d: dict, fallback: Order | None = None, origin: str | None
                  side="sell" if side in ("sell", "short", "sell_short") else "buy", qty=qty,
                  type="limit" if (_str(d, "order_type") or "").upper().startswith("LIMIT") else "market",
                  limit_px=_num(d, "limit_price"), status=status, filled_qty=filled,
-                 fill_px=px if px else None,  # Webull reports 0 / null before anything traded
+                 fill_px=px if px else None,
                  created_at=(fallback.created_at if fallback else None) or _iso(d, "place_time_at", "place_time")
                  or now_iso(),
                  filled_at=(_iso(d, "filled_time_at", "filled_time") or (fallback.filled_at if fallback else None)
@@ -442,7 +376,6 @@ def order_from_webull(d: dict, fallback: Order | None = None, origin: str | None
 
 
 def _wb_time(t: dt.datetime) -> str:
-    """Webull's history time format: yyyy-MM-dd'T'HH:mm:ss.SSS'Z' (UTC)."""
     t = t.astimezone(dt.UTC)
     return t.strftime("%Y-%m-%dT%H:%M:%S.") + f"{t.microsecond // 1000:03d}Z"
 
@@ -456,8 +389,6 @@ def _bool(v: Any) -> bool | None:
 
 
 def short_verdict(info: dict | None) -> bool | None:
-    """True / False / None from one instrument profile: not shortable, or status CO (liquidate only) / NT (not
-    tradable) -> False; shortable -> True; anything else (missing, lookup failed) -> None (unknown)."""
     if not info:
         return None
     if info.get("shortable") is False or info.get("status") in ("CO", "NT"):
@@ -473,32 +404,22 @@ class WebullBroker:
     def __init__(self, client: WebullClient, sim: SimBroker, account_id: str | None = None,
                  extended_hours: bool = False, options_supported: bool = False) -> None:
         self.client, self.sim = client, sim
-        # Documented for US stocks (support_trading_session "ALL", limit orders), but the paper sandbox refuses every
-        # order outside 09:30-16:00 ET (417, tested 2026-10-03), so it is off by default; WEBULL_EXTENDED_HOURS=1 turns
-        # it on (e.g. if the sandbox starts accepting pre-market limits).
         self.extended_hours = extended_hours
-        # Webull documents single- and multi-leg US option orders on /trading/orders/place; the paper sandbox's
-        # support is unverified (WEBULL_NOTES.md), so option orders stay in the simulator unless WEBULL_OPTIONS=1.
         self.options_supported = options_supported
         self._account_id = account_id or None
-        self._account_row: dict | None = None  # the accounts/list row of the account in use (type / class / label)
-        self._placed: dict[str, Order] = {}  # client_order_id -> last known state of orders placed through us
-        # split sell: client_order_id -> its leg client ids (recorded BEFORE each leg is posted, so a split that
-        # fails half way can still be reconciled by the parent id) and the parent's total quantity
+        self._account_row: dict | None = None
+        self._placed: dict[str, Order] = {}
         self._legs: dict[str, list[str]] = {}
         self._split_qty: dict[str, float] = {}
-        # multi-leg option orders placed at Webull: combo client id -> {"legs": [Order], "signs": [+1|-1],
-        # "refs": [mid], "side": "BUY"|"SELL", "qty": float}. Webull knows only the combo client id.
         self._combos: dict[str, dict] = {}
-        self._external: dict[str, Order] = {}  # open at Webull but not placed through this app (e.g. the Webull app)
+        self._external: dict[str, Order] = {}
         self._history_cache: dict[int, tuple[float, list[Order], bool]] = {}
         self.history_truncated = False
         self._short_cache: dict[str, tuple[float, dict]] = {}
-        self.transitions: deque[dict] = deque(maxlen=100)  # order state changes seen by reconcile(), newest last
+        self.transitions: deque[dict] = deque(maxlen=100)
 
     @property
     def regular_session_only(self) -> bool:
-        """True while orders are accepted only during the regular session (09:30-16:00 ET): the sandbox default."""
         return not self.extended_hours
 
     async def _aid(self) -> str:
@@ -512,8 +433,6 @@ class WebullBroker:
         return self._account_id
 
     async def account_info(self) -> dict:
-        """{account_type, account_class, account_label} of the account in use, from accounts/list (read once; empty
-        when Webull does not list it or the call fails: the balance never depends on it)."""
         aid = await self._aid()
         if self._account_row is None:
             try:
@@ -526,7 +445,6 @@ class WebullBroker:
         return {"account_type": typ.lower() if typ else None, "account_class": _str(r, "account_class"),
                 "account_label": _str(r, "account_label")}
 
-    # ---- account and positions --------------------------------------------------------------------
     @_guard
     async def account(self) -> Account:
         aid = await self._aid()
@@ -534,9 +452,9 @@ class WebullBroker:
                                             {"account_id": aid, "total_asset_currency": "USD"})
         top = payload.get("data", payload) if isinstance(payload, dict) else payload
         if not isinstance(top, dict):
-            top = _row(top)  # a list of one row, or nothing
+            top = _row(top)
         d = dict(top)
-        for k in ("account_currency_assets", "currency_assets"):  # per-currency breakdown: prefer USD
+        for k in ("account_currency_assets", "currency_assets"):
             sub = _rows(top.get(k))
             if sub:
                 d = {**d, **next((s for s in sub if (_str(s, "currency") or "USD") == "USD"), sub[0])}
@@ -544,8 +462,6 @@ class WebullBroker:
         equity = _num(d, "total_net_liquidation_value", "net_liquidation_value", "net_liquidation", "total_asset",
                       "total_assets", "equity")
         day_bp, night_bp = _num(d, "day_buying_power"), _num(d, "overnight_buying_power")
-        # buying_power: an explicit figure when Webull gives one, else the OVERNIGHT figure (a hedge staged over a
-        # closure is held overnight, so the 4x intraday figure would overstate what it can deploy), else intraday.
         bp = _num(d, "buying_power", "stock_buying_power")
         bp_from = "Webull's buying power figure"
         if bp is None:
@@ -580,8 +496,6 @@ class WebullBroker:
                        note=f"Webull paper (simulated money; {hours}; {opts}). buying_power is {bp_from}.")
 
     async def broker_positions(self) -> list[Position]:
-        """Positions held at Webull only (equities, and option legs when Webull holds any), labelled
-        "Webull paper account"."""
         aid = await self._aid()
         out: list[Position] = []
         for r in _rows(await self.client.request("GET", "/trading/assets/positions/list", {"account_id": aid})):
@@ -621,13 +535,9 @@ class WebullBroker:
 
     @_guard
     async def positions(self) -> list[Position]:
-        return await self.broker_positions() + await self.sim.positions()  # + simulated legs, broker="sim"
+        return await self.broker_positions() + await self.sim.positions()
 
-    # ---- shortability -----------------------------------------------------------------------------
     async def short_info(self, symbols: list[str]) -> dict[str, dict]:
-        """Instrument profiles for equity symbols (GET /trading/instruments/stocks/profiles/list, 100 per call, cached
-        15 min): {symbol: {shortable, easy_to_borrow, marginable, status, margin_requirement_short,
-        maintenance_margin_short, checked_at} or {shortable: None, reason}}. Never raises."""
         want = list(dict.fromkeys(s.strip().upper() for s in symbols if s and s.strip() and ":" not in s
                                   and not _OCC.match(s.strip().upper())))
         now = time.monotonic()
@@ -644,7 +554,7 @@ class WebullBroker:
             try:
                 rows = _rows(await self.client.request("GET", PROFILES_PATH,
                                                        {"category": "US_STOCK", "symbols": ",".join(batch)}))
-            except Exception as e:  # BrokerError, or a malformed payload: unknown, retried on the next call
+            except Exception as e:
                 why = e.message if isinstance(e, BrokerError) else type(e).__name__
                 for s in batch:
                     out[s] = {"symbol": s, "shortable": None, "reason": f"instrument lookup failed: {why}"[:160]}
@@ -667,9 +577,6 @@ class WebullBroker:
         return out
 
     async def short_status(self, symbols: list[str]) -> dict[str, dict]:
-        """Per symbol: {can_short: True|False|None, reason, ...profile}. A cash account cannot short anything; an
-        instrument Webull lists as not shortable, liquidate-only (CO) or not tradable (NT) cannot be shorted; a
-        hard-to-borrow (easy_to_borrow false) but shortable name is True with a warning in reason."""
         infos = await self.short_info(symbols)
         try:
             acct_type = (await self.account_info()).get("account_type")
@@ -692,14 +599,10 @@ class WebullBroker:
         return out
 
     async def can_short(self, symbol: str) -> bool | None:
-        """True: Webull says this account can short the symbol now; False: it cannot (not shortable, CO / NT, or a cash
-        account); None: unknown (lookup failed, not listed). Borrow can change intraday; cached 15 min."""
         sym = symbol.strip().upper()
         return (await self.short_status([sym])).get(sym, {}).get("can_short")
 
     async def _short_block(self, symbol: str) -> str | None:
-        """Why a SHORT of ``symbol`` must not be sent (instrument evidence only), else None. Unknown never blocks:
-        Webull itself refuses what it will not take (a clean rejected order)."""
         info = (await self.short_info([symbol])).get(symbol.upper())
         if short_verdict(info) is False:
             why = ("Webull lists it as not shortable" if info.get("shortable") is False
@@ -707,7 +610,6 @@ class WebullBroker:
             return f"{NOT_SHORTABLE}: {symbol.upper()} cannot be sold short ({why})"
         return None
 
-    # ---- orders -----------------------------------------------------------------------------------
     async def _held(self, symbol: str) -> float:
         try:
             return next((p.qty for p in await self.broker_positions() if p.symbol == symbol), 0.0)
@@ -715,9 +617,6 @@ class WebullBroker:
             return 0.0
 
     async def place_combo(self, reqs: list[OrderRequest]) -> list[Order]:
-        """Multi-leg option orders go to the simulator (labelled SIM_NOTE on every leg) unless options_supported, when
-        a structure Webull names (SINGLE, VERTICAL, STRADDLE, STRANGLE, CALENDAR, IRON_CONDOR) is sent as one Webull
-        multi-leg order; any other structure still goes to the simulator, labelled why."""
         if not self.options_supported or not reqs:
             return await self.sim.place_combo(reqs)
         strategy = option_strategy(reqs)
@@ -731,12 +630,12 @@ class WebullBroker:
         if req.asset == "option" and self.options_supported:
             return (await self._submit_option([req], "SINGLE"))[0]
         if req.asset != "equity":
-            return await self.sim.place_order(req)  # the sim stamps SIM_NOTE on every order it takes here
+            return await self.sim.place_order(req)
         cid = req.client_order_id
         if (dup := self._placed.get(cid)) is not None:
             if not is_market_closed(dup):
                 return dup
-            del self._placed[cid]  # refused only because the session was closed: Webull never took it, send again
+            del self._placed[cid]
         if (legs := self._legs.get(cid)) is not None and (merged := self._merge(cid, legs)) is not None:
             if not is_market_closed(merged):
                 return merged
@@ -745,17 +644,14 @@ class WebullBroker:
             del self._legs[cid]
         if req.side == "buy":
             return await self._submit(req, cid, "BUY", req.qty)
-        held = max(await self._held(req.symbol), 0.0)  # long quantity only; a short is already negative
+        held = max(await self._held(req.symbol), 0.0)
         if held >= req.qty:
             return await self._submit(req, cid, "SELL", req.qty)
-        block = await self._short_block(req.symbol)  # Webull says this name cannot be shorted: never send the SHORT
+        block = await self._short_block(req.symbol)
         if held <= 0:
             if block:
                 return self._refuse(req, cid, req.qty, block)
-            return await self._submit(req, cid, "SHORT", req.qty)  # nothing long to sell: this opens a short (hedges)
-        # Part long, part short (hold 50, sell 100): a SELL for what is held plus a SHORT for the rest. Each leg is
-        # recorded under the parent id before it is posted: if a leg's POST fails (5xx Webull cannot confirm, or the
-        # caller's timeout cancels mid-split), find_order(cid) still reaches the legs and reports what really filled.
+            return await self._submit(req, cid, "SHORT", req.qty)
         legs = self._legs[cid] = [f"{cid}-sell"]
         self._split_qty[cid] = req.qty
         sell = await self._submit(req, legs[0], "SELL", held)
@@ -775,19 +671,16 @@ class WebullBroker:
         return o
 
     def _merge(self, cid: str, legs: list[str]) -> Order | None:
-        """One Order summarising the SELL and SHORT legs of a split sell (the legs stay separate in orders()), under
-        the parent client id (also its id, so cancel(cid) reaches every leg). A leg Webull never took counts as
-        nothing traded; None when no leg is known at all."""
         got = [self._placed[c] for c in legs if c in self._placed]
         if not got:
             return None
         qty = self._split_qty.get(cid) or sum(o.qty for o in got)
         filled = sum(o.filled_qty for o in got)
         priced = [(o.filled_qty, o.fill_px) for o in got if o.filled_qty and o.fill_px is not None]
-        status = ("open" if any(o.status == "open" for o in got)  # a leg may still trade: keep tracking it
+        status = ("open" if any(o.status == "open" for o in got)
                   else "rejected" if any(o.status == "rejected" for o in got)
                   else "filled" if len(got) == 2 and all(o.status == "filled" for o in got)
-                  else "cancelled")  # done, but not all of it traded (a leg cancelled, or never taken by Webull)
+                  else "cancelled")
         reason = next((o.reject_reason for o in got if o.status == "rejected"), None)
         if status == "rejected" and filled:
             reason = f"partial: {filled:g} of {qty:g} filled; {reason or 'a leg was rejected'}"
@@ -797,7 +690,6 @@ class WebullBroker:
             "reject_reason": reason})
 
     async def _submit(self, req: OrderRequest, cid: str, side: str, qty: float) -> Order:
-        """Place one equity order at Webull and (once) ask for its state; a refusal is a rejected order."""
         base = Order(id=cid, client_order_id=cid, broker=self.name, symbol=req.symbol, asset="equity", side=req.side,
                      qty=qty, type=req.type, limit_px=req.limit_px, status="open", created_at=now_iso(), tag=req.tag,
                      price_source="webull_paper", note=req.note, origin="polybridge")
@@ -818,13 +710,11 @@ class WebullBroker:
         try:
             resp = await self.client.request("POST", "/trading/orders/place", body={"account_id": aid, "new_orders": [item]})
         except WebullAPIError as e:
-            if e.refused:  # a 4xx: understood and refused, a rejected order, not a crash
+            if e.refused:
                 base.status = "rejected"
                 base.reject_reason = MARKET_CLOSED_REASON if market_closed_refusal(e) else e.message
                 self._placed[cid] = base
                 return base
-            # 5xx / 429: the order may have been accepted anyway. Ask Webull; if it knows the order, report what it
-            # says, otherwise raise so the caller tracks it as unconfirmed (never booked as "nothing traded").
             try:
                 known = await self.find_order(cid, fallback=base)
             except BrokerError:
@@ -834,17 +724,13 @@ class WebullBroker:
             return known
         base.id = _str(_row(resp), "order_id") or base.id
         self._placed[cid] = base
-        try:  # paper orders usually fill at once; ask once, otherwise it is reported open
+        try:
             base = await self._refresh(base)
         except BrokerError:
             pass
         return base
 
-    # ---- options at Webull (options_supported only) -----------------------------------------------
     async def _submit_option(self, reqs: list[OrderRequest], strategy: str) -> list[Order]:
-        """One Webull option order: a single leg (SINGLE) or a multi-leg structure, all legs or none. Market legs with
-        no limit price are sent as one net LIMIT at the quoted mids +/- half-spreads (Webull's multi-leg examples are
-        limits); a structure with no price at all is refused here, never sent at market."""
         cid = reqs[0].combo_id or reqs[0].client_order_id
         if (known := self._combos.get(cid)) is not None and not is_market_closed(known["legs"][0]):
             return [o.model_copy() for o in known["legs"]]
@@ -880,7 +766,7 @@ class WebullBroker:
                 return refuse("no_price: a Webull option limit needs every leg's price (limit_px or quote ref_px)")
             net = sum(s * p for s, (p, _h) in zip(signs, legs_px))
             slack = 0.0 if all(r.type == "limit" for r in reqs) else sum(h for _p, h in legs_px)
-            side = "BUY" if net >= 0 else "SELL"  # BUY = net debit, SELL = net credit
+            side = "BUY" if net >= 0 else "SELL"
             limit = round(abs(net) + slack, 2) if side == "BUY" else round(max(abs(net) - slack, 0.01), 2)
             order_type = "LIMIT"
         und = occs[0]["underlying"]
@@ -912,9 +798,6 @@ class WebullBroker:
             return [o.model_copy() for o in base]
 
     async def _refresh_combo(self, cid: str) -> list[Order]:
-        """Read a Webull option order by its client id and spread its state over our legs. Webull reports one net
-        fill price for a multi-leg order: each leg's fill_px is its quoted mid, with the difference to the net fill
-        put on the first leg, so the signed sum of leg prices equals Webull's net (price_source says so)."""
         meta = self._combos[cid]
         d = await self.client.request("GET", DETAIL_PATH, {"account_id": await self._aid(), "client_order_id": cid})
         row = _order_row(d)
@@ -948,18 +831,14 @@ class WebullBroker:
         meta["legs"] = fresh
         return [o.model_copy() for o in fresh]
 
-    # ---- order lookup -----------------------------------------------------------------------------
     async def find_order(self, client_order_id: str, fallback: Order | None = None) -> Order | None:
-        """Webull's state of an order by our client_order_id, or None when Webull does not know it (never placed).
-        Used to reconcile an order whose place call timed out or failed after it may have been accepted. A split sell
-        is read leg by leg and reported as one merged order under its parent id (see ``_merge``)."""
         if (legs := self._legs.get(client_order_id)) is not None:
             for leg in list(legs):
-                await self.find_order(leg)  # refreshes a known leg; asks Webull for one whose POST never confirmed
+                await self.find_order(leg)
             return self._merge(client_order_id, legs)
         if (o := self._placed.get(client_order_id)) is not None:
             if o.status == "rejected" and (o.reject_reason or "").startswith(NOT_SHORTABLE):
-                return o  # refused here, never sent: Webull has nothing to say about it
+                return o
             try:
                 return await self._refresh(o)
             except BrokerError:
@@ -988,7 +867,6 @@ class WebullBroker:
         return fresh
 
     async def open_orders(self) -> list[Order]:
-        """Webull's open orders (paginated, at most OPEN_MAX_PAGES pages), as Orders; ours keep their local fields."""
         aid = await self._aid()
         out: list[Order] = []
         key = None
@@ -998,7 +876,7 @@ class WebullBroker:
             for r in _order_rows(payload):
                 cid = _str(r, "client_order_id") or ""
                 if cid in self._combos:
-                    continue  # our multi-leg option order: read through _refresh_combo
+                    continue
                 out.append(order_from_webull(r, fallback=self._placed.get(cid), origin="webull_open"))
             key = payload.get("pagination_key") if isinstance(payload, dict) else None
             if not key:
@@ -1006,10 +884,6 @@ class WebullBroker:
         return out
 
     async def order_history(self, days: int = HISTORY_DEFAULT_DAYS) -> list[Order]:
-        """Webull order history for the last ``days`` (1..HISTORY_MAX_DAYS), read newest window first in windows of
-        HISTORY_WINDOW_DAYS with at most HISTORY_MAX_PAGES pages each (start_time / end_time in
-        yyyy-MM-dd'T'HH:mm:ss.SSS'Z', pagination_key). Cached HISTORY_CACHE_S. Webull notes the history may lag the
-        newest orders: callers prefer the open-orders list and order detail for orders still in flight."""
         days = max(1, min(int(days), HISTORY_MAX_DAYS))
         hit = self._history_cache.get(days)
         if hit is not None and time.monotonic() - hit[0] < HISTORY_CACHE_S:
@@ -1030,7 +904,7 @@ class WebullBroker:
                 payload = await self.client.request("GET", HISTORY_PATH, q)
                 for r in _order_rows(payload):
                     cid = _str(r, "client_order_id") or _str(r, "order_id") or ""
-                    if cid and cid not in rows:  # newest window first: the first row seen for an id wins
+                    if cid and cid not in rows:
                         rows[cid] = order_from_webull(r, fallback=self._placed.get(cid), origin="webull_history")
                 key = payload.get("pagination_key") if isinstance(payload, dict) else None
                 if not key:
@@ -1044,7 +918,6 @@ class WebullBroker:
         return list(out)
 
     def _settle(self, cid: str, fresh: Order, why: str, transitions: list[dict] | None = None) -> None:
-        """Record ``fresh`` as the state of a tracked order and note a change of status or filled quantity."""
         old = self._placed.get(cid)
         self._placed[cid] = fresh
         if old is not None and (old.status, old.filled_qty) != (fresh.status, fresh.filled_qty):
@@ -1056,10 +929,6 @@ class WebullBroker:
                 transitions.append(t)
 
     async def reconcile(self, detail_budget: int = DETAIL_BUDGET) -> dict:
-        """One reconciliation pass: read Webull's open orders once, settle every order we placed that is still open
-        locally (still open at Webull -> its partial fill; gone from the open list -> its final state by order detail,
-        at most ``detail_budget`` reads per pass, the rest next pass), refresh open multi-leg option orders, and note
-        open orders placed outside this app. Raises BrokerError when the open-orders list cannot be read."""
         opn = await self.open_orders()
         by_cid = {o.client_order_id: o for o in opn}
         transitions: list[dict] = []
@@ -1104,9 +973,6 @@ class WebullBroker:
 
     @_guard
     async def orders(self, status: str | None = None, days: int = HISTORY_DEFAULT_DAYS) -> list[Order]:
-        """Webull order history (last ``days``) + Webull open orders + orders placed through us + simulated legs.
-        Freshness wins: an order still open locally takes its final state from history or order detail; the open-
-        orders list beats history (which may lag)."""
         merged: dict[str, Order] = dict(self._external)
         try:
             hist = await self.order_history(days)
@@ -1115,7 +981,7 @@ class WebullBroker:
         for o in hist:
             cid = o.client_order_id
             if cid in self._combos:
-                continue  # our multi-leg option order: its legs are listed below
+                continue
             mine = self._placed.get(cid)
             if mine is not None and mine.status == "open" and o.status != "open":
                 self._settle(cid, o, "history")
@@ -1132,7 +998,7 @@ class WebullBroker:
         except BrokerError:
             pass
         pending = [o for cid, o in self._placed.items() if o.status == "open" and cid not in open_ids][:DETAIL_BUDGET]
-        for o in pending:  # sequential: order detail allows 2 calls / 2 s
+        for o in pending:
             try:
                 merged[o.client_order_id] = await self._refresh(o)
             except BrokerError:
@@ -1150,7 +1016,7 @@ class WebullBroker:
             return await self.sim.cancel(order_id)
         combo = next((cid for cid, m in self._combos.items()
                       if order_id == cid or any(order_id in (o.id, o.client_order_id) for o in m["legs"])), None)
-        if combo is not None:  # a Webull option order: cancel it whole (Webull knows only the combo client id)
+        if combo is not None:
             try:
                 await self.client.request("POST", "/trading/orders/cancel",
                                           body={"account_id": await self._aid(), "client_order_id": combo})
@@ -1163,14 +1029,14 @@ class WebullBroker:
                 legs = [o.model_copy(update={"status": "cancelled"}) for o in self._combos[combo]["legs"]]
                 self._combos[combo]["legs"] = legs
             return next((o for o in legs if order_id in (o.id, o.client_order_id)), legs[0])
-        if (legs := self._legs.get(order_id)) is not None:  # a split sell: cancel every leg that may still trade
+        if (legs := self._legs.get(order_id)) is not None:
             for leg in list(legs):
                 if (o := self._placed.get(leg)) is not None and o.status != "open":
                     continue
                 try:
                     await self.cancel(leg)
                 except WebullAPIError as e:
-                    if not e.refused:  # a 4xx: already done, or never taken by Webull (read again below)
+                    if not e.refused:
                         raise
             if (merged := await self.find_order(order_id)) is None:
                 raise BrokerError(f"Webull does not know order {order_id}.", 404)
@@ -1191,9 +1057,6 @@ class WebullBroker:
         return base
 
     async def _not_present(self, base: Order, cid: str) -> Order:
-        """Cancel answered "Order not present": nothing rests at Webull under this id. A finished order we placed is
-        reported as it finished (it may have filled meanwhile); otherwise a clean rejected Order with reason
-        "not_found: ...", never an exception."""
         if base.client_order_id in self._placed:
             try:
                 fresh = await self._refresh(base)
@@ -1209,10 +1072,6 @@ class WebullBroker:
 
 
 def option_strategy(reqs: list[OrderRequest]) -> str | None:
-    """Webull's option_strategy for these legs, or None when Webull has no name for the combination (equal quantities
-    only): 1 leg SINGLE; 2 legs same expiry same right different strikes VERTICAL; same expiry call + put same strike
-    STRADDLE, different strikes STRANGLE; same right same strike different expiries CALENDAR; 4 legs one expiry, two
-    puts and two calls IRON_CONDOR."""
     occs = [parse_occ(r.symbol) for r in reqs]
     if not reqs or any(o is None for o in occs) or len({o["underlying"] for o in occs}) != 1:
         return None

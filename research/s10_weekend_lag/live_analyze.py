@@ -1,7 +1,3 @@
-"""S10 Part 5 analysis (METHOD.md amendment 5): the live book of the 15-minute Bitcoin markets against Coinbase.
-
-Run from `research/` after the recorder stops:  python -m s10_weekend_lag.live_analyze
-"""
 from __future__ import annotations
 
 import json
@@ -52,7 +48,6 @@ def load() -> tuple[pd.DataFrame, dict[str, dict], list[tuple[float, list]]]:
 
 
 def sigma_at(candles: list[tuple[float, list]], s: float) -> float:
-    """Std of the last 60 one-minute log returns from the latest candle fetch before s."""
     prior = [c for t, c in candles if t <= s]
     if not prior:
         return float("nan")
@@ -65,7 +60,7 @@ def add_fair(df: pd.DataFrame, candles) -> pd.DataFrame:
     ts, cb = df.ts.to_numpy(), df.cb.to_numpy()
     lo = np.searchsorted(ts, ts - 60.0, side="right")
     cs = np.concatenate([[0.0], np.cumsum(cb)])
-    x = (cs[np.arange(len(ts)) + 1] - cs[lo]) / (np.arange(len(ts)) + 1 - lo)       # mean over (s - 60, s]
+    x = (cs[np.arange(len(ts)) + 1] - cs[lo]) / (np.arange(len(ts)) + 1 - lo)
     df = df.assign(x=x)
     s0 = {}
     for st in df.start.unique():

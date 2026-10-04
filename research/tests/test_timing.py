@@ -9,7 +9,7 @@ T = pd.Timestamp
 
 def _events():
     return pd.DataFrame({"ticker": ["A", "B", "C"],
-                         "filing_date": [T("2024-06-05"), T("2024-06-05"), T("2024-06-08")],   # Wed, Wed, Sat
+                         "filing_date": [T("2024-06-05"), T("2024-06-05"), T("2024-06-08")],
                          "t_0": [T("2024-06-05")] * 2 + [T("2024-06-10")],
                          "t_pre": [T("2024-06-04")] * 2 + [T("2024-06-07")]})
 
@@ -24,7 +24,7 @@ def test_edgar_before_and_after_the_close():
 
 def test_conservative_without_acceptance_times():
     out = apply_filing_session(_events(), CAL, None)
-    assert list(out.t_0) == [T("2024-06-06"), T("2024-06-06"), T("2024-06-10")]   # weekday -> next session; weekend -> Monday
+    assert list(out.t_0) == [T("2024-06-06"), T("2024-06-06"), T("2024-06-10")]
     assert set(out.timing) == {"conservative"}
 
 

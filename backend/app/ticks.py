@@ -1,25 +1,3 @@
-"""Tick sources for the bridge loop.
-
-Each source is an async iterator of ``Tick``: a ``(ts_ns, p)`` pair (``p`` = the market's raw YES mid, for the UI
-and the legacy Engine) that also carries ``.fields``, the hedgecore ``MarketTick`` fields in the market's own YES
-orientation (direction is applied later, in exactly one place: ``app.pipeline.ticks.orient_to_adverse``).
-
-Honesty rules (same as the fit pipeline):
-- A field the source does not have is NaN, never invented. ``eightk_score`` is 0 (= none, per the contract).
-- Live (``LiveSource``): the primary venue's order book (Polymarket CLOB ``/book`` for the YES token, or the Kalshi
-  orderbook), top 5 levels each side; ``no_bid = 1 - yes_ask`` and ``no_ask = 1 - yes_bid`` (YES and NO are one book
-  on both venues). ``p_other_venue`` = the twin market's YES mid on the other venue when a twin is given and its
-  book has both sides, else NaN. ``under_*`` from the broker's quote source (Massive), refreshed at most every
-  ``equity_interval_s``; ``under_bid``/``under_ask`` only when the quote has a spread.
-- Options (``OptionsEnricher``, opportunity bridges): for a threshold question ``app.options.match`` can map,
-  ``app.options.enrich.enrich_market`` fills ``opt_mid`` / ``opt_delta`` / ``opt_iv`` / ``opt_implied_prob`` from the
-  Massive chain snapshot (refreshed every ``refresh_s``; network-free in between) and ``eightk_score`` for a
-  single-stock underlying (NaN when no 8-K data covers the date, and for indices / ETFs). Unmapped questions, no
-  key or no listed contracts leave the option fields NaN.
-- Replay (``ReplaySource``): the recorded mid (``yes_bid = yes_ask = p``, as in the fit replays) plus any other
-  MarketTick field the JSONL row carries; ``under_px`` from recorded equity bars as of the row's ORIGINAL time
-  (bar close known at that time), else NaN.
-"""
 from __future__ import annotations
 
 import asyncio
@@ -43,15 +21,14 @@ TICK_FIELDS = (["yes_bid", "yes_ask", "no_bid", "no_ask"] + BOOK_FIELDS
                + ["p_other_venue", "under_px", "under_bid", "under_ask",
                   "opt_mid", "opt_delta", "opt_iv", "opt_implied_prob", "eightk_score"])
 
-Level = tuple[float, float]  # (px, qty)
+Level = tuple[float, float]
 
 
 class SourceError(RuntimeError):
-    """The tick source failed and cannot continue."""
+    pass
 
 
 class Tick(tuple):
-    """``(ts_ns, p)`` with the full MarketTick ``fields`` attached (raw YES orientation, NaN = unknown)."""
 
     def __new__(cls, ts_ns: int, p: float, fields: dict[str, float] | None = None, venue: int = 0,
                 legs: dict[str, float] | None = None, recorded_ts_ns: int | None = None,
@@ -59,9 +36,9 @@ class Tick(tuple):
         t = super().__new__(cls, (int(ts_ns), float(p)))
         t.fields = fields if fields is not None else mid_only_fields(p)
         t.venue = venue
-        t.legs = legs  # replay only: {option leg ticker: recorded bar close} where the recording had a fresh pair
-        t.recorded_ts_ns = recorded_ts_ns  # replay only: the row's original time (ts_ns is the wall-clock stamp)
-        t.settled = bool(settled and legs)  # replay only: legs are the expiry settlement (intrinsic), not a quote
+        t.legs = legs
+        t.recorded_ts_ns = recorded_ts_ns
+        t.settled = bool(settled and legs)
         return t
 
     @property
@@ -74,7 +51,6 @@ class Tick(tuple):
 
 
 def as_tick(x: Any) -> Tick:
-    """Accept a Tick or a bare (ts_ns, p) pair (e.g. a test source)."""
     return x if isinstance(x, Tick) else Tick(x[0], x[1])
 
 
@@ -93,7 +69,6 @@ def blank_fields() -> dict[str, float]:
 
 
 def mid_only_fields(p: float) -> dict[str, float]:
-    """A mid-price-only tick: yes_bid = yes_ask = p (the spread is unknown), NO = 1 - p, everything else NaN."""
     f = blank_fields()
     f["yes_bid"] = f["yes_ask"] = float(p)
     f["no_bid"] = f["no_ask"] = 1.0 - float(p)
@@ -101,7 +76,6 @@ def mid_only_fields(p: float) -> dict[str, float]:
 
 
 def book_fields(bids: list[Level], asks: list[Level]) -> dict[str, float]:
-    """YES book (best first) -> MarketTick quote and depth fields."""
     f = blank_fields()
     for i in range(KDEPTH):
         if i < len(bids):
@@ -121,8 +95,6 @@ def book_mid(bids: list[Level], asks: list[Level]) -> float | None:
     return (bids[0][0] + asks[0][0]) / 2.0 if bids and asks else None
 
 
-# ---------------------------------------------------------------- venue books
-
 def _levels(rows: Any, px_key: str = "price", qty_key: str = "size") -> list[Level]:
     out = []
     for r in rows or []:
@@ -138,8 +110,6 @@ def _levels(rows: Any, px_key: str = "price", qty_key: str = "size") -> list[Lev
 
 
 async def polymarket_book(http: httpx.AsyncClient, token_id: str) -> tuple[list[Level], list[Level]]:
-    """CLOB ``/book`` for one token: (bids best first, asks best first), top 5 each. The API's own ordering is not
-    relied on: bids are sorted by price descending, asks ascending."""
     r = await http.get(f"{CLOB}/book", params={"token_id": token_id}, timeout=POLL_TIMEOUT)
     r.raise_for_status()
     j = r.json() or {}
@@ -149,8 +119,6 @@ async def polymarket_book(http: httpx.AsyncClient, token_id: str) -> tuple[list[
 
 
 def _kalshi_side(ob: dict, side: str) -> list[Level]:
-    """Kalshi resting bids on one side as [(px in dollars, qty)]: ``<side>_dollars`` ([["0.4500", qty]]) or the
-    legacy integer cents ``<side>`` ([[45, qty]])."""
     rows = ob.get(f"{side}_dollars")
     if rows:
         return _levels(rows)
@@ -164,8 +132,6 @@ def _kalshi_side(ob: dict, side: str) -> list[Level]:
 
 
 async def kalshi_book(http: httpx.AsyncClient, ticker: str) -> tuple[list[Level], list[Level]]:
-    """Kalshi ``/markets/{ticker}/orderbook`` as the YES book. Kalshi lists bids only: YES bids are the ``yes`` side;
-    a NO bid at q is a YES ask at 1 - q (same size)."""
     r = await http.get(f"{KALSHI_API}/markets/{ticker}/orderbook", params={"depth": KDEPTH}, timeout=POLL_TIMEOUT)
     r.raise_for_status()
     ob = (r.json() or {}).get("orderbook") or {}
@@ -174,21 +140,12 @@ async def kalshi_book(http: httpx.AsyncClient, ticker: str) -> tuple[list[Level]
     return bids, asks
 
 
-# ---------------------------------------------------------------- sources
-
-EquityQuote = Callable[[], Awaitable[Any]]  # -> object with .mid and .half_spread (broker Quote), or None
-OptionsHook = Callable[[dict, int], Awaitable[dict]]  # (fields, ts_ns) -> fields with opt_* / eightk_score filled
+EquityQuote = Callable[[], Awaitable[Any]]
+OptionsHook = Callable[[dict, int], Awaitable[dict]]
 INDEX_LIKE = ("SPY", "QQQ", "IWM", "DIA")
 
 
 class OptionsEnricher:
-    """Fills a tick's option fields (and the 8-K score) for one prediction market's threshold question.
-
-    ``question`` / ``end_date`` may be given, or resolved lazily by ``resolve`` (async () -> (question, end_date)).
-    The first call (and one every ``refresh_s``) runs ``enrich_market`` (match + chain refresh + live 8-K refresh +
-    enrich, bounded by ``timeout_s``); calls in between re-enrich from the cached snapshot without network. Never
-    raises: on any failure the fields stay NaN. ``context()`` exposes what the bridge needs to price option legs:
-    the matched underlying / strike, the listed expiry and bracketing strikes, and the chain snapshot."""
 
     def __init__(self, question: str | None = None, end_date: Any = None, *,
                  resolve: Callable[[], Awaitable[tuple[str | None, Any]]] | None = None,
@@ -255,19 +212,13 @@ class OptionsEnricher:
             return fields
         und = self.detail.get("underlying_used") or ""
         if self.detail.get("supported") and (und.startswith("I:") or und in INDEX_LIKE):
-            out["eightk_score"] = NAN  # indices and ETFs file no 8-Ks: not available, not "none"
+            out["eightk_score"] = NAN
         if "ts_ns" not in fields:
             out.pop("ts_ns", None)
         return out
 
 
 class LiveSource:
-    """Polls the primary venue's book every ``interval_s`` (plus the twin's book and the equity quote).
-
-    ``primary``: "polymarket" (``market_id`` = the YES token id) or "kalshi" (``market_id`` = the market ticker).
-    ``twin``: (source, id) of the same question on the other venue, or None. Only a failure of the primary book (and
-    of the Polymarket midpoint fallback) counts toward ``max_failures`` consecutive failures -> SourceError; a twin or
-    equity failure leaves those fields NaN for that tick."""
 
     def __init__(self, market_id: str, interval_s: float = 1.0, max_failures: int = 3,
                  http: httpx.AsyncClient | None = None, *, primary: str = "polymarket",
@@ -280,7 +231,7 @@ class LiveSource:
         self._quote_at = -math.inf
 
     @property
-    def token_id(self) -> str:  # backward compatible name
+    def token_id(self) -> str:
         return self.market_id
 
     async def _book(self, http: httpx.AsyncClient, source: str, mid: str) -> tuple[list[Level], list[Level]]:
@@ -308,7 +259,6 @@ class LiveSource:
         return self._quote
 
     async def poll(self, http: httpx.AsyncClient) -> Tick:
-        """One tick, or raises when the primary venue gave nothing usable."""
         book_task = asyncio.ensure_future(self._book(http, self.primary, self.market_id))
         twin_mid, quote = await asyncio.gather(self._twin_mid(http), self._equity())
         try:
@@ -316,7 +266,7 @@ class LiveSource:
         except Exception:
             bids, asks = [], []
         p = book_mid(bids, asks)
-        if p is None and self.primary == "polymarket":  # one-sided or empty book: fall back to the CLOB midpoint
+        if p is None and self.primary == "polymarket":
             p = await polymarket_midpoint(http, self.market_id)
         if p is None:
             raise ValueError("no book and no midpoint")
@@ -329,7 +279,7 @@ class LiveSource:
             if hs is not None and hs >= 0:
                 f["under_bid"], f["under_ask"] = mid - hs, mid + hs
         ts = time.time_ns()
-        if self.options is not None:  # opt_* / eightk_score for a mapped threshold question; NaN on any failure
+        if self.options is not None:
             try:
                 f = {**f, **{k: v for k, v in (await self.options(f, ts)).items() if k in TICK_FIELDS}}
             except Exception:
@@ -356,24 +306,10 @@ class LiveSource:
                 await http.aclose()
 
 
-# ReplaySource only re-bases its schedule when the consumer is later than this; a sleep that overshoots by a few
-# milliseconds is timer jitter, not a slow consumer, and re-basing on it would drift the recorded spacing.
 REPLAY_REBASE_NS = 50_000_000
 
 
 class ReplaySource:
-    """Reads JSONL ``{ts_ns, p, ...}`` and re-emits it on the wall clock: the first tick is stamped "now" and recorded
-    gaps are preserved divided by ``speed`` (speed 3600 plays hourly history at one tick per second). When the consumer
-    falls behind by more than 50 ms (a slow broker call between ticks; a smaller sleep overshoot is ignored), the
-    schedule shifts by the delay instead of catching up: every tick is stamped when it is handed over, so a replay tick
-    is never "stale" because of the backend's own latency.
-    speed <= 0 means no sleeping and each tick is stamped with the current time (used by tests).
-    Rows with a non-finite p are skipped. ``bars``: recorded equity closes [(known_at_s, close)] joined as of each
-    row's original time (see ``app.pipeline.ticks.recorded_bars``). A row's ``opt_legs`` ({leg ticker: bar close},
-    written by ``scripts/history_with_equity.py --options`` only where the pair was fresh, or the expiry settlement
-    when the row also has ``opt_settlement``) rides on ``Tick.legs`` (``Tick.settled`` for a settlement), with the
-    row's original time on ``Tick.recorded_ts_ns``, so an opportunity bridge can price the legs at the replayed time
-    when no current chain lists them, and tell how old the last recorded legs are when it closes at bridge end."""
 
     def __init__(self, path: str | Path, speed: float = 1.0, bars: list[tuple[int, float]] | None = None) -> None:
         self.path, self.speed, self.bars = Path(path), speed, bars or []
@@ -381,7 +317,6 @@ class ReplaySource:
 
     @staticmethod
     def legs_for(row: dict) -> dict[str, float] | None:
-        """The row's recorded option leg closes ({ticker: close}, all finite and >= 0), else None."""
         legs = row.get("opt_legs")
         if not isinstance(legs, dict) or not legs:
             return None
@@ -395,7 +330,7 @@ class ReplaySource:
 
     def fields_for(self, row: dict, p: float) -> dict[str, float]:
         f = mid_only_fields(p)
-        for k in TICK_FIELDS:  # whatever the recording has, it keeps
+        for k in TICK_FIELDS:
             if k in row:
                 v = _num(row[k])
                 f[k] = v if v is not None else NAN
@@ -425,13 +360,9 @@ class ReplaySource:
                 if target > now:
                     await asyncio.sleep((target - now) / 1e9)
                 elif now - target > REPLAY_REBASE_NS:
-                    # The consumer (the bridge awaiting its broker) fell behind the schedule: re-base the clock so
-                    # this tick is stamped now and the gaps after it keep their recorded spacing. A replayed tick
-                    # handed over late is not old data; stamping it at its past slot would make the engine's
-                    # wall-clock staleness gate hold it (and the ticks behind it) for the backend's own latency.
                     start += now - target
                     target = now
-                yield Tick(min(target, time.time_ns()), p, fields, venue, self.legs_for(row), ts,  # never future-dated
+                yield Tick(min(target, time.time_ns()), p, fields, venue, self.legs_for(row), ts,
                            bool(row.get("opt_settlement")))
             else:
                 yield Tick(time.time_ns(), p, fields, venue, self.legs_for(row), ts, bool(row.get("opt_settlement")))

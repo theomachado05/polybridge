@@ -1,7 +1,3 @@
-"""S15 report: SUMMARY.md, equity_curve.png, drawdown.png and capacity.md from the result CSVs.
-
-Run from `research/`:  python -m s15_weekend_scare.report
-"""
 from __future__ import annotations
 
 import json

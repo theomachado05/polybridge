@@ -1,4 +1,3 @@
-"""Scores, cluster bootstrap, verdicts, encompassing logit and favourite-longshot slope (METHOD.md sections 4 to 6)."""
 from __future__ import annotations
 
 import numpy as np
@@ -31,8 +30,6 @@ def _weight_chunks(c: int, draws: int, seed: int, chunk: int = 1000):
 
 
 def cluster_boot(series: dict[str, np.ndarray], clusters, draws: int = PARAMS.draws, seed: int = PARAMS.seed) -> dict:
-    """Row-weighted means (ratio of sums per draw) and equal-weight-per-cluster means, same weights for every series.
-    Returns per series: mean, ci95, ci90, cw_mean, cw_ci95, plus n and clusters."""
     cl = np.asarray(clusters)
     keys, inv = np.unique(cl, return_inverse=True)
     c = len(keys)

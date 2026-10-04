@@ -1,7 +1,3 @@
-"""S11 report: metrics.csv, tables for SUMMARY.md, equity curve and drawdown. Reads `.cache/run_state.pkl`.
-
-Run from `research/`:  python -m s11_bundles.report
-"""
 from __future__ import annotations
 
 import json
@@ -29,7 +25,6 @@ def main() -> int:
     V, P, X, T, H = S["V"], S["P"], S["X"], S["T"], S["H"]
     lines, metrics = [], []
 
-    # ---- part (a): episodes, all and print-verified, weekend against weekday
     lines.append("## Violation episodes in the history (mids moved by half-spreads and fees)\n")
     lines.append("| Kind | Costs | Episodes | Weekend | Weekday | Per 1,000 hours, weekend | Per 1,000 hours, weekday | Median gap, points | Median minutes beyond costs | Median minutes to gap close |")
     lines.append("|---|---|---|---|---|---|---|---|---|---|")
@@ -46,7 +41,6 @@ def main() -> int:
                             "hours_weekend": hw, "hours_weekday": hd})
     lines.append("")
 
-    # ---- trades
     def block(study: str, pnl_col: str, label: str):
         out = []
         for c in cfg.COST_MULTIPLIERS:
@@ -58,7 +52,7 @@ def main() -> int:
                     if not len(tt):
                         out.append({"study": label, "segment": seg, "cost_mult": c, "entries": which, "trades": 0})
                         continue
-                    pc = tt[pnl_col] * 100            # points per contract
+                    pc = tt[pnl_col] * 100
                     m, lo, hi, n, nd = boot(tt.assign(_p=pc), "_p")
                     pf = perf(tt.assign(_pnl=tt[pnl_col] * cfg.CONTRACTS, _cap=tt.capital * cfg.CONTRACTS), "_pnl", "_cap")
                     bp = float((tt[pnl_col] / tt.capital).mean() * 1e4)
@@ -87,7 +81,6 @@ def main() -> int:
                      f"{r.max_drawdown:.1%} | {r.worst_month:+.1%} | {r.turnover_per_year:.1f}× | {r.verified} / {r.not_verified} / {r.uncheckable} |")
     lines.append("")
 
-    # ---- part (b): the sibling's move, before costs
     lines.append("## Propagation: the sibling's move after a 3+ point jump (points, signed: positive = follows the jump)\n")
     lines.append("| Kind | Segment | Jumps | Dates | During the jump's 5 min | Next 5 min | Next 15 min | Next 30 min | Next 60 min (95% interval) | Jumper's own next 60 min |")
     lines.append("|---|---|---|---|---|---|---|---|---|---|")
@@ -114,7 +107,6 @@ def main() -> int:
     pd.DataFrame(metrics).to_csv(RESULTS / "metrics_tests.csv", index=False)
     (RESULTS / "tables.md").write_text("\n".join(lines))
 
-    # ---- curves: the primary trade of each part at 1x, all entries
     fig, ax = plt.subplots(figsize=(9, 4.5))
     fig2, ax2 = plt.subplots(figsize=(9, 3.5))
     for study, col, lab in (("violation", "pnl_close", "violation trade"), ("P0", "pnl", "propagation P0")):

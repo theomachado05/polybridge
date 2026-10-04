@@ -1,19 +1,3 @@
-"""Link benchmark: every question-to-instrument link tested so far, scored against prices.
-
-A link is a claim: "when the odds of this question rise by a point, this instrument moves this way". The score is
-whether the data back the claim: the through-origin slope of the instrument's excess opening gap on the overnight,
-direction-signed move in odds, with errors clustered by date.
-
-    confirmed      slope > 0 with t >= 2
-    contradicted   t <= -2
-    unproven       anything in between
-    untestable     fewer than 30 days with both prices, or a link to SPY (its excess over SPY is zero by construction)
-
-Sources: S4 (the original text-only map, with the blind critic's verdict on each link) and S5 (links two blind
-labellers both named). Reads the cached pulls of both studies; pulls nothing.
-
-Run from `research/`:  python -m linker.benchmark
-"""
 from __future__ import annotations
 
 import json
@@ -42,7 +26,6 @@ def link_stats(pm: dict, direction: int, sess: pd.DataFrame, days: list[str], as
     c = en.clustered_slope(x, g, d)
     gt = en.gate(np.append(ld.sxx, 0.0), np.append(ld.sxy, 0.0), np.append(ld.nbin, 0))
     big = np.abs(x) >= 10
-    # what can be known from the odds alone, before any equity price is looked at
     p_sig = asof((sess.open.to_numpy() - 60).astype(np.int64), pm["t"], np.abs(pm["p"].astype(float)), 1800)
     live = p_sig[np.isfinite(p_sig)]
     feats = {"odds_mean_abs_move": float(np.mean(np.abs(x))) if len(x) else float("nan"),

@@ -1,4 +1,3 @@
-"""The whole confirmatory study for one window: a pure function of (client, config, start, end)."""
 from __future__ import annotations
 
 from pathlib import Path

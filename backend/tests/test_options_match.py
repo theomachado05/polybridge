@@ -1,4 +1,3 @@
-"""Threshold-question parser (app/options/match.py): supported cases and refusals."""
 import datetime as dt
 
 import pytest
@@ -20,21 +19,15 @@ AS_OF = "2026-10-03"
     ("Will Nvidia be above $200 on 2027-01-15?", None, ("NVDA", 200.0, "2027-01-15", "above")),
     ("Will Microsoft close at or above $500 by end of December?", None, ("MSFT", 500.0, "2026-12-31", "above")),
     ("Will SPY close above 700 on Dec 18?", None, ("SPY", 700.0, "2026-12-18", "above")),
-    # no date in the text: the market's resolution date is used
     ("Will AAPL be above 300?", "2026-11-20T21:00:00Z", ("AAPL", 300.0, "2026-11-20", "above")),
-    # a month/day with no year takes the resolution date's year
     ("Will Google close above $250 on Jan 15?", "2027-01-16T00:00:00Z", ("GOOGL", 250.0, "2027-01-15", "above")),
-    # UTC resolution just after midnight Jan 1 is Dec 31 in New York: the year is this one, not next
     ("S&P 500 above 7000 by end of year?", "2027-01-01T04:59:00Z", ("I:SPX", 7000.0, "2026-12-31", "above")),
     ("Will NVDA close above $250 on Dec 31?", "2027-01-01T04:59:00Z", ("NVDA", 250.0, "2026-12-31", "above")),
     ("Will NVDA close above $250 at the end of December?", "2027-01-01T04:59:00Z",
      ("NVDA", 250.0, "2026-12-31", "above")),
-    # a market that resolves a couple of days after the question's date still means this year (slack)
     ("Will NVDA close above $250 on Dec 31?", "2027-01-02T17:00:00Z", ("NVDA", 250.0, "2026-12-31", "above")),
     ("Will NVDA close above $250 on Dec 31?", "2027-01-01", ("NVDA", 250.0, "2026-12-31", "above")),
-    # ... and a later resolution still picks the year whose Dec 31 is just before it
     ("Will NVDA close above $250 on Dec 31?", "2027-12-31T21:00:00Z", ("NVDA", 250.0, "2027-12-31", "above")),
-    # Kalshi style: title + yes_sub_title, the comparator after the level
     ("Nvidia price on Dec 31, 2026? $250 or above", "2027-01-01T04:59:00Z", ("NVDA", 250.0, "2026-12-31", "above")),
     ("S&P 500 on Dec 31, 2026? $6,000 or below", None, ("I:SPX", 6000.0, "2026-12-31", "below")),
 ])
@@ -42,7 +35,7 @@ def test_supported_questions(question, res, expected):
     m = match_question(question, res, as_of=AS_OF)
     assert m is not None, why_no_match(question, res, as_of=AS_OF)
     assert (m.underlying, m.strike, m.expiry.isoformat(), m.direction) == expected
-    u, k, e = m  # tuple-style unpacking is supported
+    u, k, e = m
     assert (u, k, e) == (m.underlying, m.strike, m.expiry)
 
 
@@ -82,11 +75,11 @@ def test_date_source_is_reported():
     ("Will there be a recession in 2026?", "no listed underlying"),
     ("Will TSLA or NVDA close above $300 on Dec 31?", "more than one"),
     ("Will NVDA close above $150?", "no resolution date"),
-    ("Will NVDA close above $150 on Jan 5, 2025?", "no resolution date"),   # already passed
+    ("Will NVDA close above $150 on Jan 5, 2025?", "no resolution date"),
     ("Will NVDA announce a split on Dec 31?", "no single numeric threshold"),
     ("Will NVDA close above $150 or below $100 on Dec 31?", "no single numeric threshold"),
-    ("Will the target price be above 4 on Dec 31?", "no listed underlying"),  # lower-case "target" is not Target
-    ("Will the market close above 4 PM ET levels on Dec 31?", "no listed underlying"),  # bare "PM" is not PM
+    ("Will the target price be above 4 on Dec 31?", "no listed underlying"),
+    ("Will the market close above 4 PM ET levels on Dec 31?", "no listed underlying"),
     ("", "no question"),
 ])
 def test_refusals_never_guess(question, reason):
@@ -101,4 +94,4 @@ def test_non_string_input():
 
 def test_defaults_to_today_and_next_occurrence_of_month_day():
     m = match_question("Will NVDA close above $150 on Jan 15?", as_of=dt.date(2026, 10, 3))
-    assert m.expiry == dt.date(2027, 1, 15)   # Jan 15 already passed this year -> next one
+    assert m.expiry == dt.date(2027, 1, 15)

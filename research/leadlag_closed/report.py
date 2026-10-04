@@ -1,4 +1,3 @@
-"""CSV, charts and SUMMARY.md for the closed-market study. Every sentence of numbers is generated from `res`."""
 from __future__ import annotations
 
 import json
@@ -52,9 +51,6 @@ def event_table(rows: pd.DataFrame) -> pd.DataFrame:
     cols = ["event", "name", "family", "closure", "open_day", "kind", "market", "news_et", "precision", "pm_close", "pm_open", "dpm_pp",
             "dpm_o_pp", "gap_bp", "ret30_bp", "resid_bp", "dpm_early_o_pp", "gap_qqq_bp", "agree", "reason"]
     return ev[[c for c in cols if c in ev]].reset_index(drop=True)
-
-
-# -------------------------------------------------------------------- charts
 
 
 def _style(ax):
@@ -135,9 +131,6 @@ def chart_placebo(res: dict, path) -> None:
     plt.close(fig)
 
 
-# ------------------------------------------------------------------- summary
-
-
 def plain_reading(res: dict) -> list[str]:
     th = PARAMS.theta_pp
     t1, t2, p2 = res["t1_events"][th], res["t2_events"], res["p2"]
@@ -170,7 +163,6 @@ def plain_reading(res: dict) -> list[str]:
     if np.isfinite(p3["d"]):
         out.append(f"The interaction term (extra response per pp on news closures) is {_f(p3['d'], 2, True)} bp per pp (HC3 t = {_f(p3['d_t'], 2, True)}); "
                    f"the baseline response over all closures is {_f(p3['b'], 2, True)} (t = {_f(p3['b_t'], 2, True)}).")
-    # bottom line, assembled from the same numbers
     a = PARAMS.alpha
     general = pl["n"] and (pl["p"] < a or pls["p_perm"] < a)
     news_extra = np.isfinite(p3["d"]) and abs(p3["d_t"]) >= 2

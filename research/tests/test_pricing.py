@@ -56,7 +56,7 @@ def test_stale_mark_is_nan():
     priced, _ = price_events(_client(), ev, CAL, CFG, max_workers=1)
     leg = priced[0].legs["C_K"]
     leg.bars = leg.bars.loc[: T("2024-06-03")]
-    assert math.isnan(leg.mark(T("2024-06-12")))      # 7 sessions old > max_stale_sessions = 3
+    assert math.isnan(leg.mark(T("2024-06-12")))
     assert not math.isnan(leg.mark(T("2024-06-05")))
 
 

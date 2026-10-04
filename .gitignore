@@ -1,15 +1,12 @@
-# env / secrets
 .env
 .env.*
 !.env.example
 *.pem
 
-# OS / editors
 .DS_Store
 .vscode/
 .idea/
 
-# web
 node_modules/
 .next/
 out/
@@ -17,7 +14,6 @@ out/
 next-env.d.ts
 .vercel
 
-# api
 backend/.sim_account.json
 backend/.closed_opportunity.json
 __pycache__/
@@ -26,18 +22,15 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 
-# engine
 engine/build/
 engine/cmake-build-*/
 compile_commands.json
 engine/recordings/*.jsonl
 !engine/recordings/demo-*.jsonl
 
-# research data (API responses are not committed)
 .massive_cache/
 research/taxonomy/
 
-# python envs and tool caches
 .venv/
 backend/.venv/
 research/.venv/
@@ -45,13 +38,11 @@ research/.venv/
 engine/hedgecore/build/
 .ipynb_checkpoints/
 
-# precompute logs: the summary log is committed, raw caches are not
 backend/data_logs/raw/
 backend/data_logs/*.cache
 backend/data_logs/*.jsonl
 .claude/worktrees/
 
-# forward recorder: run state and the raw books while they are still being written
 research/forward/raw/
 research/forward/recorder.log
 research/forward/recorder.pid
@@ -64,15 +55,12 @@ research/s6_monday_fade/.cache/
 research/s8_open_referee/.cache/
 research/s9_weekend_price_markets/.cache/
 
-# forward_monday http and massive caches
 research/results/forward_monday/.cache/
 
-# forward tests (backend/app/forward): raw books, pair CSVs and caches are not committed; summaries and the frozen runner's log are
 backend/data_forward/ladders/raw/
 backend/data_forward/touch/raw/
 backend/data_forward/touch/.cache_forward/
 
-# live book recorder: raw websocket and decision logs, caches, process files (LATENCY.md is committed)
 research/results/live_books/raw/
 research/results/live_books/decisions/
 research/results/live_books/.cache/

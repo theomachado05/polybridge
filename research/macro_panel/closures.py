@@ -1,4 +1,3 @@
-"""Per-market closures and rows (METHOD.md sections 4-5). Pure functions, no network."""
 from __future__ import annotations
 
 import numpy as np

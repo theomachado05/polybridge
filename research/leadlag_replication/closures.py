@@ -1,7 +1,3 @@
-"""Per-market closure lists and rows (METHOD.md sections 4-5). Pure functions, no network.
-
-Reuses the closed-market study's closure calendar, equity measures and as-of PM lookup unchanged.
-"""
 from __future__ import annotations
 
 import numpy as np
@@ -12,13 +8,10 @@ from polybridge_research.calendar import TradingCalendar
 
 from .config import OPEN_DAY_MAX, ORIGINAL_PANELS, TZ, WINDOW_END, WINDOW_START
 
-# NYSE 13:00 ET early closes in the study window (calendar facts, used only for the PM coverage check, which runs
-# before any equity bar is fetched; the analysis itself uses the end of the last RTH bar actually present).
 EARLY_CLOSES = {"2024-07-03", "2024-11-29", "2024-12-24", "2025-07-03", "2025-11-28", "2025-12-24"}
 
 
 def market_closures(start: str | pd.Timestamp, end: str | pd.Timestamp, cal: TradingCalendar | None = None) -> list[Closure]:
-    """Every closure in the study window with nominal close >= market start and 09:30 open <= market end."""
     s, e = pd.Timestamp(start), pd.Timestamp(end)
     s = s.tz_localize("UTC") if s.tzinfo is None else s.tz_convert("UTC")
     e = e.tz_localize("UTC") if e.tzinfo is None else e.tz_convert("UTC")
@@ -32,13 +25,11 @@ def market_closures(start: str | pd.Timestamp, end: str | pd.Timestamp, cal: Tra
 
 
 def calendar_close(c: Closure) -> pd.Timestamp:
-    """Scheduled close instant (UTC): 13:00 ET on known early-close days, else 16:00 ET."""
     hrs = 13 if c.key in EARLY_CLOSES else 16
     return (c.close_day.tz_localize(TZ) + pd.Timedelta(hours=hrs)).tz_convert("UTC")
 
 
 def pm_covered(points: list[tuple[int, float]], c: Closure) -> bool:
-    """Coverage rule (METHOD.md section 2, rule 5): a PM quote at both ends, from PM data alone."""
     return bool(np.isfinite(pm_at(points, calendar_close(c))) and np.isfinite(pm_at(points, c.nominal_open)))
 
 
@@ -49,7 +40,6 @@ def in_original_panels(close_day: str) -> bool:
 
 def replication_row(c: Closure, market: dict, points: list[tuple[int, float]], bars: dict[str, pd.DataFrame],
                     primary: str = "SPY") -> dict:
-    """One market x closure row: PM as-of close and 09:30 open, oriented change, gaps for every ticker in `bars`."""
     eq = {t: equity_measures(b, c) for t, b in bars.items()}
     p = eq[primary]
     t_close = p["t_close"] if pd.notna(p["t_close"]) else calendar_close(c)
@@ -75,6 +65,5 @@ MACRO_TERMS = ("recession", "shutdown", "default", "tariff")
 
 
 def market_class(market: dict) -> str:
-    """Secondary split (METHOD.md section 3): US macro/policy if the sign term is recession/shutdown/default/tariff."""
     why = str(market.get("sign_reason", "")).split(": ", 1)[-1]
     return "US macro/policy" if any(why.startswith(t) for t in MACRO_TERMS) else "geopolitics"

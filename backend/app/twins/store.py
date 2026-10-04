@@ -1,8 +1,3 @@
-"""Read side of the twin map: ``twin_of(source, market_id, token_id)`` -> the same question on the OTHER venue.
-
-Only entries under ``pairs`` with ``direction == "same"`` and a complete verification record are served. A missing,
-unreadable or malformed file is an empty map (never an exception): twins are an enrichment, not a requirement.
-"""
 from __future__ import annotations
 
 import json
@@ -15,9 +10,7 @@ DEFAULT_PATH = Path(__file__).resolve().parents[1] / "data" / "kalshi_twins.json
 
 @dataclass(frozen=True)
 class Twin:
-    """The counterpart market on the other venue. ``id`` is what the venue's book is keyed by in ``MarketRef``:
-    a Kalshi ticker, or a Polymarket gamma market id (``token_id`` is its YES token)."""
-    source: str                 # venue of the twin: "polymarket" | "kalshi"
+    source: str
     id: str
     token_id: str | None = None
     note: str = ""
@@ -53,7 +46,7 @@ def _load(path: Path) -> dict[tuple[str, str], Twin]:
             pid, tok, ticker = str(p["id"]), p.get("token_id"), str(k["ticker"])
             ver = e.get("verification") or {}
             if e.get("direction") != "same" or not tok or not ver.get("note") or not ver.get("verified_at"):
-                continue  # inverted, untradable on Polymarket, or without a verification record: never served
+                continue
         except (KeyError, TypeError):
             continue
         note = str(ver["note"])
@@ -68,7 +61,6 @@ def _load(path: Path) -> dict[tuple[str, str], Twin]:
 
 def twin_of(source: str, market_id: str | None = None, token_id: str | None = None,
             path: Path | None = None) -> Twin | None:
-    """The verified twin of a market, or None. Polymarket markets are found by gamma id or YES token id."""
     index = _load(path or DEFAULT_PATH)
     if not index:
         return None

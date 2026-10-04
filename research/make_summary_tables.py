@@ -1,5 +1,3 @@
-"""Print/write the SUMMARY numeric tables from the already-exported CSVs only (no network, no study rerun).
-Run from research/: .venv/bin/python make_summary_tables.py  -> results/in_sample/summary_tables.md"""
 from pathlib import Path
 
 import pandas as pd
@@ -28,7 +26,7 @@ def summary_tables() -> str:
         rows = []
         for h in (21, 42, "exp"):
             f = OUT / f"{fam}_costs_h{h}.csv"
-            if not f.exists():      # the expiry horizon exists only after the export is regenerated
+            if not f.exists():
                 continue
             d = pd.read_csv(f)
             r = {"horizon": h, "n_rows": len(d)}
@@ -40,7 +38,7 @@ def summary_tables() -> str:
         out.append(f"### {fam}: costs (mean P&L per $1 spot; n_* = non-missing rows behind each mean)\n\n"
                    + md(pd.DataFrame(rows)))
         cs = OUT / f"{fam}_cost_summary.csv"
-        if cs.exists():     # written by the regenerated export: paired means and net-of-cost edge vs placebo
+        if cs.exists():
             out.append(f"### {fam}: paired cost summary and net-of-haircut edge (events minus placebo)\n\n"
                        + md(pd.read_csv(cs).round(4)))
     return "\n\n".join(out) + "\n"

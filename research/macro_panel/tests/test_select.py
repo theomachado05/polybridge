@@ -1,4 +1,3 @@
-"""Class and sign rule and ranking on synthetic gamma metadata (no network)."""
 import json
 
 import pytest

@@ -1,10 +1,3 @@
-"""S15: do price markets that rise over the weekend fall back on Monday? Markets S9 did not use (METHOD.md).
-
-Run from `research/`:
-    python -m s15_weekend_scare.run --pull     # prices around every weekend (not committed)
-    python -m s15_weekend_scare.run            # the test, the trade, the print check on the primary trade's entries
-    python -m s15_weekend_scare.run --no-prints
-"""
 from __future__ import annotations
 
 import json
@@ -42,7 +35,6 @@ def half_spread(asset_class: str, kind: str) -> float:
 
 
 def group(w: float) -> str:
-    """riser, faller, quiet, or between (a move of 2 to 5 points, used by neither side of the test)."""
     if w >= cfg.RISE:
         return "riser"
     if w <= -cfg.RISE:
@@ -66,8 +58,6 @@ def _cached(mid: str) -> bool:
 
 
 def pull(workers: int = 6, rps: float = 5.0, resume: bool = False) -> None:
-    """`--gentle` (one worker, 2 requests a second, skipping markets already on disk) exists because the first pull,
-    run while other sessions were pulling too, coincided with DNS failures in the live recorder (RUN_LOG.md)."""
     CACHE.mkdir(parents=True, exist_ok=True)
     cal, pt, t0 = calendar(), ds.Throttle(rps), time.time()
     lo = np.array([w["start"] - 3600 for w in cal])
@@ -138,7 +128,6 @@ def build() -> tuple[pd.DataFrame, dict]:
 
 
 def tests(df: pd.DataFrame) -> list[dict]:
-    """H1 and H2 for risers, the mirror for fallers, at 5 and 10 points, on every scope of the method."""
     d = df[df.y.notna()]
     scopes = [("all fresh markets", d)] + [(f"class: {c}", d[d.asset_class == c]) for c, _ in cfg.ASSET_CLASSES] \
         + [(f"tag: {k}", d[d.kind == k]) for k in ("other event", "weekly", "leftover of an S9 event")] \

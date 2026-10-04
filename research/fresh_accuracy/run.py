@@ -1,8 +1,3 @@
-"""Single run of the fresh-market accuracy study (METHOD.md). Sequential requests only.
-
-    cd research && SHARED_MASSIVE_CACHE=<dir> .venv/bin/python -m fresh_accuracy.run          # primary
-    cd research && SHARED_MASSIVE_CACHE=<dir> .venv/bin/python -m fresh_accuracy.run --h3     # gated H3
-"""
 from __future__ import annotations
 
 import argparse

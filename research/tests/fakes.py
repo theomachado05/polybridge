@@ -1,4 +1,3 @@
-"""Offline stand-in for MassiveClient. Disclosures come from a dict keyed by tag; market data from FakeMarket."""
 from __future__ import annotations
 
 
@@ -38,7 +37,6 @@ def _occ(underlying: str, expiry: _pd.Timestamp, kind: str, strike: float) -> st
 
 
 class FakeMarket:
-    """Deterministic option market: flat spot per ticker; every leg trades at intrinsic + 1.0 each session."""
 
     def __init__(self, spot_by_ticker: dict[str, float], start: str = "2023-01-02", end: str = "2026-12-31"):
         self.spot = spot_by_ticker

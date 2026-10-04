@@ -1,38 +1,30 @@
 #pragma once
-// touch_ticket_reference: a "will it hit" ticket whose bid sits threshold points or more above the options-derived
-// central touch reference. The family proposes selling the ticket at that bid, capped per ticket, per underlying and
-// per event. No option hedge leg (the spread hedge was tested and raised risk).
-// Status: unvalidated. See note/NOTE.md section 4: the fresh test was INSUFFICIENT. With validated != True the
-// family emits proposals only; it has no path to a live order unless the evidence gate says True on the tick.
-//
-// The references (lower bound and central value) are computed upstream and passed in; this family does not price
-// options.
 #include <cmath>
 #include <cstdint>
 #include "hedgecore/algos/common.hpp"
-#include "hedgecore/algos/ladder_pair.hpp"  // Tri, MicroAction
+#include "hedgecore/algos/ladder_pair.hpp"
 #include "hedgecore/blocks/micro.hpp"
 
 namespace hedgecore {
 
-struct TicketTick {  // NaN / kNoTime / Tri::Missing = not available (the default for every field)
-  std::int64_t ts_ns = 0;            // quote time of the ticket's book
-  double bid = kNaN, bid_qty = kNaN;  // best YES bid and its size
-  double ask = kNaN;                  // best YES ask (a crossed book is refused)
-  double ref_lower = kNaN;            // options lower-bound touch probability (carried for the log; not in the rule)
-  double ref_central = kNaN;          // options central touch probability: the rule's reference
-  Tri validated = Tri::Missing;       // from the evidence gate; anything but True means proposals only
-  double underlying_short = kNaN;     // contracts sold on the underlying's OTHER tickets (from the bridge)
-  double event_short = kNaN;          // contracts sold on the event's OTHER tickets (from the bridge)
+struct TicketTick {
+  std::int64_t ts_ns = 0;
+  double bid = kNaN, bid_qty = kNaN;
+  double ask = kNaN;
+  double ref_lower = kNaN;
+  double ref_central = kNaN;
+  Tri validated = Tri::Missing;
+  double underlying_short = kNaN;
+  double event_short = kNaN;
 };
 
 struct TicketIntent {
-  MicroAction action = MicroAction::Hold;  // Hold | Propose | Order (Order only when validated == True)
-  int side = 0;                            // -1 sell YES
+  MicroAction action = MicroAction::Hold;
+  int side = 0;
   double qty = 0;
-  double limit_px = kNaN;                  // the bid: fill at the quote or not at all
+  double limit_px = kNaN;
   std::uint16_t reason = 0;
-  double signal = kNaN;                    // bid minus central reference, points
+  double signal = kNaN;
   std::int64_t latency_ns = 0;
 };
 
@@ -65,10 +57,10 @@ struct TouchTicketReference {
 
   bool valid = false;
   bool bad = false;
-  double threshold_pts = 0;  // points; compared in points with S21's 1e-9 allowance
+  double threshold_pts = 0;
   blocks::FreshnessGuard fresh{};
   blocks::ContractCap ticket_cap{}, under_cap{}, event_cap{};
-  double sold = 0;  // contracts sold on this ticket (fills only; proposals never change it)
+  double sold = 0;
 
   TouchTicketReference(const Params& p, const Position&) noexcept : valid(kSpec.valid(p)) {
     threshold_pts = p.v[kThreshold];
@@ -85,7 +77,7 @@ struct TouchTicketReference {
     return i;
   }
 
-  TicketIntent on_tick(const TicketTick& t, std::int64_t now_ns) noexcept {  // AlgoBase::on_tick's latency stamp
+  TicketIntent on_tick(const TicketTick& t, std::int64_t now_ns) noexcept {
     const std::int64_t t0 = mono_ns();
     TicketIntent i = step(t, now_ns);
     i.latency_ns = mono_ns() - t0;
@@ -97,7 +89,7 @@ struct TouchTicketReference {
     if (bad) return hold(Rc::InvalidState);
     if (!fresh.fresh(t.ts_ns, now)) return hold(Rc::Stale);
     if (!prob(t.bid) || !(t.bid_qty > 0) || !prob(t.ref_central)) return hold(Rc::SignalMissing);
-    if (prob(t.ask) && t.ask < t.bid) return hold(Rc::Invalid);  // crossed book
+    if (prob(t.ask) && t.ask < t.bid) return hold(Rc::Invalid);
     const double sig = 100.0 * (t.bid - t.ref_central);
     if (!(sig >= threshold_pts - 1e-9)) return hold(Rc::NoSignal, sig);
     bool capped = false;
@@ -114,7 +106,6 @@ struct TouchTicketReference {
     o.qty = q;
     o.limit_px = t.bid;
     o.signal = sig;
-    // The evidence gate: the ONLY path to a live order. Anything but an explicit True is a proposal.
     if (t.validated == Tri::True) {
       o.action = MicroAction::Order;
       o.reason = code(capped ? Rc::PositionCapped : Rc::Entry);
@@ -125,12 +116,11 @@ struct TouchTicketReference {
     return o;
   }
 
-  // qty is the absolute quantity sold at px.
   void on_fill(double qty, double px) noexcept {
     if (!num(qty) || !num(px) || qty < 0) { bad = true; return; }
     sold += qty;
   }
 };
 
-}  // namespace algos
-}  // namespace hedgecore
+}
+}

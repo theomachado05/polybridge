@@ -5,7 +5,7 @@ import yaml
 from leadlag.events import Event, parse_event
 from leadlag.pipeline import analyse_event
 
-START = pd.Timestamp("2025-03-19 17:00:00", tz="UTC")   # 13:00 ET: inside the regular session
+START = pd.Timestamp("2025-03-19 17:00:00", tz="UTC")
 END = START + pd.Timedelta(minutes=210)
 
 
@@ -16,7 +16,6 @@ def make_event(sign=1, primary="SPY"):
 
 
 def pm_points(jump_at, jump=0.10, seed=0):
-    """One CLOB point per minute from 4h before the window; price jumps at `jump_at` minutes after START."""
     rng = np.random.default_rng(seed)
     t = START - pd.Timedelta(minutes=190)
     pts, p = [], 0.40

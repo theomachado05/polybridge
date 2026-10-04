@@ -1,13 +1,3 @@
-"""Scalar Black–Scholes (European, continuous dividend yield ``q``, default 0): price, greeks, implied vol.
-
-Used only where Massive gives no greeks / IV for a contract (the response then labels them ``computed``), to reprice
-hedge legs at a horizon, and in tests. US single-stock options are American: for calls without dividends the price is
-the same; for puts and dividend payers this is an approximation and every caller says so.
-
-Conventions match Massive's snapshot greeks so the two can sit in one column:
-- ``theta`` per calendar day (annual theta / 365), ``vega`` per 1 vol point (per 0.01 of sigma),
-- ``delta`` per share, ``gamma`` per $1 move per share.
-"""
 from __future__ import annotations
 
 import math
@@ -40,7 +30,6 @@ def intrinsic(S: float, K: float, call: bool) -> float:
 
 
 def price(S: float, K: float, T: float, r: float, sigma: float, call: bool, q: float = 0.0) -> float:
-    """Per-share price; intrinsic at T <= 0; NaN on bad inputs."""
     if not _ok(S, K, T, r, sigma, q) or S <= 0 or K <= 0:
         return NAN
     if T <= 0:
@@ -56,7 +45,6 @@ def price(S: float, K: float, T: float, r: float, sigma: float, call: bool, q: f
 
 
 def greeks(S: float, K: float, T: float, r: float, sigma: float, call: bool, q: float = 0.0) -> dict:
-    """{delta, gamma, theta (per day), vega (per vol point)}; NaNs on bad inputs or T <= 0 / sigma <= 0."""
     out = {"delta": NAN, "gamma": NAN, "theta": NAN, "vega": NAN}
     if not _ok(S, K, T, r, sigma, q) or S <= 0 or K <= 0 or T <= 0 or sigma <= 0:
         return out
@@ -76,8 +64,6 @@ def greeks(S: float, K: float, T: float, r: float, sigma: float, call: bool, q: 
 
 
 def implied_vol(px: float, S: float, K: float, T: float, r: float, call: bool, q: float = 0.0) -> float:
-    """Sigma in [IV_LO, IV_HI] that reprices ``px`` (bisection); NaN when ``px`` is outside the no-arbitrage bounds,
-    needs a vol outside the bracket, or the inputs are bad."""
     if not _ok(px, S, K, T, r, q) or S <= 0 or K <= 0 or T <= 0 or px <= 0:
         return NAN
     lo_px, hi_px = price(S, K, T, r, IV_LO, call, q), price(S, K, T, r, IV_HI, call, q)

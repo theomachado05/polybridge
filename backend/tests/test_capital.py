@@ -1,5 +1,3 @@
-"""Capital controls (app/capital): the budget and margin math, GET /capital, and the pre-trade check on every order
-path (bridge equity orders, staged hedge B approval and execution), failing closed when the account cannot be read."""
 from __future__ import annotations
 
 import pytest
@@ -10,15 +8,11 @@ from tests.test_bridges import _events
 from tests.test_liquidity import live_algo_app
 
 
-# ------------------------------------------------------------------------------------------------------ the math
-
-
 def test_reg_t_margin_for_shorts_and_options():
     assert b.short_equity_margin(100_000.0) == {"initial": 50_000.0, "maintenance": 30_000.0}
-    # Reg T naked put: max(20% S - OTM, 10% K) + premium, x100. S 100, K 90 (10 OTM), premium 1: max(10, 9) + 1
     assert b.naked_put_margin(100.0, 90.0, 1.0) == pytest.approx(1_100.0)
-    assert b.naked_put_margin(100.0, 50.0, 0.1) == pytest.approx((5.0 + 0.1) * 100)  # the 10%-of-strike floor
-    assert b.option_requirement("call_spread", +1, 2, 3.0, 0.1) == pytest.approx(3.1 * 100 * 2)  # long: premium
+    assert b.naked_put_margin(100.0, 50.0, 0.1) == pytest.approx((5.0 + 0.1) * 100)
+    assert b.option_requirement("call_spread", +1, 2, 3.0, 0.1) == pytest.approx(3.1 * 100 * 2)
     assert b.option_requirement("put_spread", -1, 1, 2.0, 0.1, width=5.0) == pytest.approx((5.0 - 1.9) * 100)
     assert b.option_requirement("cash_secured_put", -1, 1, 2.0, 0.0, strike=90.0) == pytest.approx(8_800.0)
     assert b.option_requirement("cash_secured_put", -1, 1, 2.0, 0.0, strike=90.0, spot=100.0,
@@ -36,7 +30,7 @@ def test_evaluate_flags_each_budget_and_fails_closed_without_an_account():
     assert {x["kind"] for x in bad["breaches"]} == {"gross_hedge_notional", "event_exposure", "buying_power"}
     webull = b.evaluate(equity=1e6, buying_power=120_000, gross_now=0, event_now=0, add_notional=150_000,
                         add_margin=75_000, bp_basis="notional", lim=lim)
-    assert [x["kind"] for x in webull["breaches"]] == ["buying_power"]  # notional vs Webull's notional BP
+    assert [x["kind"] for x in webull["breaches"]] == ["buying_power"]
     closed = b.evaluate(equity=None, buying_power=None, gross_now=0, event_now=0, add_notional=1, add_margin=1,
                         bp_basis="margin", lim=lim)
     assert not closed["ok"] and closed["breaches"][0]["kind"] == "account_unreadable"
@@ -51,12 +45,7 @@ def test_limits_come_from_env_then_app_state(monkeypatch):
     assert b.limits()["max_event_pct"] == 0.2
 
 
-# ----------------------------------------------------------------------------------------------- bridges + route
-
-
 def test_a_sell_that_would_breach_the_event_budget_is_refused_and_get_capital_shows_it(tmp_path, monkeypatch):
-    """$1M sim account, per-event budget 20% ($200k): a 300-share SPY short ($150k) fits; another 200 ($100k more)
-    would take the event to $250k and is refused with reason capital_budget; GET /capital reports the exposure."""
     from tests.test_bridges_algo import FakeAlgo, proposal
 
     app = live_algo_app(tmp_path, monkeypatch, {2: {"side": -1, "qty": 300.0}, 3: {"side": -1, "qty": 200.0}},
@@ -117,14 +106,13 @@ def test_staged_approval_and_execution_check_the_budget(tmp_path):
         o = c.post("/staged/plan", json={"proposal_id": prop.id, "pm_move_pp": 5.0, "rate_bp_per_pp": 7.523237932200106,
                                          "ref_px": 500.0}).json()
         assert o["qty"] == 376
-        app.state.capital_limits = {"max_event_pct": 0.1}  # $100k per event < 376 x $500
+        app.state.capital_limits = {"max_event_pct": 0.1}
         r = c.post(f"/staged/{o['id']}/approve")
         assert r.status_code == 409 and r.json()["detail"].startswith("CAPITAL_BUDGET")
         got = c.get("/staged").json()["orders"][0]
         assert got["status"] == "staged" and got["capital"]["breaches"][0]["kind"] == "event_exposure"
         app.state.capital_limits = {}
         assert c.post(f"/staged/{o['id']}/approve").json()["status"] == "approved"
-        # the budget tightens before the session: the execution check refuses it
         app.state.capital_limits = {"max_event_pct": 0.1}
         app.state.capital_accounts = {}
         app.state.staged_clock.t = MON_PRE + dt.timedelta(minutes=5)
@@ -134,7 +122,6 @@ def test_staged_approval_and_execution_check_the_budget(tmp_path):
 
 
 def test_a_replay_sandbox_is_evaluated_but_not_enforced(tmp_path, monkeypatch):
-    """A replay trades a throwaway simulator: the budget is evaluated and shown, never enforced there."""
     from app.broker import SimBroker
     from app.broker.quotes import Quote
     from tests.test_bridges_algo import FakeAlgo, proposal, start
@@ -160,12 +147,10 @@ def test_a_replay_sandbox_is_evaluated_but_not_enforced(tmp_path, monkeypatch):
         f = next(d for k, d in _events(c, bid) if k == "fill")
         assert f["status"] == "filled" and f["scope"] == "replay_sandbox"
         assert f["capital"]["enforced"] is False and f["capital"]["ok"] is False and "not enforced" in f["capital"]["note"]
-        assert c.get("/capital").json()["gross_hedge_notional"] == 0.0  # the account holds nothing from a sandbox
+        assert c.get("/capital").json()["gross_hedge_notional"] == 0.0
 
 
 def test_get_capital_tells_not_checked_and_stale_apart_from_a_failed_read():
-    """A broker with no account read is not checked (no fail-closed breach, nothing enforced); a failed read right after
-    a good one is served from the last good read and labelled stale; a failed read with nothing cached is a breach."""
     import asyncio
     from types import SimpleNamespace
 
@@ -206,9 +191,6 @@ def test_get_capital_tells_not_checked_and_stale_apart_from_a_failed_read():
 
 
 def test_an_unpriced_exposure_increasing_order_fails_closed_at_the_account():
-    """No price anywhere (no tick, no cached Massive price, no broker mark or quote): at an account the broker can read
-    the order is refused (breach no_price); a replay sandbox passes it labelled unchecked; a broker with no account
-    read (a test fake) stays unchecked. A broker's own position mark prices the order before giving up."""
     import asyncio
     from types import SimpleNamespace
 
@@ -251,8 +233,6 @@ def test_an_unpriced_exposure_increasing_order_fails_closed_at_the_account():
 
 
 def test_a_staged_order_at_a_broker_that_prices_itself_is_refused_without_a_price(tmp_path):
-    """Webull prices its own fills, so a staged sell there was sent with no price and labelled "not checked". With no
-    price from the plan, Massive or the broker, the capital budget now refuses it at execution (fail closed)."""
     import datetime as dt
     from types import SimpleNamespace
 
@@ -274,8 +254,6 @@ def test_a_staged_order_at_a_broker_that_prices_itself_is_refused_without_a_pric
         assert r.status_code == 409 and "no price to size the budget" in r.json()["detail"]
         got = c.get("/staged").json()["orders"][0]
         assert got["status"] == "staged" and got["capital"]["breaches"][0]["kind"] == "no_price"
-        # an order approved earlier (e.g. while a price was cached) is re-checked at execution: still no price at the
-        # open, so it is refused and nothing reaches the broker
         from app.closed import staged
         st = staged.book_for(app).get(o["id"])
         st.status, st.approved_qty = "approved", st.qty

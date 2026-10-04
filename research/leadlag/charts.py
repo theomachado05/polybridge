@@ -1,4 +1,3 @@
-"""One chart per event: PM price vs equity, both normalised, first-move times and lead annotated; cross-correlation below."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -15,13 +14,12 @@ from .detect import Move
 from .events import Event
 from .xcorr import XCorr
 
-PM_COLOR = "#1f5fd1"   # blue
-EQ_COLOR = "#c4510a"   # orange (blue/orange separate cleanly under common colour-vision deficiencies)
+PM_COLOR = "#1f5fd1"
+EQ_COLOR = "#c4510a"
 INK, MUTED, GRID = "#1f2328", "#6b7280", "#e5e7eb"
 
 
 def normalise(s: pd.Series) -> pd.Series:
-    """Change since the first valid value of the window, scaled so the largest absolute excursion is 1."""
     s = s.dropna()
     if s.empty:
         return s

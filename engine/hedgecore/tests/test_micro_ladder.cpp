@@ -53,10 +53,8 @@ LadderRow row_of(const LadderTick& t, double yr, double yc, std::uint32_t pair =
   return r;
 }
 
-}  // namespace
+}
 
-// (a) A nested pair's P&L at the result is never below the edge locked in at entry, in all three possible outcomes
-// (both YES; rich NO and cheap YES; both NO). Rich YES with cheap NO cannot happen for a nested pair.
 TEST(LadderPair, PnlAtResultNeverBelowLockedEdgeInAllThreeOutcomes) {
   const double outcomes[3][2] = {{1, 1}, {0, 1}, {0, 0}};
   std::uint64_t s = 7;
@@ -76,7 +74,7 @@ TEST(LadderPair, PnlAtResultNeverBelowLockedEdgeInAllThreeOutcomes) {
         ++checked;
         EXPECT_TRUE(tr.settled);
         EXPECT_GE(tr.pnl_points, 100.0 * tr.edge_locked - 1e-9) << bid << " " << ask << " " << o[0] << o[1];
-        EXPECT_GE(tr.edge_locked, 0.01 + 0.01 - 1e-9);  // min_edge 1 point plus the one-tick margin
+        EXPECT_GE(tr.edge_locked, 0.01 + 0.01 - 1e-9);
       }
     }
   }
@@ -84,7 +82,6 @@ TEST(LadderPair, PnlAtResultNeverBelowLockedEdgeInAllThreeOutcomes) {
 }
 
 TEST(LadderPair, ExactNumbersForOneEntry) {
-  // bid 0.62, ask 0.55, fee rate 0.02: fees 0.02*0.62*0.38 + 0.02*0.55*0.45 = 0.004712 + 0.00495.
   LadderPair a(ladder_params(1, 30, 100), Position{});
   const PairIntent in = a.on_tick(quote(0.62, 0.55, 40, 0.02), kSec);
   ASSERT_EQ(in.action, MicroAction::Order);
@@ -93,13 +90,12 @@ TEST(LadderPair, ExactNumbersForOneEntry) {
   EXPECT_EQ(in.cheap.side, +1);
   EXPECT_DOUBLE_EQ(in.rich.qty, 40);
   EXPECT_DOUBLE_EQ(in.cheap.qty, 40);
-  EXPECT_DOUBLE_EQ(in.rich.limit_px, 0.62);   // at the quote, not a mid
+  EXPECT_DOUBLE_EQ(in.rich.limit_px, 0.62);
   EXPECT_DOUBLE_EQ(in.cheap.limit_px, 0.55);
   EXPECT_NEAR(in.signal, 100 * (0.07 - 0.004712 - 0.00495 - 0.01), 1e-9);
   EXPECT_GE(in.latency_ns, 0);
 }
 
-// (b) Nested false or missing is refused; only an explicit True from the linker can trade.
 TEST(LadderPair, RefusesPairNotMarkedNested) {
   for (const Tri n : {Tri::False, Tri::Missing}) {
     LadderPair a(ladder_params(1, 30, 100), Position{});
@@ -108,7 +104,7 @@ TEST(LadderPair, RefusesPairNotMarkedNested) {
     EXPECT_EQ(in.reason, code(Rc::NotNested));
   }
   LadderTick unset = quote(0.80, 0.50);
-  unset.nested = LadderTick{}.nested;  // the default of a tick nobody filled in
+  unset.nested = LadderTick{}.nested;
   LadderPair b(ladder_params(1, 30, 100), Position{});
   EXPECT_EQ(b.on_tick(unset, kSec).reason, code(Rc::NotNested));
   LadderPair c(ladder_params(1, 30, 100), Position{});
@@ -116,28 +112,28 @@ TEST(LadderPair, RefusesPairNotMarkedNested) {
 }
 
 TEST(LadderPair, FreshnessFeeGateCapsAndCooldown) {
-  {  // one quote 31 s old with max_age 30
+  {
     LadderPair a(ladder_params(1, 30, 100), Position{});
     LadderTick t = quote(0.80, 0.50, 50, 0, 40 * kSec);
     t.ts_cheap_ns = 9 * kSec;
     EXPECT_EQ(a.on_tick(t, 40 * kSec).reason, code(Rc::Stale));
     t.ts_cheap_ns = kNoTime;
     EXPECT_EQ(a.on_tick(t, 40 * kSec).reason, code(Rc::Stale));
-    t.ts_cheap_ns = 41 * kSec;  // future-dated
+    t.ts_cheap_ns = 41 * kSec;
     EXPECT_EQ(a.on_tick(t, 40 * kSec).reason, code(Rc::Stale));
   }
-  {  // 0.53 - 0.50 - tick 0.01 = 2 points: passes min_edge 2, fails min_edge 3
+  {
     LadderPair a2(ladder_params(2, 30, 100), Position{}), a3(ladder_params(3, 30, 100), Position{});
     EXPECT_EQ(a2.on_tick(quote(0.53, 0.50), kSec).action, MicroAction::Order);
     EXPECT_EQ(a3.on_tick(quote(0.53, 0.50), kSec).reason, code(Rc::BelowFees));
   }
-  {  // a fee rate that is unknown is not zero
+  {
     LadderPair a(ladder_params(1, 30, 100), Position{});
     LadderTick t = quote(0.80, 0.50);
     t.fee_rate_rich = NaN;
     EXPECT_EQ(a.on_tick(t, kSec).reason, code(Rc::FeeUnknown));
   }
-  {  // size = the smaller displayed size, capped
+  {
     LadderPair a(ladder_params(1, 30, 100), Position{});
     LadderTick t = quote(0.80, 0.50);
     t.bid_rich_qty = 700;
@@ -146,7 +142,7 @@ TEST(LadderPair, FreshnessFeeGateCapsAndCooldown) {
     EXPECT_DOUBLE_EQ(in.rich.qty, 100);
     EXPECT_EQ(in.reason, code(Rc::PositionCapped));
   }
-  {  // per-event cap counts the other pairs; unknown holdings refuse
+  {
     LadderPair a(ladder_params(1, 30, 100, 120), Position{});
     LadderTick t = quote(0.80, 0.50);
     t.event_held = 100;
@@ -159,7 +155,7 @@ TEST(LadderPair, FreshnessFeeGateCapsAndCooldown) {
     t.event_held = NaN;
     EXPECT_EQ(c.on_tick(t, kSec).reason, code(Rc::PositionUnknown));
   }
-  {  // cooldown between two entries on the pair, and capital-lock accounting
+  {
     LadderPair a(ladder_params(1, 30, 100), Position{});
     ASSERT_EQ(a.on_tick(quote(0.80, 0.50, 10), kSec).action, MicroAction::Order);
     a.on_fill(Leg::Rich, 10, 0.80);
@@ -172,7 +168,7 @@ TEST(LadderPair, FreshnessFeeGateCapsAndCooldown) {
 }
 
 TEST(LadderPair, LegRiskGuardCancelsUnwindsAndFlags) {
-  {  // rich leg rejected while cheap is open: cancel cheap; nothing held, no flag
+  {
     LadderPair a(ladder_params(1, 30, 100), Position{});
     ASSERT_EQ(a.on_tick(quote(0.80, 0.50, 10), kSec).action, MicroAction::Order);
     a.on_reject(Leg::Rich);
@@ -180,15 +176,15 @@ TEST(LadderPair, LegRiskGuardCancelsUnwindsAndFlags) {
     EXPECT_EQ(c.action, MicroAction::Cancel);
     EXPECT_EQ(c.cancel, Leg::Cheap);
     EXPECT_EQ(c.reason, code(Rc::LegRisk));
-    a.on_reject(Leg::Cheap);  // cancel acknowledged
+    a.on_reject(Leg::Cheap);
     EXPECT_FALSE(a.flagged);
     EXPECT_DOUBLE_EQ(a.held, 0);
   }
-  {  // cheap filled 10, rich filled 4 then dead: hold 4 pairs, unwind 6 cheap, flag and stop entering
+  {
     LadderPair a(ladder_params(1, 30, 100), Position{});
     ASSERT_EQ(a.on_tick(quote(0.80, 0.50, 10), kSec).action, MicroAction::Order);
     a.on_fill(Leg::Cheap, 10, 0.50);
-    EXPECT_EQ(a.on_tick(quote(0.80, 0.50, 10), kSec).reason, code(Rc::Working));  // cheap complete: wait for rich
+    EXPECT_EQ(a.on_tick(quote(0.80, 0.50, 10), kSec).reason, code(Rc::Working));
     a.on_fill(Leg::Rich, 4, 0.80);
     a.on_reject(Leg::Rich);
     EXPECT_TRUE(a.flagged);
@@ -198,29 +194,22 @@ TEST(LadderPair, LegRiskGuardCancelsUnwindsAndFlags) {
     EXPECT_EQ(u.cheap.side, -1);
     EXPECT_DOUBLE_EQ(u.cheap.qty, 6);
     EXPECT_EQ(u.rich.side, 0);
-    EXPECT_EQ(a.on_tick(quote(0.80, 0.50, 10), 3 * kSec).reason, code(Rc::LegRisk));  // unwind out: wait
-    a.on_reject(Leg::Cheap);                                                           // unwind rejected: re-send
+    EXPECT_EQ(a.on_tick(quote(0.80, 0.50, 10), 3 * kSec).reason, code(Rc::LegRisk));
+    a.on_reject(Leg::Cheap);
     EXPECT_EQ(a.on_tick(quote(0.80, 0.50, 10), 4 * kSec).action, MicroAction::Unwind);
     a.on_fill(Leg::Cheap, 6, 0.49);
     const PairIntent after = a.on_tick(quote(0.80, 0.50, 10, 0, 9000 * kSec), 9000 * kSec);
-    EXPECT_EQ(after.action, MicroAction::Hold);  // flat on the single leg, but the flag latches: no new entry
+    EXPECT_EQ(after.action, MicroAction::Hold);
     EXPECT_EQ(after.reason, code(Rc::LegRisk));
     EXPECT_EQ(a.leg_risk_events, 1u);
   }
-  {  // a fill nobody asked for, or a NaN fill, latches the algo
+  {
     LadderPair a(ladder_params(1, 30, 100), Position{});
     a.on_fill(Leg::Rich, 5, 0.5);
     EXPECT_EQ(a.on_tick(quote(0.80, 0.50), kSec).reason, code(Rc::InvalidState));
   }
 }
 
-// (c) Replay of research/results/ladder_replay/order_check/trades_fresh.csv (562 trades, +8.82 points per trade).
-// Each row becomes one LadderTick: the rich bid and cheap ask are the row's fill prices (the printed prices already
-// moved one tick against the trade by the research rule), the sizes its print size, the fee rates those that give the
-// row's fees, the quote times its two print times, decided at the entry time, nested = True (every pair in the file
-// passed the year-checked nesting rule), results from the file. The research rule took every pair with edge > 0 after
-// its one tick per leg, at most 100 contracts, no event cap, one hour between entries on a pair. In family terms that is
-// min_edge 0, max_age 60 s, cap 100, event_cap off, cooldown 3600 s, tick 0 (the tick is already in the prices).
 namespace {
 struct FreshRows {
   std::vector<LadderRow> rows;
@@ -265,7 +254,7 @@ FreshRows fresh_rows(double tick) {
                    [](const LadderRow& a, const LadderRow& b) { return a.now_ns < b.now_ns; });
   return out;
 }
-}  // namespace
+}
 
 TEST(LadderPair, ReplayOfFreshOrderCheckTradesReproducesCountAndMean) {
   const FreshRows f = fresh_rows(0.0);
@@ -279,12 +268,9 @@ TEST(LadderPair, ReplayOfFreshOrderCheckTradesReproducesCountAndMean) {
   EXPECT_NEAR(st.mean_pnl_points, f.research_mean, 1e-9);
   EXPECT_EQ(std::round(100 * st.mean_pnl_points) / 100, 8.82);
   EXPECT_EQ(st.n_leg_rejects, 0u);
-  EXPECT_GE(st.min_pnl_minus_edge, -1e-9);  // every trade at least its locked edge
+  EXPECT_GE(st.min_pnl_minus_edge, -1e-9);
 }
 
-// Not an assertion on numbers: prints what each of the 18 presets takes from the same rows, with the one-tick margin
-// at 0.01 (the research's default tick; the true tick of each market is not in the file). The presets demand at least
-// 1 point after fees and a further tick, so they are expected to take fewer trades than the research rule.
 TEST(LadderPair, PresetsOnFreshOrderCheckRows) {
   const FreshRows f = fresh_rows(0.01);
   const ParamSpec s = LadderPair::spec();

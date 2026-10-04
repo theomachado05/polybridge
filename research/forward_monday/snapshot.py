@@ -1,8 +1,3 @@
-"""Snapshot of the currently listed eligible markets (METHOD.md section 2). Gamma metadata and Massive contract lists only;
-no price, print, quote or outcome is fetched or written.
-
-    cd research && .venv/bin/python -m forward_monday.snapshot
-"""
 from __future__ import annotations
 
 import json

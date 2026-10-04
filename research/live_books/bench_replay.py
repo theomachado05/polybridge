@@ -1,8 +1,3 @@
-"""Replay recorded raw frames through the original Python path and the C++ BookEngine, check the decisions match, and
-report per-frame latency percentiles. The newest raw file is skipped because the recorder may still be writing it.
-
-    cd research && .venv/bin/python -m live_books.bench_replay
-"""
 from __future__ import annotations
 
 import argparse

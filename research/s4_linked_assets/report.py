@@ -1,7 +1,3 @@
-"""S4 report: equity_curve.png, drawdown.png, capacity.md and SUMMARY.md from the result CSVs.
-
-Run from `research/`:  python -m s4_linked_assets.report
-"""
 from __future__ import annotations
 
 import json
@@ -51,7 +47,7 @@ def charts(eq: pd.DataFrame, oos_start: str) -> None:
             e = eq[(eq.variant == vid) & (eq.cost_mult == 1.0)].copy()
             base = 0.0
             xs, ys = [], []
-            for seg in ("IS", "OOS"):           # the two segments are one continuous book here: stack them
+            for seg in ("IS", "OOS"):
                 s = e[e.segment == seg].sort_values("day")
                 xs += list(pd.to_datetime(s.day))
                 ys += list(base + s.pnl.to_numpy())
@@ -89,7 +85,6 @@ def charts(eq: pd.DataFrame, oos_start: str) -> None:
 
 
 def size_section() -> list[str]:
-    """How big the opening-gap relation is (descriptive, same sample): empty until `python -m s4_linked_assets.size` has run."""
     if not (R / "size.json").exists():
         return []
     z = json.loads((R / "size.json").read_text())
@@ -129,7 +124,6 @@ def size_section() -> list[str]:
 
 
 def premarket_section() -> list[str]:
-    """Exploratory follow-up S4c (amendment 2): empty until `python -m s4_linked_assets.premarket` has been run."""
     if not (R / "premarket_regressions.csv").exists():
         return []
     rg, pm = pd.read_csv(R / "premarket_regressions.csv"), pd.read_csv(R / "premarket_metrics.csv")

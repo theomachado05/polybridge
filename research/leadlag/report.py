@@ -1,4 +1,3 @@
-"""Pooled tests, CSV writers and SUMMARY.md (METHOD.md sections 6-7)."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -21,7 +20,6 @@ def _iso(t) -> str:
 
 
 def _rel(t, anchor) -> str:
-    """Minutes from the scheduled/news anchor to a move time ('n/a' if either is missing)."""
     if t is None or pd.isna(t) or anchor is None or pd.isna(anchor):
         return "n/a"
     return f"{(pd.Timestamp(t) - pd.Timestamp(anchor)).total_seconds() / 60:+.0f}"
@@ -34,15 +32,11 @@ def _rel_val(t, anchor):
 
 
 def _session(t) -> str:
-    """'RTH' if the time falls in the regular 09:30-16:00 ET session, else 'ext' (pre/after-hours); '' if no time."""
     if t is None or pd.isna(t):
         return ""
     et = pd.Timestamp(t).tz_convert("America/New_York")
     mins = et.hour * 60 + et.minute
     return "RTH" if 9 * 60 + 30 <= mins < 16 * 60 else "ext"
-
-
-# ------------------------------------------------------------------ pooled tests
 
 
 def pooled_tests(usable: list[EventResult], p=PARAMS) -> dict:
@@ -64,7 +58,6 @@ def pooled_tests(usable: list[EventResult], p=PARAMS) -> dict:
             g[("pm_to_eq", pp)] = granger(frames, "x", "ys", pp, p.hac_lags)
             g[("eq_to_pm", pp)] = granger(frames, "ys", "x", pp, p.hac_lags)
         out["subsets"][name] = dict(A=(A, a), B=(B, b), granger=g, n_events=len(frames))
-    # leave-one-event-out on the cumulative PM->equity response
     frames_all = {r.event.id: r.primary.frame for r in usable}
     loo = []
     if len(frames_all) >= 5:
@@ -73,7 +66,6 @@ def pooled_tests(usable: list[EventResult], p=PARAMS) -> dict:
             _, st = distributed_lag(sub, "x", "ys", p.reg_lags, p.hac_lags)
             loo.append((eid, st["cum"], st["cum_t"]))
     out["loo"] = loo
-    # Exploratory robustness (Amendment 2): sign-free per-event Granger tests, p = granger_p, both directions
     per = []
     for r in usable:
         fr = {r.event.id: r.primary.frame}
@@ -88,7 +80,6 @@ def pooled_tests(usable: list[EventResult], p=PARAMS) -> dict:
 
 
 def verdict(tests: dict, p=PARAMS) -> tuple[str, str]:
-    """Apply the decision rule written in METHOD.md section 6."""
     s = tests["subsets"].get("all usable")
     if not s:
         return "no verdict", "Too few usable events for a pooled test."
@@ -108,12 +99,6 @@ def verdict(tests: dict, p=PARAMS) -> tuple[str, str]:
 
 
 def hac_evidence(tests: dict, p=PARAMS) -> dict:
-    """Every HAC-based statistic declared in METHOD.md section 6, with flags for which are significant.
-
-    Items: Granger HAC Wald (both directions, both p) on all usable events; Regression A/B joint Wald and cumulative
-    response t in every subset. Each item records direction, whether it is significant at 5% (Wald p < 0.05 or
-    |cumulative t| > 1.96), and the sign of the relevant cumulative response where one exists.
-    """
     items = []
     s_all = tests["subsets"].get("all usable")
     if s_all:
@@ -133,7 +118,6 @@ def hac_evidence(tests: dict, p=PARAMS) -> dict:
 
 
 def robust_reading(tests: dict, p=PARAMS) -> tuple[str, str]:
-    """HAC reading over all pre-declared HAC statistics: (robustness line, plain-reading line)."""
     ev = hac_evidence(tests, p)
     items = ev["items"]
     s = tests["subsets"].get("all usable")
@@ -158,7 +142,6 @@ def robust_reading(tests: dict, p=PARAMS) -> tuple[str, str]:
                         f"Reg B Wald p={_fmt_p(b['wald_p'])} (cumulative {b['cum']:+.3f}, t={b['cum_t']:+.2f})")
     if sub_bits:
         rob += " Subsets, " + "; ".join(sub_bits) + "."
-    # plain reading, built from the flags
     pm_sig = [i for i in items if i["dir"] == "pm_to_eq" and i["sig"]]
     pm_sig_pos = [i for i in pm_sig if i["cum"] is None or i["cum"] > 0]
     eq_sig = [i for i in items if i["dir"] == "eq_to_pm" and i["sig"]]
@@ -182,9 +165,6 @@ def robust_reading(tests: dict, p=PARAMS) -> tuple[str, str]:
         plain += ("The 30-lag HAC Wald tests can be oversized (as found per event, see below), so even these significant joint tests deserve caution. "
                   "The classical F is also unreliable here because PM changes are jumpy.")
     return rob, plain
-
-
-# ------------------------------------------------------------------ CSVs
 
 
 def _events_metrics(results: list[EventResult]) -> pd.DataFrame:
@@ -223,7 +203,6 @@ def write_csvs(results: list[EventResult], failed: list[tuple[Event, str]], test
     (RESULTS_DIR / "data").mkdir(exist_ok=True)
     m = _events_metrics(results)
     m.to_csv(RESULTS_DIR / "events_metrics.csv", index=False)
-    # cross-correlation curves (primary instrument, usable events)
     xr = []
     for r in results:
         if r.usable:
@@ -233,16 +212,13 @@ def write_csvs(results: list[EventResult], failed: list[tuple[Event, str]], test
             xr.append(t)
     if xr:
         pd.concat(xr).to_csv(RESULTS_DIR / "xcorr_by_event.csv", index=False)
-    # aligned minute data (primary instrument; whole fetch range incl. warm-up)
     for r in results:
         if r.usable:
             r.primary.frame.rename_axis("minute_end_utc").to_csv(RESULTS_DIR / "data" / f"{r.event.id}__{r.primary.ticker}.csv")
-    # dropped
     dropped = [dict(event_id=r.event.id, event=r.event.name, date=r.event.date, market=r.event.market_slug,
                     reason="; ".join(r.drop_reasons)) for r in results if not r.usable]
     dropped += [dict(event_id=e.id, event=e.name, date=e.date, market=e.market_slug, reason=why) for e, why in failed]
     pd.DataFrame(dropped, columns=["event_id", "event", "date", "market", "reason"]).to_csv(RESULTS_DIR / "dropped.csv", index=False)
-    # regressions and tests
     lag_rows, test_rows = [], []
     for name, s in tests["subsets"].items():
         if not s:
@@ -264,9 +240,6 @@ def write_csvs(results: list[EventResult], failed: list[tuple[Event, str]], test
     if tests["loo"]:
         pd.DataFrame(tests["loo"], columns=["left_out_event", "cumulative_beta", "cumulative_t"]).to_csv(
             RESULTS_DIR / "leave_one_out.csv", index=False)
-
-
-# ------------------------------------------------------------------ SUMMARY.md
 
 
 def _fmt_p(p: float) -> str:
@@ -337,7 +310,6 @@ def write_summary(results: list[EventResult], failed: list[tuple[Event, str]], t
                  f"| {_rel(ir.eq_move.time if ir.eq_move else None, ev.anchor)} | {_session(ir.eq_move.time if ir.eq_move else None) or 'n/a'} "
                  f"| {xl} | [png](charts/{ev.id}.png) |")
     L.append("")
-    # moves that predate the event anchor, and equity moves in extended hours
     def _pre(rs, which):
         n = 0
         for r in rs:

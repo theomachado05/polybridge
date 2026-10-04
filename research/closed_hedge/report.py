@@ -1,4 +1,3 @@
-"""SUMMARY.md and chart.png for the R1 run. Every number comes from results.json."""
 from __future__ import annotations
 
 from pathlib import Path

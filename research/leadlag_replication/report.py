@@ -1,4 +1,3 @@
-"""results.csv companions: tests.json, chart.png and SUMMARY.md. Every number in SUMMARY.md is generated from `res`."""
 from __future__ import annotations
 
 import json
@@ -13,7 +12,6 @@ import pandas as pd  # noqa: E402
 from .analysis import usable  # noqa: E402
 from .config import PARAMS, RESULTS_DIR  # noqa: E402
 
-# reference categorical palette (dataviz skill, light mode), slots 1-2; ink and grid recessive
 CLS_COLOR = {"geopolitics": "#2a78d6", "US macro/policy": "#eb6834"}
 INK, MUTED, GRID = "#0b0b0b", "#52514e", "#e4e3df"
 
@@ -53,7 +51,7 @@ def _style(ax):
 def chart(rows: pd.DataFrame, res: dict, path) -> None:
     u = usable(rows)
     fig, (a1, a2) = plt.subplots(1, 2, figsize=(12, 5.2), gridspec_kw={"width_ratios": [1.15, 1]})
-    for cls in ("geopolitics", "US macro/policy"):   # the smaller class drawn last so it stays visible
+    for cls in ("geopolitics", "US macro/policy"):
         sub = u[u["cls"] == cls]
         if sub.empty:
             continue

@@ -1,21 +1,3 @@
-"""Mark one listed option contract from Massive quotes, for option P&L in bridges and the portfolio.
-
-    m = await mark("O:AAPL261023P00300000")          # network: snapshot + last NBBO, cached 30 s, bounded
-    m = mark_quote(quote, nbbo=None, spot=333.5)     # network-free, from a chain quote you already hold
-
-A mark is the per-share **mid** with its spread and where both came from:
-
-- ``spread_source: "nbbo"``: the last NBBO from ``/v3/quotes`` (15-min delayed on this plan);
-- ``spread_source: "estimated"``: no two-sided quote, so the mid is Massive ``fmv`` (else the session close) and the
-  half spread is ``est_half_spread`` (documented, conservative); never presented as a quote.
-- ``exit_long`` / ``exit_short`` are the per-share prices a holder would realistically close at (bid / ask, or mid
-  -/+ the estimated half spread): use them for liquidation value, ``mark`` for the headline P&L.
-- ``stale``: during the session the quote is older than 20 min; with the market closed, it predates the last regular
-  close by more than 20 min (a Friday-close mark on Saturday is current, and labelled "last close").
-- An expired contract is marked at intrinsic from the underlying price (``mark_source: "intrinsic_expired"``).
-
-Never raises: on no key / outage / unknown contract the result has ``available: false`` and a reason.
-"""
 from __future__ import annotations
 
 import datetime as dt
@@ -30,17 +12,15 @@ from . import quotes as qt
 from .live import greeks_for
 
 MARK_TTL_S = 30.0
-EST_MIN_HALF = 0.025        # $ per share: half a nickel tick
-EST_PCT_LIQUID = 0.04       # of mid, open interest >= quotes.OI_THIN
-EST_PCT_THIN = 0.08         # of mid, otherwise
+EST_MIN_HALF = 0.025
+EST_PCT_LIQUID = 0.04
+EST_PCT_THIN = 0.08
 LABEL = "option mark: mid of the last Massive quote (or fmv when no quote), with spread and staleness"
 
 _MARKS = TTLCache(MARK_TTL_S)
 
 
 def est_half_spread(mid: float, oi: float) -> float:
-    """Estimated half spread ($/share) when there is no two-sided quote: max($0.025, 4% of mid) with open interest
-    >= 500, else max($0.025, 8% of mid). Wider than the SimBroker's 2% on purpose: a mark should not flatter."""
     if not math.isfinite(mid) or mid < 0:
         return math.nan
     pct = EST_PCT_LIQUID if math.isfinite(oi) and oi >= qt.OI_THIN else EST_PCT_THIN
@@ -49,7 +29,6 @@ def est_half_spread(mid: float, oi: float) -> float:
 
 def mark_quote(q: ch.OptionQuote | None, *, nbbo: dict | None = None, spot: float = math.nan,
                now: dt.datetime | None = None, market: dict | None = None) -> dict:
-    """Network-free mark of a chain quote (optionally with a fetched NBBO on top)."""
     now = now or qt.now_utc()
     market = market if market is not None else qt.market_state(now)
     if q is None:
@@ -97,14 +76,11 @@ _DEFAULT = object()
 
 
 async def mark(contract: str, *, client: Any = _DEFAULT, now: dt.datetime | None = None) -> dict:
-    """Mark an OCC contract ('O:AAPL261023P00300000' or without 'O:') from Massive (``client`` defaults to
-    ``make_client()``; pass None for "no key"). Cached 30 s; on a fetch error the last mark is served with
-    ``cache_stale: true``. Never raises."""
     occ = qt.parse_occ(contract)
     if occ is None:
         return {"available": False, "contract": contract, "reason": "not an OCC option symbol", "label": LABEL}
     try:
-        client = make_client() if client is _DEFAULT else client   # an explicit None means "no key"
+        client = make_client() if client is _DEFAULT else client
         if client is None:
             return {**occ, "contract": occ["ticker"], "available": False, "reason": "MASSIVE_API_KEY not set",
                     "label": LABEL}

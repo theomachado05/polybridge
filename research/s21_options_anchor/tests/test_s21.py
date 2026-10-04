@@ -1,4 +1,3 @@
-"""S21: parsing a price question, the anchor from two leg quotes, the gap buckets, the rule, the clustered regression."""
 import math
 from datetime import date
 
@@ -30,7 +29,7 @@ def test_parse_reads_ticker_level_direction_and_window():
     p, _ = eg.parse_market(rec("Will S&P 500 (SPX) hit $7,350 (HIGH) in February 2026?", "What will S&P 500 (SPX) hit by end of February?", "↑ $7,350", 1,
                                start="2026-01-05T00:00:00Z"))
     assert (p["ticker"], p["level"], p["direction"], p["window_end"]) == ("SPX", 7350.0, 1, "2026-02-28")
-    assert p["end_session"] == "2026-02-27"                       # 28 February 2026 is a Saturday
+    assert p["end_session"] == "2026-02-27"
     p, _ = eg.parse_market(rec("Will S&P 500 (SPX) hit 5500 (LOW) in March?", "What will S&P 500 (SPX) hit in March?", "↓ 5500", -1))
     assert (p["level"], p["direction"], p["window_end"]) == (5500.0, -1, "2026-03-31")
 
@@ -69,10 +68,10 @@ def test_put_ticker_swaps_the_right_letter():
 
 def test_call_spread_gives_the_probability_of_finishing_above_with_its_band():
     quotes = {100.0: q(6.0, 6.4), 105.0: q(3.0, 3.2), 110.0: q(1.0, 1.2)}
-    sp = eg.finish_beyond(list(quotes), 105.0, 1, quotes.get, 0.0, AT)          # 105 is listed: its neighbours 100 and 110
+    sp = eg.finish_beyond(list(quotes), 105.0, 1, quotes.get, 0.0, AT)
     assert (sp.k1, sp.k2, sp.stepped) == (100.0, 110.0, 0)
     assert sp.p_mid == pytest.approx((6.2 - 1.1) / 10) and sp.p_lo == pytest.approx((6.0 - 1.2) / 10) and sp.p_hi == pytest.approx((6.4 - 1.0) / 10)
-    sp = eg.finish_beyond(list(quotes), 107.0, 1, quotes.get, 0.0, AT)          # between strikes: 105 and 110
+    sp = eg.finish_beyond(list(quotes), 107.0, 1, quotes.get, 0.0, AT)
     assert (sp.k1, sp.k2) == (105.0, 110.0) and sp.p_mid == pytest.approx((3.1 - 1.1) / 5)
     one_year = eg.finish_beyond(list(quotes), 107.0, 1, quotes.get, 1.0, AT)
     assert one_year.p_mid == pytest.approx((3.1 - 1.1) / 5 * math.exp(cfg.RATE))
@@ -80,7 +79,7 @@ def test_call_spread_gives_the_probability_of_finishing_above_with_its_band():
 
 def test_put_spread_gives_the_probability_of_finishing_below():
     puts = {90.0: q(0.9, 1.1), 95.0: q(2.0, 2.4), 100.0: q(4.0, 4.4)}
-    sp = eg.finish_beyond(list(puts), 97.0, -1, puts.get, 0.0, AT)              # long the 100 put, short the 95 put
+    sp = eg.finish_beyond(list(puts), 97.0, -1, puts.get, 0.0, AT)
     assert (sp.k1, sp.k2) == (95.0, 100.0)
     assert sp.p_mid == pytest.approx((4.2 - 2.2) / 5) and sp.p_lo == pytest.approx((4.0 - 2.4) / 5) and sp.p_hi == pytest.approx((4.4 - 2.0) / 5)
 
@@ -97,7 +96,7 @@ def test_a_zero_bid_leg_is_used_and_a_stale_or_empty_leg_steps_outward():
 
 def test_no_bracket_or_no_quotes_gives_no_anchor():
     quotes = {100.0: q(6.0, 6.4), 105.0: q(3.0, 3.2)}
-    assert eg.finish_beyond(list(quotes), 1200.0, 1, quotes.get, 0.0, AT) is None       # a level far above every listed strike (a split)
+    assert eg.finish_beyond(list(quotes), 1200.0, 1, quotes.get, 0.0, AT) is None
     assert eg.finish_beyond(list(quotes), 102.0, 1, lambda k: None, 0.0, AT) is None
 
 
@@ -125,8 +124,8 @@ def test_clustered_ols_recovers_the_line_and_widens_the_error_for_copied_rows():
     y = 1.0 + 2.0 * x + rng.normal(size=200)
     b, se = eg.ols_cluster(y, x[:, None], np.arange(200))
     assert b[1] == pytest.approx(2.0, abs=0.2) and 0.04 < se[1] < 0.12
-    b4, se4 = eg.ols_cluster(np.tile(y, 4), np.tile(x, 4)[:, None], np.tile(np.arange(200), 4))   # every row four times, one cluster each
-    assert b4[1] == pytest.approx(b[1]) and se4[1] == pytest.approx(se[1], rel=0.02)             # copies add no information
+    b4, se4 = eg.ols_cluster(np.tile(y, 4), np.tile(x, 4)[:, None], np.tile(np.arange(200), 4))
+    assert b4[1] == pytest.approx(b[1]) and se4[1] == pytest.approx(se[1], rel=0.02)
     exact, _ = eg.ols_cluster(np.array([1.0, 3.0, 5.0, 7.0]), np.array([[0.0], [1.0], [2.0], [3.0]]), ["a", "a", "b", "c"])
     assert exact == pytest.approx([1.0, 2.0])
 
@@ -137,7 +136,7 @@ def test_brier_and_the_bootstrap_slope():
     ev = np.array([str(i // 4) for i in range(40)])
     b, lo, hi = run.boot_slope(x, -0.5 * x + 3.0, ev)
     assert b == pytest.approx(-0.5) and lo == pytest.approx(-0.5) and hi == pytest.approx(-0.5)
-    assert all(v != v for v in run.boot_slope(x[:8], x[:8], ev[:8])[1:])                 # two events: no interval
+    assert all(v != v for v in run.boot_slope(x[:8], x[:8], ev[:8])[1:])
 
 
 def test_anchor_instant_is_1555_or_1255_on_a_half_session():
@@ -162,8 +161,8 @@ def test_build_anchor_walks_to_the_first_expiry_with_two_usable_legs():
 
         def quote(self, opt, at):
             if "260402" in opt:
-                return None                                              # a weekly not yet listed on the anchor Friday
-            assert opt[-9] == "P"                                         # a "dip" question reads puts
+                return None
+            assert opt[-9] == "P"
             return {"bid": 9.0, "ask": 9.4, "bsz": 5, "asz": 5, "ts": at - 2} if opt.endswith("195000") else {"bid": 7.0, "ask": 7.2, "bsz": 5, "asz": 5, "ts": at - 3}
 
     m = {"ticker": "NVDA", "level": 192.0, "direction": -1, "end_session": "2026-03-31", "anchor_day": "2026-03-06", "anchor_epoch": AT}
@@ -173,7 +172,7 @@ def test_build_anchor_walks_to_the_first_expiry_with_two_usable_legs():
     assert a["option_type"] == "put" and (a["k_lo"], a["k_hi"]) == (190.0, 195.0)
     t = 35 / 365.0
     assert a["p_mid"] == pytest.approx((9.2 - 7.1) / 5 * math.exp(cfg.RATE * t)) and a["anchor_central"] == pytest.approx(min(1.0, 2 * a["p_mid"]))
-    assert "2026-04-04" not in src.asked and src.asked[0] == "2026-03-31"          # weekends are not asked for
+    assert "2026-04-04" not in src.asked and src.asked[0] == "2026-03-31"
     none = pull.build_anchor(Fake(), {**m, "level": 500.0})
     assert none["status"] == "no listed strikes bracket the level"
 
@@ -190,5 +189,5 @@ def test_placebo_with_identical_anchors_equals_the_observed_difference():
 def test_placebo_keeps_prices_and_results_and_only_moves_the_anchors():
     price = np.array([0.50, 0.50, 0.50, 0.50])
     pnl = np.array([50.0, 50.0, -50.0, -50.0])
-    out = checks.placebo(price, np.array([0.10, 0.10, 0.60, 0.60]), pnl, 5.0, draws=200)       # the anchor picks exactly the winners
+    out = checks.placebo(price, np.array([0.10, 0.10, 0.60, 0.60]), pnl, 5.0, draws=200)
     assert out["observed"] == pytest.approx(100.0) and out["placebo_mean"] < 60.0 and out["hi"] <= 100.0 and out["mean_markets_taken"] == 2.0

@@ -38,7 +38,7 @@ def test_hedge_passes_when_edge_and_ratio_point_the_right_way():
 
 
 def test_opportunity_needs_ratio_below_placebo():
-    events = _res(80, pp_mean=0.0, csp_mean=0.03, ratio_mean=1.4, seed=3)   # ratio points the wrong way
+    events = _res(80, pp_mean=0.0, csp_mean=0.03, ratio_mean=1.4, seed=3)
     placebo = _res(200, pp_mean=0.0, csp_mean=0.0, ratio_mean=1.0, seed=4)
     out = pass_check(events, placebo, "opportunity", CFG)
     assert out["strategy"] == "cash_secured_put"

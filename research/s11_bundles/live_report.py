@@ -1,7 +1,3 @@
-"""S11 live: what tonight's books show. Reads `.cache/live/checks.jsonl`, writes `results/s11_bundles/live_*.csv`.
-
-Run from `research/`:  python -m s11_bundles.live_report
-"""
 from __future__ import annotations
 
 import json
@@ -30,7 +26,6 @@ def load() -> pd.DataFrame:
 def summarise(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
     snaps = sorted(df.t.unique())
     arb = df[df["size"] > 0].copy()
-    # runs of consecutive snapshots per pair or set
     pos = {t: i for i, t in enumerate(snaps)}
     runs = []
     for k, g in arb.sort_values("t").groupby("key"):
@@ -61,7 +56,6 @@ def summarise(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
            "checks_with_money_locked": int(len(arb)), "distinct_arbitrages": int(len(R)),
            "arbitrages_at_least_min_order": int(R.size_at_least_min_order.sum()) if len(R) else 0,
            "sum_of_max_locked_usd": float(R.max_locked_usd.sum()) if len(R) else 0.0}
-    # how close the books come: the best edge per check, distribution by kind
     near = df[df.edge.notna()].groupby("kind").edge.describe(percentiles=[0.5, 0.9, 0.99])
     return R, near, tot
 

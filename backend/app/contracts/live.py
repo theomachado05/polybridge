@@ -1,9 +1,3 @@
-"""Live boards: Polymarket date ladders (GET /ladders) and stock / S&P 500 tickets (GET /tickets).
-
-Every network call is bounded (per-request timeout, page cap, overall deadline) and cached; a failure returns an
-``error`` with whatever was built, never an exception. Labels come from the evidence registry
-(``app.closed.evidence.mechanism_for``) when it is present; no label is written here.
-"""
 from __future__ import annotations
 
 import asyncio
@@ -23,31 +17,28 @@ GAMMA = "https://gamma-api.polymarket.com"
 CLOB = "https://clob.polymarket.com"
 REQ_TIMEOUT_S = 6.0
 DEADLINE_S = 20.0
-LADDER_PAGES = 3                 # gamma keyset pages of 100 open events (volume >= $100k, as ladder_replay step 4)
+LADDER_PAGES = 3
 TICKET_PAGES = 2
 BOOKS_PER_CALL = 100
-MAX_CHAINS = 40                  # option-contract listings per /tickets build
-MAX_REFERENCES = 120              # options references per /tickets build (each one is its own Massive snapshot + NBBO)
-REF_CONCURRENCY = 4              # references in flight at once
-REFETCH_TIMEOUT_S = 4.0          # bound on the quote re-fetch right before the C++ decision
-LADDER_REFETCH_AFTER_S = 10.0    # ladder books older than this at decision time are fetched again (family max_age 60 s)
-ROW_TIMEOUT_S = 8.0              # one ticket's listing + reference
-TICKET_MARGIN_S = 2.0            # left of DEADLINE_S for serialising what was built
-BUDGET = "budget"                # reason on a row whose reference was not built in this build's budget
-MIN_RUNG_VOLUME = 50_000.0       # S11's rung volume rule (s11_bundles.config.MIN_MARKET_VOLUME)
-TICKET_TAGS = ({"tag_slug": "hit-price"}, {"tag_id": 102676})   # touch_fresh's "hit-price" tag; fresh_accuracy's close-above tag
+MAX_CHAINS = 40
+MAX_REFERENCES = 120
+REF_CONCURRENCY = 4
+REFETCH_TIMEOUT_S = 4.0
+LADDER_REFETCH_AFTER_S = 10.0
+ROW_TIMEOUT_S = 8.0
+TICKET_MARGIN_S = 2.0
+BUDGET = "budget"
+MIN_RUNG_VOLUME = 50_000.0
+TICKET_TAGS = ({"tag_slug": "hit-price"}, {"tag_id": 102676})
 CACHE = TTLCache(60.0)
 
 
 def contract_key(res: dict | None) -> str:
-    """The registry key for a classifier result: "btc_15min" for the classifier's BTC watch mechanism, else its type."""
     res = res or {}
     return "btc_15min" if res.get("mechanism") == "btc_15m_watch" else str(res.get("type") or "other")
 
 
 def evidence_for(contract_type: str) -> dict | None:
-    """The registry entry's id, status and label for a contract type (or contract_key), or None when the registry is
-    not present."""
     try:
         from ..closed import evidence as ev
         fn = getattr(ev, "mechanism_for", None)
@@ -102,7 +93,6 @@ def best(book: dict | None, side: str) -> float | None:
 
 
 def best_size(book: dict | None, side: str) -> float | None:
-    """Size shown at the best level of one side (summed over entries at that price)."""
     px = best(book, side)
     if px is None:
         return None
@@ -111,7 +101,6 @@ def best_size(book: dict | None, side: str) -> float | None:
 
 
 def book_ts_ns(book: dict | None) -> int | None:
-    """The book's own timestamp (CLOB gives milliseconds), or None."""
     try:
         t = int(float((book or {}).get("timestamp")))
     except (TypeError, ValueError):
@@ -120,22 +109,12 @@ def book_ts_ns(book: dict | None) -> int | None:
 
 
 def _book_key(b: dict | None) -> tuple:
-    """What identifies a book's state: the CLOB hash when given, else its timestamp and best levels."""
     b = b or {}
     return (b.get("hash"), b.get("timestamp")) if b.get("hash") else (None, b.get("timestamp"), best(b, "bids"),
                                                                        best(b, "asks"), best_size(b, "bids"), best_size(b, "asks"))
 
 
 def refresh_books(old: dict[str, dict], new: dict[str, dict], fetch_ns: int) -> dict[str, dict]:
-    """Quote books from a second fetch (``new``, fetched at ``fetch_ns``), keeping the first fetch's book (``old``)
-    for a token the second fetch did not return (a failed row: C++ then judges the old book, so "stale" is honest).
-
-    AGE BASIS. The CLOB book's ``timestamp`` is the time the book LAST CHANGED, not the server time (checked live:
-    repeated /books calls seconds apart return the same ``timestamp`` and ``hash`` for a quiet book). A book that has
-    not changed since the first fetch is therefore still a valid current quote, so its quote time is the fetch time
-    (``_age_basis`` "fetch_time_unchanged"): the family's max-age rule then measures how long ago we looked, not how
-    quiet the market is. A book that did change keeps its own timestamp ("book_timestamp"). A book that was not
-    re-fetched keeps the first fetch's timestamp ("book_timestamp_not_refetched")."""
     out: dict[str, dict] = {}
     for tok, b0 in old.items():
         b1 = new.get(tok)
@@ -151,7 +130,6 @@ def refresh_books(old: dict[str, dict], new: dict[str, dict], fetch_ns: int) -> 
 
 
 async def refetch(http: httpx.AsyncClient, old: dict[str, dict], tokens: list[str]) -> dict[str, dict]:
-    """``refresh_books`` for ``tokens`` after a bounded batched re-fetch; any failure returns ``old`` unchanged."""
     toks = sorted({t for t in tokens if t})
     if not toks:
         return old
@@ -165,7 +143,6 @@ async def refetch(http: httpx.AsyncClient, old: dict[str, dict], tokens: list[st
 
 
 def token_and_fees(m: dict) -> dict:
-    """YES token, taker fee rate and exponent, tick: the S11 catalogue fields (fees off unless enabled with a schedule)."""
     toks = m.get("clobTokenIds")
     try:
         toks = json.loads(toks) if isinstance(toks, str) else (toks or [])
@@ -182,13 +159,10 @@ def token_and_fees(m: dict) -> dict:
 
 
 def fee(p: float, rate: float, exponent: float) -> float:
-    """Polymarket taker fee per contract at price p (`s11_bundles.engine.fee`)."""
     return rate * (p * (1.0 - p)) ** exponent if 0 < p < 1 else 0.0
 
 
 def pair_edge(bid_rich: float | None, ask_cheap: float | None, a: dict, b: dict) -> float | None:
-    """Points locked in per contract by selling the earlier rung at its bid and buying the later rung at its ask, each
-    one tick worse and after both taker fees (ladder_replay step 2's entry condition on live quotes). > 0 = violation."""
     if bid_rich is None or ask_cheap is None:
         return None
     pa, pb = bid_rich - a["tick"], ask_cheap + b["tick"]
@@ -204,7 +178,6 @@ def _rung_market(m: dict) -> bool:
 
 
 def build_ladders(events: list[dict]) -> list[dict]:
-    """Ladders of the given gamma events (rungs in re-derived date order with nesting checks), no prices yet."""
     lm = research.link_map()
     out = []
     for e in events:
@@ -213,7 +186,7 @@ def build_ladders(events: list[dict]) -> list[dict]:
             continue
         for lad in lm.link_ladders(ms, e):
             if len(lad["rungs"]) < 2:
-                continue                 # a lone rung (its siblings below the volume rule) is not a ladder
+                continue
             byid = {str(m.get("id")): m for m in ms}
             for r in lad["rungs"]:
                 r.update(token_and_fees(byid[r["id"]]))
@@ -223,10 +196,6 @@ def build_ladders(events: list[dict]) -> list[dict]:
 
 
 def price_ladders(ladders: list[dict], bk: dict[str, dict], now_ns: int | None = None) -> None:
-    """Quotes on every rung, then the decision on every pair: the C++ ``ladder_pair`` family with the registry's
-    preset when the compiled module has it, else the previous Python rule (``pair_edge`` > 0, nested, valid ladder),
-    labelled ``source: "python_fallback"``. ``edge_points`` / ``violation`` stay as the descriptive Python measure of
-    ladder_replay step 2 (each leg one tick worse); ``actionable`` is the deciding family's verdict."""
     now_ns = now_ns or engine._now_ns()
     for lad in ladders:
         rid = {r["id"]: r for r in lad["rungs"]}
@@ -265,11 +234,9 @@ async def ladders_board(http: httpx.AsyncClient | None = None) -> dict:
             toks = sorted({r["token"] for lad in lads for r in lad["rungs"] if r.get("token")})
             t_fetch = time.monotonic()
             bk = await books(client, toks)
-            if time.monotonic() - t_fetch > LADDER_REFETCH_AFTER_S:   # a slow fetch: look again just before deciding
+            if time.monotonic() - t_fetch > LADDER_REFETCH_AFTER_S:
                 bk = await refetch(client, bk, toks)
             else:
-                # Fetched just now: a quiet book (unchanged for > 60 s) is still the current quote, so the family's max
-                # age measures how long ago we looked, as for tickets (refresh_books: "fetch_time_unchanged").
                 fetch_ms = str(time.time_ns() // 1_000_000)
                 bk = {t: ({**b, "timestamp": fetch_ms, "_age_basis": "fetch_time_just_fetched"} if b else b)
                       for t, b in bk.items()}
@@ -288,7 +255,6 @@ async def ladders_board(http: httpx.AsyncClient | None = None) -> dict:
 
 
 def engine_source(rows) -> str | None:
-    """"engine" / "python_fallback" / "mixed" over the rows that carry an engine block (None when none does)."""
     srcs = {(r.get("engine") or {}).get("source") for r in rows if r.get("engine")}
     return None if not srcs else srcs.pop() if len(srcs) == 1 else "mixed"
 
@@ -300,9 +266,6 @@ def _decidable(r: dict) -> bool:
 
 
 def decide_ticket(r: dict, threshold: float, now_ns: int) -> None:
-    """The decision on one touch ticket with an options reference: the C++ ``touch_ticket_reference`` family
-    (validated False: proposals only) when compiled, else the previous Python rule (bid at least ``threshold``
-    points above the central reference mid), labelled ``source: "python_fallback"``."""
     if not _decidable(r):
         return
     ref = r.get("reference") or {}
@@ -328,8 +291,6 @@ def chain_rows(chain: Any) -> list[dict]:
 
 
 async def listed_rows(underlying: str, end_session: str) -> tuple[list[dict] | None, str]:
-    """Listed contracts of one underlying from the end session day to 45 days later (Massive snapshot via
-    ``app.options.chain``). (None, reason) when no key or the listing fails."""
     try:
         from ..options import chain as ch
         d0 = dt.date.fromisoformat(end_session)
@@ -372,7 +333,6 @@ def ticket_rows(events: list[dict]) -> list[dict]:
 
 
 def touch_threshold() -> float:
-    """The registry's touch sell threshold (S21 book B0), 5 points when the registry is absent."""
     try:
         from ..closed import evidence as ev
         return float(ev.TOUCH_SELL_THRESHOLD_POINTS)
@@ -385,8 +345,6 @@ def _no_reference(reason: str) -> dict:
 
 
 def _reference_only() -> dict | None:
-    """For a close-above row: the reference is shown for information and points at the foundation entry, without that
-    entry's status (close-above tickets are "no tested mechanism")."""
     try:
         from ..closed import evidence as ev
         ref_id = (getattr(ev, "REFERENCE_FOR", {}) or {}).get("close_above_ticket")
@@ -395,14 +353,13 @@ def _reference_only() -> dict | None:
     return {"reference_only": True, "evidence_id": ref_id} if ref_id else None
 
 
-LISTING_TTL_S = 600.0            # contract listings per (underlying, expiry window) are kept 10 minutes
-CHAIN_CONCURRENCY = 6            # listings in flight at once
+LISTING_TTL_S = 600.0
+CHAIN_CONCURRENCY = 6
 _LISTINGS: dict[tuple[str, str, str], tuple[float, list[dict]]] = {}
 _INFLIGHT: dict[tuple[str, str, str], asyncio.Task] = {}
 
 
 def reset_listing_cache() -> None:
-    """Tests: forget cached and in-flight listings."""
     _LISTINGS.clear()
     _INFLIGHT.clear()
 
@@ -413,7 +370,6 @@ def _listing_key(underlying: str, end_session: str) -> tuple[str, str, str]:
 
 
 def cached_listing(underlying: str, end_session: str) -> tuple[list[dict] | None, str] | None:
-    """A listing fetched in the last LISTING_TTL_S for this (underlying, expiry window), or None."""
     hit = _LISTINGS.get(_listing_key(underlying, end_session))
     if hit is not None and time.monotonic() - hit[0] < LISTING_TTL_S:
         return hit[1], ""
@@ -421,8 +377,6 @@ def cached_listing(underlying: str, end_session: str) -> tuple[list[dict] | None
 
 
 def listing_task(underlying: str, end_session: str) -> asyncio.Task:
-    """The in-flight listing for this key (shared by every row and build). A listing the build's deadline cut off
-    keeps running and fills the cache, so the next build finds it warm."""
     key = _listing_key(underlying, end_session)
     loop = asyncio.get_running_loop()
     t = _INFLIGHT.get(key)
@@ -445,13 +399,6 @@ def listing_task(underlying: str, end_session: str) -> asyncio.Task:
 
 
 async def link_and_price(rows: list[dict], deadline: float) -> dict:
-    """Exact contract link and options reference for every linkable row, incremental and bounded.
-
-    Listings: one per (underlying, expiry window), at most MAX_CHAINS per build, CHAIN_CONCURRENCY in flight, cached
-    LISTING_TTL_S. Every row is linked as soon as its listing arrives. References: at most MAX_REFERENCES,
-    REF_CONCURRENCY in flight, ROW_TIMEOUT_S each. Touch tickets go first (they are the mechanism; close-above rows are
-    reference only). When the monotonic ``deadline`` hits, what was built is kept: a row not reached keeps
-    ``contract``/``reference`` with reason "budget". Returns the pending counts; nothing raises."""
     op = research.options()
     chain_sem = asyncio.Semaphore(CHAIN_CONCURRENCY)
     ref_sem = asyncio.Semaphore(REF_CONCURRENCY)
@@ -481,7 +428,7 @@ async def link_and_price(rows: list[dict], deadline: float) -> dict:
             got = cached_listing(*key)
             if got is None:
                 async with chain_sem:
-                    got = await asyncio.shield(listing_task(*key))   # a deadline never cancels a shared listing
+                    got = await asyncio.shield(listing_task(*key))
             listed, why = got
         except Exception as e:  # noqa: BLE001
             listed, why = None, f"contract listing failed: {type(e).__name__}"
@@ -511,7 +458,7 @@ async def link_and_price(rows: list[dict], deadline: float) -> dict:
         if pending:
             await asyncio.gather(*pending, return_exceptions=True)
     listing_pending = reference_pending = 0
-    for r in work:                                        # rows the deadline cut off
+    for r in work:
         if "contract" not in r:
             listing_pending += 1
         elif "reference" not in r:
@@ -534,7 +481,7 @@ async def tickets_board(http: httpx.AsyncClient | None = None) -> dict:
                 except Exception:
                     continue
             seen: set = set()
-            rows = [r for r in ticket_rows(evs) if not (r.get("id") in seen or seen.add(r.get("id")))]  # one row per market
+            rows = [r for r in ticket_rows(evs) if not (r.get("id") in seen or seen.add(r.get("id")))]
             bk = await books(client, sorted({r["token"] for r in rows if r.get("token")}))
         finally:
             if own:
@@ -550,8 +497,6 @@ async def tickets_board(http: httpx.AsyncClient | None = None) -> dict:
             if r["type"] == "close_above_ticket" and ref_only:
                 r.update(ref_only)
         pending = await link_and_price(rows, t0 + DEADLINE_S - TICKET_MARGIN_S)
-        # The books above were fetched before up to ~18 s of options-reference work: fetch them again for every ticket
-        # that will be decided, so the family's 30 s max-age rule judges a current quote (see refresh_books).
         deciding = [r for r in rows if _decidable(r)]
         if deciding:
             own2 = http is None
@@ -583,7 +528,7 @@ async def tickets_board(http: httpx.AsyncClient | None = None) -> dict:
         "decided_by": engine_source(d.get("tickets", []))},
         timeout=DEADLINE_S + 5.0)
     if out.get("partial") and not out.get("stale"):
-        CACHE._data.pop("tickets", None)                  # a partial board is served, not kept: the next call rebuilds warm
+        CACHE._data.pop("tickets", None)
     out.setdefault("partial", False)
     return out
 

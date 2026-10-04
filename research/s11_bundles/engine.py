@@ -1,4 +1,3 @@
-"""S11 engine: the consistency checks and fills, shared by the live logger and the history run. Pure functions."""
 from __future__ import annotations
 
 import numpy as np
@@ -11,11 +10,7 @@ def fee(p, rate: float, exponent: float, c: float = 1.0):
     return np.where((p > 0) & (p < 1), c * rate * (p * (1.0 - p)) ** exponent, 0.0)
 
 
-# ---------------------------------------------------------------- live books: real bid and ask, walking the depth
-
 def pair_arb(bids_a: list[tuple[float, float]], asks_b: list[tuple[float, float]], fa: tuple[float, float], fb: tuple[float, float]) -> dict:
-    """Sell the rich leg A at its bids and buy the cheap leg B at its asks while each extra contract still locks in money
-    after both fees. Levels best first, (price, size). Returns contracts, dollars locked in, best edge per contract."""
     i = j = 0
     ra, rb = (list(bids_a[0]) if bids_a else None), (list(asks_b[0]) if asks_b else None)
     size = locked = 0.0
@@ -40,8 +35,6 @@ def pair_arb(bids_a: list[tuple[float, float]], asks_b: list[tuple[float, float]
 
 
 def basket_arb(books: list[list[tuple[float, float]]], fees: list[tuple[float, float]], side: str) -> dict:
-    """One-of-many set. side 'buy_yes': buy one YES of every member at the asks, pays 1. side 'buy_no': sell YES of every
-    member at the bids (= buy NO at 1 - bid), n NOs pay n - 1, so a basket locks in sum(bid) - 1 - fees."""
     lv = [[list(x) for x in b] for b in books]
     if not lv or any(not b for b in lv):
         return {"size": 0.0, "locked": 0.0, "edge": float("nan")}
@@ -70,10 +63,7 @@ def basket_arb(books: list[list[tuple[float, float]]], fees: list[tuple[float, f
     return {"size": size, "locked": locked, "edge": best}
 
 
-# ---------------------------------------------------------------- history: mids moved by half-spreads and fees
-
 def pair_edge(mid_a, mid_b, h: float, fa: tuple[float, float], fb: tuple[float, float], c: float = 1.0):
-    """Money locked in per contract by selling A and buying B at the assumed fills (NaN where a mid is missing)."""
     lo, hi = cfg.PRICE_CLIP
     a = np.clip(np.asarray(mid_a, float) - c * h, lo, hi)
     b = np.clip(np.asarray(mid_b, float) + c * h, lo, hi)
@@ -81,7 +71,6 @@ def pair_edge(mid_a, mid_b, h: float, fa: tuple[float, float], fb: tuple[float, 
 
 
 def basket_edge(mids: np.ndarray, h: float, fees: list[tuple[float, float]], c: float = 1.0) -> tuple[np.ndarray, np.ndarray]:
-    """mids: members x minutes. (buy-all-YES edge, buy-all-NO edge) per minute, per basket of one contract a member."""
     lo, hi = cfg.PRICE_CLIP
     ask = np.clip(mids + c * h, lo, hi)
     bid = np.clip(mids - c * h, lo, hi)
@@ -91,7 +80,6 @@ def basket_edge(mids: np.ndarray, h: float, fees: list[tuple[float, float]], c: 
 
 
 def episodes(flag: np.ndarray, t: np.ndarray, gap_s: float = cfg.EPISODE_GAP_S) -> list[tuple[int, int]]:
-    """(first, last) index of each run of True, runs closer than gap_s joined."""
     idx = np.flatnonzero(flag)
     if not len(idx):
         return []
@@ -106,7 +94,6 @@ def episodes(flag: np.ndarray, t: np.ndarray, gap_s: float = cfg.EPISODE_GAP_S) 
 
 def jumps(t: np.ndarray, p: np.ndarray, points: float = cfg.JUMP_POINTS, window: float = cfg.JUMP_WINDOW_S,
           cooldown: float = cfg.JUMP_COOLDOWN_S) -> list[tuple[int, float]]:
-    """(index of the minute the jump is seen, signed size in points) on a regular one-minute grid with NaN for stale."""
     k = int(round(window / 60))
     if len(p) <= k:
         return []
@@ -121,7 +108,6 @@ def jumps(t: np.ndarray, p: np.ndarray, points: float = cfg.JUMP_POINTS, window:
 
 
 def taker_trade(p_in: float, p_out: float, up: bool, h: float, f: tuple[float, float], c: float) -> tuple[float, float]:
-    """Buy (up) or sell the sibling at p_in, close at p_out, both across c half-spreads and c fees. (entry, net P&L)."""
     lo, hi = cfg.PRICE_CLIP
     if up:
         e, x = min(p_in + c * h, hi), max(p_out - c * h, lo)

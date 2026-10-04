@@ -8,8 +8,8 @@ from leadlag_closed.stats import binom_two_sided, interaction, ols_hc3, pairing_
 
 def test_binomial_exact():
     assert binom_two_sided(5, 10) == 1.0
-    assert binom_two_sided(10, 12) == pytest.approx(2 * (66 + 12 + 1) / 4096)   # 0.0386
-    assert binom_two_sided(2, 12) == binom_two_sided(10, 12)                   # two-sided symmetry
+    assert binom_two_sided(10, 12) == pytest.approx(2 * (66 + 12 + 1) / 4096)
+    assert binom_two_sided(2, 12) == binom_two_sided(10, 12)
     assert binom_two_sided(10, 10) == pytest.approx(2 / 1024)
     assert np.isnan(binom_two_sided(0, 0))
 
@@ -18,7 +18,6 @@ def test_sign_agreement_threshold_and_zero_gap():
     x = [5, -3, 0.4, 2, -2, 1.0]
     y = [10, -1, 100, -5, 0, 7]
     r = sign_agreement(x, y, 1.0)
-    # |x|>=1 and y!=0: (5,10) agree, (-3,-1) agree, (2,-5) disagree, (1,7) agree; (-2,0) dropped; (0.4,..) below threshold
     assert (r["n"], r["k"]) == (4, 3)
     assert sign_agreement(x, y, 0.3)["n"] == 5
     assert sign_agreement([np.nan, 3], [1, np.nan], 1.0)["n"] == 0
@@ -41,8 +40,8 @@ def test_slope_test_detects_and_rejects():
     assert s["b"] == pytest.approx(4, abs=0.3) and s["p_perm"] < 0.01 and s["p_rho"] < 0.01
     s0 = slope_test(x, rng.normal(size=40), 2000, 1)
     assert s0["p_perm"] > 0.05
-    assert np.isnan(slope_test([1, 2], [1, 2], 100, 1)["b"])                    # too few points
-    assert np.isnan(slope_test([1.0] * 10, list(range(10)), 100, 1)["b"])         # no variation in x
+    assert np.isnan(slope_test([1, 2], [1, 2], 100, 1)["b"])
+    assert np.isnan(slope_test([1.0] * 10, list(range(10)), 100, 1)["b"])
 
 
 def test_slope_test_reproducible():
@@ -100,7 +99,6 @@ def test_analyse_no_evidence_on_pure_noise():
 
 
 def test_analyse_flags_general_comovement_in_placebo():
-    # PM relation present everywhere (events and placebo alike): the claim 'only on news' is not supported by P3
     res = analyse(_rows(n_ev=16, n_pl=300, event_slope=12.0, placebo_slope=12.0, seed=20))
     assert res["p1_t2"]["b"] == pytest.approx(12, abs=4) and res["p1_t2"]["p_perm"] < 0.01
     assert abs(res["p3"]["d_t"]) < 3
@@ -111,12 +109,12 @@ def test_leave_one_out_flags_single_point_leverage():
     from leadlag_closed.analysis import leave_one_out
 
     rng = np.random.default_rng(11)
-    x = np.append(rng.normal(0, 1, 14), 40.0)           # one huge PM move
-    y = np.append(rng.normal(0, 30, 14), 300.0)          # with a huge gap, everything else is noise
+    x = np.append(rng.normal(0, 1, 14), 40.0)
+    y = np.append(rng.normal(0, 30, 14), 300.0)
     ev = pd.DataFrame({"dpm_o_pp": x, "gap_bp": y, "event": [f"e{i:02d}" for i in range(15)],
                        "market": ["recession"] * 14 + ["election"]})
     lo = leave_one_out(ev)
-    assert lo["min_drop"] == "e14" and abs(lo["min"]) < abs(lo["full"]) / 3         # dropping the big point collapses the slope
+    assert lo["min_drop"] == "e14" and abs(lo["min"]) < abs(lo["full"]) / 3
     assert lo["no_election"]["n"] == 14 and abs(lo["no_election"]["rho"]) < 0.8
     assert leave_one_out(ev.iloc[:3]) == {"n": 3}
 

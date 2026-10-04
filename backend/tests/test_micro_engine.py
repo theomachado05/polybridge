@@ -1,15 +1,3 @@
-"""The ladder and ticket boards decide with the C++ micro families (hedgecore ladder_pair, touch_ticket_reference).
-
-Engine tests use the real compiled module and skip when it is absent (the no-engine CI job); fallback tests force the
-module away and check the previous Python rule decides, labelled ``python_fallback``.
-
-Parity, C++ against the previous Python rule, on fixture grids (documented differences, both intended):
-- ladders: Python ``pair_edge > 0`` (one tick per leg, fees at the tick-shifted prices) and ladder_pair preset #4
-  (one tick + min_edge 1 point, fees at the quotes, ``>=`` with a 1e-12 allowance) agree everywhere on a cent grid with
-  fees on; with fees off they differ only where the pair sits exactly two ticks apart (Python edge 0.000, not > 0;
-  the C++ gate accepts an edge exactly equal to min_edge).
-- tickets: identical rule (bid - central >= 5 points, 1e-9 allowance); the C++ family also refuses a crossed book.
-"""
 import pytest
 
 from app.closed import evidence as ev
@@ -62,7 +50,6 @@ def test_ladder_parity_with_python_rule_on_a_cent_grid():
                 assert c["source"] == "engine" and c["family"] == "ladder_pair" and c["preset"] == 4
                 if (c["action"] == "order") != python_actionable(bid, ask, a, b):
                     diffs.append((rate, bid, ask, live.pair_edge(bid, ask, a, b)))
-    # the only intended difference: fees off and exactly two ticks apart (Python edge 0, C++ edge == min_edge)
     assert all(r == 0.0 and abs(e) < 1e-9 for r, _, _, e in diffs), diffs
 
 
@@ -87,7 +74,7 @@ def test_ticket_parity_and_proposals_only():
             c = engine.decide_ticket(engine.ticket_tick(row, ref(central), NOW), NOW)
             py = 100 * (bid - central) >= ev.TOUCH_SELL_THRESHOLD_POINTS - 1e-9
             assert c["action"] == ("propose" if py else "hold"), (bid, central, c)
-            assert c["action"] != "order"   # validated is always False on the board
+            assert c["action"] != "order"
     crossed = {"best_bid": 0.40, "best_ask": 0.38, "bid_size": 5.0}
     assert engine.decide_ticket(engine.ticket_tick(crossed, ref(0.2), NOW), NOW)["action"] == "hold"
 

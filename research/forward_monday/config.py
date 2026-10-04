@@ -1,4 +1,3 @@
-"""Pre-registered parameters of the forward reopening taker (METHOD.md). Change only through an Amendment."""
 from __future__ import annotations
 
 import os

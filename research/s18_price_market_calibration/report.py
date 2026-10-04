@@ -1,7 +1,3 @@
-"""S18 report: SUMMARY.md, equity_curve.png, drawdown.png and capacity.md from the result CSVs.
-
-Run from `research/`:  python -m s18_price_market_calibration.report
-"""
 from __future__ import annotations
 
 import json
@@ -29,8 +25,6 @@ SELL, BUY = "sellers: sold YES into a bid, held to the result", "buyers: bought 
 
 
 def book(pm: pd.DataFrame, entries: pd.DataFrame, side: str) -> tuple[pd.DataFrame, dict]:
-    """The traded-price trade as a book: up to 100 contracts per market, never more than the printed size; P&L booked
-    in the month of the result; capital locked from the first weekend to the result."""
     e = entries.set_index("market")
     col, pcol, zcol = f"{side}_pnl_points", f"{side}_price", f"{side}_size"
     s = pm[pm[col].notna()].copy()
@@ -251,7 +245,6 @@ def main() -> int:
 
 
 def meta_age(e: pd.DataFrame) -> float:
-    """Median age in days of a market at its entry, from the two universes' listing times."""
     from .run import SOURCES
     starts = {str(m["id"]): pd.Timestamp(m["start"]).timestamp() for _, root in SOURCES for m in json.loads((root / "universe.json").read_text())["markets"]}
     return float(((e.entry_epoch - e.market.astype(str).map(starts)) / 86400).median())

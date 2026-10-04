@@ -1,8 +1,5 @@
 "use client";
 
-// One client-side store for the whole flow (the prototype's single component state, split per screen by
-// route). It lives in the root layout, so it survives client navigation between screens. Everything in it comes
-// from the backend; a failed read is kept as an error the screen shows with a retry, never replaced by sample data.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { getAccount, getEquity, getHealth, getLibrary, getPortfolio, getSession, mapEvent, postFit, searchMarkets, type AccountOut, type Direction, type FitOut, type Market, type PortfolioOut, type Proposal } from "./api";
@@ -16,29 +13,19 @@ import { fitDirection, opportunityFit, reusableBridge, runnableFit, startOpportu
 export { algoRunLabel, bridgeFeeGateOff, feeGateOff, gapPerShare, runnableFit } from "./realBridge.ts";
 
 export type { AppliedFit, Settings };
-/** A backend bridge this session opened (or re-attached to). */
 export interface BridgeEntry {
   id: string; kind: "live"; bridgeId: string; q: Question | null; eq: EquityPick | null; inst: string;
-  /** The fit this bridge was started with (sent with the proposal and POST /bridges, so hedgecore.Algo runs that
-   *  family and preset). null: no runnable fit, the engine runs its default delta-bridge spec. */
   fit: AppliedFit | null;
-  /** A fit that exists for this pick but cannot run on a bridge (e.g. an opportunity-division family). */
   unapplied?: { family: string; preset_index: number | null; why: string } | null;
-  /** $/share per unit of probability sent to the engine; 0 means its fee gate is off. null: unknown (re-attached). */
   gap: number | null;
-  /** "opportunity": an options bridge (Opportunity-division family, simulated option fills). Default hedge. */
   mode?: "hedge" | "opportunity";
-  /** True when the proposal opted in to hedge A (closed_pm_hedge): reuse only matches the same choice. */
   pmHedge?: boolean;
-  /** True when the proposal set the closed-market override (act_on_unvalidated): reuse only matches the same choice. */
   override?: boolean;
 }
 
 export interface Remote<T> { status: "loading" | "ok" | "error"; data: T | null; error: string | null }
 export interface FitState extends Remote<FitOut> {
   key: string;
-  /** Set when no hedge fit was requested because the adverse outcome is unknown (a ticker outside the market's
-   *  mapping, and the user has not said which outcome hurts it): the card asks instead of guessing a side. */
   noDirection?: boolean;
 }
 
@@ -47,9 +34,7 @@ const DEFAULT_SETTINGS: Settings = {
   broker: "webull", conns: ["webull"], account: "Taxable", rate: "32%", taxState: "CA", maxHedge: "100%",
   markets: { Polymarket: true, Kalshi: true }, guards: { edge: true, wash: true, auto: false },
 };
-/** GET /session refresh (the nav pill, Build's Weekend mode and Portfolio's weekend exposure read it). */
 export const SESSION_MS = 60_000;
-/** How long the weekend replay waits for the market's own search row before using the recording's identity. */
 const WEEKEND_SEARCH_MS = 4000;
 
 export interface Store {
@@ -59,52 +44,34 @@ export interface Store {
   patchEquity: (t: string, patch: Partial<EquityPick>) => void;
   setInst: (id: string | null) => void;
   setQuery: (q: string) => void;
-  /** The user's answer to "which outcome hurts this stock?" for a ticker outside the market's mapping; refits. */
   chooseDirection: (direction: Direction) => void;
-  /** Build preselected on the validated recession-market weekend (US recession in 2025 → SPY, recorded replay). */
   openWeekendReplay: () => Promise<void>;
   settings: Settings;
   updateSettings: (p: Partial<Settings>) => void;
   bridges: BridgeEntry[]; activeId: string | null;
   setActive: (id: string) => void;
-  /** Explicit user action only (a click, or the pipeline when settings.guards.auto is on): approves a proposal.
-   *  `ackUnvalidated` is the user's ticked acknowledgement of an unvalidated market (the evidence gate). Every
-   *  failure is thrown to the caller, which shows it: there is no simulator to fall back on. */
   openBridge: (q: Question, eq: EquityPick, inst: string, opts?: { ackUnvalidated?: boolean; proposal?: Proposal | null }) => Promise<string>;
   fit: FitState | null;
   runFit: (q: Question, eq: EquityPick) => void;
-  /** Re-run the fit for this pick after a failure. */
   retryFit: (q: Question, eq: EquityPick) => void;
-  /** The Opportunity-division fit for the same pick (POST /pipeline/fit with division "opportunity"). */
   oppFit: FitState | null;
-  /** Explicit user action only: proposes, approves and starts an options bridge for the opportunity fit. */
   openOpportunity: (q: Question, eq: EquityPick, opts?: { ackUnvalidated?: boolean }) => Promise<string>;
   library: Remote<Library>;
   reloadLibrary: () => void;
   account: Remote<AccountOut>;
   portfolio: Remote<PortfolioOut>;
   refreshAccount: () => void;
-  /** Whether an LLM is answering (GET /health `ai`, updated by every fit's `llm`). Unknown → not live: no "AI" claim. */
   ai: AiStatus;
-  /** The NYSE session now (GET /session, wall clock). A replay bridge's own session comes from its ticks instead. */
   session: Remote<SessionView>;
-  /** Hedge A opt-in for the next hedge proposal (closed-market mode). Off by default; reset on every new pick. */
   closedPmHedge: boolean;
   setClosedPmHedge: (on: boolean) => void;
-  /** Closed-market override (act_on_unvalidated) for the next hedge proposal: stage hedge B on an unvalidated market,
-   *  labelled "override". Off by default; reset on every new pick; confirmed by the acknowledged approval. */
   actOnUnvalidated: boolean;
   setActOnUnvalidated: (on: boolean) => void;
-  /** The proposal the voice agent drafted (or approved) for the current pick: the pipeline's approval panel shows and
-   *  approves exactly this one instead of preparing its own. null: the mouse flow's own proposal. */
   voiceProposal: Proposal | null;
-  /** Apply a voice tool result (lib/voiceDrive.ts) so the store is exactly what the mouse flow would have produced. */
   applyVoice: (u: StoreUpdate) => Promise<void>;
 }
 
-/** "polymarket:123|SPY": the key fits, proposals and bridges are matched on. */
 export const pickKey = (q: Pick<Question, "id"> | null | undefined, eq: Pick<EquityPick, "t"> | null | undefined) => (q && eq ? `${q.id}|${eq.t}` : null);
-/** Whether a proposal is for this pick (same ticker and market). */
 export const proposalForPick = (p: Proposal | null | undefined, q: Question | null | undefined, eq: EquityPick | null | undefined): p is Proposal =>
   !!p && !!q && !!eq && p.ticker.toUpperCase() === eq.t && !!p.market && `${p.market.source}:${p.market.id}` === q.id;
 
@@ -153,7 +120,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     void loadLibrary();
-    // GET /health may carry the LLM status ({ai: {live, model}}); without it nothing claims AI until a fit says so.
     getHealth().then((h) => { if (h && typeof h === "object" && "ai" in h) setAi(aiStatus(h)); }, () => {});
     return () => clearTimeout(thinkTimer.current);
   }, [loadLibrary]);
@@ -169,8 +135,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return () => { alive = false; clearInterval(t); };
   }, []);
 
-  // GET /portfolio and GET /account change as bridges open (hedge status, cash), so they are re-read on every
-  // Portfolio visit and right after a bridge starts, not only at load. A failed refresh keeps the last good data.
   const refreshAccount = useCallback(() => {
     getAccount().then((a) => setAccount({ status: "ok", data: a, error: null }), (e) => setAccount((s) => (s.data ? s : { status: "error", data: null, error: errMsg(e) })));
     getPortfolio().then((p) => setPortfolio({ status: "ok", data: p, error: null }), (e) => setPortfolio((s) => (s.data ? s : { status: "error", data: null, error: errMsg(e) })));
@@ -198,7 +162,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const openBridge = useCallback((q: Question, eq: EquityPick, instId: string, opts: { ackUnvalidated?: boolean; proposal?: Proposal | null } = {}): Promise<string> => {
     const key = `${q.id}|${eq.t}`;
     const openKey = `${key}|${closedPmHedge ? "pmHedge" : "plain"}|${actOnUnvalidated ? "override" : ""}`;
-    // Reuse a live bridge already open for this market and ticker, started under the same hedge A / override choices.
     const existing = reusableBridge(bridges, q.id, eq.t, closedPmHedge, actOnUnvalidated);
     if (existing) { setActiveId(existing.id); return Promise.resolve(existing.id); }
     const inflight = opening.current.get(openKey);
@@ -225,7 +188,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return run;
   }, [bridges, settings, fit, closedPmHedge, actOnUnvalidated, refreshAccount]);
 
-  // The Opportunity division, fitted alongside the hedge fit (offered on Build only when scored).
   const runOppFit = useCallback((q: Question, eq: EquityPick) => {
     const key = `${q.id}|${eq.t}`;
     if (oppKey.current === key) return;
@@ -244,11 +206,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     fitKey.current = key;
     setFit({ key, ...LOADING });
     runOppFit(q, eq);
-    // A hedge fit is tuned on the series oriented to the outcome that hurts the stock. With no mapping for this
-    // ticker (and no answer from the user) that outcome is unknown, so no hedge fit is requested.
     const direction = fitDirection(q, eq);
     if (!direction) {
-      fitKey.current = null;  // a later direction choice refits this pick
+      fitKey.current = null;
       setFit({ key, status: "error", data: null, noDirection: true,
         error: `${eq.t} is not in this market's mapping, so the outcome that hurts it is unknown; say which one does to fit a hedge` });
       return;
@@ -260,7 +220,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       (data) => { if (fitKey.current === key) { setFit({ key, status: "ok", data, error: null }); setAi(aiStatus(data)); } },
       (e) => {
         if (fitKey.current !== key) return;
-        fitKey.current = null; // let a later visit retry this pick
+        fitKey.current = null;
         setFit({ key, status: "error", data: null, error: errMsg(e) });
       },
     );
@@ -280,7 +240,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [question, equity, runFit]);
 
   const openWeekendReplay = useCallback(async () => {
-    // The market's own search row when the backend returns it in time (final price, dates), else the recording's identity.
     const rows = await withTimeout(searchMarkets(WEEKEND_REPLAY.query).then((r) => r.markets), WEEKEND_SEARCH_MS);
     const q = weekendQuestion(rows);
     const holding = (portfolio.data?.holdings ?? []).find((h) => h.ticker === WEEKEND_REPLAY.ticker) ?? null;
@@ -305,10 +264,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return entry.id;
   }, [bridges, oppFit, refreshAccount]);
 
-  // ---- voice: the same state the mouse flow produces (Build's picks, the pipeline's fit and proposal, a bridge)
-
-  /** The pick for a market + ticker: the current one when it is the same (it keeps the user's answers), else Build's
-   *  own row for it (questionFromMarket, the holding's name, quote and shares, the mapping's direction). */
   const voicePick = useCallback(async (market: Market, ticker: string, direction: Direction | null, held: number | null): Promise<{ q: Question; eq: EquityPick; same: boolean }> => {
     const t = ticker.toUpperCase();
     const qid = `${market.source}:${market.id}`;
@@ -322,7 +277,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const eq: EquityPick = { t, move: 0, rev: null, brand: null, why: "", real: true, name: h?.name ?? t, px: h?.spot ?? null,
       held: held ?? h?.shares ?? 0, ...(direction ? { direction, directionSource: "user" as const } : {}) };
     if (!direction) {
-      // Build reads the direction from POST /map; without it the pipeline asks which outcome hurts the stock.
       const map = await withTimeout(mapEvent({ question: q.q, source: market.source, market_id: market.id }), 4000);
       const item = map?.items.find((i) => i.ticker.toUpperCase() === t);
       if (item) {
@@ -350,7 +304,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const { q, eq, same } = await voicePick(u.market, u.ticker, u.direction, u.sharesHeld);
         setPick(q, eq, same);
         const key = `${q.id}|${eq.t}`;
-        fitKey.current = key;  // the pipeline's runFit is then a no-op: this fit is the one it shows and approves
+        fitKey.current = key;
         setFit({ key, status: "ok", data: u.fit, error: null });
         setAi(aiStatus(u.fit));
         runOppFit(q, eq);
@@ -393,7 +347,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
-/** "sim" | "webull-paper" from GET /account, as a label; "Account unavailable" when it cannot be read. */
 export function brokerLabel(a: Remote<AccountOut>): { name: string; tone: "sim" | "paper" | "demo" } {
   if (a.status !== "ok" || !a.data) return { name: a.status === "loading" ? "Account not read yet" : "Account not available", tone: "demo" };
   const b = (a.data.broker ?? "sim").toLowerCase();

@@ -1,7 +1,3 @@
-"""S6 forward (METHOD.md amendment 1): this weekend's real threshold-market books against Friday's options band.
-
-Run from `research/`:  python -m s6_monday_fade.forward [--final]
-"""
 from __future__ import annotations
 
 import csv
@@ -26,13 +22,10 @@ THETA, MIN_SIZE, MAX_SIZE, ADJACENT_S = 0.02, 5.0, 500.0, 45.0
 
 
 def unit_fee(venue: str, price: float) -> float:
-    """Fee per contract. Kalshi's cent rounding is applied to the whole fill in `fill`."""
     return fee(price) if venue == "pm" else float(kalshi_fee(price, 1e6, 1.0))
 
 
 def fill(levels: list, band_edge: float, side: str, venue: str) -> dict:
-    """Walk one side of the book. Selling YES: take bids while bid - fee - hi >= theta. Buying YES: take asks while
-    lo - ask - fee >= theta. Returns the contracts, the cash and the gap against the band, in dollars."""
     q = cash = gap = fees = 0.0
     for price, size in levels:
         f = unit_fee(venue, price)

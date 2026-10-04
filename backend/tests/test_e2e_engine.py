@@ -1,5 +1,3 @@
-"""End-to-end demo path: Fed market -> mapped ticker -> market-event proposal -> approve -> replay bridge -> SSE
--> summary (needs hedgecore)."""
 import json
 
 import pytest
@@ -9,8 +7,8 @@ pytest.importorskip("hedgecore")
 
 from app.main import create_app  # noqa: E402
 
-PS = [round(0.20 + 0.015 * i, 3) for i in range(30)]  # 30 rising ticks: the hedge must be sized and grow
-MAX_LINES = 500  # bound on SSE lines read
+PS = [round(0.20 + 0.015 * i, 3) for i in range(30)]
+MAX_LINES = 500
 
 
 @pytest.fixture
@@ -19,7 +17,7 @@ def client(tmp_path, monkeypatch):
     f.write_text("".join(json.dumps({"ts_ns": 1_000_000_000 * (i + 1), "p": p}) + "\n" for i, p in enumerate(PS)))
     f.with_name("fed.jsonl.meta.json").write_text(json.dumps({"source": "polymarket", "id": "2589813"}))
     monkeypatch.setenv("POLYBRIDGE_REPLAY_PATH", str(f))
-    monkeypatch.setenv("POLYBRIDGE_REPLAY_SPEED", "0")  # no sleeping between ticks
+    monkeypatch.setenv("POLYBRIDGE_REPLAY_SPEED", "0")
     with TestClient(create_app()) as c:
         yield c
 
@@ -64,5 +62,5 @@ def test_market_event_propose_approve_bridge_stream(client):
     assert s["ticks"] == 30 and s["orders"] >= 1 and s["status"] == "finished"
     assert sum(s["reasons"].values()) == 30
 
-    again = client.post("/bridges", json=body)  # the bridge finished: a re-POST starts a fresh run, never the old one
+    again = client.post("/bridges", json=body)
     assert again.status_code == 201 and again.json()["bridge_id"] != bid

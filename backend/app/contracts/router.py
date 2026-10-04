@@ -1,4 +1,3 @@
-"""POST /contracts/classify, GET /ladders, GET /tickets. Never 500: failures come back as ``ok: false`` with a reason."""
 from __future__ import annotations
 
 from typing import Any
@@ -20,7 +19,6 @@ class ClassifyIn(BaseModel):
 
 
 def provider():
-    """The text reader for the Gemini cross-check (rules only without a key). Tests replace it."""
     return default_provider()
 
 
@@ -28,9 +26,9 @@ def provider():
 async def contracts_classify(body: ClassifyIn) -> dict:
     try:
         res = await classify_contract(body.question, body.rules, body.market, provider())
-    except Exception as e:  # never 500
+    except Exception as e:
         return {"ok": False, "error": f"{type(e).__name__}", "type": "other", "fields": {}, "checks": [], "linkable": False}
-    ev = live.evidence_for(live.contract_key(res))   # a 15-minute Bitcoin market reaches the watch-only entry
+    ev = live.evidence_for(live.contract_key(res))
     if ev:
         res["evidence"] = ev
     return {"ok": True, **res}

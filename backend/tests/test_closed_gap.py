@@ -32,7 +32,7 @@ def test_pooled_default_when_file_absent(tmp_path):
     hw = G.Z80 * math.sqrt(25 * G.POOLED.se_eff ** 2 + G.POOLED_RESID_SD ** 2)
     assert e.band_bp[0] == pytest.approx(e.expected_gap_bp - hw) and e.band_bp[1] == pytest.approx(e.expected_gap_bp + hw)
     assert e.reasons == ["GAP_POOLED_RATE"] and e.active and e.band_level == 0.8
-    assert G.POOLED.se_eff > G.POOLED.se  # pooled band is the wide one
+    assert G.POOLED.se_eff > G.POOLED.se
 
 
 def test_orientation_assumed_without_direction():
@@ -56,7 +56,6 @@ def test_no_gap_during_regular_hours_or_without_move():
     assert e.expected_gap_bp is None and "GAP_NO_MOVE" in e.reasons and e.n_closures == 380
 
 
-# The shape research/gap_model/run.py writes.
 DOC = {
     "n_min": 20, "z80": 1.2816, "tau_bp_per_pp": 6.0,
     "pooled": {"rate_bp_per_pp": 8.0, "se": 2.0, "resid_sd_bp": 50.0, "n": 600, "n_nonzero": 400, "n_markets": 3},
@@ -77,12 +76,11 @@ def test_market_rate_from_file_by_token_id(tmp_path):
     e = G.expected_gap_for(_state(3.0), "polymarket", "gamma-123", token_id="tok-rec", direction="up_on_yes",
                            rates=rates)
     assert e.label == "market" and e.reasons == ["GAP_MARKET_RATE"]
-    assert e.sign == -1  # the market's research sign wins over the proposal direction
+    assert e.sign == -1
     assert e.expected_gap_bp == pytest.approx(10.7 * -3.0)
     assert e.n_closures == 231 and e.n_nonzero == 152 and e.se_eff == 3.8
     hw = 1.2816 * math.sqrt(9 * 3.8 ** 2 + 58.0 ** 2)
     assert e.band_bp[1] - e.band_bp[0] == pytest.approx(2 * hw)
-    # also found by slug
     assert rates.lookup("polymarket", "us-recession-in-2025") is not None
 
 
@@ -90,7 +88,7 @@ def test_too_few_closures_uses_file_pooled_with_tau(tmp_path):
     rates = G.GapRates.from_doc(DOC)
     e = G.expected_gap_for(_state(2.0), "polymarket", "x", token_id="tok-thin", rates=rates)
     assert e.label == "pooled" and e.reasons == ["GAP_TOO_FEW_CLOSURES"]
-    assert e.sign == 1  # research sign of the listed market still orients the move
+    assert e.sign == 1
     assert e.rate_bp_per_pp == 8.0 and e.se_eff == pytest.approx(math.sqrt(4 + 36)) and e.resid_sd_bp == 50.0
     assert e.n_closures == 600
 
@@ -109,7 +107,7 @@ def test_malformed_file_falls_back(tmp_path):
     r = G.GapRates.from_doc({"markets": {"a": {"rate": "x"}, "b": {"rate": 5, "n": 50}}})
     assert "a" not in r.markets
     rate, own, why = G.choose_rate(r, "polymarket", "b")
-    assert rate.label == "pooled" and why == ["GAP_TOO_FEW_CLOSURES"]  # no se: not usable alone
+    assert rate.label == "pooled" and why == ["GAP_TOO_FEW_CLOSURES"]
 
 
 def test_list_shaped_markets():
@@ -129,8 +127,6 @@ def test_rate_for_tracker_key(tmp_path, monkeypatch):
 
 
 def test_pooled_rate_policy_is_pinned(monkeypatch):
-    """Open decision (review P1 finding 2): with gap_rates.json present the file's pooled entry is used, not 7.52.
-    Flip POOLED_FROM_FILE only on an explicit decision; this test pins both behaviours."""
     doc = {"pooled": {"rate_bp_per_pp": 0.81, "se": 0.55, "resid_sd_bp": 60.8, "n": 1591, "n_nonzero": 1151},
            "tau_bp_per_pp": 4.23, "markets": {}}
     assert G.POOLED_FROM_FILE is True

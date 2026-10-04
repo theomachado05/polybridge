@@ -1,4 +1,3 @@
-"""Per-event measurements (METHOD.md sections 3-5). Pure given a quote function, so it runs on synthetic chains."""
 from __future__ import annotations
 
 import math
@@ -19,7 +18,6 @@ COARSE = 0.05
 
 
 def pm_at(points: list[tuple[float, float]], ts: float, max_age: float = PM_MAX_AGE) -> float | None:
-    """Last (t, p) at or before ts, at most max_age seconds old."""
     best = None
     for t, p in points:
         if t <= ts and (best is None or t > best[0]):
@@ -36,7 +34,6 @@ def kalshi_mid_at(candles: list[dict], ts: float, max_age: float = PM_MAX_AGE) -
 
 
 def pm_filter(pm_close: float | None, pm_open: float | None) -> str:
-    """Filters 1-3 of METHOD.md section 3. '' = passes."""
     if pm_close is None or pm_open is None:
         return "f1_no_pm_price"
     if not (PM_RANGE[0] <= pm_close <= PM_RANGE[1]):
@@ -51,8 +48,6 @@ def pm_filter(pm_close: float | None, pm_open: float | None) -> str:
 def spread_at(chain: dict[float, str], strike: float, get_quote: Callable[[str, float], Quote | None], snap_ts: float,
               exp_close_ts: float, max_age: float = implied.STALE_OPTION_SEC, floor_ts: float | None = None,
               extra: int = 0, pair: tuple[float, float] | None = None) -> Spread | None:
-    """Call-spread probability at snap_ts (arbscan rules). `floor_ts`: leg quotes stamped before it are invalid.
-    `pair`: price exactly these two strikes (no stepping) instead of picking."""
     t_years = max((exp_close_ts - snap_ts) / (365.0 * 86400.0), 0.0)
 
     def q(k: float) -> Quote | None:
@@ -74,7 +69,6 @@ def spread_at(chain: dict[float, str], strike: float, get_quote: Callable[[str, 
 
 
 def opt_filter(oc: Spread | None, oo: Spread | None) -> str:
-    """Filter 4. '' = passes."""
     if oc is None or oo is None:
         return "f4_no_option_spread"
     if not (OPT_RANGE[0] <= oc.p_mid <= OPT_RANGE[1]):
@@ -85,7 +79,6 @@ def opt_filter(oc: Spread | None, oo: Spread | None) -> str:
 
 
 def event_metrics(pm_close: float, pm_open: float, oc: Spread, oo: Spread) -> dict:
-    """dPM, dOpt, s, G, cost, G_net (METHOD.md section 4)."""
     d_pm = pm_open - pm_close
     d_opt = oo.p_mid - oc.p_mid
     s = 1 if d_pm > 0 else -1
@@ -96,7 +89,6 @@ def event_metrics(pm_close: float, pm_open: float, oc: Spread, oo: Spread) -> di
 
 
 def follow_through(s: int, oo: Spread, oe: Spread | None, pm_open: float, pm_eod: float | None) -> dict:
-    """Secondary 1: same strike pair priced at the end of the reopening day."""
     out = dict(F=None, rt_pnl=None, pm_follow=None)
     if pm_eod is not None:
         out["pm_follow"] = s * (pm_eod - pm_open)
@@ -109,7 +101,6 @@ def follow_through(s: int, oo: Spread, oe: Spread | None, pm_open: float, pm_eod
 
 
 def trade_prints_in(trades: list[dict], t0: float, t1: float) -> bool | None:
-    """True/False whether a print falls in [t0, t1]; None when the fetched history does not reach back to t0."""
     ts = [float(t["timestamp"]) for t in trades if t.get("timestamp") is not None]
     if any(t0 <= x <= t1 for x in ts):
         return True

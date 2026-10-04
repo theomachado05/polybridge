@@ -1,15 +1,13 @@
-"""Tests of METHOD.md section 4-5, implemented with numpy only (no scipy)."""
 from __future__ import annotations
 
 from math import comb
 
 import numpy as np
 
-THETA_TOL = 1e-9  # PM changes are differences of prices scaled by 100; a one-tick 1.0 pp move can come out as 0.99999999999999
+THETA_TOL = 1e-9
 
 
 def binom_two_sided(k: int, n: int) -> float:
-    """Exact two-sided binomial test against p = 0.5 (doubled tail, capped at 1)."""
     if n <= 0:
         return float("nan")
     hi = max(k, n - k)
@@ -18,7 +16,6 @@ def binom_two_sided(k: int, n: int) -> float:
 
 
 def sign_agreement(x, y, theta: float) -> dict:
-    """T1: among pairs with |x| >= theta and y != 0, count sign(x) == sign(y)."""
     x, y = np.asarray(x, float), np.asarray(y, float)
     m = np.isfinite(x) & np.isfinite(y) & (np.abs(x) >= theta - THETA_TOL) & (y != 0)
     n = int(m.sum())
@@ -27,7 +24,6 @@ def sign_agreement(x, y, theta: float) -> dict:
 
 
 def ols_hc3(y, X) -> dict:
-    """OLS with HC3 standard errors. X must include the constant column. Returns beta, se, t, r2, n."""
     y, X = np.asarray(y, float), np.asarray(X, float)
     n, k = X.shape
     if n <= k:
@@ -47,7 +43,6 @@ def ols_hc3(y, X) -> dict:
 
 
 def slope_test(x, y, n_perm: int, seed: int) -> dict:
-    """T2: y = a + b x, HC3 t, and a two-sided permutation p-value on |b| (shuffle y)."""
     x, y = np.asarray(x, float), np.asarray(y, float)
     m = np.isfinite(x) & np.isfinite(y)
     x, y = x[m], y[m]
@@ -80,7 +75,6 @@ def _rank(a):
     order = a.argsort(kind="mergesort")
     r = np.empty(len(a))
     r[order] = np.arange(len(a))
-    # average ties
     _, inv, cnt = np.unique(a, return_inverse=True, return_counts=True)
     sums = np.bincount(inv, weights=r)
     return (sums / cnt)[inv]
@@ -93,11 +87,6 @@ def _corr(a, b):
 
 
 def pairing_placebo(ev_x, ev_panel, ev_y, pools: dict, theta: float, n_perm: int, seed: int) -> dict:
-    """P2: pair each event's oriented PM change with the gap of a random placebo closure from the same panel.
-
-    Observed statistics use events with |x| >= theta and a valid gap: agreement count k and OLS slope.
-    Returns p-values = share of draws at least as large as observed (with +1 correction).
-    """
     x, y = np.asarray(ev_x, float), np.asarray(ev_y, float)
     panel = np.asarray(ev_panel)
     m = np.isfinite(x) & np.isfinite(y) & (np.abs(x) >= theta - THETA_TOL)
@@ -122,7 +111,6 @@ def pairing_placebo(ev_x, ev_panel, ev_y, pools: dict, theta: float, n_perm: int
 
 
 def interaction(dpm_o, gap, news) -> dict:
-    """P3: gap = a + b*dpm + c*news + d*dpm*news, HC3. Returns b, d with t."""
     x, y, z = (np.asarray(v, float) for v in (dpm_o, gap, news))
     m = np.isfinite(x) & np.isfinite(y)
     x, y, z = x[m], y[m], z[m]

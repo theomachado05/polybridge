@@ -1,8 +1,4 @@
 #pragma once
-// Renders the golden text for the 17 families that predate the micro families: every preset's replay output and the
-// default preset's intent stream, doubles as hex floats (%a). Shared by test_golden_existing.cpp (against the file
-// recorded on the reference machine) and golden_dump.cpp (CI builds it on the base commit and on the branch with the
-// same compiler and flags and diffs the two outputs byte for byte). Uses only API that predates the micro families.
 #include <algorithm>
 #include <cstdio>
 #include <sstream>
@@ -15,8 +11,6 @@ namespace hcgolden {
 using namespace hedgecore;
 using namespace hctest;
 
-// Fri 2026-10-02 14:00 ET to Mon 2026-10-05 12:00 ET in 5-minute steps: a session close, a weekend and an open,
-// so the session-aware families take both paths. Both venues, missing fields and 8-K events along the way.
 inline std::vector<MarketTick> golden_tape() {
   constexpr std::int64_t kFri1400 = 1790964000LL * kSec;
   std::vector<MarketTick> v;
@@ -66,7 +60,7 @@ inline std::string render() {
         put(o, x);
       o << "\n";
     }
-    AnyAlgo a = make_algo(f.id, f.spec.defaults(), pos);  // the default preset's intents, fills fed back at the touch
+    AnyAlgo a = make_algo(f.id, f.spec.defaults(), pos);
     int k = 0;
     for (const auto& t : tape) {
       const Intent in = on_tick(a, t, t.ts_ns);
@@ -87,4 +81,4 @@ inline std::string render() {
   return o.str();
 }
 
-}  // namespace hcgolden
+}

@@ -1,6 +1,3 @@
-// Risk-control pieces shared by Build, Pipeline, Bridge and Portfolio: badges, the evidence gate with its explicit
-// acknowledgement, the liquidity & capacity card and budget meters. Presentational only; the numbers and verdicts come
-// from src/lib/risk.ts, which mirrors what the backend enforces.
 import type { CSSProperties, ReactNode } from "react";
 import type { Badge, CapacityRow, CapacityView, EvidenceGateView, Meter } from "@/lib/risk";
 import { Tag } from "@/components/pb";
@@ -33,11 +30,8 @@ export function MetricGrid({ rows, min = 150 }: { rows: CapacityRow[]; min?: num
   );
 }
 
-/** Evidence badge, the backend's reason, and (when the market is not validated) the acknowledgement checkbox the
- *  Approve button waits for. */
 export function EvidenceGateBox({ gate, ack, onAck, copy, loading, acknowledged, testId = "evidence-gate" }: {
   gate: EvidenceGateView | null; ack: boolean; onAck: (on: boolean) => void; copy: string; loading?: boolean;
-  /** The reused proposal was already approved with the acknowledgement: no new tick is needed. */
   acknowledged?: boolean; testId?: string;
 }) {
   return (

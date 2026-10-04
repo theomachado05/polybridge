@@ -1,11 +1,3 @@
-"""Export the EXPLORATORY atlas (HYPOTHESIS.md §5) over every 8-K filing type, in-sample only.
-
-Mirrors the notebook's atlas cell: baseline spec, max_events_per_tag=15, one shared 300-day placebo over
-TOP_100 at the baseline bucket (seed 11). Window is cfg.study_start -> cfg.study_end; the out-of-sample
-window is never referenced. Run from research/:
-    .venv/bin/python export_atlas.py
-Writes results/atlas/atlas.csv and results/atlas/variants.txt (derived aggregates only).
-"""
 from __future__ import annotations
 
 import time
@@ -52,7 +44,6 @@ pl_priced, _ = price_events(client, pl_events, cal, cfg, buckets=base, max_worke
 pl_res = evaluate(pl_priced, cal, cfg, last)
 log("placebo done")
 
-# run_atlas loops tags internally; call per tag for progress, then re-adjust q-values over all rows.
 from polybridge_research.stats import benjamini_hochberg  # noqa: E402
 
 parts = []

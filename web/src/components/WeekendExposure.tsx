@@ -1,8 +1,5 @@
 "use client";
 
-// Portfolio, closed-market mode (U3): each holding's exposure to the expected open gap (expected gap x position), its
-// staged hedges (hedge B) and the evidence badge. Real holdings read GET /closed/expected-gap for their mapped market;
-// bridges opened this session report their own (a replay bridge: the recorded weekend, labelled as such).
 import { useEffect, useState } from "react";
 import { getBridge, getExpectedGap, listStaged, type BridgeSummary, type Holding } from "@/lib/api";
 import { bandText, currentGap, exposureTotal, fmtBp, gapBadge, normalizeGap, sessionClosed, stagedHedgeText, weekendExposure, type GapView, type SessionView, type StagedOrder } from "@/lib/closed";

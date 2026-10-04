@@ -1,4 +1,3 @@
-"""8-K score mapping and the OOS guard (app/options/eightk.py). Offline."""
 import asyncio
 import datetime as dt
 import json
@@ -30,17 +29,17 @@ def test_hedge_tag_negative_opportunity_tag_positive_on_filing_day():
 
 
 def test_linear_decay_over_window():
-    rows = [f("XYZ", "2025-06-15", "workforce_reduction")]   # 15 days old
+    rows = [f("XYZ", "2025-06-15", "workforce_reduction")]
     assert ek.eightk_score("XYZ", AS_OF, 30, rows) == pytest.approx(0.5)
     assert ek.eightk_score("XYZ", AS_OF, 60, rows) == pytest.approx(0.75)
-    assert ek.eightk_score("XYZ", AS_OF, 10, rows) == 0.0     # outside the window
+    assert ek.eightk_score("XYZ", AS_OF, 10, rows) == 0.0
 
 
 def test_most_recent_qualifying_filing_wins():
     rows = [f("XYZ", "2025-06-01", "material_litigation"), f("XYZ", "2025-06-27", "facility_closure"),
-            f("XYZ", "2025-06-29", "settlement_agreement"),                      # atlas-only tag: not qualifying
-            f("XYZ", "2025-06-29", "asset_impairment", "restructuring_plan"),     # both families: excluded
-            f("XYZ", "2025-07-02", "cybersecurity_incident")]                     # after as_of: look-ahead
+            f("XYZ", "2025-06-29", "settlement_agreement"),
+            f("XYZ", "2025-06-29", "asset_impairment", "restructuring_plan"),
+            f("XYZ", "2025-07-02", "cybersecurity_incident")]
     assert ek.eightk_score("XYZ", AS_OF, 30, rows) == pytest.approx(0.9)
     d = ek.eightk_detail("xyz", AS_OF, 30, rows)
     assert d["filing"]["family"] == "opportunity" and d["filing"]["filing_date"] == "2025-06-27"
@@ -51,7 +50,7 @@ def test_zero_when_none_or_bad_input():
     assert ek.eightk_score("XYZ", AS_OF, filings=[]) == 0.0
     assert ek.eightk_score("ABC", AS_OF, filings=[f("XYZ", AS_OF, "material_litigation")]) == 0.0
     assert ek.eightk_score("XYZ", AS_OF, filings=[{"ticker": "XYZ", "filing_date": "bad", "tags": ["x"]}]) == 0.0
-    assert ek.eightk_score("XYZ", AS_OF, filings=[None]) == 0.0      # garbage rows never raise
+    assert ek.eightk_score("XYZ", AS_OF, filings=[None]) == 0.0
     assert ek.eightk_score("XYZ", AS_OF, window_days=0, filings=[f("XYZ", AS_OF, "material_litigation")]) == 0.0
     assert ek.eightk_detail("XYZ", AS_OF, 30, [])["filing"] is None
 
@@ -96,11 +95,11 @@ class FakeClient:
 def test_fetch_recent_clamps_start_after_oos_window():
     c = FakeClient()
     out = ek.fetch_recent(c, as_of="2026-09-10", window_days=30)
-    assert {p["filing_date.gte"] for _, p in c.calls} == {"2026-09-01"}   # not 2026-08-11
+    assert {p["filing_date.gte"] for _, p in c.calls} == {"2026-09-01"}
     assert len(c.calls) == len(ek.H1_TAGS | ek.H2_TAGS)
     assert out[0]["family"] == "opportunity"
     c2 = FakeClient()
-    assert ek.fetch_recent(c2, as_of="2026-05-01") == [] and c2.calls == []   # inside OOS: nothing fetched
+    assert ek.fetch_recent(c2, as_of="2026-05-01") == [] and c2.calls == []
 
 
 def test_bundled_file_is_in_sample_only():
@@ -113,7 +112,6 @@ def test_bundled_file_is_in_sample_only():
     some = rows[-1]
     s = ek.eightk_score(some["ticker"], as_of=some["filing_date"])
     assert s == (1.0 if some["family"] == "opportunity" else -1.0) or abs(s) == 1.0
-    # 2030: nothing loaded covers that date -> NaN ("no data"), not 0.0 ("no filing")
     assert math.isnan(ek.eightk_score(some["ticker"], as_of=dt.date(2030, 1, 1)))
 
 
@@ -123,10 +121,8 @@ def no_live(monkeypatch):
 
 
 def test_no_data_is_nan_and_no_filing_is_zero(no_live):
-    # in-sample date with no qualifying filing for this ticker -> 0.0 (data loaded, nothing found)
     assert ek.eightk_coverage("2025-06-30") == "in_sample"
     assert ek.eightk_score("NO_SUCH_TICKER", "2025-06-30") == 0.0
-    # a live date before refresh_eightk ran, or a date inside the frozen OOS window -> NaN (no data)
     assert ek.eightk_coverage("2026-10-03") is None and math.isnan(ek.eightk_score("XYZ", "2026-10-03"))
     assert ek.eightk_coverage("2026-05-01") is None and math.isnan(ek.eightk_score("XYZ", "2026-05-01"))
     d = ek.eightk_detail("XYZ", "2026-10-03")
@@ -136,12 +132,12 @@ def test_no_data_is_nan_and_no_filing_is_zero(no_live):
 def test_refresh_eightk_loads_live_store_used_by_score(no_live):
     c = FakeClient()
     assert asyncio.run(ek.refresh_eightk("2026-10-03", client=c)) == "live"
-    assert ek.eightk_score("XYZ", "2026-10-03") == pytest.approx(1 - 5 / 30)   # workforce_reduction on 09-28
-    assert ek.eightk_score("ABC", "2026-10-03") == 0.0                          # loaded, no filing
+    assert ek.eightk_score("XYZ", "2026-10-03") == pytest.approx(1 - 5 / 30)
+    assert ek.eightk_score("ABC", "2026-10-03") == 0.0
     assert ek.eightk_detail("XYZ", "2026-10-03")["coverage"] == "live"
     n = len(c.calls)
-    assert asyncio.run(ek.refresh_eightk("2026-10-03", client=c)) == "live" and len(c.calls) == n   # TTL hit
-    assert math.isnan(ek.eightk_score("XYZ", "2026-10-05"))   # a later date is not covered until refreshed
+    assert asyncio.run(ek.refresh_eightk("2026-10-03", client=c)) == "live" and len(c.calls) == n
+    assert math.isnan(ek.eightk_score("XYZ", "2026-10-05"))
 
 
 def test_refresh_eightk_never_raises_and_never_reads_oos(no_live):
@@ -150,4 +146,4 @@ def test_refresh_eightk_never_raises_and_never_reads_oos(no_live):
             raise TimeoutError
     assert asyncio.run(ek.refresh_eightk("2026-10-03", client=Boom())) is None
     assert math.isnan(ek.eightk_score("XYZ", "2026-10-03"))
-    assert asyncio.run(ek.refresh_eightk("2026-05-01", client=Boom())) is None    # OOS date: no call at all
+    assert asyncio.run(ek.refresh_eightk("2026-05-01", client=Boom())) is None

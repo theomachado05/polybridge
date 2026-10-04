@@ -1,4 +1,3 @@
-"""Synthetic tests for R3 (no network): closures, eligibility, PM as-of, call-spread catch-up metrics, bootstrap."""
 from datetime import date, datetime, timedelta, timezone
 
 import numpy as np
@@ -15,10 +14,10 @@ from open_options.stats import cluster_bootstrap, mean_ci, ols
 def test_closures_weekends_holidays_and_early_close():
     cl = {c.key: c for c in build_closures("2025-11-01", "2026-01-31")}
     assert "2025-11-07" in cl and cl["2025-11-07"].kind == "weekend" and cl["2025-11-07"].open_day == date(2025, 11, 10)
-    assert "2025-11-26" in cl and cl["2025-11-26"].open_day == date(2025, 11, 28)          # Thanksgiving midweek holiday
-    assert cl["2025-11-28"].close.hour == 13 and cl["2025-11-28"].opt_close.minute == 55   # early close
+    assert "2025-11-26" in cl and cl["2025-11-26"].open_day == date(2025, 11, 28)
+    assert cl["2025-11-28"].close.hour == 13 and cl["2025-11-28"].opt_close.minute == 55
     assert cl["2025-12-24"].close.hour == 13 and cl["2025-12-24"].kind == "holiday"
-    assert "2025-11-10" not in cl                                                          # ordinary weeknight
+    assert "2025-11-10" not in cl
     c = cl["2025-11-07"]
     assert c.open == datetime(2025, 11, 10, 9, 30, tzinfo=ET) and c.opt_open.minute == 45 and c.eod.hour == 16
 
@@ -57,7 +56,7 @@ def test_catchup_metrics_full_partial_none():
         oo = ms.spread_at(ch_m, k, _getq({t_open: q_m}), t_open, exp_close)
         d_opt = oo.p_mid - oc.p_mid
         pm_close = oc.p_mid
-        pm_open = oc.p_mid + (d_opt if frac == 1.0 else 0.10)        # PM moved by 10 points; options did / did not follow
+        pm_open = oc.p_mid + (d_opt if frac == 1.0 else 0.10)
         e = ms.event_metrics(pm_close, pm_open, oc, oo)
         if frac == 1.0:
             assert abs(e["G"]) < 1e-9 and e["s"] == 1

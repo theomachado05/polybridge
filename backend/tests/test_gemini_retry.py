@@ -1,4 +1,3 @@
-"""Gemini 429/503 are retried with backoff (Retry-After honoured, capped); a persistent error still falls back."""
 import asyncio
 
 import httpx

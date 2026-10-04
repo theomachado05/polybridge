@@ -1,15 +1,3 @@
-// hedgecore_bench: on_tick latency per algo family on a deterministic synthetic tape (default preset, seed 42),
-// plus replay_grid throughput (presets x ticks per second). Usage: hedgecore_bench [ticks=1000000] [grid_ticks=20000]
-// NOTE: AlgoBase::on_tick stamps Intent::latency_ns with two steady_clock reads of its own (about 15 ns total), so
-// every on_tick figure below INCLUDES that self-timing. Columns:
-//   mean      = batch mean of on_tick (no bench clock reads per call, but on_tick's own two reads are inside it)
-//   step_mean = batch mean of step() called directly: the decision logic alone, without the latency stamp
-//   call*     = per-call percentiles around each on_tick: four clock reads in all (two bench, two inside on_tick),
-//               quantized by the clock resolution (about 42 ns on Apple Silicon), so an upper bound
-//   blk*      = percentiles of 64-call blocks / 64: amortizes only the bench's outer two reads; on_tick's own two
-//               reads per call remain in the figure
-// All passes feed fills back through on_fill (fill application is inside the timed region for mean/step_mean/blk
-// and outside it for call*). An untimed warm-up pass over the tape runs first.
 #include <span>
 #include <algorithm>
 #include <chrono>
@@ -62,7 +50,7 @@ template <class F>
 void bench_family(const std::vector<MarketTick>& ticks) {
   Position pos;
   pos.shares_held = 1000;
-  {  // untimed warm-up pass: caches and branch predictors warm before any timing
+  {
     F w(F::spec().defaults(), pos);
     volatile double wsink = 0;
     for (const auto& t : ticks) wsink = wsink + w.on_tick(t, t.ts_ns).qty;
@@ -71,7 +59,7 @@ void bench_family(const std::vector<MarketTick>& ticks) {
   std::vector<std::int64_t> lat;
   lat.reserve(ticks.size());
   std::size_t orders = 0;
-  for (const auto& t : ticks) {  // per-call timing; fills applied so state evolves like a live bridge
+  for (const auto& t : ticks) {
     const auto t0 = std::chrono::steady_clock::now();
     const Intent in = algo.on_tick(t, t.ts_ns);
     const auto t1 = std::chrono::steady_clock::now();
@@ -81,7 +69,7 @@ void bench_family(const std::vector<MarketTick>& ticks) {
       algo.on_fill(in.instrument, in.side * in.qty, in.instrument == Instrument::Equity ? t.under_px : t.yes_ask);
     }
   }
-  std::vector<std::int64_t> blk;  // ns per call over 64-call blocks
+  std::vector<std::int64_t> blk;
   {
     F b(F::spec().defaults(), pos);
     volatile double bsink = 0;
@@ -100,7 +88,7 @@ void bench_family(const std::vector<MarketTick>& ticks) {
                     static_cast<std::int64_t>(kB));
     }
   }
-  F fresh(F::spec().defaults(), pos);  // batch timing
+  F fresh(F::spec().defaults(), pos);
   volatile double sink = 0;
   const auto b0 = std::chrono::steady_clock::now();
   for (const auto& t : ticks) {
@@ -112,7 +100,7 @@ void bench_family(const std::vector<MarketTick>& ticks) {
   const auto b1 = std::chrono::steady_clock::now();
   const double mean = static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(b1 - b0).count()) /
                       static_cast<double>(ticks.size());
-  F sf(F::spec().defaults(), pos);  // step() only: decision logic without the latency stamp
+  F sf(F::spec().defaults(), pos);
   volatile double ssink = 0;
   const auto s0 = std::chrono::steady_clock::now();
   for (const auto& t : ticks) {
@@ -135,11 +123,10 @@ void bench_family(const std::vector<MarketTick>& ticks) {
               F::spec().preset_count(), orders);
 }
 
-// replay_grid throughput: every preset of the family replayed over the same tape.
 void bench_grid(const FamilyInfo& f, std::span<const MarketTick> ticks) {
   Position pos;
   pos.shares_held = 1000;
-  (void)replay_grid(f.id, pos, ticks);  // warm-up
+  (void)replay_grid(f.id, pos, ticks);
   const auto t0 = std::chrono::steady_clock::now();
   const auto res = replay_grid(f.id, pos, ticks);
   const auto t1 = std::chrono::steady_clock::now();
@@ -148,11 +135,6 @@ void bench_grid(const FamilyInfo& f, std::span<const MarketTick> ticks) {
   std::printf("%-22s %8zu %10zu %9.3f %14.3e\n", f.id, res.size(), ticks.size(), sec, work / sec);
 }
 
-// ---- micro families: own tick types, same four timing views -------------------------------------------------------
-// Synthetic, deterministic (LCG seed 42), 1-second ticks. Ladder: rich bid 0.50 + 0.08 z around a cheap ask of 0.47
-// (an edge above 1 point on about a third of ticks), sizes 5 to 120, fee rate 0.02 on both legs, tick 0.01, quote
-// ages 0 to 89 s, nested missing on 1 tick in 10. Ticket: bid 0.30 + 0.10 z, central reference 0.28, sizes 1 to 200,
-// validated True on half the ticks, positions 0. Fills are fed back in full at the quote.
 std::vector<LadderTick> ladder_tape(int n) {
   std::vector<LadderTick> v;
   v.reserve(static_cast<std::size_t>(n));
@@ -323,7 +305,7 @@ template <std::size_t... I>
 void bench_all(const std::vector<MarketTick>& ticks, std::index_sequence<I...>) {
   (bench_family<std::variant_alternative_t<I, AnyAlgo>>(ticks), ...);
 }
-}  // namespace
+}
 
 int main(int argc, char** argv) {
   const int n = std::max(64, argc > 1 ? std::atoi(argv[1]) : 1'000'000);

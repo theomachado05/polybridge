@@ -1,4 +1,3 @@
-"""Routes: POST /pipeline/fit, GET /library, GET /pipeline/fits (the precomputed batch)."""
 from __future__ import annotations
 
 import json
@@ -20,7 +19,6 @@ FIT_CACHE_MAX = 256
 
 
 class FitCache:
-    """TTL + size-capped LRU, so a stream of distinct free-text questions cannot grow memory without bound."""
 
     def __init__(self, ttl_s: float = FIT_TTL_S, max_entries: int = FIT_CACHE_MAX,
                  clock: Callable[[], float] = time.monotonic):
@@ -48,14 +46,12 @@ class FitCache:
 
 
 def get_adapter(request: Request) -> EngineAdapter:
-    """Tests set app.state.pipeline_adapter (e.g. an adapter around a fake hedgecore)."""
     if not hasattr(request.app.state, "pipeline_adapter"):
         request.app.state.pipeline_adapter = EngineAdapter()
     return request.app.state.pipeline_adapter
 
 
 def get_provider(request: Request, http) -> LLMProvider:
-    """Tests set app.state.pipeline_provider; otherwise Gemini when GEMINI_API_KEY is set, else rules."""
     p = getattr(request.app.state, "pipeline_provider", None)
     return p if p is not None else default_provider(http)
 
@@ -76,16 +72,13 @@ async def pipeline_fit(req: FitRequest, request: Request) -> FitResponse:
     cache: FitCache = request.app.state.cache_fit
     key = req.model_dump_json()
     hit = cache.get(key)
-    if hit is not None:  # say so: any Gemini call behind it happened earlier
+    if hit is not None:
         return hit.model_copy(update={"ai": hit.ai.model_copy(update={"cached": True})})
     try:
         deps = _deps(request)
     except Exception:
         deps = Deps(adapter=EngineAdapter(module=None))
     value = await fit(req, deps)
-    # Never cache a degraded answer, nor one where a Gemini call failed and rules/template stood in: that failure
-    # may be transient (503, timeout), and caching it would pin the fallback for the whole TTL, so Retry could not
-    # reach Gemini. A cached answer whose Gemini calls succeeded, or a rules-only answer with no key, stays cached.
     if not value.rationale.startswith("The fit pipeline hit an internal error") and not value.gemini_failed:
         cache.put(key, value)
     return value

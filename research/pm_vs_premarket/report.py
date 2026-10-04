@@ -1,4 +1,3 @@
-"""SUMMARY.md writers for arm K and arm M (METHOD.md section 7)."""
 from __future__ import annotations
 
 import math

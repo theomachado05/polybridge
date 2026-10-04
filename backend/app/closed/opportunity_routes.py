@@ -1,24 +1,3 @@
-"""HTTP surface for opportunity at the open (``/closed/opportunity``). See ``opportunity.py`` for the model.
-
-- ``GET  /closed/opportunity``                     status: R3 research gate, session, snapshots, trades
-- ``POST /closed/opportunity/snapshot``            Friday-close option snapshot for one threshold market
-- ``GET  /closed/opportunity/compare``             the open comparison (PM now vs options), read-only
-- ``POST /closed/opportunity/trades``              stage the 09:30 option trade (needs approval; while R3 does not
-                                                   support the signal, also ``ack_unvalidated: true``, else 409
-                                                   ``evidence_unvalidated``). Execution passes the option
-                                                   participation caps and the capital budget.
-- ``POST /closed/opportunity/trades/{id}/approve`` / ``/cancel`` / ``/execute``
-- ``POST /closed/opportunity/review``              revert rule before the open: cancel trades the PM no longer supports
-- ``POST /closed/opportunity/execute-due``         execute approved trades whose open window is running
-- ``GET  /closed/opportunity/trades`` / ``/trades/{id}``
-
-Data problems (no key, unsupported question, Massive outage) are 200s with ``supported``/``available`` false and a
-reason code, never a 500. A caller outside localhost never supplies its own PM price (``pm_yes`` is dropped).
-Only a live PM price (Gamma / Kalshi, fetched now) or one a local caller supplies feeds a decision: when the live
-lookup fails, ``resolve_market`` falls back to the bundled universe or a recording, and those prices are reported
-(``pm_source``) but treated as unavailable (hold at execution, no cancel on review, 409 on stage).
-The clock is ``app.state.closed_clock`` when set (tests, replays), else the wall clock.
-"""
 from __future__ import annotations
 
 import datetime as dt
@@ -42,7 +21,7 @@ class SnapshotIn(BaseModel):
     market_id: str | None = Field(default=None, min_length=1, max_length=128)
     question: str | None = Field(default=None, min_length=1, max_length=500)
     end_date: str | None = Field(default=None, max_length=40)
-    pm_yes: float | None = Field(default=None, gt=0, lt=1, allow_inf_nan=False)  # PM YES at the close (local only)
+    pm_yes: float | None = Field(default=None, gt=0, lt=1, allow_inf_nan=False)
 
 
 class StageIn(BaseModel):
@@ -52,15 +31,11 @@ class StageIn(BaseModel):
     max_notional: float = Field(default=OPP_DEFAULT_MAX_NOTIONAL, gt=0, le=OPP_DEFAULT_MAX_NOTIONAL,
                                 allow_inf_nan=False)
     pm_yes: float | None = Field(default=None, gt=0, lt=1, allow_inf_nan=False)
-    # R3 is NULL: staging acts on an unvalidated estimate, so it needs this explicit acknowledgement (409 otherwise)
     ack_unvalidated: bool = False
 
 
 class PriceIn(BaseModel):
     pm_yes: float | None = Field(default=None, gt=0, lt=1, allow_inf_nan=False)
-
-
-# ------------------------------------------------------------------------------------------------------ helpers
 
 
 def book(request: Request) -> opp.OpportunityBook:
@@ -93,17 +68,14 @@ async def _resolve(request: Request, market: dict) -> dict:
             "origin": "request"}
 
 
-DECISION_ORIGINS = ("live",)  # resolve_market origins whose price may feed a decision ("supplied" is handled apart)
+DECISION_ORIGINS = ("live",)
 
 
 def decision_price(found: dict) -> float | None:
-    """The PM YES price from a resolve_market result, only when it was fetched live just now."""
     return opp._fin(found.get("yes_price")) if found.get("origin") in DECISION_ORIGINS else None
 
 
 async def pm_now(request: Request, market: dict, override: float | None) -> tuple[float | None, str | None]:
-    """(price, origin). The price is None unless it is live or supplied by a local caller; the origin is reported
-    either way (e.g. "universe" during a Gamma outage)."""
     if (p := _local_price(request, override)) is not None:
         return p, "supplied"
     if not (market.get("source") and market.get("id")):
@@ -113,7 +85,6 @@ async def pm_now(request: Request, market: dict, override: float | None) -> tupl
 
 
 async def open_chain(snap: dict, t: dt.datetime):
-    """(chain, cache_stale) for the snapshot's own underlying and strike, fetched now; (None, False) without data."""
     client = opp.make_client()
     if client is None or not snap.get("match"):
         return None, False
@@ -143,9 +114,6 @@ def _close_supported(s: dict) -> bool:
     return bool(s.get("available")) and opp._fin(s.get("pm_yes")) is not None
 
 
-# ------------------------------------------------------------------------------------------------------- routes
-
-
 @router.get("")
 async def status(request: Request) -> dict:
     b = book(request)
@@ -156,7 +124,7 @@ async def status(request: Request) -> dict:
     supported = any(_close_supported(s) for s in snaps)
     s = sc.session_at(t)
     return {"label": opp.LABEL, "research": research,
-            "supported": supported,  # data availability only (an option estimate and a PM price at the close)
+            "supported": supported,
             "display": "research_supported" if supported and research["supports_claim"] else
                        "estimate" if supported else "hidden",
             "session": {"phase": s.phase, "label": s.label, "next_open": sc._iso(s.next_open),
@@ -179,13 +147,12 @@ async def snapshot(body: SnapshotIn, request: Request) -> dict:
         market.update(question=body.question or found.get("question"),
                       end_date=body.end_date or found.get("end_date"),
                       origin="request" if body.question else found_origin)
-        yes = decision_price(found)  # a bundled / recorded price is not a close price
+        yes = decision_price(found)
     supplied = _local_price(request, body.pm_yes)
     rec = await opp.take_snapshot(market, now=t, pm_yes=supplied if supplied is not None else yes,
                                   client=opp.make_client())
-    if rec.get("key") is None:  # unsupported question or market open: nothing stored
+    if rec.get("key") is None:
         return {**rec, "stored": False, "research": opp.research_status()}
-    # Provenance of the PM price, independent of where the question text came from.
     rec["pm_source"] = "supplied" if supplied is not None else found_origin if yes is not None else None
     if supplied is None and yes is None and found_origin not in (None, *DECISION_ORIGINS):
         rec.setdefault("notes", []).append(f"no live PM price (lookup fell back to {found_origin}); no close price "
@@ -212,7 +179,7 @@ async def compare(request: Request, snapshot_id: str | None = None, market_sourc
     t = now(request)
     price, origin = await pm_now(request, s["market"], pm_yes)
     opt_now = None
-    if refresh_options and sc.to_utc(s["next_open"]) <= t:  # before the open the options cannot have moved
+    if refresh_options and sc.to_utc(s["next_open"]) <= t:
         chain, stale = await open_chain(s, t)
         opt_now = opp.implied_now(s, chain, now=t, cache_stale=stale)
     dec = opp.evaluate(s, price, opt_now)
@@ -231,7 +198,7 @@ async def stage(body: StageIn, request: Request) -> dict:
         raise HTTPException(409, {"reason_code": "missed_open_window", "reason": opp.REASONS["missed_open_window"]})
     research = opp.research_status()
     validated = bool(research.get("supports_claim"))
-    if not validated and not body.ack_unvalidated:  # the evidence gate (docs/design.md section 6)
+    if not validated and not body.ack_unvalidated:
         raise HTTPException(409, {"reason_code": "evidence_unvalidated", "reason": opp.REASONS["evidence_unvalidated"],
                                   "research": research})
     price, _ = await pm_now(request, s["market"], body.pm_yes)
@@ -328,7 +295,6 @@ async def execute(tid: str, request: Request, body: PriceIn | None = None) -> di
 
 @router.post("/execute-due")
 async def execute_due(request: Request) -> dict:
-    """Execute approved trades whose open window is running; expire unapproved ones whose window has passed."""
     b = book(request)
     t = now(request)
     out = []
@@ -343,8 +309,6 @@ async def execute_due(request: Request) -> dict:
 
 @router.post("/review")
 async def review(request: Request) -> dict:
-    """The revert rule before the open: re-evaluate every staged or approved trade against the current PM price and
-    cancel those the PM no longer supports (reason code ``pm_reverted``)."""
     b = book(request)
     t = now(request)
     out = []

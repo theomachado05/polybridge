@@ -1,4 +1,3 @@
-"""In-memory proposal store. A proposal becomes executable only through approve(), exactly once."""
 from __future__ import annotations
 
 import datetime as dt
@@ -38,7 +37,6 @@ class ProposalStore:
             return self._items[pid]
 
     def update(self, pid: str, **fields) -> Proposal:
-        """Set server-side fields (e.g. the capacity block) without touching the decision."""
         with self._lock:
             if pid not in self._items:
                 raise NotFound(pid)

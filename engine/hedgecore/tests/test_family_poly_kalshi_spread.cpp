@@ -12,11 +12,11 @@ MarketTick gap_tick(std::int64_t ts, double other, double hs = 0.01, Venue v = V
   t.p_other_venue = other;
   return t;
 }
-}  // namespace
+}
 
 TEST(PolyKalshiSpread, RichVenueBuysNoThenExitsOnConvergence) {
-  F a(params<F>(), Position{});  // entry 0.02, exit 0.005, size 500
-  const Intent e = a.on_tick(gap_tick(kSec, 0.50), kSec);  // gap 0.05, edge 0.05 - 0.01 - 0 = 0.04
+  F a(params<F>(), Position{});
+  const Intent e = a.on_tick(gap_tick(kSec, 0.50), kSec);
   ASSERT_TRUE(is_order(e));
   EXPECT_EQ(e.instrument, Instrument::PredNo);
   EXPECT_EQ(e.side, +1);
@@ -24,8 +24,8 @@ TEST(PolyKalshiSpread, RichVenueBuysNoThenExitsOnConvergence) {
   EXPECT_EQ(e.reason, rc(Rc::Entry));
   EXPECT_EQ(e.venue, Venue::Poly);
   a.on_fill(Instrument::PredNo, 500, 0.46);
-  EXPECT_EQ(a.on_tick(gap_tick(2 * kSec, 0.53), 2 * kSec).reason, rc(Rc::NoSignal));  // gap 0.02 > exit
-  const Intent x = a.on_tick(gap_tick(3 * kSec, 0.545), 3 * kSec);                    // gap 0.005 <= exit
+  EXPECT_EQ(a.on_tick(gap_tick(2 * kSec, 0.53), 2 * kSec).reason, rc(Rc::NoSignal));
+  const Intent x = a.on_tick(gap_tick(3 * kSec, 0.545), 3 * kSec);
   ASSERT_TRUE(is_order(x));
   EXPECT_EQ(x.side, -1);
   EXPECT_EQ(x.reason, rc(Rc::Exit));
@@ -42,19 +42,18 @@ TEST(PolyKalshiSpread, GapFlipKillsAndLatches) {
   F a(params<F>(), Position{});
   ASSERT_TRUE(is_order(a.on_tick(gap_tick(kSec, 0.50), kSec)));
   a.on_fill(Instrument::PredNo, 500, 0.46);
-  const Intent k = a.on_tick(gap_tick(2 * kSec, 0.58), 2 * kSec);  // gap -0.03 < -entry
+  const Intent k = a.on_tick(gap_tick(2 * kSec, 0.58), 2 * kSec);
   ASSERT_TRUE(is_order(k));
   EXPECT_EQ(k.reason, rc(Rc::GapFlipKill));
   a.on_fill(Instrument::PredNo, -500, 0.44);
-  EXPECT_EQ(a.on_tick(gap_tick(3 * kSec, 0.50), 3 * kSec).reason, rc(Rc::GapFlipKill));  // stopped
+  EXPECT_EQ(a.on_tick(gap_tick(3 * kSec, 0.50), 3 * kSec).reason, rc(Rc::GapFlipKill));
 }
 
 TEST(PolyKalshiSpread, FeeSpreadAndSizeCap) {
   F narrow(params<F>(), Position{});
-  EXPECT_EQ(narrow.on_tick(gap_tick(kSec, 0.525), kSec).reason, rc(Rc::BelowFees));  // edge 0.015 < 0.02
+  EXPECT_EQ(narrow.on_tick(gap_tick(kSec, 0.525), kSec).reason, rc(Rc::BelowFees));
   F wide(params<F>(), Position{});
   EXPECT_EQ(wide.on_tick(gap_tick(kSec, 0.50, 0.03), kSec).reason, rc(Rc::SpreadTooWide));
-  // On Kalshi the fee 0.07 * 0.46 * 0.54 = 0.0174 eats the edge at entry 0.03: 0.05 - 0.01 - 0.0174 < 0.03.
   F k(params<F>({{"entry_gap", 0.03}}), Position{});
   EXPECT_EQ(k.on_tick(gap_tick(kSec, 0.50, 0.01, Venue::Kalshi), kSec).reason, rc(Rc::BelowFees));
   F p(params<F>({{"entry_gap", 0.03}}), Position{});
@@ -71,13 +70,13 @@ TEST(PolyKalshiSpread, MissingOtherVenue) {
 
 TEST(PolyKalshiSpread, GapBelowEntryIsNoSignalNotFees) {
   F a(params<F>(), Position{});
-  EXPECT_EQ(a.on_tick(gap_tick(kSec, 0.54), kSec).reason, rc(Rc::NoSignal));  // gap 0.01 < entry 0.02
+  EXPECT_EQ(a.on_tick(gap_tick(kSec, 0.54), kSec).reason, rc(Rc::NoSignal));
 }
 
 TEST(PolyKalshiSpread, RejectedEntryDisarmsTheStop) {
   F a(params<F>(), Position{});
   ASSERT_TRUE(is_order(a.on_tick(gap_tick(kSec, 0.50), kSec)));
   EXPECT_NE(a.kill.entry_sign, 0);
-  a.on_reject(Instrument::PredNo);  // never filled: still flat
+  a.on_reject(Instrument::PredNo);
   EXPECT_EQ(a.kill.entry_sign, 0);
 }

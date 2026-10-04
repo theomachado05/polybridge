@@ -1,9 +1,3 @@
-"""S12: could a resting order have earned the give-back of S8 and S9? (METHOD.md)
-
-Run from `research/`:
-    python -m s12_resting_orders.run --pull     # prints near every entry and exit, deadline mids (not committed)
-    python -m s12_resting_orders.run            # fills, P&L, adverse selection, every variant
-"""
 from __future__ import annotations
 
 import json
@@ -37,10 +31,7 @@ UTC = timezone.utc
 EPS = 1e-9
 
 
-# ---------------------------------------------------------------- the orders
-
 def orders() -> pd.DataFrame:
-    """One row per order of both samples: where, when, which side, the mids, costs. side +1 = sell YES, -1 = buy YES."""
     uni = {m["id"]: m for m in json.loads(S9_UNIVERSE.read_text())["markets"]}
     exits = {w["key"]: w["exit"] for w in calendar()}
     t9 = pd.read_csv(S9_RESULTS / "trades.csv")
@@ -70,10 +61,7 @@ def orders() -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-# ---------------------------------------------------------------- prints
-
 def pm_trades(condition_id: str, oldest_needed: float, pt: ds.Throttle, page: int = 10000, max_pages: int = 2) -> tuple[list[dict], bool]:
-    """ds.pm_trades with takerOnly passed explicitly. Also says whether the API ran out (the whole history was served)."""
     out: list[dict] = []
     for i in range(max_pages):
         d = ds.get_json(ds.DATA_API, {"market": condition_id, "limit": page, "offset": i * page, "takerOnly": "true"},
@@ -89,7 +77,6 @@ def pm_trades(condition_id: str, oldest_needed: float, pt: ds.Throttle, page: in
 
 
 def keep_window(ts: np.ndarray, starts: np.ndarray, width: float) -> np.ndarray:
-    """Mask of prints inside [s, s + width] for some s in starts."""
     starts = np.sort(starts)
     j = np.searchsorted(starts, ts, side="right") - 1
     ok = j >= 0
@@ -126,7 +113,6 @@ def pull() -> None:
 
 
 def pull_deadline_mids(od: pd.DataFrame, pt: ds.Throttle) -> None:
-    """S9's weekend cache ends at 10:10 on the exit day; the 120-minute deadline needs [T, T + 125 min] from prices-history."""
     f = CACHE / "s9_deadline_mids.json"
     have = json.loads(f.read_text()) if f.exists() else {}
     s9 = od[od["sample"] == "S9"]
@@ -145,7 +131,6 @@ def pull_deadline_mids(od: pd.DataFrame, pt: ds.Throttle) -> None:
 
 
 def yes_terms(prints: list[dict]) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """(time, YES price, taker side +1 buy / -1 sell in YES terms, size), sorted by time."""
     rows = []
     for t in prints:
         out, sd = str(t.get("outcome", "")).lower(), str(t.get("side", "")).upper()
@@ -160,10 +145,7 @@ def yes_terms(prints: list[dict]) -> tuple[np.ndarray, np.ndarray, np.ndarray, n
     return a[:, 0], a[:, 1], a[:, 2].astype(int), a[:, 3]
 
 
-# ---------------------------------------------------------------- the fill rule
-
 def post_price(mid: float, side: int, offset_ticks: int, tick: float = cfg.TICK) -> float:
-    """Passive cent: a sale rounds the mid up, a purchase down; then `offset_ticks` toward the other side."""
     k = math.ceil(mid / tick - 1e-6) if side > 0 else math.floor(mid / tick + 1e-6)
     q = (k - side * offset_ticks) * tick
     return float(min(max(q, tick), 1.0 - tick))
@@ -171,9 +153,6 @@ def post_price(mid: float, side: int, offset_ticks: int, tick: float = cfg.TICK)
 
 def fill(ts: np.ndarray, px: np.ndarray, sd: np.ndarray, sz: np.ndarray, side: int, q: float, t0: float, window_s: float,
          size: float, allowance: float, shift: float = 0.0) -> tuple[float, float | None, float]:
-    """A resting order of `size` posted at t0 at price q. side +1 = our sale (needs taker buys), -1 = our purchase.
-    Prints strictly through the threshold count in full; prints at it count only beyond `allowance`. The threshold is
-    q moved `shift` against us (2x costs). Returns (filled fraction, fill instant, qualifying volume over the window)."""
     thr = q + side * shift
     m = (ts > t0) & (ts <= t0 + window_s) & (sd == side)
     at_q, steps = 0.0, []
@@ -203,7 +182,6 @@ def fee(p: float, rate: float, exponent: float, c: float) -> float:
 
 
 def simulate(o: dict, prints: tuple, v: cfg.Variant, c: float, mid_deadline: float) -> dict:
-    """One order under one variant and cost level. Prices per contract, YES terms."""
     ts, px, sd, sz = prints
     side, w = o["side"], v.window_min * 60.0
     shift = cfg.TICK if c > 1.0 else 0.0
@@ -233,10 +211,7 @@ def simulate(o: dict, prints: tuple, v: cfg.Variant, c: float, mid_deadline: flo
     return rec
 
 
-# ---------------------------------------------------------------- statistics
-
 def cboot(groups: list[str], vals: np.ndarray, wts: np.ndarray | None = None, seed: int = cfg.BOOT_SEED) -> tuple[float, float, float]:
-    """Weighted mean and a 95% interval resampling groups (weekends or dates)."""
     vals = np.asarray(vals, float)
     wts = np.ones(len(vals)) if wts is None else np.asarray(wts, float)
     if len(vals) == 0 or wts.sum() <= 0:
@@ -256,7 +231,6 @@ def cboot(groups: list[str], vals: np.ndarray, wts: np.ndarray | None = None, se
 
 
 def cboot_diff(ga: list[str], a: np.ndarray, gb: list[str], b: np.ndarray, seed: int = cfg.BOOT_SEED) -> tuple[float, float, float]:
-    """Mean of a minus mean of b, resampling groups jointly (a group carries its orders of both kinds)."""
     a, b = np.asarray(a, float), np.asarray(b, float)
     if len(a) == 0 or len(b) == 0:
         return (float("nan"),) * 3
@@ -275,8 +249,6 @@ def cboot_diff(ga: list[str], a: np.ndarray, gb: list[str], b: np.ndarray, seed:
     lo, hi = np.percentile(diffs, [2.5, 97.5])
     return d, float(lo), float(hi)
 
-
-# ---------------------------------------------------------------- run
 
 def load_cache(od: pd.DataFrame) -> tuple[dict, dict]:
     prints = {}

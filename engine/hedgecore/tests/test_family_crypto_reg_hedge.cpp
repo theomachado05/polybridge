@@ -4,11 +4,11 @@ using namespace hctest;
 using F = hedgecore::algos::CryptoRegHedge;
 
 TEST(CryptoRegHedge, WarmupUnscaledThenInverseVol) {
-  F a(params<F>({{"impact", 0}}), held(1000));  // coverage 0.75, sigma_ref 0.02, max_lev 1.5
+  F a(params<F>({{"impact", 0}}), held(1000));
   const Intent w = a.on_tick(pm(kSec, 0.20), kSec);
   EXPECT_DOUBLE_EQ(w.qty, 150.0);
   EXPECT_DOUBLE_EQ(w.signal, 1.0);
-  const Intent noisy = a.on_tick(pm(2 * kSec, 0.24), 2 * kSec);  // sigma 0.04 -> scale 0.5 -> c 0.375
+  const Intent noisy = a.on_tick(pm(2 * kSec, 0.24), 2 * kSec);
   EXPECT_DOUBLE_EQ(noisy.qty, 90.0);
   EXPECT_DOUBLE_EQ(noisy.signal, 0.5);
 }
@@ -16,7 +16,7 @@ TEST(CryptoRegHedge, WarmupUnscaledThenInverseVol) {
 TEST(CryptoRegHedge, CalmScaleCappedAndCoverageClamped) {
   F a(params<F>({{"impact", 0}}), held(1000));
   a.on_tick(pm(kSec, 0.20), kSec);
-  const Intent i = a.on_tick(pm(2 * kSec, 0.201), 2 * kSec);  // scale min(20, 1.5) -> c 1.125 -> clamp 1
+  const Intent i = a.on_tick(pm(2 * kSec, 0.201), 2 * kSec);
   EXPECT_DOUBLE_EQ(i.signal, 1.5);
   EXPECT_DOUBLE_EQ(i.qty, 201.0);
 }

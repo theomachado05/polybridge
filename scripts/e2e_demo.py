@@ -49,41 +49,23 @@ CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 DEFAULT_REPLAY = BACKEND / "replays" / "another-fed-hike-2026-history.jsonl"
 SCREEN_DIR = WEB / "e2e" / "screens"
 
-# The default target: "Another Fed rate hike in 2026?" hedging TLT. +0.257 (fits.json: score_vs_static over 401 hourly
-# ticks) is the in-sample score of preset #75 (equity_delta_bridge) at 1,000 shares, uncapped; this e2e runs that preset
-# capped at 50% coverage, so it is not the score of what runs here. YES token id and provenance: backend/replays/another-fed-hike-2026-history.jsonl.meta.json. The Fed October 2026 market (2589813, IWM,
-# fed-hike-25bps-oct-2026-history.jsonl, query "fed october") remains an alternative: pass --query/--market-id/
-# --market-text/--ticker/--replay/--speed 36000.
 MARKET_ID = "4620900"
 QUESTION = "Another Fed rate hike in 2026?"
 QUERY = "fed rate hike 2026"
-MARKET_TEXT = "Another Fed rate hike in 2026"  # what the UI walk clicks in the Build search results
+MARKET_TEXT = "Another Fed rate hike in 2026"
 TICKER = "TLT"
-SHARES = 1000.0  # the precompute's shares_held, so the fit matches fits.json
-# 401 hourly points (about 400 h) at 21600x = 6 ticks per second, about 67 s for the whole replay.
+SHARES = 1000.0
 SPEED = "21600"
 COVERAGE = 0.5
 DIRECTION = "down_on_yes"
 
-# --opportunity: "Will NVIDIA (NVDA) close above $230 end of September?" (resolved NO on 2026-09-30), recorded with its
-# options-implied history (backend/replays/nvda-230-sep-2026-history.jsonl, 353 hourly rows, 66 with an estimate). Its
-# contracts have expired, so the fit replays the recording and the bridge prices each call-spread leg at its recorded
-# bar close (simulated fills, labelled); its last row is the expiry settlement (each leg at intrinsic from NVDA's
-# official close), where the bridge-end close is priced. In-sample: binary_vs_spread_arb #6 scores -0.956 on it (11
-# orders, -$276.15: it loses money here).
 OPP_MARKET_ID = "3961215"
 OPP_QUERY = "NVIDIA close above $230 end of September"
 OPP_TICKER = "NVDA"
 OPP_REPLAY = BACKEND / "replays" / "nvda-230-sep-2026-history.jsonl"
-OPP_FAMILIES = ("binary_vs_spread_arb", "vol_vs_pm_move", "eightk_opportunity")  # what an opportunity bridge runs
-OPP_CAPS = {"max_contracts": 10, "max_notional": 10_000.0}  # the web's DEFAULT_OPP_CAPS
+OPP_FAMILIES = ("binary_vs_spread_arb", "vol_vs_pm_move", "eightk_opportunity")
+OPP_CAPS = {"max_contracts": 10, "max_notional": 10_000.0}
 
-# --weekend: closed-market mode on the recorded weekend (backend/scripts/record_weekend.py picks it by rule): US recession
-# in 2025 (Polymarket 516710, the one market whose expected-gap model is validated out of sample, R2), Friday
-# 2025-04-04 15:30 ET to Monday 2025-04-07 10:00 ET, PM history at 5-minute points and 5-minute SPY bars. 799 rows over
-# 66.5 h: at 3600x the replay takes about 67 s and the staged plan must be approved before Monday 04:00 (about 61 s in).
-# The backend runs WITHOUT the env file and with POLYBRIDGE_REPLAY_PRICES=recorded here: the replay carries its own
-# (2025) prices, and a live 2026 quote would mix two price times into the hedge's P&L.
 WK_MARKET_ID = "516710"
 WK_TOKEN = "104173557214744537570424345347209544585775842950109756851652855913015295701992"
 WK_TICKER = "SPY"
@@ -106,10 +88,8 @@ def check(name: str, ok: bool, detail: str = "") -> bool:
 
 
 class Abort(Exception):
-    """A step failed in a way that makes the rest of the flow meaningless."""
+    pass
 
-
-# ------------------------------------------------------------------ http (stdlib)
 
 def call(base: str, method: str, path: str, body=None, timeout: float = 60.0):
     data = None if body is None else json.dumps(body).encode()
@@ -153,14 +133,12 @@ def wait_for(url: str, what: str, timeout: float, proc: subprocess.Popen | None 
     return False
 
 
-# ------------------------------------------------------------------ processes
-
 def find_env_file(explicit: str | None) -> Path | None:
     if explicit:
         p = Path(explicit).expanduser()
         return p if p.is_file() else None
     cands = [ROOT / ".env"]
-    try:  # a git worktree keeps its .env in the main checkout
+    try:
         common = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "--path-format=absolute", "--git-common-dir"],
                                 capture_output=True, text=True, timeout=10).stdout.strip()
         if common:
@@ -196,11 +174,7 @@ def stop_all() -> None:
     children.clear()
 
 
-# ------------------------------------------------------------------ SSE
-
 def read_sse(base: str, bridge_id: str, want_events: int, max_s: float, need_fill: bool):
-    """Read the bridge stream. Returns (events, closed_by_server). Stops after `want_events` events, but keeps going
-    (until max_s) while `need_fill` and no order has been filled yet. Heartbeats are not events."""
     host, port = base.replace("http://", "").split(":")
     conn = http.client.HTTPConnection(host, int(port), timeout=15)
     events: list[tuple[str, dict]] = []
@@ -216,7 +190,7 @@ def read_sse(base: str, bridge_id: str, want_events: int, max_s: float, need_fil
             try:
                 line = resp.readline()
             except socket.timeout:
-                continue  # a quiet stretch; the server sends heartbeats, keep waiting until max_s
+                continue
             if not line:
                 closed = True
                 break
@@ -241,13 +215,7 @@ def read_sse(base: str, bridge_id: str, want_events: int, max_s: float, need_fil
     return events, closed
 
 
-# ------------------------------------------------------------------ the flow
-
 def approve_gated(base: str, prop: dict) -> dict:
-    """Approve through the evidence gate (docs/design.md section 6). A proposal whose (market, ticker) signal has not
-    passed its out-of-sample test is refused (409 EVIDENCE_UNVALIDATED) until the approval acknowledges it
-    (ack_unvalidated: true); every decision and fill of its bridge is then labelled "unvalidated (acknowledged)". The
-    capacity block (participation caps, est. cost, capital budget) is shown before approving."""
     ev = prop.get("evidence") or {}
     cap = prop.get("capacity") or {}
     eq = cap.get("equity") or {}
@@ -261,7 +229,7 @@ def approve_gated(base: str, prop: dict) -> dict:
     capital = cap.get("capital") or {}
     say(f"     capital: fits={capital.get('fits')} {[b.get('kind') for b in capital.get('breaches') or []]}")
     check("the proposal carries a capacity block before approval", bool(cap) and "caps" in cap, "")
-    fit = (prop.get("algo") or {}).get("source") == "ai_fit"   # the generic AI fit is unvalidated: always behind the ack
+    fit = (prop.get("algo") or {}).get("source") == "ai_fit"
     if ev.get("validated") and not fit:
         s, out = call(base, "POST", f"/proposals/{prop['id']}/approve")
     else:
@@ -339,14 +307,14 @@ def run_flow(base: str, args) -> dict:
     body = {"proposal_id": prop["id"], "source": "replay", "gap_per_share": 1.0, "direction": direction,
             "market": {"source": "polymarket", "id": mk["id"], "token_id": mk.get("token_id")},
             "family": fit["family"], "preset_index": fit["preset_index"],
-            "replay_to_account": True}  # so GET /orders shows the fills (the default replay sandbox is invisible there)
+            "replay_to_account": True}
     s, br = call(base, "POST", "/bridges", body)
     if not check("bridge started", s == 201 and "bridge_id" in br, f"{s} {br}"):
         raise Abort("bridge not started")
     bid = br["bridge_id"]
     out["bridge_id"] = bid
     _, sm0 = call(base, "GET", f"/bridges/{bid}")
-    if (sm0 or {}).get("status") == "running":  # idempotent only while running; a finished bridge is never handed back
+    if (sm0 or {}).get("status") == "running":
         s, again = call(base, "POST", "/bridges", body)
         check("re-POST is idempotent (200, same bridge)", s == 200 and again.get("bridge_id") == bid, f"{s}")
     else:
@@ -368,7 +336,6 @@ def run_flow(base: str, args) -> dict:
     check("every decision names the fitted family", bool(decisions) and all(d.get("family") == fit["family"] for d in decisions),
           f"families={sorted({d.get('family') for d in decisions})}")
     if args.offline:
-        # Wi-Fi off: no current Massive quote, so a replay bridge fills at the replayed under_px, labelled "recorded".
         filled_now = [f for f in fills if f.get("status") == "filled"]
         check("offline: orders fill at the recorded price (no current quote), labelled",
               bool(filled_now) and all(f.get("price_source") == "recorded" and "recorded price" in str(f.get("price_note"))
@@ -414,7 +381,6 @@ def run_flow(base: str, args) -> dict:
     mine = [o for o in orders if o.get("tag") == bid] if isinstance(orders, list) else []
     filled = [o for o in mine if o.get("status") == "filled"]
     check("orders reached the broker (tagged with the bridge id)", len(mine) >= 1, f"{len(mine)} orders for {bid}")
-    # offline too: the replay fills at the recorded price, so the account must match the bridge either way
     check("broker order count matches the bridge summary", len(filled) == summ["broker_filled"],
           f"filled in /orders={len(filled)} vs summary.broker_filled={summ['broker_filled']}")
     short = next((p for p in pos if p.get("symbol") == args.ticker), None) if isinstance(pos, list) else None
@@ -437,8 +403,6 @@ def run_flow(base: str, args) -> dict:
 
 
 def options_pick(fit: dict) -> dict | None:
-    """The options family the Build screen offers (web/src/lib/realBridge.ts opportunityFit): the top pick when it is
-    an options family with a score, else the best-scored options family among the alternatives."""
     cands = [{"family": fit.get("family"), "preset_index": fit.get("preset_index"), "score": fit.get("score"),
               "stats": None}] + list(fit.get("alternatives") or [])
     for c in cands:
@@ -507,7 +471,7 @@ def run_opportunity_flow(base: str, args) -> dict:
     if s != 201:
         raise Abort("proposal refused")
     body = {"proposal_id": prop["id"], "source": "replay", "market": {"source": "polymarket", "id": mk["id"], "token_id": mk.get("token_id")},
-            "replay_to_account": True}  # so GET /orders shows the option legs (the default replay sandbox is invisible there)
+            "replay_to_account": True}
     s2, _ = call(base, "POST", "/bridges", body)
     check("a bridge on an unapproved proposal is refused (409)", s2 == 409, f"{s2}")
     prop = approve_gated(base, prop)
@@ -588,8 +552,6 @@ def run_opportunity_flow(base: str, args) -> dict:
 
 
 def run_weekend_flow(base: str, args) -> dict:
-    """Closed-market mode over HTTP: Friday close -> weekend PM move -> expected gap (validated) -> staged order
-    (hedge B) approved through POST /staged/{id}/approve -> executes at the first tradable moment -> P&L vs no hedge."""
     out: dict = {"mode": "weekend"}
     market = {"source": "polymarket", "id": args.market_id, "token_id": WK_TOKEN}
     say("\n== 1. health")
@@ -649,7 +611,7 @@ def run_weekend_flow(base: str, args) -> dict:
         for o in (st or {}).get("orders", []):
             cur = o.get("current") or o["estimate"]
             if o["status"] == "staged" and cur["gap_bp"] <= -o["full_size_gap_bp"] and o["id"] not in {a["id"] for a in approved}:
-                s2, a = call(base, "POST", f"/staged/{o['id']}/approve", {"qty": o["qty"]})  # the qty seen
+                s2, a = call(base, "POST", f"/staged/{o['id']}/approve", {"qty": o["qty"]})
                 if s2 == 200:
                     approved.append(a)
                     say(f"     approved staged plan {a['id']}: sell {a['qty']} {a['ticker']} for the "
@@ -675,7 +637,6 @@ def run_weekend_flow(base: str, args) -> dict:
     check("the expected gap is validated (own rate, n closures, 80% band) while closed",
           bool(gaps) and all(g["validated"] and g["rate_source"] == "market" and g["n"] == 231 and g["band"] for g in gaps),
           f"{len(gaps)} closed ticks; peak {min(g['bp'] for g in gaps):.1f} bp" if gaps else "none")
-    # every equity fill of the bridge's own algo happens while the regular session is on
     phase, bad = None, []
     for k, d in events:
         if k == "tick":
@@ -724,15 +685,11 @@ def run_weekend_flow(base: str, args) -> dict:
     return out
 
 
-# ------------------------------------------------------------------ screenshots
-
 SCREENS = [("landing", "/"), ("build", "/build"), ("connect", "/connect"), ("pipeline", "/pipeline"),
            ("bridge", None), ("portfolio", "/portfolio"), ("library", "/library"), ("profile", "/profile")]
 
 
 def ui_walk(web: str, base: str, args) -> list[str]:
-    """Click through the real UI (web/e2e/ui_walk.mjs, Chrome DevTools protocol) and save a screenshot per screen.
-    Returns the files written. Its checks are folded into this run's results."""
     node = shutil.which("node")
     if not node or not Path(CHROME).exists():
         check("UI walk can run (node + Chrome)", False, "node or Chrome missing; falling back to direct-URL screenshots")
@@ -768,8 +725,7 @@ def ui_walk(web: str, base: str, args) -> list[str]:
 
 
 def direct_shot(web: str, i: int, name: str, path: str, wait_ms: int, prof: Path) -> None:
-    """Fallback: open one URL cold (no wizard state) and screenshot it; Chrome is killed on a deadline (SSE never idles)."""
-    wait_for(web + path, name, 120)  # the first hit compiles the route in `next dev`
+    wait_for(web + path, name, 120)
     dest = SCREEN_DIR / f"{i:02d}-{name}.png"
     dest.unlink(missing_ok=True)
     cmd = [CHROME, "--headless=new", "--disable-gpu", "--no-first-run", "--hide-scrollbars", f"--user-data-dir={prof}",
@@ -807,8 +763,6 @@ def screenshots(web: str, base: str, bridge_id: str | None, args) -> None:
         check(f"screenshot {i:02d}-{n}.png", bool(f) and f.stat().st_size > 5000, f"{f.stat().st_size // 1024} KB" if f else "missing")
 
 
-# ------------------------------------------------------------------ main
-
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--backend-port", type=int, default=8000)
@@ -841,13 +795,13 @@ def main() -> int:
                     help="drive closed-market mode instead (API only): the recorded 2025-04-04 weekend on the US "
                          "recession 2025 market, expected gap, staged order approved, executed, P&L vs no hedge")
     args = ap.parse_args()
-    if args.weekend:  # its own market, ticker, recording and speed unless given explicitly
+    if args.weekend:
         args.no_screens = True
         args.market_id = WK_MARKET_ID if args.market_id == MARKET_ID else args.market_id
         args.ticker = WK_TICKER if args.ticker == TICKER else args.ticker
         args.replay = str(WK_REPLAY) if args.replay == str(DEFAULT_REPLAY) else args.replay
         args.speed = WK_SPEED if args.speed == SPEED else args.speed
-    if args.opportunity:  # its own market, ticker and recording unless given explicitly
+    if args.opportunity:
         args.no_screens = True
         args.market_id = OPP_MARKET_ID if args.market_id == MARKET_ID else args.market_id
         args.query = OPP_QUERY if args.query == QUERY else args.query
@@ -874,11 +828,11 @@ def main() -> int:
         if not args.reuse:
             env = {**os.environ, "POLYBRIDGE_REPLAY_PATH": str(Path(args.replay).resolve()), "POLYBRIDGE_REPLAY_SPEED": str(args.speed),
                    "BROKER": "sim", "SIM_ACCOUNT_PATH": str(work / "sim_account.json"), "PYTHONUNBUFFERED": "1"}
-            if args.weekend:  # the bridge's own sandbox fills at the recorded (2025) prices too, like `make dev`
+            if args.weekend:
                 env["POLYBRIDGE_REPLAY_PRICES"] = "recorded"
             for k in ("WEBULL_APP_KEY", "WEBULL_APP_SECRET"):
                 env.pop(k, None)
-            if args.offline:  # httpx honours these: every call to Polymarket, Kalshi, Massive, Gemini is refused at once
+            if args.offline:
                 env.update(HTTPS_PROXY="http://127.0.0.1:9", HTTP_PROXY="http://127.0.0.1:9", ALL_PROXY="http://127.0.0.1:9",
                            NO_PROXY="localhost,127.0.0.1")
                 for k in ("MASSIVE_API_KEY", "GEMINI_API_KEY"):
@@ -904,7 +858,7 @@ def main() -> int:
         elif not wait_for(base + "/health", "backend", 5):
             raise Abort(f"--reuse but nothing answers on {base}/health")
         else:
-            s, _ = call(base, "POST", "/account/reset")  # reused backend: start from a clean sim account (409 if Webull is active)
+            s, _ = call(base, "POST", "/account/reset")
             say(f"--reuse: reset sim account -> {s}")
 
         out = (run_weekend_flow(base, args) if args.weekend else

@@ -1,4 +1,3 @@
-"""What the trade costs: the pre-registered premium haircut (1x, 2x) and real half-spreads from Massive quotes."""
 from __future__ import annotations
 
 import numpy as np
@@ -12,7 +11,7 @@ LEGS_FOR_STRATEGY = {"long_call": ["C_K"], "covered_call": ["C_U{otm}"], "protec
 
 def half_spread(client, opt_ticker: str, day: pd.Timestamp) -> float | None:
     d = pd.Timestamp(day).strftime("%Y-%m-%d")
-    lower = int(pd.Timestamp(d + " 09:30", tz="America/New_York").value)   # same session only: no stale prior-day quote
+    lower = int(pd.Timestamp(d + " 09:30", tz="America/New_York").value)
     bound = int(pd.Timestamp(d + " 16:00", tz="America/New_York").value)
     rows = client.get(f"/v3/quotes/{opt_ticker}", {"timestamp.gte": lower, "timestamp.lte": bound, "order": "desc",
                                                    "sort": "timestamp", "limit": 1}).get("results") or []
@@ -54,9 +53,6 @@ def cost_table(results: pd.DataFrame, priced, strategy: str, horizon, cfg: Study
 
 
 def cost_summary(ct: pd.DataFrame, ct_placebo: pd.DataFrame | None = None, multipliers=(1, 2)) -> dict:
-    """Means over PAIRED rows (gross and spread both present) so gross, spread and net-of-spread share one sample;
-    haircut nets use every row with a gross P&L. With a placebo cost table, also the net-of-haircut edge
-    (events minus placebo) at each multiplier."""
     paired = ct.dropna(subset=["gross", "spread_cost"])
     out = {"n": len(ct), "n_gross": int(ct["gross"].notna().sum()), "n_paired": len(paired),
            "gross_paired": paired["gross"].mean(), "spread_cost_paired": paired["spread_cost"].mean(),

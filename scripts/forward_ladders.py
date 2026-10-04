@@ -1,8 +1,3 @@
-"""Run the ladder live check once (research/ladder_replay/live.py, rules frozen) and save a timestamped snapshot.
-
-Run from backend/:  uv run python ../scripts/forward_ladders.py     (or `make forward-ladders` from the repo root)
-Output: backend/data_forward/ladders/{raw/<stamp>/, snapshots/<stamp>.json}. Nothing under research/results/.
-"""
 from __future__ import annotations
 
 import json

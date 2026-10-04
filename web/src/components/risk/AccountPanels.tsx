@@ -1,7 +1,5 @@
 "use client";
 
-// Portfolio: the capital budget in force (GET /capital) and the active broker's real book (the Webull paper account:
-// balances, positions, order history, reconciliation), kept apart from the demo holdings.
 import { getCapital, getOrders, getPositions, getReconcile, type AccountOut } from "@/lib/api";
 import { useAsync } from "@/lib/hooks";
 import { accountPill, accountRows, capitalView, orderRows, reconcileView, splitPositions } from "@/lib/risk";

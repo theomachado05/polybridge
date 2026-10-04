@@ -156,7 +156,7 @@ bool read_sz(od::value v, double& out) {
   return false;
 }
 
-}  // namespace
+}
 
 struct BookEngine::Impl {
   StaleQuoteParams base;
@@ -450,4 +450,4 @@ int64_t BookEngine::mono_ns() noexcept {
 #endif
 }
 
-}  // namespace hedgecore
+}

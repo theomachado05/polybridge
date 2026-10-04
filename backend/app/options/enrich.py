@@ -1,32 +1,3 @@
-"""Fill a MarketTick dict's option fields (and optionally the 8-K score) for the bridge loop and the tick builder.
-
-    await refresh("NVDA", 150.0, "2026-12-31")                    # fetch/refresh the snapshot for this query
-    await refresh_eightk()                                        # (optional) load live 8-K filings for today
-    tick = enrich(tick, "NVDA", 150.0, "2026-12-31", eightk_ticker="NVDA")   # network-free
-
-    # or, from the market's own question and end date (match + both refreshes + enrich):
-    tick, detail = await enrich_market(tick, question, end_date)
-
-Which chain enrich reads: the snapshot ``refresh`` fetched for exactly this (underlying, K, resolution date)
-(``chain.chain_for``), so two markets on one underlying never read each other's strike band or expiry window.
-Without one it falls back to the underlying's latest snapshot, under the same checks.
-
-Expiry guard: when the nearest listed expiry is more than ``implied.max_expiry_gap_days`` from the resolution date
-(max(7 days, 20% of the horizon)), the estimate prices a different date, so every opt_* field stays NaN and the
-detail says why (``expiry_gap_ok`` False). A threshold outside the chain's listed strikes also leaves them NaN.
-
-Field meanings (MarketTick, engine/hedgecore/include/hedgecore/market.hpp), all for the YES side of the question:
-- ``opt_implied_prob``: options-implied P(YES) (see implied.py: call spread, parity fallback, delta approximation);
-- ``opt_mid``: per-share mid of one unit of the YES-equivalent structure: the call spread C(k_lo) - C(k_hi) for
-  "above", the put spread P(k_hi) - P(k_lo) for "below" (the C++ option families trade one unit at opt_mid, x100);
-- ``opt_delta``: delta interpolated at K (call delta for "above", put delta for "below");
-- ``opt_iv``: implied volatility interpolated at K;
-- ``eightk_score``: [-1, 1], only when ``eightk_ticker`` is given: 0.0 = data loaded, no qualifying filing;
-  NaN = no loaded data covers the tick date (for a live date, ``await refresh_eightk()`` first). See eightk.py.
-
-NaN-safe: a missing chain, a missing strike or a broken quote leaves the field NaN (or its existing finite value);
-enrich never raises on bad input.
-"""
 from __future__ import annotations
 
 import datetime as dt
@@ -71,7 +42,6 @@ def structure_mid(sl: dict, k_lo: float | None, k_hi: float | None, above: bool)
 def enrich_detail(tick: dict | None, underlying: str, K: float, expiry: Any, *, above: bool = True,
                   chain: Any = None, as_of: Any = None, r: float = RISK_FREE,
                   eightk_ticker: str | None = None) -> tuple[dict, dict]:
-    """(enriched tick copy, estimate detail). See module docstring."""
     out = dict(tick or {})
     for f in OPT_FIELDS:
         v = out.get(f, NAN)
@@ -105,7 +75,7 @@ def enrich_detail(tick: dict | None, underlying: str, K: float, expiry: Any, *, 
         detail = res
         detail["available"] = _fin(res.get("prob")) and bool(res.get("expiry_gap_ok"))
         if res.get("expiry") and not res.get("expiry_gap_ok"):
-            return out, detail   # a different date: leave the opt_* fields as they were (NaN)
+            return out, detail
         if res.get("expiry"):
             mid = structure_mid(c.slice(res["expiry"]), res.get("k_lo"), res.get("k_hi"), above)
             res["structure_mid"] = mid
@@ -114,7 +84,7 @@ def enrich_detail(tick: dict | None, underlying: str, K: float, expiry: Any, *, 
             for f, v in vals.items():
                 if _fin(v):
                     out[f] = float(v)
-    except Exception as e:  # NaN-safety contract: never break the tick loop
+    except Exception as e:
         detail = {"available": False, "notes": [f"enrich failed: {type(e).__name__}"]}
         for f in OPT_FIELDS:
             out[f] = out.get(f, NAN) if _fin(out.get(f)) else NAN
@@ -122,21 +92,11 @@ def enrich_detail(tick: dict | None, underlying: str, K: float, expiry: Any, *, 
 
 
 def enrich(tick: dict | None, underlying: str, K: float, expiry: Any, **kw) -> dict:
-    """Returns a copy of ``tick`` with opt_mid / opt_delta / opt_iv / opt_implied_prob filled where possible."""
     return enrich_detail(tick, underlying, K, expiry, **kw)[0]
 
 
 async def refresh(underlying: str, K: float, expiry: Any, *, as_of: Any = None, client=None,
                   cache=None) -> tuple[Any, bool] | None:
-    """Fetch (TTL-cached) the snapshot around K and the resolution date so ``enrich`` can use it.
-
-    Index chains list an expiry almost every day, so the expiry window widens step by step (``EXPIRY_STEPS`` days
-    either side of the resolution date, never past ``max_expiry_gap_days``, beyond which enrich would not use the
-    chain anyway) and stops at the first window with contracts: that window holds the nearest listed expiry.
-    Strikes within ``STRIKE_PAD`` of K; if Massive had more pages than ``chain.MAX_PAGES`` (an index chain), it
-    refetches once with ``NARROW_PAD``. The chain is stored for exactly this query (``chain.chain_for``).
-    Returns (chain, cache_stale), or None when there is no key, no listed contracts, or Massive is unavailable and
-    nothing is cached."""
     e = _date(expiry)
     a = _date(as_of) or dt.date.today()
     try:
@@ -170,9 +130,6 @@ async def refresh(underlying: str, K: float, expiry: Any, *, as_of: Any = None, 
 
 async def enrich_market(tick: dict | None, question: str, resolution_date: Any = None, *, as_of: Any = None,
                         eightk: bool = True, client=None) -> tuple[dict, dict]:
-    """One call for the bridge loop: match the market question (match.py), refresh the chain for it (and, if
-    ``eightk``, the live 8-K store), then enrich. Unsupported questions return the tick unchanged (opt_* NaN) and
-    ``detail["supported"] = False``. Never raises."""
     from .match import match_question, why_no_match
     a = _date(as_of) or _tick_date(tick or {}) or dt.date.today()
     try:

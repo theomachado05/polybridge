@@ -1,7 +1,3 @@
-"""touch_fresh: the tests of METHOD.md section 3 from the cache. No network.
-
-Run from `research/`:  python -m touch_fresh.run
-"""
 from __future__ import annotations
 
 import json
@@ -102,7 +98,6 @@ def enrich(d: pd.DataFrame) -> pd.DataFrame:
     d["gap_s21"] = 100 * (d.sell_price - d.anchor_s21)
     d["B0"] = d.gap >= cfg.THRESHOLD - 1e-9
     d["B0_s21"] = d.gap_s21 >= cfg.THRESHOLD - 1e-9
-    # hedge
     deltas, hp, hp2, mv = [], [], [], []
     for r in d.itertuples():
         delta = float("nan")

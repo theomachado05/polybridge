@@ -1,11 +1,9 @@
 #pragma once
-// Prediction-market-leg families: poly_kalshi_spread (cross-venue convergence) and no_bid_seller (sell rich NO).
 #include <cmath>
 #include "hedgecore/algos/common.hpp"
 
 namespace hedgecore::algos {
 
-// Shared admission for the non-equity families: param validity, latched bad fills, staleness.
 struct OppCore {
   bool valid = false;
   Ledger led{};
@@ -26,13 +24,11 @@ struct OppCore {
   void fill(Instrument i, double q, double px, double mult) noexcept { led.fill(i, q, px, mult); }
 };
 
-// NO ask on this venue, else its YES-parity equivalent 1 - yes_bid (not a missing field read as 0).
 inline double no_ask_or_parity(const MarketTick& t) noexcept {
   if (prob(t.no_ask)) return t.no_ask;
   return prob(t.yes_bid) ? 1.0 - t.yes_bid : kNaN;
 }
 
-// ---- poly_kalshi_spread -------------------------------------------------------------------------------------------
 struct PolyKalshiSpread : AlgoBase<PolyKalshiSpread> {
   static constexpr const char* id = "poly_kalshi_spread";
   static constexpr const char* division = "hedge/opportunity";
@@ -88,8 +84,6 @@ struct PolyKalshiSpread : AlgoBase<PolyKalshiSpread> {
     const double px = gap > 0 ? no_ask_or_parity(t) : t.yes_ask;
     const double fee = fees.unit_fee(inst, t.venue, px);
     if (std::abs(gap) < entry) return hold(Rc::NoSignal, gap);
-    // FeeGate: the gap beyond the entry threshold must pay this venue's half-spread plus the taker fee, i.e.
-    // |gap| - half-spread - fee >= entry_gap.
     const Rc fr = fee_gate.check(std::abs(gap) - entry, half_spread(t.yes_bid, t.yes_ask) + fee);
     if (fr != Rc::None) return hold(fr, gap);
     bool capped = false;
@@ -102,13 +96,11 @@ struct PolyKalshiSpread : AlgoBase<PolyKalshiSpread> {
     core.fill(i, q, px, 1.0);
     if (core.led.at(Instrument::PredYes) == 0 && core.led.at(Instrument::PredNo) == 0) kill.disarm();
   }
-  // An entry that never filled leaves the algo flat: the gap-flip stop armed for it no longer applies.
   void on_reject(Instrument) noexcept {
     if (core.led.at(Instrument::PredYes) == 0 && core.led.at(Instrument::PredNo) == 0) kill.disarm();
   }
 };
 
-// ---- no_bid_seller ------------------------------------------------------------------------------------------------
 struct NoBidSeller : AlgoBase<NoBidSeller> {
   static constexpr const char* id = "no_bid_seller";
   static constexpr const char* division = "opportunity";
@@ -155,7 +147,7 @@ struct NoBidSeller : AlgoBase<NoBidSeller> {
     if (!core.admit(t, now, out)) return out;
     double fair = kNaN;
     if (src == 0) fair = t.p_other_venue;
-    else if (src == 1) fair = ewma.fair();  // judged against the past, then updated
+    else if (src == 1) fair = ewma.fair();
     else fair = blocks::OptionImpliedProb::read(t);
     ewma.update(blocks::PMid::read(t));
     if (!prob(fair)) return hold(src == 1 ? Rc::Warmup : Rc::SignalMissing);
@@ -164,7 +156,7 @@ struct NoBidSeller : AlgoBase<NoBidSeller> {
     const double ymid = blocks::PMid::read(t);
     const bool day_stop =
         daily.update(t.ts_ns, num(ymid) ? core.led.cash + core.led.at(Instrument::PredNo) * (1.0 - ymid) : kNaN);
-    if (short_no > 0) {  // buying back is always allowed, also after the daily stop
+    if (short_no > 0) {
       const blocks::Route rb = router.route(+1, Instrument::PredNo, t);
       if (num(rb.all_in) && fair_no - rb.all_in >= edge)
         return order(Instrument::PredNo, +1, short_no, kNaN, Rc::Exit, fair_no - rb.all_in, rb.venue);
@@ -174,14 +166,14 @@ struct NoBidSeller : AlgoBase<NoBidSeller> {
     if (rs.reason == Rc::NoRoute) return hold(Rc::NoRoute);
     const double rich = rs.all_in - fair_no;
     if (!(rich >= edge)) return hold(Rc::NoSignal, rich);
-    bool ncap = false;  // selling NO at b == buying YES at 1 - b
+    bool ncap = false;
     const double target = notional.clamp(kelly.target(fair, 1.0 - rs.px), rs.px, 1.0, ncap);
     if (!num(target)) return hold(Rc::NotionalUnknown, rich);
     const double delta = target - short_no;
     if (!(delta >= 1) && ncap) return hold(Rc::NotionalCapped, rich);
     if (!(delta >= 1)) return hold(Rc::ZeroTarget, rich);
     bool capped = false;
-    const double qty = iceberg.clip(delta, t.asks[0].qty, capped);  // YES asks are the NO bids
+    const double qty = iceberg.clip(delta, t.asks[0].qty, capped);
     if (qty < 1) return hold(Rc::IcebergCapped, rich);
     const Rc why = capped ? Rc::IcebergCapped : (ncap ? Rc::NotionalCapped : rs.reason);
     return order(Instrument::PredNo, -1, qty, kNaN, why, rich, rs.venue);
@@ -191,4 +183,4 @@ struct NoBidSeller : AlgoBase<NoBidSeller> {
   }
 };
 
-}  // namespace hedgecore::algos
+}

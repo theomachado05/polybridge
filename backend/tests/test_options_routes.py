@@ -1,4 +1,3 @@
-"""/options/implied, /options/chain, /options/eightk with mocked Massive and mocked market lookups. Offline."""
 import datetime as dt
 import json
 import math
@@ -115,7 +114,7 @@ def test_implied_resolves_kalshi_market(make):
     j = c.get("/options/implied", params={"market_source": "kalshi", "market_id": "KXNVDA-26"}).json()
     assert j["match"]["direction"] == "below" and j["market"]["yes_price"] == pytest.approx(0.42)
     assert j["estimate"]["prob"] == pytest.approx(1 - 0.5 / math.exp(-0.04 * 60 / 365))
-    assert j["estimate"]["structure_mid"] == pytest.approx(4.5)   # put spread P(155) - P(145)
+    assert j["estimate"]["structure_mid"] == pytest.approx(4.5)
 
 
 def test_unsupported_question_is_200_with_reason(make):
@@ -159,7 +158,7 @@ def test_spx_falls_back_to_spy_with_scaled_strike(make):
 def test_threshold_outside_listed_strikes_is_unavailable_with_reason(make):
     c = make(FakeMassive({"NVDA": NVDA_ROWS}))
     j = c.get("/options/implied", params={"question": q_nvda(152)}).json()
-    assert j["available"]  # 152 sits between 150 and 155
+    assert j["available"]
     j = c.get("/options/implied", params={"question": q_nvda(158)}).json()
     assert j["available"] is False and "outside the listed strikes" in j["reason"]
 
@@ -213,14 +212,13 @@ def test_eightk_route_bundled_and_live(make, monkeypatch):
     c = make(Live())
     j = c.get("/options/eightk", params={"ticker": "XYZ", "as_of": "2026-10-03"}).json()
     assert j["score"] == pytest.approx(1 - 3 / 30) and "live Massive" in j["source"] and j["coverage"] == "live"
-    j = make(None).get("/options/eightk", params={"ticker": "XYZ", "as_of": "2026-05-01"}).json()   # OOS window
+    j = make(None).get("/options/eightk", params={"ticker": "XYZ", "as_of": "2026-05-01"}).json()
     assert j["available"] is False and j["score"] is None and j["coverage"] is None
     assert c.get("/options/eightk", params={"ticker": "XYZ", "window_days": 0}).status_code == 422
     assert c.get("/options/eightk", params={"ticker": "XYZ", "as_of": "x"}).status_code == 422
 
 
 def test_implied_kalshi_threshold_in_subtitle(make):
-    """Realistic Kalshi payload: the level lives in yes_sub_title, close_time is UTC (Dec 31 11:59 PM ET)."""
     exp = dt.date(TARGET.year, TARGET.month, TARGET.day)
     title = f"Nvidia price on {exp.strftime('%b')} {exp.day}?"
     close = dt.datetime.combine(exp + dt.timedelta(days=1), dt.time(4, 59)).isoformat() + "Z"

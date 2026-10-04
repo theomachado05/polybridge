@@ -13,9 +13,6 @@ import { ProposalPanel, StatusTag } from "./parts";
 
 const band = (b: Band | null | undefined) => (b && b.mid != null ? `${pct(b.mid)} [${pct(b.lo)}, ${pct(b.hi)}]` : "—");
 
-/** Ticket board: touch and close-above tickets, linked to an option expiry and the two bracketing strikes, priced
- *  against the options reference. No hedge is offered for a ticket (S25 failed). Close-above tickets are "no tested
- *  mechanism": their finish-beyond reference is shown for information only, linked to the entry that explains it. */
 export function TicketBoard({ reg }: { reg: Registry | null }) {
   const [n, retry] = useRetry();
   const t = useAsync(`tickets:${n}`, getTickets);

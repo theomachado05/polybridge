@@ -26,7 +26,6 @@ def test_bootstrap_ci_too_few_values_is_nan():
 
 def test_benjamini_hochberg_known_values():
     q = benjamini_hochberg([0.01, 0.04, 0.03, 0.20])
-    # sorted p .01 .03 .04 .20 -> p*m/rank .04 .06 .0533 .20 -> step-up min .04 .0533 .0533 .20
     np.testing.assert_allclose(q, [0.04, 0.16 / 3, 0.16 / 3, 0.20], rtol=1e-12)
 
 

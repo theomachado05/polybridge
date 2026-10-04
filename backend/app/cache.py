@@ -5,7 +5,6 @@ from typing import Any, Awaitable, Callable
 
 
 class TTLCache:
-    """Async TTL cache. On a fetch error, serves the last value marked stale; raises if there is none."""
 
     def __init__(self, ttl_s: float, clock: Callable[[], float] = time.monotonic):
         self.ttl_s = ttl_s
@@ -13,7 +12,6 @@ class TTLCache:
         self._data: dict[Any, tuple[float, Any]] = {}
 
     async def get_or_set(self, key: Any, coro_fn: Callable[[], Awaitable[Any]]) -> tuple[Any, bool]:
-        """Returns (value, stale)."""
         hit = self._data.get(key)
         now = self._clock()
         if hit is not None and now - hit[0] < self.ttl_s:

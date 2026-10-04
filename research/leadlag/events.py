@@ -1,4 +1,3 @@
-"""Load and validate events.yaml."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -15,7 +14,7 @@ class Event:
     id: str
     name: str
     family: str
-    selection: str  # scheduled | curated
+    selection: str
     anchor: pd.Timestamp | None
     start: pd.Timestamp
     end: pd.Timestamp

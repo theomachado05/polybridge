@@ -1,4 +1,3 @@
-"""S7: the Friday flag, the control match, the straddle's P&L and costs."""
 import numpy as np
 import pytest
 
@@ -10,27 +9,27 @@ V0, V1, V2 = cfg.VARIANTS
 
 def test_put_ticker_swaps_only_the_right_letter():
     assert s7.put_ticker("O:EWZ261009C00038000") == "O:EWZ261009P00038000"
-    assert s7.put_ticker("O:CCJ261016C00055000") == "O:CCJ261016P00055000"       # a C in the root is left alone
+    assert s7.put_ticker("O:CCJ261016C00055000") == "O:CCJ261016P00055000"
 
 
 def test_activity_uses_the_five_nights_ending_on_the_friday_only():
     x = np.array([9.0, 1.0, 2.0, 3.0, 4.0, 5.0, 99.0])
-    assert s7.activity(x, 5) == pytest.approx(3.0)                                  # nights 1..5; the 99 after Friday is not seen
-    assert np.isnan(s7.activity(np.array([np.nan, np.nan, np.nan, 4.0, 5.0]), 4))   # fewer than three nights
+    assert s7.activity(x, 5) == pytest.approx(3.0)
+    assert np.isnan(s7.activity(np.array([np.nan, np.nan, np.nan, 4.0, 5.0]), 4))
 
 
 def test_flag_needs_live_odds_and_activity_on_the_same_question():
     assert s7.flagged([(0.50, 4.0)], V0) and s7.flagged([(0.50, 2.0)], V1) and not s7.flagged([(0.50, 2.0)], V0)
-    assert not s7.flagged([(0.95, 9.0)], V0)                                        # active but outside 10% to 90%
-    assert not s7.flagged([(0.95, 9.0), (0.50, 1.0)], V0)                           # the two conditions on different questions
-    assert s7.flagged([(0.20, 5.0)], V0) and not s7.flagged([(0.20, 5.0)], V2)      # V2 wants 25% to 75%
+    assert not s7.flagged([(0.95, 9.0)], V0)
+    assert not s7.flagged([(0.95, 9.0), (0.50, 1.0)], V0)
+    assert s7.flagged([(0.20, 5.0)], V0) and not s7.flagged([(0.20, 5.0)], V2)
     assert not s7.flagged([(float("nan"), 5.0)], V0)
 
 
 def test_controls_are_the_nearest_earlier_unflagged_weekend_used_once():
     assert s7.match_controls([10, 20], [5, 8, 15, 30]) == {10: 8, 20: 15}
     assert s7.match_controls([10, 11], [5, 8]) == {10: 8, 11: 5}
-    assert s7.match_controls([3], [5, 8]) == {3: 5}                                 # none earlier: the nearest later
+    assert s7.match_controls([3], [5, 8]) == {3: 5}
     assert s7.match_controls([3, 4], [5]) == {3: 5}
 
 
@@ -40,7 +39,7 @@ def test_straddle_buys_at_the_ask_and_sells_at_the_bid():
     assert s["cost"] == pytest.approx((1.10 + 1.00) * 100 + 1.30)
     assert s["proceeds"] == pytest.approx((1.50 + 0.40) * 100 - 1.30)
     assert s["ret"] == pytest.approx((188.70 - 211.30) / 211.30)
-    assert s["mid_ret"] == pytest.approx((200.0 - 200.0) / 200.0)                   # flat at mid: the loss is all costs
+    assert s["mid_ret"] == pytest.approx((200.0 - 200.0) / 200.0)
 
 
 def test_double_costs_double_every_half_spread_and_commission():

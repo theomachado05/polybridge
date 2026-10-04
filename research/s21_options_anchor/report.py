@@ -1,7 +1,3 @@
-"""S21 report: SUMMARY.md, capacity.md and the three charts, every number read back from the result CSVs.
-
-Run from `research/`:  python -m s21_options_anchor.report
-"""
 from __future__ import annotations
 
 import json
@@ -22,7 +18,7 @@ from .pull import S18  # noqa: E402
 from .run import BUCKETS, RESULTS as R  # noqa: E402
 
 SURFACE, INK, INK2, GRID = "#fcfcfb", "#0b0b0b", "#52514e", "#e7e6e2"
-SERIES = {"B0": "#2a78d6", "U": "#eb6834", "B1": "#1baf7a"}        # validated order: blue, orange, aqua (B2 took two markets and is not drawn)
+SERIES = {"B0": "#2a78d6", "U": "#eb6834", "B1": "#1baf7a"}
 NAMES = {"B0": "B0: sell, 5+ points above the central anchor", "B1": "B1: sell, 10+ points above the central anchor",
          "B2": "B2: buy, 5+ points below the lower-bound anchor", "U": "U: sell every anchored market (S18's book)",
          "U-all": "U-all: sell every stock and S&P market (S18's book)", "R1": "R1: B0 without zero-bid anchors",
@@ -316,7 +312,6 @@ def main() -> int:
 
 
 def ANSWER(v: dict) -> list[str]:
-    """The plain-language answer, every number from the result files (the local variables of main)."""
     from .answer import answer
     return answer(v)
 

@@ -1,7 +1,5 @@
 "use client";
 
-// Options views: the strike ladder (GET /options/chain/{underlying}), the hedge-instrument comparison
-// (GET /options/hedge-quote) and option legs marked to market (GET /options/mark/{contract}).
 import { useState } from "react";
 import { getHedgeQuote, getLiveChain, getOptionMark } from "@/lib/api";
 import { useAsync } from "@/lib/hooks";
@@ -17,7 +15,6 @@ const title = { fontSize: "var(--fs-14)" } as const;
 const note = { fontSize: "var(--fs-12)", color: "var(--faint)", marginTop: "var(--sp-3)", lineHeight: 1.5 } as const;
 const status = { marginTop: "var(--sp-3)" } as const;
 
-/** Strike ladder: calls left, puts right, one expiry; in-the-money cells tinted, the strike nearest spot marked. */
 export function OptionChainCard({ ticker }: { ticker: string }) {
   const [expiry, setExpiry] = useState<string | null>(null);
   const chain = useAsync(`chain:${ticker}:${expiry ?? ""}`, () => getLiveChain(ticker, { strikes: 10, ...(expiry ? { expiry } : {}) }));
@@ -82,7 +79,6 @@ export function OptionChainCard({ ticker }: { ticker: string }) {
   );
 }
 
-/** Short stock vs protective put vs collar vs put spread for this position, at executable prices. */
 export function HedgeCompareCard({ ticker, shares, protection = 0.05, horizon = 30 }: { ticker: string; shares: number; protection?: number; horizon?: number }) {
   const [pp, setPp] = useState(protection);
   const hq = useAsync(`hq:${ticker}:${shares}:${pp}:${horizon}`, () => getHedgeQuote({ ticker, shares, horizon_days: horizon, protection_pct: pp }));
@@ -139,7 +135,6 @@ export function HedgeCompareCard({ ticker, shares, protection = 0.05, horizon = 
   );
 }
 
-/** One option leg with its live mark (GET /options/mark), for open structures and broker option positions. */
 export function LegMark({ contract, sign, qty }: { contract: string; sign?: number; qty?: number }) {
   const m = useAsync(`mark:${contract}`, () => getOptionMark(contract));
   const v = m.error ? { text: `no mark (${m.error})`, tone: "neutral" as const, title: "" } : markLine(m.data);

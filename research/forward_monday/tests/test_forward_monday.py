@@ -1,4 +1,3 @@
-"""Synthetic tests for the forward reopening taker. No network, no key."""
 from datetime import date
 
 import pandas as pd

@@ -1,33 +1,3 @@
-"""Options reference for a price ticket: the probability that the underlying finishes beyond a level, and the touch
-reference built from it, with the bid/ask band. ``GET /options/reference`` and ``reference_for()``.
-
-Rules are those of ``research/s21_options_anchor/METHOD.md`` section 3, applied to the latest Massive quotes instead of a
-historical instant:
-
-- **Window end -> end session day:** the last weekday on or before the ticket's window end.
-- **Expiry:** listed expiries are walked forward from the end session day, at most 45 calendar days; an expiry counts
-  only if it gives two usable legs; at most three listed expiries are tried, in order.
-- **Strikes:** the two listed strikes that bracket the level (``arbscan.implied.bracket_indices``): the level's two
-  neighbours if it is itself listed, otherwise the strikes just below and just above. A leg without a usable quote moves
-  outward by one listed strike, at most twice.
-- **Finish beyond the level:** "above" = the call spread, long the lower strike; "below" = the put spread, long the higher
-  strike (``arbscan.implied.Spread``): ``mid`` from the two mids, ``lo`` from long-leg bid minus short-leg ask, ``hi``
-  from long-leg ask minus short-leg bid, each divided by the strike width, grossed up by exp(0.04 x years to expiry),
-  clamped to 0..1.
-- **Usable leg quote:** the last NBBO (Massive ``/v3/quotes``), an offer above zero and a bid of zero or more not above
-  the offer (a zero bid is accepted and flagged, as in S21), at most 10 minutes older than the data instant.
-- **Touch reference:** min(1, 2 x finish-beyond), band min(1, 2 x lo) .. min(1, 2 x hi). This is the reflection-principle
-  approximation; it ignores drift, and the option expiry can be later than the ticket's window, which makes it a little
-  high. The finish-beyond probability itself is a lower bound for the touch probability.
-
-**Data instant.** During the regular session Massive's quotes are delayed about 15 minutes, so the instant is now minus
-15 minutes. Outside the session (nights, weekends, holidays) it is the last regular close: on a weekend that is
-Friday's close, and ``session_label`` / ``as_of`` say so.
-
-This is a yardstick, not a trade: touch tickets are an OPEN LEAD, unvalidated (the fresh test was INSUFFICIENT). No
-option-spread hedge is offered here. No key, a Massive outage, a timeout or a ticket the chain cannot price is a labelled
-``available: false`` with a reason, never an exception.
-"""
 from __future__ import annotations
 
 import asyncio
@@ -43,17 +13,17 @@ from ..chain import bounded, make_client
 from . import chain as ch
 from . import quotes as qt
 
-RATE = 0.04                    # METHOD 3: the existing code's rate, to undo the discount on the spread
-STALE_OPTION_S = 600           # a leg quote may be at most 10 minutes older than the data instant
-MAX_STEP_OUT = 2               # a leg with no usable quote moves outward by at most two listed strikes
-MAX_EXPIRY_GAP_DAYS = 45       # the expiry is at most this many calendar days after the window's last session day
-MAX_EXPIRY_TRIES = 3           # listed expiries tried, in order, until one gives two usable legs
-CENTRAL_MULTIPLE = 2.0         # reflection rule: touch = twice the finish-beyond probability, capped at 1
-FEED_DELAY_S = 15 * 60         # Massive option quotes are 15-minute delayed during the session
-STRIKE_WINDOW = 0.25           # strikes fetched within +/-25% of the level (bracket plus two outward steps)
+RATE = 0.04
+STALE_OPTION_S = 600
+MAX_STEP_OUT = 2
+MAX_EXPIRY_GAP_DAYS = 45
+MAX_EXPIRY_TRIES = 3
+CENTRAL_MULTIPLE = 2.0
+FEED_DELAY_S = 15 * 60
+STRIKE_WINDOW = 0.25
 REF_TTL_S = 30.0
 CHAIN_TTL_S = 60.0
-TOTAL_TIMEOUT_S = 20.0         # one reference never takes longer than this
+TOTAL_TIMEOUT_S = 20.0
 INDEX = {"SPX": ("I:SPX", "SPXW"), "I:SPX": ("I:SPX", "SPXW"), "^SPX": ("I:SPX", "SPXW"), "^GSPC": ("I:SPX", "SPXW")}
 
 STATUS = "OPEN LEAD, unvalidated (touch tickets); reference only, not a trade signal"
@@ -75,12 +45,9 @@ _CHAINS = TTLCache(CHAIN_TTL_S)
 
 
 def reset_caches() -> None:
-    """Tests: fresh caches."""
     global _REF, _CHAINS
     _REF, _CHAINS = TTLCache(REF_TTL_S), TTLCache(CHAIN_TTL_S)
 
-
-# ------------------------------------------------------------------------------------------------ pure rules
 
 @dataclass(frozen=True)
 class Leg:
@@ -88,7 +55,7 @@ class Leg:
     strike: float
     bid: float
     ask: float
-    ts: float                   # epoch seconds of the NBBO
+    ts: float
 
     @property
     def mid(self) -> float:
@@ -100,8 +67,6 @@ def _clamp(x: float) -> float:
 
 
 def bracket_indices(strikes: Sequence[float], k: float) -> tuple[int, int] | None:
-    """``arbscan.implied.bracket_indices`` (narrow rule): if k is listed, its immediate neighbours; else the strikes
-    immediately below and above. None when k is outside the listed range."""
     s = list(strikes)
     j = bisect.bisect_left(s, k - 1e-9)
     if j < len(s) and abs(s[j] - k) < 1e-6:
@@ -114,8 +79,6 @@ def bracket_indices(strikes: Sequence[float], k: float) -> tuple[int, int] | Non
 
 
 def usable(leg: Leg | None, instant: float, now: float) -> bool:
-    """An offer above zero, a bid of zero or more not above it, at most STALE_OPTION_S older than the instant (and not
-    from the future)."""
     if leg is None or not (math.isfinite(leg.bid) and math.isfinite(leg.ask)):
         return False
     if not (leg.ask > 0 and leg.ask >= leg.bid >= 0):
@@ -125,7 +88,6 @@ def usable(leg: Leg | None, instant: float, now: float) -> bool:
 
 @dataclass
 class SpreadProb:
-    """``arbscan.implied.Spread`` for a long leg and a short leg: the finish-beyond probability and its band."""
     k_lo: float
     k_hi: float
     long: Leg
@@ -169,8 +131,6 @@ def touch_from(p: float) -> float:
 
 async def pick_spread(strikes: Sequence[float], level: float, above: bool,
                       get_leg: Callable[[float], Any], t_years: float, instant: float, now: float) -> SpreadProb | None:
-    """S21 ``finish_beyond``: bracket the level, move a leg without a usable quote outward (at most twice). ``get_leg``
-    is an async function strike -> Leg | None for the right kind of option (call for above, put for below)."""
     s = sorted(strikes)
     ij = bracket_indices(s, level)
     if ij is None:
@@ -207,8 +167,6 @@ def end_session_day(window_end: dt.date) -> dt.date:
 
 
 def underlying_and_root(ticker: str) -> tuple[str, str]:
-    """(snapshot underlying, contract root). S&P 500 index questions use the PM-settled index options (SPXW) at the
-    index level named; SPY questions use SPY options at the SPY level. No level is converted between the two."""
     t = ticker.strip().upper()
     if t in INDEX:
         return INDEX[t]
@@ -216,7 +174,6 @@ def underlying_and_root(ticker: str) -> tuple[str, str]:
 
 
 def data_instant(now: dt.datetime) -> tuple[dt.datetime, dict, str]:
-    """(instant of the data, market state, session label)."""
     market = qt.market_state(now)
     if market.get("market_open"):
         inst = now - dt.timedelta(seconds=FEED_DELAY_S)
@@ -234,8 +191,6 @@ def data_instant(now: dt.datetime) -> tuple[dt.datetime, dict, str]:
                            "quotes, not tradable now")
 
 
-# ------------------------------------------------------------------------------------------------ network
-
 def _fetch_contracts_sync(client, underlying: str, params: dict) -> ch.Chain:
     pages = ch.fetch_pages(client, underlying, params)
     chain = ch.parse_snapshot(underlying, pages)
@@ -252,7 +207,6 @@ async def _contracts(client, underlying: str, kind: str, d0: dt.date, level: flo
 
 
 def _listed(chain: ch.Chain, root: str, kind: str) -> dict[str, dict[float, str]]:
-    """{expiry: {strike: OCC ticker}} of standard 100-share contracts of the right root and kind."""
     pat = re.compile(rf"^O:{re.escape(root)}\d{{6}}{'C' if kind == 'call' else 'P'}\d{{8}}$")
     out: dict[str, dict[float, str]] = {}
     for q in chain.quotes:
@@ -378,8 +332,6 @@ def _parse_date(x: Any) -> dt.date | None:
 
 async def reference_for(ticker: str, level: float, direction: str, window_end: Any, kind: str = "touch", *,
                         client: Any = ..., now: dt.datetime | None = None) -> dict:
-    """The options reference of one ticket (see the module docstring). ``direction`` "above" | "below"; ``kind``
-    "touch" | "finish" picks ``central``. Never raises; cached ``REF_TTL_S`` per ticket and minute."""
     tk = str(ticker or "").strip().upper()
     d = str(direction or "").strip().lower()
     k = str(kind or "").strip().lower()

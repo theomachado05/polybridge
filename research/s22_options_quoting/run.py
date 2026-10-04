@@ -1,9 +1,3 @@
-"""S22 runner: the fills a maker quoting around the options band would have received, scored to the result.
-
-Reads one file from git (no network), applies METHOD.md, writes research/results/s22_options_quoting/.
-
-    cd research && .venv/bin/python -m s22_options_quoting.run
-"""
 from __future__ import annotations
 
 import argparse
@@ -29,14 +23,11 @@ TRADE_COLS = ["variant", "market_id", "tk", "k", "res_date", "ts", "time_ny", "t
               "p_mid_region", "sample"]
 
 
-# ---------------------------------------------------------------- input -------------------------------------------
-
 def git(*args: str) -> bytes:
     return subprocess.run(["git", *args], capture_output=True, cwd=C.REPO_DIR, check=True).stdout
 
 
 def load_input() -> tuple[pd.DataFrame, str]:
-    """The partner's file at the pinned commit, read with `git show`. Refuses if the blob id differs."""
     blob = git("rev-parse", f"{C.INPUT_COMMIT}:{C.INPUT_PATH}").decode().strip()
     if blob != C.INPUT_BLOB:
         raise SystemExit(f"input blob {blob} is not the registered {C.INPUT_BLOB}")
@@ -45,20 +36,15 @@ def load_input() -> tuple[pd.DataFrame, str]:
 
 
 def sample(df: pd.DataFrame) -> pd.DataFrame:
-    """METHOD 2: the rows with status == ok, no other filter."""
     return df[df["status"] == C.STATUS_OK].reset_index(drop=True)
 
 
 def oos_dates(dates) -> list[str]:
-    """METHOD 5: the last ceil(20%) of the distinct resolution dates."""
     d = sorted({str(x) for x in dates})
     return d[len(d) - math.ceil(C.OOS_SHARE * len(d)):] if d else []
 
 
-# ---------------------------------------------------------------- quotes and fills --------------------------------
-
 def quotes(p_lo, p_hi, m: float, tick: float | None = None) -> tuple[np.ndarray, np.ndarray]:
-    """(bid, offer). NaN where the quote would sit outside POST_RANGE and so is not posted."""
     bid = np.asarray(p_lo, float) - m
     offer = np.asarray(p_hi, float) + m
     if tick:
@@ -71,13 +57,11 @@ def quotes(p_lo, p_hi, m: float, tick: float | None = None) -> tuple[np.ndarray,
 
 
 def region(p_mid) -> np.ndarray:
-    """p_mid region: <0.10, [0.10, 0.25), [0.25, 0.75), [0.75, 0.90), >= 0.90."""
     i = np.searchsorted(np.asarray(C.P_MID_EDGES), np.asarray(p_mid, float), side="right")
     return np.asarray(C.P_MID_LABELS, dtype=object)[i]
 
 
 def dose_bin(dose, m: float) -> np.ndarray:
-    """Distance beyond the band: [m, 2m), [2m, 4m), [4m, ...)."""
     edges = np.asarray([k * m for k in C.DOSE_MULTS]) - C.EPS
     i = np.searchsorted(edges, np.asarray(dose, float), side="right")
     return np.asarray(C.DOSE_LABELS, dtype=object)[i]
@@ -85,8 +69,6 @@ def dose_bin(dose, m: float) -> np.ndarray:
 
 def fills(ok: pd.DataFrame, m: float, through: float = 0.0, tick: float | None = None, variant: str = "primary",
           at_print: bool = False, oos: list[str] | None = None) -> tuple[pd.DataFrame, dict]:
-    """One row per fill (METHOD 3, 4). `through` = how far beyond our quote a print must be (the stress). With
-    `at_print` (amendment A1) there is no quote: we are the other side of every print, at the print's own price."""
     d = ok.copy()
     side = d["side"].astype(str).str.upper()
     px = d["px"].astype(float).to_numpy()
@@ -131,10 +113,7 @@ def fills(ok: pd.DataFrame, m: float, through: float = 0.0, tick: float | None =
     return d[TRADE_COLS], info
 
 
-# ---------------------------------------------------------------- statistics --------------------------------------
-
 def cluster_boot(values, clusters, weights=None, draws: int = C.BOOT_DRAWS, seed: int = C.SEED) -> tuple[float, float]:
-    """95% percentile interval of the (weighted) pooled mean, resampling whole clusters (resolution dates)."""
     v = np.asarray(values, float)
     if len(v) == 0:
         return float("nan"), float("nan")
@@ -148,7 +127,6 @@ def cluster_boot(values, clusters, weights=None, draws: int = C.BOOT_DRAWS, seed
 
 
 def day_weight(values, clusters, draws: int = C.BOOT_DRAWS, seed: int = C.SEED) -> tuple[float, float, float]:
-    """Mean of daily means and its 95% interval (resampling days)."""
     v = np.asarray(values, float)
     if len(v) == 0:
         return float("nan"), float("nan"), float("nan")
@@ -201,7 +179,6 @@ def days_per_year(all_dates: list[str]) -> float:
 
 
 def book(f: pd.DataFrame, all_dates: list[str]) -> tuple[pd.DataFrame, dict]:
-    """METHOD 6: daily dollar P&L over every resolution date of the sample, Sharpe, drawdown, worst month."""
     g = f.groupby("res_date")
     daily = pd.DataFrame({"pnl_usd": g["pnl_usd"].sum(), "capital_usd": g["capital_usd"].sum(),
                           "contracts": g["contracts"].sum(), "n_fills": g.size()}).reindex(all_dates).fillna(0.0)
@@ -239,7 +216,6 @@ def book(f: pd.DataFrame, all_dates: list[str]) -> tuple[pd.DataFrame, dict]:
 
 
 def verdict(prim: dict, ins: dict, oos: dict, stress: dict) -> tuple[str, list[tuple[str, bool, str]]]:
-    """METHOD 7: the seven lines, each (text, held, the number)."""
     def pos(r):
         return bool(r["n_fills"]) and r["mean_pt"] > 0
 
@@ -257,8 +233,6 @@ def verdict(prim: dict, ins: dict, oos: dict, stress: dict) -> tuple[str, list[t
     ]
     return ("PASS" if all(ok for _, ok, _ in lines) else "FAIL"), lines
 
-
-# ---------------------------------------------------------------- charts ------------------------------------------
 
 SURFACE, INK, INK2, GRID, BLUE, ORANGE = "#fcfcfb", "#0b0b0b", "#52514e", "#e4e3df", "#2a78d6", "#eb6834"
 
@@ -282,7 +256,6 @@ def _axes(title: str, ylabel: str):
 
 
 def usd(x: float, sign: bool = True) -> str:
-    """Dollar text for matplotlib (a bare $ would start math mode)."""
     s = ("+" if x >= 0 else "-") if sign else ("-" if x < 0 else "")
     return f"{s}\\${abs(x):,.0f}"
 
@@ -313,8 +286,6 @@ def charts(daily: pd.DataFrame, daily_stress: pd.DataFrame, bm: dict, out: Path)
     fig.savefig(out / "drawdown.png", dpi=150, facecolor=SURFACE)
     plt.close(fig)
 
-
-# ---------------------------------------------------------------- main --------------------------------------------
 
 def fmt(x, d=2):
     return "" if x == "" or x is None or (isinstance(x, float) and math.isnan(x)) else f"{x:+.{d}f}"

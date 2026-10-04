@@ -1,7 +1,3 @@
-"""Reference prices for simulated fills, from Massive via the bounded helpers in app.chain.
-
-Calls bypass the research client's on-disk cache (a cached "last price" would be stale forever) but keep its
-bounded session, and every call runs through chain.bounded so a stalled request cannot hang an order."""
 from __future__ import annotations
 
 import math
@@ -16,7 +12,7 @@ from .. import chain
 @dataclass(frozen=True)
 class Quote:
     mid: float
-    half_spread: float | None  # None: the source has no bid/ask, the broker applies its configured spread
+    half_spread: float | None
     source: str
 
 
@@ -26,7 +22,6 @@ class QuoteProvider(Protocol):
 
 
 class NullQuotes:
-    """No market data: every order must carry its own reference price."""
 
     async def equity(self, symbol: str) -> Quote | None:
         return None
@@ -44,7 +39,7 @@ def _pos(x) -> float | None:
 
 
 def _get(client, path: str, params: dict | None = None) -> dict:
-    r = client.session.get(BASE_URL + path, params=params)  # _BoundedSession caps the timeout
+    r = client.session.get(BASE_URL + path, params=params)
     r.raise_for_status()
     return r.json()
 
@@ -86,7 +81,7 @@ class MassiveQuotes:
     async def _run(self, fn, symbol: str) -> Quote | None:
         client = self._get_client()
         if client is None:
-            return None  # no Massive key: the order needs its own price
+            return None
         try:
             return await chain.bounded(fn, client, symbol)
         except Exception:

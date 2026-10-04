@@ -1,7 +1,3 @@
-"""S10 report: equity_curve.png, drawdown.png, leadlag.png and capacity.md from the result CSVs.
-
-Run from `research/`:  python -m s10_weekend_lag.report
-"""
 from __future__ import annotations
 
 import json
@@ -117,7 +113,6 @@ def main() -> int:
 
 
 def mechanism_chart() -> None:
-    """Part 2: how far the follower moves per point of the leader's move, by horizon, for question pairs (type B)."""
     s = pd.read_csv(R / "mechanism" / "slopes.csv")
     s = s[(s.pairs == "B") & (s.group == "all")]
     fig, ax = plt.subplots(figsize=(9.5, 4.0), facecolor=SURFACE)

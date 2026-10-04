@@ -1,9 +1,3 @@
-"""S10: inside the weekend, does the oil event question move before the oil price market? (METHOD.md)
-
-Run from `research/`:
-    python -m s10_weekend_lag.run               # tests, event study, every variant, the print check
-    python -m s10_weekend_lag.run --no-prints   # the same without pulling prints
-"""
 from __future__ import annotations
 
 import json
@@ -33,10 +27,7 @@ CACHE = HERE / ".cache"
 S9_CACHE = RESEARCH / "s9_weekend_price_markets" / ".cache"
 
 
-# ---------------------------------------------------------------- small pure pieces
-
 def boot_mean(by: dict[str, list[float]]) -> tuple[float, float, float]:
-    """Mean over all observations, 95% interval resampling the keys (weekends)."""
     keys = sorted(k for k, v in by.items() if v)
     allv = [x for k in keys for x in by[k]]
     if not allv:
@@ -52,7 +43,6 @@ def boot_mean(by: dict[str, list[float]]) -> tuple[float, float, float]:
 
 
 def fwd(S: np.ndarray, k: int) -> np.ndarray:
-    """Index change from grid i to i + k: the mean over rows valid at both ends (NaN where none, or i + k off the grid)."""
     n = S.shape[1]
     out = np.full(n, np.nan)
     if k >= n or S.shape[0] == 0:
@@ -66,8 +56,6 @@ def fwd(S: np.ndarray, k: int) -> np.ndarray:
 
 
 def jumps(P: np.ndarray, sign: float, first: int) -> dict[int, float]:
-    """Jumps of one series on the grid: {grid index: signed size in points}. P in points (0-100), unsigned. A jump at i is
-    a change over a rule's window ending at i, from a reference price inside JUMP_REF_BAND; the largest firing change wins."""
     lo, hi = 100 * cfg.JUMP_REF_BAND[0], 100 * cfg.JUMP_REF_BAND[1]
     out = {}
     for i in range(first, len(P)):
@@ -88,7 +76,6 @@ def jumps(P: np.ndarray, sign: float, first: int) -> dict[int, float]:
 
 
 def pick_signals(cands: dict[int, float], refractory_bins: int, last: int | None = None, cap: int | None = None) -> list[tuple[int, float]]:
-    """Accept jumps in time order with a refractory gap; optionally only up to grid index `last`, and the first `cap`."""
     out, prev = [], -10**9
     for i in sorted(cands):
         if last is not None and i > last:
@@ -106,7 +93,6 @@ def fee(p: float, rate: float, exponent: float, c: float) -> float:
 
 
 def trade(buy: bool, p_in: float, p_out: float, settled: bool, h: float, rate: float, exponent: float, c: float) -> tuple[float, float, float]:
-    """(entry fill in YES terms, gross P&L per contract at mids, net P&L per contract)."""
     lo, hi = cfg.PRICE_CLIP
     entry = min(max(p_in + c * h if buy else p_in - c * h, lo), hi)
     if settled:
@@ -120,9 +106,6 @@ def trade(buy: bool, p_in: float, p_out: float, settled: bool, h: float, rate: f
 
 
 def verify(prints: list[dict], buy: bool, entry: float, t_signal: float) -> tuple[int, float]:
-    """Prints in [t_signal, t_signal + PRINT_WINDOW_S] at the assumed price or better on the side that proves the fill
-    (S6's rule): a YES sale needs a taker who sold YES at or above our price; a YES purchase needs a taker who bought
-    YES at or below it. NO prints are converted to YES terms."""
     n, size = 0, 0.0
     for t in prints:
         ts = t.get("timestamp")
@@ -139,8 +122,6 @@ def verify(prints: list[dict], buy: bool, entry: float, t_signal: float) -> tupl
             n, size = n + 1, size + float(t.get("size", 0))
     return n, size
 
-
-# ---------------------------------------------------------------- data
 
 def questions() -> list[dict]:
     by_q: dict[str, dict] = {}
@@ -175,7 +156,6 @@ def price_markets(asset_class: str) -> list[dict]:
 
 
 def grid_matrix(series: list[dict], grid: np.ndarray) -> tuple[np.ndarray, np.ndarray, list[dict]]:
-    """(P unsigned points, S signed points, live series) on the grid, keeping only series live at the start."""
     P, live = [], []
     for s in series:
         v = 100.0 * asof(grid.astype(np.int64), s["t"], s["p"], cfg.PM_MAX_AGE_S)
@@ -189,7 +169,6 @@ def grid_matrix(series: list[dict], grid: np.ndarray) -> tuple[np.ndarray, np.nd
 
 
 def index_change(live: list[dict], a: float, b: float) -> float:
-    """Signed index change in points between two instants (minute resolution), over the series valid at both."""
     if not live:
         return float("nan")
     d = []
@@ -200,8 +179,6 @@ def index_change(live: list[dict], a: float, b: float) -> float:
     return float(np.mean(d)) if d else float("nan")
 
 
-# ---------------------------------------------------------------- one weekend
-
 def weekend(w: dict, qs: list[dict], classes: dict[str, list[dict]]) -> dict:
     start, end = w["start"], w["entry"]
     grid = np.arange(start, end + 1, cfg.BIN_S)
@@ -211,7 +188,6 @@ def weekend(w: dict, qs: list[dict], classes: dict[str, list[dict]]) -> dict:
     for c, ms in classes.items():
         Pp, Sp, live_p = grid_matrix(ms, grid)
         out["classes"][c] = {"P": Pp, "S": Sp, "live": live_p}
-    # event-question jumps: the largest at each instant, one per 30 minutes
     cands: dict[int, tuple[float, str]] = {}
     for r, s in enumerate(live_q):
         for i, j in jumps(Pq[r], s["sign"], first).items():
@@ -230,8 +206,6 @@ def weekend(w: dict, qs: list[dict], classes: dict[str, list[dict]]) -> dict:
     return out
 
 
-# ---------------------------------------------------------------- tests
-
 def leadlag_rows(W: list[dict], c: str) -> list[dict]:
     rows = []
     first = cfg.LOOKBACK_S // cfg.BIN_S
@@ -243,11 +217,11 @@ def leadlag_rows(W: list[dict], c: str) -> list[dict]:
                 d = wk["classes"][c]
                 if not len(wk["live_q"]) or not len(d["live"]):
                     continue
-                xb, yb = fwd(wk["Sq"], 1), fwd(d["S"], 1)        # value at i: change over (i, i+1]
+                xb, yb = fwd(wk["Sq"], 1), fwd(d["S"], 1)
                 xf, yf = fwd(wk["Sq"], k), fwd(d["S"], k)
                 n = len(wk["grid"])
                 for i in range(first, n):
-                    back_x, back_y = xb[i - 1], yb[i - 1]       # the bin (t - 5 min, t]
+                    back_x, back_y = xb[i - 1], yb[i - 1]
                     if direction == "same bin":
                         xs.append(back_x), ys.append(back_y), gs.append(wk["key"])
                     elif i + k < n:
@@ -261,7 +235,6 @@ def leadlag_rows(W: list[dict], c: str) -> list[dict]:
 
 
 def event_rows(W: list[dict], c: str) -> list[dict]:
-    """One row per jump (both kinds), with the response of the other index."""
     rows = []
     for wk in W:
         d, grid = wk["classes"][c], wk["grid"]
@@ -292,8 +265,6 @@ def event_summary(ev: pd.DataFrame) -> list[dict]:
                         "mean": m[0], "ci_lo": m[1], "ci_hi": m[2], "mean_abs_jump": float(s.jump.abs().mean()) if len(s) else float("nan")})
     return out
 
-
-# ---------------------------------------------------------------- trades
 
 def make_trades(W: list[dict]) -> list[dict]:
     out = []
@@ -335,7 +306,6 @@ def make_trades(W: list[dict]) -> list[dict]:
 
 
 def load_prints(need: dict[str, tuple[str, list[float]]]) -> dict[str, dict]:
-    """Public prints of each market near the signal instants, cached per market."""
     CACHE.mkdir(parents=True, exist_ok=True)
     pt, out = ds.Throttle(cfg.PRINT_RATE), {}
     for mid, (cond, at) in sorted(need.items()):
@@ -356,8 +326,6 @@ def load_prints(need: dict[str, tuple[str, list[float]]]) -> dict[str, dict]:
         out[mid] = rec
     return out
 
-
-# ---------------------------------------------------------------- run
 
 def main() -> int:
     t_run = time.time()
@@ -395,7 +363,6 @@ def main() -> int:
         t["verify_n"], t["verify_size"], t["verified"] = n, size, n > 0
         t["pnl_verified"] = t["pnl"] * min(size, cfg.CONTRACTS) / cfg.CONTRACTS if n else 0.0
 
-    # weekends a variant could trade: those with live markets of its class and live questions
     live_by_class = {c: sorted(wk["key"] for wk in W if len(wk["classes"][c]["live"])) for c in classes}
     rows, eq = [], []
     for v in cfg.VARIANTS:

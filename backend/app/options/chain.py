@@ -1,13 +1,3 @@
-"""Listed option chain snapshots from Massive (`/v3/snapshot/options/{underlying}`).
-
-- Live snapshot calls never go through the research client's permanent on-disk cache (a snapshot is only true for
-  a moment); they use the same bounded session (6 s per HTTP call, 8 s per threaded call via ``app.chain.bounded``)
-  and an in-memory TTL cache (``CHAIN_TTL_S``). On a fetch error the last snapshot is served, marked stale.
-- Quote fields depend on the Massive plan. ``bid``/``ask`` come from ``last_quote`` when the plan has quotes;
-  otherwise they are NaN and ``mid`` falls back to ``fmv`` (Massive's fair-market value), then the session close.
-  ``mark_source`` says which one was used, so nothing downstream mistakes a close for a quote.
-- Everything missing is NaN, never invented. No key -> ``make_client()`` is None and callers degrade gracefully.
-"""
 from __future__ import annotations
 
 import datetime as dt
@@ -27,18 +17,15 @@ MAX_PAGES = 8
 NAN = math.nan
 
 _CACHE = TTLCache(CHAIN_TTL_S)
-_LAST: dict[str, "Chain"] = {}  # most recent snapshot per underlying (the /options/chain view; not for enrich)
-# Snapshot fetched *for* one (underlying, K, resolution date) query. enrich() reads this, so two markets on the same
-# underlying (different strikes or dates) never read each other's strike band / expiry window.
+_LAST: dict[str, "Chain"] = {}
 _FOR: dict[tuple[str, float, str], "Chain"] = {}
 
 
 class NoClient(RuntimeError):
-    """MASSIVE_API_KEY is not configured."""
+    pass
 
 
 def _f(x: Any) -> float:
-    """Finite float or NaN."""
     try:
         v = float(x)
     except (TypeError, ValueError):
@@ -54,13 +41,13 @@ def _ns(x: Any) -> int | None:
 @dataclass
 class OptionQuote:
     ticker: str
-    kind: str          # "call" | "put"
+    kind: str
     strike: float
-    expiry: str        # YYYY-MM-DD
+    expiry: str
     bid: float = NAN
     ask: float = NAN
     mid: float = NAN
-    mark_source: str | None = None   # "quote" | "fmv" | "day_close" | None
+    mark_source: str | None = None
     iv: float = NAN
     delta: float = NAN
     open_interest: float = NAN
@@ -68,28 +55,27 @@ class OptionQuote:
     updated_ns: int | None = None
     exercise_style: str | None = None
     gamma: float = NAN
-    theta: float = NAN               # per calendar day (Massive convention)
-    vega: float = NAN                # per vol point
-    last: float = NAN                # last trade price when the plan has trades, else the session close
-    last_source: str | None = None   # "last_trade" | "day_close" | None
+    theta: float = NAN
+    vega: float = NAN
+    last: float = NAN
+    last_source: str | None = None
     shares_per_contract: float = 100.0
 
 
 @dataclass
 class Chain:
     underlying: str
-    fetched_at: float                      # unix seconds
+    fetched_at: float
     quotes: list[OptionQuote] = field(default_factory=list)
-    spot: float = NAN                      # Massive underlying_asset.price when the plan provides it
-    timeframe: str | None = None           # Massive's label, e.g. "DELAYED" / "REAL-TIME"
+    spot: float = NAN
+    timeframe: str | None = None
     source: str = "massive_snapshot"
-    truncated: bool = False                # True when Massive had more pages than MAX_PAGES (chain incomplete)
+    truncated: bool = False
 
     def expiries(self) -> list[str]:
         return sorted({q.expiry for q in self.quotes})
 
     def slice(self, expiry: str) -> dict[float, dict[str, OptionQuote]]:
-        """{strike: {"call": q, "put": q}} for one expiry, strikes ascending."""
         out: dict[float, dict[str, OptionQuote]] = {}
         for q in self.quotes:
             if q.expiry == expiry and math.isfinite(q.strike):
@@ -112,7 +98,6 @@ def _clean(d: dict) -> dict:
 
 
 def parse_result(r: dict) -> OptionQuote | None:
-    """One snapshot row -> OptionQuote; None when the row has no usable contract details."""
     det = r.get("details") or {}
     kind = det.get("contract_type")
     strike, expiry = _f(det.get("strike_price")), det.get("expiration_date")
@@ -121,7 +106,7 @@ def parse_result(r: dict) -> OptionQuote | None:
     lq, day, greeks = r.get("last_quote") or {}, r.get("day") or {}, r.get("greeks") or {}
     bid, ask = _f(lq.get("bid")), _f(lq.get("ask"))
     if math.isfinite(bid) and math.isfinite(ask) and (bid < 0 or ask <= 0 or bid > ask):
-        bid = ask = NAN  # crossed or empty book: trust neither side
+        bid = ask = NAN
     mid, src = NAN, None
     if math.isfinite(bid) and math.isfinite(ask):
         mid, src = (bid + ask) / 2.0, "quote"
@@ -164,7 +149,6 @@ def parse_snapshot(underlying: str, pages: list[dict], fetched_at: float | None 
 
 
 def _get(client, url: str, params: dict | None) -> dict:
-    """GET without the research client's permanent disk cache (snapshots go stale); bounded by the session."""
     full = url if url.startswith("http") else BASE_URL + url
     resp = client.session.get(full, params=params, timeout=6.0)
     resp.raise_for_status()
@@ -215,7 +199,6 @@ def fetch_chain_sync(underlying: str, params: dict, client=None) -> Chain:
 
 async def get_chain(underlying: str, *, expiry_from=None, expiry_to=None, strike_min: float | None = None,
                     strike_max: float | None = None, client=None, cache: TTLCache | None = None) -> tuple[Chain, bool]:
-    """(chain, cache_stale). Raises NoClient without a key; TimeoutError / HTTP errors when nothing is cached."""
     underlying = underlying.strip().upper()
     params = snapshot_params(expiry_from, expiry_to, strike_min, strike_max)
     key = (underlying, tuple(sorted(params.items())))
@@ -228,7 +211,6 @@ async def get_chain(underlying: str, *, expiry_from=None, expiry_to=None, strike
 
 
 def last_chain(underlying: str) -> Chain | None:
-    """Most recent snapshot fetched for this underlying in this process (no network)."""
     return _LAST.get(underlying.strip().upper())
 
 
@@ -247,20 +229,17 @@ def _qkey(underlying: str, K: Any, expiry: Any) -> tuple[str, float, str] | None
 
 
 def remember_for(underlying: str, K: Any, expiry: Any, chain: Chain) -> None:
-    """Store the snapshot fetched for this (underlying, K, resolution date) query (see ``chain_for``)."""
     key = _qkey(underlying, K, expiry)
     if key is not None:
         _FOR[key] = chain
 
 
 def chain_for(underlying: str, K: Any, expiry: Any) -> Chain | None:
-    """The snapshot ``enrich.refresh`` fetched for exactly this query, or None (no network)."""
     key = _qkey(underlying, K, expiry)
     return _FOR.get(key) if key is not None else None
 
 
 def staleness(chain: Chain, cache_stale: bool, now: float | None = None) -> dict:
-    """Honest freshness labels for a response."""
     now = time.time() if now is None else now
     upd = chain.latest_update_ns()
     age = None if upd is None else max(0.0, now - upd / 1e9)

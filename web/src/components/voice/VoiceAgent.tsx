@@ -1,10 +1,5 @@
 "use client";
 
-// The voice agent itself, on the official ElevenLabs React SDK (@elevenlabs/react): ConversationProvider +
-// useConversation. Its client tools call our backend's POST /agent/tool/{name} from the browser (lib/voice.ts);
-// the orb follows the SDK: listening (wave), thinking while one of our tools runs (orbits), speaking (ribbon).
-// Every tool result also moves the screen (lib/voiceDrive.ts): the store gets the state the mouse flow would have
-// produced, the router goes to that screen, and the page smooth-scrolls to the panel; a glass pill says what moved.
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ConversationProvider, useConversation } from "@elevenlabs/react";
@@ -15,7 +10,6 @@ import { buildClientTools, CONFIRM_TOOLS, micErrorText, ORB_FOR, PHASE_LABEL, vo
 import { searchedMarkets, voiceDrive, voiceStartLabel } from "@/lib/voiceDrive";
 import "./voice.css";
 
-/** Smooth-scroll to a panel once it is on screen (the route change and its data can take a moment). */
 function scrollWhenReady(id: string, timeoutMs = 6000) {
   const until = Date.now() + timeoutMs;
   const tick = () => {
@@ -30,12 +24,8 @@ function scrollWhenReady(id: string, timeoutMs = 6000) {
   setTimeout(tick, 120);
 }
 
-/** What the client tools read when a result lands (one voice agent per page): the latest store, kept current by an
- *  effect, and the rows of the last market search (to resolve the market a later fit or propose names). */
 const live: { store: Store | null; markets: Market[] } = { store: null, markets: [] };
 
-/** One tool result moves the screen: store first (the state the mouse flow would have made), then the route, then a
- *  smooth scroll to the panel. Returns what the "voice is driving" pill says. Errors stay put (voiceDrive). */
 function driveScreen(name: VoiceToolName, params: Record<string, unknown>, reply: ToolReply, push: (route: string) => void): string {
   const d = voiceDrive(name, params, reply, live.markets);
   if (name === "search_markets" && reply.ok) live.markets = searchedMarkets(reply);
@@ -55,8 +45,6 @@ export function VoiceAgent({ agentId }: { agentId: string }) {
   const [note, setNote] = useState<{ tone: "info" | "error"; text: string } | null>(null);
   const [drive, setDrive] = useState<string | null>(null);
 
-  // Stable for the provider's lifetime (the app router instance does not change); the hooks only touch state setters
-  // and `live` (the latest store, read when a result lands).
   const clientTools = useMemo(() => buildClientTools(undefined, {
     onStart: (name: VoiceToolName, params: Record<string, unknown>) => {
       setBusy((n) => n + 1);
@@ -92,7 +80,6 @@ function VoicePill({ toolBusy, note, setNote, drive, setDrive }: {
     if (askingMic || active) return;
     setFailed(false);
     setNote(null);
-    // Ask for the microphone first, so a refusal gets a clear message instead of a silent failed session.
     setAskingMic(true);
     try {
       if (!navigator.mediaDevices?.getUserMedia) throw Object.assign(new Error("no mediaDevices"), { name: "NotFoundError" });
@@ -114,7 +101,6 @@ function VoicePill({ toolBusy, note, setNote, drive, setDrive }: {
   return (
     <div className="pb-voice" data-phase={phase}>
       {active && drive && (
-        // Never blocks the mouse (pointer-events: none): the user can take over at any moment.
         <div className="pb-voice-drive" role="status" aria-live="polite" data-busy={toolBusy || undefined}>
           <span className="pb-voice-drive-k">Voice control</span>
           <span className="pb-voice-drive-t">{drive}</span>

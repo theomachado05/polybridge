@@ -1,4 +1,3 @@
-"""The notebook's S1 section: every headline number recomputes from the committed files, offline."""
 import socket
 
 import pytest
@@ -21,5 +20,4 @@ def test_s1_numbers_recompute_offline_and_match_the_committed_metrics(monkeypatc
     assert chk["match"].all(), chk[~chk["match"]]
     summary = tss.summary(rec).set_index("finding")["verdict"]
     assert summary["Pre-registered success criterion"] == rec["verdict"]
-    # the verdict is the conjunction of the four pre-registered criteria, nothing else
     assert (rec["verdict"] == "pass") == all(rec["criteria"].values())

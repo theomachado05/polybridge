@@ -1,7 +1,3 @@
-"""Apply METHOD.md section 6. Pure pandas/numpy, testable on synthetic data.
-
-Input columns: market, cls, closure, kind, fresh_date, x_pp, gap_spy_bp, reason.
-"""
 from __future__ import annotations
 
 import numpy as np
@@ -20,7 +16,6 @@ def usable(df: pd.DataFrame, y: str = "gap_spy_bp") -> pd.DataFrame:
 
 
 def cluster_ols(y, X, groups) -> dict:
-    """OLS with CR1 standard errors clustered by `groups`."""
     y, X, groups = np.asarray(y, float), np.asarray(X, float), np.asarray(groups)
     n, k = X.shape
     uniq, inv = np.unique(groups, return_inverse=True)
@@ -59,7 +54,6 @@ def verdict(p: dict) -> tuple[str, dict]:
 
 
 def contrast(macro: pd.DataFrame, geo: pd.DataFrame) -> dict:
-    """d = b_macro - b_geo from gap = a + c*macro + b_geo*x + d*x*macro, clustered by closure date."""
     m = usable(macro)[["x_pp", "gap_spy_bp", "closure"]].assign(macro=1.0)
     g = usable(geo)[["x_pp", "gap_spy_bp", "closure"]].assign(macro=0.0)
     df = pd.concat([m, g], ignore_index=True)

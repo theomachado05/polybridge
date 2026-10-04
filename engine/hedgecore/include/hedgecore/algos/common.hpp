@@ -1,7 +1,4 @@
 #pragma once
-// Shared pieces of the algo families: catalog metadata types, the CRTP latency wrapper, a small ledger, and
-// HedgeCore, the equity-hedge pipeline that the 11 hedge families feed with their own signal and target.
-// Nothing here allocates or makes a virtual call on the tick path.
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -23,12 +20,10 @@
 namespace hedgecore {
 
 struct BlockRef {
-  const char* kind;  // signals | gates | sizers | execution | risk | tax | routing
+  const char* kind;
   const char* name;
 };
 
-// UI library grouping (spec §9): signals -> Reader, sizers -> Impact, gates -> Gate, execution -> Execution,
-// tax -> Tax, routing -> Routing. Risk blocks cap or stop trading, so they are shown under Gate.
 constexpr const char* ui_kind_of(const char* kind) noexcept {
   const std::string_view k{kind};
   if (k == "signals") return "Reader";
@@ -40,7 +35,7 @@ constexpr const char* ui_kind_of(const char* kind) noexcept {
   return "Other";
 }
 
-namespace ev {  // event classes (spec §4 step 1)
+namespace ev {
 inline constexpr const char* kAll[] = {"macro_fed",      "elections", "tariffs_trade", "geopolitics_energy",
                                       "housing",        "fig",       "tech_regulation", "crypto",
                                       "corporate_8k",   "company_specific"};
@@ -66,7 +61,6 @@ inline Intent order(Instrument inst, int side, double qty, double limit, Rc r, d
   return i;
 }
 
-// CRTP wrapper: measures the family's step() and stamps latency_ns. No virtual dispatch.
 template <class D>
 struct AlgoBase {
   Intent on_tick(const MarketTick& t, std::int64_t now_ns) noexcept {
@@ -82,8 +76,6 @@ inline bool position_ok(const Position& p) noexcept {
          p.shares_held >= 0;
 }
 
-// Cash and signed positions from the algo's own fills, marked at the latest tick (fees are not known to the algo;
-// replay() accounts for them).
 struct Ledger {
   double cash = 0;
   double pos[4] = {0, 0, 0, 0};
@@ -97,31 +89,20 @@ struct Ledger {
   double at(Instrument i) const noexcept { return pos[static_cast<int>(i)]; }
 };
 
-// ---------------------------------------------------------------------------------------------------------------
-// HedgeCore: staleness -> session -> [family signal + target] -> position cap -> drawdown kill (shrink only) ->
-// no-trade band -> fee gate (new increments only) -> wash-sale guard -> cooldown -> slicer -> passive/aggressive. The hedge is a short equity position of
-// `hedge` shares (Position::equity == -hedge) protecting Position::shares_held long shares.
-// ---------------------------------------------------------------------------------------------------------------
 struct HedgeCore {
   bool valid = false;
-  double shares = 0;       // N
-  double hedge = 0;        // current short hedge in shares (>= 0 normally)
-  double impact = 0.03;    // expected fractional move of the stock if the adverse event resolves; 0 disables FeeGate
-  double p_last_order = 0; // adverse probability at the last fee-gate approval
-  bool working = false;    // an approved rebalance toward work_target is not finished yet
+  double shares = 0;
+  double hedge = 0;
+  double impact = 0.03;
+  double p_last_order = 0;
+  bool working = false;
   double work_target = 0;
   static constexpr double kDoneShares = 1e-6;
-  // Reject backoff: consecutive rejects of equity orders on the same side with no fill in between. The first reject
-  // is re-sent on the next tick; after the k-th (k >= 2) the next send on that side waits 2^(k-2) s (at most 60 s)
-  // after the rejected one, held as Cooldown. Measured on `now` (the live bridge passes wall-clock time, so it bounds
-  // a fast replayed stream too; offline replay passes tick time, where hourly ticks are never held). A fill or an
-  // order on the other side resets it. The approved rebalance stays approved, so it still completes once the venue
-  // accepts it (a market reopening, a transient broker error).
   static constexpr std::int64_t kBackoffBaseNs = kNsPerSec;
   static constexpr std::int64_t kBackoffMaxNs = 60 * kNsPerSec;
   int rejects = 0;
-  int last_side = 0;                // side of the last order sent
-  std::int64_t last_send_ns = 0;    // `now` of the last order sent
+  int last_side = 0;
+  std::int64_t last_send_ns = 0;
   std::int64_t retry_at_ns = std::numeric_limits<std::int64_t>::min();
   FeeModel fees{};
   blocks::Staleness stale{2 * kNsPerSec};
@@ -132,12 +113,12 @@ struct HedgeCore {
   blocks::NoTradeBand band{};
   blocks::FeeGate fee_gate{};
   blocks::Slicer slicer{};
-  blocks::PassiveAggressive pa{0.0};  // threshold 0: marketable; families that work orders passively raise it
+  blocks::PassiveAggressive pa{0.0};
   blocks::TaxLotSelector lots{};
   blocks::WashSaleGuard wash{};
   Ledger ledger{};
   std::int64_t last_ts = 0;
-  double seed_qty = 0;  // a pre-existing hedge enters the lot ledger at the first known price
+  double seed_qty = 0;
 
   HedgeCore() = default;
   HedgeCore(const Position& p, bool params_ok, double band_shares, double fee_ratio, double impact_, bool session_on,
@@ -155,7 +136,6 @@ struct HedgeCore {
     if (p.equity != 0 && num(p.equity)) seed_qty = p.equity;
   }
 
-  // Step 1: validity, staleness, session. Returns false with `out` set to the Hold.
   bool admit(const MarketTick& t, std::int64_t now, Intent& out) noexcept {
     if (!valid) { out = hold(Rc::InvalidParams); return false; }
     if (ledger.bad || !num(hedge)) { out = hold(Rc::InvalidState); return false; }
@@ -163,7 +143,7 @@ struct HedgeCore {
     if (!stale.pass(g)) { out = hold(Rc::Stale); return false; }
     if (!session.pass(g)) { out = hold(Rc::OutOfSession); return false; }
     last_ts = t.ts_ns;
-    if (seed_qty != 0 && num(under_ref(t))) {  // the pre-existing hedge counts for drawdown from its first mark
+    if (seed_qty != 0 && num(under_ref(t))) {
       lots.apply_fill(seed_qty, under_ref(t), t.ts_ns);
       ledger.fill(Instrument::Equity, seed_qty, under_ref(t), 1.0);
       seed_qty = 0;
@@ -171,7 +151,6 @@ struct HedgeCore {
     return true;
   }
 
-  // Fee gate for a fresh increment of q shares: benefit is priced on the probability move since the last approval.
   Rc fee_check(const MarketTick& t, double u, double q, double p_adv) const noexcept {
     if (impact <= 0) return Rc::None;
     if (!num(u)) return Rc::FeeUnknown;
@@ -182,13 +161,6 @@ struct HedgeCore {
     return fee_gate.check(benefit, cost);
   }
 
-  // Step 2: the family's target (short shares) for adverse probability p_adv.
-  //
-  // Working rebalance: once the band and fee gate approve a move to `work_target`, the rest of that move is already
-  // paid for. Later slices, re-quotes of a passive order that did not fill, and re-sends after a reject finish it
-  // without being judged again (the fee gate prices only the probability move since the approval, which is ~0 by
-  // then). Only an increment beyond the approved target, or a reversal, goes back through band and fee gate. A
-  // shrinking target narrows the approved move and never needs a new approval.
   Intent decide(const MarketTick& t, std::int64_t now, double p_adv, double target, double urgency, double signal,
                 Rc why = Rc::Rebalance) noexcept {
     if (!num(target) || !num(p_adv)) return hold(Rc::SignalMissing, signal);
@@ -196,7 +168,6 @@ struct HedgeCore {
     bool capped = false;
     target = cap.clamp(target < 0 ? 0.0 : target, capped);
     if (dd.update(num(u) ? ledger.cash + ledger.at(Instrument::Equity) * u : kNaN)) {
-      // Killed: the hedge leg may only shrink (toward 0); it never grows again. Risk-reducing, so no fee gate.
       working = false;
       if (!(target < hedge) || !band.pass(target - hedge)) return hold(Rc::DrawdownKill, signal);
       return send(t, now, target - hedge, urgency, signal, Rc::DrawdownKill, capped);
@@ -204,10 +175,10 @@ struct HedgeCore {
     double delta = target - hedge;
     double rem = working ? work_target - hedge : 0.0;
     if (working && (std::abs(rem) < kDoneShares || sgn(rem) != sgn(delta))) { working = false; rem = 0.0; }
-    if (working && !band.pass(delta)) { working = false; return hold(Rc::InsideBand, signal); }  // close enough
+    if (working && !band.pass(delta)) { working = false; return hold(Rc::InsideBand, signal); }
     if (working) {
       const double extra = std::abs(delta) - std::abs(rem);
-      if (extra > 0) {  // the target moved further: the increment needs its own approval
+      if (extra > 0) {
         if (band.pass(extra) && fee_check(t, u, extra, p_adv) == Rc::None) p_last_order = p_adv;
         else { target = work_target; delta = rem; capped = false; }
       }
@@ -225,7 +196,7 @@ struct HedgeCore {
 
   Intent send(const MarketTick& t, std::int64_t now, double delta, double urgency, double signal, Rc why,
               bool capped) noexcept {
-    const int side = delta > 0 ? -1 : +1;  // sell to add to the short hedge
+    const int side = delta > 0 ? -1 : +1;
     if (side < 0 && !wash.allows(-1, t.ts_ns)) return hold(Rc::WashSale, signal);
     if (side != last_side) { rejects = 0; retry_at_ns = std::numeric_limits<std::int64_t>::min(); }
     if (now < retry_at_ns) return hold(Rc::Cooldown, signal);
@@ -240,10 +211,6 @@ struct HedgeCore {
     return order(Instrument::Equity, side, qty, limit, r, signal);
   }
 
-  // The venue rejected the order or a passive limit expired unfilled: nothing traded, so the cooldown it started is
-  // void. The working rebalance stays approved. The first reject is re-sent on the next tick; repeated rejects back
-  // off (see kBackoffBaseNs) so a reject that keeps happening (closed market, coverage cap) cannot re-send every
-  // tick.
   void on_reject(Instrument i) noexcept {
     if (i != Instrument::Equity) return;
     cooldown.last_ns = std::numeric_limits<std::int64_t>::min();
@@ -264,4 +231,4 @@ struct HedgeCore {
   }
 };
 
-}  // namespace hedgecore
+}

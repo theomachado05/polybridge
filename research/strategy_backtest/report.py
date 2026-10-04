@@ -1,4 +1,3 @@
-"""SUMMARY.md, capacity.md, CSVs and charts for the strategy backtest. Every number comes from the run's results."""
 from __future__ import annotations
 
 import matplotlib

@@ -1,6 +1,4 @@
 #pragma once
-// Stale-quote detector for a Polymarket binary against a reference probability (forward_monday rule on the live book).
-// Buy YES when best_ask <= p_ref - tau; buy NO (hit the YES bid) when best_bid >= p_ref + tau. Pure, no allocation.
 #include <cmath>
 #include <limits>
 
@@ -30,4 +28,4 @@ double poly_taker_fee(double px, const StaleQuoteParams& p) noexcept;
 StaleQuoteDecision stale_quote(double best_bid, double bid_size, double best_ask, double ask_size, double p_ref,
                                const StaleQuoteParams& p) noexcept;
 
-}  // namespace hedgecore
+}

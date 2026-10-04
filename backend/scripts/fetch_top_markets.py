@@ -1,5 +1,3 @@
-"""Rebuild app/data/market_universe.json: top open Polymarket + Kalshi markets by 24h volume.
-Documentation-grade; not run in tests. Usage: uv run python scripts/fetch_top_markets.py"""
 import json
 import re
 from datetime import datetime
@@ -48,7 +46,7 @@ def kalshi(c):
         p = dict(status="open", limit=60, with_nested_markets="true", category=cat)
         for e in (_get(c, KALSHI, p) or {}).get("events", []):
             if e.get("markets"):
-                m = e["markets"][0]  # first market per event
+                m = e["markets"][0]
                 yield dict(source="kalshi", id=m["ticker"], question=m.get("title") or e["title"],
                            yes_price=num(m.get("last_price_dollars") or m.get("last_price")),
                            volume_24h=num(m.get("volume_24h")), end_date=m.get("close_time"))

@@ -1,13 +1,3 @@
-"""``GET /options/chain/{underlying}``: one expiry of the live Massive option chain, per contract with quote, last,
-volume, open interest, IV and greeks, plus the underlying price, staleness and the market-open flag.
-
-- Greeks / IV come from the Massive snapshot when it has them (``greeks_source: "massive"``). A contract with a mark
-  but no greeks gets Black–Scholes values solved from its mark (``"computed"``; European, no dividends, r = RISK_FREE).
-- The plan's chain snapshot has no bid/ask, so each returned contract nearest the money (up to ``quotes.MAX_NBBO``)
-  gets its last NBBO from ``/v3/quotes`` (15-min delayed); the rest stay fmv-marked, and every row says which.
-- Market closed (night, weekend, holiday): the same snapshot is the last session's close, labelled as such.
-- No key, a Massive outage or nothing listed: ``available: false`` with a reason. Never raises.
-"""
 from __future__ import annotations
 
 import datetime as dt
@@ -21,13 +11,11 @@ from .implied import RISK_FREE
 
 DEFAULT_STRIKES = 12
 MAX_STRIKES = 60
-DEFAULT_WINDOW = 0.20      # strike window, fraction of spot
-DEFAULT_EXPIRY_DAYS = 45   # with no expiry given: the nearest listed expiry inside this many days
+DEFAULT_WINDOW = 0.20
+DEFAULT_EXPIRY_DAYS = 45
 
 
 def greeks_for(q: ch.OptionQuote, spot: float, T: float, r: float = RISK_FREE) -> dict:
-    """{iv, delta, gamma, theta, vega, iv_source, greeks_source}: Massive's where present, else Black–Scholes from the
-    contract's mark (and Massive IV when only the greeks are missing)."""
     out = {"iv": q.iv, "delta": q.delta, "gamma": q.gamma, "theta": q.theta, "vega": q.vega,
            "iv_source": "massive" if math.isfinite(q.iv) else None, "greeks_source": None}
     names = ("delta", "gamma", "theta", "vega")

@@ -1,7 +1,3 @@
-"""S18 amendment 1: the calibration question at prices that traded (METHOD.md, Amendments).
-
-Run from `research/`:  python -m s18_price_market_calibration.prints [--pull]
-"""
 from __future__ import annotations
 
 import json
@@ -25,7 +21,6 @@ PAGES = 2
 
 
 def yes_terms(t: dict) -> tuple[float, str, float] | None:
-    """(YES price, taker side in YES terms, size) of a print, or None if it cannot be read."""
     out, side = str(t.get("outcome", "")).lower(), str(t.get("side", "")).upper()
     if out not in ("yes", "no") or side not in ("BUY", "SELL"):
         return None
@@ -34,7 +29,6 @@ def yes_terms(t: dict) -> tuple[float, str, float] | None:
 
 
 def weighted(prints: list[tuple[float, str, float]], side: str) -> tuple[float, float, int]:
-    """Size-weighted mean YES price, total size and count of the prints on one taker side."""
     s = [(p, z) for p, sd, z in prints if sd == side and z > 0]
     tot = sum(z for _, z in s)
     return (sum(p * z for p, z in s) / tot if tot > 0 else float("nan")), tot, len(s)

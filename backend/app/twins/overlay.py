@@ -1,10 +1,3 @@
-"""Fill ``p_other_venue`` on a fit's replay ticks from the market's verified twin, so the pipeline's ``both_venues``
-requirement is met for twinned markets (and only for them).
-
-The twin's own price history is joined as-of: a tick sees the latest twin point that is no older than
-``MAX_STALE_S``; older or earlier ticks stay NaN (never invented). Every failure degrades to "no overlay" plus a
-note; the fit then proceeds exactly as it did before the twin map existed.
-"""
 from __future__ import annotations
 
 import bisect
@@ -15,11 +8,10 @@ import numpy as np
 
 from .store import Twin, twin_of
 
-MAX_STALE_S = 4 * 3600  # hourly candles / hourly Polymarket points: allow a missed hour or two
+MAX_STALE_S = 4 * 3600
 
 
 def asof_join(tick_ts_s: list[int], other: list[tuple[int, float]], max_stale_s: int = MAX_STALE_S) -> np.ndarray:
-    """Latest ``other`` value at or before each tick time and no older than ``max_stale_s``; NaN otherwise."""
     pts = sorted((t, p) for t, p in other if math.isfinite(p))
     ts = [t for t, _ in pts]
     out = np.full(len(tick_ts_s), np.nan)
@@ -31,7 +23,7 @@ def asof_join(tick_ts_s: list[int], other: list[tuple[int, float]], max_stale_s:
 
 
 async def twin_history(http: httpx.AsyncClient, twin: Twin) -> list[tuple[int, float]]:
-    from ..pipeline import ticks as pt  # lazy: pipeline.ticks imports this module's caller
+    from ..pipeline import ticks as pt
 
     if twin.source == "kalshi":
         series, _ = await pt.kalshi_series(http, twin.id)
@@ -43,8 +35,6 @@ async def twin_history(http: httpx.AsyncClient, twin: Twin) -> list[tuple[int, f
 
 async def overlay_other_venue(ticks: dict[str, np.ndarray], points: list[tuple[int, float]], *, source: str | None,
                               market_id: str | None, token_id: str | None, http: httpx.AsyncClient) -> str | None:
-    """Sets ``ticks["p_other_venue"]`` in place when the market has a verified twin with usable history. Returns a
-    note for the fit's notes, or None when the market has no twin (nothing to say)."""
     if not source:
         return None
     twin = twin_of(source, market_id, token_id)

@@ -1,15 +1,3 @@
-"""Routes: GET /session (now or ?at=), GET /closed/expected-gap (with the evidence gate) and GET /closed/evidence.
-
-The expected-gap route reads the app's closure tracker (fed by bridges). When the tracker has no price at the last
-close for a Polymarket market, it seeds the tracker once from the CLOB price history around the close
-(``app.state.closed_history_fetcher`` overrides the fetch; tests set it). Kalshi history is not fetched: a Kalshi
-market needs a running bridge (or ``move_pp``) for a move.
-
-Seeding is skipped during regular hours (no gap applies). A seed that fails or leaves no close anchor is not retried
-for the same (market, last close) for ``SEED_RETRY_S`` (5 min), so a polling UI does not wait on the CLOB every call.
-A seed for an instant the shared tracker would not keep (a historical ``at`` on a market with live ticks more than
-10 days newer) goes into a tracker local to the request instead.
-"""
 from __future__ import annotations
 
 import math
@@ -48,7 +36,6 @@ def _at(at: str | None) -> Any:
 
 
 async def polymarket_points(source: str, token_id: str, start_s: int, end_s: int) -> list[tuple[int, float]]:
-    """Polymarket CLOB price history (1-minute fidelity) as [(epoch s, YES p)]. Polymarket only."""
     if source != "polymarket":
         return []
     async with httpx.AsyncClient(timeout=TIMEOUT) as http:
@@ -60,8 +47,6 @@ async def polymarket_points(source: str, token_id: str, start_s: int, end_s: int
 
 async def seed_from_history(tracker: ClosureTracker, key: str, source: str, history_id: str, at: Any,
                             fetcher: Fetcher = polymarket_points) -> int:
-    """Fill the tracker from price history spanning [last close - 2 h, at]. Returns the points the tracker accepted
-    (0 on failure or when it rejected them all)."""
     sess = session_at(at)
     start = int(sess.last_close.timestamp()) - SEED_BEFORE_CLOSE_S
     end = int(sess.at.timestamp())
@@ -75,7 +60,6 @@ async def seed_from_history(tracker: ClosureTracker, key: str, source: str, hist
 def closed_fields(tracker: ClosureTracker, market_source: str, market_id: str, at: Any, *,
                   ticker: str | None = None, direction: str | None = None, token_id: str | None = None,
                   rates: GapRates | None = None) -> dict:
-    """``{"session", "closure", "expected_gap"}`` for a bridge summary (P5): pure reads, explicit instant."""
     state = tracker.state(market_key(market_source, market_id), at)
     gap = expected_gap_for(state, market_source, market_id, ticker=ticker, direction=direction, token_id=token_id,
                            rates=rates)
@@ -83,7 +67,6 @@ def closed_fields(tracker: ClosureTracker, market_source: str, market_id: str, a
 
 
 def _seed_misses(app: Any) -> dict[tuple[str, float], float]:
-    """(market key, last close ts) -> monotonic time before which a failed or anchorless seed is not retried."""
     misses = getattr(app.state, "closed_seed_misses", None)
     if misses is None:
         misses = app.state.closed_seed_misses = {}
@@ -96,7 +79,6 @@ def _seed_misses(app: Any) -> dict[tuple[str, float], float]:
 
 @router.get("/session")
 def get_session(at: str | None = None) -> dict:
-    """The NYSE session at ``at`` (ISO-8601 or epoch s/ms/us/ns; default now)."""
     return session_at(_at(at)).to_dict()
 
 
@@ -118,7 +100,7 @@ async def get_expected_gap(request: Request, market_source: str = Query(min_leng
         if misses.get(miss_key, 0.0) <= time.monotonic():
             misses.pop(miss_key, None)
             if not tracker.accepts(key, sess.last_close.timestamp() - SEED_BEFORE_CLOSE_S):
-                tracker = ClosureTracker()  # historical instant behind the live series: seed a request-local tracker
+                tracker = ClosureTracker()
             fetcher = getattr(request.app.state, "closed_history_fetcher", None) or polymarket_points
             seeded = await seed_from_history(tracker, key, market_source, token_id or market_id, t, fetcher)
             if not tracker.has_close_anchor(key, t):
@@ -132,13 +114,9 @@ async def get_expected_gap(request: Request, market_source: str = Query(min_leng
                              p_now=None, p_now_at=None, move_pp=float(move_pp), high_pp=None, low_pp=None,
                              n_points=0)
     evid = market_evidence(market_source, market_id, token_id)
-    # gap_rates.json is keyed by slug and token: a studied market queried by its Polymarket id alone resolves to its
-    # token through the evidence file, so it gets its own rate rather than the pooled one
     gap = expected_gap_for(state, market_source, market_id, ticker=ticker, direction=direction,
                            token_id=token_id or evid.get("token_id"), rates=load_rates())
     gd = gap.to_dict()
-    # evidence gate: validated only on a market whose own out-of-sample record passes, whose own rate is used, and
-    # whose rate was estimated on this ticker (R2 tested SPY only; other tickers are proxies)
     gd["validated"], gd["status"], gd["evidence"] = evidence_gate(evid, gap.label, gap.ticker, gap.basis_ticker,
                                                                   gap.reasons)
     return {"market_source": market_source, "market_id": market_id, "ticker": gap.ticker,
@@ -149,8 +127,6 @@ async def get_expected_gap(request: Request, market_source: str = Query(min_leng
 
 @router.get("/closed/evidence")
 def get_evidence(market_source: str | None = None, market_id: str | None = None, token_id: str | None = None) -> dict:
-    """The evidence gate: which markets' expected gaps are validated out of sample (R2), and the hedge / opportunity
-    research verdicts (R1, R3) with the labels the UI shows. With a market: that market's own status."""
     doc = load_evidence()
     out = {"rule": doc.get("rule"), "validated_markets": sorted(k for k, v in (doc.get("markets") or {}).items()
                                                                 if v.get("validated")),
@@ -163,7 +139,4 @@ def get_evidence(market_source: str | None = None, market_id: str | None = None,
 
 @router.get("/evidence/mechanisms")
 def get_mechanisms() -> dict:
-    """The mechanism registry (backend/app/closed/evidence.py): one entry per mechanism with its status, allowed
-    actions, numbers (each with range, sample and result file), caveats and forward test. The UI reads every label
-    from here."""
     return mechanism_registry()

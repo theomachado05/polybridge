@@ -1,4 +1,3 @@
-"""Per-event pipeline: fetch -> align -> detect -> cross-correlate -> usability verdict. Pure of I/O except `fetch_event`."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -24,7 +23,7 @@ class InstrumentResult:
     xc: XCorr
     eq_valid_frac: float
     eq_cov: float
-    sens: dict = field(default_factory=dict)  # k -> (eq_time, lead)
+    sens: dict = field(default_factory=dict)
 
 
 @dataclass
@@ -35,7 +34,7 @@ class EventResult:
     pm_move: Move | None
     instruments: dict[str, InstrumentResult]
     drop_reasons: list[str]
-    sens_pm: dict = field(default_factory=dict)  # k -> pm move time
+    sens_pm: dict = field(default_factory=dict)
 
     @property
     def usable(self) -> bool:
@@ -48,14 +47,12 @@ class EventResult:
 
 def analyse_event(ev: Event, pm_points: list[tuple[int, float]], bars: dict[str, pd.DataFrame],
                   p: Params = PARAMS) -> EventResult:
-    """bars: ticker -> DataFrame (index = bar start UTC, 'close'). Missing/empty tickers get an empty frame."""
     fetch_start = ev.start - pd.Timedelta(minutes=p.warmup_min)
     grid = make_grid(fetch_start, ev.end)
     pm = pm_series(pm_points, grid)
     in_win = pd.Series((grid >= ev.start) & (grid < ev.end), index=grid)
     pm_pts_win = int(pm.loc[in_win, "obs"].sum())
 
-    # PM first move does not depend on the equity instrument or on the orientation
     probe = build_frame(pm, equity_series(None, grid), ev.expected_sign, ev.start, ev.end)
     pm_changes = int(((probe["y"] != 0) & probe["y"].notna() & probe["in_window"]).sum())
     pm_move = first_move(probe["pm_lvl"], probe["y"], probe["in_window"], p.pm_floor_pp, p=p)

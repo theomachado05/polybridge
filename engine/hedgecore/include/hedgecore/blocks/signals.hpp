@@ -1,6 +1,4 @@
 #pragma once
-// Signal blocks (UI kind: Reader). Stateless signals expose `static double read(const MarketTick&)`; stateful ones
-// expose `update(...)`. A NaN input yields NaN and never advances state: a missing field is never read as 0.
 #include <array>
 #include <cmath>
 #include "hedgecore/market.hpp"
@@ -8,7 +6,6 @@
 
 namespace hedgecore::blocks {
 
-// YES mid on this venue.
 struct PMid {
   static constexpr const char* name = "PMid";
   static double read(const MarketTick& t) noexcept {
@@ -17,8 +14,6 @@ struct PMid {
   }
 };
 
-// Implied YES probability from both books, de-vigged: yes_mid / (yes_mid + no_mid). With only one side quoted it
-// falls back to that side (yes_mid, or 1 - no_mid).
 struct ImpliedProb {
   static constexpr const char* name = "ImpliedProb";
   static double read(const MarketTick& t) noexcept {
@@ -31,8 +26,6 @@ struct ImpliedProb {
   }
 };
 
-// (bid depth - ask depth) / (bid depth + ask depth) over the top `levels` of the YES book. Levels are summed until
-// the first missing one; level 0 must exist on both sides.
 struct BookImbalance {
   static constexpr const char* name = "BookImbalance";
   int levels = 3;
@@ -51,7 +44,6 @@ struct BookImbalance {
   }
 };
 
-// Size-weighted mid of the top level: (bid * ask_qty + ask * bid_qty) / (bid_qty + ask_qty).
 struct Microprice {
   static constexpr const char* name = "Microprice";
   static double read(const MarketTick& t) noexcept {
@@ -63,7 +55,6 @@ struct Microprice {
   }
 };
 
-// This venue's YES mid minus the other venue's YES mid (Poly - Kalshi when the tick is from Polymarket).
 struct CrossVenueGap {
   static constexpr const char* name = "CrossVenueGap";
   static double read(const MarketTick& t) noexcept {
@@ -75,7 +66,6 @@ struct CrossVenueGap {
 
 inline constexpr int kMaxWindow = 64;
 
-// p_now - p_{window observations ago}; NaN until `window` + 1 finite observations.
 struct DeltaDp {
   static constexpr const char* name = "DeltaDp";
   int window = 5;
@@ -93,13 +83,11 @@ struct DeltaDp {
   }
 };
 
-// EWMA volatility of one-step changes. `sigma_prev` is the volatility before the latest change (gates judge a move
-// against the past); `sigma` includes it.
 struct EwmaVol {
   static constexpr const char* name = "EwmaVol";
   double alpha = 0.05;
   double var = 0, last = kNaN;
-  int n = 0;  // number of changes observed
+  int n = 0;
   struct Out { double dp, sigma_prev, sigma; };
   Out update(double p) noexcept {
     if (!num(p)) return {kNaN, kNaN, kNaN};
@@ -113,7 +101,6 @@ struct EwmaVol {
   }
 };
 
-// EWMA of one-step changes (drift / momentum); NaN until the first change.
 struct Momentum {
   static constexpr const char* name = "Momentum";
   double alpha = 0.2;
@@ -130,7 +117,6 @@ struct Momentum {
   }
 };
 
-// z = (x - EWMA mean) / EWMA std, both measured before x; NaN until the variance is positive.
 struct MeanRevertZ {
   static constexpr const char* name = "MeanRevertZ";
   double alpha = 0.1;
@@ -152,8 +138,6 @@ struct MeanRevertZ {
   double fair() const noexcept { return n > 0 ? mean : kNaN; }
 };
 
-// Option-implied probability of the same threshold: opt_implied_prob (call-spread price / width) when present,
-// else |opt_delta| as the usual proxy.
 struct OptionImpliedProb {
   static constexpr const char* name = "OptionImpliedProb";
   static double read(const MarketTick& t) noexcept {
@@ -163,7 +147,6 @@ struct OptionImpliedProb {
   }
 };
 
-// Prediction-market implied probability minus the option-implied probability.
 struct PMvsOptionGap {
   static constexpr const char* name = "PMvsOptionGap";
   static double read(const MarketTick& t) noexcept {
@@ -172,7 +155,6 @@ struct PMvsOptionGap {
   }
 };
 
-// 8-K tag score in [-1, 1] from the v3 research (0 = no filing); NaN when absent or out of range.
 struct EightKScore {
   static constexpr const char* name = "EightKScore";
   static double read(const MarketTick& t) noexcept {
@@ -180,4 +162,4 @@ struct EightKScore {
   }
 };
 
-}  // namespace hedgecore::blocks
+}

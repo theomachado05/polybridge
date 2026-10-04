@@ -1,4 +1,3 @@
-"""R3: do options catch up at the Monday open? See METHOD.md. Reuses research/arb/arbscan unchanged."""
 import sys
 from pathlib import Path
 

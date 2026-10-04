@@ -1,17 +1,3 @@
-"""Closed-market evidence for the scored notebook, rebuilt from the COMMITTED result files only.
-
-No network, no API key. Every statistic is recomputed from the committed CSVs with the same functions, parameters and
-seeds the studies used, then checked against the committed JSON. Sources:
-
-- results/leadlag_closed       380-closure panel (placebo arm of the closed-market study; exploratory re-read)
-- results/leadlag_replication  10 rule-selected new markets (pre-registered replication)
-- results/gap_model            R2 expected-gap model, walk-forward per market
-- results/closed_hedge         R1 closed-market hedge (hedge A: PM contract; hedge B: staged equity order at 09:30)
-- results/open_options         R3 options catch-up at the Monday open
-
-The study packages' stats modules are numpy-only and never fetch data; they are imported here so the rules are the
-studies' own, not a re-implementation.
-"""
 from __future__ import annotations
 
 import json
@@ -51,7 +37,6 @@ FILES = {
 
 
 def load(results_dir: Path | str = RESULTS) -> dict:
-    """Read the committed CSV and JSON outputs. Raises FileNotFoundError naming any missing file."""
     root = Path(results_dir)
     missing = [p for p in FILES.values() if not (root / p).exists()]
     if missing:
@@ -71,10 +56,8 @@ def _gap_eval(pr: pd.DataFrame, n_perm: int, groups: str | None = None) -> dict:
 
 
 def recompute(data: dict, n_perm: int = 10_000, n_boot: int = 10_000) -> dict:
-    """Headline statistics of the five studies, recomputed from the CSVs (defaults = the studies' own draw counts)."""
     res: dict = {}
 
-    # 1. 380-closure panel: closures with no flagged news, slope with HC3 t and a permutation p, sign test at 1 pp
     c = data["closures"]
     news = c["news"].astype(str).str.lower().eq("true")
     pl = c[~news]
@@ -84,21 +67,18 @@ def recompute(data: dict, n_perm: int = 10_000, n_boot: int = 10_000) -> dict:
                        "by_market": {m: sign_agreement(s["dpm_o_pp"], s["gap_bp"], CLOSED_PARAMS.theta_pp)
                                      for m, s in pl.groupby("market")}}
 
-    # 2. replication: pooled slope, HC3 t, date-permutation p (one shuffle of the date -> gap map for all markets)
     r = data["replication"]
     r = r[np.isfinite(r["x_pp"].astype(float)) & np.isfinite(r["gap_spy_bp"].astype(float))]
     s1 = date_perm_slope(r["x_pp"], r["gap_spy_bp"], r["closure"], n_perm, REP_PARAMS.seed)
     res["replication"] = {"slope": s1, "sign": sign_agreement(r["x_pp"], r["gap_spy_bp"], REP_PARAMS.theta_pp),
                           "verdict": replication_verdict(s1)[0]}
 
-    # 3. R2: walk-forward predictions; sign accuracy and slope of realized on predicted, per market and pooled
     p = data["gap_pred"]
     a = p[(p["set"] == "A_placebo") & (p["etf"] == "SPY")]
     res["r2"] = {"pooled": _gap_eval(a, n_perm),
                  "by_market": {m: _gap_eval(s, n_perm) for m, s in a.groupby("market")},
                  "replication_panel": _gap_eval(p[p["set"] == "B_replication"], n_perm, groups="closure")}
 
-    # 4. R1: variance tests on the 09:30-10:00 P&L of a long SPY holder (iid bootstrap = the rule; block = check)
     h = data["hedge"]
     ev = h[h["excluded"].fillna("").astype(str) == ""]
     r1 = {}
@@ -112,7 +92,6 @@ def recompute(data: dict, n_perm: int = 10_000, n_boot: int = 10_000) -> dict:
         r1[name] = t
     res["r1"] = r1
 
-    # 5. R3: catch-up slope and net residual gap, cluster bootstrap over closures
     o = data["options"]
     o = o[o["status"] == "event"]
     cb = cluster_bootstrap(o["d_pm"], o["d_opt"], o["G"], o["closure"], draws=n_boot)
@@ -124,7 +103,6 @@ def recompute(data: dict, n_perm: int = 10_000, n_boot: int = 10_000) -> dict:
 
 
 def comparison(rec: dict, data: dict) -> pd.DataFrame:
-    """Recomputed value next to the committed JSON value for every headline number."""
     ct, rt, gt, ht, ot = (data[k] for k in ("closed_tests", "replication_tests", "gap_tests", "hedge_tests", "options_tests"))
     g = gt["primary"]["SPY"]
     rows = [
@@ -165,7 +143,6 @@ def _p(p):
 
 
 def summary(rec: dict) -> pd.DataFrame:
-    """One row per finding: what was tested, on what data, the kind of evidence, the numbers, the verdict and its scope."""
     p3, rp, r2, r1, r3 = rec["panel380"], rec["replication"], rec["r2"], rec["r1"], rec["r3"]
     s, sg = p3["slope"], p3["sign"]
     bm = p3["by_market"]
@@ -218,7 +195,6 @@ def summary(rec: dict) -> pd.DataFrame:
 
 
 def chart(data: dict, rec: dict, ax=None, xlim: float = 15.0, ylim: float = 250.0):
-    """Small multiples, shared axes: PM move vs SPY opening gap on the 380 panel (left) and the replication (right)."""
     import matplotlib.pyplot as plt
 
     c = data["closures"]
@@ -236,7 +212,7 @@ def chart(data: dict, rec: dict, ax=None, xlim: float = 15.0, ylim: float = 250.
         x, y = x[ok], y[ok]
         clipped = int(((np.abs(x) > xlim) | (np.abs(y) > ylim)).sum())
         a.scatter(np.clip(x, -xlim, xlim), np.clip(y, -ylim, ylim), s=14, color=colr, alpha=0.35, edgecolors="none")
-        xs = np.linspace(max(x.min(), -xlim), min(x.max(), xlim), 50)  # fit drawn over the data range only
+        xs = np.linspace(max(x.min(), -xlim), min(x.max(), xlim), 50)
         intercept = float(np.mean(y) - st["b"] * np.mean(x))
         a.plot(xs, intercept + st["b"] * xs, color="#222222", lw=2)
         a.axhline(0, color="#999999", lw=0.6)

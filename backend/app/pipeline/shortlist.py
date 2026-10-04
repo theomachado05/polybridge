@@ -1,15 +1,7 @@
-"""Step 2: families from the manifest whose event classes include the class, split by division.
-
-Within a division, families that name the class explicitly come before generic families (wildcard "all", or the
-full list of classes as the compiled catalog spells it); among the specific ones the narrowest (fewest event classes)
-comes first, so the family built for this class leads. Families whose requirements are known to be unmet (no listed
-options, no second venue) go last.
-"""
 from __future__ import annotations
 
 from .engine_adapter import DIVISIONS, family_matches, is_specific
 
-# Rule order for wildcard families when nothing is scored (the generic, always-applicable hedge first).
 GENERIC_PREFERENCE = ["equity_delta_bridge", "book_imbalance_hedge", "no_bid_seller", "binary_vs_spread_arb",
                       "vol_vs_pm_move", "poly_kalshi_spread"]
 
@@ -23,11 +15,6 @@ def _rank(family: dict, event_class: str, available: set[str] | None) -> tuple:
 
 
 def shortlist(manifest: dict, event_class: str, available: set[str] | None = None) -> dict[str, list[dict]]:
-    """{'hedge': [family, ...], 'opportunity': [...]} in rule-preference order.
-
-    ``available`` lists satisfied requirements (e.g. {'listed_options', 'both_venues'}); None means unknown,
-    in which case no family is demoted for its requirements.
-    """
     out: dict[str, list[dict]] = {d: [] for d in DIVISIONS}
     for fam in manifest.get("families") or []:
         if not family_matches(fam, event_class):

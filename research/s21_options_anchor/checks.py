@@ -1,8 +1,3 @@
-"""S21 bug hunt (METHOD.md, amendment 2): checks added AFTER the result was seen, because books showed a Sharpe above 3.
-None of them is a pre-registered test and none changes a rule. Cached data only.
-
-Run from `research/`:  python -m s21_options_anchor.checks
-"""
 from __future__ import annotations
 
 import sys
@@ -18,11 +13,10 @@ from .pull import S18
 from .run import RESULTS, boot_slope
 
 PLACEBO_DRAWS, PLACEBO_SEED = 5000, 0
-PRICE_BUCKETS = (0.0, 0.10, 0.25, 0.50, 0.75, 1.0)           # S18's traded-price buckets, with the two ends closed
+PRICE_BUCKETS = (0.0, 0.10, 0.25, 0.50, 0.75, 1.0)
 
 
 def placebo(price: np.ndarray, anchor: np.ndarray, pnl: np.ndarray, threshold: float, draws: int = PLACEBO_DRAWS, seed: int = PLACEBO_SEED) -> dict:
-    """The taken-minus-left difference when the anchors are shuffled across markets (prices and results kept)."""
     taken = 100.0 * (price - anchor) >= threshold - 1e-9
     obs = float(pnl[taken].mean() - pnl[~taken].mean())
     rng = np.random.default_rng(seed)
@@ -58,13 +52,11 @@ def main() -> int:
     def add(check, item, value, lo=float("nan"), hi=float("nan"), n=float("nan"), note=""):
         rows.append({"check": check, "item": item, "value": value, "lo": lo, "hi": hi, "n": n, "note": note})
 
-    # 1. no look-ahead
     lead = d.entry_epoch - d.anchor_epoch
     add("no look-ahead", "seconds from the anchor instant to the start of the traded-price window, minimum", float(lead.min()), n=len(d))
     add("no look-ahead", "oldest leg quote, seconds before the anchor instant", float(max(ok.leg_lo_age_s.max(), ok.leg_hi_age_s.max())), n=len(ok))
     add("no look-ahead", "youngest leg quote, seconds before the anchor instant", float(min(ok.leg_lo_age_s.min(), ok.leg_hi_age_s.min())), n=len(ok))
 
-    # 2. is it the anchor, or only the price level?
     p = placebo(s.sell_price.to_numpy(), s.anchor_central.to_numpy(), s.sell_pnl_points.to_numpy(), prim.threshold)
     add("placebo: anchors shuffled across markets", "taken minus left, observed", p["observed"], n=len(s))
     add("placebo: anchors shuffled across markets", "taken minus left, placebo mean and 95% range", p["placebo_mean"], p["lo"], p["hi"], p["draws"],
@@ -81,7 +73,6 @@ def main() -> int:
                 float(t.sell_pnl_points.mean()) if len(t) else float("nan"), n=len(t),
                 note=f"resolved YES {100 * t.outcome.mean():.0f}%, mean anchor {100 * t.anchor_central.mean():.0f}%" if len(t) else "")
 
-    # 3. the anchor's own fragilities
     for label, t in (("B0 on anchors with no leg moved outward", b0[b0.stepped == 0]), ("the markets it leaves, same anchors", left[left.stepped == 0]),
                      ("sell only when the traded bid is 5+ points above the TOP of the anchor's band", s[100.0 * (s.sell_price - s.central_hi) >= 5.0]),
                      ("B0, printed size of 100 contracts or more", b0[b0.sell_size >= 100]), ("B0, printed size under 100 contracts", b0[b0.sell_size < 100]),
@@ -93,7 +84,6 @@ def main() -> int:
     add("subsets of the primary", "B0 worst single market, points", float(b0.sell_pnl_points.min()), n=len(b0))
     add("subsets of the primary", "B0 share of markets that made money", float((b0.sell_pnl_points > 0).mean()), n=len(b0))
 
-    # 4. one bet per Friday instead of one per event
     m = boot_mean(groups(b0, "anchor_day", "sell_pnl_points"))
     add("resampling Fridays instead of events", "B0 mean P&L per contract", m[0], m[1], m[2], b0.anchor_day.nunique(), "Fridays")
     m = boot_diff(groups(b0, "anchor_day", "sell_pnl_points"), groups(left, "anchor_day", "sell_pnl_points"))
@@ -101,7 +91,6 @@ def main() -> int:
     m = boot_slope(bb.gap.to_numpy(), bb.buy_pnl_points.to_numpy(), bb.anchor_day.to_numpy())
     add("resampling Fridays instead of events", "T1 slope of buyers' P&L on the gap", m[0], m[1], m[2], bb.anchor_day.nunique(), "Fridays")
 
-    # 5. how much a Sharpe on ten or eleven months can say
     eq = pd.read_csv(RESULTS / "equity.csv")
     for bk, e in eq.groupby("book"):
         r = (e.pnl / e.capital_base.iloc[0]).to_numpy()

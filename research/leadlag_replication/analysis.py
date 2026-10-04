@@ -1,7 +1,3 @@
-"""Apply METHOD.md section 6 to the pooled market x closure table. Pure pandas/numpy, testable on synthetic data.
-
-Input columns: market, cls, closure, kind, fresh_date, x_pp, gap_spy_bp (and gap_qqq_bp, gap_iwm_bp).
-"""
 from __future__ import annotations
 
 import numpy as np
@@ -26,7 +22,6 @@ def _s2(df: pd.DataFrame, y: str, theta: float | None = None) -> dict:
 
 
 def verdict(s1: dict) -> tuple[str, dict]:
-    """METHOD.md section 6, applied literally."""
     pos = bool(np.isfinite(s1["b"]) and s1["b"] > 0)
     c_perm = bool(np.isfinite(s1["p_perm"]) and s1["p_perm"] < PARAMS.alpha)
     c_t = bool(np.isfinite(s1["t"]) and s1["t"] > PARAMS.t_min)
@@ -51,7 +46,6 @@ def analyse(rows: pd.DataFrame, secondary: tuple[str, ...] = ("QQQ", "IWM"), n_p
     s2 = res["s2"]
     res["sign_test_agrees"] = bool(s2["n"] and s2["rate"] > 0.5 and s2["p"] < PARAMS.alpha)
     nps = n_perm_secondary or PARAMS.n_perm
-    # secondary
     res["s2_sens"] = {th: _s2(u, y, th) for th in PARAMS.theta_sens}
     res["s2_date_perm"] = date_perm_sign(u["x_pp"], u[y], u["closure"], PARAMS.theta_pp, nps, PARAMS.seed)
     res["cluster"] = cluster_t(u["x_pp"], u[y], u["closure"])

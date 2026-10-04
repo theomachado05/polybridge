@@ -1,4 +1,3 @@
-"""Live prediction-market search (Polymarket + Kalshi). Every call has a 5 s timeout and a TTL cache."""
 from __future__ import annotations
 
 import asyncio
@@ -28,8 +27,6 @@ class Market(BaseModel):
     end_date: str | None = None
     url: str | None = None
     token_id: str | None = None
-    # The name of the backend's recording of this market (replay index + sidecar), else None. A resolved market with a
-    # recording is still worth listing: its replay (and, with option columns, the Opportunity division) runs offline.
     recorded: str | None = None
 
 
@@ -46,8 +43,6 @@ OFFLINE_NOTE = "offline: cached market list"
 
 def recorded_file(source: str, mid: str, token_id: str | None = None, data_dir: Path = DATA,
                   replays: Path = REPLAYS) -> str | None:
-    """The file name of the replay index's recording of this market when the file exists and its sidecar names this
-    market, else None."""
     try:
         index = json.loads((data_dir / "replay_index.json").read_text())
     except (OSError, ValueError):
@@ -71,7 +66,6 @@ def annotate_recorded(markets: list[Market], data_dir: Path = DATA, replays: Pat
 
 
 def _recordings(data_dir: Path = DATA, replays: Path = REPLAYS) -> list[Market]:
-    """Markets the replay index points at, from their sidecars (question, end date, token id)."""
     try:
         index = json.loads((data_dir / "replay_index.json").read_text())
     except (OSError, ValueError):
@@ -93,7 +87,6 @@ def _recordings(data_dir: Path = DATA, replays: Path = REPLAYS) -> list[Market]:
 
 
 def offline_search(q: str, data_dir: Path = DATA) -> list[Market]:
-    """Case-insensitive search of the bundled market list (market_universe.json + ai_map.json questions)."""
     words = q.lower().split()
     found: dict[tuple[str, str], Market] = {}
     try:
@@ -265,7 +258,6 @@ async def markets_search(q: str, request: Request) -> SearchOut:
 
 @router.get("/markets/{source}/{id}/history", response_model=list[HistoryPoint])
 async def markets_history(source: str, id: str, request: Request) -> list[HistoryPoint]:
-    """For polymarket, `id` is the YES token id (Market.token_id). Kalshi history is not served (returns [])."""
     if source == "kalshi":
         return []
     if source != "polymarket":

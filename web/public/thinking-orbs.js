@@ -1,5 +1,3 @@
-// Plain-JS port of Jakubantalik/thinking-orbs (MIT) — dotted 3D thought-orbs on a 2D canvas.
-// <thinking-orb state="connecting" size="64" theme="light" ink="#141A2B" speed="1"></thinking-orb>
 (function () {
   const lerp = (a, b, f) => a + (b - a) * f, frac = x => x - Math.floor(x);
   const hashD = (a, b) => { const h = Math.sin(a * 12.9898 + b * 78.233) * 43758.5453; return h - Math.floor(h); };

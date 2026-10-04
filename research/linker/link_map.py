@@ -1,22 +1,3 @@
-"""The link map: exact contract links, not "question -> likely ticker".
-
-Every question is put in one of four types by text rules, and each type links to exact contracts or says why not:
-
-    ladder_rung          "X by <date>" inside an event: linked to its ladder, rungs in date order, each adjacent pair
-                         checked by `research/ladder_replay/METHOD.md` (step 1 with amendments 2 and 4: same event
-                         definition and source, the cheap rung not created after a creation-anchored window opens;
-                         amendment 5: each rung's year re-derived from the market's creation date)
-    touch_ticket         "will <stock> hit / reach / dip to $X" with a window: ticker, level, direction, window end ->
-                         option expiry and the two bracketing strikes (`options.exact_ticket_link`, S21's rules)
-    close_above_ticket   "will <stock> close above $K on <date>": the same contract link at the close date
-    other                no tested mechanism; no contract is linked
-
-Parsing helpers are imported from the studies that froze them (`s11_bundles`, `s21_options_anchor`, `ladder_replay`),
-not copied. A model may read text into the same fields, but the product checks every model field against `classify`
-and the rule parser wins.
-
-Run from `research/` (after benchmark, scorer and heldout):  python -m linker.link_map
-"""
 from __future__ import annotations
 
 import json
@@ -34,8 +15,6 @@ TODAY = "2026-10-04"
 TRUST_SCORE = 0.5
 
 TYPES = ("ladder_rung", "touch_ticket", "close_above_ticket", "other")
-# tickets are on stocks and the S&P 500 only (touch_fresh's exclusion list: crypto, commodities, other indices)
-# Word boundaries on every term: "Goldman Sachs" is not gold, a company name containing "dax" is not the DAX.
 NOT_STOCK_RE = (r"\bbitcoin\b|\bbtc\b|\bethereum\b|\beth\b|\bsolana\b|\bxrp\b|\bdogecoin\b|\bcrude\b|\boil\b|\bgold\b|"
                 r"\bsilver\b|\bnatural gas\b|\bdollar index\b|\bnasdaq\b|\bdow jones\b|\brussell\b|\bnyse\b|\bnikkei\b|"
                 r"\bhang seng\b|\bftse\b|\bdax\b")
@@ -53,7 +32,6 @@ CLOSE_RE = re.compile(r"\b(?:close|finish|settle)s?\s+(?:the\s+day\s+)?(at\s+or\
 
 
 def _price(m: dict) -> float | None:
-    """The underlying's latest price if the caller supplied one (`underlying_price`, `last_price` or `price`)."""
     for k in ("underlying_price", "last_price", "price"):
         try:
             v = float(m.get(k))
@@ -78,8 +56,6 @@ def created_on(m: dict) -> date | None:
 
 
 def _universe() -> dict[str, str]:
-    """Ticker -> company name: `research/linker/instruments.json` when present, else the backend's named stock list
-    (`backend/app/data/names.json`), plus NAMES and SPY/SPX. Missing files leave NAMES alone."""
     from pathlib import Path
     here = Path(__file__).resolve().parent
     out: dict[str, str] = {}
@@ -101,12 +77,10 @@ def _universe() -> dict[str, str]:
 
 
 UNIVERSE = _universe()
-# uppercase words that are tickers in the universe but also ordinary words in a question; a bare match on these is ignored
 BARE_STOP = {"A", "I", "ALL", "ON", "IT", "ARE", "BE", "SO", "NOW", "ONE", "CEO", "AI", "US", "USA", "ETF", "IPO", "GDP",
              "FED", "CPI", "ET", "PM", "AM", "EOD", "YES", "NO", "BY", "OR", "AND", "THE", "TO", "IN", "AT", "OF"}
 CASHTAG_RE = re.compile(r"(?<![\w$])\$([A-Z]{1,5}(?:\.[A-Z])?)\b(?![\d,.]*\d)")
 BARE_RE = re.compile(r"(?<![\w$&.])([A-Z]{2,5}(?:\.[A-Z])?)(?![\w&])")
-# company names from the universe matched as written (capitalised), e.g. "Apple", "Bank of America"
 _NAME_TO_TICKER: dict[str, set[str]] = {}
 for _tk, _nm in UNIVERSE.items():
     if _nm and len(_nm) >= 3 and _nm.upper() != _tk:
@@ -114,7 +88,6 @@ for _tk, _nm in UNIVERSE.items():
 
 
 def _symbols_in(text: str) -> list[str]:
-    """Tickers written in the text: "(AAPL)", "$AAPL", or a bare uppercase universe ticker ("AAPL")."""
     out = [x for x in SYMBOL_RE.findall(text or "") if x not in ("HIGH", "LOW")]
     out += CASHTAG_RE.findall(text or "")
     out += [x for x in BARE_RE.findall(text or "") if x in UNIVERSE and x not in BARE_STOP]
@@ -122,9 +95,6 @@ def _symbols_in(text: str) -> list[str]:
 
 
 def ticker_of(question: str, title: str = "") -> tuple[str | None, str]:
-    """(ticker, "") or (None, reason). The single symbol in the event title (S21: in parentheses; also "$AAPL" or a
-    bare uppercase universe ticker), else in the question, else a company name; S&P 500 needs (SPY) or (SPX) written
-    out because no level is converted between them (S21)."""
     t_sym = _symbols_in(title or "")
     q_sym = _symbols_in(question or "")
     if len(set(t_sym)) > 1:
@@ -150,9 +120,7 @@ def ticker_of(question: str, title: str = "") -> tuple[str | None, str]:
 
 
 def _year_date(phrase: str, m: dict) -> tuple[date | None, str]:
-    """A date phrase's date with the year re-derived (ladder_replay amendment 5, `replay.deadline`): an explicit year
-    in the question or groupItemTitle wins, else the first year in which the month and day fall on or after creation."""
-    key = parse_date(phrase, 2024)                       # a leap year so that "February 29" parses; only month and day are used
+    key = parse_date(phrase, 2024)
     if key is None:
         return None, "date phrase does not parse"
     explicit = re.search(r"20\d\d", phrase)
@@ -182,10 +150,6 @@ def _window_end(question: str, title: str, m: dict) -> tuple[date | None, str]:
 
 
 def classify(question: str, rules: str | None = None, market: dict | None = None) -> dict:
-    """Rule parser: the question's type, its structured fields, and the checks a link must pass. Pure text, no network.
-
-    `market` (optional, gamma fields): createdAt/startDate, endDate, groupItemTitle, resolutionSource, description,
-    event_title, event_id or event_slug, and for a ticket without a direction word the universe `label` or `sign`."""
     m = dict(market or {})
     q = (question or "").strip()
     m.setdefault("question", q)
@@ -267,7 +231,6 @@ def classify(question: str, rules: str | None = None, market: dict | None = None
 
 
 def registered_date(phrase: str, m: dict) -> date | None:
-    """S11's registered year rule (end-date year, amendment 1 of S11), kept only to flag where amendment 5 changed it."""
     end = date.fromisoformat(str(m.get("endDate") or "2026-12-31")[:10])
     d = parse_date(phrase, end.year)
     if d is not None and not re.search(r"20\d\d", phrase) and d > date.fromordinal(end.toordinal() + 7):
@@ -276,9 +239,6 @@ def registered_date(phrase: str, m: dict) -> date | None:
 
 
 def link_ladders(markets: list[dict], event: dict | None = None) -> list[dict]:
-    """Rungs of one event's markets linked into ladders. Each ladder: rungs in re-derived date order, and for each
-    adjacent pair (rich = earlier, cheap = later) the nesting verdict of `ladder_replay.replay.nested` with its reason.
-    Markets need gamma fields: id, question, description, resolutionSource, startDate/createdAt, endDate."""
     ev = dict(event or {})
     groups: dict[str, list[tuple[dict, dict]]] = {}
     unplaced = []
@@ -324,7 +284,6 @@ def link_ladders(markets: list[dict], event: dict | None = None) -> list[dict]:
 
 
 def end_dates() -> dict[str, tuple[str, bool]]:
-    """market id -> (the day the question ends, whether it has already resolved)."""
     from s4_linked_assets import data as d4
     from s5_big_moves import run as r5
 
@@ -339,9 +298,6 @@ def end_dates() -> dict[str, tuple[str, bool]]:
 
 
 def main() -> int:
-    """Every open question in the benchmark and held-out sets, typed, with its exact contract link or the reason it has
-    none. Tickets get their option expiry and bracketing strikes; rungs get their ladder fields (the ladder itself is
-    linked from the event's other rungs, served live by GET /ladders); everything else: no tested mechanism."""
     import pandas as pd
 
     from s4_linked_assets import data as d4

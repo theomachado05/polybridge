@@ -10,7 +10,7 @@ TEST(Execution, NoTradeBand) {
   NoTradeBand b{10};
   EXPECT_FALSE(b.pass(9));
   EXPECT_TRUE(b.pass(-10));
-  EXPECT_FALSE((NoTradeBand{0}.pass(0)));  // never a zero-quantity order
+  EXPECT_FALSE((NoTradeBand{0}.pass(0)));
   EXPECT_FALSE(b.pass(NaN));
 }
 
@@ -35,10 +35,10 @@ TEST(Execution, SlicerPreservesSign) {
 
 TEST(Execution, PassiveAggressive) {
   PassiveAggressive pa{2.0};
-  EXPECT_DOUBLE_EQ(pa.limit(+1, 99.9, 100.1, 1.0), 99.9);   // join bid
-  EXPECT_DOUBLE_EQ(pa.limit(-1, 99.9, 100.1, 1.0), 100.1);  // join ask
-  EXPECT_TRUE(std::isnan(pa.limit(-1, 99.9, 100.1, 2.5)));  // urgent: cross
-  EXPECT_TRUE(std::isnan(pa.limit(+1, NaN, 100.1, 0.0)));   // no touch to join
+  EXPECT_DOUBLE_EQ(pa.limit(+1, 99.9, 100.1, 1.0), 99.9);
+  EXPECT_DOUBLE_EQ(pa.limit(-1, 99.9, 100.1, 1.0), 100.1);
+  EXPECT_TRUE(std::isnan(pa.limit(-1, 99.9, 100.1, 2.5)));
+  EXPECT_TRUE(std::isnan(pa.limit(+1, NaN, 100.1, 0.0)));
 }
 
 TEST(Execution, IcebergCap) {
@@ -47,6 +47,6 @@ TEST(Execution, IcebergCap) {
   EXPECT_DOUBLE_EQ(c.clip(300, 401, capped), 200);
   EXPECT_TRUE(capped);
   EXPECT_DOUBLE_EQ(c.clip(-100, 401, capped), -100);
-  EXPECT_DOUBLE_EQ(c.clip(300, NaN, capped), 300);  // unknown size is not zero
+  EXPECT_DOUBLE_EQ(c.clip(300, NaN, capped), 300);
   EXPECT_FALSE(capped);
 }

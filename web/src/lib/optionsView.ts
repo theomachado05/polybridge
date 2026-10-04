@@ -1,7 +1,3 @@
-// View logic for the options screens: the strike ladder (GET /options/chain/{underlying}), the hedge-instrument
-// comparison (GET /options/hedge-quote) and option-leg marks (GET /options/mark/{contract}). Pure, tested offline.
-// Labels stay honest: bid/ask are Massive's last NBBO (15-min delayed), a closed market shows the last close, an
-// estimated spread says so, and the ranking is by trading friction only (it ignores the upside given up).
 import type { ChainContract, HedgeQuoteOut, HedgeStrategy, HedgeStrategyId, LiveChainOut, OptionMark, QuoteLeg } from "./api.ts";
 import { bp, usd, type Badge } from "./risk.ts";
 
@@ -10,7 +6,6 @@ const px = (x: number | null | undefined) => (fin(x) ? x.toFixed(2) : "n/a");
 
 export interface LadderRow { strike: number; call: ChainContract | null; put: ChainContract | null; atm: boolean; callItm: boolean; putItm: boolean }
 
-/** One row per strike, ascending, calls left and puts right; `atm` marks the strike nearest the underlying. */
 export function ladder(chain: Pick<LiveChainOut, "contracts" | "underlying_price"> | null | undefined): LadderRow[] {
   if (!chain?.contracts?.length) return [];
   const by = new Map<number, LadderRow>();
@@ -30,8 +25,6 @@ export function ladder(chain: Pick<LiveChainOut, "contracts" | "underlying_price
   return rows;
 }
 
-/** Visible source marker for a chain IV / delta cell: "" = Massive's, "c" = Black–Scholes from the mark, "c*" = Massive's
- *  greeks with the missing ones computed (backend/app/options/live.py greeks_for). */
 export type GreekMark = "" | "c" | "c*";
 export const GREEK_LEGEND = "c = computed (Black–Scholes from the mark). c* = Massive greeks, with the missing values computed. No mark = Massive values.";
 export function greekMarks(c: Pick<ChainContract, "iv" | "delta" | "iv_source" | "greeks_source"> | null): { iv: GreekMark; delta: GreekMark } {
@@ -43,14 +36,12 @@ export function greekMarks(c: Pick<ChainContract, "iv" | "delta" | "iv_source" |
   };
 }
 
-/** The chain card's fill tag: option orders go to Webull paper only when the account reports options_supported. */
 export function optionFillBadge(a: { broker?: string; options_supported?: boolean; options_route?: string | null } | null | undefined): Badge {
   if (!a) return { tone: "neutral", text: "fills: account n/a", title: "The account data is not available. The app does not know where option orders fill." };
   if (a.options_supported) return { tone: "paper", text: "Webull paper fills", title: `Option orders go to ${a.options_route ?? a.broker ?? "the broker"} (WEBULL_OPTIONS=1).` };
   return { tone: "sim", text: "simulated fills", title: `The simulator fills option orders.${(a.broker ?? "").includes("webull") ? " Webull paper options are off unless WEBULL_OPTIONS=1." : ""}` };
 }
 
-/** Cells for one side of a ladder row. */
 export function sideCells(c: ChainContract | null): { bid: string; ask: string; iv: string; delta: string; oi: string; vol: string; title: string; stale: boolean; marks: { iv: GreekMark; delta: GreekMark } } {
   if (!c) return { bid: "n/a", ask: "n/a", iv: "n/a", delta: "n/a", oi: "n/a", vol: "n/a", title: "not listed in this window", stale: false, marks: { iv: "", delta: "" } };
   const n = (x: number | null | undefined) => (fin(x) ? Math.round(x).toLocaleString("en-US") : "n/a");
@@ -63,7 +54,6 @@ export function sideCells(c: ChainContract | null): { bid: string; ask: string; 
   };
 }
 
-/** The chain's honesty line: last close vs live, how many rows have a real quote, and how many are stale. */
 export function chainLabel(chain: LiveChainOut | null | undefined): Badge {
   if (!chain) return { tone: "neutral", text: "no chain yet" };
   if (!chain.available) return { tone: "neutral", text: "chain unavailable", title: chain.reason ?? undefined };
@@ -96,14 +86,12 @@ const liqBadge = (s: HedgeStrategy): Badge => {
   return { tone: g === "liquid" ? "measured" : g === "thin" ? "caution" : g === "illiquid" ? "caution" : "neutral", text: g, title: (s.liquidity_flags ?? []).map(flagLabel).join(", ") || undefined };
 };
 
-/** "+10 O:SPY261014P00731000 · bid 0.38 × ask 0.39 (NBBO) · mid 0.385" */
 export function legLine(l: QuoteLeg): string {
   const src = l.spread_source === "nbbo" ? "NBBO" : l.spread_source === "estimated" ? "estimated spread" : l.spread_source ?? "";
   return `${l.side === "sell" ? MINUS_SIGN : "+"}${l.contracts} ${l.right} ${l.strike} ${l.expiry} · bid ${px(l.bid)} × ask ${px(l.ask)}${src ? ` (${src})` : ""} · mid ${px(l.mid)}${l.stale ? " · stale" : ""}`;
 }
 const MINUS_SIGN = "−";
 
-/** Four rows (short stock, protective put, collar, put spread) in the fixed order, each with its rank by expected cost. */
 export function hedgeRows(hq: HedgeQuoteOut | null | undefined): HedgeRow[] {
   if (!hq?.strategies) return [];
   const order = hq.ranking?.order ?? [];
@@ -127,7 +115,6 @@ export function hedgeRows(hq: HedgeQuoteOut | null | undefined): HedgeRow[] {
   });
 }
 
-/** The quote's honesty line (closed market / horizon not covered / borrow assumed). */
 export function hedgeNotes(hq: HedgeQuoteOut | null | undefined): string[] {
   if (!hq) return [];
   const out: string[] = [];
@@ -138,13 +125,11 @@ export function hedgeNotes(hq: HedgeQuoteOut | null | undefined): string[] {
   return out;
 }
 
-/** One option leg marked to market: mark ± half spread, its source and staleness. */
 export function markLine(m: OptionMark | null | undefined): { text: string; tone: Badge["tone"]; title: string } {
   if (!m) return { text: "marking…", tone: "neutral", title: "" };
   if (!m.available || !fin(m.mark)) return { text: `no mark${m.reason ? ` (${m.reason})` : ""}`, tone: "neutral", title: m.reason ?? "" };
   const src = m.spread_source === "nbbo" ? "NBBO" : m.spread_source === "estimated" ? "estimated spread" : m.spread_source === "settlement" ? "settlement estimate" : m.spread_source ?? "";
   const hs = fin(m.half_spread) ? ` ± ${m.half_spread.toFixed(2)}` : "";
-  // A closed market's NBBO is the last session's close: not stale, but not a live quote either.
   const lastClose = m.market_open === false || (m.as_of_label ?? "").startsWith("last close");
   return {
     text: `mark ${m.mark.toFixed(2)}${hs}${src ? ` · ${src}` : ""}${lastClose ? " · last close" : ""}${m.stale ? " · stale" : ""}`,

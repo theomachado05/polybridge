@@ -1,5 +1,3 @@
-"""Reads the forward recording of the twin pairs (research/forward/raw/twins) and calibrates the modelled
-Polymarket half-spread from its calibration slice (METHOD.md section 2)."""
 from __future__ import annotations
 
 import gzip
@@ -15,7 +13,6 @@ RAW = Path(__file__).resolve().parents[1] / "forward" / "raw" / "twins"
 
 
 def load_rows(start: datetime, end: datetime, folder: Path = RAW) -> list[dict]:
-    """Book rows with start <= t < end. Error rows are skipped; a truncated last line of a live file is ignored."""
     s, e = start.timestamp(), end.timestamp()
     rows: list[dict] = []
     for f in sorted(folder.glob("*.jsonl.gz")):
@@ -37,8 +34,6 @@ def load_rows(start: datetime, end: datetime, folder: Path = RAW) -> list[dict]:
 
 
 def calibrate_half_spreads(rows: list[dict] | None = None) -> dict[str, dict]:
-    """Per Polymarket token: median half-spread of its two-sided books in the calibration slice, floored. `usable`
-    is False when the book was one-sided or empty in more than half of the snapshots."""
     if rows is None:
         rows = load_rows(CALIBRATION_START, CALIBRATION_END)
     by: dict[str, list[float | None]] = {}

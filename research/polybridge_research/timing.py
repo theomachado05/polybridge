@@ -1,9 +1,3 @@
-"""When could a filing first be traded? EDGAR acceptance time when known; otherwise assume after the close.
-
-The conservative fallback means the notebook never needs anything but the Massive key and never trades on
-information before it was public. An optional SEC_USER_AGENT enables acceptance times (sec.gov asks for a
-contact in the User-Agent and at most 10 requests per second).
-"""
 from __future__ import annotations
 
 import hashlib

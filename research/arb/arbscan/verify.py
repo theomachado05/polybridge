@@ -1,7 +1,3 @@
-"""Trade-print verification of resolved Polymarket gaps (METHOD.md amendment 3).
-
-Resolved Polymarket rows use mid -/+ an assumed half-spread, which proved to be the weak link (see SUMMARY.md). A row only
-counts as `gap_verified` if a public trade print within +/- WINDOW_SEC of the snapshot shows the PM price the trade needs."""
 from __future__ import annotations
 
 from . import implied
@@ -27,7 +23,6 @@ def fetch_trades(http: Http, condition_id: str) -> list[dict]:
 
 
 def needed_price(trade: str, p_lo: float, p_hi: float, width: float, fee, min_edge: float = implied.MIN_EDGE) -> float | None:
-    """Breakeven PM price for the row's trade: A needs a SELL price >= b*, B needs a BUY price <= a*. None if unreachable."""
     comm = commission_per_share(width)
     grid = [i / 1000.0 for i in range(1, 1000)]
     if trade.startswith("A"):
@@ -42,9 +37,6 @@ def needed_price(trade: str, p_lo: float, p_hi: float, width: float, fee, min_ed
 
 
 def verify_row(trades: list[dict], snap_ts: float, trade: str, price_needed: float | None, window: float = WINDOW_SEC) -> dict:
-    """Yes-equivalent prices: a No trade at q is a Yes trade at 1 - q on the opposite side. Evidence for trade A (we sell YES):
-    the taker sold YES (or bought NO) at a Yes-price >= needed, i.e. a bid that good existed. For trade B (we buy YES):
-    the taker bought YES (or sold NO) at a Yes-price <= needed."""
     if price_needed is None:
         return {"verified": False, "verify_n": 0, "verify_size": 0.0}
     n, size = 0, 0.0

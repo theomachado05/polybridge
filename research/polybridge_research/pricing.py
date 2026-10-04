@@ -1,4 +1,3 @@
-"""Price each event from the option chain alone (Massive starter, section 5), with explicit arguments and threads."""
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor

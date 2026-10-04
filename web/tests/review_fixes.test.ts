@@ -1,4 +1,3 @@
-// Pins the review fixes: exact-terms proposal reuse, no hedge fit without a direction, honest labels.
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
@@ -36,7 +35,6 @@ describe("proposal reuse matches the exact approved terms", () => {
     const r = await startRealBridge(q, eq, "20%", a);
     assert.equal(r.bridgeId, "b-new");
     assert.equal(calls.create?.target_coverage, 0.2);
-    // same terms are still reused
     assert.equal((await startRealBridge(q, eq, "100%", api([old]).api)).bridgeId, "b-old");
   });
   it("an approval for another position size is not reused (with or without a fit)", async () => {

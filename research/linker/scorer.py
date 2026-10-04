@@ -1,14 +1,3 @@
-"""Link scorer: a small model, trained on the benchmark, that predicts whether a proposed link will be confirmed by
-prices. It uses only what is known before any equity price is looked at: how sure the labellers were, whether two
-models agreed, and how alive the question's odds are.
-
-Logistic regression with an L2 penalty, in numpy. Validation never scores a link with a model that saw its market:
-    by market     5 folds, all links of a market in the same fold
-    across sets   train on S5, test on S4; and the reverse
-    by theme      leave one theme out
-
-Run from `research/`:  python -m linker.scorer
-"""
 from __future__ import annotations
 
 import json
@@ -30,7 +19,6 @@ def design(df: pd.DataFrame) -> np.ndarray:
 
 
 def fit(X: np.ndarray, y: np.ndarray, l2: float = L2) -> dict:
-    """Standardise, then Newton steps on the penalised log-likelihood (the intercept is not penalised)."""
     mu, sd = X.mean(axis=0), X.std(axis=0)
     sd[sd == 0] = 1.0
     Z = np.column_stack([np.ones(len(X)), (X - mu) / sd])
@@ -54,7 +42,6 @@ def predict(m: dict, X: np.ndarray) -> np.ndarray:
 
 
 def auc(y: np.ndarray, s: np.ndarray) -> float:
-    """Probability that a confirmed link outranks an unconfirmed one (ties count half)."""
     pos, neg = s[y == 1], s[y == 0]
     if not len(pos) or not len(neg):
         return float("nan")
@@ -67,7 +54,6 @@ def top_third(y: np.ndarray, s: np.ndarray) -> float:
 
 
 def rule(df: pd.DataFrame) -> np.ndarray:
-    """A plain rule to compare the model with: two models agree, and the odds are alive."""
     return ((df.two_models == 1) & (df.odds_share_between_10_and_90 >= 0.5) & (df.odds_share_nights_1pt >= 0.3)).to_numpy(float)
 
 

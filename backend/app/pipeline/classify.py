@@ -1,12 +1,3 @@
-"""Step 1: question -> event class (Gemini first, keyword rules on any failure), and the four contract types.
-
-Two classifiers live here:
-
-- ``classify_contract`` (what the product acts on): ``ladder_rung``, ``touch_ticket``, ``close_above_ticket`` or
-  ``other``, with structured fields and link checks. The rule parser (``research/linker/link_map.classify``) decides;
-  Gemini may read the same text into the same fields and is checked against it (``app.contracts.classify``).
-- ``classify`` (the generic AI fit, unvalidated: its walk-forward test failed): question -> event class.
-"""
 from __future__ import annotations
 
 from ..contracts.classify import TYPES as CONTRACT_TYPES, classify_contract, rules_classify as rules_classify_contract  # noqa: F401
@@ -17,9 +8,6 @@ from .llm import LLMError, LLMProvider, RulesProvider
 
 async def classify(question: str, provider: LLMProvider, allowed: list[str] | None = None,
                    ticker: str | None = None, trace: dict | None = None) -> tuple[str, str]:
-    """Returns (event_class, label of what produced it: 'gemini:<model>' | 'rules').
-
-    ``trace`` (optional) receives ``error`` when a Gemini provider was tried and the rules answered instead."""
     allowed = list(allowed or EVENT_CLASSES)
     if "unsupported" not in allowed:
         allowed.append("unsupported")
@@ -33,7 +21,7 @@ async def classify(question: str, provider: LLMProvider, allowed: list[str] | No
             err = "Gemini returned a class outside the allowed set"
         except LLMError as e:
             err = str(e)
-        except Exception as e:  # a provider bug must not break the fit
+        except Exception as e:
             err = f"provider error: {type(e).__name__}"
         if trace is not None:
             trace["error"] = err

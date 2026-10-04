@@ -1,9 +1,3 @@
-"""Build ``app/data/kalshi_twins.json``: fetch both universes, match, verify, write.
-
-``build_map`` is pure (claims in, document out) so tests can feed it fixtures; ``run`` adds the network.
-Only VERIFIED pairs go under ``pairs`` (and are the only thing ``app.twins.store`` reads). Ambiguous pairs are
-listed under ``ambiguous`` for a human, with the reasons, and are never used.
-"""
 from __future__ import annotations
 
 from collections import Counter

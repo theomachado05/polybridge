@@ -1,12 +1,3 @@
-"""NYSE session clock: classify any instant as regular, pre-market, after-hours, overnight, weekend or holiday.
-
-Pure functions of an explicit instant (never the wall clock unless the caller passes ``now``), so a replay that passes
-each tick's own time sees a replayed Saturday as a Saturday.
-
-The holiday rules are a stdlib copy of ``research/polybridge_research/calendar.py`` (NYSEHolidays); the test suite
-checks the two agree for 2015-2030. Early closes (13:00 ET): the day after Thanksgiving, Christmas Eve when it is a
-trading day, and 3 July when it is a Monday-Thursday trading day. On an early-close day after-hours ends at 17:00 ET.
-"""
 from __future__ import annotations
 
 import datetime as dt
@@ -28,20 +19,13 @@ EARLY_POST_CLOSE = dt.time(17, 0)
 PHASES = ("regular", "pre_market", "after_hours", "overnight", "weekend", "holiday")
 CLOSED_PHASES = ("overnight", "weekend", "holiday")
 
-# One-off closures the research calendar also carries (national days of mourning).
 _SPECIAL_CLOSURES = {
     dt.date(2018, 12, 5): "National day of mourning, President Bush",
     dt.date(2025, 1, 9): "National day of mourning, President Carter",
 }
 
 
-# ------------------------------------------------------------------------------------------------- time parsing
-
-
 def to_utc(x: Any) -> dt.datetime:
-    """An aware UTC datetime from a datetime (naive = UTC), an epoch number (s, ms, us or ns, by magnitude), a numeric
-    string, or an ISO-8601 string (naive = UTC). Raises ValueError on anything else, including an epoch the platform
-    cannot represent (never OverflowError or OSError)."""
     if isinstance(x, dt.datetime):
         return x.replace(tzinfo=UTC) if x.tzinfo is None else x.astimezone(UTC)
     if isinstance(x, bool):
@@ -66,7 +50,7 @@ def to_utc(x: Any) -> dt.datetime:
                 n = conv(s)
             except (ValueError, OverflowError):
                 continue
-            return to_utc(n)  # out of range: ValueError
+            return to_utc(n)
         try:
             return to_utc(dt.datetime.fromisoformat(s.replace("Z", "+00:00")))
         except ValueError:
@@ -78,21 +62,15 @@ def now_utc() -> dt.datetime:
     return dt.datetime.now(UTC)
 
 
-# The calendar is answered for instants in [SUPPORTED_FROM, SUPPORTED_TO). Outside it the neighbouring trading days can
-# fall off the ends of the datetime range, and nothing in the product needs such dates.
 SUPPORTED_FROM = dt.datetime(1971, 1, 1, tzinfo=UTC)
 SUPPORTED_TO = dt.datetime(2100, 1, 1, tzinfo=UTC)
 
 
 def check_supported(at: Any) -> dt.datetime:
-    """``to_utc(at)``, or ValueError when it falls outside [SUPPORTED_FROM, SUPPORTED_TO)."""
     t = to_utc(at)
     if not SUPPORTED_FROM <= t < SUPPORTED_TO:
         raise ValueError(f"time outside the supported range 1971-01-01..2100-01-01: {_iso(t)}")
     return t
-
-
-# ---------------------------------------------------------------------------------------------------- calendar
 
 
 def _nth_weekday(year: int, month: int, weekday: int, n: int) -> dt.date:
@@ -126,10 +104,9 @@ def _nearest_workday(d: dt.date) -> dt.date:
 
 @lru_cache(maxsize=64)
 def nyse_holidays(year: int) -> dict[dt.date, str]:
-    """Full-day NYSE closures falling in ``year`` (observed dates), as {date: name}."""
     out: dict[dt.date, str] = {}
     ny = dt.date(year, 1, 1)
-    out[ny + dt.timedelta(days=1) if ny.weekday() == 6 else ny] = "New Year's Day"  # Saturday: not observed
+    out[ny + dt.timedelta(days=1) if ny.weekday() == 6 else ny] = "New Year's Day"
     out[_nth_weekday(year, 1, 0, 3)] = "Martin Luther King Jr. Day"
     out[_nth_weekday(year, 2, 0, 3)] = "Presidents' Day"
     out[_easter(year) - dt.timedelta(days=2)] = "Good Friday"
@@ -163,7 +140,6 @@ def is_early_close(d: dt.date) -> bool:
 
 
 def next_trading_day(d: dt.date) -> dt.date:
-    """First trading day strictly after ``d``."""
     d += dt.timedelta(days=1)
     while not is_trading_day(d):
         d += dt.timedelta(days=1)
@@ -171,7 +147,6 @@ def next_trading_day(d: dt.date) -> dt.date:
 
 
 def previous_trading_day(d: dt.date) -> dt.date:
-    """Last trading day strictly before ``d``."""
     d -= dt.timedelta(days=1)
     while not is_trading_day(d):
         d -= dt.timedelta(days=1)
@@ -183,21 +158,18 @@ def _at_et(d: dt.date, t: dt.time) -> dt.datetime:
 
 
 def regular_hours(d: dt.date) -> tuple[dt.datetime, dt.datetime] | None:
-    """(open, close) of the regular session on ET date ``d`` in UTC, or None when it is not a trading day."""
     if not is_trading_day(d):
         return None
     return _at_et(d, REG_OPEN), _at_et(d, EARLY_CLOSE if is_early_close(d) else REG_CLOSE)
 
 
 def extended_hours(d: dt.date) -> tuple[dt.datetime, dt.datetime] | None:
-    """(pre-market start 04:00, after-hours end 20:00, or 17:00 on an early-close day) in UTC, or None."""
     if not is_trading_day(d):
         return None
     return _at_et(d, PRE_OPEN), _at_et(d, EARLY_POST_CLOSE if is_early_close(d) else POST_CLOSE)
 
 
 def last_regular_close(at: Any) -> dt.datetime:
-    """The most recent regular-session close at or before ``at`` (UTC). During regular hours: the previous session's."""
     t = to_utc(at)
     d = t.astimezone(ET).date()
     if is_trading_day(d):
@@ -208,7 +180,6 @@ def last_regular_close(at: Any) -> dt.datetime:
 
 
 def next_regular_open(at: Any) -> dt.datetime:
-    """The first regular-session open strictly after ``at`` (UTC). During regular hours: the next session's."""
     t = to_utc(at)
     d = t.astimezone(ET).date()
     if is_trading_day(d):
@@ -219,7 +190,6 @@ def next_regular_open(at: Any) -> dt.datetime:
 
 
 def next_extended_open(at: Any) -> dt.datetime:
-    """The first 04:00 ET pre-market start strictly after ``at`` (UTC)."""
     t = to_utc(at)
     d = t.astimezone(ET).date()
     if is_trading_day(d):
@@ -230,7 +200,6 @@ def next_extended_open(at: Any) -> dt.datetime:
 
 
 def closure_kind(close_day: dt.date, open_day: dt.date) -> str:
-    """Same rule as research/leadlag_closed/closures.py: overnight (next day), weekend (Fri to Mon), else holiday."""
     n = (open_day - close_day).days
     if n == 1:
         return "overnight"
@@ -239,17 +208,13 @@ def closure_kind(close_day: dt.date, open_day: dt.date) -> str:
     return "holiday"
 
 
-# ------------------------------------------------------------------------------------------------------ session
-
-
 @dataclass(frozen=True)
 class Closure:
-    """The regular-session closure containing an instant: from one regular close to the next regular open."""
-    kind: str                  # overnight | weekend | holiday
-    close_day: dt.date         # trading day whose close started the closure
-    open_day: dt.date          # trading day whose open ends it
-    started_at: dt.datetime    # UTC
-    ends_at: dt.datetime       # UTC
+    kind: str
+    close_day: dt.date
+    open_day: dt.date
+    started_at: dt.datetime
+    ends_at: dt.datetime
     elapsed_s: float
     remaining_s: float
 
@@ -261,19 +226,19 @@ class Closure:
 
 @dataclass(frozen=True)
 class Session:
-    at: dt.datetime                     # UTC
-    phase: str                          # one of PHASES
-    equities_open: bool                 # regular session in progress
-    extended_open: bool                 # pre-market or after-hours in progress
-    trading_day: bool                   # the ET date is an NYSE trading day
-    early_close: bool                   # the ET date closes at 13:00
-    holiday: str | None                 # the ET date's holiday name
-    regular_open: dt.datetime | None    # today's regular hours (UTC), when a trading day
+    at: dt.datetime
+    phase: str
+    equities_open: bool
+    extended_open: bool
+    trading_day: bool
+    early_close: bool
+    holiday: str | None
+    regular_open: dt.datetime | None
     regular_close: dt.datetime | None
-    last_close: dt.datetime             # most recent regular close at or before `at` (previous session's when open)
-    next_open: dt.datetime              # next regular open strictly after `at`
-    next_extended_open: dt.datetime     # next 04:00 ET pre-market start strictly after `at`
-    closure: Closure | None             # set whenever the regular session is not in progress
+    last_close: dt.datetime
+    next_open: dt.datetime
+    next_extended_open: dt.datetime
+    closure: Closure | None
     label: str
 
     @property
@@ -303,7 +268,6 @@ def _hm(t: dt.datetime) -> str:
 
 
 def _day(t: dt.datetime, ref: dt.datetime) -> str:
-    """'Mon', or 'Mon 12 Jan' when it is six or more days after the reference."""
     e = t.astimezone(ET)
     return e.strftime("%a") if (e.date() - ref.astimezone(ET).date()).days < 6 else e.strftime("%a %d %b")
 
@@ -319,8 +283,6 @@ def _label(phase: str, t: dt.datetime, close: dt.datetime | None, nxt: dt.dateti
 
 
 def session_at(at: Any) -> Session:
-    """Classify an explicit instant (datetime, epoch s/ms/us/ns, or ISO string). Replays pass the tick's own time.
-    Raises ValueError for an unparseable time or one outside 1971-01-01..2100-01-01."""
     t = check_supported(at)
     d = t.astimezone(ET).date()
     hours = regular_hours(d)

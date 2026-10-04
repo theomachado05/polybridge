@@ -1,5 +1,3 @@
-"""S21: the plain-language answer of SUMMARY.md. Every number comes from the result files through report.main's
-variables; the wording of each verdict follows the reading fixed in METHOD.md."""
 from __future__ import annotations
 
 from s8_open_referee.report import ci, num, pts
@@ -17,7 +15,6 @@ def answer(v: dict) -> list[str]:
     d, d_is = im.loc["ALL"], im.loc["IS"]
     out = []
 
-    # ---- the answer in one paragraph
     if v["dose"] and v["improves"] and not v["passed"]:
         head = ("**In this sample the options anchor does sort the overpriced tickets from the fair ones, and by the rule fixed in advance it is still not a "
                 "pass: almost none of the evidence is out-of-sample.**")
@@ -30,7 +27,6 @@ def answer(v: dict) -> list[str]:
     out += [f"{head} {meta['anchored']} of the {meta['markets_in_s18_file']} stock and S&P 500 markets got an anchor from two real option quotes taken at 15:55 on "
             "the Friday before the market's first weekend.", ""]
 
-    # ---- T1
     t1_head = ("**The further above the anchor a buyer paid, the more the buyer lost.**" if v["dose"] else
                "**Buyers who paid further above the anchor did not reliably lose more.**")
     out += [f"{t1_head} Over {int(every.markets)} markets in {int(every.events)} events, buyers of YES paid {num(every.mean_traded_price, 1)}% on average against a "
@@ -43,7 +39,6 @@ def answer(v: dict) -> list[str]:
             + ("The steps are not even: the buckets in between do not line up one by one; the two ends do." if not tb.buyers_pnl_points.is_monotonic_decreasing
                else "The loss grows bucket by bucket."), ""]
 
-    # ---- T3
     t3_head = ("**Selling only the tickets priced above the anchor beat selling all of them, in-sample.**" if v["improves"] else
                "**Selling only the tickets priced above the anchor did not reliably beat selling all of them.**")
     out += [f"{t3_head} B0 sells YES at the traded bid when it is 5 or more points above the central anchor and holds to the result: {stat(b0a)} "
@@ -56,7 +51,6 @@ def answer(v: dict) -> list[str]:
             f"{pc(ua.max_drawdown)}, worst month {pc(ua.worst_month)}). The filter takes {num(100 * b0a.markets / ua.markets, 0)}% of the "
             f"markets and keeps {num(100 * b0a.pnl / ua.pnl, 0)}% of the unfiltered book's dollars.", ""]
 
-    # ---- verdict
     if v["passed"]:
         out += ["**By the rule fixed before the pull this is a pass: a lead that needs a replication on fresh markets, not an edge.**", ""]
     else:
@@ -66,7 +60,6 @@ def answer(v: dict) -> list[str]:
                 f"{pts(b0i.mean_pnl_points)} {ci(b0i.ci_lo, b0i.ci_hi)}; with the fee doubled {pts(b0i2.mean_pnl_points)} in-sample and "
                 f"{pts(b0o2.mean_pnl_points)} out-of-sample.", ""]
 
-    # ---- T2 and the variants: the short section of what did not hold
     out += ["**What did not hold.** "
             f"(a) The anchor does not carry the weight alone (T2). With the result regressed on both, the central anchor's coefficient is {ca.value:+.3f} "
             f"[{ca.ci_lo:+.3f}, {ca.ci_hi:+.3f}] and the traded price's {cp.value:+.3f} [{cp.ci_lo:+.3f}, {cp.ci_hi:+.3f}]: the two move together and neither is "
@@ -78,7 +71,6 @@ def answer(v: dict) -> list[str]:
             f"({pts(row('B2', 'ALL').mean_pnl_points)} points): the crowd almost never prices a ticket below the options' floor. "
             f"(c) Out-of-sample nothing can be said: {int(b0o.markets)} markets.", ""]
 
-    # ---- the bug hunt
     hs = v["high_sharpe"]
     p_obs, p_pl, p_share = chk("placebo", "taken minus left, observed"), chk("placebo", "taken minus left, placebo"), chk("placebo", "share of placebo")
     un, unl = chk("subsets", "B0 on anchors with no leg"), chk("subsets", "the markets it leaves")

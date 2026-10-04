@@ -1,4 +1,3 @@
-"""Hedge menu priced from today's option chain (5 strategies, 3-6m expiry, 5% OTM; ATM for the long call)."""
 from __future__ import annotations
 
 from typing import Literal
@@ -29,13 +28,12 @@ class Leg(BaseModel):
 
 
 class HedgeOption(BaseModel):
-    """Units: premium_per_share/max_loss_per_share in $/share; premium_total, fees, half_spread_cost in total $."""
     strategy: str
     legs: list[Leg]
     premium_per_share: float | None
     premium_total: float | None
-    max_loss_per_share: float | None  # dollars per share
-    breakeven_price: float | None  # underlying price at expiry
+    max_loss_per_share: float | None
+    breakeven_price: float | None
     fees: float
     half_spread_cost: float | None
     covers: str

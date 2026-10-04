@@ -87,7 +87,6 @@ const GATES: { reason: string; name: string }[] = [
   { reason: "rebalance", name: "Delta-bridge sizer" },
   { reason: "risk_capped", name: "Position cap" },
 ];
-/** Closed-market mode: the session clock holds the equity algo while the regular session is closed. */
 const SESSION_GATE = { reason: "session_closed", name: "Session clock" };
 
 function LiveBridge({ entry }: { entry: LiveEntry }) {
@@ -96,7 +95,6 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
   const [summaryTry, retrySummary] = useRetry();
   const first = useAsync(`b:${id}:${summaryTry}`, () => getBridge(id));
   const st = useBridgeStream(id, first.data?.source ?? null);
-  // A live bridge that fell back to a replay mid-run: refetch the summary once so replay_file / replay_market are known.
   const fellBack = st.source === "replay" && first.data != null && first.data.source !== "replay";
   const refetched = useAsync(fellBack ? `b:${id}:replay` : null, () => getBridge(id));
   const summary = refetched.data ? refetched : first;
@@ -109,7 +107,6 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
   const scope = fillScopeLabel(summary.data?.account_scope, acct);
   const mkt = entry.q?.real ?? summary.data?.market ?? null;
   const venue = liveVenue(mkt?.source);
-  // The market on screen, with its YES token id from the summary when the entry's market lacks it (sidecars may name either).
   const shown = mkt ? { source: mkt.source, id: mkt.id, token_id: mkt.token_id ?? summary.data?.market?.token_id ?? null } : null;
   const replay = replayInfo(summary.data);
   const pSub = priceSubtitle(source, shown?.source, replay, shown?.id, shown?.token_id);
@@ -156,8 +153,6 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
       tags: fillBadges(f, l.evidence),
     };
   });
-  // The fit is sent with the proposal and POST /bridges, and hedgecore.Algo runs that family and preset. The
-  // backend's summary is the truth (engine "algo"); the entry's fit covers the moment before the summary loads.
   const running = summary.data?.engine === "algo" && summary.data.algo
     ? { family: summary.data.algo.family, preset_index: summary.data.algo.preset_index ?? null }
     : summary.data?.engine === "legacy" ? null : entry.fit;
@@ -170,11 +165,9 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
     : entry.unapplied
       ? <Tag tone="ai" title={`POST /pipeline/fit selected ${prettyId(entry.unapplied.family)}, but ${entry.unapplied.why}. The engine runs its default delta-bridge spec.`}>Fit: {prettyId(entry.unapplied.family)} (not applied: {entry.unapplied.why})</Tag>
       : null;
-  // A replay with no recorded equity price for this ticker: the hedge families hold (fee_unknown) on every tick.
   const holdTag = summary.data?.engine === "algo" && summary.data.equity_price === "none"
     ? <Tag tone="sim" title={`This replay has no equity price for ${summary.data.ticker ?? "this ticker"} (no recorded bars). Thus the fee gate cannot calculate a trade price, and the algo holds with reason fee_unknown.`}>holds: no equity price in replay</Tag>
     : null;
-  // gap_per_share applies only to the legacy Engine; an algo bridge prices its fee gate from the tick's under_px.
   const gateTag = bridgeFeeGateOff(entry.gap, running)
     ? <Tag tone="sim" title="The bridge started on the default engine spec with gap_per_share = 0 because no quote or impact estimate was available. Thus the fee gate of the legacy Engine is off (docs/contracts.md).">fee gate off (no quote or impact)</Tag>
     : null;
@@ -237,7 +230,6 @@ function LiquidityPanel({ ticker, shares, coverage, counts, sandbox }: { ticker:
   const hedge = Math.floor(coverage * shares);
   const liq = useAsync(`bliq:${ticker}:${coverage}:${hedge}`, () => getLiquidity(ticker, { coverage, ...(hedge > 0 ? { qty: hedge } : {}) }));
   const view = liq.error ? { ...capacityFromLiquidity(null), reason: `Liquidity data is not available (${liq.error}). The system does not cap orders and labels them “unknown”.` } : capacityFromLiquidity(liq.data, hedge);
-  // The budget numbers come from GET /capital (CAPITAL_MAX_GROSS_PCT / CAPITAL_MAX_EVENT_PCT), never hard-coded.
   const cap = useAsync(`bcap:${ticker}`, getCapital);
   const capV = cap.data ? capitalView(cap.data) : null;
   const enforce = sandbox ? "This replay fills in a sandbox. The system calculates and labels the capital budget but does not enforce it."

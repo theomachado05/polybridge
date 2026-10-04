@@ -1,7 +1,4 @@
 #pragma once
-// Gate blocks (UI kind: Gate). Each gate answers pass(GateIn) and names its failure reason. Gates fail closed when the
-// field they check is missing (NaN): an unknown spread is not a tight spread. AnyGate is a std::variant so a family
-// can hold a fixed array of gates and run them with static dispatch (no virtual calls, no allocation).
 #include <array>
 #include <cmath>
 #include <cstdint>
@@ -16,16 +13,15 @@ namespace hedgecore::blocks {
 struct GateIn {
   const MarketTick& t;
   std::int64_t now_ns;
-  double dp = kNaN;          // latest one-step change of the family's probability signal
-  double sigma = kNaN;       // its volatility before this change
-  double trigger = kNaN;     // event trigger value (EventWindow)
+  double dp = kNaN;
+  double sigma = kNaN;
+  double trigger = kNaN;
 };
 
 struct Staleness {
   static constexpr const char* name = "Staleness";
   static constexpr Rc fail = Rc::Stale;
   std::int64_t max_ns = 2 * kNsPerSec;
-  // Fails for future-dated ticks and age > max_ns; overflow-safe (unsigned difference only when ts <= now).
   bool pass(const GateIn& g) noexcept {
     if (g.t.ts_ns > g.now_ns || max_ns < 0) return false;
     const auto age = static_cast<std::uint64_t>(g.now_ns) - static_cast<std::uint64_t>(g.t.ts_ns);
@@ -33,8 +29,6 @@ struct Staleness {
   }
 };
 
-// Passes when |dp| >= k * sigma. Warm-up (sigma unknown) passes so the initial position can be sized; a missing dp
-// fails. k <= 0 disables the gate.
 struct Sigma {
   static constexpr const char* name = "Sigma";
   static constexpr Rc fail = Rc::BelowSigma;
@@ -47,7 +41,6 @@ struct Sigma {
   }
 };
 
-// YES spread on this venue must be <= max_spread (probability points).
 struct Spread {
   static constexpr const char* name = "Spread";
   static constexpr Rc fail = Rc::SpreadTooWide;
@@ -58,7 +51,6 @@ struct Spread {
   }
 };
 
-// Minimum liquidity: both sides of the YES book must show >= min_qty over the top `levels`.
 struct Depth {
   static constexpr const char* name = "Depth";
   static constexpr Rc fail = Rc::ThinBook;
@@ -73,20 +65,16 @@ struct Depth {
   }
 };
 
-// US equity regular hours (09:30-16:00 ET, Mon-Fri). Disabled when enabled == false (replay on daily bars).
 struct Session {
   static constexpr const char* name = "Session";
   static constexpr Rc fail = Rc::OutOfSession;
   bool enabled = false;
-  // false: us_equity_session (rule-7.2 holidays, 16:00 close every day). true: us_equity_regular_session (also
-  // one-off closures and 13:00 early closes, matching the backend session clock). Opt-in per family.
   bool full_calendar = false;
   bool pass(const GateIn& g) noexcept {
     return !enabled || (full_calendar ? us_equity_regular_session(g.t.ts_ns) : us_equity_session(g.t.ts_ns));
   }
 };
 
-// At least min_ns between orders. The family calls on_order(now) when it emits one.
 struct Cooldown {
   static constexpr const char* name = "Cooldown";
   static constexpr Rc fail = Rc::Cooldown;
@@ -99,7 +87,6 @@ struct Cooldown {
   void on_order(std::int64_t now_ns) noexcept { last_ns = now_ns; }
 };
 
-// Opens when |trigger| >= threshold and stays open for window_ns of tick time; passes only while open.
 struct EventWindow {
   static constexpr const char* name = "EventWindow";
   static constexpr Rc fail = Rc::OutsideEventWindow;
@@ -118,7 +105,6 @@ struct EventWindow {
 
 using AnyGate = std::variant<Staleness, Sigma, Spread, Depth, Session, Cooldown, EventWindow>;
 
-// Runs gates in order; on the first failure writes its reason and returns false.
 template <std::size_t N>
 bool run_gates(std::array<AnyGate, N>& gates, const GateIn& in, Rc& failed) noexcept {
   for (auto& gate : gates) {
@@ -138,4 +124,4 @@ void gates_on_order(std::array<AnyGate, N>& gates, std::int64_t now_ns) noexcept
     if (auto* c = std::get_if<Cooldown>(&gate)) c->on_order(now_ns);
 }
 
-}  // namespace hedgecore::blocks
+}

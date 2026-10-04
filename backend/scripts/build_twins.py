@@ -1,12 +1,3 @@
-"""Rebuild the Polymarket<->Kalshi twin map (backend/app/data/kalshi_twins.json).
-
-    cd backend && uv run python scripts/build_twins.py            # live: gamma + Kalshi public trade API, no keys
-    uv run python scripts/build_twins.py --top 3000 --out /tmp/t.json
-    uv run python scripts/build_twins.py --cache /tmp/twins_raw.json   # reuse a saved fetch while tuning the matcher
-
-Never overwrites the map when a venue returned nothing. The map holds VERIFIED pairs only; ambiguous pairs are listed
-under "ambiguous" and ignored by the backend.
-"""
 from __future__ import annotations
 
 import argparse

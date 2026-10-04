@@ -1,4 +1,3 @@
-"""S22 unit tests on synthetic rows only. Nothing here reads the input file."""
 from __future__ import annotations
 
 import math
@@ -38,15 +37,15 @@ def test_quotes_sit_m_outside_the_band():
 
 def test_quotes_outside_the_posting_range_are_not_posted():
     bid, offer = R.quotes([0.05, 0.07, 0.90], [0.10, 0.93, 0.95], 0.05)
-    assert math.isnan(bid[0]) and offer[0] == pytest.approx(0.15)          # bid 0.00 not posted
-    assert bid[1] == pytest.approx(0.02) and offer[1] == pytest.approx(0.98)  # exactly on the edges: posted
-    assert bid[2] == pytest.approx(0.85) and math.isnan(offer[2])          # offer 1.00 not posted
+    assert math.isnan(bid[0]) and offer[0] == pytest.approx(0.15)
+    assert bid[1] == pytest.approx(0.02) and offer[1] == pytest.approx(0.98)
+    assert bid[2] == pytest.approx(0.85) and math.isnan(offer[2])
 
 
 def test_tick_grid_rounds_away_from_the_band():
     bid, offer = R.quotes([0.418], [0.512], 0.05, tick=0.01)
     assert bid[0] == pytest.approx(0.36) and offer[0] == pytest.approx(0.57)
-    bid, offer = R.quotes([0.40], [0.50], 0.05, tick=0.01)                 # already on the grid: unchanged
+    bid, offer = R.quotes([0.40], [0.50], 0.05, tick=0.01)
     assert bid[0] == pytest.approx(0.35) and offer[0] == pytest.approx(0.55)
 
 
@@ -54,9 +53,9 @@ def test_taker_buy_above_our_offer_fills_at_our_offer_not_at_the_print():
     f, _ = one(side="BUY", px=0.60, y=0)
     assert len(f) == 1 and f.loc[0, "our_side"] == "offer"
     assert f.loc[0, "quote"] == pytest.approx(0.55)
-    assert f.loc[0, "pnl_pt"] == pytest.approx(55.0)                       # sold at 0.55, result NO
+    assert f.loc[0, "pnl_pt"] == pytest.approx(55.0)
     f, _ = one(side="BUY", px=0.60, y=1)
-    assert f.loc[0, "pnl_pt"] == pytest.approx(-45.0)                      # sold at 0.55, result YES
+    assert f.loc[0, "pnl_pt"] == pytest.approx(-45.0)
 
 
 def test_taker_sell_below_our_bid_fills_at_our_bid():
@@ -75,29 +74,29 @@ def test_print_at_the_quote_fills_and_inside_it_does_not():
 
 
 def test_wrong_side_prints_never_fill():
-    assert len(one(side="SELL", px=0.60)[0]) == 0                          # a seller above our offer is not our fill
-    assert len(one(side="BUY", px=0.30)[0]) == 0                           # a buyer below our bid is not our fill
+    assert len(one(side="SELL", px=0.60)[0]) == 0
+    assert len(one(side="BUY", px=0.30)[0]) == 0
 
 
 def test_unposted_quote_gives_no_fill():
-    assert len(one(side="BUY", px=0.94, p_lo=0.90, p_mid=0.92, p_hi=0.94)[0]) == 0    # offer would be 0.99
-    assert len(one(side="SELL", px=0.03, p_lo=0.06, p_mid=0.08, p_hi=0.10)[0]) == 0   # bid would be 0.01
+    assert len(one(side="BUY", px=0.94, p_lo=0.90, p_mid=0.92, p_hi=0.94)[0]) == 0
+    assert len(one(side="SELL", px=0.03, p_lo=0.06, p_mid=0.08, p_hi=0.10)[0]) == 0
 
 
 def test_size_is_capped_at_100_and_capital_is_the_cash_locked():
     f, _ = one(side="BUY", px=0.60, size=250.0, y=0)
     assert f.loc[0, "contracts"] == 100.0
-    assert f.loc[0, "capital_usd"] == pytest.approx(45.0)                  # sale: (1 - 0.55) x 100
+    assert f.loc[0, "capital_usd"] == pytest.approx(45.0)
     assert f.loc[0, "pnl_usd"] == pytest.approx(55.0)
     f, _ = one(side="SELL", px=0.30, size=10.0, y=1)
     assert f.loc[0, "contracts"] == 10.0
-    assert f.loc[0, "capital_usd"] == pytest.approx(3.5)                   # purchase: 0.35 x 10
+    assert f.loc[0, "capital_usd"] == pytest.approx(3.5)
     assert f.loc[0, "pnl_usd"] == pytest.approx(6.5)
 
 
 def test_stress_needs_one_cent_through_the_widened_quote():
     kw = dict(m=C.M_PRIMARY + C.STRESS_WIDEN, through=C.STRESS_THROUGH)
-    assert len(one(side="BUY", px=0.57, **kw)[0]) == 0                     # at the widened offer: queue, no fill
+    assert len(one(side="BUY", px=0.57, **kw)[0]) == 0
     f, _ = one(side="BUY", px=0.58, y=0, **kw)
     assert len(f) == 1 and f.loc[0, "quote"] == pytest.approx(0.57) and f.loc[0, "pnl_pt"] == pytest.approx(57.0)
     assert len(one(side="SELL", px=0.33, **kw)[0]) == 0
@@ -142,7 +141,7 @@ def test_p_mid_regions():
 def test_out_of_sample_is_the_last_fifth_of_the_dates():
     d = [f"2026-05-{i:02d}" for i in range(1, 11)]
     assert R.oos_dates(d + d) == ["2026-05-09", "2026-05-10"]
-    assert R.oos_dates(d + ["2026-05-11"]) == ["2026-05-09", "2026-05-10", "2026-05-11"]     # ceil(2.2) = 3
+    assert R.oos_dates(d + ["2026-05-11"]) == ["2026-05-09", "2026-05-10", "2026-05-11"]
     df = frame([{"side": "BUY", "px": 0.60, "res_date": "2026-05-01"}, {"side": "BUY", "px": 0.60, "res_date": "2026-05-10"}])
     f, _ = R.fills(df, m=0.05, oos=["2026-05-09", "2026-05-10"])
     assert list(f["sample"]) == ["in-sample", "out-of-sample"]
@@ -150,14 +149,13 @@ def test_out_of_sample_is_the_last_fifth_of_the_dates():
 
 def test_cluster_bootstrap_resamples_days():
     lo, hi = R.cluster_boot([1.0, 2.0, 3.0], ["a", "a", "a"])
-    assert lo == pytest.approx(2.0) and hi == pytest.approx(2.0)           # one day = one bet: no spread
+    assert lo == pytest.approx(2.0) and hi == pytest.approx(2.0)
     rng = np.random.default_rng(0)
     v = rng.normal(5.0, 10.0, 400)
     c = np.repeat(np.arange(40), 10)
     lo, hi = R.cluster_boot(v, c)
     assert lo < v.mean() < hi
-    assert (lo, hi) == R.cluster_boot(v, c)                                # fixed seed
-    # the same value repeated inside a day must not narrow the interval
+    assert (lo, hi) == R.cluster_boot(v, c)
     lo1, hi1 = R.cluster_boot(np.repeat(v[:40], 10), c)
     lo2, hi2 = R.cluster_boot(v[:40], np.arange(40))
     assert (lo1, hi1) == pytest.approx((lo2, hi2))
@@ -173,24 +171,24 @@ def test_weighted_bootstrap_and_day_weight():
 
 def test_book_sharpe_drawdown_and_worst_month():
     dates = ["2026-04-01", "2026-04-02", "2026-04-30", "2026-05-01", "2026-05-29"]
-    df = frame([{"side": "BUY", "px": 0.60, "size": 100.0, "y": 0, "res_date": dates[0]},              # +55
-                {"side": "BUY", "px": 0.60, "size": 100.0, "y": 1, "res_date": dates[1], "ts": 1778000060},   # -45
-                {"side": "SELL", "px": 0.30, "size": 100.0, "y": 0, "res_date": dates[3], "ts": 1778000120},  # -35
-                {"side": "SELL", "px": 0.30, "size": 100.0, "y": 1, "res_date": dates[4], "ts": 1778000180}])  # +65
+    df = frame([{"side": "BUY", "px": 0.60, "size": 100.0, "y": 0, "res_date": dates[0]},
+                {"side": "BUY", "px": 0.60, "size": 100.0, "y": 1, "res_date": dates[1], "ts": 1778000060},
+                {"side": "SELL", "px": 0.30, "size": 100.0, "y": 0, "res_date": dates[3], "ts": 1778000120},
+                {"side": "SELL", "px": 0.30, "size": 100.0, "y": 1, "res_date": dates[4], "ts": 1778000180}])
     f, _ = R.fills(df, m=0.05)
     daily, m = R.book(f, dates)
     pnl = np.array([55.0, -45.0, 0.0, -35.0, 65.0])
     assert list(daily["pnl_usd"].round(6)) == list(pnl)
     assert list(daily["cum_pnl_usd"].round(6)) == [55.0, 10.0, 10.0, -25.0, 40.0]
-    assert m["max_drawdown_usd"] == pytest.approx(-80.0)                   # from +55 to -25
-    assert m["bankroll_usd"] == pytest.approx(45.0)                        # a sale at 0.55 locks 45; a buy at 0.35 locks 35
+    assert m["max_drawdown_usd"] == pytest.approx(-80.0)
+    assert m["bankroll_usd"] == pytest.approx(45.0)
     assert m["total_pnl_usd"] == pytest.approx(40.0) and m["total_capital_usd"] == pytest.approx(160.0)
     assert m["return_on_capital"] == pytest.approx(0.25)
-    dpy = 5 * 365.25 / 59                                                  # 1 April to 29 May inclusive = 59 days
+    dpy = 5 * 365.25 / 59
     assert m["days_per_year"] == pytest.approx(dpy)
     assert m["sharpe"] == pytest.approx(pnl.mean() / pnl.std(ddof=1) * math.sqrt(dpy))
     assert m["worst_month"] == "2026-04"
-    assert m["worst_month_pnl_usd"] == pytest.approx(10.0)                 # April +10, May +30
+    assert m["worst_month_pnl_usd"] == pytest.approx(10.0)
     assert m["dates_with_fills"] == 4 and m["winning_dates"] == 2 and m["losing_dates"] == 2
 
 
@@ -200,7 +198,7 @@ def test_stat_row_counts_and_means():
     f, _ = R.fills(df, m=0.05)
     r = R.stat_row(f, "v", "all", "all")
     assert (r["n_fills"], r["days"], r["markets"]) == (2, 2, 2)
-    assert r["mean_pt"] == pytest.approx(5.0)                              # (+55 - 45) / 2, each fill once
+    assert r["mean_pt"] == pytest.approx(5.0)
     assert r["contract_weight_mean_pt"] == pytest.approx(100 * (55.0 - 4.5) / 110)
     assert r["pnl_usd"] == pytest.approx(50.5)
     empty = R.stat_row(f.iloc[:0], "v", "all", "all")
@@ -230,8 +228,6 @@ def _world(truth: str, n: int = 4000) -> pd.DataFrame:
 
 
 def test_the_runner_has_no_built_in_sign():
-    """If the options are the truth the maker earns about band + margin (8 pt); if the takers' price is the truth the
-    maker loses. The code must be able to show both."""
     f, _ = R.fills(_world("options"), m=0.05)
     assert len(f) > 500 and 5.0 < f["pnl_pt"].mean() < 11.0
     f, _ = R.fills(_world("takers"), m=0.05)

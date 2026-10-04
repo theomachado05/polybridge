@@ -1,4 +1,3 @@
-"""Synthetic tests for the P2 taker study. No network, no key."""
 import importlib.util
 import json
 from datetime import date, datetime, timedelta

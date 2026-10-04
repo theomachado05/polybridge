@@ -1,8 +1,3 @@
-"""Fresh "will it hit" universe from Polymarket catalogue metadata only (METHOD.md section 2). No price and no
-result is read: `outcomePrices` is dropped from every record before anything is kept.
-
-Run from `research/`:  python -m touch_fresh.universe
-"""
 from __future__ import annotations
 
 import csv
@@ -48,7 +43,6 @@ def asset_class(title: str) -> str | None:
 
 
 def last_session_before_weekend(d: date) -> date:
-    """The Friday of d's week, stepped back over holidays."""
     f = d + timedelta(days=(4 - d.weekday()) % 7)
     while f.isoformat() in cfg.HOLIDAYS or f.weekday() >= 5:
         f -= timedelta(days=1)
@@ -56,7 +50,6 @@ def last_session_before_weekend(d: date) -> date:
 
 
 def entry_instant(start_iso: str) -> tuple[date, float]:
-    """The first weekend start (20:00 New York on the last session day before a weekend) strictly after the listing."""
     t0 = datetime.fromisoformat(start_iso.replace("Z", "+00:00")).timestamp()
     d = datetime.fromtimestamp(t0, ET).date()
     while True:

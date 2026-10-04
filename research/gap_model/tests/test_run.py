@@ -1,4 +1,3 @@
-"""End-to-end run on synthetic closure tables (no network, no real data)."""
 from __future__ import annotations
 
 import json
@@ -65,10 +64,9 @@ def test_run_without_panel_b(tmp_path, monkeypatch):
     assert "not available at run time" in (out / "SUMMARY.md").read_text()
     e = json.loads(exp.read_text())
     assert set(e["markets"]) == {"slug-e", "slug-r"}
-    assert e["pooled"]["n"] == 376  # 380 rows minus 4 news closures
+    assert e["pooled"]["n"] == 376
     assert e["markets"]["slug-r"]["rate_raw_bp_per_pp"] == -e["markets"]["slug-r"]["rate_bp_per_pp"]
     assert e["oos"]["verdict"] == res["primary"]["SPY"]["verdict"]
-    # the primary predictions never include news closures
     pr = pd.read_csv(out / "predictions.csv")
     assert (pr["set"] == "A_placebo").sum() == 2 * res["primary"]["SPY"]["n_test"]
 

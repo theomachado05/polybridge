@@ -1,4 +1,3 @@
-"""Fetch + cache: Polymarket CLOB minute prices and Massive minute bars. Network requests are counted for the run log."""
 from __future__ import annotations
 
 import hashlib
@@ -17,7 +16,6 @@ _RETRY = {429, 500, 502, 503, 504}
 
 
 class CountingSession(requests.Session):
-    """requests.Session that counts real network GETs by host (cache hits never reach it)."""
 
     def __init__(self):
         super().__init__()
@@ -31,7 +29,6 @@ class CountingSession(requests.Session):
 
 def fetch_pm_history(token_id: str, start: pd.Timestamp, end: pd.Timestamp, cache_dir: Path,
                      session: requests.Session | None = None, sleep=time.sleep, max_attempts: int = 6) -> list[tuple[int, float]]:
-    """CLOB prices-history, fidelity=1 (one point per minute at best). Returns [(unix_ts, price)], possibly empty."""
     session = session or requests.Session()
     cache_dir = Path(cache_dir)
     cache_dir.mkdir(parents=True, exist_ok=True)
@@ -53,7 +50,7 @@ def fetch_pm_history(token_id: str, start: pd.Timestamp, end: pd.Timestamp, cach
             if resp.status_code not in _RETRY:
                 break
             sleep(min(2 ** attempt, 20))
-        if resp.status_code == 400:  # e.g. "no data for this interval"; treat as empty, but keep the reason
+        if resp.status_code == 400:
             payload = {"history": [], "_error": resp.text[:200]}
         else:
             resp.raise_for_status()
@@ -65,10 +62,6 @@ def fetch_pm_history(token_id: str, start: pd.Timestamp, end: pd.Timestamp, cach
 
 
 def fetch_equity_minutes(client, ticker: str, start: pd.Timestamp, end: pd.Timestamp) -> pd.DataFrame:
-    """Massive 1-minute aggregates over [start, end] (UTC), extended hours included.
-
-    Returns a DataFrame indexed by bar START time (UTC) with a `close` column (and volume). Empty frame if no bars.
-    """
     path = f"/v2/aggs/ticker/{ticker}/range/1/minute/{int(start.timestamp() * 1000)}/{int(end.timestamp() * 1000)}"
     rows = client.get_all(path, {"adjusted": "true", "sort": "asc", "limit": 50000})
     if not rows:

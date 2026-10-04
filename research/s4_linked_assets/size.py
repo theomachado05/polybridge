@@ -1,8 +1,3 @@
-"""S4, descriptive: how big is the relation between the overnight move in odds and the linked equity's opening gap?
-Same data and links as the S4 run (agreed event links, Brazil excluded); nothing new is pulled. Exploratory.
-
-Run from `research/`:  python -m s4_linked_assets.size
-"""
 from __future__ import annotations
 
 import csv
@@ -22,7 +17,6 @@ BUCKETS = ((0.0, 2.0, "under 2"), (2.0, 5.0, "2 to 5"), (5.0, 10.0, "5 to 10"), 
 
 
 def build() -> pd.DataFrame:
-    """One row per (agreed event link, session) with the signed overnight odds move and the equity's excess gap."""
     critic, links = load_critic(), dt.proposer_links()
 
     def npz(name):
@@ -63,7 +57,6 @@ def boot_mean(v: np.ndarray, g: np.ndarray) -> tuple[float, float, float]:
 
 
 def r2(x: np.ndarray, y: np.ndarray, b: float) -> float:
-    """Share of the gap's (uncentred) variance explained by slope b times the odds move."""
     return float(1.0 - np.sum((y - b * x) ** 2) / np.sum(y ** 2))
 
 
@@ -76,7 +69,6 @@ def main() -> int:
     out["gap_sd_bp"] = float(df.gap.std())
     out["abs_move_mean_pp"] = float(ax.mean())
 
-    # by size of the overnight move: the gap signed by the direction of the odds move
     buckets = []
     for scope, sm in (("all closures", np.ones(len(df), bool)), ("weekends only", df.weekend.to_numpy())):
         for lo, hi, lab in BUCKETS[1:]:
@@ -92,7 +84,6 @@ def main() -> int:
                             "signed_gap_bp": m, "gap_ci_lo": lo_, "gap_ci_hi": hi_, "gap_same_sign": float(np.mean(signed_gap > 0)),
                             "signed_after_open_bp": am, "after_ci_lo": alo, "after_ci_hi": ahi})
 
-    # variance explained, in sample and with the in-sample slope applied out of sample (the hedge's value)
     is_, oos = df[df.segment == "IS"], df[df.segment == "OOS"]
     b_all = float(np.sum(df.x * df.gap) / np.sum(df.x ** 2))
     b_is = float(np.sum(is_.x * is_.gap) / np.sum(is_.x ** 2))
@@ -102,11 +93,9 @@ def main() -> int:
     big = df[ax >= 5]
     out["r2_moves_5pp_plus"] = r2(big.x.to_numpy(), big.gap.to_numpy(), b_all) if len(big) else float("nan")
 
-    # one observation per ticker and day (several markets can link to one ticker)
     td = df.groupby(["day", "ticker"]).agg(x=("x", "mean"), gap=("gap", "first")).reset_index()
     out["ticker_day"] = en.clustered_slope(td.x.to_numpy(), td.gap.to_numpy(), td.day.to_numpy())
 
-    # which tickers carry it
     per = []
     for tk, s in df.groupby("ticker"):
         r = en.clustered_slope(s.x.to_numpy(), s.gap.to_numpy(), s.day.to_numpy())
@@ -114,7 +103,6 @@ def main() -> int:
                     "weight": float(np.sum(s.x ** 2) / np.sum(df.x ** 2)), "slope_bp_per_pp": r["slope"], "t": r["t"],
                     "example": s.question.iloc[0][:70]})
     per.sort(key=lambda r: -r["weight"])
-    # leave the heaviest ticker out: does the result survive?
     loo = []
     for r in per[:5]:
         s = df[df.ticker != r["ticker"]]
@@ -122,7 +110,6 @@ def main() -> int:
         loo.append({"without": r["ticker"], "slope": c["slope"], "t": c["t"], "n": c["n"]})
     out["leave_one_ticker_out"] = loo
 
-    # concentration by market, and without the crypto-linked equities
     def fit(d):
         c = en.clustered_slope(d.x.to_numpy(), d.gap.to_numpy(), d.day.to_numpy())
         return {"slope": c["slope"], "t": c["t"], "n": c["n"]}

@@ -1,6 +1,3 @@
-"""S4 engine: sessions, as-of odds, betas, the walk-forward data gate, signals and trades (METHOD.md sections 1 to 6).
-
-Pure functions on arrays; no network. Times are epoch seconds UTC."""
 from __future__ import annotations
 
 import math
@@ -18,19 +15,13 @@ BAR_S = 300
 BIN_BARS = cfg.GATE_BIN_MIN * 60 // BAR_S
 
 
-# ---------------------------------------------------------------- sessions and prices
-
 def sessions_from(spy_t: np.ndarray) -> pd.DataFrame:
-    """One row per session, from SPY's regular 5-minute bars: day, open and close instants."""
     day = pd.to_datetime(spy_t, unit="s", utc=True).tz_convert(ET).strftime("%Y-%m-%d")
     g = pd.DataFrame({"day": day, "t": spy_t}).groupby("day").t.agg(["min", "max"])
     return pd.DataFrame({"day": g.index, "open": g["min"].to_numpy(), "close": g["max"].to_numpy() + BAR_S}).reset_index(drop=True)
 
 
 def session_prices(bars: dict, sess: pd.DataFrame) -> dict[str, np.ndarray]:
-    """Per session: the price at the open, at every 30-minute boundary and at the close, plus early volume.
-    The open is the first bar's open and is used only if that bar starts within 10 minutes of the open. Later
-    boundaries use the last bar close before the boundary (a thin ticker can skip a bar)."""
     n = len(sess)
     nb = int((sess.close - sess.open).max() // (BIN_BARS * BAR_S))
     px = np.full((n, nb + 1), np.nan)
@@ -57,7 +48,6 @@ def session_prices(bars: dict, sess: pd.DataFrame) -> dict[str, np.ndarray]:
 
 
 def betas(day_asset: dict, day_spy: dict, days: list[str]) -> np.ndarray:
-    """OLS beta of daily close-to-close returns on SPY's over the sessions strictly before each day."""
     a = pd.Series(day_asset["c"], index=day_asset["day"]).pct_change()
     s = pd.Series(day_spy["c"], index=day_spy["day"]).pct_change()
     df = pd.concat([a.rename("a"), s.rename("s")], axis=1).dropna()
@@ -70,19 +60,15 @@ def betas(day_asset: dict, day_spy: dict, days: list[str]) -> np.ndarray:
     return out
 
 
-# ---------------------------------------------------------------- one link
-
 @dataclass
 class LinkDays:
-    """Per session, for one (market, ticker, direction) link. Moves in odds are in pp and signed by the direction;
-    equity moves are excess returns in bp."""
-    x_night: np.ndarray       # previous close to 09:29
-    x_next_night: np.ndarray  # this close to the next 09:29
-    x_next_24h: np.ndarray    # this close to the next close
-    e_gap: np.ndarray         # previous close to open
-    e_day: np.ndarray         # open to close
-    e_10: np.ndarray          # open to 10:00
-    sxx: np.ndarray           # data gate: per-session sums over 30-minute bins with a non-zero change in odds
+    x_night: np.ndarray
+    x_next_night: np.ndarray
+    x_next_24h: np.ndarray
+    e_gap: np.ndarray
+    e_day: np.ndarray
+    e_10: np.ndarray
+    sxx: np.ndarray
     sxy: np.ndarray
     nbin: np.ndarray
 
@@ -125,8 +111,6 @@ def link_days(pm_t: np.ndarray, pm_p: np.ndarray, direction: int, sess: pd.DataF
 
 
 def gate(sxx: np.ndarray, sxy: np.ndarray, nbin: np.ndarray) -> dict[str, np.ndarray]:
-    """Walk-forward data gate. Entry i uses sessions strictly before i: bins, sessions, the through-origin slope
-    (bp per pp), its t-statistic with errors clustered by session, and whether the link is confirmed."""
     def before(a):
         return np.concatenate([[0.0], np.cumsum(a)[:-1]])
 
@@ -141,22 +125,17 @@ def gate(sxx: np.ndarray, sxy: np.ndarray, nbin: np.ndarray) -> dict[str, np.nda
     return {"bins": bins, "sessions": sessions, "slope": slope, "t": t, "confirmed": ok}
 
 
-# ---------------------------------------------------------------- trades
-
 def cost_bp(ticker: str, beta: float, mult: float) -> float:
-    """Round trip, bp of the equity notional: two sides on the equity and two on the SPY hedge."""
     c = cfg.COST_LIQUID if ticker in cfg.LIQUID else cfg.COST_OTHER
     return mult * (2 * c + abs(beta) * 2 * cfg.COST_SPY)
 
 
 def pick(signals: pd.DataFrame) -> pd.DataFrame:
-    """One day's signals (ticker, x): those with |x| at or above the threshold, at most MAX_POSITIONS, largest first."""
     s = signals[np.abs(signals.x) >= cfg.X_MIN_PP]
     return s.reindex(s.x.abs().sort_values(ascending=False).index).head(cfg.MAX_POSITIONS)
 
 
 def trade_bp(x: float, e_move_bp: float, ticker: str, beta: float, mult: float) -> tuple[float, float]:
-    """(gross, net) return of one trade in bp of the equity notional: long the equity when the odds moved for it."""
     gross = math.copysign(1.0, x) * e_move_bp
     return gross, gross - cost_bp(ticker, beta, mult)
 
@@ -179,7 +158,6 @@ def day_metrics(pnl_by_day: np.ndarray, days: list[str], traded: float) -> dict:
 
 
 def date_bootstrap(by_date: dict[str, list[float]], n_boot: int = cfg.N_BOOT, seed: int = cfg.BOOT_SEED) -> tuple[float, float, float]:
-    """Mean per trade and its 95% interval, resampling dates."""
     keys = sorted(k for k, v in by_date.items() if v)
     allv = [x for k in keys for x in by_date[k]]
     if not allv:
@@ -195,7 +173,6 @@ def date_bootstrap(by_date: dict[str, list[float]], n_boot: int = cfg.N_BOOT, se
 
 
 def clustered_slope(x: np.ndarray, y: np.ndarray, groups: np.ndarray) -> dict:
-    """Through-origin slope of y on x with errors clustered by group, and the share of same-sign pairs."""
     ok = np.isfinite(x) & np.isfinite(y)
     x, y, g = x[ok], y[ok], groups[ok]
     nz = (x != 0) & (y != 0)

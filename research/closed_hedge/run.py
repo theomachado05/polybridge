@@ -1,4 +1,3 @@
-"""One run of the R1 closed-market hedge test (METHOD.md). `python -m closed_hedge.run`."""
 from __future__ import annotations
 
 import json
@@ -25,7 +24,6 @@ def _git(*args) -> str:
 
 
 def replication_panel() -> tuple[pd.DataFrame | None, str]:
-    """Section 7: only a git-committed results.csv is used."""
     rel = REPLICATION_CSV.relative_to(REPO_DIR).as_posix()
     if not _git("ls-files", rel):
         return None, "not available (results.csv not committed when this study ran)"
@@ -52,7 +50,7 @@ def main(argv: list[str] | None = None) -> int:
     t0 = time.time()
     out = Path(RESULTS_DIR)
     out.mkdir(parents=True, exist_ok=True)
-    offline = "--offline-books" in argv  # tests only: skip the network, use the fallback spread
+    offline = "--offline-books" in argv
     if "--report-only" in argv:
         return rerender(out)
     if "--replication-only" in argv:
@@ -106,7 +104,6 @@ def main(argv: list[str] | None = None) -> int:
     res["replication_status"] = rep_status
     res["replication"] = A.replication(rep, hs) if rep is not None else None
 
-    # per-closure CSV
     cols = ["closure", "open_day", "kind", "market", "sign", "pm_close", "pm_open", "dpm_o_pp", "dpm_early_o_pp", "gap_bp",
             "ret30_bp", "resid_bp", "rate", "rate_raw", "rate_src", "n_prior", "excluded"]
     csv = d[cols].join(st)
@@ -127,7 +124,6 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def rerender(out: Path) -> int:
-    """Rewrite SUMMARY.md and chart.png from the saved results.json and closures_hedged.csv (no fetch, no refit)."""
     t0 = time.time()
     res = json.loads((out / "results.json").read_text())
     h = pd.read_csv(out / "closures_hedged.csv")
@@ -150,7 +146,6 @@ def rerender(out: Path) -> int:
 
 
 def replication_followup(out: Path) -> int:
-    """METHOD.md Amendment 2: section 7 applied to the replication panel committed after the run. Primary untouched."""
     t0 = time.time()
     res = json.loads((out / "results.json").read_text())
     rep, status = replication_panel()

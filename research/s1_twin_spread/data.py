@@ -1,8 +1,3 @@
-"""S1 data: pair metadata, Kalshi 1-minute candles (real bid/ask), Polymarket 1-minute price history and trade prints.
-
-Nothing here is committed: arrays go to `.cache/` as compressed npz. Run from `research/`:
-    python -m s1_twin_spread.data
-"""
 from __future__ import annotations
 
 import json
@@ -25,13 +20,12 @@ GAMMA = "https://gamma-api.polymarket.com"
 CLOB = "https://clob.polymarket.com"
 DATA_API = "https://data-api.polymarket.com/trades"
 KALSHI = "https://api.elections.kalshi.com/trade-api/v2"
-KALSHI_WINDOW_S = 4990 * 60          # the API serves at most 5000 candles per request
-PM_WINDOW_S = 14 * 86400             # prices-history refuses 1-minute ranges much longer than 15 days
+KALSHI_WINDOW_S = 4990 * 60
+PM_WINDOW_S = 14 * 86400
 RETRY = {429, 500, 502, 503, 504}
 
 
 class Throttle:
-    """At most `rate` calls per second across threads."""
 
     def __init__(self, rate: float):
         self.gap, self.lock, self.next = 1.0 / rate, threading.Lock(), 0.0
@@ -83,7 +77,6 @@ def load_pairs() -> list[dict]:
 
 
 def pair_meta(pair: dict, kt: Throttle, pt: Throttle) -> dict:
-    """Dates, fee terms and ids of one pair, from the venues' own market records (no prices are kept)."""
     tk = pair["kalshi"]["ticker"]
     m = get_json(f"{KALSHI}/markets/{tk}", throttle=kt)["market"]
     ev = get_json(f"{KALSHI}/events/{m['event_ticker']}", throttle=kt)["event"]
@@ -146,8 +139,6 @@ def pm_history(meta: dict, start: datetime, end: datetime, pt: Throttle) -> dict
 
 
 def pm_trades(condition_id: str, oldest_needed: float, pt: Throttle, page: int = 10000, max_pages: int = 2) -> list[dict]:
-    """Public trade prints, newest first, paged back until `oldest_needed` (epoch s) or until the API stops serving.
-    The data API refuses an offset above 10000, so at most the latest 20000 prints of a market are reachable."""
     out: list[dict] = []
     for i in range(max_pages):
         d = get_json(DATA_API, {"market": condition_id, "limit": page, "offset": i * page}, throttle=pt, allow=(400, 404))
@@ -173,8 +164,6 @@ def pull_pair(pair: dict, t1: datetime, kt: Throttle, pt: Throttle) -> dict:
 
 
 def main() -> int:
-    """No argument: pull every pair up to now. With tickers: re-pull only those, up to the first pull's cut-off, slowly
-    (the forward recorder shares Kalshi's rate limit)."""
     CACHE.mkdir(parents=True, exist_ok=True)
     only = set(sys.argv[1:])
     prior = json.loads((CACHE / "pull_meta.json").read_text()) if only else None
@@ -190,7 +179,7 @@ def main() -> int:
             print(f"{time.time() - t0:6.0f}s {m['ticker']}: {m['kalshi_candles']} candles, {m['pm_points']} PM points "
                   f"from {m['hist_start'][:10]}", flush=True)
             return m
-        except Exception as e:  # reported, never hidden
+        except Exception as e:
             failures.append({"ticker": pair["kalshi"]["ticker"], "error": repr(e)[:300]})
             print(f"FAILED {pair['kalshi']['ticker']}: {e!r}", flush=True)
             return None

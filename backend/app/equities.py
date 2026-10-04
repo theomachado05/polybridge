@@ -1,4 +1,3 @@
-"""Any-stock lookup: 8-K filings with verdict badges, live implied move, related prediction markets."""
 from __future__ import annotations
 
 import json
@@ -69,12 +68,11 @@ def _row_tags(r: dict) -> list[str]:
 def _verdict(book, tag: str) -> TagVerdict:
     try:
         return book.for_tag(tag)
-    except KeyError:  # tag absent from the atlas (never tested)
+    except KeyError:
         return TagVerdict(tag=tag, family=None, kind="none", label="no_edge", evidence=Evidence(), note="not tested")
 
 
 def _headline(vs: list[TagVerdict]) -> TagVerdict | None:
-    """One badge per filing: an edge label beats no_edge; confirmatory beats exploratory."""
     if not vs:
         return None
     return sorted(vs, key=lambda v: (v.label == "no_edge", v.kind != "confirmatory"))[0]
@@ -90,9 +88,9 @@ def fetch_filings(client, ticker: str, today: pd.Timestamp, book) -> list[Filing
     for r in rows:
         tk = r.get("tickers")
         if not isinstance(tk, list) or want not in {normalize_ticker(t) for t in tk}:
-            continue  # the API may ignore its filter; never show another company's filing
+            continue
         acc = r.get("accession_number")
-        key = acc or f"{r.get('filing_date')}-{len(groups)}"  # internal grouping key only
+        key = acc or f"{r.get('filing_date')}-{len(groups)}"
         g = groups.setdefault(key, {"date": str(r.get("filing_date"))[:10], "url": r.get("filing_url"), "tags": [],
                                     "acc": acc})
         for t in _row_tags(r):
@@ -131,7 +129,6 @@ def _book_sync():
 
 
 def get_client(request: Request):
-    """Massive client; tests set app.state.massive (a fake) or app.state.massive = None for 'no key'."""
     if not hasattr(request.app.state, "massive"):
         request.app.state.massive = chain.make_client()
     return request.app.state.massive

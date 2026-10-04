@@ -1,4 +1,3 @@
-"""S23: the window clock, the print conversion, the replay rule, the costs, the bootstrap and the closure Sharpe."""
 import math
 
 import numpy as np
@@ -9,13 +8,13 @@ from s23_monday_fade_real import run as s23
 
 
 def test_snapshot_is_0945_new_york_in_winter_and_summer():
-    assert s23.snapshot_epoch("2026-01-05") == 1767624300.0          # 14:45 UTC, standard time
-    assert s23.snapshot_epoch("2026-07-06") == 1783345500.0          # 13:45 UTC, daylight saving
+    assert s23.snapshot_epoch("2026-01-05") == 1767624300.0
+    assert s23.snapshot_epoch("2026-07-06") == 1783345500.0
 
 
 def test_windows_are_exact_seconds_lower_bound_in_upper_bound_out():
     assert s23.window_of(0.0) == "0-15" and s23.window_of(14.999) == "0-15"
-    assert s23.window_of(15.0) == "15-60" and s23.window_of(15.5) == "15-60"       # 10:00:30 is not in the first 15 minutes
+    assert s23.window_of(15.0) == "15-60" and s23.window_of(15.5) == "15-60"
     assert s23.window_of(60.0) == "60-180" and s23.window_of(180.0) == "180+"
     assert s23.window_of(-0.1) is None
 
@@ -26,12 +25,12 @@ def test_fee_is_s6s():
 
 
 def _prints(t0):
-    return [{"timestamp": t0 + 1900, "price": 0.20, "side": "BUY", "outcome": "Yes", "size": 500},      # after 10:15: ignored
-            {"timestamp": t0 + 900, "price": 0.70, "side": "SELL", "outcome": "No", "size": 30},       # taker sold NO at 0.70 = bought YES at 0.30
+    return [{"timestamp": t0 + 1900, "price": 0.20, "side": "BUY", "outcome": "Yes", "size": 500},
+            {"timestamp": t0 + 900, "price": 0.70, "side": "SELL", "outcome": "No", "size": 30},
             {"timestamp": t0 + 600, "price": 0.33, "side": "BUY", "outcome": "Yes", "size": 40},
-            {"timestamp": t0 + 300, "price": 0.60, "side": "BUY", "outcome": "No", "size": 25},        # taker bought NO at 0.60 = sold YES at 0.40
+            {"timestamp": t0 + 300, "price": 0.60, "side": "BUY", "outcome": "No", "size": 25},
             {"timestamp": t0 + 60, "price": 0.36, "side": "SELL", "outcome": "Yes", "size": 10},
-            {"timestamp": t0 - 5, "price": 0.10, "side": "BUY", "outcome": "Yes", "size": 500}]         # before 09:45: ignored
+            {"timestamp": t0 - 5, "price": 0.10, "side": "BUY", "outcome": "Yes", "size": 500}]
 
 
 def test_prints_are_converted_to_yes_terms_and_cut_to_the_window():
@@ -41,7 +40,7 @@ def test_prints_are_converted_to_yes_terms_and_cut_to_the_window():
 
 def test_window_end_is_inclusive_and_same_second_prints_keep_api_order():
     ps = [{"timestamp": 2800, "price": 0.31, "side": "BUY", "outcome": "Yes", "size": 1},
-          {"timestamp": 2800, "price": 0.32, "side": "BUY", "outcome": "Yes", "size": 1},              # listed later = printed earlier
+          {"timestamp": 2800, "price": 0.32, "side": "BUY", "outcome": "Yes", "size": 1},
           {"timestamp": 2801, "price": 0.10, "side": "BUY", "outcome": "Yes", "size": 1}]
     rows = s23.yes_prints(ps, 1000.0)
     assert [r["px"] for r in rows] == [0.32, 0.31]
@@ -63,12 +62,12 @@ def test_sell_takes_the_highest_taker_sale_minus_one_cent():
 
 def test_no_trade_when_the_printed_price_is_not_two_points_beyond_the_band_after_the_fee():
     rows = s23.yes_prints(_prints(1000.0), 1000.0)
-    x = s23.replay(rows, "buy YES", 0.335, 0.40)                       # 0.335 - 0.31 - fee is under 2 points
+    x = s23.replay(rows, "buy YES", 0.335, 0.40)
     assert x["status"] == "print, gap gone" and x["print_px"] == pytest.approx(0.30)
-    assert s23.replay(rows, "buy YES", 0.45, 0.50, c=2.0)["entry"] == pytest.approx(0.32)       # two cents at 2x costs
+    assert s23.replay(rows, "buy YES", 0.45, 0.50, c=2.0)["entry"] == pytest.approx(0.32)
     assert s23.replay([], "buy YES", 0.45, 0.50)["status"] == "no print on the side"
     only_sales = [r for r in rows if r["side"] == "SELL"]
-    assert s23.replay(only_sales, "buy YES", 0.45, 0.50)["status"] == "no print on the side"   # a sale never proves an offer
+    assert s23.replay(only_sales, "buy YES", 0.45, 0.50)["status"] == "no print on the side"
 
 
 def test_size_sums_the_prints_at_the_best_price_only():
@@ -81,7 +80,7 @@ def test_first_print_mode_takes_the_first_that_still_clears_the_line():
     rows = s23.yes_prints(_prints(1000.0), 1000.0)
     x = s23.replay(rows, "buy YES", 0.45, 0.50, mode="first")
     assert x["print_px"] == pytest.approx(0.33) and x["entry"] == pytest.approx(0.34) and x["print_size"] == pytest.approx(40)
-    y = s23.replay(rows, "buy YES", 0.365, 0.40, mode="first")          # 0.33 does not clear it, 0.30 does
+    y = s23.replay(rows, "buy YES", 0.365, 0.40, mode="first")
     assert y["print_px"] == pytest.approx(0.30) and y["status"] == "trade"
     assert s23.replay(rows, "buy YES", 0.30, 0.40, mode="first")["status"] == "print, gap gone"
 
@@ -97,14 +96,14 @@ def test_pnl_and_capital_held_to_the_result():
 
 def test_partner_net_matches_its_definition_and_doubles_costs():
     assert s23.partner_net("BUY", 0.30, 1, True, 0.04, 1.0) == pytest.approx(1 - 0.31 - 0.04 * 0.30 * 0.70)
-    assert s23.partner_net("SELL", 0.70, 1, False, 0.04, 1.0) == pytest.approx(0 - 0.31)           # bought NO at 0.30, YES won
+    assert s23.partner_net("SELL", 0.70, 1, False, 0.04, 1.0) == pytest.approx(0 - 0.31)
     assert s23.partner_net("SELL", 0.70, 0, True, 0.04, 1.0, 2.0) == pytest.approx(1 - 0.32 - 2 * 0.04 * 0.30 * 0.70)
 
 
 def test_bootstrap_resamples_whole_closures():
     v, c = [1.0, 1.0, 1.0, -1.0], ["a", "a", "a", "b"]
     b = s23.boot_mean(v, c)
-    assert b["mean"] == pytest.approx(0.5) and math.isnan(b["lo"])                              # two closures: no interval
+    assert b["mean"] == pytest.approx(0.5) and math.isnan(b["lo"])
     v = [1.0] * 6 + [-1.0] * 6
     c = ["a", "a", "b", "b", "c", "c", "d", "d", "e", "e", "f", "f"]
     b = s23.boot_mean(v, c)

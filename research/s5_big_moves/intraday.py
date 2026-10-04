@@ -1,8 +1,3 @@
-"""S5b, exploratory (METHOD.md amendment 2): inside the regular session, do the odds move first or the equity?
-Same links and cached data as S5; 5-minute bins.
-
-Run from `research/`:  python -m s5_big_moves.intraday
-"""
 from __future__ import annotations
 
 import csv
@@ -26,8 +21,6 @@ PM_MAX_AGE_S = 1800
 
 
 def session_bars(bars: dict, sess: pd.DataFrame, nb: int) -> np.ndarray:
-    """(sessions, nb) close-to-close returns of each 5-minute bar; the first bar is open to close. NaN where a bar
-    or the bar before it is missing."""
     out = np.full((len(sess), nb), np.nan)
     t, o, c = bars["t"], bars["o"], bars["c"]
     pos = {int(x): i for i, x in enumerate(t)}
@@ -46,7 +39,6 @@ def session_bars(bars: dict, sess: pd.DataFrame, nb: int) -> np.ndarray:
 
 
 def forward_sum(a: np.ndarray, h: int) -> np.ndarray:
-    """Sum of the next h bins of each row (bins j+1 .. j+h), NaN if any is missing or runs past the session."""
     n, m = a.shape
     out = np.full((n, m), np.nan)
     for j in range(m - h):
@@ -124,7 +116,6 @@ def main() -> int:
         rows.append({"test": f"equity jump of {EQUITY_JUMP_BP:.0f}+ bp: odds over the next {lab}", "unit": "points, signed by the equity", "n": int(j.sum()),
                      "mean": m[0], "ci_lo": m[1], "ci_hi": m[2], "dates": int(len(np.unique(day2[j])))})
 
-    # the odds-first trade: enter at the next bin's open after an odds jump, hold 30 minutes, one position per ticker
     fe = forward_sum(E, HOLD_BINS)
     trades = []
     cand = np.argwhere(odds_jump & np.isfinite(fe))
@@ -176,7 +167,6 @@ def main() -> int:
 
 
 def reversal() -> int:
-    """Amendment 3: after an overnight move in odds, do the odds give some back once the stock market is open?"""
     links, _ = merge_links()
     spy_bars = dict(np.load(CACHE / "eq_SPY.npz"))
     sess = en.sessions_from(spy_bars["t"])

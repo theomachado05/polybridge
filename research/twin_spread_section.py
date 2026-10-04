@@ -1,8 +1,3 @@
-"""S1 (Polymarket-Kalshi twin spread) for the scored notebook, rebuilt from the COMMITTED result files only.
-
-No network, no API key. The headline numbers of `results/s1_twin_spread/SUMMARY.md` are recomputed from the committed
-trade list and equity path with the study's own functions, then checked against the committed `metrics.csv`.
-"""
 from __future__ import annotations
 
 import json
@@ -26,7 +21,6 @@ RUNS = [("IS", 1.0), ("IS", 2.0), ("OOS", 1.0), ("OOS", 2.0)]
 
 
 def load(results_dir: Path | str = RESULTS) -> dict:
-    """Read the committed outputs. Raises FileNotFoundError naming any missing file."""
     root = Path(results_dir)
     missing = [f for f in FILES if not (root / f).exists()]
     if missing:
@@ -43,7 +37,6 @@ def _epoch(iso: str) -> int:
 
 
 def recompute(data: dict) -> dict:
-    """Primary variant under the registered quote rule: counts and P&L from the trade list, risk from the equity path."""
     tr, eq, meta = data["trades"], data["equity"], data["meta"]
     starts = {"IS": _epoch(meta["t0"]), "OOS": _epoch(meta["split"])}
     out: dict = {}
@@ -75,7 +68,6 @@ def recompute(data: dict) -> dict:
 
 
 def comparison(rec: dict, data: dict) -> pd.DataFrame:
-    """Recomputed numbers next to the committed metrics.csv."""
     m = data["metrics"]
     rows = []
     for seg, cost in RUNS:
@@ -111,7 +103,6 @@ def summary(rec: dict) -> pd.DataFrame:
 
 
 def chart(data: dict, ax=None):
-    """Cumulative net P&L of the primary variant at 1x costs: all modelled entries against print-verified only."""
     import matplotlib.pyplot as plt
 
     from s1_twin_spread.report import BLUE, GRID, INK, INK2, ORANGE, SURFACE, curve
@@ -141,7 +132,6 @@ def chart(data: dict, ax=None):
 
 
 def forward_table(data: dict) -> pd.DataFrame | None:
-    """Forward paper test on the recorded books: primary variant rows of metrics.csv, when the window has been run."""
     m = data["metrics"]
     f = m[m.segment.astype(str).str.startswith("forward") & (m.variant == PRIMARY)]
     if f.empty:

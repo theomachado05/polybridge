@@ -1,9 +1,3 @@
-"""Ladder forward check: ``research/ladder_replay/live.py`` (METHOD step 4) run once, its output redirected here.
-
-live.py reads every open Polymarket date ladder's real books and prices each rung pair after both fees. Its rules are
-frozen; this module only points its output directory at ``backend/data_forward/ladders/raw/<stamp>/`` (raw, gitignored)
-and writes a small committed summary to ``backend/data_forward/ladders/snapshots/<stamp>.json``.
-"""
 from __future__ import annotations
 
 import contextlib
@@ -39,8 +33,6 @@ def _quantile(xs: list[float], q: float) -> float:
 
 
 def gap_stats(rows: list[dict]) -> dict | None:
-    """Points each pair is from an arbitrage (positive = no violation), over the pairs that have both books. The range
-    (min, 10th and 90th percentile, max) and the sample size travel with the median."""
     gaps = [-100 * e for r in rows if _truthy(r.get("has_books")) and (e := _f(r.get("edge_top"))) is not None]
     if not gaps:
         return None
@@ -49,8 +41,6 @@ def gap_stats(rows: list[dict]) -> dict | None:
 
 
 def summarize(totals: dict, pairs: list[dict]) -> dict:
-    """The committed summary of one live check: live.py's own totals plus the violations found after fees (each with
-    its contracts and locked dollars) and the gap range. Per-pair rows stay in the raw CSV."""
     viol = []
     for r in pairs:
         c = _f(r.get("contracts"))
@@ -68,8 +58,6 @@ def summarize(totals: dict, pairs: list[dict]) -> dict:
 
 
 def run(now: datetime | None = None, base: Path | None = None, live: Any = None) -> dict:
-    """Run the live check once. ``live`` is the ``ladder_replay.live`` module (tests pass a fake). Returns the summary
-    record written to ``snapshots/<stamp>.json`` (``error`` set instead when the check failed)."""
     base = (base or data_dir()) / "ladders"
     now = now or datetime.now(timezone.utc)
     st = stamp(now)
@@ -79,7 +67,7 @@ def run(now: datetime | None = None, base: Path | None = None, live: Any = None)
         ensure_research_path()
         live = importlib.import_module("ladder_replay.live")
     original, buf, error = live.OUT, io.StringIO(), None
-    live.OUT = raw  # live.py writes live_pairs.csv / live_totals.json to OUT: point it here, not at research/results
+    live.OUT = raw
     try:
         with contextlib.redirect_stdout(buf):
             live.main()

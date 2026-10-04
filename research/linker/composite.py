@@ -1,17 +1,3 @@
-"""Linking by event, not by question: the Fed case.
-
-A Fed meeting is listed as four or five questions ("cut 25", "cut 50+", "no change", "hike 25+"). Tied to a bond ETF
-one at a time, each has an ambiguous sign (is "cut 25" up dovish or hawkish? it depends on what loses probability).
-Tied together they give one number with an unambiguous sign: the expected change in the policy rate, in bp.
-
-    expected change = -25 x P(cut 25) - 50 x P(cut 50+) + 25 x P(hike 25) + 50 x P(hike 50+)
-    easing          = -expected change            (up is good for bonds)
-
-This script builds that composite for each meeting in the S5 sample and scores it against TLT, IEF and SHY the same
-way the benchmark scores single links. Reads the S5 cache; pulls nothing. Exploratory.
-
-Run from `research/`:  python -m linker.composite
-"""
 from __future__ import annotations
 
 import json
@@ -34,7 +20,6 @@ MAX_AGE_S = 1800
 
 
 def outcome_weight(question: str) -> int | None:
-    """bp change in the policy rate this outcome stands for; None for 'no change' and for anything else."""
     q = question.lower()
     if "no change" in q or "no fed rate cuts" in q:
         return None
@@ -45,8 +30,6 @@ def outcome_weight(question: str) -> int | None:
 
 
 def composite_series(parts: list[tuple[np.ndarray, np.ndarray, int]]) -> tuple[np.ndarray, np.ndarray]:
-    """Minute series of the easing composite, in probability units x bp / 100 (so that 1 'point' is 1 bp). A minute
-    is kept only when every component has a price at most 30 minutes old."""
     start, end = max(int(t[0]) for t, _, _ in parts), min(int(t[-1]) for t, _, _ in parts)
     grid = np.arange((start // 60 + 1) * 60, end, 60, dtype=np.int64)
     total = np.zeros(len(grid))

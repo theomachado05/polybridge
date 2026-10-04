@@ -1,8 +1,3 @@
-"""S10 Part 5 recorder (METHOD.md amendment 5): the live order book of the current 15-minute Bitcoin Up/Down market
-and Coinbase's live BTC-USD price, about once a second, until a stop time. Read-only; one Polymarket request a second.
-
-Run from `research/`:  python -m s10_weekend_lag.live --until "2026-10-04 06:00"
-"""
 from __future__ import annotations
 
 import json
@@ -44,7 +39,7 @@ def main() -> int:
         start = int(t0) - int(t0) % cfg.BTC_WINDOW_S
         rec: dict = {"ts": t0, "start": start}
         try:
-            for s in (start, start + cfg.BTC_WINDOW_S):            # the current window and the next one
+            for s in (start, start + cfg.BTC_WINDOW_S):
                 if s not in markets:
                     markets[s] = token_for(s, pm)
                     if markets[s]:

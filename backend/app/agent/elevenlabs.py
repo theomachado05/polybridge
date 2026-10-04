@@ -1,21 +1,3 @@
-"""Provision the PolyBridge ElevenLabs Conversational AI agent with CLIENT tools (no tunnel, no webhooks).
-
-Client tools run in the browser: the widget on http://localhost:3000 receives the tool call and the page calls
-``POST /agent/tool/{name}`` on the local backend, then hands the ``summary`` back to the agent. So ElevenLabs never
-needs to reach the backend. The tools mirror ``GET /agent/tools`` exactly (``app.agent.tools.TOOLS``); approve and
-start_bridge keep their required ``confirm`` parameter and the backend refuses them without ``confirm: true``.
-
-API (https://api.elevenlabs.io, header ``xi-api-key``), as documented on elevenlabs.io (checked 2026-10-03):
-  GET   /v1/convai/tools                   list workspace tools (paginated: has_more / next_cursor)
-  POST  /v1/convai/tools                   {"tool_config": {...}} -> {"id", ...}
-  PATCH /v1/convai/tools/{id}              {"tool_config": {...}}
-  POST  /v1/convai/agents/create           {"name", "conversation_config", "platform_settings"} -> {"agent_id"}
-  GET   /v1/convai/agents/{id}
-  PATCH /v1/convai/agents/{id}             partial update
-  GET   /v1/user/subscription              read-only (keys-check)
-Inline ``prompt.tools`` is deprecated in favour of ``prompt.tool_ids``, so tools are created as workspace tools and
-attached by id. Idempotent: our tools are found by name + type client + the ``PolyBridge:`` description prefix and
-updated in place; the agent is updated when its id is known, else created."""
 from __future__ import annotations
 
 import os
@@ -32,14 +14,13 @@ from .tools import CONFIRM_TOOLS, TOOLS
 API = "https://api.elevenlabs.io"
 REPO = Path(__file__).resolve().parents[3]
 VOICE_DOC = REPO / "docs" / "voice-agent.md"
-DEFAULT_VOICE_ID = "cjVigY5qzO86Huf0OWal"  # ElevenLabs premade "Eric - Smooth, Trustworthy" (conversational)
-DEFAULT_TTS_MODEL = "eleven_turbo_v2"      # English agents: the higher-quality v2 English model
+DEFAULT_VOICE_ID = "cjVigY5qzO86Huf0OWal"
+DEFAULT_TTS_MODEL = "eleven_turbo_v2"
 AGENT_NAME = "PolyBridge"
 DESC_PREFIX = "PolyBridge: "
 DEFAULT_LLM = "gemini-2.5-flash"
-WEB_HOSTS = ("localhost:3000", "127.0.0.1:3000")  # widget allowlist (exact host:port match)
+WEB_HOSTS = ("localhost:3000", "127.0.0.1:3000")
 TIMEOUT_S = 20.0
-# Seconds the agent waits for each client tool (ElevenLabs allows 1..120). fit replays history (up to ~45 s worst case).
 TOOL_TIMEOUTS = {"fit": 90, "start_bridge": 30, "search_markets": 20, "propose": 20, "approve": 20,
                  "bridge_status": 15, "account": 15, "positions": 15, "navigate": 5}
 CONFIRM_NOTE = (" Only set confirm true after the user has said yes, out loud, in their last message; never on your "
@@ -52,10 +33,7 @@ class ElevenLabsError(RuntimeError):
         self.status = status
 
 
-# ---------------------------------------------------------------- what we send
-
 def _prop(name: str, spec: dict) -> dict:
-    """One JSON-schema property in ElevenLabs' form: every property needs a description; arrays need typed items."""
     out: dict[str, Any] = {"type": spec.get("type", "string"),
                            "description": spec.get("description") or name.replace("_", " ").capitalize() + "."}
     if spec.get("enum"):
@@ -67,7 +45,6 @@ def _prop(name: str, spec: dict) -> dict:
 
 
 def client_tool_configs() -> list[dict]:
-    """The client tools, one per GET /agent/tools entry, in the same order and with the same parameters."""
     configs = []
     for t in TOOLS:
         params = t["parameters"]
@@ -79,7 +56,7 @@ def client_tool_configs() -> list[dict]:
             "parameters": {"type": "object",
                            "properties": {k: _prop(k, v) for k, v in params.get("properties", {}).items()},
                            "required": list(params.get("required") or [])},
-            "expects_response": True,  # the agent waits for the backend's summary and speaks it
+            "expects_response": True,
             "response_timeout_secs": TOOL_TIMEOUTS.get(t["name"], 20),
         })
     return configs
@@ -93,7 +70,6 @@ def _fenced(doc: str, marker: str) -> str:
 
 
 def prompt_from_doc(path: Path = VOICE_DOC) -> tuple[str, str]:
-    """(system prompt, first message), read from docs/voice-agent.md so the doc and the agent never drift."""
     try:
         doc = path.read_text()
     except OSError as e:
@@ -108,16 +84,12 @@ def agent_body(system_prompt: str, first_message: str, tool_ids: list[str], llm:
         prompt["llm"] = llm
     conv: dict[str, Any] = {"agent": {"first_message": first_message, "language": "en", "prompt": prompt}}
     voice_id = voice_id or os.environ.get("ELEVENLABS_VOICE_ID") or DEFAULT_VOICE_ID
-    # A warmer, less robotic delivery: the higher-quality English model, a little less stability (more natural
-    # intonation), strong similarity to the chosen voice, normal speed.
     conv["tts"] = {"voice_id": voice_id, "model_id": os.environ.get("ELEVENLABS_TTS_MODEL") or DEFAULT_TTS_MODEL,
                    "stability": 0.45, "similarity_boost": 0.8, "speed": 1.0}
     return {"name": AGENT_NAME, "conversation_config": conv,
             "platform_settings": {"auth": {"enable_auth": False,
                                            "allowlist": [{"hostname": h} for h in WEB_HOSTS]}}}
 
-
-# ---------------------------------------------------------------- HTTP
 
 def _detail(r: httpx.Response) -> str:
     try:
@@ -186,7 +158,6 @@ class Result:
 
 
 def sync_tools(http: httpx.Client, res_notes: list[str] | None = None) -> tuple[dict[str, str], list[str], list[str]]:
-    """Create or update every client tool. Returns ({name: id}, created names, updated names)."""
     existing = list_tools(http)
     ids: dict[str, str] = {}
     created, updated = [], []
@@ -217,7 +188,6 @@ def _llm_rejected(r: httpx.Response) -> bool:
 def provision(http: httpx.Client, *, agent_id: str | None, system_prompt: str, first_message: str,
               llm: str | None = DEFAULT_LLM, voice_id: str | None = None,
               log: Callable[[str], None] = lambda s: None) -> Result:
-    """Create or update the tools, then create or update the agent. Raises ElevenLabsError with a clear message."""
     notes: list[str] = []
     ids, created, updated = sync_tools(http, notes)
     log(f"tools: {len(created)} created, {len(updated)} updated ({', '.join(ids)})")
@@ -250,7 +220,6 @@ def provision(http: httpx.Client, *, agent_id: str | None, system_prompt: str, f
 
 
 def subscription(http: httpx.Client) -> dict:
-    """Read-only: GET /v1/user/subscription (tier, usage, status)."""
     return _ok(_call(http, "GET", "/v1/user/subscription"), "reading the subscription")
 
 
@@ -260,8 +229,6 @@ def get_agent(http: httpx.Client, agent_id: str) -> dict | None:
         return None
     return _ok(r, "reading the agent")
 
-
-# ---------------------------------------------------------------- web/.env.local
 
 ENV_VAR = "NEXT_PUBLIC_ELEVENLABS_AGENT_ID"
 
@@ -278,7 +245,6 @@ def read_env_local(path: Path) -> str | None:
 
 
 def write_env_local(path: Path, agent_id: str) -> None:
-    """Set ONLY NEXT_PUBLIC_ELEVENLABS_AGENT_ID (an id, not a secret); every other line is kept as it was."""
     if not re.fullmatch(r"[A-Za-z0-9_\-]{4,128}", agent_id):
         raise ElevenLabsError("refusing to write an agent id with unexpected characters")
     try:

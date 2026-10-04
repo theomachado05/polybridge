@@ -1,8 +1,5 @@
 "use client";
 
-// Closed-market mode on the Bridge screen (docs/design.md, section 2): the closed-market
-// banner, and the weekend panel (PM move since the close, the evidence-gated expected gap, staged hedge B with
-// Approve plan / Cancel, the handoff timeline, hedge A only when opted in, and the research-only Opportunity card).
 import { useEffect, useState } from "react";
 import { approveStaged, cancelStaged, getBridge, getClosedOpportunity, type BridgeSummary, type ClosedOpportunityOut } from "@/lib/api";
 import {
@@ -27,8 +24,6 @@ export function GapBadge({ gap }: { gap: GapView | null }) {
   return <Tag tone={b.validated ? "measured" : "caution"} title={b.reason}>{b.text}</Tag>;
 }
 
-/** U1: "Market closed · reopens Mon 09:30 ET / pre-market 04:00", with the session pill. A replay shows its recorded
- *  time (a replayed Saturday is a Saturday); a live bridge, the wall clock. */
 export function ClosedBanner({ session, replay, hold }: { session: SessionView | null; replay: boolean; hold: boolean }) {
   const head = closedHeadline(session);
   const pill = sessionPill(session);
@@ -45,7 +40,6 @@ export function ClosedBanner({ session, replay, hold }: { session: SessionView |
   );
 }
 
-/** The bridge summary, re-read while the bridge runs (staged orders, timeline, P&L live there) and after an action. */
 function useSummary(id: string, initial: BridgeSummary | null, running: boolean, bump: number): BridgeSummary | null {
   const [data, setData] = useState<BridgeSummary | null>(null);
   useEffect(() => {
@@ -71,8 +65,6 @@ export function WeekendPanel({ id, summary, st, replay, ticker }: { id: string; 
   const session = st.closed?.session ?? summ?.session ?? null;
   const closure = st.closed?.closure ?? summ?.closure ?? null;
   const closed = sessionClosed(session);
-  // After the open the gap service has no active gap: show the one it expected (kept by the backend), labelled so.
-  // While closed, that kept gap counts only if it belongs to this closure (the backend does not clear it).
   const { gap, past: gapIsPast } = currentGap((st.closed?.expected_gap ?? summ?.expected_gap) as Record<string, unknown> | null,
     cm?.last_expected_gap as Record<string, unknown> | null, closed, closure?.since);
   const orders = mergeOrders(cm?.staged_orders, cm?.plan ? [cm.plan] : null, st.staged, local);
@@ -231,7 +223,6 @@ export function WeekendPanel({ id, summary, st, replay, ticker }: { id: string; 
   );
 }
 
-/** U5: the research card. It never offers an order: R3's net-of-cost gap is null. */
 function OpportunityResearch({ title, text }: { title: string; text: string }) {
   const [d, setD] = useState<ClosedOpportunityOut | null>(null);
   const [e, setE] = useState<string | null>(null);

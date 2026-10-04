@@ -1,4 +1,3 @@
-"""Benchmark probe, futures bars and per-closure measures (METHOD.md sections 1-2). Network only through injected clients."""
 from __future__ import annotations
 
 import numpy as np
@@ -17,8 +16,6 @@ def _ns(ts: pd.Timestamp) -> int:
 
 
 def parse_futures_rows(rows: list[dict]) -> pd.DataFrame:
-    """Futures aggregate rows -> frame indexed by bar START (UTC) with a `close` column. Tolerates ns/ms timestamps and
-    `close`/`c`, `window_start`/`t` field names."""
     out_t, out_c = [], []
     for r in rows or []:
         t = r.get("window_start", r.get("t", r.get("timestamp")))
@@ -43,7 +40,6 @@ def fetch_futures_bars(client, ticker: str, start: pd.Timestamp, end: pd.Timesta
 
 
 def probe_futures(client) -> dict:
-    """Section 2: one probe per ticker spelling, in order. Returns {"benchmark": "ES"|"SPY", "spelling": ..., "log": [...]}."""
     a = pd.Timestamp(PROBE_WINDOW_ET[0], tz=TZ).tz_convert("UTC")
     b = pd.Timestamp(PROBE_WINDOW_ET[1], tz=TZ).tz_convert("UTC")
     log = []
@@ -64,7 +60,6 @@ def third_friday(year: int, month: int) -> pd.Timestamp:
 
 
 def front_contract(root: str, open_day: pd.Timestamp, spelling: str = "y1") -> str:
-    """First quarterly contract whose expiry is more than ROLL_DAYS calendar days after the open day."""
     d = pd.Timestamp(open_day).normalize()
     y, mo = d.year, d.month
     for _ in range(8):
@@ -82,7 +77,6 @@ def front_contract(root: str, open_day: pd.Timestamp, spelling: str = "y1") -> s
 
 
 def at_or_before(bars: pd.DataFrame, t: pd.Timestamp, tol_min: int | None = None) -> float:
-    """Close of the last 1-minute bar that ENDS at or before t and no earlier than t - tol."""
     tol = PARAMS.bar_tol_min if tol_min is None else tol_min
     if bars is None or bars.empty:
         return float("nan")
@@ -99,7 +93,6 @@ def bench_time(c: Closure, hm: tuple) -> pd.Timestamp:
 
 def closure_measures(c: Closure, spy_bars: pd.DataFrame, points: list[tuple[int, float]], sign: int,
                      bench_bars: pd.DataFrame | None = None, times: dict | None = None) -> dict:
-    """Outcome g, benchmark moves b_T and PM moves x_T for each benchmark time, plus x_full. bench_bars None = SPY itself."""
     times = times or {"0925": PARAMS.t_primary, "0800": PARAMS.t_sens}
     eq = equity_measures(spy_bars, c)
     nan = float("nan")
@@ -124,7 +117,6 @@ def closure_measures(c: Closure, spy_bars: pd.DataFrame, points: list[tuple[int,
 
 
 def arm_k_rows(df: pd.DataFrame) -> pd.DataFrame:
-    """Arm K (section 4): x_T and b_T at 08:00 from the committed closed-market columns. Placebo rows, empty reason."""
     d = df[(~df["news"].astype(bool)) & (df["reason"].isna() | (df["reason"].astype(str) == ""))].copy()
     g = d["gap_bp"].astype(float)
     r = d["resid_bp"].astype(float)

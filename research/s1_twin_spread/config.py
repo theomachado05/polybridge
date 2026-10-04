@@ -1,4 +1,3 @@
-"""S1 twin spread: every fixed parameter of METHOD.md. Committed with it, before any S1 data is pulled."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -9,23 +8,20 @@ UTC = timezone.utc
 LOOKBACK_DAYS = 365
 GRID_SECONDS = 60
 MAX_QUOTE_AGE_S = 900
-# Quote rules: the registered one, and the sensitivity of amendment 1 (Kalshi candles are written only on a change).
 QUOTE_RULES = (("registered", 900), ("kalshi_carry_6h", 6 * 3600))
 
-# Polymarket modelled half-spread (history only): median of the recorded books in the calibration slice.
 CALIBRATION_START = datetime(2026, 10, 3, 23, 9, 48, tzinfo=UTC)
 CALIBRATION_END = datetime(2026, 10, 4, 0, 0, 0, tzinfo=UTC)
 HALF_SPREAD_FLOOR = 0.005
 PRICE_CLIP = (0.001, 0.999)
 CALIBRATION_MIN_TWO_SIDED = 0.5
 
-# Forward paper test window (starts where the calibration slice ends).
 FORWARD_START = CALIBRATION_END
-FORWARD_END = datetime(2026, 10, 4, 11, 0, 0, tzinfo=UTC)          # Sun 07:00 ET
-FORWARD_END_FINAL = datetime(2026, 10, 4, 13, 30, 0, tzinfo=UTC)   # Sun 09:30 ET, labelled update
+FORWARD_END = datetime(2026, 10, 4, 11, 0, 0, tzinfo=UTC)
+FORWARD_END_FINAL = datetime(2026, 10, 4, 13, 30, 0, tzinfo=UTC)
 
 KALSHI_FEE_COEFF = 0.07
-CLIP_HISTORY = 100          # contract pairs per entry; history has no sizes
+CLIP_HISTORY = 100
 FORWARD_MIN_SIZE = 5
 FORWARD_MAX_SIZE = 500
 N_PAIRS = 33
@@ -47,7 +43,7 @@ class Variant:
 
 
 VARIANTS = (
-    Variant("V0", 0.01, True),     # primary
+    Variant("V0", 0.01, True),
     Variant("V1", 0.02, True),
     Variant("V2", 0.03, True),
     Variant("V3", 0.01, False),
@@ -55,7 +51,6 @@ VARIANTS = (
 PRIMARY = "V0"
 COST_MULTIPLIERS = (1.0, 2.0)
 
-# Success criterion (METHOD.md section 9)
 MIN_OOS_ENTRIES = 30
 MIN_OOS_PAIRS = 5
 MIN_VERIFIED_SHARE = 0.5

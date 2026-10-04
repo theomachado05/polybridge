@@ -1,4 +1,3 @@
-"""Voice-agent tool surface: schema shape, dispatch, confirm gating, never a 500. Fully offline."""
 import pytest
 from fastapi.testclient import TestClient
 
@@ -27,7 +26,7 @@ def test_tool_list_shape(client):
     assert {t["name"] for t in tools} == EXPECTED == NAMES == set(HANDLERS)
     routes = {(p, m.upper()) for p, ops in client.app.openapi()["paths"].items() for m in ops}
     for t in tools:
-        if t.get("client_only"):  # runs in the browser (navigate): no backend route behind it
+        if t.get("client_only"):
             assert t["method"] is None and t["path"] is None
         else:
             assert t["method"] in ("GET", "POST") and t["path"].startswith("/")
@@ -50,7 +49,6 @@ def test_navigate_is_a_browser_only_tool_with_a_screen_enum(client):
     assert p["properties"]["screen"]["enum"] == ["landing", "build", "pipeline", "bridge", "portfolio", "library",
                                                  "profile", "connect"]
     assert p["properties"]["bridge_id"]["type"] == "string"
-    # The dispatcher only echoes it (the page navigates itself); a bad screen is a speakable refusal.
     j = call(client, "navigate", {"screen": "bridge", "bridge_id": "b1"}).json()
     assert j["ok"] is True and j["data"] == {"screen": "bridge", "bridge_id": "b1"}
     assert call(client, "navigate", {"screen": "portfolio", "bridge_id": "b1"}).json()["data"]["bridge_id"] is None
@@ -103,7 +101,7 @@ def test_propose_then_approve_requires_confirm(client):
         r = call(client, "approve", {"proposal_id": pid, **bad})
         assert r.status_code == 200 and r.json()["ok"] is False and r.json()["needs_confirmation"] is True
     assert client.get("/proposals").json()[0]["status"] == "proposed"
-    gated = call(client, "approve", {"proposal_id": pid, "confirm": True}).json()  # evidence gate: m1 is unvalidated
+    gated = call(client, "approve", {"proposal_id": pid, "confirm": True}).json()
     assert gated["ok"] is False and gated["status"] == 409 and "ack_unvalidated" in gated["summary"]
     ok = call(client, "approve", {"proposal_id": pid, "confirm": True, "ack_unvalidated": True}).json()
     assert ok["ok"] and ok["data"]["status"] == "approved" and ok["data"]["ack_unvalidated"] is True
@@ -177,20 +175,17 @@ def test_agent_secret_enforced_when_set(client, monkeypatch):
 
 
 def test_local_web_app_client_tools_need_no_secret(client, monkeypatch):
-    """The voice widget's client tools run in the browser page on localhost:3000, which cannot hold a secret."""
     monkeypatch.setenv("AGENT_TOOL_SECRET", "s3")
     ok = client.post("/agent/tool/account", json={}, headers={"Origin": "http://localhost:3000"})
     assert ok.status_code == 200 and ok.json()["ok"] is True
     assert client.post("/agent/tool/account", json={}, headers={"Origin": "https://evil.example"}).status_code == 401
     tunnel = {"Origin": "http://localhost:3000", "X-Forwarded-For": "1.2.3.4", "Host": "abc.ngrok.app"}
-    assert client.post("/agent/tool/account", json={}, headers=tunnel).status_code == 401  # remote: secret still due
-    # confirm-gated tools stay gated for the browser too
+    assert client.post("/agent/tool/account", json={}, headers=tunnel).status_code == 401
     r = client.post("/agent/tool/approve", json={"proposal_id": "x"}, headers={"Origin": "http://localhost:3000"})
     assert r.json()["ok"] is False and r.json()["needs_confirmation"] is True
 
 
 def test_search_appends_matching_recordings(client, monkeypatch):
-    """A live search does not list resolved markets; the agent still learns the recorded demo weekend's id."""
     from app import markets
     from app.markets import Market, SearchOut
 

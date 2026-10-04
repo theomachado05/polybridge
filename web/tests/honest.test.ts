@@ -1,6 +1,3 @@
-// Pins the "no scrap" rules: no prototype simulator or sample data anywhere in the app, AI labels only from backend
-// fields, the voice agent wired to our backend without a secret and hidden without an agent id, and the weekend replay
-// preset built from the real recording.
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
@@ -62,7 +59,6 @@ describe("AI labels come from backend fields only", () => {
     assert.equal(modelName("models/gemini-2.5-flash-lite"), "2.5 Flash Lite");
   });
   it("credits Gemini with the classification only when Gemini produced the event class", () => {
-    // Gemini 503 on classify, rules stood in, then the explain call succeeded: ai.live is true, classify is "rules".
     const ctx: PipeContext = { question: "Will the Fed cut rates?", venues: ["Kalshi"], yes: 62, vol: "2.4M", ticker: "SPY", held: 10, move: -0.9, rev: 0, brand: 0, why: "" };
     const partial: FitOut = { event_class: "macro_fed", division: "hedge", family: "macro_fed_hedge", preset_index: 0, params: {}, score: null, alternatives: [], rationale: "Rules picked it.", llm: "rules", ticks_source: "replay", n_ticks: 700,
       ai: { provider: "gemini", model: "gemini-2.5-flash", live: true, steps: { classify: "rules", explain: "gemini" } } };
@@ -73,14 +69,11 @@ describe("AI labels come from backend fields only", () => {
     assert.equal(classifiedByGemini(aiStatus(partial)), false, "the store's AiStatus keeps the steps");
     assert.doesNotMatch(classifyLead(aiStatus(partial)), /Gemini classifies/);
     assert.match(aiLabel(aiStatus(partial)), /^AI · Gemini/, "the rationale did come from Gemini");
-    // Gemini classified: the step names the model.
     const both: FitOut = { ...partial, llm: "gemini:gemini-2.5-flash", ai: { ...partial.ai, steps: { classify: "gemini", explain: "gemini" } } };
     assert.match(fitSteps(both, ctx).find((s) => s.key === "classify")!.text, /\(Gemini 2\.5 Flash\)/);
     assert.equal(classifyLead(aiStatus(both)), "Gemini classifies the event");
-    // Legacy fit with only llm: llm names Gemini only when Gemini classified.
     assert.equal(classifiedByGemini({ llm: "gemini:gemini-2.5-flash" }), true);
     assert.equal(classifiedByGemini({ llm: "rules" }), false);
-    // Health-style status (live, no steps): neutral wording; no LLM: keyword rules.
     assert.doesNotMatch(classifyLead({ live: true, model: "gemini-2.5-flash" }), /Gemini classifies/);
     assert.equal(classifyLead(aiStatus({ llm: "rules" })), "Keyword rules classify the event");
   });
@@ -125,7 +118,6 @@ describe("voice agent", () => {
     const headers = new Headers(calls[0].init?.headers);
     assert.equal(headers.has("x-agent-secret"), false);
     assert.deepEqual(r, { ok: true, tool: "approve", summary: "Proposal p1 is approved.", data: { id: "p1" } });
-    // The agent's own confirm value passes through as sent: the backend, not the browser, decides.
     await callAgentTool("start_bridge", { proposal_id: "p1", confirm: "true" }, fake, "http://x");
     assert.deepEqual(JSON.parse(String(calls[1].init?.body)), { proposal_id: "p1", confirm: "true" });
   });

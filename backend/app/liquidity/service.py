@@ -1,11 +1,3 @@
-"""Liquidity data: Massive (equity bars, quotes, option chain) and the Polymarket / Kalshi books, cached and bounded.
-
-Every fetch is bounded (each Massive call through ``app.chain.bounded``, 8 s; each venue book call 4 s), cached in
-memory, and served stale (labelled) on a later failure. Nothing here raises to a route: an unavailable input is
-``available: false`` with a reason, and unknown numbers stay None (never invented).
-
-The order gates (``app.liquidity.gate``) read only what is already cached (``cached_equity``), so an order path never
-waits on the network; a bridge warms its ticker's numbers in the background when it starts (``warm_equity``)."""
 from __future__ import annotations
 
 import asyncio
@@ -22,10 +14,10 @@ from ..chain import bounded, make_client
 from . import model as m
 
 log = logging.getLogger(__name__)
-EQUITY_TTL_S = 300.0       # bars and the opening-volume median move slowly
+EQUITY_TTL_S = 300.0
 QUOTE_TTL_S = 30.0
 PM_TTL_S = 15.0
-STALE_MAX_S = 24 * 3600.0  # the gates use cached equity numbers up to a day old (labelled stale past the TTL)
+STALE_MAX_S = 24 * 3600.0
 BOOK_TIMEOUT = httpx.Timeout(4.0)
 MASSIVE = "https://api.massive.com"
 CLOB = "https://clob.polymarket.com"
@@ -40,7 +32,6 @@ def _now() -> float:
 
 
 def default_http() -> httpx.AsyncClient:
-    """The venue-book HTTP client (tests replace it with an offline one)."""
     return httpx.AsyncClient()
 
 
@@ -57,7 +48,7 @@ def _is_open_bar(ms: int) -> bool:
 
 
 def _get_json(client, path: str, params: dict | None = None) -> dict:
-    r = client.session.get(MASSIVE + path, params=params, timeout=6.0)  # bounded session caps it anyway
+    r = client.session.get(MASSIVE + path, params=params, timeout=6.0)
     r.raise_for_status()
     return r.json() or {}
 
@@ -70,14 +61,11 @@ def _daily_sync(client, ticker: str, today: dt.date) -> list[dict]:
 
 
 def completed_daily(bars: list[dict], now: dt.datetime) -> tuple[list[dict], dict | None]:
-    """(the daily bars of completed sessions, the current session's partial bar or None). Massive's range runs
-    through today, so before today's regular close (pre-market and the session itself) the last bar is a partial day:
-    in the 20-day ADV it understates volume, and in sigma it adds a partial-day return. It is dropped from both."""
     from ..closed.session import ET, regular_hours
     today = now.astimezone(ET).date()
     hours = regular_hours(today)
     if hours is not None and now >= hours[1]:
-        return bars, None  # today's session has closed: its bar is complete
+        return bars, None
     keep, partial = [], None
     for b in bars:
         t = m.fin(b.get("t"))
@@ -110,19 +98,16 @@ def _quote_sync(client, ticker: str) -> dict | None:
 
 
 class LiquidityService:
-    """One per app (``service_for``). ``client_factory`` returns a Massive client or None (no key: unavailable)."""
 
     def __init__(self, client_factory=None, http_factory=None, clock=_now) -> None:
         self._client_factory = client_factory
         self._http_factory = http_factory
         self._clock = clock
-        self._wall = lambda: dt.datetime.now(dt.timezone.utc)  # the session clock for bar completeness (tests pin it)
+        self._wall = lambda: dt.datetime.now(dt.timezone.utc)
         self._client: Any = _MISSING
-        self.equity_raw: dict[str, tuple[float, dict]] = {}   # ticker -> (fetched_at, raw stats)
+        self.equity_raw: dict[str, tuple[float, dict]] = {}
         self.pm_raw: dict[tuple, tuple[float, dict]] = {}
         self._pending: dict[str, asyncio.Task] = {}
-
-    # ------------------------------------------------------------------ clients
 
     def client(self):
         if self._client is _MISSING:
@@ -132,15 +117,10 @@ class LiquidityService:
                 self._client = None
         return self._client
 
-    # ------------------------------------------------------------------ equity
-
     def set_equity(self, ticker: str, raw: dict, at: float | None = None) -> None:
-        """Pin raw equity stats (tests, or a recorded snapshot): {price, adv_shares, adv_usd, sigma_daily,
-        open5_median_shares, open5_sessions, spread_bp, spread_source, ...}."""
         self.equity_raw[ticker.upper()] = (self._clock() if at is None else at, {"available": True, **raw})
 
     def cached_equity(self, ticker: str) -> tuple[dict | None, float | None]:
-        """(raw stats, age in seconds) when cached and usable (<= STALE_MAX_S), else (None, None). No network."""
         hit = self.equity_raw.get((ticker or "").upper())
         if hit is None:
             return None, None
@@ -166,8 +146,6 @@ class LiquidityService:
             return {"available": False, "reason": "no daily bars from Massive" + (f" ({errors})" if errors else ""),
                     "errors": errors}
         stats = m.daily_stats(daily)
-        # ADV, sigma and the spread estimate use completed sessions only; the price is the latest print, so a
-        # session in progress still prices the order at today's level (its partial bar's close)
         price_basis = "last_completed_close"
         if partial is not None and m.pos(partial.get("c")) is not None:
             stats["price"], price_basis = float(partial["c"]), "current_session_partial_bar"
@@ -194,7 +172,6 @@ class LiquidityService:
                 "price_basis": price_basis, "partial_session_excluded": partial is not None, "errors": errors}
 
     async def equity_raw_for(self, ticker: str, refresh: bool = False) -> tuple[dict, float, bool]:
-        """(raw stats, age s, cache_stale). A failed refresh serves the last good value, marked stale."""
         t = ticker.upper()
         hit = self.equity_raw.get(t)
         now = self._clock()
@@ -210,7 +187,6 @@ class LiquidityService:
         return raw, 0.0, False
 
     def warm_equity(self, ticker: str) -> None:
-        """Fetch a ticker's numbers in the background when they are missing or old (bridge start). Never raises."""
         t = (ticker or "").upper()
         hit = self.equity_raw.get(t)
         if not t or (hit is not None and self._clock() - hit[0] < EQUITY_TTL_S):
@@ -236,8 +212,6 @@ class LiquidityService:
             return {"kind": "equity", "ticker": t, "available": False, "reason": "not a ticker"}
         raw, age, stale = await self.equity_raw_for(t, refresh)
         return equity_view(t, raw, age, stale, coverage, qty)
-
-    # ------------------------------------------------------------------ options
 
     async def option(self, underlying: str, strike: float, expiry: str, right: str, coverage: float = 0.5) -> dict:
         from ..options.chain import NoClient, get_chain, staleness
@@ -274,8 +248,6 @@ class LiquidityService:
                 "cost_model": {"formula": "cost_bp = half the quoted spread (bp of mid); option impact not "
                                           "modelled, the volume / open-interest caps keep orders small"}}
 
-    # ------------------------------------------------------------------ prediction markets
-
     async def _book(self, http: httpx.AsyncClient, source: str, key: str) -> tuple[list, list]:
         from ..ticks import _kalshi_side, _levels
         if source == "kalshi":
@@ -293,7 +265,7 @@ class LiquidityService:
     async def _poly_token(self, http: httpx.AsyncClient, mid: str, token_id: str | None) -> str | None:
         if token_id:
             return token_id
-        if mid.isdigit() and len(mid) > 30:  # already a CLOB token id
+        if mid.isdigit() and len(mid) > 30:
             return mid
         r = await http.get(GAMMA_MARKET.format(id=mid), timeout=BOOK_TIMEOUT)
         r.raise_for_status()
@@ -390,7 +362,7 @@ def service_for(app) -> LiquidityService:
     st = app.state
     svc = getattr(st, "liquidity", None)
     if svc is None:
-        pinned = getattr(st, "massive", _MISSING)  # tests pin app.state.massive (a fake client or None)
+        pinned = getattr(st, "massive", _MISSING)
         factory = (lambda: pinned) if pinned is not _MISSING else None
         svc = st.liquidity = LiquidityService(client_factory=factory)
     return svc

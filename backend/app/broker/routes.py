@@ -1,11 +1,3 @@
-"""HTTP surface for the active broker. A broker failure is a clean 4xx/502, never a 500.
-
-GET /positions lists the active broker's book (Webull paper equities + simulated legs, or the simulator), each row
-labelled by ``account``; ``include_demo=true`` appends the seeded demo portfolio as separate rows (broker "demo",
-account "demo holdings"), never mixed into the broker's numbers. GET /orders reads Webull order history (``days``,
-bounded) + open orders. POST /orders (manual) passes the liquidity caps and the capital budget first
-(``gate_manual_order``). /broker/capabilities, /broker/shortable/{symbol} and /broker/reconcile* expose the broker's
-capabilities, short-sale readiness and the background order reconciliation."""
 from __future__ import annotations
 
 import asyncio
@@ -20,7 +12,7 @@ from .models import Account, BrokerError, Order, OrderRequest, Position
 from .reconcile import ensure_started, get_reconciler, stop_all
 from .sim import SimBroker
 
-router = APIRouter(on_shutdown=[stop_all])  # no reconciler outlives the app
+router = APIRouter(on_shutdown=[stop_all])
 log = logging.getLogger(__name__)
 DEMO_LABEL = "demo holdings"
 
@@ -34,13 +26,12 @@ async def _call(coro):
         return await coro
     except BrokerError as e:
         raise HTTPException(e.status_code, e.message)
-    except Exception as e:  # the API never answers 500 for a broker problem
+    except Exception as e:
         log.warning("broker call failed: %s", type(e).__name__)
         raise HTTPException(502, f"Broker error ({type(e).__name__}).")
 
 
 def market_session(app) -> dict:
-    """The NYSE session now (``app.state.staged_clock`` pins it in tests): market_open is the regular session."""
     from ..closed.session import now_utc, session_at, to_utc
 
     clock = getattr(app.state, "staged_clock", None)
@@ -60,8 +51,6 @@ async def get_account(request: Request) -> Account:
 
 
 def demo_positions() -> list[Position]:
-    """The seeded demo portfolio (app/data/portfolio.json) as positions labelled "demo holdings": never held at any
-    broker, no cost basis (avg_px 0) and no marks."""
     from ..portfolio import load_holdings
 
     return [Position(symbol=h["ticker"], asset="equity", qty=h["shares"], avg_px=0.0, broker="demo",
@@ -72,7 +61,7 @@ def demo_positions() -> list[Position]:
 async def get_positions(request: Request, refresh: bool = False, include_demo: bool = False) -> list[Position]:
     b = get_broker(request.app)
     ensure_started(request.app)
-    if refresh:  # the sim itself, or the sim behind Webull that holds the option and prediction legs
+    if refresh:
         sim = b if isinstance(b, SimBroker) else getattr(b, "sim", None)
         if sim is not None:
             await sim.refresh_marks()
@@ -85,7 +74,7 @@ async def get_orders(request: Request, status: Literal["filled", "open", "cancel
                      days: int = Query(7, ge=1, le=30)) -> list[Order]:
     b = get_broker(request.app)
     ensure_started(request.app)
-    if hasattr(b, "order_history"):  # Webull: history over the last `days` (bounded windows) + open orders
+    if hasattr(b, "order_history"):
         return await _call(b.orders(status, days=days))
     return await _call(b.orders(status))
 
@@ -109,8 +98,6 @@ def _symbols(raw: str | None) -> list[str]:
 
 @router.get("/broker/capabilities")
 async def capabilities(request: Request, symbols: str | None = None) -> dict:
-    """What the active broker can do now: option orders (options_supported / options_route), extended hours, order
-    reconciliation, and short-sale readiness per symbol (can_short True / False / None with the reason)."""
     b = get_broker(request.app)
     ensure_started(request.app)
     opts = bool(getattr(b, "options_supported", False))
@@ -152,7 +139,7 @@ async def reconcile_start(request: Request) -> dict:
 
 @router.post("/broker/reconcile/stop")
 async def reconcile_stop(request: Request) -> dict:
-    request.app.state.reconcile_stopped_by_user = True  # no auto-start until started again
+    request.app.state.reconcile_stopped_by_user = True
     r = get_reconciler(request.app)
     stopped = await r.stop()
     return {"stopped": stopped, **r.status()}
@@ -160,7 +147,6 @@ async def reconcile_stop(request: Request) -> dict:
 
 @router.post("/broker/reconcile/run")
 async def reconcile_run(request: Request) -> dict:
-    """One reconciliation pass now, even outside the session (read-only at the broker)."""
     res = await get_reconciler(request.app).run_once(force=True)
     return res
 
@@ -173,8 +159,6 @@ def _refuse(code: str, detail: str) -> HTTPException:
 
 
 async def _held(broker, symbol: str) -> float:
-    """The signed position the broker reports in ``symbol`` (0 when it cannot be read: every order then counts as
-    opening, the conservative reading)."""
     try:
         rows = await asyncio.wait_for(broker.positions(), 8.0)
     except Exception:
@@ -195,8 +179,6 @@ async def _option_mid(broker, symbol: str, body: OrderRequest) -> tuple[float | 
 
 
 async def _equity_px(app, broker, symbol: str, body: OrderRequest) -> float | None:
-    """The price the budget sizes a manual equity order at: the supplied reference, the cached Massive price, the
-    broker's own mark, its quote provider (``capital.order_price``, the same order as the bridges and staged plans)."""
     from ..capital import service as cap
 
     px, _src = await cap.order_price(app, broker, symbol, body.ref_px)
@@ -204,8 +186,6 @@ async def _equity_px(app, broker, symbol: str, body: OrderRequest) -> float | No
 
 
 async def _capital_gate(app, broker, notional: float, margin: float, what: str) -> dict:
-    """The capital budget for one exposure-increasing manual order, failing closed (an unreadable account, a failed
-    check or a broker with no account read refuses it)."""
     from ..capital import service as cap
 
     try:
@@ -221,19 +201,6 @@ async def _capital_gate(app, broker, notional: float, margin: float, what: str) 
 
 
 async def gate_manual_order(app, broker, body: OrderRequest) -> dict:
-    """POST /orders is the manual route. It passes the same liquidity caps and capital budget as the bridges and the
-    staged plans, but refuses (409) instead of cutting, because the caller named the size:
-
-    - equity, both sides: <= 10% of the opening 5-minute volume and <= what is left of 1% of ADV today (account
-      scope; no cached numbers: not capped, labelled ``unknown``);
-    - option: <= 10% of the contract's volume and <= 5% of its open interest (Massive snapshot; none: ``unknown``);
-    - capital: a sell that opens or adds to a short equity position, or an option order that opens or adds to a
-      position, must fit the gross and per-event budget and buying power. Its price must be known and the account
-      readable, else it is refused (fail closed). Equity buys that open a long and orders that only reduce a position
-      are not budget-checked (the broker's own cash check still applies);
-    - prediction legs: simulated, and not depth-capped here (a request carries no book).
-
-    Returns the gate outcome; ``record`` is the equity participation to count once the order is sent."""
     from ..capital import budget as cb
     from ..liquidity import gate as liq
 
@@ -286,7 +253,6 @@ async def gate_manual_order(app, broker, body: OrderRequest) -> dict:
         if req is None or (body.side == "sell" and occ is None):
             raise _refuse("CAPITAL_BUDGET", f"no option price for {sym}: its requirement is unknown, so the budget "
                                             "cannot be checked (fail closed).")
-        # option legs settle where they are filled: Webull paper's simulator unless WEBULL_OPTIONS=1
         acct = broker if isinstance(broker, SimBroker) or getattr(broker, "options_supported", False) else \
             (getattr(broker, "sim", None) or broker)
         out["capital"] = await _capital_gate(app, acct, req, req, f"this option order ({opening:g} {sym})")
@@ -295,8 +261,7 @@ async def gate_manual_order(app, broker, body: OrderRequest) -> dict:
 
 @router.post("/orders", response_model=Order, status_code=201)
 async def post_order(body: OrderRequest, request: Request) -> Order:
-    """The manual order route: gated by the liquidity caps and the capital budget (``gate_manual_order``)."""
-    if getattr(request.state, "remote", False):  # a caller outside localhost never picks its own fill price
+    if getattr(request.state, "remote", False):
         body = body.model_copy(update={"ref_px": None, "ref_half_spread": None, "ref_source": None})
     broker = get_broker(request.app)
     g = await gate_manual_order(request.app, broker, body)

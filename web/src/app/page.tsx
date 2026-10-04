@@ -9,8 +9,6 @@ import { useStore } from "@/lib/store";
 
 const body = { margin: 0, fontSize: 16, lineHeight: 1.5, color: "var(--text-2)" } as const;
 
-// What PolyBridge does, one registry entry per line (name, claim and status words all come from
-// GET /evidence/mechanisms): the two mechanisms, the watch-only market, the generic fit, and everything else.
 const MECHANISM_LINES = ["ladders", "touch", "btc_15min", "generic_ai_fit", "other"] as const;
 
 const BRIER = { poly: 0.0938, options: 0.0831, diff: 0.0108, lo: 0.0064, hi: 0.0158 };

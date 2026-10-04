@@ -12,11 +12,11 @@ def test_fwd_mean_of_valid_rows():
 
 
 def test_jumps_rules_and_band():
-    P = np.array([50, 50, 50, 50, 54, 54, 54, 54, 55, 56, 58, 58], dtype=float)   # 4 points in one bin at i=4; 5 in 15 at i=10
+    P = np.array([50, 50, 50, 50, 54, 54, 54, 54, 55, 56, 58, 58], dtype=float)
     j = jumps(P, -1.0, 3)
-    assert j[4] == -4.0                       # signed by the link direction
-    assert 10 not in j                        # 54 -> 58 over 15 minutes is 4 points: below the 5-point rule
-    P2 = np.array([2, 2, 2, 2, 6, 6], dtype=float)  # reference price 2% is outside the band
+    assert j[4] == -4.0
+    assert 10 not in j
+    P2 = np.array([2, 2, 2, 2, 6, 6], dtype=float)
     assert jumps(P2, 1.0, 3) == {}
 
 
@@ -43,6 +43,6 @@ def test_verify_window_and_side():
     pr = [{"timestamp": 1000 + 10, "price": 0.41, "side": "SELL", "outcome": "Yes", "size": 50},
           {"timestamp": 1000 + cfg.PRINT_WINDOW_S + 1, "price": 0.50, "side": "SELL", "outcome": "Yes", "size": 50},
           {"timestamp": 999, "price": 0.50, "side": "SELL", "outcome": "Yes", "size": 50},
-          {"timestamp": 1100, "price": 0.58, "side": "BUY", "outcome": "No", "size": 20}]   # = a YES sale at 0.42
+          {"timestamp": 1100, "price": 0.58, "side": "BUY", "outcome": "No", "size": 20}]
     assert verify(pr, False, 0.40, 1000) == (2, 70.0)
     assert verify(pr, True, 0.40, 1000) == (0, 0.0)

@@ -1,4 +1,3 @@
-"""Synthetic tests for the fresh-market accuracy study (no network)."""
 from __future__ import annotations
 
 import math

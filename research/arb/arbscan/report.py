@@ -1,4 +1,3 @@
-"""Build SUMMARY.md, the chart and RUN_LOG.md from arb_gaps.csv + run_meta.json.  python -m arbscan.report [results_dir]"""
 from __future__ import annotations
 
 import json
@@ -163,7 +162,7 @@ def make_chart(df: pd.DataFrame, path: Path) -> None:
             if s.empty:
                 continue
             if not live and name != "inside option bounds":
-                b = s[(s.p_hi - s.p_lo) <= 0.30]          # very wide bounds only add horizontal clutter
+                b = s[(s.p_hi - s.p_lo) <= 0.30]
                 err = np.vstack([(b.p_mid - b.p_lo).clip(lower=0), (b.p_hi - b.p_mid).clip(lower=0)])
                 ax.errorbar(b.p_mid, b.pm_mid, xerr=err, fmt="none", ecolor=color, elinewidth=0.5, alpha=0.18, zorder=2)
             ax.scatter(s.p_mid, s.pm_mid, s=size, marker=marker, facecolors=color if filled else "none", edgecolors=color if not filled else surf,

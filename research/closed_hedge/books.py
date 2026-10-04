@@ -1,4 +1,3 @@
-"""Live Polymarket books for the PM half-spread assumption (METHOD.md section 6)."""
 from __future__ import annotations
 
 import json
@@ -21,7 +20,6 @@ def _tokens(m: dict) -> list[str]:
 
 
 def pick_markets(markets: list[dict], n: int = PARAMS.n_books) -> list[dict]:
-    """First n markets (already ordered by lifetime volume) that have an order book and token ids."""
     out = []
     for m in markets:
         if m.get("enableOrderBook") and _tokens(m) and m.get("active") and not m.get("closed"):
@@ -32,7 +30,6 @@ def pick_markets(markets: list[dict], n: int = PARAMS.n_books) -> list[dict]:
 
 
 def half_spread_pp(book: dict, lo: float = PARAMS.mid_lo, hi: float = PARAMS.mid_hi) -> float | None:
-    """(best ask - best bid)/2 in pp for a two-sided book with mid in [lo, hi]; None otherwise."""
     bids = [float(x["price"]) for x in (book or {}).get("bids", [])]
     asks = [float(x["price"]) for x in (book or {}).get("asks", [])]
     if not bids or not asks:
@@ -51,7 +48,6 @@ def summarise(halves: list[float], min_books: int = PARAMS.min_books, fallback: 
 
 
 def fetch_live(session: requests.Session | None = None, n: int = PARAMS.n_books) -> tuple[dict, dict]:
-    """Returns (summary, raw). Network: one gamma page (up to 3 if needed) + one CLOB /book per market."""
     s = session or requests.Session()
     counts = {"gamma": 0, "clob": 0}
     markets: list[dict] = []

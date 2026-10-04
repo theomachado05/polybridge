@@ -1,5 +1,3 @@
-"""Opportunity at the open (closed-market mode, P4): Friday-close option snapshot, open comparison, staged option
-trade (approval, caps, simulated multi-leg fill). Offline: mocked Massive chains and a mocked Gamma lookup."""
 import datetime as dt
 import json
 import math
@@ -17,8 +15,8 @@ from app.options.match import match_question
 
 EXPIRY = "2026-12-18"
 Q = "Will NVDA close above $150 on December 18, 2026?"
-SAT = dt.datetime(2026, 10, 3, 16, 0, tzinfo=dt.timezone.utc)        # Saturday 12:00 ET
-MON_OPEN = dt.datetime(2026, 10, 5, 13, 30, tzinfo=dt.timezone.utc)  # Monday 09:30 ET
+SAT = dt.datetime(2026, 10, 3, 16, 0, tzinfo=dt.timezone.utc)
+MON_OPEN = dt.datetime(2026, 10, 5, 13, 30, tzinfo=dt.timezone.utc)
 FRI_NS = int(dt.datetime(2026, 10, 2, 19, 59, tzinfo=dt.timezone.utc).timestamp() * 1e9)
 MON_NS = int((MON_OPEN + dt.timedelta(minutes=2)).timestamp() * 1e9)
 
@@ -57,9 +55,6 @@ class FakeMassive:
         return _Resp({"results": self.rows})
 
 
-# ------------------------------------------------------------------------------------------------- pure pieces
-
-
 def _snap(pm_yes=0.50, rows=None):
     m = match_question(Q, EXPIRY, as_of=dt.date(2026, 10, 2))
     chain = ch.parse_snapshot("NVDA", [{"results": rows or book_rows()}])
@@ -80,7 +75,7 @@ def test_snapshot_records_close_estimate_and_both_spreads():
     assert {(lg["kind"], lg["strike"]) for lg in s["legs"]} == {("call", 145.0), ("call", 155.0),
                                                                  ("put", 145.0), ("put", 155.0)}
     assert "not a measured edge" in s["label"]
-    assert any("after the close" in n for n in s["notes"])  # PM price taken Saturday, labelled as such
+    assert any("after the close" in n for n in s["notes"])
 
 
 def test_evaluate_stages_yes_spread_when_options_have_not_caught_up():
@@ -97,7 +92,7 @@ def test_evaluate_stages_no_spread_on_a_down_move():
 
 
 @pytest.mark.parametrize("pm_now, code", [
-    (0.52, "pm_move_small"),             # 2-point move
+    (0.52, "pm_move_small"),
     (0.515, "pm_move_small"),
     (None, "pm_unavailable"),
 ])
@@ -107,9 +102,7 @@ def test_evaluate_small_or_missing_moves_do_nothing(pm_now, code):
 
 
 def test_evaluate_refuses_when_options_already_past_pm_or_inside_spread():
-    # PM closed 0.40 under the options (0.504) and rose to 0.48: still at or below the option estimate.
     assert opp.evaluate(_snap(pm_yes=0.40), 0.48)["reason_code"] == "options_already_past_pm"
-    # PM 0.48 -> 0.52: above the mid (0.504) but not above the ask-implied 0.524.
     assert opp.evaluate(_snap(pm_yes=0.48), 0.52)["reason_code"] == "gap_within_spread"
 
 
@@ -146,8 +139,7 @@ def test_price_structure_and_caps():
     assert opp.size(5, 10, 500, 520.0) == (0, "max_notional")
     assert opp.size(5, 10, 10_000, 520.0, book_room=1100.0) == (2, "book_notional")
     assert opp.size(5, 10, 10_000, 520.0, book_room=0.0) == (0, "book_notional")
-    assert yes["unit_cost"] == pytest.approx(520.0 + 2 * 0.65)  # leg fees count toward the caps
-    # a $10 debit spread sized at the $10,000 cap: 10 x $1000 + 20 leg fees would exceed it, so 9
+    assert yes["unit_cost"] == pytest.approx(520.0 + 2 * 0.65)
     assert opp.size(10, 10, 10_000, 1000.0 + 2 * 0.65) == (9, "max_notional")
     missing = opp.price_structure(c, "call_spread", EXPIRY, 145.0, 160.0)
     assert missing["reason_code"] == "legs_not_listed"
@@ -188,7 +180,6 @@ def test_research_status_pending_until_a_result_says_supported(tmp_path):
     ("PASS", "supported", True), ("NULL", "null", False), ("SAMPLE TOO SMALL", "insufficient", False),
 ])
 def test_research_status_reads_the_r3_study_stats_file(tmp_path, verdict, status, claim):
-    """research/open_options/report.py writes results/open_options/stats.json with a verdict and no boolean."""
     d = tmp_path / "research/results/open_options"
     d.mkdir(parents=True)
     (d / "events.csv").write_text("x\n")
@@ -203,10 +194,10 @@ def test_book_refuses_to_replace_a_snapshot_in_use_and_keeps_the_close_price(tmp
     b = opp.OpportunityBook(tmp_path / "b.json")
     s = b.put_snapshot(_snap(pm_yes=0.50))
     later = {**_snap(pm_yes=0.62), "taken_at": "2026-10-04T18:00:00Z"}
-    r = b.put_snapshot(later)  # no trade yet: options refreshed, the close price stays
+    r = b.put_snapshot(later)
     assert r["id"] == s["id"] and r["pm_yes"] == 0.50 and r["revision"] == 2
     assert any("PM close price kept" in n for n in r["notes"])
-    assert b.put_snapshot(_snap(pm_yes=0.48), pm_explicit=True)["pm_yes"] == 0.48  # an explicit close price wins
+    assert b.put_snapshot(_snap(pm_yes=0.48), pm_explicit=True)["pm_yes"] == 0.48
     b.put_trade(opp.stage_trade(b.snapshots[s["id"]], opp.evaluate(b.snapshots[s["id"]], 0.62), now=SAT))
     with pytest.raises(ValueError, match="snapshot_in_use"):
         b.put_snapshot(_snap(pm_yes=0.62), pm_explicit=True)
@@ -221,8 +212,8 @@ def test_book_exposure_totals_open_opportunity_trades(tmp_path):
     assert b.book_room(SAT) == pytest.approx(opp.BOOK_MAX_NOTIONAL - 3 * 521.3)
     assert b.exposure(SAT, exclude=t["id"]) == 0
     t["status"], t["execution"] = "executed", {"cost": 1500.0}
-    assert b.exposure(SAT) == 1500.0  # executed and not expired: still at risk
-    assert b.exposure(dt.datetime(2026, 12, 21, 15, tzinfo=dt.timezone.utc)) == 0  # after the spread's expiry
+    assert b.exposure(SAT) == 1500.0
+    assert b.exposure(dt.datetime(2026, 12, 21, 15, tzinfo=dt.timezone.utc)) == 0
     with pytest.raises(ValueError, match="book_cap_used_up"):
         opp.stage_trade(s, opp.evaluate(s, 0.62), now=SAT, book_room=100.0)
 
@@ -236,12 +227,8 @@ def test_book_persists_snapshots_and_trades(tmp_path):
     assert set(b2.snapshots) == {s["id"]} and len(b2.trades) == 1 and b2.active_trade(s["id"])
 
 
-# ------------------------------------------------------------------------------------------------------- routes
-
-
 @pytest.fixture
 def env(monkeypatch, tmp_path):
-    """A TestClient with a controllable clock, Massive rows and Gamma YES price."""
     state = {"now": SAT, "yes": 0.50, "massive": FakeMassive(book_rows()), "gamma_down": False}
 
     def reset_chain_cache():
@@ -252,7 +239,7 @@ def env(monkeypatch, tmp_path):
     reset_chain_cache()
     monkeypatch.setenv("CLOSED_OPPORTUNITY_PATH", str(tmp_path / "opp.json"))
     monkeypatch.setattr(opp, "make_client", lambda: state["massive"])
-    monkeypatch.setattr(opp, "REPO", tmp_path)  # no R3 result: research pending
+    monkeypatch.setattr(opp, "REPO", tmp_path)
 
     def gamma(req: httpx.Request):
         if "gamma-api" in str(req.url):
@@ -283,7 +270,7 @@ def _to_monday(env, rows):
 
 
 def test_route_full_weekend_flow_executes_a_simulated_combo(env, monkeypatch, tmp_path):
-    monkeypatch.setattr(opp, "REPO", tmp_path)  # no R3 result here: research pending (the real one is pinned below)
+    monkeypatch.setattr(opp, "REPO", tmp_path)
     c = env["client"]
     s = _snapshot(env)
     assert s["stored"] and s["supported"] and s["pm_yes"] == 0.50 and s["pm_source"] == "supplied"
@@ -291,7 +278,7 @@ def test_route_full_weekend_flow_executes_a_simulated_combo(env, monkeypatch, tm
     assert st["supported"] and st["display"] == "estimate" and st["research"]["status"] == "pending"
     assert st["session"]["phase"] == "weekend"
 
-    env["yes"] = 0.62  # the PM moves over the weekend
+    env["yes"] = 0.62
     cmp_ = c.get("/closed/opportunity/compare", params={"snapshot_id": s["id"]}).json()
     assert cmp_["supported"] and cmp_["comparison"]["reason_code"] == "stage_yes_spread"
     assert cmp_["pm_source"] == "live"
@@ -300,21 +287,21 @@ def test_route_full_weekend_flow_executes_a_simulated_combo(env, monkeypatch, tm
     assert r.status_code == 201, r.text
     tr = r.json()
     assert tr["status"] == "staged" and tr["structure"]["kind"] == "call_spread" and tr["qty_estimate"] == 2
-    assert c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"], "ack_unvalidated": True}).status_code == 409  # one per snapshot
+    assert c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"], "ack_unvalidated": True}).status_code == 409
 
     r = c.post(f"/closed/opportunity/trades/{tr['id']}/execute")
-    assert r.status_code == 409 and r.json()["detail"]["reason_code"] == "awaiting_approval"  # approval required
+    assert r.status_code == 409 and r.json()["detail"]["reason_code"] == "awaiting_approval"
     assert c.post(f"/closed/opportunity/trades/{tr['id']}/approve").json()["status"] == "approved"
     r = c.post(f"/closed/opportunity/trades/{tr['id']}/execute")
     assert r.json()["outcome"] == "held" and r.json()["reason_code"] == "before_open"
 
-    _to_monday(env, book_rows(upd=MON_NS))  # options did not reprice at the open
+    _to_monday(env, book_rows(upd=MON_NS))
     r = c.post("/closed/opportunity/execute-due")
     res = r.json()["results"]
     assert len(res) == 1 and res[0]["outcome"] == "executed", res
     ex = c.get(f"/closed/opportunity/trades/{tr['id']}").json()
     assert ex["status"] == "executed" and ex["execution"]["simulated"] and ex["execution"]["qty"] == 2
-    assert ex["execution"]["net_debit"] == pytest.approx(8.1 - 2.9)  # buy C145 at ask, sell C155 at bid
+    assert ex["execution"]["net_debit"] == pytest.approx(8.1 - 2.9)
     assert ex["events"][-1]["reason_code"] == "filled"
     orders = c.get("/orders").json()
     legs = [o for o in orders if o["combo_id"] == tr["id"]]
@@ -345,11 +332,11 @@ def test_route_holds_on_stale_quotes_then_expires(env):
     env["yes"] = 0.62
     tid = c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"], "ack_unvalidated": True}).json()["id"]
     c.post(f"/closed/opportunity/trades/{tid}/approve")
-    _to_monday(env, book_rows(upd=FRI_NS))  # the feed still shows Friday's quotes
+    _to_monday(env, book_rows(upd=FRI_NS))
     r = c.post(f"/closed/opportunity/trades/{tid}/execute").json()
     assert r["outcome"] == "held" and r["reason_code"] == "quotes_not_updated_since_open"
     r = c.post(f"/closed/opportunity/trades/{tid}/execute").json()
-    assert c.get(f"/closed/opportunity/trades/{tid}").json()["events"][-1].get("count") == 2  # one row, counted
+    assert c.get(f"/closed/opportunity/trades/{tid}").json()["events"][-1].get("count") == 2
     env["now"] = MON_OPEN + dt.timedelta(minutes=31)
     res = c.post("/closed/opportunity/execute-due").json()["results"]
     assert res[0]["outcome"] == "expired" and res[0]["reason_code"] == "missed_open_window"
@@ -412,7 +399,6 @@ def test_remote_caller_cannot_supply_the_pm_price(env):
 
 
 def test_route_universe_fallback_price_never_feeds_a_decision(env, monkeypatch):
-    """Gamma down: resolve_market falls back to the bundled universe price; it is reported but not acted on."""
     from app.options import router as orouter
     c = env["client"]
     s = _snapshot(env)
@@ -428,7 +414,6 @@ def test_route_universe_fallback_price_never_feeds_a_decision(env, monkeypatch):
     assert c.post(f"/closed/opportunity/trades/{tid}/cancel").status_code == 200
     r = c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"], "ack_unvalidated": True})
     assert r.status_code == 409 and r.json()["detail"]["reason_code"] == "pm_unavailable"
-    # an approved trade under a Gamma outage: review leaves it alone, execution at the open holds
     env["gamma_down"] = False
     tid = c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"], "ack_unvalidated": True}).json()["id"]
     c.post(f"/closed/opportunity/trades/{tid}/approve")
@@ -439,7 +424,6 @@ def test_route_universe_fallback_price_never_feeds_a_decision(env, monkeypatch):
     r = c.post(f"/closed/opportunity/trades/{tid}/execute").json()
     assert r["outcome"] == "held" and r["reason_code"] == "pm_unavailable"
     assert [o for o in c.get("/orders").json() if o["combo_id"] == tid] == []
-    # a snapshot taken during the outage records no close price (not supported)
     env["now"] = SAT
     r = c.post("/closed/opportunity/snapshot", json={"market_source": "polymarket", "market_id": "pm-other"}).json()
     assert r["stored"] and r["pm_yes"] is None and r["pm_source"] is None and not r["supported"]
@@ -452,13 +436,13 @@ def test_route_resnapshot_refused_while_a_trade_uses_it(env):
     env["yes"] = 0.62
     tid = c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"], "ack_unvalidated": True}).json()["id"]
     c.post(f"/closed/opportunity/trades/{tid}/approve")
-    env["now"] = SAT + dt.timedelta(days=1)  # Sunday: someone re-snapshots (no pm_yes, so the live 0.62)
+    env["now"] = SAT + dt.timedelta(days=1)
     r = c.post("/closed/opportunity/snapshot", json={"market_source": "polymarket", "market_id": "pm-test-1"})
     assert r.status_code == 409 and r.json()["detail"]["reason_code"] == "snapshot_in_use"
     assert r.json()["detail"]["trade_id"] == tid
     assert c.get("/closed/opportunity/compare", params={"snapshot_id": s["id"]}).json()["snapshot"]["pm_yes"] == 0.50
     _to_monday(env, book_rows(upd=MON_NS))
-    assert c.post(f"/closed/opportunity/trades/{tid}/execute").json()["outcome"] == "executed"  # not pm_reverted
+    assert c.post(f"/closed/opportunity/trades/{tid}/execute").json()["outcome"] == "executed"
 
 
 def test_route_resnapshot_without_trade_keeps_the_friday_price(env):
@@ -469,7 +453,7 @@ def test_route_resnapshot_without_trade_keeps_the_friday_price(env):
     r = c.post("/closed/opportunity/snapshot", json={"market_source": "polymarket", "market_id": "pm-test-1"}).json()
     assert r["id"] == s["id"] and r["pm_yes"] == 0.50 and r["pm_source"] == "supplied" and r["revision"] == 2
     cmp_ = c.get("/closed/opportunity/compare", params={"snapshot_id": s["id"]}).json()
-    assert cmp_["comparison"]["reason_code"] == "stage_yes_spread"  # the weekend move survives the re-snapshot
+    assert cmp_["comparison"]["reason_code"] == "stage_yes_spread"
 
 
 def test_route_pm_source_reflects_the_price_origin_not_the_question(env):
@@ -486,7 +470,6 @@ def test_route_book_cap_spans_trades(env, monkeypatch):
     env["yes"] = 0.62
     r = c.post("/closed/opportunity/trades", json={"snapshot_id": s["id"], "ack_unvalidated": True, "contracts": 5})
     assert r.status_code == 201 and r.json()["qty_estimate"] == 2 and r.json()["cap_estimate"] == "book_notional"
-    # a second market on the same weekend: no room left under the book cap
     s2 = c.post("/closed/opportunity/snapshot", json={"market_source": "polymarket", "market_id": "pm-test-2",
                                                       "pm_yes": 0.50}).json()
     r2 = c.post("/closed/opportunity/trades", json={"snapshot_id": s2["id"], "ack_unvalidated": True})
@@ -512,9 +495,6 @@ def test_route_simulated_orders_carry_the_decision_time(env):
 def test_committed_r3_result_is_null_and_supports_no_claim():
     st = opp.research_status(opp.REPO)
     assert st["status"] == "null" and st["supports_claim"] is False
-
-
-# ------------------------------------------------------------------------- the gates (evidence, liquidity, capital)
 
 
 def _with_liquidity(rows, volume, oi):
@@ -545,7 +525,6 @@ def test_staging_on_an_unvalidated_signal_needs_the_acknowledgement(env):
 def test_execution_cuts_the_combo_to_the_option_participation_cap(env):
     c = env["client"]
     tid = _staged_and_approved(env, contracts=5)
-    # 30 contracts of volume: 10% allows 3 per leg (open interest 1,000 would allow 50)
     _to_monday(env, _with_liquidity(book_rows(upd=MON_NS), volume=30, oi=1_000))
     r = c.post(f"/closed/opportunity/trades/{tid}/execute").json()
     assert r["outcome"] == "executed", r
@@ -566,7 +545,7 @@ def test_execution_refuses_when_the_participation_cap_allows_nothing(env):
 def test_execution_refuses_a_trade_the_capital_budget_does_not_allow(env):
     c = env["client"]
     tid = _staged_and_approved(env)
-    env["app"].state.capital_limits = {"max_gross_hedge_pct": 0.0001, "max_event_pct": 0.0001}  # $100 on a $1M account
+    env["app"].state.capital_limits = {"max_gross_hedge_pct": 0.0001, "max_event_pct": 0.0001}
     _to_monday(env, book_rows(upd=MON_NS))
     r = c.post(f"/closed/opportunity/trades/{tid}/execute").json()
     assert r["outcome"] == "rejected" and r["reason_code"] == "capital_budget", r

@@ -1,38 +1,3 @@
-"""Bridge loop: one bridge per approved hedge proposal drives the C++ hedgecore library from a tick source
-and publishes tick/decision/fill/position events over SSE. hedgecore is imported lazily (engine group only).
-
-Two engines:
-- ``algo`` (the proposal or the body names a fitted family + preset/params): ``hedgecore.Algo`` for that family is fed
-  full MarketTicks (book, other venue, equity quote). Its Order intents go to the broker; a fill calls
-  ``Algo.on_fill``, a reject / expiry / cancel calls ``Algo.on_reject``, and any resting order of the bridge is
-  cancelled before a new one is sent. A place call that fails or times out is tracked as an unconfirmed resting order
-  (by client_order_id) and reconciled first, never booked as "nothing traded". The hedge reported is what the broker
-  filled.
-- ``legacy`` (no fit): the original ``hedgecore.Engine`` default spec on the adverse probability. Its broker side is
-  position-aware: buys never exceed the short the broker filled, sells never exceed the approved target_coverage, and
-  open orders are tracked and cancelled like the algo path's.
-A live bridge whose source fails falls back only to a recording of its own market, after settling what is open at the
-account broker.
-- opportunity (an approved opportunity proposal with an Opportunity-division options family): the same Algo loop
-  on raw (never oriented) ticks whose option fields come from ``OptionsEnricher``; each Option intent becomes one
-  multi-leg option order (``app.options.fills`` structure legs priced at the Massive quotes, filled all-or-none by
-  the SimBroker; Webull paper routes options to the simulator). The proposal's max_contracts / max_notional cap it.
-  On a replay whose contracts no current chain lists (a resolved market: they expired; or offline), the legs are
-  priced at the recording's own bar closes at the replayed time (``opt_legs`` rows + the sidecar's ``options``
-  structure), labelled "recorded", and only where the recording kept a fresh pair (regular session, both legs printed).
-
-Direction is applied in ONE place: ``app.pipeline.ticks.orient_to_adverse`` turns every tick into "YES = the outcome
-that hurts the holder" before either engine sees it; hedgecore is always called with its default direction.
-
-Closed-market mode (``app.closed.bridge_mode``): every bridge knows the NYSE session of each tick (a replay from the
-tick's recorded time, a live bridge from the wall clock). Tick events carry ``closed`` {session, closure,
-expected_gap, hold} and the summary ``session`` / ``closure`` / ``expected_gap`` / ``closed_mode`` / ``hedge_a``. While
-the regular session is closed a hedge bridge's equity engine is paused (decision ``hold`` / ``session_closed``, nothing
-sent; ``session_hold: false`` turns this off), hedge B is staged from the expected gap for approval and executed on the
-bridge's ticks at the first tradable moment, hedge A runs only on a proposal's ``closed_pm_hedge`` opt-in (a simulated,
-labelled estimate), and the coverage cap counts the staged and PM legs (``_coverage_room``). Extra SSE events:
-``session`` (the close), ``staged`` (plan / approval / resize / fill), ``hedge_a`` (simulated PM-leg fills) and
-``handoff`` (the open)."""
 from __future__ import annotations
 
 import asyncio
@@ -67,17 +32,11 @@ from .ticks import TICK_FIELDS, LiveSource, OptionsEnricher, ReplaySource, Sourc
 from .twins import twin_of
 
 router = APIRouter()
-LABELLED_EVENTS = ("decision", "fill", "staged", "hedge_a")  # each carries the bridge's evidence label
+LABELLED_EVENTS = ("decision", "fill", "staged", "hedge_a")
 HEARTBEAT_S = 15.0
 MAX_EVENTS = 20_000
 REPLAYS_DIR = Path(__file__).resolve().parents[1] / "replays"
 NO_ENGINE = "engine not installed (uv sync --group engine)"
-# Each broker call (and the whole _lookup chain: orders() then find_order, under one deadline) is bounded by this, so
-# no single broker step stalls the bridge loop longer than 30 s; an order that goes through several steps (settle the
-# resting order, then place) can take one bound per step. It is above the longest chain of broker requests inside one
-# place_order (Webull: 6 requests x 4 s hard deadline each = 24 s), so a call that may still place an order is never
-# abandoned half-way; if it is (timeout or error after the request was built), the order is tracked as unconfirmed
-# and reconciled by client_order_id before anything else is sent.
 BROKER_TIMEOUT_S = 30.0
 MAX_FILLS = 500
 REPLAY_NOTE = "replay: priced at the current market, not the replayed time"
@@ -85,7 +44,6 @@ REPLAY_BROKER_NAME = "sim-replay"
 
 
 def _load_engine():
-    """Import hedgecore lazily; None when the engine group is not installed."""
     try:
         import hedgecore
     except ImportError:
@@ -96,31 +54,16 @@ def _load_engine():
 class BridgeIn(BaseModel):
     proposal_id: str
     source: Literal["live", "replay"]
-    market: MarketRef | None = None  # optional for market-event proposals (their own market is used)
+    market: MarketRef | None = None
     gap_per_share: float = Field(default=0.0, ge=0, allow_inf_nan=False)
-    direction: Literal["down_on_yes", "up_on_yes"] = "down_on_yes"  # which outcome hurts a long holder
-    # Replay decisions are historical; fills are priced at today's market when the broker has a current quote, else
-    # (Wi-Fi off / no Massive key) at the replayed under_px, labelled "recorded price". By default a replay bridge
-    # trades a throwaway in-memory simulator (never Webull, never the persistent account); set true to opt in to the
-    # account (recorded-price fills then carry historical cost bases: see ``account_note`` in the summary).
+    direction: Literal["down_on_yes", "up_on_yes"] = "down_on_yes"
     replay_to_account: bool = False
-    # The fitted algo to run (spec §3.4 hedgecore.Algo): a catalog family plus preset_index or params. Ignored when
-    # the proposal already carries an algo (it was approved with it; a different one is a 409).
     family: str | None = Field(default=None, min_length=1, max_length=64, pattern=r"^[a-z][a-z0-9_]*$")
     preset_index: int | None = Field(default=None, ge=0)
     params: dict[str, float] | None = None
-    # The same question on the other venue (e.g. the Kalshi twin of a Polymarket market) -> p_other_venue.
     twin: MarketRef | None = None
-    # Names the configured replay file (POLYBRIDGE_REPLAY_PATH) explicitly: needed to replay a file with no
-    # <file>.meta.json sidecar (its market is unknown) under this market. A file whose sidecar names another market is
-    # refused either way. Only compared with the configured file's name; never opens a path from the request.
     replay_file: str | None = Field(default=None, min_length=1, max_length=200, pattern=r"^[A-Za-z0-9_.-]+$")
-    # Closed-market mode (app/closed/bridge_mode.py): while the regular session is closed (judged on the tick's
-    # recorded time on a replay, the wall clock live) the equity algo holds and hedge B is staged for the open.
-    # False keeps the old behaviour (equity orders at any hour): research / parity runs against the engine only.
     session_hold: bool = True
-    # Closed-market override (evidence gate): let hedge B stage plans on a market whose signal has NOT passed out of
-    # sample. Accepted only on a proposal approved with ack_unvalidated (the confirmation); labelled "override".
     act_on_unvalidated: bool = False
 
 
@@ -143,66 +86,54 @@ class Bridge:
         self.ticks = self.orders = 0
         self.hedge = 0.0
         self.task: asyncio.Task | None = None
-        self.broker: Broker | None = None  # active broker for engine orders (None: no account attached)
+        self.broker: Broker | None = None
         self.replay_to_account = replay_to_account
-        self.replay_broker: Broker | None = None  # isolated in-memory sim used by replay bridges by default
-        self.broker_name: str | None = None  # the broker that took the latest order (else the active one)
-        self.broker_hedge = 0.0  # net short quantity actually filled by the broker (sell adds, buy reduces)
-        # Net short this proposal holds at the ACCOUNT broker (never the replay sandbox), cumulative over every run of
-        # the proposal: a restart is seeded with it, so one approval stays one target_coverage budget at the account.
+        self.replay_broker: Broker | None = None
+        self.broker_name: str | None = None
+        self.broker_hedge = 0.0
         self.account_hedge = 0.0
         self.fills: list[dict] = []
         self.broker_filled = self.broker_rejects = self.broker_errors = 0
-        self.algo = algo  # {family, preset_index, params, source, coverage_cap, capped} or None (legacy Engine)
-        self.twin: dict | None = None  # the other-venue market feeding p_other_venue, and where it came from
-        self.choice: AlgoChoice | None = None  # what the algo was chosen as (idempotent re-POSTs are compared to it)
-        # The bridge's open broker order: {order_id, client_order_id, instrument, side, qty, applied (filled qty fed
-        # back to the algo), hedged (filled qty already in broker_hedge), unconfirmed / unpriced flags}.
+        self.algo = algo
+        self.twin: dict | None = None
+        self.choice: AlgoChoice | None = None
         self.resting: dict | None = None
-        self.resting_broker: Broker | None = None  # the broker holding it (a live->replay fallback never loses it)
+        self.resting_broker: Broker | None = None
         self.cancels = 0
-        self.cap_holds = 0  # sell intents the approved coverage cap clipped to zero
-        self.equity_source: str | None = None  # where the last live under_px came from (None: no quote)
-        self.equity_price = "live_quote"  # "live_quote" | "recorded" | "none": what under_px the algo can see
-        self.quote_check: tuple[float, bool] | None = None  # replay: (monotonic, can the broker quote the ticker)
-        self.recorded_fills = 0  # replay orders filled at the recorded under_px (no current quote)
-        # Opportunity (options) bridges
-        self.division = proposal.family  # "hedge" | "opportunity"
+        self.cap_holds = 0
+        self.equity_source: str | None = None
+        self.equity_price = "live_quote"
+        self.quote_check: tuple[float, bool] | None = None
+        self.recorded_fills = 0
+        self.division = proposal.family
         self.options: OptionsEnricher | None = None
-        self.opt_pos = 0.0           # signed structures the broker filled (+ long, - short)
-        self.opt_open: dict | None = None  # the open structure: {kind, expiry, k_lo, k_hi, legs: [{sign, ticker}]}
-        self.opt_risk_per_unit = 0.0  # USD at risk per open structure (premium or max loss), set at entry
-        self.opt_last: dict | None = None  # latest PM-vs-options view for the UI
-        self.option_data = "none"    # "live_chain" | "recorded" | "none"
-        self.replay_file: str | None = None    # the replay file's name once the bridge replays one
-        self.replay_market: dict | None = None  # the market its .meta.json sidecar says it records (None: unknown)
-        self.recorded_options: dict | None = None  # the option structure the recording priced (sidecar "options")
-        self.last_legs: dict[str, float] | None = None  # the latest fresh recorded leg closes seen on a replay tick
-        self.last_legs_ts_ns: int | None = None  # their recorded (replayed) time
-        self.last_legs_settled = False  # True: they are the expiry settlement (intrinsic), not bar closes
-        self.last_replay_ts_ns: int | None = None  # the recorded time of the last replayed tick (the bridge's "now")
-        self.recorded_option_fills = 0  # option orders filled at recorded leg closes (no current chain)
-        # Closed-market mode: the session of each tick, the closure, the expected gap, hedge B / hedge A
+        self.opt_pos = 0.0
+        self.opt_open: dict | None = None
+        self.opt_risk_per_unit = 0.0
+        self.opt_last: dict | None = None
+        self.option_data = "none"
+        self.replay_file: str | None = None
+        self.replay_market: dict | None = None
+        self.recorded_options: dict | None = None
+        self.last_legs: dict[str, float] | None = None
+        self.last_legs_ts_ns: int | None = None
+        self.last_legs_settled = False
+        self.last_replay_ts_ns: int | None = None
+        self.recorded_option_fills = 0
         self.app: Any = None
         self.session_hold = True
         self.closed: bridge_mode.ClosedMode | None = None
         self.closed_errors = 0
-        self.engine: Any = None  # the running hedgecore Algo / Engine (staged fills are handed to it)
-        self.last_under_px: float | None = None  # the latest equity price a tick carried (staged plans' reference)
-        self.broker_note: str | None = None  # set when the account broker's market hours shaped this bridge at start
-        # Evidence gate (docs/design.md section 6): the (market, ticker) status at start, and the label every
-        # decision / fill / staged / hedge A event carries: "validated" or "unvalidated (acknowledged)".
+        self.engine: Any = None
+        self.last_under_px: float | None = None
+        self.broker_note: str | None = None
         self.evidence: dict | None = None
         self.evidence_label: str | None = None
-        self.act_on_unvalidated = False  # closed-market override for this bridge's staged plans (labelled "override")
-        # Liquidity and capital gates (app/liquidity, app/capital): orders capped by participation, refused by budget
+        self.act_on_unvalidated = False
         self.liquidity_capped = 0
         self.capital_refused = 0
 
     def on_staged_fill(self, signed_short: float, px: float | None) -> None:
-        """A staged (hedge B) order of this bridge filled ``signed_short`` shares (+ = more short) at ``px``: the
-        bridge's own algo takes the position over (handoff), so after the open it manages the whole hedge; hedge A
-        sees the equity leg for the combined coverage. ``broker_hedge`` was already updated by the staged book."""
         eng = self.engine
         if eng is not None and px:
             if self.algo and self.division == "hedge":
@@ -217,9 +148,9 @@ class Bridge:
         if self.evidence_label and kind in LABELLED_EVENTS and isinstance(data, dict):
             data.setdefault("evidence", self.evidence_label)
         async with self.cond:
-            if status:  # set atomically with the final event so streams end right after it
+            if status:
                 self.status = status
-            if len(self.events) >= MAX_EVENTS:  # bound memory on long live runs; indexes stay stable via `dropped`
+            if len(self.events) >= MAX_EVENTS:
                 del self.events[: MAX_EVENTS // 2]
                 self.dropped += MAX_EVENTS // 2
             self.events.append((kind, data))
@@ -229,8 +160,6 @@ class Bridge:
         return self.effective_source == "replay" and not self.replay_to_account
 
     def order_broker(self) -> Broker | None:
-        """The broker for the next order. Replay bridges get an isolated in-memory sim (never Webull, never the
-        persistent account) unless replay_to_account was set; it shares the active broker's market-data source."""
         if self.broker is None or not self._sandboxed():
             return self.broker
         if self.replay_broker is None:
@@ -245,8 +174,6 @@ class Bridge:
         self.recorded_options = replay_option_structure(path) if self.replay_market is not None else None
 
     def options_brief(self) -> dict | None:
-        """What the UI shows about the option structure: the live enricher's view, or on a replay whose contracts no
-        current chain lists, the structure the recording priced (with the enricher's reason kept as ``live_reason``)."""
         live = _options_brief(self.options)
         rec = self.recorded_options
         if rec is None or self.effective_source != "replay" or (self.options is not None and self.options.context()):
@@ -297,19 +224,15 @@ class Bridge:
                 **self._closed_summary()}
 
     def _closed_summary(self) -> dict:
-        """session {phase, next_open, next_premarket, ...}, closure {pm_move_pp, since, ...}, expected_gap {bp, band,
-        n, rate_source, validated, evidence, ...}, closed_mode {...} and hedge_a {...} (app/closed/bridge_mode.py)."""
         if self.closed is None:
             return {"session": None, "closure": None, "expected_gap": None, "closed_mode": None, "hedge_a": None}
         try:
             return self.closed.summary()
-        except Exception as e:  # a summary never fails because of the closed-market view
+        except Exception as e:
             return {"session": None, "closure": None, "expected_gap": None,
                     "closed_mode": {"error": type(e).__name__}, "hedge_a": None}
 
     def _account_note(self) -> str | None:
-        """Set when recorded-price replay fills went into the persistent account: their cost bases are historical, so
-        the account's unrealized P&L against today's quotes mixes two price times and measures nothing."""
         if self.effective_source != "replay" or not self.replay_to_account or not self.recorded_fills:
             return None
         return (f"{self.recorded_fills} fill(s) entered the persistent sim account at recorded (historical) prices; "
@@ -329,10 +252,6 @@ class Bridge:
 
 
 def _replay_speed(app, path: Path | None = None) -> float:
-    """app.state.replay_speed (tests) or POLYBRIDGE_REPLAY_SPEED; 1.0 = real time. A recording found through the
-    replay index (not the configured POLYBRIDGE_REPLAY_PATH file) plays at its sidecar's ``replay_speed`` when it has
-    one, so one ``make dev`` session plays each recording at its own demo pace (the 5-minute weekend at 3600x, the
-    hourly histories at 18000-36000x) whatever the configured file's speed is."""
     v = getattr(app.state, "replay_speed", None)
     if v is not None:
         return v
@@ -348,7 +267,7 @@ def _sidecar_speed(app, path: Path) -> float | None:
     configured = getattr(app.state, "replay_path", None) or os.environ.get("POLYBRIDGE_REPLAY_PATH")
     try:
         if configured and Path(configured).resolve() == path.resolve():
-            return None  # the configured file plays at the configured speed
+            return None
         v = float(json.loads(path.with_name(path.name + ".meta.json").read_text()).get("replay_speed"))
     except (OSError, ValueError, TypeError, AttributeError):
         return None
@@ -356,8 +275,6 @@ def _sidecar_speed(app, path: Path) -> float | None:
 
 
 def replay_meta(path: Path) -> dict | None:
-    """The market a replay file records, from its sidecar ``<file>.meta.json`` (``{source, id, token_id}``, next to the
-    file); None when there is no readable sidecar (the file's market is then unknown)."""
     try:
         raw = json.loads(path.with_name(path.name + ".meta.json").read_text())
     except (OSError, ValueError):
@@ -369,10 +286,6 @@ def replay_meta(path: Path) -> dict | None:
 
 
 def replay_option_structure(path: Path) -> dict | None:
-    """The option structure a recording priced (sidecar ``options``, written by ``history_with_equity.py --options``):
-    {underlying, strike, direction, kind, expiry, k_lo, k_hi, legs: [{sign, ticker, strike, kind}]}, plus
-    ``settlement`` {underlying_close, source, ...} when the recording reached the expiry close; None when absent or
-    malformed."""
     try:
         o = json.loads(path.with_name(path.name + ".meta.json").read_text()).get("options")
         legs = [{"sign": 1 if int(lg["sign"]) > 0 else -1, "ticker": str(lg["ticker"]), "strike": float(lg["strike"]),
@@ -391,7 +304,6 @@ def replay_option_structure(path: Path) -> dict | None:
 
 
 def _meta_matches(meta: dict, market: MarketRef) -> bool:
-    """Same venue, and the same market id or the same (YES) token id."""
     if meta["source"] != market.source:
         return False
     keys = {k for k in (market.id, market.token_id) if k}
@@ -399,8 +311,6 @@ def _meta_matches(meta: dict, market: MarketRef) -> bool:
 
 
 def _names_file(path: Path, market: MarketRef, replay_file: str | None) -> bool:
-    """The request names this file explicitly: ``replay_file`` is its name, or the market id / token id is its stem
-    (the ``replays/<market id>[-history].jsonl`` convention)."""
     if replay_file and replay_file in (path.name, path.stem):
         return True
     stems = {k for k in (market.id, market.token_id) if k}
@@ -408,8 +318,6 @@ def _names_file(path: Path, market: MarketRef, replay_file: str | None) -> bool:
 
 
 def _check_replay_market(path: Path, market: MarketRef | None, replay_file: str | None) -> None:
-    """422 unless ``path`` records ``market``: its sidecar names this market, or (no sidecar: the file's market is
-    unknown) the request names the file explicitly. Another market's history is never replayed under this title."""
     if market is None:
         return
     meta = replay_meta(path)
@@ -428,8 +336,6 @@ def _check_replay_market(path: Path, market: MarketRef | None, replay_file: str 
 
 
 def _own_recordings(market: MarketRef) -> list[Path]:
-    """Where a recording of ``market`` may live: the replay index (``app/data/replay_index.json``), then
-    ``replays/<market id>-history.jsonl`` and ``replays/<market id>.jsonl`` (``pipeline.ticks._replay_candidates``)."""
     from .pipeline.ticks import DATA, _replay_candidates
     try:
         return _replay_candidates(market.source, market.id, market.token_id, DATA, REPLAYS_DIR)
@@ -438,8 +344,6 @@ def _own_recordings(market: MarketRef) -> list[Path]:
 
 
 def _first_recording(candidates: list[Path], market: MarketRef) -> Path | None:
-    """The first existing candidate that records ``market``: its sidecar names it, or it has no sidecar (its name
-    came from the index / the market-id naming)."""
     for c in candidates:
         if c.is_file() and ((meta := replay_meta(c)) is None or _meta_matches(meta, market)):
             return c
@@ -447,9 +351,6 @@ def _first_recording(candidates: list[Path], market: MarketRef) -> Path | None:
 
 
 def _replay_path(request: Request, *markets: MarketRef | None, replay_file: str | None = None) -> Path | None:
-    """The replay file for the first (resolved) market: POLYBRIDGE_REPLAY_PATH when it records that market, else that
-    market's own recording (``_own_recordings`` of the given markets). A configured file of another market is a 422
-    only when no recording of the requested market exists (see ``_check_replay_market``)."""
     configured = getattr(request.app.state, "replay_path", None) or os.environ.get("POLYBRIDGE_REPLAY_PATH")
     target = next((m for m in markets if m is not None), None)
     mismatch: HTTPException | None = None
@@ -478,12 +379,10 @@ def _replay_path(request: Request, *markets: MarketRef | None, replay_file: str 
 
 
 def _resolve(prop: Proposal, body: BridgeIn) -> tuple[MarketRef, str]:
-    """Market-event proposals carry their own market and direction; filing proposals take them from the body."""
     if prop.market is not None and (prop.direction is not None or prop.family == "opportunity"):
         token = prop.market.token_id
         if token is None and body.market is not None and body.market.id == prop.market.id:
             token = body.market.token_id
-        # opportunity bridges never orient ticks; their direction is only a label
         return prop.market.model_copy(update={"token_id": token}), prop.direction or "down_on_yes"
     if body.market is None:
         raise HTTPException(422, "market is required for a filing-tags proposal.")
@@ -491,9 +390,6 @@ def _resolve(prop: Proposal, body: BridgeIn) -> tuple[MarketRef, str]:
 
 
 def _fallback_path(app, market: MarketRef | None = None) -> Path | None:
-    """The recording a live bridge falls back to when its source fails: only a recording of THIS market (the replay
-    index / ``replays/<market id>.jsonl``, see ``pipeline.ticks._replay_candidates``). POLYBRIDGE_REPLAY_PATH is used
-    only when it is one of those files; another market's history is never replayed under this market's title."""
     configured = getattr(app.state, "replay_path", None) or os.environ.get("POLYBRIDGE_REPLAY_PATH")
     if market is None:
         return None
@@ -511,13 +407,6 @@ def _fallback_path(app, market: MarketRef | None = None) -> Path | None:
 
 
 async def _send_to_broker(bridge: Bridge, order_qty: float) -> dict | None:
-    """Route one engine order to the active broker: sell to add to the short hedge, buy to reduce it.
-    Returns the fill record for the stream; never raises (a broker failure must not stop the bridge).
-
-    The legacy Engine advances on every intent, whatever the broker did, so the broker side is position-aware: a buy
-    never exceeds the short the broker really holds for this bridge (a rejected sell is never "bought back" into an
-    unapproved long), a sell never exceeds the approved target_coverage, and an order left open is tracked as resting
-    (settled before the next order and cancelled at bridge end), exactly like the algo path."""
     broker = bridge.order_broker()
     if broker is None:
         return None
@@ -561,22 +450,15 @@ async def _send_to_broker(bridge: Bridge, order_qty: float) -> dict | None:
         return rec
     rec.update(status=o.status, order_id=o.id, fill_px=o.fill_px, fee=o.fee, price_source=o.price_source,
                reject_reason=o.reject_reason, note=o.note, broker=o.broker, filled_qty=o.filled_qty)
-    await _apply_order_state(bridge, None, o, side, "equity", broker=broker)  # broker_hedge: only what really filled
+    await _apply_order_state(bridge, None, o, side, "equity", broker=broker)
     return rec
 
 
-# ---------------------------------------------------------------- liquidity and capital gates (every order)
-
-
 def _liq_scope(bridge: Bridge) -> str:
-    """Whose per-day participation an order counts toward: the account, or this replay's own sandbox."""
     return f"sandbox:{bridge.id}" if bridge._sandboxed() else "account"
 
 
 def _liq_day(bridge: Bridge, t: Tick | None = None) -> str:
-    """The ET session date an order counts toward: a sandboxed replay's recorded time (its own ledger), else the wall
-    clock. A replay that trades the account (replay_to_account) sends its orders to the account today, so they count
-    toward today's account-wide 1%-of-ADV cap, never the replayed date's."""
     rts = getattr(t, "recorded_ts_ns", None) if t is not None and bridge._sandboxed() else None
     if rts is None and bridge._sandboxed():
         rts = bridge.last_replay_ts_ns
@@ -589,8 +471,6 @@ def _liq_day(bridge: Bridge, t: Tick | None = None) -> str:
 
 
 def _equity_liquidity(bridge: Bridge, rec: dict, qty: float, t: Tick | None = None) -> float:
-    """Cap an equity order by participation (10% of the opening 5-minute volume per order, 1% of ADV per day); tags
-    ``rec`` (``liquidity``, and a ``gates`` entry ``liquidity_capped`` when it bound). Returns the allowed qty."""
     if bridge.app is None:
         return qty
     chk = liquidity.equity_check(bridge.app, bridge.proposal.ticker, qty, scope=_liq_scope(bridge),
@@ -613,8 +493,6 @@ def _record_participation(bridge: Bridge, qty: float, t: Tick | None = None) -> 
 
 async def _capital_refuses(bridge: Bridge, broker: Broker, rec: dict, add_notional: float | None,
                            add_margin: float | None = None) -> bool:
-    """The pre-trade capital check of an exposure-increasing order (gross / per-event budget, buying power). True:
-    refuse it (reason ``capital_budget``). A replay sandbox is evaluated but not enforced (labelled)."""
     if bridge.app is None:
         return False
     sandbox = bridge._sandboxed()
@@ -622,14 +500,13 @@ async def _capital_refuses(bridge: Bridge, broker: Broker, rec: dict, add_notion
     sandbox_gross = max(0.0, bridge.broker_hedge) * px if (sandbox and px) else 0.0
     if sandbox and bridge.division == "opportunity":
         sandbox_gross = abs(bridge.opt_pos) * bridge.opt_risk_per_unit
-    # no price (add_notional None): refused at the account (fail closed), unchecked and labelled in a sandbox
     margin = add_margin if add_margin is not None or add_notional is None else \
         capital_budget.REG_T_INITIAL * add_notional
     try:
         chk = await capital.check(bridge.app, broker=broker, event=capital.event_key(bridge.market),
                                   add_notional=add_notional, add_margin=margin,
                                   scope="replay_sandbox" if sandbox else "account", sandbox_gross=sandbox_gross)
-    except Exception as e:  # a failing check fails closed at the account, open (labelled) in a sandbox
+    except Exception as e:
         chk = {"ok": sandbox, "enforced": not sandbox, "checked": False, "scope": "account",
                "breaches": [{"kind": "check_failed", "detail": f"capital check failed ({type(e).__name__})"}]}
     capital.tag(rec, chk)
@@ -654,8 +531,6 @@ def _equity_px(bridge: Bridge, t: Tick | None = None) -> float | None:
 
 async def _equity_gates(bridge: Bridge, broker: Broker, rec: dict, side: str, qty: float,
                         t: Tick | None = None) -> float | None:
-    """Liquidity cap (both sides), then the capital check (sells: they add to the short). Returns the qty to send, or
-    None when the order must not be sent (``rec`` then says why: status held, a ``gates`` entry)."""
     qty = _equity_liquidity(bridge, rec, qty, t)
     if qty <= 1e-9:
         rec.update(status="held", filled_qty=0.0,
@@ -664,7 +539,7 @@ async def _equity_gates(bridge: Bridge, broker: Broker, rec: dict, side: str, qt
         return None
     if side == "sell":
         px = _equity_px(bridge, t)
-        if px is None and bridge.app is not None:  # the broker's own mark or quote before failing closed
+        if px is None and bridge.app is not None:
             px, src = await capital.order_price(bridge.app, broker, bridge.proposal.ticker)
             if px is not None:
                 rec["capital_price_source"] = src
@@ -674,9 +549,6 @@ async def _equity_gates(bridge: Bridge, broker: Broker, rec: dict, side: str, qt
 
 
 def _track_unconfirmed(bridge: Bridge, broker: Broker, req: OrderRequest, instrument: str) -> None:
-    """The place call failed or timed out after the request was built: the broker may have accepted it. It is tracked
-    as resting under its client_order_id, so the next order (or the bridge end) reconciles it first: a fill is booked,
-    an open order is cancelled, an order the broker never saw is dropped. Never booked as "nothing traded"."""
     bridge.broker_errors += 1
     bridge.resting = {"order_id": req.client_order_id, "client_order_id": req.client_order_id,
                       "instrument": instrument, "side": req.side, "qty": req.qty, "applied": 0.0, "hedged": 0.0,
@@ -693,7 +565,6 @@ def _fin(x: Any) -> float | None:
 
 
 def _tick_event(t: Tick) -> dict:
-    """The raw market as the UI shows it (YES orientation, never re-oriented); unknown fields are null."""
     f = t.fields
     return {"ts_ns": t.ts_ns, "p": t.p, "venue": "kalshi" if t.venue == 1 else "poly",
             "yes_bid": _fin(f.get("yes_bid")), "yes_ask": _fin(f.get("yes_ask")),
@@ -702,8 +573,6 @@ def _tick_event(t: Tick) -> dict:
 
 
 def adverse_p(oriented: dict, t: Tick, direction: str) -> float:
-    """The adverse probability for the legacy Engine: the oriented YES mid; for a one-sided tick, the raw p
-    oriented the same way (identical to the old ``p`` / ``1 - p`` for mid-only ticks)."""
     b, a = _fin(oriented.get("yes_bid")), _fin(oriented.get("yes_ask"))
     if b is not None and a is not None:
         return (b + a) / 2.0
@@ -711,17 +580,12 @@ def adverse_p(oriented: dict, t: Tick, direction: str) -> float:
 
 
 def engine_tick(oriented: dict, ts_ns: int, venue: int) -> dict:
-    """MarketTick dict for hedgecore.Algo.on_tick: only MarketTick keys, NaN for unknown."""
     d: dict[str, Any] = {k: (v if (v := _fin(oriented.get(k))) is not None else math.nan) for k in TICK_FIELDS}
     d["ts_ns"], d["venue"] = int(ts_ns), int(venue)
     return d
 
 
 async def _closed_tick(bridge: Bridge, t: Tick, oriented: dict) -> tuple[dict | None, list[tuple[str, dict]]]:
-    """The closed-market step for one tick (app/closed/bridge_mode.py): the tick's session (recorded time on a replay,
-    wall clock live), closure tracker, expected gap, hedge A, staged hedge B. Returns (the tick event's ``closed``
-    block, extra events to emit after the tick). Never raises: a failure is reported (at most 3 times) and the bridge
-    goes on as if the mode were off for that tick."""
     if bridge.effective_source == "replay":
         rts = getattr(t, "recorded_ts_ns", None)
         if rts is not None:
@@ -752,7 +616,6 @@ HOLD_NOTE_OPTIONS = ("options closed: the order broker takes option orders only 
 
 
 async def _hold_closed(bridge: Bridge, fields: dict, note: str = HOLD_NOTE_EQUITY) -> None:
-    """A tick while the regular session is closed: the engine is not stepped and nothing is sent."""
     bridge.closed.holds += 1
     bridge.reasons[SESSION_CLOSED] += 1
     sess = bridge.closed.sess
@@ -764,7 +627,7 @@ async def _run_source(bridge: Bridge, engine, hc, source) -> None:
     async for raw in source:
         t = as_tick(raw)
         bridge.ticks += 1
-        oriented = orient_to_adverse(t.fields, bridge.direction)  # the one orientation step
+        oriented = orient_to_adverse(t.fields, bridge.direction)
         view, extra = await _closed_tick(bridge, t, oriented)
         ev = _tick_event(t)
         if view is not None:
@@ -773,8 +636,6 @@ async def _run_source(bridge: Bridge, engine, hc, source) -> None:
         for kind, data in extra:
             await bridge.emit(kind, data)
         if bridge.closed is not None and bridge.closed.hold:
-            # the regular session is closed: the Engine is paused (not stepped, so it books nothing and starts no
-            # cooldown) and nothing reaches the broker; hedge B (staged) covers the open
             await _hold_closed(bridge, {"engine": "legacy", "family": None, "preset": None, "signal": None,
                                         "qty": 0.0, "order_qty": 0.0, "target_hedge": None,
                                         "current_hedge": bridge.hedge, "latency_ns": None})
@@ -787,8 +648,6 @@ async def _run_source(bridge: Bridge, engine, hc, source) -> None:
                                        "latency_ns": d.latency_ns, "engine": "legacy", "family": None,
                                        "preset": None, "signal": None})
         if d.action == "order":
-            # The engine tracks the intended hedge and advances on every order (as before); the broker holds the
-            # account record. A rejected or failed broker order is flagged on the "fill" event and in the summary.
             engine.on_fill(d.order_qty)
             bridge.orders += 1
             bridge.hedge = engine.current_hedge
@@ -798,8 +657,6 @@ async def _run_source(bridge: Bridge, engine, hc, source) -> None:
                 del bridge.fills[:-MAX_FILLS]
                 await bridge.emit("fill", fill)
             shares = bridge.proposal.shares_held
-            # "hedge"/"coverage" are the engine's intended position (it advances on every order). "broker_hedge" /
-            # "broker_coverage" are what the broker actually filled; they differ when orders are rejected or fail.
             await bridge.emit("position", {"hedge": bridge.hedge, "coverage": bridge.hedge / shares,
                                            "hedge_basis": "engine_intent",
                                            "broker_hedge": bridge.broker_hedge,
@@ -807,17 +664,11 @@ async def _run_source(bridge: Bridge, engine, hc, source) -> None:
                                            "broker": bridge.broker_name or getattr(bridge.broker, "name", None)})
 
 
-# ---------------------------------------------------------------- algo engine (hedgecore.Algo)
-
-EQUITY_TTL_S = 15.0  # one Massive quote per ticker per 15 s, shared by every bridge on that ticker
-STALE_QUOTE_SOURCES = ("massive_prev_close",)  # yesterday's close is not a current under_px
+EQUITY_TTL_S = 15.0
+STALE_QUOTE_SOURCES = ("massive_prev_close",)
 
 
 def _equity_quote(bridge: Bridge, app):
-    """Async callable -> the broker's equity quote for the proposal's ticker (Massive via the broker quote source),
-    or None. Used by the live source of an algo bridge to fill under_px / under_bid / under_ask. Quotes are cached
-    per ticker for EQUITY_TTL_S across bridges (rate limits); a previous-close fallback is reported as the source but
-    returned as None, so the algo sees NaN (unknown) rather than a stale price as current."""
     if not hasattr(app.state, "equity_quotes"):
         app.state.equity_quotes = {}
     cache: dict = app.state.equity_quotes
@@ -845,29 +696,22 @@ def _equity_quote(bridge: Bridge, app):
     return quote
 
 
-RECORDED_SOURCE = "recorded"  # price_source of a replay fill priced at the replayed under_px
+RECORDED_SOURCE = "recorded"
 REPLAY_RECORDED_NOTE = "replay: recorded price (no current quote), not a live fill"
 REPLAY_RECORDED_PRICE_NOTE = ("recorded price: no current market quote (offline or no Massive key), so the fill is "
                               "priced at the replayed under_px, not today's market")
 
 
 def recorded_prices_only() -> bool:
-    """POLYBRIDGE_REPLAY_PRICES=recorded (``make dev`` default for the weekend demo): a replay sandbox fills every
-    equity order at the recorded under_px even when a Massive key could quote today's price, so the bridge's own fills
-    and the closure P&L use the same (recorded) price time while the .env keys (Gemini, Webull) stay loaded."""
     return os.environ.get("POLYBRIDGE_REPLAY_PRICES", "").strip().lower() == "recorded"
 
 
 async def _broker_can_price(bridge: Bridge, broker: Broker) -> bool:
-    """Replay only: can the order broker price an equity order itself (a current Massive quote for the ticker)?
-    A broker that prices its own fills (Webull) always can; a sim without a quote cannot, and the replay then
-    supplies the replayed under_px. The answer is cached per bridge for EQUITY_TTL_S (one quote call per ticker per
-    window, never one per order) and never consulted by a live bridge."""
     sim = broker if isinstance(broker, SimBroker) else None
     if sim is None:
         return True
     if recorded_prices_only():
-        return False  # POLYBRIDGE_REPLAY_PRICES=recorded: replay fills at the replayed price, never today's quote
+        return False
     now = time.monotonic()
     hit = bridge.quote_check
     if hit is not None and now - hit[0] < EQUITY_TTL_S:
@@ -898,19 +742,6 @@ def _positive(x: Any) -> float | None:
 async def _apply_order_state(bridge: Bridge, algo, o, side: str, instrument: str, applied: float = 0.0,
                              hedged: float | None = None, ref_px: float | None = None,
                              broker: Broker | None = None, inherited: bool = False) -> None:
-    """Feed the broker's answer back to the algo: filled -> on_fill(signed qty, fill px); rejected / cancelled ->
-    on_reject; open -> the bridge remembers it as resting (cancel/replace before the next order). ``algo`` None is the
-    legacy Engine (it already advanced on the intent): only the broker hedge and the resting order are tracked.
-
-    ``filled_qty`` is cumulative per order, so only the part not fed back yet reaches on_fill (``applied``) and the
-    broker hedge (``hedged``); a partial fill is never counted twice. The filled quantity always reaches broker_hedge
-    (the coverage cap must see every share the broker sold). The algo's fill price is the broker's fill price, else
-    the order's limit, else ``ref_px`` (the tick's equity price); with none of them the order stays resting (flagged
-    ``unpriced``) so a later lookup can price it, and no further order is stacked on top of it.
-
-    A fill at the account broker (not the replay sandbox) also reaches ``account_hedge``. An ``inherited`` order (left
-    resting at the account by an earlier run of the proposal) never reaches a sandboxed bridge's broker_hedge: the
-    sandbox does not hold that position."""
     filled = float(getattr(o, "filled_qty", 0.0) or 0.0)
     hedged = applied if hedged is None else hedged
     if filled - hedged > 1e-9:
@@ -921,9 +752,7 @@ async def _apply_order_state(bridge: Bridge, algo, o, side: str, instrument: str
             bridge.account_hedge += signed
         if not (inherited and bridge._sandboxed()):
             bridge.broker_hedge += signed
-            if bridge.closed is not None and instrument == "equity":  # the closure P&L sees every equity fill
-                # a replay's closure P&L is marked in recorded prices only: its fill is taken at the replayed price
-                # (a sim fill at today's quote would mix two price times), a live one at the broker's fill price
+            if bridge.closed is not None and instrument == "equity":
                 if bridge.effective_source == "replay":
                     px = _positive(ref_px) or bridge.last_under_px
                 else:
@@ -959,7 +788,7 @@ async def _apply_order_state(bridge: Bridge, algo, o, side: str, instrument: str
     elif o.status == "open":
         bridge.resting = keep
         bridge.resting_broker = broker or bridge.resting_broker
-    else:  # rejected or cancelled: nothing (more) traded
+    else:
         if o.status == "rejected":
             bridge.broker_rejects += 1
         bridge.resting = bridge.resting_broker = None
@@ -968,9 +797,6 @@ async def _apply_order_state(bridge: Bridge, algo, o, side: str, instrument: str
 
 
 async def _lookup(broker: Broker, order_id: str, client_order_id: str | None = None):
-    """The broker's current state of an order, by broker id or by our client_order_id (an unconfirmed order only has
-    the latter). A broker that can read one order by client id (Webull) is asked directly when the list misses it.
-    Both reads share one BROKER_TIMEOUT_S deadline (read-only, so cutting them off abandons nothing)."""
     ids = {order_id, client_order_id} - {None}
 
     async def read():
@@ -985,19 +811,13 @@ async def _lookup(broker: Broker, order_id: str, client_order_id: str | None = N
 
 
 async def _settle_resting(bridge: Bridge, algo, broker: Broker | None, why: str, ref_px: float | None = None) -> bool:
-    """Cancel/replace: before a new order (or when the bridge ends), the bridge's resting order is looked up; if it
-    filled meanwhile the fill goes to the algo, otherwise it is cancelled and the algo hears on_reject (expired).
-
-    Returns True when nothing rests any more. When the broker cannot be read or the cancel did not take, the order
-    may still be working: it stays in ``bridge.resting`` (retried before the next order and at bridge end) and the
-    caller must not send another order on top of it (False)."""
     r = bridge.resting
-    broker = bridge.resting_broker or broker  # the broker that took it, even after a live->replay switch
+    broker = bridge.resting_broker or broker
     if r is None or broker is None:
         return r is None
     cid = r.get("client_order_id")
     inherited = bool(r.get("inherited"))
-    if inherited:  # placed by an earlier run of the proposal: this run's algo never sent it, so never hears of it
+    if inherited:
         algo = None
     rec: dict = {"order_id": r["order_id"], "reason": why, "broker": broker.name}
     try:
@@ -1005,7 +825,7 @@ async def _settle_resting(bridge: Bridge, algo, broker: Broker | None, why: str,
         if current is not None and current.status == "open":
             try:
                 current = await asyncio.wait_for(broker.cancel(current.id), BROKER_TIMEOUT_S)
-            except Exception:  # filled or gone between the lookup and the cancel: read it again
+            except Exception:
                 current = await _lookup(broker, r["order_id"], cid)
     except Exception as e:
         bridge.broker_errors += 1
@@ -1013,12 +833,12 @@ async def _settle_resting(bridge: Bridge, algo, broker: Broker | None, why: str,
         await bridge.emit("cancel", rec)
         return False
     applied, hedged = float(r.get("applied") or 0.0), float(r.get("hedged", r.get("applied")) or 0.0)
-    if current is None:  # the broker no longer knows it: nothing can still trade, treat as expired
+    if current is None:
         bridge.resting = bridge.resting_broker = None
         if algo is not None:
             algo.on_reject(r["instrument"])
         rec["status"] = "unknown"
-    elif current.status == "open":  # the cancel did not take: it may still fill, so keep tracking it
+    elif current.status == "open":
         await _apply_order_state(bridge, algo, current, r["side"], r["instrument"], applied, hedged, ref_px, broker,
                                  inherited)
         rec.update(status="cancel_failed", kept_resting=True, filled_qty=current.filled_qty)
@@ -1030,7 +850,7 @@ async def _settle_resting(bridge: Bridge, algo, broker: Broker | None, why: str,
         await _apply_order_state(bridge, algo, current, r["side"], r["instrument"], applied, hedged, ref_px, broker,
                                  inherited)
         rec.update(status=current.status, filled_qty=current.filled_qty, fill_px=current.fill_px)
-        if bridge.resting is not None:  # filled but still unpriced: keep it, send nothing on top
+        if bridge.resting is not None:
             rec["kept_resting"] = True
             await bridge.emit("cancel", rec)
             return False
@@ -1039,10 +859,6 @@ async def _settle_resting(bridge: Bridge, algo, broker: Broker | None, why: str,
 
 
 def _coverage_room(bridge: Bridge) -> float:
-    """Shares the bridge may still sell short: the approved target_coverage of shares_held minus everything that holds
-    or may still take hedge, PM and equity legs combined: the hedge the broker filled, the unfilled part of this
-    proposal's staged (hedge B) sells resting at a broker, and hedge A's PM leg in equity shares. The approval gate is
-    a hard cap for every family, including one without a coverage param."""
     cap = math.floor(bridge.proposal.target_coverage * bridge.proposal.shares_held + 1e-9)
     reserved = pm = 0.0
     app = getattr(bridge, "app", None)
@@ -1059,14 +875,13 @@ def _coverage_room(bridge: Bridge) -> float:
 
 
 async def _send_intent(bridge: Bridge, algo, intent: dict, t: Tick) -> dict:
-    """Route one Algo Order intent to the broker; returns the fill record for the stream. Never raises."""
     instrument = str(intent.get("instrument") or "equity")
     side, qty = _side(intent), float(intent.get("qty") or 0.0)
     rec: dict = {"side": side, "qty": qty, "symbol": bridge.proposal.ticker, "instrument": instrument,
                  "family": bridge.algo["family"], "preset": bridge.algo.get("preset_index"),
                  "reason": intent.get("reason")}
     broker = bridge.order_broker()
-    if instrument != "equity" or not (qty > 0 and math.isfinite(qty)):  # hedge families trade equity only
+    if instrument != "equity" or not (qty > 0 and math.isfinite(qty)):
         algo.on_reject(instrument)
         rec.update(status="rejected", reject_reason=f"bridge routes equity intents only (got {instrument})",
                    filled_qty=0.0, broker=getattr(broker, "name", None))
@@ -1078,7 +893,7 @@ async def _send_intent(bridge: Bridge, algo, intent: dict, t: Tick) -> dict:
         return rec
     rec["broker"] = broker.name
     if not await _settle_resting(bridge, algo, broker, "replace", _positive(t.fields.get("under_px"))):
-        algo.on_reject(instrument)  # the old order may still be working: never stack a new one on top of it
+        algo.on_reject(instrument)
         rec.update(status="held", reject_reason="previous order still resting at the broker (retried next time)",
                    filled_qty=0.0)
         return rec
@@ -1107,14 +922,13 @@ async def _send_intent(bridge: Bridge, algo, intent: dict, t: Tick) -> dict:
         rec["scope"] = "account" if bridge.replay_to_account else "replay_sandbox"
         recorded = _fin(t.fields.get("under_px"))
         if recorded is not None and recorded > 0 and not await _broker_can_price(bridge, broker):
-            # Wi-Fi off / no Massive key: the sim has no current quote, so the replay fills at the replayed under_px
             ref, ref_source, note = recorded, RECORDED_SOURCE, REPLAY_RECORDED_NOTE
             rec["price_note"] = REPLAY_RECORDED_PRICE_NOTE
         else:
-            note = REPLAY_NOTE  # replayed decisions, fills priced at today's market (the broker's own quote)
+            note = REPLAY_NOTE
             rec["price_note"] = "priced at the current market, not the replayed time"
     else:
-        ref = _fin(t.fields.get("under_px"))  # the live quote the algo just saw
+        ref = _fin(t.fields.get("under_px"))
         ref = ref if ref is not None and ref > 0 else None
     try:
         req = OrderRequest(symbol=bridge.proposal.ticker, asset="equity", side=side, qty=qty,
@@ -1123,15 +937,13 @@ async def _send_intent(bridge: Bridge, algo, intent: dict, t: Tick) -> dict:
                            note=note)
     except Exception as e:
         bridge.broker_errors += 1
-        algo.on_reject(instrument)  # never sent: nothing traded
+        algo.on_reject(instrument)
         rec.update(status="error", error=type(e).__name__, filled_qty=0.0)
         return rec
     _record_participation(bridge, qty, t)
     try:
         o = await asyncio.wait_for(broker.place_order(req), BROKER_TIMEOUT_S)
     except Exception as e:
-        # The broker may have accepted it (a timeout after the POST, a 5xx): track it under its client_order_id and
-        # reconcile it before the next order, so an accepted order is never re-sent on top of itself.
         _track_unconfirmed(bridge, broker, req, instrument)
         rec.update(status="error", error=type(e).__name__, filled_qty=0.0, order_id=req.client_order_id,
                    kept_resting=True)
@@ -1142,7 +954,7 @@ async def _send_intent(bridge: Bridge, algo, intent: dict, t: Tick) -> dict:
         if ref_source == RECORDED_SOURCE and o.filled_qty > 0:
             bridge.recorded_fills += 1
         elif o.status == "rejected" and str(o.reject_reason or "").startswith("no_price"):
-            bridge.quote_check = (time.monotonic(), False)  # the quote vanished since the check: next order uses the recording
+            bridge.quote_check = (time.monotonic(), False)
     rec.update(status=o.status, order_id=o.id, fill_px=o.fill_px, fee=o.fee, price_source=o.price_source,
                reject_reason=o.reject_reason, note=o.note, broker=o.broker, filled_qty=o.filled_qty,
                type=req.type, limit_px=req.limit_px)
@@ -1157,7 +969,7 @@ async def _run_algo_source(bridge: Bridge, algo, source) -> None:
         bridge.ticks += 1
         ev = _tick_event(t)
         opp = bridge.division == "opportunity"
-        if opp:  # option families name the real YES contract: never oriented; the UI sees the PM-vs-options gap
+        if opp:
             rts = getattr(t, "recorded_ts_ns", None)
             if rts is not None:
                 bridge.last_replay_ts_ns = int(rts)
@@ -1172,8 +984,6 @@ async def _run_algo_source(bridge: Bridge, algo, source) -> None:
         else:
             ev["under_source"] = bridge.equity_source if bridge.effective_source == "live" else (
                 "recorded" if ev["under_px"] is not None else None)
-        # the one orientation step: hedge -> adverse per the proposal's direction; opportunity -> raw YES, except a
-        # family that reads the PM adverse probability (eightk_opportunity), oriented by the matched question
         oriented = opp_engine_fields(bridge, t.fields) if opp else orient_to_adverse(t.fields, bridge.direction)
         adverse = oriented if not opp else orient_to_adverse(t.fields, bridge.direction)
         view, extra = await _closed_tick(bridge, t, adverse)
@@ -1183,10 +993,6 @@ async def _run_algo_source(bridge: Bridge, algo, source) -> None:
         for kind, data in extra:
             await bridge.emit(kind, data)
         if bridge.closed is not None and bridge.closed.hold:
-            # the regular session is closed: the algo is paused (not stepped: no intent, no reject backoff or
-            # cooldown carried into the open) and nothing is sent. Hedge: hedge B (staged) covers the open.
-            # Opportunity: held only when the order broker takes its option combos in the regular session only
-            # (Webull paper with WEBULL_OPTIONS=1; bridge_mode.broker_hold).
             await _hold_closed(bridge, {"engine": "algo", "family": fam, "preset": preset, "signal": None,
                                         "instrument": None, "side": None, "qty": 0.0, "limit_px": None,
                                         "order_qty": 0.0, "target_hedge": None, "current_hedge": bridge.hedge,
@@ -1204,7 +1010,6 @@ async def _run_algo_source(bridge: Bridge, algo, source) -> None:
             "reason_code": i.get("reason_code"), "reason_block": i.get("reason_block"), "signal": i.get("signal"),
             "instrument": i.get("instrument"), "side": side if is_order else None, "qty": qty,
             "limit_px": i.get("limit_px"),
-            # legacy-compatible fields: order_qty > 0 adds to the short hedge; the hedge is what the broker filled
             "order_qty": (qty if side == "sell" else -qty) if is_order else 0.0,
             "target_hedge": None, "current_hedge": bridge.hedge, "latency_ns": i.get("latency_ns")})
         if not is_order:
@@ -1228,8 +1033,6 @@ async def _run_algo_source(bridge: Bridge, algo, source) -> None:
                                        "broker": bridge.broker_name or getattr(bridge.broker, "name", None)})
 
 
-# ---------------------------------------------------------------- opportunity engine (options)
-
 OPTION_FILLS_LABEL = ("simulated option fills: Massive option quote mid +/- half the quoted spread, per-contract fee "
                       "(SimBroker; Webull paper does not take options here)")
 OPTION_FILLS_LABEL_BROKER = ("Webull paper option fills: each structure is one net limit order at the quoted mids +/- "
@@ -1242,22 +1045,18 @@ OPTIONS_SESSION_CLOSED = ("session_closed: the order broker takes option orders 
 
 
 def _options_at_broker(broker: Broker | None) -> bool:
-    """True when option combos are placed at the real broker (Webull paper with WEBULL_OPTIONS=1), not a simulator:
-    their fills are then the broker's, not simulated, and the broker's session rules apply."""
     return broker is not None and not isinstance(broker, SimBroker) and bool(getattr(broker, "options_supported",
                                                                                      False))
 
 
 def _options_closed_at_broker(bridge: Bridge, broker: Broker | None) -> bool:
-    """The combo would go to a broker that takes orders only in the regular session, and that session is closed now
-    (the broker's wall clock, whatever a replay's recorded time says)."""
     if not _options_at_broker(broker) or not getattr(broker, "regular_session_only", False):
         return False
     try:
         now = bridge_mode.live_now(bridge.app) if bridge.app is not None else bridge_mode.now_utc()
         return bridge_mode.session_at(now).closed
     except (ValueError, AttributeError):
-        return True  # unknown session at a regular-session-only broker: never send (fail closed)
+        return True
 OPTION_MULT = 100.0
 RECORDED_OPTION_NOTE = "replay: option legs priced at the recorded bar closes (no current chain lists them)"
 RECORDED_OPTION_PRICE_NOTE = ("recorded leg closes: no current option chain lists these contracts (expired, or offline), "
@@ -1265,16 +1064,13 @@ RECORDED_OPTION_PRICE_NOTE = ("recorded leg closes: no current option chain list
                               "simulator's default half-spread (2% of the price; the real spread is unknown)")
 NO_FRESH_LEGS = ("replay: no fresh recorded option closes at this replayed time (the recording keeps leg closes only in "
                  "the regular session once both legs have printed) and no current chain lists these contracts")
-# The bridge-end close prices the legs at the last recorded closes only if they are at most one hourly bar (plus the
-# recording's few seconds of jitter) older than the last replayed tick: a replay that ends overnight, on a weekend or
-# past expiry without a recorded settlement would otherwise close at a stale price.
 END_LEGS_MAX_AGE_NS = (3600 + 300) * 1_000_000_000
 SETTLED_OPTION_PRICE_NOTE = ("expiry settlement: the contracts expired, so each leg is valued at its intrinsic value from "
                              "the underlying's official close on the expiry date (recorded with the replay), with no "
                              "spread; the simulator's per-contract fee still applies")
 SETTLED_OPENS = ("replay: the recorded legs are the expiry settlement (the contracts have expired), not a tradable quote: "
                  "only an open structure is closed at it")
-SETTLE_MIN_PX = 0.0001  # the simulator's price floor: an expired out-of-the-money leg (worth 0) is closed at it
+SETTLE_MIN_PX = 0.0001
 
 
 def stale_end_legs(age_ns: int | None) -> str:
@@ -1287,9 +1083,6 @@ def stale_end_legs(age_ns: int | None) -> str:
 
 
 def recorded_context(struct: dict, legs: dict[str, float], settled: bool = False) -> dict:
-    """An options context (as ``OptionsEnricher.context()``) whose chain holds only the recorded legs, each quoted at
-    its recorded bar close (no bid/ask: the spread is unknown). ``settled``: the legs are the expiry settlement, a
-    known value with no spread (bid = ask = intrinsic)."""
     from .options.chain import Chain, OptionQuote
     chain = Chain(underlying=struct["underlying"], fetched_at=time.time(), source="recording")
     for lg in struct["legs"]:
@@ -1314,15 +1107,11 @@ def _options_brief(enricher: OptionsEnricher | None) -> dict | None:
 
 
 def opp_engine_fields(bridge: Bridge, fields: dict) -> dict:
-    """The tick an opportunity family sees: raw YES, or for eightk_opportunity the adverse orientation of the matched
-    threshold question ("above K" -> NO is adverse). The UI's PM-vs-options gap always uses the raw fields."""
     qdir = (bridge.options.detail or {}).get("direction") if bridge.options is not None else None
     return orient_for_family(fields, bridge.algo["family"], qdir)
 
 
 def pm_vs_options(fields: dict) -> dict:
-    """The PM YES mid vs the options-implied P(YES) on one tick (raw orientation). The option number is a
-    risk-neutral estimate from listed prices, not a measured probability."""
     b, a = _fin(fields.get("yes_bid")), _fin(fields.get("yes_ask"))
     pm = (b + a) / 2.0 if b is not None and a is not None else None
     op = _fin(fields.get("opt_implied_prob"))
@@ -1333,10 +1122,6 @@ def pm_vs_options(fields: dict) -> dict:
 
 
 def option_structure(family: str, ctx: dict, side: int) -> dict | None:
-    """The unit an Option intent trades, as signed legs (+1 long / -1 short per unit bought), from the family and the
-    matched question: binary_vs_spread_arb -> the YES-equivalent spread (call spread for "above", put spread for
-    "below"); vol_vs_pm_move -> the straddle at the listed strike nearest K; eightk_opportunity -> selling opens a
-    cash-secured put at k_lo (unit = one put), buying opens a put spread k_hi/k_lo."""
     k_lo, k_hi, K = ctx["k_lo"], ctx["k_hi"], _fin(ctx.get("strike"))
     if family == "binary_vs_spread_arb":
         if ctx["above"]:
@@ -1360,9 +1145,6 @@ def _quote_by_ticker(chain, ticker: str):
 
 
 def unit_risk(struct: dict, side: int, net_mid: float, net_half: float) -> float | None:
-    """USD at risk per structure (x100 shares): a bought structure risks its debit (at the ask); a sold spread its
-    width minus the credit; a cash-secured put its strike minus the credit; a sold straddle has no defined max loss
-    and is counted at its strike notional (the cash-secured analogue). None when there is no price."""
     if net_mid is None or not math.isfinite(net_mid):
         return None
     if side > 0:
@@ -1377,8 +1159,6 @@ def unit_risk(struct: dict, side: int, net_mid: float, net_half: float) -> float
 
 
 async def _send_option_intent(bridge: Bridge, algo, intent: dict, t: Tick | None) -> dict:
-    """One Option intent -> one multi-leg option order (all legs or none), capped by the approved max_contracts /
-    max_notional. Fills go back to the algo as one structure price (per share). Never raises."""
     fam = bridge.algo["family"]
     side = 1 if int(intent.get("side") or 0) > 0 else -1
     qty = float(intent.get("qty") or 0.0)
@@ -1404,7 +1184,7 @@ async def _send_option_intent(bridge: Bridge, algo, intent: dict, t: Tick | None
     combo = getattr(broker, "place_combo", None)
     if combo is None:
         return refuse("rejected", f"broker {broker.name} cannot take multi-leg option orders")
-    if _options_closed_at_broker(bridge, broker):  # never an order outside the broker's session (no reject backoff)
+    if _options_closed_at_broker(bridge, broker):
         bridge.reasons[SESSION_CLOSED] += 1
         rec.update(status="held", reject_reason=OPTIONS_SESSION_CLOSED, filled_qty=0.0)
         return rec
@@ -1412,9 +1192,6 @@ async def _send_option_intent(bridge: Bridge, algo, intent: dict, t: Tick | None
     recorded = settled = False
     closing = bridge.opt_pos != 0 and side * bridge.opt_pos < 0
     if ctx is None and bridge.effective_source == "replay" and bridge.recorded_options is not None:
-        # No current chain lists these contracts: price them at the recording's own closes for this replayed tick, or
-        # at its recorded expiry settlement. The bridge-end close (t None) uses the last recorded legs only when they
-        # are at most one bar older than the end of the replay, never a stale close.
         if t is None:
             legs_px, settled = bridge.last_legs, bridge.last_legs_settled
             if legs_px:
@@ -1430,7 +1207,7 @@ async def _send_option_intent(bridge: Bridge, algo, intent: dict, t: Tick | None
             return refuse("rejected", SETTLED_OPENS)
         ctx, recorded = recorded_context(bridge.recorded_options, legs_px, settled), True
         rec["price_source"] = RECORDED_SOURCE
-    if closing and bridge.opt_open is not None:  # exits trade the open structure's own legs
+    if closing and bridge.opt_open is not None:
         struct = {k: v for k, v in bridge.opt_open.items() if k != "legs"}
         legs = [(lg["sign"], lg["ticker"]) for lg in bridge.opt_open["legs"]]
         qty = min(qty, abs(bridge.opt_pos))
@@ -1466,13 +1243,13 @@ async def _send_option_intent(bridge: Bridge, algo, intent: dict, t: Tick | None
             net_half += half if half is not None else mid * 0.02
     rec["symbol"] = struct.get("underlying") or bridge.proposal.ticker
     rec["structure"] = struct["kind"]
-    if not closing:  # risk caps apply to anything that opens or adds exposure
+    if not closing:
         p = bridge.proposal
         room_c = max(0.0, float(p.max_contracts or 0) - abs(bridge.opt_pos)) if p.max_contracts else qty
         risk = unit_risk(struct, side, net_mid, net_half)
         if risk is None:
             return refuse("rejected", "no option quote to size the max_notional cap")
-        if risk <= 0:  # stale / crossed leg quotes: zero risk is never unlimited room
+        if risk <= 0:
             return refuse("rejected", "the leg quotes give a non-positive risk per structure (stale or crossed "
                                       "quotes), so the max_notional cap cannot be sized")
         used = abs(bridge.opt_pos) * bridge.opt_risk_per_unit
@@ -1489,7 +1266,6 @@ async def _send_option_intent(bridge: Bridge, algo, intent: dict, t: Tick | None
                                       f"({p.max_contracts if rec['cap'] == 'max_contracts' else p.max_notional:g}) "
                                       "is used up")
         rec["unit_risk"] = risk
-    # participation: every leg <= 10% of its daily volume and <= 5% of its open interest (entries and exits alike)
     lq = liquidity.option_check([_quote_by_ticker(chain, tk) if chain is not None else None for _s, tk, *_r in priced],
                                 qty)
     liquidity.tag(rec, lq)
@@ -1501,14 +1277,12 @@ async def _send_option_intent(bridge: Bridge, algo, intent: dict, t: Tick | None
         rec["qty"] = qty
         if qty <= 0:
             return refuse("held", f"liquidity_capped: {lq['rule']} (leg {lq.get('leg')} allows {lq['limit_qty']:g})")
-    if not closing:  # the capital budget: the structure's requirement (premium, max loss, cash-secured or margin)
+    if not closing:
         mode = capital_budget.limits(bridge.app)["short_put_mode"] if bridge.app is not None else "cash_secured"
         spot = _positive(bridge.last_under_px) or _fin((ctx or {}).get("spot"))
         req_usd = capital_budget.option_requirement(struct.get("kind", ""), side, qty, net_mid, net_half,
                                                     width=struct.get("width"), strike=struct.get("strike"),
                                                     spot=spot, mode=mode)
-        # option legs settle where the combo is filled: Webull paper routes them to its own simulator account unless
-        # WEBULL_OPTIONS=1 places them at Webull (then the Webull account is the one checked)
         opt_acct = getattr(broker, "sim", None) if not isinstance(broker, SimBroker) and not at_broker else None
         if await _capital_refuses(bridge, opt_acct or broker, rec, req_usd, req_usd):
             algo.on_reject("option")
@@ -1526,7 +1300,7 @@ async def _send_option_intent(bridge: Bridge, algo, intent: dict, t: Tick | None
         rec["routed"] = ROUTED_SIM
     cid = f"{bridge.id}-{bridge.orders}"
     try:
-        if settled:  # an expired out-of-the-money leg is worth 0: closed at the simulator's price floor, no spread
+        if settled:
             priced = [(sign, tk, max(mid, SETTLE_MIN_PX) if mid is not None else None, 0.0, src)
                       for sign, tk, mid, _half, src in priced]
         reqs = [OrderRequest(symbol=tk, asset="option", side="buy" if sign * side > 0 else "sell", qty=qty,
@@ -1572,12 +1346,11 @@ async def _send_option_intent(bridge: Bridge, algo, intent: dict, t: Tick | None
 
 async def _run(bridge: Bridge, app, hc, source, fallback: Path | None) -> None:
     if bridge.algo:
-        # Position fields only: the direction already reached the ticks (orient_to_adverse); never passed to hedgecore.
         position = ({"option": 0.0} if bridge.division == "opportunity"
                     else {"shares_held": float(bridge.proposal.shares_held)})
         try:
             engine = hc.Algo(bridge.algo["family"], dict(bridge.algo["params"]), position)
-        except Exception as e:  # a catalog/engine mismatch must end the stream cleanly, never hang it
+        except Exception as e:
             await bridge.emit("error", {"message": f"hedgecore.Algo refused {bridge.algo['family']}: {e}",
                                         "source": "engine"})
             await bridge.emit("status", {"status": "stopped", "reason": "engine_error"}, status="stopped")
@@ -1591,11 +1364,10 @@ async def _run(bridge: Bridge, app, hc, source, fallback: Path | None) -> None:
     bridge.engine = engine
     try:
         bridge.broker = get_broker(app)
-    except Exception:  # an unavailable account must not stop the hedge loop
+    except Exception:
         bridge.broker = None
         await bridge.emit("error", {"message": "broker unavailable", "source": "broker"})
     if bridge.options is not None and bridge.effective_source == "replay":
-        # Replays keep the option fields they recorded; the current snapshot is only used to price the legs.
         await bridge.options({"ts_ns": time.time_ns()}, time.time_ns())
     if bridge.options is not None:
         await bridge.emit("status", {"status": "running", "options": bridge.options_brief()
@@ -1607,8 +1379,6 @@ async def _run(bridge: Bridge, app, hc, source, fallback: Path | None) -> None:
         except (SourceError, OSError) as e:
             await bridge.emit("error", {"message": str(e), "source": bridge.effective_source})
             if bridge.effective_source == "live" and fallback is not None and fallback.is_file():
-                # Settle what is open at the account broker first (resting order, open option structure): after the
-                # switch, orders go to the replay sandbox and must never orphan what the live phase left working.
                 await _finish_orders(bridge, engine)
                 bridge.effective_source = "replay"
                 bridge.set_replay(fallback)
@@ -1625,7 +1395,7 @@ async def _run(bridge: Bridge, app, hc, source, fallback: Path | None) -> None:
     except asyncio.CancelledError:
         await bridge.emit("status", {"status": "stopped", "reason": "cancelled"}, status="stopped")
         raise
-    except Exception as e:  # never leave a stream hanging
+    except Exception as e:
         await bridge.emit("error", {"message": type(e).__name__})
         await bridge.emit("status", {"status": "stopped", "reason": "internal_error"}, status="stopped")
 
@@ -1639,10 +1409,7 @@ OPTION_CLOSE_LABEL_BROKER = ("close at bridge end: the open option structure is 
 
 
 async def _finish_orders(bridge: Bridge, engine) -> None:
-    """A bridge that ends leaves no order resting at the broker, and an opportunity bridge leaves no option structure
-    open: it is closed on its own legs (simulated, labelled). A close that cannot be priced is reported, not hidden:
-    the structure then stays in the summary's option_structure."""
-    if bridge.resting is not None:  # algo and legacy bridges alike
+    if bridge.resting is not None:
         await _settle_resting(bridge, engine if bridge.algo else None, bridge.order_broker(), "bridge_end")
     if bridge.algo and bridge.division == "opportunity" and bridge.opt_pos != 0 and bridge.opt_open is not None:
         bridge.orders += 1
@@ -1662,8 +1429,6 @@ async def _finish_orders(bridge: Bridge, engine) -> None:
 
 
 def _replay_equity_price(path: Path, bars: list[tuple[int, float]]) -> str:
-    """"recorded" when a replay can show the algo an equity price (an under_px column in the recording, or a recorded
-    bar known by its last row), else "none": the hedge families then hold (fee_unknown) on every tick."""
     try:
         last_s = None
         for line in path.read_text().splitlines():
@@ -1684,7 +1449,6 @@ def _bars(ticker: str) -> list[tuple[int, float]]:
 
 
 def _catalog_manifest(hc) -> dict:
-    """The compiled catalog (authoritative at run time), normalized like the pipeline's library."""
     try:
         m = normalize_manifest(hc.catalog())
         if m["families"]:
@@ -1696,7 +1460,6 @@ def _catalog_manifest(hc) -> dict:
 
 
 def _asked_algo(body: BridgeIn) -> AlgoChoice | None:
-    """The algo named in a POST /bridges body, or None."""
     if body.family is not None:
         try:
             return AlgoChoice(family=body.family, preset_index=body.preset_index, params=body.params)
@@ -1719,11 +1482,6 @@ def _algo_label(c: AlgoChoice | None) -> str:
 
 
 def _algo_for(prop: Proposal, body: BridgeIn, hc) -> tuple[dict | None, AlgoChoice | None]:
-    """Which algo this bridge runs. A proposal approved with an algo runs exactly that algo (a body naming another is
-    a 409: the approval gate covers what runs); otherwise the body's algo; otherwise None (legacy Engine).
-
-    The approved target_coverage caps every hedge-size param (``cap_coverage``): a preset with coverage 1.0 on a 0.5
-    proposal runs with coverage 0.5. The bridge also clips sell intents at that coverage (``_coverage_room``)."""
     asked = _asked_algo(body)
     choice = prop.algo
     if choice is not None and asked is not None and not _same_algo(asked, choice):
@@ -1738,7 +1496,7 @@ def _algo_for(prop: Proposal, body: BridgeIn, hc) -> tuple[dict | None, AlgoChoi
                          division="opportunity" if opp else "hedge")
     except AlgoChoiceError as e:
         raise HTTPException(422, f"algo: {e}.")
-    if opp:  # the approved max_contracts caps the per-entry size; the bridge also caps open contracts / notional
+    if opp:
         run, lowered = cap_contracts(r["params"], prop.max_contracts)
         return ({"family": r["family"], "preset_index": r["preset_index"], "params": run, "source": choice.source,
                  "coverage_cap": None, "capped": lowered, "division": "opportunity",
@@ -1751,7 +1509,6 @@ def _algo_for(prop: Proposal, body: BridgeIn, hc) -> tuple[dict | None, AlgoChoi
 
 
 def _live_primary(market: MarketRef) -> tuple[str, str]:
-    """(venue, id the venue's book is keyed by): a Polymarket YES token id, or a Kalshi market ticker."""
     if market.source == "kalshi":
         return "kalshi", market.id
     if not market.token_id:
@@ -1772,8 +1529,6 @@ def _twin(twin: MarketRef | None, primary: str) -> tuple[str, str] | None:
 
 
 def _has_options_algo(prop: Proposal, request: Request) -> bool:
-    """An opportunity proposal reaches hedgecore only when it was approved with an Opportunity-division options
-    family (checked against the library the proposal was validated with)."""
     if prop.algo is None:
         return False
     from .pipeline.router import get_adapter
@@ -1786,7 +1541,6 @@ def _has_options_algo(prop: Proposal, request: Request) -> bool:
 
 
 def _options_enricher(request: Request, market: MarketRef) -> OptionsEnricher:
-    """The option-field source for an opportunity bridge. Tests set app.state.options_enricher_factory."""
     factory = getattr(request.app.state, "options_enricher_factory", None)
     if factory is not None:
         return factory(market)
@@ -1801,7 +1555,6 @@ def _options_enricher(request: Request, market: MarketRef) -> OptionsEnricher:
 
 
 def _mapped_twin(market: MarketRef) -> tuple[str, str] | None:
-    """The verified twin of the primary market from the twin map (app/data/kalshi_twins.json), as _twin() returns it."""
     t = twin_of(market.source, market.id, market.token_id)
     if t is None:
         return None
@@ -1830,23 +1583,18 @@ async def start_bridge(body: BridgeIn, request: Request, response: Response) -> 
     existing = reg.get(prop.id)
     prior: Bridge | None = None
     if existing is not None and existing.status != "running":
-        # finished / stopped: a new POST starts a fresh bridge (it replaces the registry entry); the old one stays
-        # readable by its id (summary / stream) but is never handed back as if it were the new run. The new run
-        # starts from what the old one left at the account (_carry_account_exposure).
         _history(request)[existing.id] = existing
         prior, existing = existing, None
-    if existing is not None:  # idempotent: one running bridge per approved proposal id
+    if existing is not None:
         if existing.requested_source != body.source:
             raise HTTPException(409, f"Bridge {existing.id} already started for proposal {prop.id} with source {existing.requested_source}.")
-        asked = _asked_algo(body)  # a body naming an algo must name the one running (else the caller is misled)
+        asked = _asked_algo(body)
         if asked is not None and (existing.choice is None or not _same_algo(asked, existing.choice)):
             raise HTTPException(409, f"Bridge {existing.id} for proposal {prop.id} already runs "
                                      f"{_algo_label(existing.choice)}; it cannot switch algos.")
         response.status_code = 200
         return {"bridge_id": existing.id}
     market, direction = _resolve(prop, body)
-    # The evidence gate: the (market, ticker) this bridge acts on. Unvalidated -> the approval must have acknowledged
-    # it (ack_unvalidated); the bridge then runs the approved algo and labels every decision and fill.
     evid = evidence_gate.signal_status(market.source, market.id, market.token_id, prop.ticker)
     if not evid["validated"] and not prop.ack_unvalidated:
         raise HTTPException(409, f"EVIDENCE_UNVALIDATED: {prop.ticker} on {market.source}:{market.id} is an "
@@ -1876,13 +1624,11 @@ async def start_bridge(body: BridgeIn, request: Request, response: Response) -> 
     bridge.evidence_label = (evidence_gate.LABEL_VALIDATED if evid["validated"]
                              else evidence_gate.LABEL_ACKNOWLEDGED)
     bridge.act_on_unvalidated = bool(body.act_on_unvalidated or prop.act_on_unvalidated) and not evid["validated"]
-    if prop.family == "hedge":  # the participation caps read cached numbers: fetch them now, in the background
+    if prop.family == "hedge":
         from .liquidity.service import service_for
         service_for(request.app).warm_equity(prop.ticker)
     if prior is not None:
         _carry_account_exposure(prior, bridge)
-    # closed-market mode: every bridge reports its session; hedge bridges hold off-session and stage hedge B, and run
-    # hedge A (a simulated PM-leg estimate) only when the proposal opted in
     bridge.closed = bridge_mode.ClosedMode(bridge, request.app, hc,
                                            hedge_a=bool(getattr(prop, "closed_pm_hedge", False)))
 
@@ -1901,20 +1647,18 @@ async def start_bridge(body: BridgeIn, request: Request, response: Response) -> 
         primary, mid = _live_primary(market)
         twin = _twin(body.twin, primary)
         origin = "request" if twin else None
-        if twin is None and body.twin is None:  # no twin given: use the verified twin map
+        if twin is None and body.twin is None:
             twin = _mapped_twin(market)
             origin = "twin_map" if twin else None
         bridge.twin = {"source": twin[0], "id": twin[1], "origin": origin} if twin else None
         factory = getattr(request.app.state, "live_source_factory", None) or LiveSource
-        if bridge.division == "opportunity":  # option fields from the chain; no equity quote needed
+        if bridge.division == "opportunity":
             bridge.options = _options_enricher(request, market)
             source = factory(mid, primary=primary, twin=twin, equity=None, options=bridge.options)
         else:
-            # Only the algo reads under_px; a legacy bridge never polls the equity quote (Massive rate limits).
             source = factory(mid, primary=primary, twin=twin,
                              equity=_equity_quote(bridge, request.app) if algo else None)
 
-    # No await between the registry check above and this insert: exactly one bridge per proposal.
     reg[prop.id] = bridge
     store.mark_bridge_started(prop.id)
     bridge.task = asyncio.create_task(_run(bridge, request.app, hc, source, fallback))
@@ -1922,7 +1666,6 @@ async def start_bridge(body: BridgeIn, request: Request, response: Response) -> 
 
 
 def _regular_session_only(app) -> bool:
-    """The account broker takes orders only in the regular session (Webull paper: 417 outside 09:30-16:00 ET)."""
     try:
         return bool(getattr(get_broker(app), "regular_session_only", False))
     except Exception:
@@ -1937,9 +1680,6 @@ def _wall_closed(app) -> bool:
 
 
 def _replay_scope(app, body: BridgeIn) -> tuple[bool, str | None]:
-    """(replay_to_account, note). A bridge started while the market is closed at a regular-session-only broker
-    (BROKER=webull): a replay keeps its in-memory sandbox (Webull would refuse every order until 09:30 ET), a live
-    bridge holds its equity algo off-session and only staged orders reach Webull, executing at the 09:30 open."""
     if not _regular_session_only(app) or not _wall_closed(app):
         return body.replay_to_account, None
     if body.source == "replay":
@@ -1951,12 +1691,6 @@ def _replay_scope(app, body: BridgeIn) -> tuple[bool, str | None]:
 
 
 def _carry_account_exposure(old: Bridge, new: Bridge) -> None:
-    """A restarted proposal starts from its cumulative exposure at the account broker, never from zero: bridges do not
-    unwind their hedge when they end, so a fresh broker_hedge would hand every run the full target_coverage budget
-    again and one approval could grow the account short without bound. A run that trades at the account is seeded
-    with the short earlier runs left there (``_coverage_room`` then caps the total at the approved coverage), and an
-    order an earlier run left resting at the account is handed over so this run reconciles it. A replay-sandbox run
-    starts from its own empty sim (it never touches the account) but still carries the account total forward."""
     new.account_hedge = old.account_hedge
     if not new._sandboxed():
         new.broker_hedge = old.account_hedge
@@ -1992,11 +1726,11 @@ async def bridge_stream(bridge_id: str, request: Request) -> StreamingResponse:
     bridge = _find(request, bridge_id)
 
     async def gen():
-        seen = 0  # absolute index into the event history (incl. dropped)
+        seen = 0
         while True:
             batch: list = []
             done = heartbeat = False
-            async with bridge.cond:  # decide what to send under the lock, send after releasing it
+            async with bridge.cond:
                 start = max(seen, bridge.dropped)
                 batch = bridge.events[start - bridge.dropped:]
                 seen = start + len(batch)

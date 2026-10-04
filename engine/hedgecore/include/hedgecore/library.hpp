@@ -1,6 +1,4 @@
 #pragma once
-// The compiled algo library: every family in one std::variant, a factory by id, and the catalog the AI pipeline and
-// the UI read (the AI only ever sees what is compiled).
 #include <cstddef>
 #include <span>
 #include <stdexcept>
@@ -19,7 +17,6 @@
 
 namespace hedgecore {
 
-// Order = the spec's priority order; it is also the catalog order.
 using AnyAlgo = std::variant<algos::EquityDeltaBridge, algos::StressLeadHedge, algos::BookImbalanceHedge,
                              algos::PolyKalshiSpread, algos::NoBidSeller, algos::FigStress, algos::HousingRates,
                              algos::MacroFedHedge, algos::ElectionHedge, algos::TariffTradeHedge,
@@ -31,7 +28,7 @@ inline constexpr std::size_t kNumFamilies = std::variant_size_v<AnyAlgo>;
 struct FamilyInfo {
   const char* id;
   const char* division;
-  const char* ui_kind;  // primary UI library group
+  const char* ui_kind;
   const char* idea;
   std::span<const char* const> event_classes;
   std::span<const char* const> instruments;
@@ -75,7 +72,7 @@ AnyAlgo make(std::string_view id, const Params& p, const Position& pos) {
     return make<I + 1>(id, p, pos);
   }
 }
-}  // namespace detail
+}
 
 inline const Catalog& catalog() {
   static const Catalog c = detail::build_catalog(std::make_index_sequence<kNumFamilies>{});
@@ -88,8 +85,6 @@ inline const FamilyInfo* find_family(std::string_view id) noexcept {
   return nullptr;
 }
 
-// Throws std::invalid_argument for an unknown id. Params outside the spec's bounds do not throw: the algo holds
-// every tick with reason invalid_params.
 inline AnyAlgo make_algo(std::string_view id, const Params& p, const Position& pos) {
   return detail::make(id, p, pos);
 }
@@ -100,7 +95,6 @@ inline Intent on_tick(AnyAlgo& a, const MarketTick& t, std::int64_t now_ns) noex
 inline void on_fill(AnyAlgo& a, Instrument i, double signed_qty, double px) noexcept {
   std::visit([&](auto& f) noexcept { f.on_fill(i, signed_qty, px); }, a);
 }
-// The order was rejected or a passive limit expired unfilled. Families that keep order state react; others ignore it.
 inline void on_reject(AnyAlgo& a, Instrument i) noexcept {
   std::visit(
       [&](auto& f) noexcept {
@@ -112,4 +106,4 @@ inline const char* algo_id(const AnyAlgo& a) noexcept {
   return std::visit([](const auto& f) noexcept { return std::decay_t<decltype(f)>::id; }, a);
 }
 
-}  // namespace hedgecore
+}

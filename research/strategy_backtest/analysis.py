@@ -1,4 +1,3 @@
-"""Segments, metrics, verdict, capacity and the R1 reconciliation (METHOD.md sections 6, 8, 9). Pure: no network."""
 from __future__ import annotations
 
 from math import ceil, sqrt
@@ -13,7 +12,6 @@ ANN = 252
 
 
 def oos_length(ret_days: list[pd.Timestamp], p=PARAMS) -> int:
-    """L = min(ceil(oos_frac x N), return days in the last oos_max_days calendar days)."""
     n = len(ret_days)
     last = pd.Timestamp(ret_days[-1])
     recent = sum(1 for d in ret_days if pd.Timestamp(d) > last - pd.Timedelta(days=p.oos_max_days))
@@ -21,14 +19,12 @@ def oos_length(ret_days: list[pd.Timestamp], p=PARAMS) -> int:
 
 
 def segments(days: list[pd.Timestamp], p=PARAMS) -> dict[str, list[pd.Timestamp]]:
-    """Return days per segment; days[0] is the purchase day and never a return day."""
     ret = list(days[1:])
     k = oos_length(ret, p)
     return {"IS": ret[:-k] if k else ret, "OOS": ret[-k:] if k else [], "full": ret}
 
 
 def segment_metrics(equity: pd.Series, seg: list[pd.Timestamp], daily: pd.DataFrame | None = None) -> dict:
-    """Metrics of one book over one segment, rebased at the equity of the session before the segment's first day."""
     if not seg:
         return {}
     idx = equity.index
@@ -66,7 +62,6 @@ def segment_metrics(equity: pd.Series, seg: list[pd.Timestamp], daily: pd.DataFr
 
 
 def verdict(strat: dict, bh: dict, p=PARAMS) -> dict:
-    """Section 8 on the OOS segment at 1x costs."""
     if not strat or strat.get("hedge_days", 0) == 0:
         return {"verdict": "Fail", "reason": "the overlay never trades in OOS (books identical, no effect)",
                 "dd_rel": 0.0, "vol_rel": 0.0, "a": False, "b": False}
@@ -83,12 +78,8 @@ def verdict(strat: dict, bh: dict, p=PARAMS) -> dict:
             "dd_rel": dd_rel, "vol_rel": vol_rel, "a": bool(a), "b": bool(b)}
 
 
-# ---------------------------------------------------------------- capacity (section 9)
-
-
 def capacity(meas: pd.DataFrame, daily_bars: pd.DataFrame, days: list[pd.Timestamp], hedges: pd.DataFrame,
              vol_col: str = "vol5_usd", p=PARAMS) -> dict:
-    """hedges: rows indexed by day with `notional` at the study's book size and `book` (equity at that day)."""
     dv = (daily_bars["volume"] * daily_bars["vwap"]).reindex(days)
     adv = dv.shift(1).rolling(p.adv_window, min_periods=p.adv_window).mean()
     v5 = meas[vol_col].reindex(days[1:])
@@ -113,13 +104,8 @@ def capacity(meas: pd.DataFrame, daily_bars: pd.DataFrame, days: list[pd.Timesta
     return out
 
 
-# ---------------------------------------------------------------- R1 reconciliation (section 9)
-
-
 def reconcile_r1(r1: pd.DataFrame, meas: pd.DataFrame, pm: dict, markets: list[dict], days: list[pd.Timestamp],
                  p=PARAMS) -> tuple[pd.DataFrame, dict]:
-    """Compare gap, open-to-10:00 return and oriented move with R1's columns on overlapping panel-A closures, and
-    recompute R1's hedge-B P&L (-f_B x ret30 - 4 f_B) with this study's price legs."""
     by_label = {m["label"]: m for m in markets if m.get("source") == "panel_A"}
     nxt = {days[i - 1].strftime("%Y-%m-%d"): days[i] for i in range(1, len(days))}
     rows = []

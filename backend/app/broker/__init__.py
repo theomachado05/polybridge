@@ -1,15 +1,3 @@
-"""Accounts: the Broker protocol, the simulated broker (default) and Webull paper (opt-in).
-
-get_broker() is the one place that decides which broker is active:
-  BROKER=webull + WEBULL_APP_KEY (or WEBULL_API_KEY) + WEBULL_APP_SECRET
-                                                       -> WebullBroker (paper); prediction legs to the sim; options to
-                                                          the sim unless WEBULL_OPTIONS=1 (options_supported; unverified
-                                                          on the paper sandbox, see broker/WEBULL_NOTES.md); equity
-                                                          orders only 09:30-16:00 ET unless WEBULL_EXTENDED_HOURS=1
-  anything else, or a missing Webull key               -> SimBroker (never a crash)
-  WEBULL_BASE_URL other than https://api.sandbox.webull.com (e.g. production api.webull.com)
-                                                       -> refused, logged, SimBroker: nothing here reaches real money
-Tests and the app can pin a broker with app.state.broker."""
 from __future__ import annotations
 
 import logging
@@ -31,7 +19,6 @@ _DEFAULT: Broker | None = None
 
 
 def _env(name: str) -> str:
-    """Environment first, then a .env file (same lookup as the Massive key); empty when unset."""
     try:
         return load_api_key(name, interactive=False)
     except MissingApiKey:
@@ -46,7 +33,7 @@ def _quotes(app: Any | None):
     from .. import chain
 
     def client():
-        c = getattr(getattr(app, "state", None), "massive", chain)  # tests pin app.state.massive (a fake or None)
+        c = getattr(getattr(app, "state", None), "massive", chain)
         return chain.make_client() if c is chain else c
     return MassiveQuotes(client)
 
@@ -58,17 +45,15 @@ def build_broker(app: Any | None = None) -> Broker:
     except ValueError:
         cash = START_CASH
     if _env("BROKER").lower() == "webull":
-        key, secret = _env("WEBULL_APP_KEY") or _env("WEBULL_API_KEY"), _env("WEBULL_APP_SECRET")  # either key name
+        key, secret = _env("WEBULL_APP_KEY") or _env("WEBULL_API_KEY"), _env("WEBULL_APP_SECRET")
         if key and secret:
             try:
                 client = WebullClient(key, secret, _env("WEBULL_BASE_URL") or SANDBOX_HOST,
                                       algorithm=_env("WEBULL_SIGN_ALG") or "HMAC-SHA256")
-            except NotSandboxHost as e:  # a production host would place real-money orders under a "paper" label
+            except NotSandboxHost as e:
                 log.error("%s; using the simulated broker", e)
                 return SimBroker(path, _quotes(app), cash)
             sim = SimBroker(path, _quotes(app), cash, order_note=SIM_NOTE)
-            # The paper sandbox refuses every order outside 09:30-16:00 ET (417): extended hours stay off unless
-            # WEBULL_EXTENDED_HOURS turns them on explicitly.
             return WebullBroker(client, sim, account_id=_env("WEBULL_ACCOUNT_ID") or None,
                                 extended_hours=_on("WEBULL_EXTENDED_HOURS"), options_supported=_on("WEBULL_OPTIONS"))
         log.warning("BROKER=webull but WEBULL_APP_KEY / WEBULL_APP_SECRET are not set; using the simulated broker")
@@ -76,7 +61,6 @@ def build_broker(app: Any | None = None) -> Broker:
 
 
 def get_broker(app: Any | None = None) -> Broker:
-    """The active broker: app.state.broker when set, else built once from the environment."""
     global _DEFAULT
     state = getattr(app, "state", None)
     if state is not None:

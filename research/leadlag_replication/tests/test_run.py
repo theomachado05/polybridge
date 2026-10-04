@@ -1,4 +1,3 @@
-"""Closure windows, rows and the selection walk with fake PM and equity data (no network, no key)."""
 import pandas as pd
 
 import leadlag_replication.run as run
@@ -9,7 +8,7 @@ from leadlag_replication.report import write_all
 
 def test_market_closures_respect_market_life_and_window():
     cl = market_closures("2025-12-01T00:00:00Z", "2026-03-01T00:00:00Z")
-    assert cl[0].key == "2025-12-01" and cl[-1].key == "2025-12-30"           # nothing opening in 2026
+    assert cl[0].key == "2025-12-01" and cl[-1].key == "2025-12-30"
     assert all(c.open_day <= pd.Timestamp("2025-12-31") for c in cl)
     cl2 = market_closures("2024-09-13T15:43:00Z", "2024-12-21T00:31:00Z")
     assert cl2[0].key == "2024-09-13" and cl2[-1].open_day == pd.Timestamp("2024-12-20")
@@ -25,7 +24,6 @@ def test_calendar_close_early_days_and_panels():
 
 
 def _bars(days, jump_bp):
-    """Flat 100 every RTH minute; the open of each listed day jumps by jump_bp."""
     rows = {}
     for d, j in zip(days, jump_bp):
         px = 100.0
@@ -41,7 +39,7 @@ def test_replication_row_orients_and_uses_asof_quotes():
     bars = _bars(["2025-03-04", "2025-03-05"], [0, -50])
     t_close = int(pd.Timestamp("2025-03-04 16:00", tz=TZ).timestamp())
     t_open = int(pd.Timestamp("2025-03-05 09:30", tz=TZ).timestamp())
-    pts = [(t_close - 60, 0.10), (t_open - 120, 0.13), (t_open + 60, 0.50)]   # the post-open point must be ignored
+    pts = [(t_close - 60, 0.10), (t_open - 120, 0.13), (t_open + 60, 0.50)]
     m = {"market_slug": "x", "rank": 1, "sign": -1, "sign_reason": "risk-off: invade"}
     r = replication_row(c, m, pts, {"SPY": bars, "QQQ": bars})
     assert abs(r["dpm_pp"] - 3.0) < 1e-9 and abs(r["x_pp"] + 3.0) < 1e-9
@@ -55,7 +53,7 @@ def test_select_markets_walks_ranking_until_n_qualify(tmp_path):
               "start": "2025-01-01T00:00:00Z", "end": "2025-06-30T00:00:00Z"} for i in (1, 2, 3, 4)]
 
     def fake_pm(token, closures, session=None):
-        if token == "t2":                       # no quotes -> fails coverage
+        if token == "t2":
             return {c.key: [] for c in closures}
         out = {}
         for c in closures:
@@ -65,7 +63,7 @@ def test_select_markets_walks_ranking_until_n_qualify(tmp_path):
 
     sel, cov = run.select_markets(cands, None, n=2, fetch_pm=fake_pm, progress=False)
     assert [s["market"]["market_slug"] for s in sel] == ["m1", "m3"]
-    assert list(cov["qualifies"]) == [True, False, True]       # m4 never examined
+    assert list(cov["qualifies"]) == [True, False, True]
 
     days = sorted({d for s in sel for c in s["closures"] for d in (c.close_day, c.open_day)})
     bars = _bars([d.strftime("%Y-%m-%d") for d in days], [10] * len(days))

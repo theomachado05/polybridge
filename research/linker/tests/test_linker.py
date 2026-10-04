@@ -1,4 +1,3 @@
-"""Link agent: the verdict rule, the scorer, the Fed composite's weights and the option resolver."""
 import numpy as np
 import pandas as pd
 import pytest
@@ -15,7 +14,7 @@ def test_verdict_rule():
     assert bm.verdict({**base, "gap_t": -2.0}) == "contradicted"
     assert bm.verdict({**base, "gap_t": 1.9}) == "unproven"
     assert bm.verdict({**base, "days": 29, "gap_t": 5.0}) == "untestable"
-    assert bm.verdict({"ticker": "SPY", "days": 200, "gap_t": 5.0}) == "untestable"       # excess over SPY is zero by construction
+    assert bm.verdict({"ticker": "SPY", "days": 200, "gap_t": 5.0}) == "untestable"
     assert bm.verdict({**base, "gap_t": float("nan")}) == "untestable"
 
 
@@ -34,7 +33,7 @@ def test_logistic_fit_separates_and_predicts_probabilities():
     m = sc.fit(x, y)
     p = sc.predict(m, x)
     assert ((p > 0) & (p < 1)).all() and sc.auc(y, p) > 0.95
-    assert m["w"][1] > m["w"][2] > 0                                                      # the stronger feature gets the larger weight
+    assert m["w"][1] > m["w"][2] > 0
 
 
 def test_rule_needs_two_models_and_live_odds():
@@ -56,8 +55,8 @@ def test_composite_is_easing_in_bp_and_needs_every_component():
     cut = np.full(10, 0.40)
     hike = np.full(10, 0.10)
     grid, v = cp.composite_series([(t, cut, -25), (t, hike, 25)])
-    assert v[0] == pytest.approx((25 * 0.40 - 25 * 0.10) / 100)                           # 7.5 bp of expected easing
-    late = (t[5:], hike[5:], 25)                                                          # one component starts later
+    assert v[0] == pytest.approx((25 * 0.40 - 25 * 0.10) / 100)
+    late = (t[5:], hike[5:], 25)
     grid2, _ = cp.composite_series([(t, cut, -25), late])
     assert grid2[0] > t[5]
 

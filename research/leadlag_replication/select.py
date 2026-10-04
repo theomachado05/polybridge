@@ -1,10 +1,3 @@
-"""Market selection by a fixed rule (METHOD.md section 2) using gamma METADATA only (no prices).
-
-    cd research && uv run python -m leadlag_replication.select          # print the ranked candidate list
-    cd research && uv run python -m leadlag_replication.select --write  # freeze it to leadlag_replication/markets.json
-
-Never prints or stores outcome prices, last-trade prices or price changes from gamma.
-"""
 from __future__ import annotations
 
 import argparse
@@ -19,34 +12,24 @@ from .config import EXCLUDED_SLUGS, MARKETS_PATH, PARAMS, POOL_EVENTS_PER_QUERY,
 
 GAMMA = "https://gamma-api.polymarket.com"
 
-# ---------------------------------------------------------------- sign rule (METHOD.md section 3)
-# Matching is on the lower-cased question text, with word boundaries. Order: EXCLUDE first, then the two sign lists.
-# A question matching both sign lists, or neither, is excluded as ambiguous.
-
 EXCLUDE = [
-    # monetary policy: the equity response to a repricing of cuts depends on why (growth scare vs dovish policy)
     r"fed", r"fomc", r"federal reserve", r"interest rates?", r"rate cuts?", r"rate hikes?", r"bps", r"powell",
-    # elections, people and offices: no market-level sign without a per-candidate argument
     r"elect\w*", r"win", r"wins", r"nominee", r"nominat\w*", r"president", r"prime minister", r"approval", r"who",
     r"which", r"out as", r"resign\w*", r"impeach\w*", r"pardon\w*", r"leader",
-    # the outcome itself or other asset prices (circular or no fixed sign)
     r"s&p", r"spx", r"nasdaq", r"dow", r"stocks?", r"spy", r"ipo", r"market cap", r"largest company",
     r"bitcoin", r"btc", r"eth", r"ethereum", r"crypto\w*", r"microstrategy", r"solana", r"gold", r"oil", r"price",
     r"treasury", r"yields?",
-    # macro prints with a threshold or bucket: direction of the equity response is not fixed
     r"inflation", r"cpi", r"gdp", r"unemployment", r"jobs", r"payrolls?",
-    # counts, buckets and thresholds
     r"how many", r"how much", r"exactly", r"between", r"above", r"below", r"more than", r"less than", r"at least",
     r"greater than", r"fewer than", r"nothing",
     r"revenue", r"emergency", r"no change", r"sanctions?",
-    # negated or conditional questions: Yes means the opposite of the sign term, or depends on another event
     r"not", r"no", r"broken", r"break\w*", r"collaps\w*", r"fail\w*", r"violat\w*", r"surviv\w*", r"if",
 ]
-RISK_ON = [  # Yes = good for US equities -> sign +1
+RISK_ON = [
     r"cease-?fire", r"truce", r"peace deal", r"peace agreement", r"trade deal", r"trade agreement", r"nuclear deal",
     r"war ends?", r"end (?:of )?the war", r"ends? the war",
 ]
-RISK_OFF = [  # Yes = bad for US equities -> sign -1
+RISK_OFF = [
     r"recession", r"shutdown", r"default\w*", r"invade\w*", r"invasion", r"blockade\w*", r"military", r"strikes?",
     r"airstrikes?", r"attacks?", r"declares? war", r"war with", r"go to war", r"at war", r"martial law",
     r"nuclear (?:test|weapon|strike)\w*",
@@ -61,7 +44,6 @@ def _any(patterns: list[str], text: str) -> list[str]:
 
 
 def classify(question: str) -> tuple[int, str]:
-    """Return (sign, reason). sign = +1 (Yes is risk-on), -1 (Yes is risk-off) or 0 (excluded)."""
     q = (question or "").lower()
     ex = _any(EXCLUDE, q)
     if ex:
@@ -78,9 +60,6 @@ def classify(question: str) -> tuple[int, str]:
     return 0, "no sign term"
 
 
-# ---------------------------------------------------------------- pool and ranking (METHOD.md section 2)
-
-
 def _ts(s) -> pd.Timestamp | None:
     if not s:
         return None
@@ -92,7 +71,6 @@ def _ts(s) -> pd.Timestamp | None:
 
 
 def market_window(m: dict) -> tuple[pd.Timestamp | None, pd.Timestamp | None]:
-    """Market life: start = startDate (else createdAt); end = closedTime if closed, else endDate."""
     start = _ts(m.get("startDate")) or _ts(m.get("createdAt"))
     end = _ts(m.get("closedTime")) if m.get("closed") else None
     end = end or _ts(m.get("endDate"))
@@ -118,7 +96,6 @@ def _outcomes(m: dict) -> list[str]:
 
 
 def fetch_pool(session=None) -> list[dict]:
-    """All events tagged with any POOL_TAGS (closed and open), top POOL_EVENTS_PER_QUERY by volume per query, deduped."""
     s = session or requests.Session()
     events: dict[str, dict] = {}
     for tag_id in POOL_TAGS.values():
@@ -145,14 +122,11 @@ STEM_STOP = {"will", "the", "a", "an", "in", "by", "before", "after", "on", "of"
 
 
 def question_stem(question: str) -> str:
-    """Question with dates, years, numbers and filler words removed: 'Russia x Ukraine ceasefire before July?' and
-    'Russia x Ukraine ceasefire in 2025?' share the stem 'russia x ukraine ceasefire'."""
     words = re.findall(r"[a-z]+", (question or "").lower())
     return " ".join(w for w in words if w not in MONTHS and w not in STEM_STOP)
 
 
 def dedupe_overlapping(df: pd.DataFrame) -> pd.DataFrame:
-    """Walk the volume ranking; drop a market whose stem equals a kept market's stem AND whose life overlaps it."""
     kept: list[int] = []
     for i, r in df.iterrows():
         s0, e0 = pd.Timestamp(r["start"]), pd.Timestamp(r["end"])
@@ -164,8 +138,6 @@ def dedupe_overlapping(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def candidates(events: list[dict]) -> pd.DataFrame:
-    """Eligible markets, at most one per event (its highest-volume classifiable market), same-stem overlapping
-    duplicates removed, ranked by volume."""
     rows = []
     for e in events:
         best = None

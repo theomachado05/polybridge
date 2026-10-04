@@ -1,10 +1,3 @@
-"""Macro market selection by a fixed rule (METHOD.md sections 2-3) using gamma METADATA only (no prices).
-
-    cd research && .venv/bin/python -m macro_panel.select          # print the ranked eligible list
-    cd research && .venv/bin/python -m macro_panel.select --write  # freeze it to macro_panel/markets.json
-
-Never prints or stores outcome prices, last-trade prices or price changes from gamma.
-"""
 from __future__ import annotations
 
 import argparse
@@ -60,7 +53,6 @@ def _any(patterns: list[str], text: str) -> list[str]:
 
 
 def classify(question: str) -> tuple[int, str, str]:
-    """Return (sign, class, reason). sign 0 means excluded."""
     q = (question or "").lower()
     ex = _any(EXCLUDE, q)
     if ex:
@@ -121,7 +113,6 @@ def fetch_pool(session=None) -> list[dict]:
 
 
 def candidates(events: list[dict]) -> pd.DataFrame:
-    """Eligible markets, the highest-volume eligible market per event, ranked by lifetime volume."""
     rows = []
     for e in events:
         best = None

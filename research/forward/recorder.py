@@ -1,5 +1,3 @@
-"""Forward recorder: live order books (top-5 levels, both sides, timestamps) for the verified Polymarket<->Kalshi
-twin pairs and for the threshold markets with listed options. Runs until END_UTC. Row format: README.md."""
 from __future__ import annotations
 
 import argparse
@@ -23,7 +21,7 @@ CLOB = "https://clob.polymarket.com"
 KALSHI = "https://api.elections.kalshi.com/trade-api/v2"
 TWINS = ROOT / "backend" / "app" / "data" / "kalshi_twins.json"
 OUT = Path(__file__).resolve().parent
-END_UTC = datetime(2026, 10, 4, 13, 30, tzinfo=timezone.utc)   # Sun 2026-10-04 09:30 ET
+END_UTC = datetime(2026, 10, 4, 13, 30, tzinfo=timezone.utc)
 DEPTH = 5
 PM_CHUNK = 100
 KALSHI_CHUNK = 50
@@ -44,7 +42,6 @@ def session() -> requests.Session:
 
 
 def _levels(raw, best_high: bool) -> list[list[float]]:
-    """Top-DEPTH [price, size] levels, best first. Accepts Polymarket dicts or Kalshi [price, size] pairs."""
     out = []
     for x in raw or []:
         p, s = (x["price"], x["size"]) if isinstance(x, dict) else (x[0], x[1])
@@ -61,7 +58,6 @@ def pm_row(book: dict, t0: float, t1: float) -> dict:
 
 
 def kalshi_row(ob: dict, t0: float, t1: float) -> dict:
-    """Kalshi lists bids only. YES asks are the NO bids seen from the other side: price 1 - no_bid, same size."""
     fp = ob.get("orderbook_fp") or {}
     no_bids = _levels(fp.get("no_dollars"), True)
     return {"t0": round(t0, 3), "t": round(t1, 3), "v": "k", "id": ob.get("ticker"),
@@ -69,8 +65,6 @@ def kalshi_row(ob: dict, t0: float, t1: float) -> dict:
 
 
 def _request(http: requests.Session, method: str, url: str, **kw):
-    """The response with the send and receive times of the attempt that succeeded. A rate limit or a server error
-    is retried twice inside the cycle, after 1 s and 2 s."""
     for attempt in range(3):
         t0 = time.time()
         r = http.request(method, url, timeout=10, **kw)
@@ -100,8 +94,6 @@ def fetch_kalshi(http: requests.Session, tickers: list[str]) -> list[dict]:
     return rows
 
 
-# ---------------------------------------------------------------- universes
-
 def twins_universe(http: requests.Session) -> dict:
     pairs = json.loads(TWINS.read_text())["pairs"]
     return {"pm": [{"token": p["polymarket"]["token_id"], "id": p["polymarket"]["id"],
@@ -121,7 +113,6 @@ def _jl(x) -> list:
 
 
 def thresholds_universe(http: requests.Session) -> dict:
-    """Open 'close above $K' markets: Polymarket equity-tag events, and Kalshi 16:00 ET closes of SPX and NDX."""
     now = datetime.now(timezone.utc)
     pm, offset = [], 0
     while True:
@@ -168,10 +159,7 @@ def thresholds_universe(http: requests.Session) -> dict:
     return {"pm": pm, "kalshi": kalshi}
 
 
-# ---------------------------------------------------------------- loop
-
 class Sink:
-    """One gzip member per cycle, appended to an hourly file: a crash loses at most the cycle in flight."""
 
     def __init__(self, folder: Path):
         self.folder = folder
@@ -199,7 +187,7 @@ def record(name: str, interval: float, universe_fn, refresh_s: float | None, end
                     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
                     (OUT / "raw" / name / f"universe_{stamp}.json").write_text(json.dumps(uni, indent=1))
                     log(f"[{name}] universe: {len(uni['pm'])} polymarket, {len(uni['kalshi'])} kalshi")
-            except Exception as e:  # keep recording the previous universe
+            except Exception as e:
                 uni_at = time.time() - (refresh_s or 0) + 120
                 log(f"[{name}] universe refresh failed: {e!r}")
             if uni is None:
@@ -226,7 +214,7 @@ def record(name: str, interval: float, universe_fn, refresh_s: float | None, end
         if stats["cycles"] % 20 == 1:
             (OUT / f"heartbeat_{name}.json").write_text(json.dumps(stats))
         nxt += interval
-        if nxt < time.time():        # fell behind: do not burst to catch up
+        if nxt < time.time():
             nxt = time.time()
         time.sleep(max(0.0, nxt - time.time()))
     (OUT / f"heartbeat_{name}.json").write_text(json.dumps(stats))

@@ -1,5 +1,3 @@
-// Micro-market boards: labels come from the evidence registry, no number without its range and sample, and no hedge
-// is ever offered on a ticket. Offline: registry-shaped fixtures, plus source scans of the screens.
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync, statSync } from "node:fs";
@@ -25,7 +23,6 @@ const act = (o: Partial<Mechanism["actions_allowed"]>) => ({ mode: "x", trade: f
 const mech = (id: string, status: string, status_label: string, a: Partial<Mechanism["actions_allowed"]>, numbers: EvNumber[] = []): Mechanism =>
   ({ id, name: `name of ${id}`, status, status_label, claim: `claim of ${id}`, actions_allowed: act(a), numbers, caveats: [], forward_test: null });
 
-// Deliberately odd labels: if a screen helper printed its own words instead of the registry's, these tests catch it.
 const REG: Registry = {
   source_of_truth: "note/NOTE.md", statuses: {}, forward_tests_start: "2026-10-05",
   contract_types: { ladder_rung: "ladders", touch_ticket: "touch", close_above_ticket: "other", btc_15min: "btc_15min", btc_15m_watch: "btc_15min", other: "other" },
@@ -244,28 +241,28 @@ describe("review fixes: statuses, BTC watch, touch threshold, fit gate", () => {
   it("the Draft proposal needs the backend's touch_ticket_reference action to be propose", () => {
     assert.ok(touchProposal(T, REG));
     assert.equal(touchProposal({ ...T, engine: { ...T.engine!, action: "hold", reason: "no_signal" } }, REG), null);
-    assert.equal(touchProposal({ ...T, engine: undefined }, REG), null);               // no decision block: no draft
+    assert.equal(touchProposal({ ...T, engine: undefined }, REG), null);
     assert.equal(engineLine(T.engine, mechanismById(REG, "touch")), `decided by C++ · touch_ticket_reference #0 · proposal · 42 ns · ${mechanismById(REG, "touch")!.status_label}`);
     assert.match(engineLine({ family: "ladder_pair", source: "python_fallback", action: "hold", reason: "python: no violation" }, null)!, /^decided by the Python fallback \(C\+\+ micro families not compiled\) · ladder_pair/);
     assert.equal(engineLine(undefined, null), null);
   });
   it("a touch proposal needs the bid 5+ points above the touch reference, priced at the bid", () => {
-    const p = touchProposal(T, REG)!;                       // bid 30 vs touch mid 24: +6 points
+    const p = touchProposal(T, REG)!;
     assert.equal(p.price, 0.3);
     assert.equal(p.gapPoints.toFixed(1), "6.0");
-    assert.ok(touchProposal({ ...T, best_bid: 0.29, best_ask: 0.40 }, REG));            // +5.0 is inside the rule
-    assert.equal(touchProposal({ ...T, best_bid: 0.285, best_ask: 0.40 }, REG), null);  // +4.5: mid gap irrelevant
+    assert.ok(touchProposal({ ...T, best_bid: 0.29, best_ask: 0.40 }, REG));
+    assert.equal(touchProposal({ ...T, best_bid: 0.285, best_ask: 0.40 }, REG), null);
     assert.equal(touchProposal({ ...T, type: "close_above_ticket" }, REG), null);
     const noTh = { ...REG, touch_sell_threshold_points: undefined, mechanisms: REG.mechanisms.map((m) => m.id === "touch" ? { ...m, actions_allowed: { ...m.actions_allowed, sell_threshold_points: undefined } } : m) };
-    assert.equal(touchProposal(T, noTh), null);                                         // no threshold: none
+    assert.equal(touchProposal(T, noTh), null);
     assert.equal(touchProposal({ ...T, linkable: false }, REG), null);
   });
   it("the threshold comes from the registry touch entry, and the proposal needs the acknowledgement gate", () => {
     const withTh = (th: number | undefined, extra: Partial<Mechanism["actions_allowed"]> = {}) => ({ ...REG, touch_sell_threshold_points: undefined,
       mechanisms: REG.mechanisms.map((m) => m.id === "touch" ? { ...m, actions_allowed: { ...m.actions_allowed, sell_threshold_points: th, ...extra } } : m) });
-    assert.equal(touchProposal(T, withTh(7)), null);                                    // +6 < 7 from the entry
+    assert.equal(touchProposal(T, withTh(7)), null);
     assert.equal(touchProposal(T, withTh(6))!.threshold, 6);
-    assert.equal(touchProposal(T, withTh(5, { requires_acknowledgement: false })), null); // no ack gate: fail closed
+    assert.equal(touchProposal(T, withTh(5, { requires_acknowledgement: false })), null);
     assert.equal(touchProposal(T, withTh(5, { proposals: false })), null);
   });
   it("the ticket board labels the proposal Sell YES and shows it behind the acknowledgement panel", () => {

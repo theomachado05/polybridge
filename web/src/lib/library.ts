@@ -1,6 +1,3 @@
-// GET /library (the hedgecore catalog manifest) → Library screen rows.
-// The UI families come from block kinds (spec §9): signals→Reader, sizers→Impact, gates→Gate,
-// execution→Execution, tax→Tax, routing→Routing; risk blocks sit with Gate.
 import type { CatalogFamily, CatalogParam, LibraryOut } from "./api";
 import { prettyId } from "./fmt.ts";
 
@@ -16,7 +13,6 @@ const KIND_TO_UI: Record<string, UiFamily> = {
   routing: "Routing", router: "Routing",
 };
 
-// Block names from spec §3.1 and §9, for manifests that list blocks by name only.
 const BLOCK_KIND: Record<string, UiFamily> = {};
 const add = (ui: UiFamily, names: string) => names.split(" ").forEach((n) => (BLOCK_KIND[n.toLowerCase()] = ui));
 add("Reader", "PMid ImpliedProb BookImbalance Microprice CrossVenueGap DeltaDp EwmaVol Momentum MeanRevertZ OptionImpliedProb PMvsOptionGap EightKScore");
@@ -29,7 +25,7 @@ add("Routing", "VenueRouter");
 export function blockUi(b: string | { name: string; kind?: string; ui_kind?: string }): UiFamily | null {
   const name = typeof b === "string" ? b : b.name;
   const kind = typeof b === "string" ? undefined : b.kind;
-  const ui = typeof b === "string" ? undefined : b.ui_kind;  // the compiled manifest names the UI family itself
+  const ui = typeof b === "string" ? undefined : b.ui_kind;
   if (ui && (UI_FAMILIES as readonly string[]).includes(ui)) return ui as UiFamily;
   if (kind && KIND_TO_UI[kind.toLowerCase()]) return KIND_TO_UI[kind.toLowerCase()];
   const key = name.replace(/Gate$|Block$/, "").toLowerCase();
@@ -38,11 +34,10 @@ export function blockUi(b: string | { name: string; kind?: string; ui_kind?: str
 
 export interface LibParam { name: string; grid: number[]; min?: number; max?: number }
 export interface LibRow {
-  code: string;          // PB-0001…
-  id: string;            // family id
+  code: string;
+  id: string;
   name: string;
   division: string;
-  /** Every division the family runs in (the catalog's `divisions`, else its single `division`). */
   divisions: string[];
   role: string;
   eventClasses: string[];
@@ -54,14 +49,11 @@ export interface LibRow {
   p50ns: number | null;
   p99ns: number | null;
 }
-/** A micro family (hedgecore ladder_pair, touch_ticket_reference): its own tick type, outside the 17 families. The
- *  status word is the catalog's (`lead`, `unvalidated`). */
 export interface MicroFam { id: string; name: string; status: string; idea: string; division: string; presets: number; params: LibParam[] }
 export interface Library { rows: LibRow[]; total: number; source: string | null; micro: MicroFam[]; microTotal: number }
 
 type RawMicro = { id?: unknown; status?: unknown; idea?: unknown; division?: unknown; preset_count?: unknown; params?: CatalogFamily["params"] };
 
-/** The catalog's `micro_families` (empty when the catalog has none). */
 export function parseMicro(raw: unknown): { micro: MicroFam[]; microTotal: number } {
   const r = (raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {}) as { micro_families?: RawMicro[]; micro_total?: unknown };
   const micro = (Array.isArray(r.micro_families) ? r.micro_families : []).filter((f) => f && typeof f.id === "string").map((f) => ({
@@ -107,10 +99,6 @@ export function parseLibrary(raw: LibraryOut | CatalogFamily[] | null | undefine
   return { rows, total, source: Array.isArray(raw) ? null : raw.source ?? null, ...parseMicro(raw) };
 }
 
-/** Families whose event classes include `cls` (the pipeline's shortlist step, recomputed client-side). With
- *  `division`, only families in that division: the backend shortlists within the chosen division, so the step must
- *  count the same set its rationale does. */
 export const shortlist = (lib: Library | null, cls: string, division?: string | null) => (lib
   ? lib.rows.filter((r) => (r.eventClasses.includes(cls) || r.eventClasses.includes("all")) && (!division || r.divisions.includes(division)))
   : []);
-

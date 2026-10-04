@@ -1,7 +1,3 @@
-"""Candidate-market discovery helper (gamma API). Used by hand while curating events.yaml; not part of the run.
-
-    python -m leadlag.discover "fed decision in september" [--open] [--markets]
-"""
 from __future__ import annotations
 
 import argparse
@@ -29,7 +25,7 @@ def event_by_slug(slug: str) -> dict | None:
 
 
 def market_by_slug(slug: str) -> dict | None:
-    for closed in ("false", "true"):  # gamma hides closed markets unless asked
+    for closed in ("false", "true"):
         r = requests.get(f"{GAMMA}/markets", params={"slug": slug, "closed": closed}, timeout=30)
         r.raise_for_status()
         rows = r.json()

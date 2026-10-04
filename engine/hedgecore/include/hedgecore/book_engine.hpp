@@ -1,7 +1,4 @@
 #pragma once
-// Polymarket market-channel frame to stale-quote decisions in one call: simdjson on-demand parse, preallocated per-token
-// books (integer prices in 1e-8 units, best level at the back of each side), and hedgecore::stale_quote on every touched
-// token against the reference probability of its market. No allocation per frame once the buffers are warm.
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -60,4 +57,4 @@ class BookEngine {
   std::unique_ptr<Impl> im_;
 };
 
-}  // namespace hedgecore
+}

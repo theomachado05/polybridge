@@ -1,7 +1,3 @@
-"""S14: is the missing edge a link problem, a signal problem, or neither? (METHOD.md). A diagnostic on cached data.
-
-Run from `research/`:  python -m s14_link_ceiling.run
-"""
 from __future__ import annotations
 
 import json
@@ -27,7 +23,6 @@ RESULTS = HERE.parent / "results" / "s14_link_ceiling"
 
 
 def slope_t(x: np.ndarray, y: np.ndarray) -> tuple[float, float, int]:
-    """Through-origin slope of y on x, its heteroskedasticity-robust t, and the number of sessions with x != 0."""
     ok = np.isfinite(x) & np.isfinite(y)
     x, y = x[ok], y[ok]
     n, sxx = int((x != 0).sum()), float(np.sum(x * x))
@@ -39,12 +34,10 @@ def slope_t(x: np.ndarray, y: np.ndarray) -> tuple[float, float, int]:
 
 
 def pick(t: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """(continuation, reversal): links whose t is at least +T_PICK, at most -T_PICK."""
     return np.nan_to_num(t, nan=0.0) >= cfg.T_PICK, np.nan_to_num(t, nan=0.0) <= -cfg.T_PICK
 
 
 def shares(t_after: np.ndarray, t_gap: np.ndarray) -> tuple[float, float, float]:
-    """Share of links with after-open |t| >= 2, mean |t| of the top tenth, share with gap t >= 2 (links with a t only)."""
     a, g = np.abs(t_after[np.isfinite(t_after)]), t_gap[np.isfinite(t_gap)]
     k = max(1, int(math.ceil(cfg.TOP_SHARE * len(a)))) if len(a) else 0
     return (float(np.mean(a >= cfg.T_PICK)) if len(a) else float("nan"), float(np.sort(a)[-k:].mean()) if k else float("nan"),
@@ -114,7 +107,6 @@ def main() -> int:
     days, oos, weekend = cal["days"], cal["oos"], cal["weekend"]
     rows, link_rows = [], []
 
-    # ---- per-link slopes: in-sample (for the oracle) and whole sample (for the count)
     t_is, t_all, t_gap_all, t_gap_is = (np.full(len(panel), np.nan) for _ in range(4))
     for i, l in enumerate(panel):
         b_is, t_is[i], n_is = slope_t(l["x"][~oos], l["after"][~oos])
@@ -128,7 +120,6 @@ def main() -> int:
                           "in_sample_sessions_with_a_move": n_is, "in_sample_after_slope": b_is, "in_sample_after_t": t_is[i],
                           "in_sample_gap_t": t_gap_is[i]})
 
-    # ---- C1: the oracle link
     def pooled(idx: np.ndarray, mask: np.ndarray, y: str, flip: np.ndarray | None = None) -> dict:
         xs, ys, ds = [], [], []
         for i in np.flatnonzero(idx):
@@ -155,7 +146,6 @@ def main() -> int:
         rows.append({"test": "C1 oracle link", "group": name, "sample": "out-of-sample", "outcome": "after the open", **pooled(idx, oos, "after", flip)})
     rows.append({"test": "C1 oracle link", "group": "every link", "sample": "out-of-sample", "outcome": "opening gap", **pooled(has, oos, "gap")})
 
-    # ---- C2: more strong links than chance?
     obs = shares(t_all, t_gap_all)
     rng = np.random.default_rng(cfg.SHUFFLE_SEED)
     null = np.zeros((cfg.N_SHUFFLES, 3))
@@ -175,7 +165,6 @@ def main() -> int:
                      "shuffle_mean": float(null[:, j].mean()), "shuffle_p95": float(np.percentile(null[:, j], 95)),
                      "shuffle_max": float(null[:, j].max()), "share_of_shuffles_at_or_above": float(np.mean(null[:, j] >= obs[j]))})
 
-    # ---- C3: other definitions of the signal
     D = np.concatenate([np.asarray(days)] * len(panel))
     W = np.concatenate([weekend] * len(panel))
     for col, name in (("x", "points, previous close to 09:29"), ("x_logit", "log-odds, previous close to 09:29"),

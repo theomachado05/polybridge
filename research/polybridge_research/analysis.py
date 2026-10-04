@@ -1,4 +1,3 @@
-"""Scoreboards, placebo, parity decay and the pre-registered pass check (HYPOTHESIS.md §4)."""
 from __future__ import annotations
 
 import numpy as np
@@ -94,7 +93,6 @@ def decay_table(res: pd.DataFrame, cfg: StudyConfig, entry: str = "pre") -> pd.D
 
 
 def with_put_leg(res: pd.DataFrame) -> pd.DataFrame:
-    """Add `put_leg`: the protective put minus the stock, i.e. the bought put's own P&L per $1 of spot."""
     return res.assign(put_leg=res["protective_put"] - res["stock"]) if len(res) else res.assign(put_leg=pd.Series(dtype=float))
 
 
@@ -108,7 +106,6 @@ def _cluster_means(x: np.ndarray, groups: np.ndarray, rng, n_boot: int) -> np.nd
 
 def cluster_difference_board(res_a, res_b, cfg: StudyConfig, column: str, level: float = 0.95, entry=None,
                              cluster: str = "ticker", seed: int = 1, n_boot: int = 4000) -> pd.DataFrame:
-    """Events minus placebo with a bootstrap that resamples whole clusters (companies), not single rows."""
     e = entry or cfg.entry
     a = slice_results(res_a, cfg.baseline_bucket, e, cfg.otm_pct)
     b = slice_results(res_b, cfg.baseline_bucket, e, cfg.otm_pct)
@@ -129,7 +126,6 @@ def cluster_difference_board(res_a, res_b, cfg: StudyConfig, column: str, level:
 
 
 def robustness_table(events_res, placebo_res, family: str, cfg: StudyConfig) -> pd.DataFrame:
-    """Checks reported next to the pass rule, never instead of it: company-clustered intervals, and for H1 the put's own edge."""
     strategy = STRATEGY_FOR_FAMILY[Family(family)]
     ev, pl = with_put_leg(events_res), with_put_leg(placebo_res)
     level, heads = cfg.confirmatory_level, list(cfg.headline_horizons)
@@ -145,7 +141,6 @@ def robustness_table(events_res, placebo_res, family: str, cfg: StudyConfig) -> 
 
 
 def verdict(chk: dict | None) -> str:
-    """PASS, NULL, or INSUFFICIENT when fewer than 2 headline horizons have the 5+ events and placebo days a CI needs."""
     if chk is None:
         return "INSUFFICIENT"
     if chk["passed"]:
@@ -164,7 +159,7 @@ def pass_check(events_res, placebo_res, family: str, cfg: StudyConfig) -> dict:
     want_up = family == Family.HEDGE.value
     pnl_ok = [h for h in heads if ((pnl["horizon"] == h) & (pnl["ci_lo"] > 0)).any()]
     d = ratio["difference"]
-    sign_ok = (d > 0) if want_up else (d < 0)          # strict; NaN compares False
+    sign_ok = (d > 0) if want_up else (d < 0)
     ratio_ok = [h for h in heads if ((ratio["horizon"] == h) & sign_ok).any()]
     both = [h for h in heads if h in pnl_ok and h in ratio_ok]
     return {"family": family, "strategy": strategy, "pnl": pnl, "ratio": ratio,

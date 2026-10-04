@@ -1,4 +1,3 @@
-"""enrich(): MarketTick option fields, NaN-safety, refresh() windowing (app/options/enrich.py). Offline."""
 import asyncio
 import datetime as dt
 import math
@@ -40,9 +39,9 @@ def test_enrich_fills_option_fields_for_above():
     out, det = en.enrich_detail(tick, "NVDA", 150.0, "2026-12-18", chain=make_chain())
     T = 77 / 365
     assert out["opt_implied_prob"] == pytest.approx(0.5 / math.exp(-0.04 * T))
-    assert out["opt_mid"] == pytest.approx(5.0)          # call spread C(145) - C(155)
+    assert out["opt_mid"] == pytest.approx(5.0)
     assert out["opt_delta"] == pytest.approx(0.5) and out["opt_iv"] == pytest.approx(0.3)
-    assert out["yes_bid"] == 0.4 and tick.get("opt_mid") is None   # input untouched, other fields kept
+    assert out["yes_bid"] == 0.4 and tick.get("opt_mid") is None
     assert det["available"] and det["expiry"] == EXP
 
 
@@ -50,7 +49,7 @@ def test_enrich_below_uses_put_spread_and_flipped_prob():
     out = en.enrich({"ts_ns": ts("2026-10-02")}, "NVDA", 150.0, EXP, above=False, chain=make_chain())
     above = en.enrich({"ts_ns": ts("2026-10-02")}, "NVDA", 150.0, EXP, chain=make_chain())
     assert out["opt_implied_prob"] == pytest.approx(1 - above["opt_implied_prob"])
-    assert out["opt_mid"] == pytest.approx(6.5 - 2.0)    # put spread P(155) - P(145)
+    assert out["opt_mid"] == pytest.approx(6.5 - 2.0)
     assert out["opt_delta"] == pytest.approx(-0.5)
 
 
@@ -62,13 +61,13 @@ def test_enrich_uses_last_cached_chain_without_network():
 
 
 @pytest.mark.parametrize("tick,und,K,exp,chain", [
-    (None, "NOCHAIN_A", 150.0, EXP, None),                 # no tick, no chain
-    ({}, "NOCHAIN_TICKER", 150.0, EXP, None),              # nothing cached
-    ({"ts_ns": "garbage"}, "NVDA", "abc", EXP, "chain"),   # bad K
+    (None, "NOCHAIN_A", 150.0, EXP, None),
+    ({}, "NOCHAIN_TICKER", 150.0, EXP, None),
+    ({"ts_ns": "garbage"}, "NVDA", "abc", EXP, "chain"),
     ({}, "NVDA", NAN, EXP, "chain"),
     ({}, "NVDA", 150.0, "not-a-date", "chain"),
-    ({}, "NVDA", 999.0, EXP, "chain"),                     # outside listed strikes
-    ({"opt_mid": "x", "opt_iv": None}, "NVDA", 150.0, EXP, ch.Chain("NVDA", 0.0)),  # empty chain
+    ({}, "NVDA", 999.0, EXP, "chain"),
+    ({"opt_mid": "x", "opt_iv": None}, "NVDA", 150.0, EXP, ch.Chain("NVDA", 0.0)),
 ])
 def test_enrich_nan_safe(tick, und, K, exp, chain):
     c = make_chain() if chain == "chain" else chain
@@ -101,7 +100,7 @@ class Live8K:
 def test_enrich_eightk_is_nan_for_a_live_date_until_refreshed():
     tick = {"ts_ns": ts("2026-10-02")}
     out, det = en.enrich_detail(tick, "NVDA", 150.0, EXP, chain=make_chain(), eightk_ticker="NVDA")
-    assert math.isnan(out["eightk_score"]) and det["eightk_coverage"] is None     # no data, not "no filing"
+    assert math.isnan(out["eightk_score"]) and det["eightk_coverage"] is None
     assert asyncio.run(en.refresh_eightk("2026-10-02", client=Live8K())) == "live"
     out, det = en.enrich_detail(tick, "NVDA", 150.0, EXP, chain=make_chain(), eightk_ticker="NVDA")
     assert out["eightk_score"] == pytest.approx(1 - 1 / 30) and det["eightk_coverage"] == "live"
@@ -113,15 +112,13 @@ def test_enrich_eightk_in_sample_date_reads_bundled_file():
     assert out["eightk_score"] == 0.0
 
 
-# ---------------------------------------------------------------- chain selection and the expiry guard
-
 def test_two_markets_on_one_underlying_read_their_own_chains():
     dec = make_chain("NVDA", "2026-12-31")
     mar = make_chain("NVDA", "2027-03-19", scale=0.5)
     ch.remember_for("NVDA", 150.0, "2026-12-31", dec)
     ch.remember(dec)
     ch.remember_for("NVDA", 150.0, "2027-03-19", mar)
-    ch.remember(mar)                       # the latest snapshot for NVDA is now the March one
+    ch.remember(mar)
     out, det = en.enrich_detail({}, "NVDA", 150.0, "2026-12-31", as_of="2026-10-02")
     assert det["expiry"] == "2026-12-31" and det["chain_origin"] == "query"
     assert out["opt_mid"] == pytest.approx(5.0)
@@ -130,7 +127,7 @@ def test_two_markets_on_one_underlying_read_their_own_chains():
 
 
 def test_fallback_chain_with_wrong_expiry_leaves_fields_nan():
-    ch.remember(make_chain("NVDA", "2027-03-19"))     # only another market's chain is cached
+    ch.remember(make_chain("NVDA", "2027-03-19"))
     out, det = en.enrich_detail({}, "NVDA", 150.0, "2026-12-31", as_of="2026-10-02")
     assert det["chain_origin"] == "underlying_latest" and det["expiry_gap_days"] == 78
     assert det["expiry_gap_ok"] is False and det["available"] is False
@@ -140,12 +137,10 @@ def test_fallback_chain_with_wrong_expiry_leaves_fields_nan():
 
 def test_expiry_gap_guard_scales_with_horizon():
     from app.options.implied import max_expiry_gap_days
-    assert max_expiry_gap_days("2026-10-10", "2026-10-02") == 7         # short horizon: floor of 7 days
-    assert max_expiry_gap_days("2026-12-31", "2026-10-02") == 18        # 90 days out: 20% of the horizon
-    # Dec 31 question, Dec 18 monthly, 3 months out: 13 days, accepted
+    assert max_expiry_gap_days("2026-10-10", "2026-10-02") == 7
+    assert max_expiry_gap_days("2026-12-31", "2026-10-02") == 18
     out, det = en.enrich_detail({}, "NVDA", 150.0, "2026-12-31", chain=make_chain(), as_of="2026-10-02")
     assert det["expiry_gap_days"] == -13 and det["expiry_gap_ok"] and math.isfinite(out["opt_implied_prob"])
-    # the same 13-day gap two weeks before resolution is a different date: rejected
     out, det = en.enrich_detail({}, "NVDA", 150.0, "2026-12-31", chain=make_chain(), as_of="2026-12-10")
     assert not det["expiry_gap_ok"] and math.isnan(out["opt_implied_prob"])
 
@@ -162,7 +157,6 @@ class _Resp:
 
 
 class WindowClient:
-    """Returns contracts only when the requested expiry window is at least `need_days` wide on each side."""
 
     def __init__(self, need_lo: str):
         self.need_lo, self.calls = need_lo, []
@@ -181,7 +175,7 @@ def test_refresh_widens_expiry_window_until_contracts_found():
     got = asyncio.run(en.refresh("NVDA", 150.0, "2026-12-31", as_of="2026-10-02", client=client, cache=TTLCache(60)))
     assert got is not None and got[0].quotes and got[1] is False
     widths = [p["expiration_date.gte"] for p in client.calls]
-    assert widths == ["2026-12-28", "2026-12-21", "2026-12-13"]    # 3, 10, then the 18-day gap limit
+    assert widths == ["2026-12-28", "2026-12-21", "2026-12-13"]
     assert client.calls[0]["strike_price.gte"] == pytest.approx(135.0)
     assert client.calls[0]["strike_price.lte"] == pytest.approx(165.0)
     assert ch.last_chain("NVDA") is got[0]
@@ -189,7 +183,6 @@ def test_refresh_widens_expiry_window_until_contracts_found():
 
 
 class TruncatingClient:
-    """Always says there are more pages; returns contracts in every window."""
 
     def __init__(self):
         self.calls = []
@@ -217,7 +210,7 @@ def test_refresh_refetches_narrower_band_when_truncated():
 def test_refresh_none_on_bad_input_or_nothing_listed():
     client = WindowClient(need_lo="2000-01-01")
     assert asyncio.run(en.refresh("NVDA", 150.0, "2026-12-31", as_of="2026-10-02", client=client, cache=TTLCache(60))) is None
-    assert len(client.calls) == 3       # 3, 10 and 18 days (the gap limit for a 90-day horizon)
+    assert len(client.calls) == 3
     assert asyncio.run(en.refresh("NVDA", "x", "2026-12-31", client=client)) is None
     assert asyncio.run(en.refresh("NVDA", 150.0, None, client=client)) is None
 
@@ -231,8 +224,6 @@ def test_refresh_none_on_massive_failure():
             raise TimeoutError
     assert asyncio.run(en.refresh("NVDA", 150.0, "2026-12-31", client=Failing(), cache=TTLCache(60))) is None
 
-
-# ---------------------------------------------------------------- enrich_market (one call for the bridge loop)
 
 class BookClient:
     def __init__(self, rows):

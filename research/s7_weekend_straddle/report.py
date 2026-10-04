@@ -1,7 +1,3 @@
-"""S7 report: SUMMARY.md, equity_curve.png, drawdown.png and capacity.md from the result CSVs.
-
-Run from `research/`:  python -m s7_weekend_straddle.report
-"""
 from __future__ import annotations
 
 import json
@@ -38,7 +34,6 @@ def md_table(df: pd.DataFrame, cols: dict) -> str:
 
 
 def books(tr: pd.DataFrame) -> tuple[pd.Series, pd.Series]:
-    """Mean 1x return per Friday of the primary's flagged straddles and of their controls."""
     ok = tr[tr.status == "ok"]
     f = ok[(ok.group == "flagged") & (ok[f"flag_{cfg.PRIMARY}"])]
     keys = set(zip(f.ticker, f.friday))

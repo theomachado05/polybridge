@@ -72,7 +72,6 @@ CLOB_HISTORY = "https://clob.polymarket.com/prices-history"
 
 
 def parse_when(s: str):
-    """An ISO-8601 time; without an offset it is New York time. Returns an aware datetime."""
     import datetime as dt
     from zoneinfo import ZoneInfo
     t = dt.datetime.fromisoformat(s.replace("Z", "+00:00"))
@@ -80,7 +79,6 @@ def parse_when(s: str):
 
 
 def fetch_window(token: str, http: httpx.Client, start_s: int, end_s: int, fidelity_min: int) -> list[dict]:
-    """CLOB price history (YES mid) over [start_s, end_s] at ``fidelity_min``-minute points, as replay rows."""
     from history_to_replay import parse_history
     r = http.get(CLOB_HISTORY, params={"market": token, "startTs": start_s, "endTs": end_s,
                                        "fidelity": fidelity_min}, timeout=30)
@@ -92,7 +90,6 @@ def fetch_window(token: str, http: httpx.Client, start_s: int, end_s: int, fidel
 
 
 def fetch_minute_bars(client, ticker: str, start_s: int, end_s: int, minutes: int) -> list[dict]:
-    """Massive ``minutes``-minute aggregates (extended hours included) covering the window, [{"t": start s, "c"}]."""
     from datetime import datetime, timedelta, timezone
     d0 = datetime.fromtimestamp(start_s, timezone.utc).date() - timedelta(days=1)
     d1 = datetime.fromtimestamp(end_s, timezone.utc).date() + timedelta(days=1)
@@ -104,7 +101,6 @@ def fetch_minute_bars(client, ticker: str, start_s: int, end_s: int, minutes: in
 
 
 def join(rows: list[dict], span_s: int, bars: list[dict]) -> list[dict]:
-    """Stamp each row with the close of the last bar already finished at its time."""
     known = [b["t"] + span_s for b in bars]
     out = []
     for r in rows:
@@ -118,14 +114,11 @@ def _round(x: float) -> float:
 
 
 async def _direct(fn, *args):
-    """``app.chain.bounded`` without its 8 s API bound: a one-off recording may wait for Massive."""
     return fn(*args)
 
 
 def option_rows(rows: list[dict], question: str, end_date: str | None, client, *,
                 bars=None) -> tuple[list[dict], dict]:
-    """``rows`` with the options-implied fields of the question's threshold (see the module docstring), and the
-    structure (for the sidecar). Raises SystemExit when the question cannot be mapped or nothing is listed."""
     import datetime as dt
 
     import numpy as np
@@ -165,7 +158,7 @@ def option_rows(rows: list[dict], question: str, end_date: str | None, client, *
             row["opt_legs"] = {lg["ticker"]: _round(float(c[i])) for lg, c in zip(st["legs"], closes)}
         out.append(row)
     settlement = None
-    if int(ts_s.max()) >= settle_s(st["expiry"]):  # the history reaches the expiry close: record the settlement
+    if int(ts_s.max()) >= settle_s(st["expiry"]):
         got = official_close(client, und, dt.date.fromisoformat(st["expiry"]))
         if got is None:
             raise SystemExit(f"no official close for {und} on {st['expiry']}: cannot record the expiry settlement")
@@ -184,7 +177,6 @@ SETTLE_SOURCE_DAILY = "Massive daily bar close"
 
 
 def official_close(client, underlying: str, day) -> tuple[float, str] | None:
-    """(the underlying's official close on ``day``, source): Massive /v1/open-close, else that day's daily bar."""
     try:
         r = client.get(f"/v1/open-close/{underlying.upper()}/{day.isoformat()}", {"adjusted": "true"}) or {}
         c = float(r.get("close"))
@@ -204,7 +196,6 @@ def official_close(client, underlying: str, day) -> tuple[float, str] | None:
 
 
 def settle_s(expiry: str) -> int:
-    """Unix s of the expiry close: 16:00 New York on the expiry date (the listed contracts' last trade)."""
     import datetime as dt
 
     from app.options.match import _NY
@@ -212,9 +203,6 @@ def settle_s(expiry: str) -> int:
 
 
 def settle_rows(rows: list[dict], structure: dict, close: float, source: str) -> int:
-    """Stamp every row at or after the expiry close with the structure's settlement: each leg at its intrinsic value
-    (call max(S - K, 0), put max(K - S, 0)) at the official close ``close``. Replaces any option fields there, drops
-    opt_implied_prob / opt_iv (a settlement value is not a quote). Returns the number of rows stamped."""
     at = settle_s(structure["expiry"])
     legs = {lg["ticker"]: max((close - lg["strike"]) if lg["kind"] == "call" else (lg["strike"] - close), 0.0)
             for lg in structure["legs"]}
@@ -233,7 +221,6 @@ def settle_rows(rows: list[dict], structure: dict, close: float, source: str) ->
 
 
 def since_day(rows: list[dict], day) -> list[dict]:
-    """Rows from the start of New York day ``day``."""
     import datetime as dt
 
     from app.options.match import _NY
@@ -242,7 +229,6 @@ def since_day(rows: list[dict], day) -> list[dict]:
 
 
 def since_first_option(rows: list[dict]) -> list[dict]:
-    """Rows from the New York day of the first row that carries an options estimate."""
     import datetime as dt
 
     from app.options.match import _NY
@@ -331,7 +317,7 @@ def main(argv: list[str] | None = None) -> int:
         if client is None:
             raise SystemExit("--options needs MASSIVE_API_KEY")
         joined, structure = option_rows(joined, question, end_date, client)
-        structure["counts_over_rows"] = len(joined)  # the rows the n_* counts above are over (before --since options)
+        structure["counts_over_rows"] = len(joined)
         if a.since == "options":
             joined = since_first_option(joined)
     a.out.parent.mkdir(parents=True, exist_ok=True)

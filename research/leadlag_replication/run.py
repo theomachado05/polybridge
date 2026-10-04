@@ -1,9 +1,3 @@
-"""Run the confirmatory replication once:  cd research && uv run --env-file ../.env python -m leadlag_replication.run
-
-Order (METHOD.md section 2, rule 5): PM data for candidates in rank order until N markets pass the coverage check,
-then (and only then) equity bars, then the analysis. Writes results.csv, coverage.csv, tests.json, SUMMARY.md,
-chart.png and appends to RUN_LOG.md under research/results/leadlag_replication/. A missing Massive key exits 2.
-"""
 from __future__ import annotations
 
 import argparse
@@ -37,8 +31,6 @@ def load_candidates(path=MARKETS_PATH) -> list[dict]:
 
 def select_markets(cands: list[dict], pm_session, cal=None, n: int | None = None, fetch_pm=fetch_market_pm,
                    progress=True) -> tuple[list[dict], pd.DataFrame]:
-    """Walk the frozen ranking; fetch PM for each candidate's closures; keep the first n with >= min_pm_closures
-    closures quoted at both ends. Returns (selected markets with their closures and PM points, coverage table)."""
     cal = cal or TradingCalendar()
     n = n or PARAMS.n_markets
     selected, cov = [], []

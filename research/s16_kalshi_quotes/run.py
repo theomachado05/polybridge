@@ -1,7 +1,3 @@
-"""S16: the give-back at Kalshi's real bid and ask, and the same nights on Polymarket (METHOD.md). Cached data only.
-
-Run from `research/`:  python -m s16_kalshi_quotes.run
-"""
 from __future__ import annotations
 
 import json
@@ -29,8 +25,6 @@ CLIP = (0.01, 0.99)
 
 
 def standing_quote(grid: np.ndarray, t: np.ndarray, bid: np.ndarray, ask: np.ndarray, max_age: float) -> tuple[np.ndarray, np.ndarray]:
-    """The quote in force at each instant: the last candle at or before it, if it is at most max_age old and
-    two-sided (bid above 0, ask below 1, ask above bid). A later one-sided candle cancels an earlier two-sided one."""
     b, a = np.full(len(grid), np.nan), np.full(len(grid), np.nan)
     if len(t) == 0:
         return b, a
@@ -45,8 +39,6 @@ def standing_quote(grid: np.ndarray, t: np.ndarray, bid: np.ndarray, ask: np.nda
 
 
 def fade_at_quotes(x: float, bid_in: float, ask_in: float, bid_out: float, ask_out: float, mult: float, c: float) -> dict:
-    """Sell a rise at the bid and buy it back at the ask (or the mirror), 100 contracts, Kalshi's taker fee on each fill.
-    At c = 2 each fill is a further half-spread worse and the fee is doubled. Per contract, in price units."""
     half_in, half_out = (ask_in - bid_in) / 2.0, (ask_out - bid_out) / 2.0
     sell = x > 0
     entry = bid_in - (c - 1.0) * half_in if sell else ask_in + (c - 1.0) * half_in
@@ -122,7 +114,6 @@ def tests(df: pd.DataFrame) -> list[dict]:
             m = boot_mean({g: list(v) for g, v in diff.groupby("day").d})
             rows.append({"test": "K2 Polymarket minus Kalshi, paired", "quote_age": tag, "threshold": thr, "n": len(both), "dates": int(both.day.nunique()),
                          "markets": int(both.ticker.nunique()), "mean": m[0], "ci_lo": m[1], "ci_hi": m[2]})
-    # K3 (amendment 1): the nights picked on Polymarket's own overnight move
     d = df[(df.quote_age == "6h") & df.p_in.between(*cfg.ENTRY_BAND) & df.p_out.notna() & df.mid_out.notna() & df.x_polymarket.notna()]
     for thr in cfg.TEST_THRESHOLDS:
         s = d[d.x_polymarket.abs() >= thr]

@@ -1,44 +1,4 @@
 #pragma once
-// closed_session_hedge: hedge A of closed-market mode (docs/design.md, section 2, Product behaviour 4).
-// While US equities are closed (nights, weekends, NYSE holidays, one-off closures, and from 13:00 ET on early-close
-// days; judged on the tick's own timestamp so a replayed Saturday behaves like a Saturday) the stock cannot be traded
-// but the prediction market can. The calendar is us_equity_regular_session (util.hpp), the same rules as the backend
-// session clock (backend/app/closed/session.py). The family buys the
-// adverse YES contract (Instrument::PredYes), sized to offset the expected equity move, and at the next regular
-// session it hands off: it unwinds the YES leg first and then, when `handoff_equity` = 1, moves the hedge into the
-// equity at the DeltaBridge target round(c * N * p_adverse) through the shared HedgeCore pipeline.
-//
-// Sizing (documented derivation):
-//   * The research rate r is in bp of equity move per percentage point (pp) of PM move: across 380 closures a 1 pp
-//     rise in the adverse YES went with about r = 7.52 bp of adverse open gap. The rate is per market when the backend
-//     has enough of that market's closures (passed in `rate_bp_per_pp`), else the pooled figure.
-//   * Expected equity loss per 1 pp adverse move: N_cov * S * r * 1e-4 dollars, with S the underlying price (the last
-//     close while the market is shut) and N_cov the shares still to be covered.
-//   * A YES contract pays $1 at resolution, so its value moves $0.01 per pp.
-//   * Contracts that offset the loss: N_cov * S * r * 1e-4 / 0.01 = N_cov * S * r * 1e-2, rounded to whole contracts.
-//     Example: N_cov = 500, S = $100, r = 7.52 -> 3,760 contracts (a 1 pp move: equity -$37.60, YES leg +$37.60).
-//   * N_cov = max(0, c * N - h_eq): coverage c applies to the PM and equity legs combined, so an equity short h_eq
-//     already in place (e.g. from the previous session) reduces the PM leg one for one.
-//   * r_eff = rate_bp_per_pp * rate_scale (the tuned scaling of the research rate).
-// Caps: PositionCap keeps the YES leg's resolution payoff (contracts * $1) at or below the covered equity value
-// N_cov * S, so the hedge never turns into a net bet on the event; NotionalCap keeps contracts * YES price at or below
-// max_notional. Fee gate on increments only: the protection an increment buys on an expected exp_move_pp move over the
-// closure (q * 0.01 * exp_move_pp) must cover its round trip (q * 2 * (YES half-spread + taker fee)); reductions are
-// risk-reducing and skip it.
-//
-// Contracts with the caller:
-//   * Combined coverage needs every equity fill for this holding. The equity short h_eq is Position::equity at
-//     construction plus every on_fill(Instrument::Equity, signed_qty, px) since. When another component fills the
-//     equity leg (the staged-order book with the default handoff_equity = 0), the bridge must forward those fills to
-//     this algo via on_fill("equity", ...) or rebuild the algo with the current Position::equity before each closure;
-//     otherwise the next closure sizes the YES leg on the full c * N and PM + equity together exceed c * N.
-//   * Intent::signal is the expected adverse open gap in bp on every path, r_eff * (p - p_close) * 100, NaN until a
-//     close mark exists (or with no probability). p_close is the last in-session adverse probability before the
-//     current (or, in session, the previous) closure. An algo built during a closure has no in-session mark, so its
-//     p_close is the first closed tick's probability and the signal measures the move since the algo started, not
-//     since the regular close. The backend closure tracker (backend/app/closed/tracker.py) is the source of truth
-//     for the expected gap shown to users; this signal is diagnostic and does not size the leg.
-// Nothing here allocates or makes a virtual call on the tick path.
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -82,8 +42,8 @@ struct ClosedSessionHedge : AlgoBase<ClosedSessionHedge> {
   static constexpr std::int64_t kBackoffBaseNs = kNsPerSec;
   static constexpr std::int64_t kBackoffMaxNs = 60 * kNsPerSec;
 
-  HedgeCore core;  // admission (validity, staleness) and the equity handoff leg
-  blocks::Session session{true, true};  // enabled, full NYSE calendar (inverted)
+  HedgeCore core;
+  blocks::Session session{true, true};
   blocks::DeltaBridge sizer;
   blocks::PositionCap risk_cap{};
   blocks::NotionalCap notional;
@@ -92,19 +52,14 @@ struct ClosedSessionHedge : AlgoBase<ClosedSessionHedge> {
   FeeModel fees{};
   double coverage, rate_eff, exp_move;
   bool handoff_equity;
-  double yes = 0;         // held adverse YES contracts (own fills plus any pre-existing Position::pred_yes)
-  bool yes_bad = false;   // a non-finite YES fill latches InvalidState
+  double yes = 0;
+  bool yes_bad = false;
   bool was_closed = false;
-  bool handoff_due = false;  // the next equity order after an unwind is tagged Handoff
-  double p_open = kNaN;   // adverse probability at the last in-session tick
-  double p_close = kNaN;  // adverse probability when the current closure began (closure tracker)
-  // Session state is constant within a UTC minute (the session edges, early closes included, fall on whole minutes
-  // and the DST offsets are whole hours), so the calendar check runs once per minute of tick time.
+  bool handoff_due = false;
+  double p_open = kNaN;
+  double p_close = kNaN;
   std::int64_t sess_minute = std::numeric_limits<std::int64_t>::min();
   bool sess_closed = true;
-  // YES-leg reject backoff, as HedgeCore's for equity: the first reject is re-sent at once, the k-th (k >= 2) waits
-  // 2^(k-2) s (at most 60 s) after the rejected send. A fill or an order on the other side resets it, so rejected
-  // buys during a closure never delay the handoff sell at the open.
   int yes_rejects = 0;
   int yes_last_side = 0;
   std::int64_t yes_sent_ns = 0;
@@ -120,15 +75,11 @@ struct ClosedSessionHedge : AlgoBase<ClosedSessionHedge> {
         exp_move(p.v[kExpMove]),
         handoff_equity(p.v[kHandoffEquity] >= 0.5),
         yes(num(pos.pred_yes) ? pos.pred_yes : 0.0) {}
-  // HedgeCore's impact (expected fractional stock move if the adverse event resolves, pricing its equity fee gate) is
-  // the rate's own: r_eff bp/pp * 100 pp * 1e-4 = r_eff * 1e-2.
 
-  // Expected adverse open gap in bp implied by the PM move since the close (positive = expected equity loss).
   double expected_gap_bp(double p) const noexcept {
     return (num(p) && num(p_close)) ? rate_eff * (p - p_close) * 100.0 : kNaN;
   }
 
-  // Contracts that offset the expected equity move per pp (see the header), before caps. NaN if S is unknown.
   double raw_target(double s) const noexcept {
     if (!num(s) || s <= 0) return kNaN;
     const double n_cov = std::max(0.0, coverage * core.shares - std::max(0.0, core.hedge));
@@ -151,17 +102,17 @@ struct ClosedSessionHedge : AlgoBase<ClosedSessionHedge> {
     risk_cap.max_abs = floor_units(std::max(0.0, coverage * core.shares - std::max(0.0, core.hedge)) * s);
     bool pcap = false, ncap = false;
     target = risk_cap.clamp(target, pcap);
-    double px = t.yes_ask;  // YES price for the notional cap: the ask, else its NO-parity 1 - no_bid
+    double px = t.yes_ask;
     if (!prob(px)) px = prob(t.no_bid) ? 1.0 - t.no_bid : kNaN;
     target = notional.clamp(target, px, 1.0, ncap);
     if (!num(target)) return hold(Rc::NotionalUnknown, sig);
     const double delta = target - yes;
-    if (!band.pass(delta)) {  // a cap that holds the leg below its sized target is named as the reason
+    if (!band.pass(delta)) {
       if (ncap) return hold(Rc::NotionalCapped, sig);
       if (pcap) return hold(Rc::PositionCapped, sig);
       return hold(delta == 0 ? Rc::ZeroTarget : Rc::InsideBand, sig);
     }
-    if (delta > 0 && exp_move > 0) {  // fee gate on increments: protection on an exp_move_pp move vs round trip
+    if (delta > 0 && exp_move > 0) {
       const double hs = half_spread(t.yes_bid, t.yes_ask);
       const double fee = fees.unit_fee(Instrument::PredYes, t.venue, px);
       const double q = delta;
@@ -173,15 +124,13 @@ struct ClosedSessionHedge : AlgoBase<ClosedSessionHedge> {
   }
 
   Intent open_step(const MarketTick& t, std::int64_t now, double p) noexcept {
-    const double sig = expected_gap_bp(p);  // p_close still marks the closure that just ended
-    if (std::abs(yes) > kDone) {  // handoff, step 1: unwind the whole YES leg at market
+    const double sig = expected_gap_bp(p);
+    if (std::abs(yes) > kDone) {
       handoff_due = true;
       return send_yes(t, now, yes > 0 ? -1 : +1, std::abs(yes), Rc::Handoff, sig);
     }
-    if (!handoff_equity) return hold(Rc::OutOfSession, sig);  // the family's own session is the closure
+    if (!handoff_equity) return hold(Rc::OutOfSession, sig);
     if (!prob(p)) return hold(Rc::SignalMissing);
-    // Handoff, step 2 (optional): the equity leg at the DeltaBridge target through HedgeCore (band, fee gate,
-    // backoff). Later in-session moves are ordinary rebalances.
     Intent i = core.decide(t, now, p, sizer.target(p), 0.0, sig, handoff_due ? Rc::Handoff : Rc::Rebalance);
     if (i.action == Action::Order) handoff_due = false;
     return i;
@@ -194,13 +143,13 @@ struct ClosedSessionHedge : AlgoBase<ClosedSessionHedge> {
     const double pr = blocks::ImpliedProb::read(t);
     const double p = prob(pr) ? pr : kNaN;
     const std::int64_t minute = t.ts_ns >= 0 ? t.ts_ns / (60 * kNsPerSec) : -((-t.ts_ns - 1) / (60 * kNsPerSec)) - 1;
-    if (minute != sess_minute) {  // Session gate inverted, on the tick's own ts
+    if (minute != sess_minute) {
       sess_closed = !session.pass(blocks::GateIn{t, now});
       sess_minute = minute;
     }
     const bool closed = sess_closed;
     if (closed) {
-      if (!was_closed) p_close = num(p_open) ? p_open : p;  // a closure began: mark the PM at the close
+      if (!was_closed) p_close = num(p_open) ? p_open : p;
       if (!num(p_close)) p_close = p;
       was_closed = true;
       return closed_step(t, now, p);
@@ -227,4 +176,4 @@ struct ClosedSessionHedge : AlgoBase<ClosedSessionHedge> {
   }
 };
 
-}  // namespace hedgecore::algos
+}

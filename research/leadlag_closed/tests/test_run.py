@@ -1,4 +1,3 @@
-"""End-to-end with mocked HTTP: no network, no key needed."""
 import json
 
 import numpy as np
@@ -12,7 +11,6 @@ from leadlag_closed.data import fetch_equity_ohlc, month_chunks
 
 
 class FakeClient:
-    """Minute bars for every trading day: flat RTH, a +1% jump at each open after a news-sized PM move is not modelled here."""
 
     def __init__(self):
         self.calls = []
@@ -55,7 +53,6 @@ def test_plan_has_events_flagged_and_unique():
     assert len(keys) == len(set(keys))
     assert any(p["market"] == "election" and not p["news"] for p in plan)
     assert all(p["sign"] == PANELS[p["market"]]["sign"] for p in plan)
-    # the 2024 election-call closure sits outside the placebo panel range but is still planned
     assert any(p["event"] == "e04-2024-11-06-election" for p in plan)
 
 
@@ -73,9 +70,9 @@ def test_collect_rows_with_mocked_http(monkeypatch):
     assert len(df) == 6
     ok = df[df["reason"] == ""]
     assert len(ok) >= 1
-    assert np.allclose(ok["dpm_pp"], 5.0)                                  # 40 -> 45 pp
+    assert np.allclose(ok["dpm_pp"], 5.0)
     assert np.allclose(ok["dpm_o_pp"], ok["sign"] * 5.0)
-    assert np.allclose(ok["gap_bp"], 0.0)                                  # flat synthetic prices
+    assert np.allclose(ok["gap_bp"], 0.0)
     assert set(df.columns) >= {"news", "event", "kind", "market", "gap_qqq_bp", "ret30_bp", "resid_bp"}
 
 

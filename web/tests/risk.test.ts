@@ -1,5 +1,3 @@
-// Offline tests for the risk-control view logic (evidence gate, liquidity caps, capital budget, Webull account) and the
-// approval flow that carries the evidence acknowledgement. Fixtures are trimmed from real backend responses.
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
@@ -15,7 +13,6 @@ import { init, reduce, sandboxFills } from "../src/lib/bridgeStream.ts";
 const UNVALIDATED = { validated: false, status: "unvalidated estimate", evidence: "No out-of-sample test for this market.", rate_source: "pooled", basis_ticker: "SPY", reasons: ["GAP_POOLED_RATE"] };
 const VALIDATED = { validated: true, status: "validated", evidence: "US recession 2025 on SPY: 97/151 out of sample." };
 
-// POST /proposals capacity block for TLT 1,000 sh at 50% (live, 2026-10-03).
 const CAPACITY: Capacity = {
   source: "live", label: "Capacity before approval",
   equity: { ticker: "TLT", available: true, hedge_shares: 500, price: 77.48, hedge_notional_usd: 38740, max_order_shares: 80510, per_day_shares: 478458,
@@ -37,7 +34,7 @@ describe("evidence gate", () => {
     const v = evidenceGate(VALIDATED);
     assert.deepEqual([v.needsAck, v.validated, v.badge.tone], [false, true, "measured"]);
     const n = evidenceGate(null);
-    assert.deepEqual([n.known, n.needsAck], [false, false]);  // older backend: it still decides at approval
+    assert.deepEqual([n.known, n.needsAck], [false, false]);
   });
   it("the acknowledgement copy names the ticker and the label decisions will carry", () => {
     const c = ackCopy("TLT");
@@ -68,7 +65,7 @@ describe("gates on fills", () => {
     assert.deepEqual(fillBadges(refused).map((b) => b.text), ["capital budget · refused"]);
     assert.deepEqual(fillBadges(advisory).map((b) => b.text), ["capital budget · advisory"]);
     assert.deepEqual(fillBadges({ status: "held", reject_reason: "liquidity_capped: per day (limit 0 shares left)" }).map((b) => b.text), ["liquidity capped"]);
-    assert.deepEqual(fillBadges(undefined, "validated").map((b) => b.text), ["validated"]);  // the decision's label when no fill yet
+    assert.deepEqual(fillBadges(undefined, "validated").map((b) => b.text), ["validated"]);
   });
   it("explains them in the trade log", () => {
     assert.match(gateSentence(capped), /cut it from 90000 to 80510/);
@@ -160,7 +157,6 @@ describe("capital usage and the Webull account", () => {
   });
   it("'within budget' only on a real read; not checked and stale reads say so", () => {
     assert.deepEqual(capitalView({ ...CAP, breaches: [] }).status, { tone: "measured", text: "within budget" });
-    // Broker with no account equity: the backend does not fail closed, nothing is enforced.
     const nc = capitalView({ broker: "fake", account_read: false, account_checked: false, account_error: "the broker returned no account equity", breaches: [] });
     assert.equal(nc.checked, false);
     assert.equal(nc.status.text, "budget not checked");
@@ -168,7 +164,6 @@ describe("capital usage and the Webull account", () => {
     assert.match(nc.error!, /^Capital budget not checked \(the broker returned no account equity\)/);
     assert.match(nc.enforcement, /Nothing is enforced/);
     assert.doesNotMatch(nc.enforcement, /fail closed/);
-    // Older payload without account_checked: no account_unreadable breach means not checked.
     assert.equal(capitalView({ account_read: false, breaches: [] }).checked, false);
     assert.equal(capitalView({ account_read: false, breaches: [{ kind: "account_unreadable" }] }).status.text, "1 breach");
     const st = capitalView({ ...CAP, breaches: [], account_stale: true, account_age_s: 14.2, account_error: "account read failed (BrokerError)" });
@@ -190,7 +185,6 @@ describe("capital usage and the Webull account", () => {
     const rows = accountRows(wb);
     assert.deepEqual(rows.slice(0, 3).map((r) => r.v), ["$1,000,000", "$1,000,000", "$2,000,000"]);
     assert.equal(rows[2].sub, "overnight figure");
-    // An explicit buying_power that differs from the overnight figure is not labelled as it.
     assert.equal(accountRows({ ...wb, buying_power: 3e6 })[2].sub, undefined);
     assert.equal(accountRows({ ...wb, overnight_buying_power: null, buying_power: 4e6 })[2].sub, "intraday figure");
     assert.ok(rows.some((r) => r.k === "DAY BUYING POWER" && r.v === "$4,000,000"));
@@ -231,8 +225,6 @@ describe("capital usage and the Webull account", () => {
     assert.equal(usd(12500, { compact: true }), "$12.5k");
   });
 });
-
-// ---------------------------------------------------------------- approval flow with the acknowledgement
 
 const q = questionFromMarket({ source: "polymarket", id: "m1", question: "Will X happen?", yes_price: 0.4, volume_24h: 1000, end_date: null, url: null, token_id: "tok" });
 const eq: EquityPick = { t: "ABNB", move: -3, rev: null, brand: null, why: "", direction: "down_on_yes", name: "Airbnb", px: 130, held: 1200 };
@@ -292,12 +284,11 @@ describe("approval with the evidence gate", () => {
     assert.equal(ok.bridgeId, "b-pend");
   });
   it("a bridge start refused by the evidence gate drops the proposal instead of promising reuse", async () => {
-    // Approved while validated; the evidence file then flipped, and POST /bridges re-checks (409) without rewriting it.
     const flipped = prop({ id: "flip", status: "approved", evidence: VALIDATED, ack_unvalidated: false });
     const { a: base, calls } = api([flipped]);
     const a: BridgeApi = { ...base, startBridge: async (b) => { calls.push(`bridge:${b.proposal_id}:${b.source}`); throw new Error("EVIDENCE_UNVALIDATED: ABNB on polymarket:m1 is an unvalidated estimate"); } };
     await assert.rejects(startRealBridge(q, eq, "100%", a), (e: Error) => isEvidenceError(e) && /not reused/.test(e.message) && !/reused on the next try/.test(e.message));
-    assert.deepEqual(calls, ["bridge:flip:replay"]);  // the gate answers the same for live: no second attempt
+    assert.deepEqual(calls, ["bridge:flip:replay"]);
     assert.equal(bridgeable(flipped), false);
     assert.equal((await prepareHedgeProposal(hedgeTerms(q, eq, "100%"), a)).id, "new");
   });

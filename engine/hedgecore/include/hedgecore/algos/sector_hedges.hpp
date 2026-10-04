@@ -1,5 +1,4 @@
 #pragma once
-// The event-class hedge families: same HedgeCore pipeline, each with its own signal, sizer and filters.
 #include <cmath>
 #include "hedgecore/algos/common.hpp"
 #include "hedgecore/algos/hedge_params.hpp"
@@ -9,7 +8,6 @@ namespace hedgecore::algos {
 #define HEDGECORE_HEDGE_CTOR_CORE(BAND, FEE)                                                                  \
   core(pos, kSpec.valid(p), (BAND), (FEE), p.v[kImpact], p.v[kSession] >= 0.5, p.v[kWash] >= 0.5)
 
-// ---- housing_rates ------------------------------------------------------------------------------------------------
 struct HousingRates : AlgoBase<HousingRates> {
   static constexpr const char* id = "housing_rates";
   static constexpr const char* division = "hedge";
@@ -49,7 +47,6 @@ struct HousingRates : AlgoBase<HousingRates> {
   void on_reject(Instrument i) noexcept { core.on_reject(i); }
 };
 
-// ---- fig_stress ---------------------------------------------------------------------------------------------------
 struct FigStress : AlgoBase<FigStress> {
   static constexpr const char* id = "fig_stress";
   static constexpr const char* division = "hedge";
@@ -80,7 +77,7 @@ struct FigStress : AlgoBase<FigStress> {
   Intent step(const MarketTick& t, std::int64_t now) noexcept {
     Intent out;
     if (!core.admit(t, now, out)) return out;
-    if (core.dd.max_dd <= 0 && num(under_ref(t)))  // dollar limit fixed at the first known price
+    if (core.dd.max_dd <= 0 && num(under_ref(t)))
       core.dd.max_dd = dd_frac * core.shares * under_ref(t);
     const double p = blocks::ImpliedProb::read(t);
     if (!num(p)) return hold(Rc::SignalMissing);
@@ -90,7 +87,6 @@ struct FigStress : AlgoBase<FigStress> {
   void on_reject(Instrument i) noexcept { core.on_reject(i); }
 };
 
-// ---- macro_fed_hedge ----------------------------------------------------------------------------------------------
 struct MacroFedHedge : AlgoBase<MacroFedHedge> {
   static constexpr const char* id = "macro_fed_hedge";
   static constexpr const char* division = "hedge";
@@ -126,7 +122,7 @@ struct MacroFedHedge : AlgoBase<MacroFedHedge> {
     if (!num(p)) return hold(Rc::SignalMissing);
     const double m = mom.update(p);
     const double target = sizer.target(p);
-    if (num(m) && num(target)) {  // warm-up sizes freely; afterwards momentum must agree with the change
+    if (num(m) && num(target)) {
       const double delta = target - core.hedge;
       if ((delta > 0 && m <= 0) || (delta < 0 && m >= 0)) return hold(Rc::NoSignal, m);
     }
@@ -136,7 +132,6 @@ struct MacroFedHedge : AlgoBase<MacroFedHedge> {
   void on_reject(Instrument i) noexcept { core.on_reject(i); }
 };
 
-// ---- election_hedge -----------------------------------------------------------------------------------------------
 struct ElectionHedge : AlgoBase<ElectionHedge> {
   static constexpr const char* id = "election_hedge";
   static constexpr const char* division = "hedge";
@@ -177,7 +172,6 @@ struct ElectionHedge : AlgoBase<ElectionHedge> {
   void on_reject(Instrument i) noexcept { core.on_reject(i); }
 };
 
-// ---- tariff_trade_hedge -------------------------------------------------------------------------------------------
 struct TariffTradeHedge : AlgoBase<TariffTradeHedge> {
   static constexpr const char* id = "tariff_trade_hedge";
   static constexpr const char* division = "hedge";
@@ -223,7 +217,6 @@ struct TariffTradeHedge : AlgoBase<TariffTradeHedge> {
   void on_reject(Instrument i) noexcept { core.on_reject(i); }
 };
 
-// ---- energy_geo_hedge ---------------------------------------------------------------------------------------------
 struct EnergyGeoHedge : AlgoBase<EnergyGeoHedge> {
   static constexpr const char* id = "energy_geo_hedge";
   static constexpr const char* division = "hedge";
@@ -269,7 +262,6 @@ struct EnergyGeoHedge : AlgoBase<EnergyGeoHedge> {
   void on_reject(Instrument i) noexcept { core.on_reject(i); }
 };
 
-// ---- crypto_reg_hedge ---------------------------------------------------------------------------------------------
 struct CryptoRegHedge : AlgoBase<CryptoRegHedge> {
   static constexpr const char* id = "crypto_reg_hedge";
   static constexpr const char* division = "hedge";
@@ -304,7 +296,7 @@ struct CryptoRegHedge : AlgoBase<CryptoRegHedge> {
     const double p = blocks::ImpliedProb::read(t);
     if (!num(p)) return hold(Rc::SignalMissing);
     const auto v = vol.update(p);
-    const double scale = num(v.sigma) ? vt.scale(v.sigma) : 1.0;  // warm-up: unscaled
+    const double scale = num(v.sigma) ? vt.scale(v.sigma) : 1.0;
     const blocks::DeltaBridge sizer{clampd(coverage * scale, 0.0, 1.0), core.shares};
     return core.decide(t, now, p, sizer.target(p), 0.0, scale);
   }
@@ -312,7 +304,6 @@ struct CryptoRegHedge : AlgoBase<CryptoRegHedge> {
   void on_reject(Instrument i) noexcept { core.on_reject(i); }
 };
 
-// ---- tech_reg_hedge -----------------------------------------------------------------------------------------------
 struct TechRegHedge : AlgoBase<TechRegHedge> {
   static constexpr const char* id = "tech_reg_hedge";
   static constexpr const char* division = "hedge";
@@ -354,4 +345,4 @@ struct TechRegHedge : AlgoBase<TechRegHedge> {
 
 #undef HEDGECORE_HEDGE_CTOR_CORE
 
-}  // namespace hedgecore::algos
+}

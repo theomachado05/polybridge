@@ -1,8 +1,3 @@
-"""Fresh universe (METHOD step 3): S11's date-ladder rule on every gamma event ending on or after 2025-10-01 that holds a
-closed market, minus S11's bundles. Metadata only: price fields are dropped (asserted) before anything is stored.
-
-Run from `research/`:  python -m ladder_replay.fresh_universe
-"""
 from __future__ import annotations
 
 import json

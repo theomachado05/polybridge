@@ -1,4 +1,3 @@
-"""Live Polymarket book recorder and stale-quote detector. Records only; no order is ever sent."""
 import sys
 from pathlib import Path
 

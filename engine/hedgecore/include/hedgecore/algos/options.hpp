@@ -1,12 +1,9 @@
 #pragma once
-// Opportunity-division option families. An Option intent trades one unit of the family's structure (call spread,
-// straddle, cash-secured put or put spread, named in `instruments`), priced by the tick's opt_mid.
 #include <cmath>
 #include "hedgecore/algos/opportunity.hpp"
 
 namespace hedgecore::algos {
 
-// ---- binary_vs_spread_arb -----------------------------------------------------------------------------------------
 struct BinaryVsSpreadArb : AlgoBase<BinaryVsSpreadArb> {
   static constexpr const char* id = "binary_vs_spread_arb";
   static constexpr const char* division = "opportunity";
@@ -49,7 +46,6 @@ struct BinaryVsSpreadArb : AlgoBase<BinaryVsSpreadArb> {
   }
 };
 
-// ---- vol_vs_pm_move -----------------------------------------------------------------------------------------------
 struct VolVsPmMove : AlgoBase<VolVsPmMove> {
   static constexpr const char* id = "vol_vs_pm_move";
   static constexpr const char* division = "opportunity";
@@ -111,7 +107,6 @@ struct VolVsPmMove : AlgoBase<VolVsPmMove> {
   }
 };
 
-// ---- eightk_opportunity -------------------------------------------------------------------------------------------
 struct EightKOpportunity : AlgoBase<EightKOpportunity> {
   static constexpr const char* id = "eightk_opportunity";
   static constexpr const char* division = "opportunity";
@@ -164,4 +159,4 @@ struct EightKOpportunity : AlgoBase<EightKOpportunity> {
   }
 };
 
-}  // namespace hedgecore::algos
+}

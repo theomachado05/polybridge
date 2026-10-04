@@ -1,9 +1,3 @@
-"""S10 Part 3: 15-minute Bitcoin Up/Down markets against a fair value from spot (METHOD.md amendment 2).
-
-Run from `research/` after `python -m s10_weekend_lag.btc_pull`:
-    python -m s10_weekend_lag.btc               # tests, every variant, the print check
-    python -m s10_weekend_lag.btc --no-prints
-"""
 from __future__ import annotations
 
 import json
@@ -33,7 +27,6 @@ def phi(z: float) -> float:
 
 
 def fair_value(m: int, s0: float, closes: np.ndarray, sigma: float) -> float:
-    """P(final 15-minute average >= s0) at minute m, given the m completed closes and per-minute log volatility sigma."""
     n = 15 - m
     a, s = float(np.mean(closes[:m])), float(closes[m - 1])
     num = m * a + n * s - 15.0 * s0
@@ -46,7 +39,6 @@ def fair_value(m: int, s0: float, closes: np.ndarray, sigma: float) -> float:
 
 
 def fair_value_end(m: int, s0_mid: float, x_mid: float, sigma: float) -> float:
-    """Amendment 4: P(mid at the end >= mid before the start) at minute m, given the current mid and per-minute volatility."""
     n = 15 - m
     if n == 0:
         return 1.0 if x_mid >= s0_mid else 0.0
@@ -56,8 +48,6 @@ def fair_value_end(m: int, s0_mid: float, x_mid: float, sigma: float) -> float:
 
 
 def verify(prints: list[dict], buy_up: bool, entry_up: float, t_signal: float) -> tuple[int, float]:
-    """Section 6's rule in Up-token terms over [t, t + BTC_PRINT_WINDOW_S]: buying Up needs a taker who bought Up at or
-    below our price; selling Up (buying Down) needs a taker who sold Up at or above it. Down prints are converted."""
     n, size = 0, 0.0
     for t in prints:
         ts = t.get("timestamp")
@@ -74,8 +64,6 @@ def verify(prints: list[dict], buy_up: bool, entry_up: float, t_signal: float) -
             n, size = n + 1, size + float(t.get("size", 0))
     return n, size
 
-
-# ---------------------------------------------------------------- build the market-minutes
 
 def build() -> tuple[pd.DataFrame, list[dict], dict]:
     cat = json.loads((BTC / "catalogue.json").read_text())
@@ -113,7 +101,6 @@ def build() -> tuple[pd.DataFrame, list[dict], dict]:
             closes = closes_all[:m]
             if not np.all(np.isfinite(closes)):
                 continue
-            # volatility from the 60 one-minute returns ending at t (closes of the candles before and inside the window)
             seq = [sc[i] for i in reversed(back) if i is not None] + list(closes)
             lr = np.diff(np.log(np.array(seq[-(cfg.BTC_VOL_LOOKBACK_MIN + 1):])))
             sigma = float(np.std(lr, ddof=1)) if len(lr) >= 30 else float("nan")
@@ -126,8 +113,6 @@ def build() -> tuple[pd.DataFrame, list[dict], dict]:
     df = pd.DataFrame(rows)
     return df, cat, {"markets_in_catalogue": len(cat), "windows": None, **n_missing}
 
-
-# ---------------------------------------------------------------- tests before costs
 
 def tests(df: pd.DataFrame, col: str = "fair") -> list[dict]:
     out = []
@@ -147,8 +132,6 @@ def tests(df: pd.DataFrame, col: str = "fair") -> list[dict]:
                 "n": len(m15), "match_rate": float(np.mean(m15.end_sign_15 == m15.result)) if len(m15) else float("nan")})
     return out
 
-
-# ---------------------------------------------------------------- trades
 
 def make_trades(df: pd.DataFrame, col: str = "fair") -> list[dict]:
     out = []

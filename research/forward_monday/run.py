@@ -1,8 +1,3 @@
-"""Forward test orchestrator (METHOD.md section 8). Per reopening: frozen universe -> prints and same-instant option
-probability -> frozen trade list -> outcomes once resolved. Then cumulative stats. `.done` refuses further runs.
-
-    cd research && .venv/bin/python -m forward_monday.run
-"""
 from __future__ import annotations
 
 import argparse
@@ -45,7 +40,6 @@ def sessions() -> set[date]:
 
 
 def listing(http: ds.Http, d0: date, d1: date, closed_states=("false", "true")) -> list[dict]:
-    """Gamma equity events resolving in [d0, d1]; metadata only (core.strip_meta), never cached to disk."""
     out: dict[str, dict] = {}
     for closed in closed_states:
         offset = 0

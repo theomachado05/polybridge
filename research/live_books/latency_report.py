@@ -1,7 +1,3 @@
-"""Latency report from the recorder's decision logs. Writes results/live_books/LATENCY.md.
-
-    cd research && .venv/bin/python -m live_books.latency_report
-"""
 from __future__ import annotations
 
 import argparse

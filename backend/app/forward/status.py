@@ -1,4 +1,3 @@
-"""GET /forward/status payload: the latest forward snapshots, labelled with the frozen rule files they ran under."""
 from __future__ import annotations
 
 import json
@@ -11,8 +10,6 @@ from zoneinfo import ZoneInfo
 from .paths import LADDER_FILES, REPO, TOUCH_FILES, data_dir, frozen_info
 
 LABEL = "forward test, rules frozen"
-# research/touch_fresh/FORWARD.md: markets listed at or after 2026-10-05 00:00 New York. Snapshots taken before that are
-# checks of the plumbing, not forward-test observations, and are never counted as such.
 FORWARD_START = "2026-10-05"
 FORWARD_START_UTC = datetime(2026, 10, 5, tzinfo=ZoneInfo("America/New_York")).astimezone(timezone.utc)
 PRE_START = "pre-start check (not part of the forward test)"
@@ -20,7 +17,6 @@ IN_TEST = "forward test"
 
 
 def _taken_at(f: Path, snap: dict | None = None) -> datetime | None:
-    """When a snapshot was taken: its <YYYYMMDDTHHMMSSZ> file stamp, else its run_utc."""
     stem = f.stem.rsplit("_", 1)[-1]
     try:
         return datetime.strptime(stem, "%Y%m%dT%H%M%SZ").replace(tzinfo=timezone.utc)
@@ -35,7 +31,6 @@ def _taken_at(f: Path, snap: dict | None = None) -> datetime | None:
 
 
 def phase(t: datetime | None) -> str:
-    """The label of a snapshot taken at ``t``: in the forward test from FORWARD_START_UTC, a pre-start check before."""
     return IN_TEST if t is not None and t >= FORWARD_START_UTC else PRE_START
 
 
@@ -51,7 +46,6 @@ def _snapshots(d: Path, prefix: str = "") -> list[Path]:
 
 
 def _latest(d: Path, prefix: str = "") -> tuple[dict | None, int]:
-    """(latest readable snapshot with its ``phase`` label, number of files)."""
     files = _snapshots(d, prefix)
     for f in reversed(files):
         try:
@@ -85,7 +79,6 @@ def ladders(base: Path) -> dict:
         "run_utc": snap.get("run_utc"), "snapshot_utc": snap.get("snapshot_utc"), "phase": snap.get("_phase"),
         "events_read": snap.get("events_read"), "date_ladders": snap.get("date_ladders"),
         "pairs": snap.get("pairs"), "pairs_with_books": snap.get("pairs_with_books"), "nested_pairs": snap.get("nested_pairs"),
-        # each count carries its denominator (the sample it is out of)
         "violations_net_of_fees": {"count": snap.get("violations_net_of_fees"), "of_pairs_with_books": snap.get("pairs_with_books"),
                                    "nested": snap.get("violations_nested"), "locked_usd": snap.get("locked_usd")},
         "gap_points_to_arb": snap.get("gap_points_to_arb"), "violations": snap.get("violations") or []}
@@ -93,7 +86,7 @@ def ladders(base: Path) -> dict:
 
 
 def touch(base: Path) -> dict:
-    snap, _n = _latest(base / "touch" / "snapshots", "20")  # state files are <stamp>.json; stage_*.json are separate
+    snap, _n = _latest(base / "touch" / "snapshots", "20")
     stage, _ = _latest(base / "touch" / "snapshots", "stage_evaluate_")
     out: dict = {"label": f"{LABEL} ({_frozen_label(frozen_info(TOUCH_FILES))})", "rule": "research/touch_fresh/FORWARD.md",
                  "status": "open lead, unvalidated: proposals only, no trading from this test",
@@ -111,8 +104,6 @@ def touch(base: Path) -> dict:
 
 
 def recorder() -> dict | None:
-    """Read-only heartbeat of the live book recorder (research/forward). Another checkout may be the one running it:
-    set POLYBRIDGE_RECORDER_DIR to that checkout's research/forward."""
     d = Path(os.environ.get("POLYBRIDGE_RECORDER_DIR", "").strip() or REPO / "research" / "forward")
     beats = {}
     for f in sorted(d.glob("heartbeat_*.json")) if d.is_dir() else []:

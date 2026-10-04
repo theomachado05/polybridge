@@ -1,4 +1,3 @@
-"""The notebook's weekend-studies section: every recomputed number must match the committed metrics."""
 import weekend_studies_section as wss
 
 

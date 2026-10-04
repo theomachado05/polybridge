@@ -1,9 +1,3 @@
-"""S6: on Monday at 09:45, trade Polymarket toward the options' probability and hold to resolution (METHOD.md).
-
-Run from `research/`:
-    python -m s6_monday_fade.run            # calibrate the half-spread, run every variant, check entries against prints
-    python -m s6_monday_fade.run --no-prints
-"""
 from __future__ import annotations
 
 import csv
@@ -36,7 +30,6 @@ def fee(x: float, c: float = 1.0) -> float:
 
 
 def decide(p: float, lo: float, hi: float, h: float, c: float, theta: float) -> tuple[str, float, float] | None:
-    """(side, entry price in YES terms, edge against the options' band) or None. Selling YES is buying NO."""
     b = min(max(p - c * h, cfg.PRICE_CLIP[0]), cfg.PRICE_CLIP[1])
     a = min(max(p + c * h, cfg.PRICE_CLIP[0]), cfg.PRICE_CLIP[1])
     sell, buy = b - fee(b, c) - hi, lo - a - fee(a, c)
@@ -48,12 +41,10 @@ def decide(p: float, lo: float, hi: float, h: float, c: float, theta: float) -> 
 
 
 def pnl_resolution(side: str, entry: float, outcome: float, c: float) -> float:
-    """Per contract, held to the result."""
     return (entry - fee(entry, c) - outcome) if side == "sell YES" else (outcome - entry - fee(entry, c))
 
 
 def pnl_end_of_day(side: str, entry: float, pm_eod: float, h: float, c: float) -> float:
-    """Per contract, closed at the end of the reopening day across another half-spread and fee."""
     if side == "sell YES":
         out = min(pm_eod + c * h, cfg.PRICE_CLIP[1])
         return entry - fee(entry, c) - out - fee(out, c)
@@ -66,7 +57,6 @@ def capital(side: str, entry: float) -> float:
 
 
 def calibrate() -> dict:
-    """Half-spread and size at the touch of this weekend's recorded Polymarket threshold books (METHOD.md section 2)."""
     s, e = cfg.CALIBRATION_START.timestamp(), cfg.CALIBRATION_END.timestamp()
     lo, hi = cfg.CALIBRATION_MID_RANGE
     half: dict[str, list[float]] = {}
@@ -99,8 +89,6 @@ def entry_epoch(open_day: str) -> float:
 
 
 def verify(prints: list[dict], side: str, entry: float, at: float) -> tuple[int, float]:
-    """Prints within the window at a price at least as good as assumed (YES terms). A YES sale needs a taker who sold
-    YES at or above our price; a YES purchase needs a taker who bought YES at or below it."""
     n, size = 0, 0.0
     for t in prints:
         ts = t.get("timestamp")
@@ -195,7 +183,6 @@ def main() -> int:
                                "cost_per_contract": c * h + fee(entry, c), "pm_closure_move": float(r.d_pm) if r.d_pm == r.d_pm else float("nan"),
                                "prints_in_closure": bool(r.prints_in_closure)})
 
-    # ---- trade-print check for the primary's entries (both cost levels)
     prints: dict[int, list[dict]] = {}
     if "--no-prints" not in sys.argv:
         pt = ds.Throttle(4.0)

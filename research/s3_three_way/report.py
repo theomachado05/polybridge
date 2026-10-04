@@ -1,7 +1,3 @@
-"""S3 report: metrics.csv, equity_curve.png, drawdown.png, capacity.md and SUMMARY.md from the result CSVs.
-
-Run from `research/`:  python -m s3_three_way.report
-"""
 from __future__ import annotations
 
 import json

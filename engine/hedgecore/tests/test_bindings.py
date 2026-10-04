@@ -36,7 +36,6 @@ def test_fee_gate_fields_and_reason():
     assert (d.action, d.reason) == ("hold", "below_fees")
 
 
-# ---- v4 algo library ----
 import math
 
 import numpy as np
@@ -88,7 +87,7 @@ def test_algo_missing_fields_are_nan_not_zero_and_stale():
 def test_algo_direction_up_on_yes_flips_the_book():
     tick = {"ts_ns": 1, "yes_bid": 0.795, "yes_ask": 0.805, "under_px": 100.0, "under_bid": 99.99, "under_ask": 100.01}
     a = hedgecore.Algo("equity_delta_bridge", {}, {"shares_held": 1000}, direction="up_on_yes")
-    assert a.on_tick(tick)["qty"] == 100.0  # adverse prob = 1 - 0.8
+    assert a.on_tick(tick)["qty"] == 100.0
 
 
 def test_algo_rejects_unknown_names():
@@ -163,7 +162,6 @@ def test_replay_rejects_ragged_ticks():
 
 def test_direction_up_on_yes_only_for_hedge_families():
     tick = {"ts_ns": 1, "yes_bid": 0.29, "yes_ask": 0.31, "opt_implied_prob": 0.3, "opt_mid": 2.0}
-    # Opportunity / PM-leg families name the real contract in their intents: flipping would trade the wrong leg.
     for fam in ("binary_vs_spread_arb", "no_bid_seller", "poly_kalshi_spread", "vol_vs_pm_move"):
         with pytest.raises(ValueError):
             hedgecore.Algo(fam, {}, {}, direction="up_on_yes")
@@ -171,14 +169,12 @@ def test_direction_up_on_yes_only_for_hedge_families():
             hedgecore.replay(fam, {}, {}, _ticks(), direction="up_on_yes")
         with pytest.raises(ValueError):
             hedgecore.replay_grid(fam, {}, _ticks(), direction="up_on_yes")
-    # Unflipped, YES 0.3 against an option-implied 0.3 is no gap: hold.
     assert hedgecore.Algo("binary_vs_spread_arb").on_tick(tick)["action"] == "hold"
-    # Hedge families accept it.
     hedgecore.Algo("macro_fed_hedge", {}, {"shares_held": 10}, direction="up_on_yes")
 
 
 def test_on_reject_lets_a_passive_hedge_requote():
-    a = hedgecore.Algo("stress_lead_hedge", {}, {"shares_held": 1000})  # default impact: fee gate on
+    a = hedgecore.Algo("stress_lead_hedge", {}, {"shares_held": 1000})
     t = {"ts_ns": 1_000_000_000, "yes_bid": 0.195, "yes_ask": 0.205,
          "under_px": 100.0, "under_bid": 99.99, "under_ask": 100.01}
     first = a.on_tick(t)
@@ -190,7 +186,6 @@ def test_on_reject_lets_a_passive_hedge_requote():
 
 
 def test_constant_pm_static_short_adds_nothing_over_static():
-    """A constant PM series carries no information: the raw score is ~1 - (1 - 0.99)^2, the vs-static score ~0."""
     n = 500
     rng = np.random.default_rng(3)
     u = 100 + np.cumsum(rng.uniform(-0.5, 0.5, n))
@@ -219,8 +214,8 @@ def test_repeated_rejects_back_off():
 
 
 def test_closed_session_hedge_closed_vs_open_and_handoff():
-    sat, mon = 1_791_043_200 * 10**9, 1_791_207_000 * 10**9  # Sat 2026-10-03 12:00 EDT, Mon 2026-10-05 09:30 EDT
-    fri = 1_790_967_600 * 10**9  # Fri 2026-10-02 15:00 EDT (regular session)
+    sat, mon = 1_791_043_200 * 10**9, 1_791_207_000 * 10**9
+    fri = 1_790_967_600 * 10**9
     q = {"yes_bid": 0.295, "yes_ask": 0.305, "under_px": 100.0, "under_bid": 99.99, "under_ask": 100.01}
     assert hedgecore.Algo("closed_session_hedge", {}, {"shares_held": 1000}).on_tick(
         {**q, "ts_ns": fri}, now_ns=fri)["reason"] == "out_of_session"

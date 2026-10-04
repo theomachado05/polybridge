@@ -1,5 +1,4 @@
 #pragma once
-// Execution blocks (UI kind: Execution): whether a desired change is worth trading, and how to work the order.
 #include <cmath>
 #include "hedgecore/market.hpp"
 #include "hedgecore/reasons.hpp"
@@ -7,7 +6,6 @@
 
 namespace hedgecore::blocks {
 
-// Trade only when |delta| >= band; never a zero-quantity order, even with band = 0.
 struct NoTradeBand {
   static constexpr const char* name = "NoTradeBand";
   static constexpr Rc fail = Rc::InsideBand;
@@ -15,7 +13,6 @@ struct NoTradeBand {
   bool pass(double delta) const noexcept { return num(delta) && delta != 0 && std::abs(delta) >= band; }
 };
 
-// Trade only when the expected benefit covers ratio * cost (fee + half-spread). Unknown inputs fail as FeeUnknown.
 struct FeeGate {
   static constexpr const char* name = "FeeGate";
   double ratio = 1.0;
@@ -25,7 +22,6 @@ struct FeeGate {
   }
 };
 
-// Child order quantity cap; child_max <= 0 disables it. Preserves sign.
 struct Slicer {
   static constexpr const char* name = "Slicer";
   double child_max = 0;
@@ -36,8 +32,6 @@ struct Slicer {
   }
 };
 
-// Join the near touch (buy at bid, sell at ask) unless urgency >= threshold, then cross (marketable, NaN limit).
-// With no two-sided quote the order goes marketable: there is no touch to join.
 struct PassiveAggressive {
   static constexpr const char* name = "PassiveAggressive";
   double urgency_threshold = 1.0;
@@ -48,8 +42,6 @@ struct PassiveAggressive {
   }
 };
 
-// Never show more than frac of the displayed opposite-side size. Unknown displayed size leaves the order unchanged
-// (the cap cannot be measured, and is not read as zero).
 struct IcebergCap {
   static constexpr const char* name = "IcebergCap";
   double frac = 0.5;
@@ -62,4 +54,4 @@ struct IcebergCap {
   }
 };
 
-}  // namespace hedgecore::blocks
+}

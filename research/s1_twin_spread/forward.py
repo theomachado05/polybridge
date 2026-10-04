@@ -1,8 +1,3 @@
-"""S1 forward paper test on the recorded order books (METHOD.md sections 5, 6 and 8).
-
-Fills are taken from the recorded levels only: prices and sizes that were on the book. Run from `research/`:
-    python -m s1_twin_spread.forward --rate 0.0417 [--final]
-"""
 from __future__ import annotations
 
 import argparse
@@ -21,7 +16,7 @@ from .engine import YEAR_S
 from .recording import load_rows
 
 RESULTS = Path(__file__).resolve().parents[1] / "results" / "s1_twin_spread"
-MAX_PAIR_SKEW_S = 5.0      # the two venues' books of one snapshot must be this close in time
+MAX_PAIR_SKEW_S = 5.0
 
 
 def iso(ts: float) -> str:
@@ -29,7 +24,6 @@ def iso(ts: float) -> str:
 
 
 def widen(book: dict, c: float) -> dict:
-    """Costs x c: every ask moves up and every bid down by (c - 1) half-spreads of the top of the book."""
     if c == 1.0 or not book["b"] or not book["a"]:
         return book
     shift = (c - 1.0) * (book["a"][0][0] - book["b"][0][0]) / 2.0
@@ -37,7 +31,6 @@ def widen(book: dict, c: float) -> dict:
 
 
 def no_asks(book: dict) -> list[list[float]]:
-    """Buying NO costs 1 - (YES bid), level by level."""
     return [[1.0 - p, s] for p, s in book["b"]]
 
 
@@ -47,9 +40,6 @@ def no_bids(book: dict) -> list[list[float]]:
 
 def walk(pm_levels: list, k_levels: list, pm_rate: float, pm_exp: float, k_mult: float, c: float, carry_rate: float,
          theta: float | None, max_size: float, buying: bool = True) -> dict:
-    """Matches the two legs level by level. Buying: takes every increment whose marginal edge
-    1 - (pm + fee) - (k + fee) - carry is still >= theta. Selling (theta None): sells up to max_size.
-    The Kalshi fee is rounded up to a cent on the whole order."""
     i = j = 0
     ri = pm_levels[0][1] if pm_levels else 0.0
     rj = k_levels[0][1] if k_levels else 0.0
@@ -84,12 +74,10 @@ def walk(pm_levels: list, k_levels: list, pm_rate: float, pm_exp: float, k_mult:
 
 
 def entry_legs(pm: dict, k: dict, d: str):
-    """Books to buy from. A = Polymarket YES + Kalshi NO; B = Polymarket NO + Kalshi YES."""
     return (pm["a"], no_asks(k)) if d == "A" else (no_asks(pm), k["a"])
 
 
 def exit_legs(pm: dict, k: dict, d: str):
-    """Books to sell into: the bids of what is held."""
     return (pm["b"], no_bids(k)) if d == "A" else (no_bids(pm), k["b"])
 
 
@@ -98,7 +86,6 @@ def two_sided(book: dict) -> bool:
 
 
 def top_edge(pm: dict, k: dict, d: str, m: dict, c: float, carry_rate: float) -> float:
-    """Edge of the first contract at the top of both books. NaN unless both books are two-sided (amendments 2, 3)."""
     if not (two_sided(pm) and two_sided(k)):
         return float("nan")
     pl, kl = entry_legs(pm, k, d)
@@ -108,7 +95,6 @@ def top_edge(pm: dict, k: dict, d: str, m: dict, c: float, carry_rate: float) ->
 
 
 def snapshots(rows: list[dict], metas: list[dict], max_skew: float = MAX_PAIR_SKEW_S) -> dict[str, list[tuple[float, dict, dict]]]:
-    """Per pair, the time-ordered (t, Polymarket book, Kalshi book) snapshots whose two books are close in time."""
     by: dict[str, list[dict]] = {}
     for r in rows:
         by.setdefault(r["id"], []).append(r)
@@ -129,13 +115,11 @@ def snapshots(rows: list[dict], metas: list[dict], max_skew: float = MAX_PAIR_SK
 
 
 def adjacent(prev_t: float, t: float, max_gap: float = 25.0) -> bool:
-    """Consecutive snapshots of the recording cadence (a missed cycle breaks the run of two). 25 s fits the 15 s cadence."""
     return 0 < t - prev_t <= max_gap
 
 
 def paper_test(snaps: list, m: dict, theta: float, exit_on: bool, c: float, r: float, max_size: float,
                max_gap: float = 25.0) -> tuple[list[dict], dict]:
-    """One pair: entries and exits on the recorded books, plus what was fillable with no size cap."""
     deadline = m["deadline_ts"]
     trades, pos = [], None
     prev = None
@@ -145,7 +129,6 @@ def paper_test(snaps: list, m: dict, theta: float, exit_on: bool, c: float, r: f
         pm, k = widen(pm_raw, c), widen(k_raw, c)
         carry = c * r * max(deadline - t, 0.0) / YEAR_S
         edges = {d: top_edge(pm, k, d, m, c, carry) for d in "AB"}
-        # capacity, measured on every snapshot regardless of the position
         for d in "AB":
             if edges[d] == edges[d] and edges[d] >= theta:
                 pl, kl = entry_legs(pm, k, d)
@@ -189,7 +172,6 @@ def paper_test(snaps: list, m: dict, theta: float, exit_on: bool, c: float, r: f
 
 
 def mark_end(tr: dict, snaps: list, m: dict, c: float, r: float) -> None:
-    """Marks of a trade at the end of the window: realised if exited, else mid, liquidation and locked."""
     financing = c * r * tr["cost"] * ((tr["t_out"] or snaps[-1][0]) - tr["t_in"]) / YEAR_S
     if tr["t_out"] is not None:
         tr["pnl_mid"] = tr["pnl_liq"] = tr["pnl_locked"] = tr["proceeds"] - tr["cost"] - financing
@@ -200,7 +182,6 @@ def mark_end(tr: dict, snaps: list, m: dict, c: float, r: float) -> None:
     def mid(b):
         return (b["b"][0][0] + b["a"][0][0]) / 2.0
 
-    # last valid mid carried: the latest snapshot at or after the entry with both books two-sided
     last = next((s for s in reversed(snaps) if s[0] >= tr["t_in"] and two_sided(s[1]) and two_sided(s[2])), None)
     pm_mid, k_mid = (mid(last[1]), mid(last[2])) if last else (float("nan"), float("nan"))
     tr["mid_mark_utc"] = iso(last[0]) if last else ""

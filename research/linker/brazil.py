@@ -1,11 +1,3 @@
-"""The Brazil case on the right market: "Will Flávio Bolsonaro / Lula win the 2026 Brazilian presidential election?"
-(a year of history) against EWZ, Petrobras, Vale and Itaú. An illustration of the link problem, not a test: this was
-the example that motivated S4 and it is excluded from every pre-registered figure.
-
-Two readings: the overnight link (as in the benchmark), and who moves first over days.
-
-Run from `research/`:  python -m linker.brazil
-"""
 from __future__ import annotations
 
 import json
@@ -62,7 +54,6 @@ def main() -> int:
         for tk in TICKERS:
             a = {"px": en.session_prices(dict(np.load(C / f"eq_{tk}.npz")), sess), "beta": en.betas(dict(np.load(C / f"day_{tk}.npz")), spy_day, days)}
             rows.append({"question": name, "ticker": tk, "direction": "up_on_yes" if dr > 0 else "down_on_yes", **link_stats(pm, dr, sess, days, a, spy_px)})
-            # close-to-close: signed odds change (points) and the equity's excess return (bp), then who leads over days
             c = a["px"]["close"]
             dx = dr * 100 * np.diff(p_close)
             e = 1e4 * ((c[1:] / c[:-1] - 1) - a["beta"][1:] * (spy_c[1:] / spy_c[:-1] - 1))

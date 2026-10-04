@@ -1,8 +1,4 @@
 #pragma once
-// ParamSpec: the named, bounded parameters of an algo family and its tuning grid.
-// A preset is one grid point; preset_count() is the product of the grid sizes. Grid values within a parameter are
-// distinct, so presets are distinct by construction. A parameter with a single grid value is a fixed setting
-// (e.g. a live-only toggle) and does not multiply the count.
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -50,12 +46,11 @@ struct ParamSpec {
     for (int i = 0; i < n; ++i) c *= static_cast<std::size_t>(defs[i].n_grid);
     return c;
   }
-  constexpr int tuned_count() const noexcept {  // params with more than one grid value
+  constexpr int tuned_count() const noexcept {
     int c = 0;
     for (int i = 0; i < n; ++i) c += defs[i].n_grid > 1;
     return c;
   }
-  // Mixed-radix decode; the last parameter varies fastest.
   constexpr Params preset(std::size_t idx) const noexcept {
     Params p = defaults();
     for (int i = n - 1; i >= 0; --i) {
@@ -82,4 +77,4 @@ struct ParamSpec {
   }
 };
 
-}  // namespace hedgecore
+}

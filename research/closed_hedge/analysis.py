@@ -1,4 +1,3 @@
-"""Applies METHOD.md sections 2-5 to a closure panel. No I/O."""
 from __future__ import annotations
 
 import numpy as np
@@ -7,7 +6,7 @@ import pandas as pd
 from . import hedge as H
 from .config import PARAMS
 
-PAIRS = {  # hedge -> (unhedged, hedged, static) columns
+PAIRS = {
     "A": ("Y0_A", "Y_A", "Y_SA"),
     "B": ("Y0_B", "Y_B", "Y_SB"),
     "B08": ("Y0_B08", "Y_B08", "Y_SB08"),
@@ -15,7 +14,6 @@ PAIRS = {  # hedge -> (unhedged, hedged, static) columns
 
 
 def prepare(df: pd.DataFrame) -> pd.DataFrame:
-    """Sort, fit the expanding rate, mark the evaluation sample."""
     d = H.sort_panel(df)
     d = pd.concat([d, H.expanding_rates(d)], axis=1)
     d["excluded"] = np.where(d["rate"].isna(), "no rate yet", "")
@@ -24,7 +22,6 @@ def prepare(df: pd.DataFrame) -> pd.DataFrame:
 
 def evaluate(d: pd.DataFrame, hs_pp: float, k_bp: float = PARAMS.k_bp, eq_pre_side_bp: float = PARAMS.eq_cost_bp,
              n_boot: int = PARAMS.n_boot, seed: int = PARAMS.seed, block: int | None = None) -> dict:
-    """Variance tests for hedges A, B, B08 on the evaluation rows of a prepared panel."""
     ev = d[d["excluded"] == ""].copy()
     st = H.strategies(ev, hs_pp, k_bp=k_bp, eq_pre_side_bp=eq_pre_side_bp)
     out = {"sizes": dict(st.attrs), "tests": {}, "describe": {}}
@@ -50,7 +47,6 @@ def whole_path(st: pd.DataFrame) -> dict:
 
 
 def in_sample_bound(d: pd.DataFrame, hs_pp: float) -> dict:
-    """Hedge A with the full-panel per-market slope (look-ahead); VR0 on the evaluation rows."""
     ev = d[d["excluded"] == ""]
     rates = {m: max(H._slope(g["dpm_o_pp"], g["gap_bp"]), 0.0) for m, g in d.groupby("market")}
     r = ev["market"].map(rates).to_numpy(float)
@@ -59,7 +55,6 @@ def in_sample_bound(d: pd.DataFrame, hs_pp: float) -> dict:
 
 
 def per_market(d: pd.DataFrame, hs_pp: float, n_boot: int = PARAMS.n_boot, seed: int = PARAMS.seed) -> dict:
-    """Hedge A per market; the static size is that market's own mean rate."""
     out = {}
     for m, g in d[d["excluded"] == ""].groupby("market"):
         st = H.strategies(g, hs_pp)
@@ -70,7 +65,6 @@ def per_market(d: pd.DataFrame, hs_pp: float, n_boot: int = PARAMS.n_boot, seed:
 
 
 def replication(rep: pd.DataFrame, hs_pp: float, n_boot: int = PARAMS.n_boot, seed: int = PARAMS.seed) -> dict:
-    """Section 7: hedge A on the replication panel, cluster bootstrap by closure date."""
     d = H.sort_panel(rep)
     d = pd.concat([d, H.expanding_rates(d)], axis=1)
     ev = d[d["rate"].notna()].reset_index(drop=True)
@@ -84,7 +78,6 @@ def replication(rep: pd.DataFrame, hs_pp: float, n_boot: int = PARAMS.n_boot, se
 
 
 def concentration(st: pd.DataFrame, h: str, ks=(1, 3, 5)) -> dict:
-    """Exploratory (Amendment 1): VR0 and VRS after dropping the k closures that add most to VRS."""
     c0, ch, cs = PAIRS[h]
     e = st[[c0, ch, cs]].dropna()
     v0 = e[c0].var(ddof=1)
@@ -99,7 +92,6 @@ def concentration(st: pd.DataFrame, h: str, ks=(1, 3, 5)) -> dict:
 
 
 def b_timing(ev: pd.DataFrame) -> dict:
-    """Exploratory (Amendment 1): post-open sd when hedge B is active vs not, and corr(f_B, ret30)."""
     on = ev["f_B"] > 0
     return {"n_active": int(on.sum()), "sd_active": float(ev.loc[on, "ret30_bp"].std(ddof=1)),
             "sd_inactive": float(ev.loc[~on, "ret30_bp"].std(ddof=1)),

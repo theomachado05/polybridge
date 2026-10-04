@@ -1,4 +1,3 @@
-// Mirrors docs/contracts.md (HTTP API). Change both together, by PR.
 import type { ClosedLabels, ClosedModeSummary, ClosureView, GapView, HedgeASummary, SessionView, StagedOrder } from "./closed.ts";
 import type { ForwardStatus, LaddersOut, Registry, TicketsOut } from "./micro.ts";
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -24,18 +23,12 @@ export interface Proposal {
   market?: { source: string; id: string; token_id?: string | null } | null;
   direction?: Direction | null;
   algo?: AlgoChoice | null;
-  /** Opportunity proposals: the approved risk caps (open option structures; premium / max loss at risk, USD). */
   max_contracts?: number | null;
   max_notional?: number | null;
-  /** Hedge A opt-in (closed-market mode): a simulated PM-leg estimate while equities are closed. Off by default. */
   closed_pm_hedge?: boolean;
-  /** Closed-market override: stage hedge B on a market whose signal is NOT validated (labelled "override"). */
   act_on_unvalidated?: boolean;
-  /** The evidence gate for this (market, ticker), computed by the backend; approval needs ack_unvalidated when not validated. */
   evidence?: EvidenceStatus | null;
-  /** True when the approval acknowledged an unvalidated market (decisions and fills are labelled so). */
   ack_unvalidated?: boolean;
-  /** Liquidity and capital before approval (POST /proposals; cached numbers on the sync path). */
   capacity?: Capacity | null;
   created_at: string;
   decided_at: string | null;
@@ -79,8 +72,6 @@ export interface Market {
   end_date: string | null;
   url: string | null;
   token_id: string | null;
-  /** The backend's recording of this market (replay file name), when it has one. A resolved market with a recording
-   *  is still listed in Build: its replay runs offline (and, with option columns, the Opportunity division). */
   recorded?: string | null;
 }
 export interface SearchOut { markets: Market[]; stale: boolean; note?: string | null }
@@ -124,7 +115,6 @@ export interface EquityCard {
 export interface MapItem { ticker: string; direction: string; impact_pct: number | null; rationale: string | null }
 export interface MapCandidate { source_key: string; matched_question: string; score: number; items: MapItem[] }
 export interface MapOut {
-  /** "ai_precomputed" (an LLM ahead of time, ai_map.json), "ai_live:gemini:<model>" (Gemini, now), or "none". */
   source: "ai_precomputed" | "none" | string;
   label: string;
   match_type: "exact" | "fuzzy" | null;
@@ -170,15 +160,12 @@ export interface BridgeSummary {
   label?: string | null;
   reasons: Record<string, number>;
   latency_ns: { p50: number | null; p99: number | null };
-  /** "algo": hedgecore.Algo runs `algo` (the fit); "legacy": the Engine default spec (no fit sent). */
   engine?: "algo" | "legacy";
   algo?: (AlgoChoice & { params?: Record<string, number> | null }) | null;
-  /** Algo bridges: the approved coverage cap, sells it held, and what equity price the algo can see. */
   coverage_cap?: number | null;
   cap_holds?: number;
   equity_price?: "live_quote" | "recorded" | "none" | null;
   equity_source?: string | null;
-  /** "opportunity": an options bridge (Opportunity-division family, simulated option fills). */
   division?: Family;
   option_position?: number;
   option_structure?: { kind: string; expiry?: string; strikes?: number[]; side?: string; legs?: { sign: number; ticker: string }[] } | null;
@@ -189,35 +176,25 @@ export interface BridgeSummary {
   pm_vs_options?: PmVsOptions | null;
   options_detail?: { supported?: boolean; available?: boolean; reason?: string | null; underlying_used?: string; strike_used?: number; expiry?: string; k_lo?: number; k_hi?: number; notes?: string[] } | null;
   fills_label?: string;
-  /** "replay_sandbox": a replay bridge's orders go to an isolated in-memory sim, never the account. */
   account_scope?: "replay_sandbox" | "account";
   broker?: string | null;
   broker_hedge?: number;
   broker_filled?: number;
-  /** The market the bridge was started on. */
   market?: { source: string; id: string; token_id?: string | null } | null;
-  /** Replay bridges (when the backend reports them): the recorded file and the market it belongs to. */
   replay_file?: string | null;
-  /** From the file's .meta.json sidecar; null when the file has no sidecar (its market is unknown). Set too when a
-   *  live bridge fell back to a replay. */
   replay_market?: { source?: string | null; id?: string | null; token_id?: string | null } | null;
-  /** Closed-market mode (backend app/closed/bridge_mode.py): the session at the bridge's latest tick (recorded time on
-   *  a replay), the PM move since the last close, the expected open gap (evidence-gated), staged hedge B, hedge A. */
   session?: SessionView | null;
   closure?: ClosureView | null;
   expected_gap?: GapView | null;
   closed_mode?: ClosedModeSummary | null;
   hedge_a?: HedgeASummary | null;
-  /** Evidence gate at bridge start: the backend's status and the label every decision/fill carries. */
   evidence?: EvidenceStatus | null;
   evidence_label?: string | null;
   act_on_unvalidated?: boolean;
-  /** Orders capped by the participation caps / refused by the capital budget on this bridge. */
   liquidity_capped?: number;
   capital_refused?: number;
 }
 
-/** One tick's PM YES mid vs the options-implied P(YES) (raw orientation). The option number is an estimate. */
 export interface PmVsOptions {
   pm_mid: number | null;
   opt_implied_prob: number | null;
@@ -229,14 +206,11 @@ export interface PmVsOptions {
   label?: string;
 }
 
-/** The hedgecore algo a bridge runs (contracts.md): a catalog family plus one preset, or explicit params. */
 export interface AlgoChoice {
   family: string;
   preset_index?: number | null;
   params?: Record<string, number> | null;
   source?: "ai_fit" | "user";
-  /** Server-set on the stored proposal: the params that will run after the approved target_coverage capped the
-   *  hedge-size params, the cap, and the params it lowered ({name: original}). */
   resolved_params?: Record<string, number> | null;
   coverage_cap?: number | null;
   capped?: Record<string, number> | null;
@@ -250,16 +224,13 @@ export interface Exposure {
   rationale: string | null;
   remaining_usd: number;
   label: string;
-  /** Where the mapping came from (POST /map's `source`); absent on backends that only serve precomputed mappings. */
   source?: string | null;
   match_type: string | null;
   matched_question: string | null;
   score: number | null;
 }
 export interface Holding {
-  /** Shares of this ticker in the broker book (not the demo shares); null when the broker could not be read. */
   broker_qty?: number | null;
-  /** Can the active broker short it now (true / false / unknown), and why. */
   can_short?: boolean | null;
   short_reason?: string | null;
   ticker: string;
@@ -273,21 +244,16 @@ export interface Holding {
   hedge: HedgeStatus;
   notes: string[];
 }
-/** The active broker's real book (GET /portfolio broker_account): the Webull paper account, or the simulator. */
 export interface BrokerBook {
   broker?: string | null; label?: string; available?: boolean; error?: string | null;
   account?: AccountOut | null; positions?: BrokerPosition[]; options_supported?: boolean | null; note?: string | null;
 }
 export interface PortfolioOut {
   holdings: Holding[]; total_value: number | null; total_exposure: number | null; total_includes_fuzzy?: boolean; stale: boolean;
-  /** "demo holdings": the holdings above are the demo seed, never the broker's book. */
   holdings_label?: string;
   broker_account?: BrokerBook | null;
 }
 
-// ---- evidence gate, liquidity and capital (backend app/closed/evidence.py, app/liquidity, app/capital)
-
-/** The backend's evidence gate for one (market, ticker). The UI never upgrades it. */
 export interface EvidenceStatus {
   validated: boolean;
   status: string;
@@ -300,7 +266,6 @@ export interface EvidenceStatus {
 }
 export interface Freshness { age_s?: number | null; cache_stale?: boolean; staleness?: string; fetched_at?: number }
 export interface CostBreakdown { qty?: number; half_spread_bp?: number | null; impact_bp?: number | null; total_bp?: number | null }
-/** The equity part of a proposal's capacity block: the hedge at its approved size against the participation caps. */
 export interface CapacityEquity {
   ticker?: string; available?: boolean; reason?: string | null; hedge_shares?: number; price?: number | null;
   hedge_notional_usd?: number | null; max_order_shares?: number | null; per_day_shares?: number | null;
@@ -334,7 +299,6 @@ export interface Capacity {
   pm?: CapacityPm | null;
   capital?: CapitalFit | null;
 }
-/** GET /liquidity/{ticker}: participation caps, cost model and book-size capacity for one equity. */
 export interface LiquidityEquity {
   kind?: "equity"; ticker: string; available: boolean; reason?: string | null;
   caps?: { per_order?: string; per_day?: string }; cost_model?: { formula?: string; k?: number; k_source?: string; sigma_source?: string; spread_source?: string };
@@ -348,11 +312,10 @@ export interface LiquidityEquity {
 export interface CapitalLimits { max_gross_hedge_pct: number; max_event_pct: number; reg_t_initial: number; reg_t_maintenance: number; short_put_mode: string }
 export interface CapitalEvent { event: string; equity_hedge_usd?: number; equity_hedge_shares?: number; staged_pending_usd?: number; option_risk_usd?: number; total_usd: number; limit_usd?: number | null; use_pct?: number | null; proposals?: string[] }
 export interface CapitalBreach { kind: string; event?: string; after_usd?: number; limit_usd?: number; detail?: string | null }
-/** GET /capital: the account budget in force, hedge exposure per event, margin and breaches. */
 export interface CapitalOut {
   broker?: string | null; account_read?: boolean; account_error?: string | null; account_type?: string | null; account_label?: string | null;
-  /** False: the broker has no account read, so the budget is not enforced. */ account_checked?: boolean;
-  /** True: the live read failed and this is the last good read (`account_age_s` old). */ account_stale?: boolean; account_age_s?: number | null;
+  account_checked?: boolean;
+  account_stale?: boolean; account_age_s?: number | null;
   equity?: number | null; cash?: number | null; buying_power?: number | null; buying_power_basis?: string | null;
   limits?: CapitalLimits; gross_hedge_notional?: number; gross_limit_usd?: number | null; gross_use_pct?: number | null;
   equity_hedge_usd?: number; broker_short_notional?: number | null; staged_pending_usd?: number; option_risk_usd?: number;
@@ -363,12 +326,9 @@ export const getLiquidity = (ticker: string, p: { coverage?: number; qty?: numbe
   request<LiquidityEquity>(`/liquidity/${encodeURIComponent(ticker)}${Object.keys(p).length ? `?${qs(p)}` : ""}`);
 export const getCapital = () => request<CapitalOut>("/capital");
 
-/** GET /health; `ai` (when the backend reports it) says whether an LLM is configured and answering. */
 export interface HealthOut { status: string; ai?: { live?: boolean | null; model?: string | null; provider?: string | null } | null }
 export const getHealth = () => request<HealthOut>("/health");
 export const listProposals = () => request<Proposal[]>("/proposals");
-/** Explicit user action only. `ackUnvalidated` is the user's acknowledgement that the market's signal has not passed
- *  its out-of-sample test (the backend answers 409 EVIDENCE_UNVALIDATED without it on such a market). */
 export const approveProposal = (id: string, ackUnvalidated = false) =>
   ackUnvalidated
     ? post<Proposal>(`/proposals/${id}/approve`, { ack_unvalidated: true })
@@ -392,19 +352,14 @@ export const startBridge = (body: {
   market?: { source: string; id: string; token_id?: string | null };
   gap_per_share: number;
   direction?: Direction;
-  /** The fitted algo (must equal the proposal's approved algo when it has one). Omitted: the Engine default spec. */
   family?: string;
   preset_index?: number;
   params?: Record<string, number>;
-  /** Closed-market override on this bridge (accepted only for a proposal approved with the acknowledgement). */
   act_on_unvalidated?: boolean;
 }) => post<{ bridge_id: string }>("/bridges", body);
 export const getBridge = (id: string) => request<BridgeSummary>(`/bridges/${id}`);
 export const getPortfolio = () => request<PortfolioOut>("/portfolio");
 export const listVerdicts = () => request<TagVerdict[]>("/verdicts");
-
-// ---- v4 endpoints (spec §4 fit, §5 broker, §3.4/§9 library). Shapes are parsed defensively in the UI
-// because the backend streams land in parallel; a caller whose endpoint fails shows the error with a retry.
 
 export type EventClass =
   | "macro_fed" | "elections" | "tariffs_trade" | "geopolitics_energy" | "housing" | "fig"
@@ -416,23 +371,17 @@ export interface FitBody {
   ticker: string;
   direction?: Direction;
   shares_held?: number;
-  /** Fit this division instead of the default (hedge when shares are held, else opportunity). */
   division?: Family;
   end_date?: string;
 }
-/** Replay stats the backend copies into each alternative (tune.STAT_KEYS); only finite values are present. */
 export interface FitStats {
   n_ticks?: number; n_orders?: number; pnl?: number; fees?: number; max_dd?: number;
-  /** Plain hedge variance reduction: any static short of a fraction h earns 1 - (1 - h)^2 of it, so never ranked. */
   hedge_var_reduction?: number;
-  /** Variance cut beyond a static short of the same average size: what the PM signal adds (the hedge ranking score). */
   hedge_var_reduction_vs_static?: number;
-  /** Mean short as a fraction of shares_held over the replay. */
   avg_hedge_ratio?: number;
   turnover?: number; p50_ns?: number; p99_ns?: number;
 }
 export interface FitAlternative { family: string; preset_index?: number; params?: Record<string, number>; score?: number | null; division?: string; stats?: FitStats }
-/** What FitOut.score ranks by: the hedge score is the variance cut beyond a static hedge, never the raw cut. */
 export type ScoreBasis = "hedge_var_reduction_vs_static" | "net_pnl_per_drawdown";
 export interface FitOut {
   event_class: EventClass | string;
@@ -443,25 +392,17 @@ export interface FitOut {
   score: number | null;
   alternatives: FitAlternative[];
   rationale: string;
-  /** Which classifier answered this fit: "gemini" (or a Gemini model id) or "rules". The only basis for an "AI" label. */
   llm: "gemini" | "rules" | string;
-  /** The Gemini model, when the backend reports it. */
   model?: string | null;
-  /** LLM provenance block (docs/contracts.md "AI provenance"): `steps` says what produced each step
-   *  (classify "gemini" | "rules", explain "gemini" | "template"); `live` alone does not mean Gemini classified. */
   ai?: { live?: boolean | null; model?: string | null; provider?: string | null; cached?: boolean | null;
     steps?: { classify?: string | null; explain?: string | null } | null; fell_back_reason?: string | null } | null;
   ticks_source: "live_history" | "replay" | "none" | string;
   n_ticks: number;
-  /** What `score` measures (null or absent: unscored, or an older backend whose hedge score was the raw cut). */
   no_static_benchmark?: boolean;
   score_basis?: ScoreBasis | null;
   score_note?: string | null;
-  /** Hedge fits only (null otherwise): raw variance reduction, reported but never ranked. */
   score_raw?: number | null;
-  /** Hedge fits only: equals `score`, the variance cut beyond a static hedge of the same average size. */
   score_vs_static?: number | null;
-  /** Hedge fits only: mean short as a fraction of shares held over the replay. */
   avg_hedge_ratio?: number | null;
 }
 export const postFit = (body: FitBody) => post<FitOut>("/pipeline/fit", body);
@@ -471,7 +412,6 @@ export interface CatalogBlock { name: string; kind?: string; ui_kind?: string }
 export interface CatalogFamily {
   id: string;
   division?: string;
-  /** A family listed in more than one division (e.g. poly_kalshi_spread: hedge and opportunity). */
   divisions?: string[];
   event_classes?: string[];
   instruments?: string[];
@@ -493,9 +433,8 @@ export interface LibraryOut {
 }
 export const getLibrary = () => request<LibraryOut | CatalogFamily[]>("/library");
 
-// Field names checked against origin/v4/broker (backend/app/broker/models.py) and origin/v4/ai-pipeline.
 export interface AccountOut {
-  broker?: string;          // "sim" | "webull-paper"
+  broker?: string;
   cash: number;
   equity: number;
   buying_power: number;
@@ -505,7 +444,6 @@ export interface AccountOut {
   realized_pnl?: number | null;
   fees_paid?: number | null;
   note?: string | null;
-  /** Webull margin fields (null when the broker does not report them). */
   account_type?: string | null;
   account_class?: string | null;
   account_label?: string | null;
@@ -542,7 +480,6 @@ export interface BrokerPosition {
   unrealized_pnl?: number | null;
   broker?: string;
   multiplier?: number;
-  /** "Webull paper account" | "Simulated account" | "demo holdings". */
   account?: string;
   strategy?: string | null;
 }
@@ -567,9 +504,7 @@ export interface BrokerOrder {
   reject_reason?: string | null;
   note?: string | null;
   client_order_id?: string;
-  /** "polybridge" (placed here) | "webull_open" | "webull_history" (read back from Webull). */
   origin?: string | null;
-  /** The broker's own status word (e.g. Webull FILLED / CANCELLED), kept next to the mapped status. */
   broker_status?: string | null;
 }
 export const getAccount = () => request<AccountOut>("/account");
@@ -581,7 +516,6 @@ export const getOrders = (status?: string, days?: number) => {
   const q = qs({ status, days });
   return request<unknown>(`/orders${q ? `?${q}` : ""}`).then(unwrap<BrokerOrder>("orders"));
 };
-/** GET /broker/reconcile: the Webull order reconciler (runs every 15 s in the regular session, idles when closed). */
 export interface ReconcileStatus {
   running?: boolean; state?: string; idle_reason?: string | null; interval_s?: number; market_open?: boolean; broker?: string | null;
   supported?: boolean; passes?: number; errors?: number; last_run_at?: string | null; last_error?: string | null;
@@ -594,9 +528,6 @@ export interface ShortInfo { symbol: string; can_short: boolean | null; reason?:
 export interface BrokerCapabilities { broker?: string; options_supported?: boolean; options_route?: string | null; extended_hours?: boolean; reconcile?: boolean; can_short?: Record<string, ShortInfo>; note?: string | null }
 export const getBrokerCapabilities = (symbols: string[]) =>
   request<BrokerCapabilities>(`/broker/capabilities${symbols.length ? `?symbols=${encodeURIComponent(symbols.join(","))}` : ""}`);
-
-// ---- options data layer (backend/app/options/router.py). Every number here is labelled: options-implied values are
-// risk-neutral estimates from listed prices, never measured probabilities.
 
 export interface OptionsMatch {
   underlying: string; strike: number; expiry: string; direction: "above" | "below"; scale: number; level: number;
@@ -658,14 +589,10 @@ export const getOptionsChain = (p: { ticker: string; expiry_from?: string; expir
 export const getOptionsEightK = (ticker: string, as_of?: string) =>
   request<OptionsEightKOut>(`/options/eightk?${qs({ ticker, as_of })}`);
 
-// ---- closed-market mode (backend app/closed/router.py, staged.py, opportunity_routes.py). The evidence gate is the
-// backend's: a gap is "validated" only for a market whose own out-of-sample record passes; the UI never upgrades it.
-
 export const getSession = (at?: string) => request<SessionView>(`/session${at ? `?at=${encodeURIComponent(at)}` : ""}`);
 export interface ExpectedGapOut {
   market_source: string; market_id: string; ticker: string;
   session: SessionView; closure: ClosureView & Record<string, unknown>;
-  /** The gap service's names (expected_gap_bp, band_bp, n_closures, label) plus validated / status / evidence. */
   expected_gap: Record<string, unknown>;
   evidence: { validated: boolean; status: string; market: string | null; evidence: string };
   move_source: "what_if" | "history_seed" | "tracker";
@@ -681,8 +608,6 @@ export const getClosedEvidence = (p: { market_source?: string; market_id?: strin
 export interface StagedListOut { orders: StagedOrder[]; broker: { name: string | null; extended_hours: boolean }; note: string }
 export const listStaged = (p: { bridge_id?: string; proposal_id?: string } = {}) =>
   request<StagedListOut>(`/staged${Object.keys(p).length ? `?${qs(p)}` : ""}`);
-/** Explicit user action only: approves one staged plan (hedge B) at the quantity the user saw. An unapproved plan
- *  resizes with the gap; if it changed since it was rendered the backend refuses (409 PLAN_CHANGED). */
 export const approveStaged = (id: string, qtySeen: number) =>
   post<StagedOrder>(`/staged/${encodeURIComponent(id)}/approve`, { qty: qtySeen });
 export const cancelStaged = (id: string) => request<StagedOrder>(`/staged/${encodeURIComponent(id)}`, { method: "DELETE" });
@@ -694,9 +619,6 @@ export interface ClosedOpportunityOut {
   snapshots: unknown[];
 }
 export const getClosedOpportunity = () => request<ClosedOpportunityOut>("/closed/opportunity");
-
-// ---- options: live chain, hedge-instrument comparison, marks (backend app/options/live.py, hedge.py, mark.py).
-// Bid/ask are Massive's last NBBO (15-min delayed); when the market is closed every row is the last session's close.
 
 export interface ChainContract {
   ticker: string; strike: number; right: "call" | "put"; expiry: string;
@@ -759,7 +681,6 @@ export interface OptionMark {
 }
 export const getOptionMark = (contract: string) => request<OptionMark>(`/options/mark/${encodeURIComponent(contract)}`);
 
-// Micro-market mechanisms (docs: backend/app/contracts, app/closed/evidence.py, app/forward). Labels come from the registry.
 export const getMechanisms = () => request<Registry>("/evidence/mechanisms");
 export const getLadders = () => request<LaddersOut>("/ladders");
 export const getTickets = () => request<TicketsOut>("/tickets");

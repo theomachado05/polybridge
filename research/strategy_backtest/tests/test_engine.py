@@ -63,7 +63,6 @@ def test_store_filters_known_at():
 
 
 def _perturb_after(w: dict, k: int, seed: int = 9) -> dict:
-    """Change everything that becomes knowable after T_sig of session days[k]."""
     rng = np.random.default_rng(seed)
     days = w["days"]
     meas = w["meas"].copy()
@@ -79,7 +78,6 @@ def _perturb_after(w: dict, k: int, seed: int = 9) -> dict:
 
 @pytest.mark.parametrize("variant", ["primary", "V1_premarket", "V2_no_gating", "V3_unwind_close"])
 def test_no_look_ahead(variant):
-    """Section 2: decisions up to session k are identical when everything after T_sig of session k is replaced."""
     w = world(n=70, seed=3)
     v = VARIANTS[variant]
     base, _ = run_loop(w["days"], w["meas"], w["markets"], w["part"], w["pm"], v)

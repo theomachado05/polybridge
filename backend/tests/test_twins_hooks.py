@@ -1,4 +1,3 @@
-"""Where the twin map is consumed: the fit pipeline's p_other_venue / 'both_venues', and bridges with no twin given."""
 from __future__ import annotations
 
 import json
@@ -38,15 +37,13 @@ def twin_map(tmp_path, monkeypatch):
     return install
 
 
-# ---------------------------------------------------------------- pipeline
-
 def test_asof_join_is_causal_and_bounded():
     other = [(1000, 0.40), (2000, 0.50), (2000 + MAX_STALE_S + 500, 0.60)]
     out = asof_join([500, 1000, 1500, 2000, 2000 + MAX_STALE_S, 2000 + MAX_STALE_S + 1], other)
-    assert math.isnan(out[0])                       # before the first twin point: nothing to see yet
+    assert math.isnan(out[0])
     assert out[1] == 0.40 and out[2] == 0.40 and out[3] == 0.50
-    assert out[4] == 0.50                           # exactly at the staleness bound still counts
-    assert math.isnan(out[5])                       # older than the bound: NaN, never carried forward
+    assert out[4] == 0.50
+    assert math.isnan(out[5])
     assert asof_join([10], [(5, float("nan"))])[0] != asof_join([10], [(5, float("nan"))])[0]
 
 
@@ -60,11 +57,11 @@ def test_polymarket_market_with_a_kalshi_twin_meets_both_venues(twin_map):
     ts = run(build_ticks({"source": "polymarket", "id": "777"}, "SPY", http=mock_http(r), massive=lambda: FakeMassive()))
     pov = ts.ticks["p_other_venue"]
     assert np.isfinite(pov).sum() >= N_POINTS - 2
-    assert pov[0] == pytest.approx(0.32)            # Kalshi hourly candle mid (bid .30, ask .34), same hour
+    assert pov[0] == pytest.approx(0.32)
     assert "both_venues" in available_requirements(ts)
     assert any("p_other_venue from kalshi twin KXTWIN-26-T1" in n for n in ts.notes)
     assert any(q.url.path == "/trade-api/v2/series/KXTWIN/markets/KXTWIN-26-T1/candlesticks" for q in r.requests)
-    assert ts.source == "live_history" and ts.has_underlying   # the rest of the tick set is untouched
+    assert ts.source == "live_history" and ts.has_underlying
 
 
 def test_market_without_a_twin_keeps_both_venues_unmet(twin_map):
@@ -85,7 +82,7 @@ def test_unverified_pairs_never_feed_p_other_venue(twin_map):
 
 def test_twin_history_failure_degrades_to_nan_with_a_note(twin_map):
     twin_map(entry("777", "tokYES", "KXTWIN-26-T1"))
-    r = Router(prices=history(), gamma=GAMMA, kalshi_market=K_MARKET, kalshi_event=K_EVENT, candles=None)  # 503
+    r = Router(prices=history(), gamma=GAMMA, kalshi_market=K_MARKET, kalshi_event=K_EVENT, candles=None)
     ts = run(build_ticks({"source": "polymarket", "id": "777"}, "SPY", http=mock_http(r), massive=lambda: FakeMassive()))
     assert ts.source == "live_history" and ts.n == N_POINTS
     assert np.isnan(ts.ticks["p_other_venue"]).all() and "both_venues" not in available_requirements(ts)
@@ -111,14 +108,11 @@ def test_no_overlay_offline_or_from_a_replay(twin_map):
                                    http=mock_http(twinned_router()))) is None
     assert run(overlay_other_venue(ticks, pts, source="polymarket", market_id="nope", token_id=None,
                                    http=mock_http(twinned_router()))) is None
-    # a build with no network (offline) does not try the twin's book either
     r = twinned_router()
     ts = run(build_ticks({"source": "polymarket", "id": "2589813"}, "SPY", http=mock_http(r), offline=True))
     assert not any("candlesticks" in q.url.path for q in r.requests)
     assert "both_venues" not in available_requirements(ts)
 
-
-# ---------------------------------------------------------------- bridges
 
 class Scripted:
     seen: dict = {}
@@ -188,6 +182,6 @@ def test_replay_bridge_ignores_the_twin_map(client, twin_map):
     twin_map(entry("2589813", "tokYES", "KXFEDDECISION-26OCT-H25"))
     p = proposal(client, {"family": "macro_fed_hedge"})
     r = client.post("/bridges", json={"proposal_id": p["id"], "source": "replay"})
-    assert r.status_code in (201, 422)  # 422 only if the test env has no replay file; never an error from the map
+    assert r.status_code in (201, 422)
     if r.status_code == 201:
         assert client.get(f"/bridges/{r.json()['bridge_id']}").json()["twin"] is None

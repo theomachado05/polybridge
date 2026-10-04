@@ -1,4 +1,3 @@
-"""Hedge rules, expanding-window rate and bootstrap of METHOD.md sections 2-5. Pure numpy/pandas, no I/O."""
 from __future__ import annotations
 
 import numpy as np
@@ -25,12 +24,6 @@ def sort_panel(df: pd.DataFrame) -> pd.DataFrame:
 
 def expanding_rates(df: pd.DataFrame, x: str = "dpm_o_pp", y: str = "gap_bp",
                     min_prior: int = PARAMS.min_prior, min_nonzero: int = PARAMS.min_prior_nonzero) -> pd.DataFrame:
-    """Section 2. For each row, OLS slope of y on x over rows whose open_day <= this row's closure day.
-
-    Same-market rows first; pooled (all markets) fallback; negative slope clipped to 0. Returns columns
-    rate (NaN = no rate yet), rate_raw (unclipped), rate_src ('market', 'pooled' or ''), n_prior.
-    The row itself and every later row are never used (open_day of the row > its closure day).
-    """
     closure = df["closure"].astype(str).to_numpy()
     open_day = df["open_day"].astype(str).to_numpy()
     market = df["market"].astype(str).to_numpy()
@@ -54,7 +47,6 @@ def expanding_rates(df: pd.DataFrame, x: str = "dpm_o_pp", y: str = "gap_bp",
 
 
 def frac_b(expected_gap_bp, k_bp: float) -> np.ndarray:
-    """Hedge B fraction: clip(-E / K, 0, 1)."""
     return np.clip(-np.asarray(expected_gap_bp, float) / k_bp, 0.0, 1.0)
 
 
@@ -64,20 +56,17 @@ def compound_bp(a_bp, b_bp) -> np.ndarray:
 
 
 def hedge_a(gap, dpm_o, rate, hs_pp) -> np.ndarray:
-    """Y_A = gap - rate * dpm_o - 2 * hs * rate (bp of position)."""
     rate = np.asarray(rate, float)
     return np.asarray(gap, float) - rate * np.asarray(dpm_o, float) - 2.0 * hs_pp * rate
 
 
 def hedge_b(ret, f, cost_side_bp) -> np.ndarray:
-    """Y_B = (1 - f) * ret - 2 * cost_side * f (bp of position, window from the hedge's execution)."""
     f = np.asarray(f, float)
     return (1.0 - f) * np.asarray(ret, float) - 2.0 * cost_side_bp * f
 
 
 def strategies(df: pd.DataFrame, hs_pp: float, k_bp: float = PARAMS.k_bp, eq_side_bp: float = PARAMS.eq_cost_bp,
                eq_pre_side_bp: float = PARAMS.eq_cost_bp) -> pd.DataFrame:
-    """Every strategy's P&L for the rows of df (which must already carry `rate`). Static sizes from these rows."""
     out = pd.DataFrame(index=df.index)
     g, x, r30 = df["gap_bp"].to_numpy(float), df["dpm_o_pp"].to_numpy(float), df["ret30_bp"].to_numpy(float)
     rate = df["rate"].to_numpy(float)
@@ -109,7 +98,6 @@ def strategies(df: pd.DataFrame, hs_pp: float, k_bp: float = PARAMS.k_bp, eq_sid
     out["Y_B08"] = np.where(ok08, hedge_b(r08, f08, eq_pre_side_bp), np.nan)
     out["Y_SB08"] = np.where(ok08, hedge_b(r08, np.full_like(f08, fbar08), eq_pre_side_bp), np.nan)
 
-    # whole path, close to 10:00 ET (secondary)
     u = compound_bp(g, r30)
     pm_leg = -rate * x - 2.0 * hs_pp * rate
     eq_leg = -(f * r30 + 2.0 * eq_side_bp * f) * (1 + g / 1e4)
@@ -121,14 +109,11 @@ def strategies(df: pd.DataFrame, hs_pp: float, k_bp: float = PARAMS.k_bp, eq_sid
     return out
 
 
-# ---------------- inference ----------------
-
 def iid_indices(n: int, n_boot: int, seed: int) -> np.ndarray:
     return np.random.default_rng(seed).integers(0, n, size=(n_boot, n))
 
 
 def block_indices(n: int, n_boot: int, block: int, seed: int) -> np.ndarray:
-    """Moving-block bootstrap over the sorted rows."""
     rng = np.random.default_rng(seed)
     block = max(1, min(block, n))
     nb = -(-n // block)
@@ -138,7 +123,6 @@ def block_indices(n: int, n_boot: int, block: int, seed: int) -> np.ndarray:
 
 
 def cluster_indices(groups, n_boot: int, seed: int) -> list[np.ndarray]:
-    """Resample groups (closure dates) with replacement; all rows of a drawn group come together."""
     groups = np.asarray(groups)
     uniq, inv = np.unique(groups, return_inverse=True)
     members = [np.flatnonzero(inv == k) for k in range(len(uniq))]
@@ -154,7 +138,6 @@ def _var_rows(Y: np.ndarray, idx) -> np.ndarray:
 
 
 def variance_test(y0, yh, ys, idx) -> dict:
-    """VR0 = 1 - Var(H)/Var(0); VRS = (Var(S) - Var(H))/Var(0); paired bootstrap percentile CIs."""
     y0, yh, ys = (np.asarray(a, float) for a in (y0, yh, ys))
     v0, vh, vs = y0.var(ddof=1), yh.var(ddof=1), ys.var(ddof=1)
     b0, bh, bs = _var_rows(y0, idx), _var_rows(yh, idx), _var_rows(ys, idx)
@@ -169,7 +152,6 @@ def variance_test(y0, yh, ys, idx) -> dict:
 
 
 def verdict(t: dict) -> str:
-    """Section 4: both CIs above 0 -> reduces; exactly one -> partial; else no evidence / increases."""
     a, b = t["VR0_lo"] > 0, t["VRS_lo"] > 0
     if a and b:
         return "reduces the loss variance"

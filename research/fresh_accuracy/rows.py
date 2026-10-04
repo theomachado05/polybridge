@@ -1,4 +1,3 @@
-"""Rows for one market: snapshots, PM price, clean-expiry option probability (METHOD.md sections 2, 3, 6). No outcomes here."""
 from __future__ import annotations
 
 import math
@@ -28,7 +27,6 @@ def _iso(s: str) -> datetime | None:
 
 
 def snapshots(res_date: date, start: datetime | None, end: datetime, prev_session: date, p=PARAMS) -> tuple[list, dict]:
-    """[(label, instant)] that exist under section 2, and counts of the dropped ones."""
     out, drop = [], {}
     for label, d, hm in (("S1", prev_session, p.s1_hhmm), ("S2", res_date, p.s2_hhmm)):
         t = et_dt(d, *hm)
@@ -50,7 +48,6 @@ def pm_at(history: list[tuple[int, float]], snap_ts: float) -> tuple[float | Non
 
 
 def strict_quote(get_quote: Callable[[str], Quote | None], snap_ts: float) -> Callable[[str], Quote | None]:
-    """A leg quote stamped after the snapshot is treated as missing (never fills in)."""
     def f(tk):
         q = get_quote(tk)
         if q is None or (not math.isnan(q.ts) and q.ts > snap_ts):
@@ -72,8 +69,6 @@ def option_row(*, mid: float, age: float, strike: float, chain: dict, get_quote,
 
 
 def pm_market_rows(m: dict, *, history_fn, chain_fn, quote_fn, prev_session_fn, p=PARAMS) -> tuple[list[dict], dict]:
-    """All rows of one frozen Polymarket market. history_fn(token, a, b) -> [(t, p)]; chain_fn(und, iso) -> {K: ticker};
-    quote_fn(ticker, snap_dt) -> Quote | None; prev_session_fn(date) -> date."""
     rd = date.fromisoformat(m["res_date"])
     end = _iso(m["end"])
     start = _iso(m.get("start") or "")
@@ -117,8 +112,6 @@ def pm_market_rows(m: dict, *, history_fn, chain_fn, quote_fn, prev_session_fn, 
 def is_scored(r: dict) -> bool:
     return r.get("status") == "scored" and bool(r.get("clean")) and r.get("pm_mid") != PARAMS.placeholder
 
-
-# ---------------------------------------------------------------- Kalshi (H3)
 
 def kalshi_event_ticker(series: str, d: date) -> str:
     return f"{series}-{d.strftime('%y%b%d').upper()}H1600"

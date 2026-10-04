@@ -1,14 +1,3 @@
-"""Live Massive reads behind the options chain, hedge quote and option marks (all bounded, cached, never raising to a
-route): underlying spot, last option NBBO, single-contract snapshot, dividends, plus pure helpers (OCC parsing, time
-to expiry, market-open flag, liquidity flags).
-
-What the Massive plan gives (probed 2026-10-03): the chain snapshot carries greeks, IV, open interest, ``fmv`` and the
-session bar, but **no** ``last_quote``; the per-contract ``/v3/quotes/{ticker}`` endpoint does return the last NBBO
-(15-minute delayed). So chain rows are fmv-marked unless an NBBO is fetched for them, and every response says which.
-
-Each network function is synchronous (run through ``app.chain.bounded``: 6 s per HTTP call, 8 s per threaded call)
-and returns ``None`` / a labelled empty value on any failure.
-"""
 from __future__ import annotations
 
 import asyncio
@@ -37,8 +26,8 @@ DIVIDENDS = "/v3/reference/dividends"
 SPOT_TTL_S = 30.0
 NBBO_TTL_S = 30.0
 DIV_TTL_S = 6 * 3600.0
-MAX_NBBO = 30               # most per-contract NBBO calls one chain request makes (nearest the money first)
-DELAYED_MAX_AGE_S = 20 * 60  # the plan is 15-min delayed: older than 20 min during the session = stale
+MAX_NBBO = 30
+DELAYED_MAX_AGE_S = 20 * 60
 
 _SPOT = TTLCache(SPOT_TTL_S)
 _NBBO = TTLCache(NBBO_TTL_S)
@@ -47,14 +36,11 @@ _DIVS = TTLCache(DIV_TTL_S)
 _OCC = re.compile(r"^(?:O:)?([A-Z][A-Z0-9.]{0,6}?)(\d{6})([CP])(\d{8})$")
 
 
-# ------------------------------------------------------------------------------------------------ pure helpers
-
 def fnum(x: Any) -> float:
     return ch._f(x)
 
 
 def clean(x: Any) -> Any:
-    """JSON-safe: NaN / inf -> None, recursively; floats rounded to 6 dp."""
     if isinstance(x, float):
         return round(x, 6) if math.isfinite(x) else None
     if isinstance(x, dict):
@@ -65,7 +51,6 @@ def clean(x: Any) -> Any:
 
 
 def parse_occ(ticker: str) -> dict | None:
-    """'O:AAPL261023P00300000' -> {underlying, expiry, right, strike, ticker}; None if it is not an OCC symbol."""
     m = _OCC.match((ticker or "").strip().upper())
     if not m:
         return None
@@ -88,7 +73,6 @@ def expiry_close(expiry: str | dt.date) -> dt.datetime:
 
 
 def years_to_expiry(expiry: str | dt.date, now: dt.datetime | None = None) -> float:
-    """Years (ACT/365, to the minute) from ``now`` to 16:00 ET on the expiry date; <= 0 once expired; NaN if bad."""
     try:
         return (expiry_close(expiry) - (now or now_utc())).total_seconds() / YEAR_S
     except (TypeError, ValueError):
@@ -96,7 +80,6 @@ def years_to_expiry(expiry: str | dt.date, now: dt.datetime | None = None) -> fl
 
 
 def market_state(now: dt.datetime | None = None) -> dict:
-    """{market_open, phase, label, last_close, next_open} for the regular options session (09:30-16:00 ET)."""
     from ..closed.session import session_at
     try:
         s = session_at(now or now_utc())
@@ -117,8 +100,6 @@ def quote_age(updated_ns: int | None, now: dt.datetime | None = None) -> float |
 
 def is_stale(updated_ns: int | None, market: dict, now: dt.datetime | None = None,
              max_age_s: float = DELAYED_MAX_AGE_S) -> tuple[bool, str | None]:
-    """Session open: stale when older than ``max_age_s``. Closed: stale when the price predates the last regular close
-    by more than ``max_age_s`` (a Friday-close price on Saturday is the right closing mark, not a stale one)."""
     if not updated_ns:
         return True, "no timestamp"
     t = updated_ns / 1e9
@@ -133,15 +114,13 @@ def is_stale(updated_ns: int | None, market: dict, now: dt.datetime | None = Non
     return (gap > max_age_s, f"predates the last close by {gap / 3600:.1f} h" if gap > max_age_s else None)
 
 
-# Liquidity thresholds (per leg). Documented in docs/contracts.md.
 OI_LOW, OI_THIN = 100, 500
-SPREAD_WIDE, SPREAD_VERY_WIDE = 0.10, 0.25   # (ask - bid) / mid
-SIZE_VS_OI = 0.20                             # contracts traded / open interest
+SPREAD_WIDE, SPREAD_VERY_WIDE = 0.10, 0.25
+SIZE_VS_OI = 0.20
 
 
 def liquidity_flags(*, bid: float, ask: float, mid: float, oi: float, volume: float, contracts: int | None = None,
                     quoted: bool = True, stale: bool = False) -> tuple[list[str], str]:
-    """(flags, grade) with grade 'liquid' | 'thin' | 'illiquid'."""
     flags: list[str] = []
     severe = moderate = 0
     if not quoted:
@@ -149,7 +128,7 @@ def liquidity_flags(*, bid: float, ask: float, mid: float, oi: float, volume: fl
         moderate += 1
     elif math.isfinite(bid) and math.isfinite(ask) and math.isfinite(mid) and mid > 0:
         rel = (ask - bid) / mid
-        rel -= 1e-9  # a spread of exactly 10% is not "wider than 10%" (float noise)
+        rel -= 1e-9
         if rel > SPREAD_VERY_WIDE:
             flags.append("very_wide_spread")
             severe += 1
@@ -187,15 +166,11 @@ def worst_grade(grades: list[str]) -> str:
     return max(grades, key=lambda g: GRADE_RANK.get(g, 2)) if grades else "illiquid"
 
 
-# ------------------------------------------------------------------------------------------------ network (sync)
-
 def _get(client, url: str, params: dict | None = None) -> dict:
     return ch._get(client, url, params)
 
 
 def parse_spot(snap: dict | None, prev: dict | None, market_open: bool | None) -> dict:
-    """Underlying price from the stock snapshot (last trade while open, else the session close) or the prev-day agg.
-    Also the stock's last quote when it is sane (two-sided, within 1% wide) and today's % change (SSR check)."""
     out: dict[str, Any] = {"price": None, "source": None, "updated_ns": None, "bid": None, "ask": None,
                            "change_pct": None}
     t = (snap or {}).get("ticker") or {}
@@ -255,7 +230,6 @@ def fetch_nbbo_sync(client, opt_ticker: str) -> dict | None:
 
 
 def fetch_contract_sync(client, underlying: str, opt_ticker: str) -> tuple[ch.OptionQuote | None, float]:
-    """(quote, underlying price) from the single-contract snapshot."""
     payload = _get(client, OPTION_CONTRACT.format(underlying=underlying, ticker=opt_ticker))
     r = (payload or {}).get("results") or {}
     q = ch.parse_result(r) if isinstance(r, dict) else None
@@ -264,8 +238,6 @@ def fetch_contract_sync(client, underlying: str, opt_ticker: str) -> tuple[ch.Op
 
 
 def parse_dividends(payload: dict | None, start: dt.date, end: dt.date) -> dict:
-    """Next cash dividend with an ex-date in [start, end]: declared if listed, else projected from the last one and
-    its frequency (labelled), else none."""
     rows = [r for r in (payload or {}).get("results") or [] if r.get("ex_dividend_date")]
     out: dict[str, Any] = {"status": "none_in_horizon", "ex_date": None, "amount": None, "source": "massive_dividends"}
     if not rows:
@@ -293,12 +265,10 @@ def fetch_dividends_sync(client, ticker: str, start: dt.date, end: dt.date) -> d
     return parse_dividends(p, start, end)
 
 
-# ------------------------------------------------------------------------------------------------ async (cached)
-
 def _spot_or_raise(client, ticker: str, market_open: bool | None) -> dict:
     got = fetch_spot_sync(client, ticker, market_open)
     if got.get("price") is None:
-        raise LookupError("no underlying price")  # never cache a miss; a previous good price is served stale
+        raise LookupError("no underlying price")
     return got
 
 
@@ -333,8 +303,6 @@ async def get_dividends(client, ticker: str, start: dt.date, end: dt.date) -> di
 
 
 def apply_nbbo(q: ch.OptionQuote, nbbo: dict | None) -> ch.OptionQuote:
-    """A copy of a chain quote carrying a fetched NBBO (bid / ask / mid / mark_source 'quote' / updated_ns). Copies,
-    so the shared cached chain is never edited."""
     if nbbo and math.isfinite(nbbo["bid"]) and math.isfinite(nbbo["ask"]):
         return dataclasses.replace(q, bid=nbbo["bid"], ask=nbbo["ask"], mid=(nbbo["bid"] + nbbo["ask"]) / 2.0,
                                    mark_source="quote", updated_ns=nbbo.get("updated_ns") or q.updated_ns)
@@ -342,6 +310,5 @@ def apply_nbbo(q: ch.OptionQuote, nbbo: dict | None) -> ch.OptionQuote:
 
 
 def reset_caches() -> None:
-    """Tests: fresh caches."""
     global _SPOT, _NBBO, _DIVS
     _SPOT, _NBBO, _DIVS = TTLCache(SPOT_TTL_S), TTLCache(NBBO_TTL_S), TTLCache(DIV_TTL_S)

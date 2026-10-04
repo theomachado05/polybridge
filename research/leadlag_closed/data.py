@@ -1,4 +1,3 @@
-"""Fetch + cache for the closed-market study. Reuses the wave-1 CLOB fetcher and the Massive client."""
 from __future__ import annotations
 
 import pandas as pd
@@ -10,10 +9,6 @@ from .config import CACHE_DIR, PARAMS, TZ
 
 
 def fetch_equity_ohlc(client, ticker: str, start: pd.Timestamp, end: pd.Timestamp) -> pd.DataFrame:
-    """Massive 1-minute aggregates over [start, end] UTC, extended hours included.
-
-    Index = bar START time (UTC); columns open, close, volume. Empty frame if no bars.
-    """
     path = f"/v2/aggs/ticker/{ticker}/range/1/minute/{int(start.timestamp() * 1000)}/{int(end.timestamp() * 1000)}"
     rows = client.get_all(path, {"adjusted": "true", "sort": "asc", "limit": 50000})
     cols = ["open", "close", "volume"]
@@ -26,11 +21,10 @@ def fetch_equity_ohlc(client, ticker: str, start: pd.Timestamp, end: pd.Timestam
     return out[~out.index.duplicated(keep="last")].sort_index()
 
 
-YEAR_END_CLAMP = pd.Timestamp("2025-12-31 23:59", tz="UTC")  # study uses 2024-2025 prices only; nothing dated 2026 is requested
+YEAR_END_CLAMP = pd.Timestamp("2025-12-31 23:59", tz="UTC")
 
 
 def month_chunks(start: str, end: str) -> list[tuple[pd.Timestamp, pd.Timestamp]]:
-    """Calendar-month UTC chunks covering [start, end] (dates), each padded by one day so closures at the edges are whole."""
     s, e = pd.Timestamp(start), pd.Timestamp(end)
     out = []
     cur = s.replace(day=1)
@@ -51,7 +45,6 @@ def fetch_equity_range(client, ticker: str, start: str, end: str) -> pd.DataFram
 
 
 def fetch_closure_pm(token_id: str, c: Closure, pm_session=None, cache_dir=None) -> list[tuple[int, float]]:
-    """CLOB points covering [close - 2 h, open + 30 min] for one closure (one request, fidelity=1)."""
     start = c.nominal_close - pd.Timedelta(minutes=PARAMS.pm_pad_before_min)
     end = c.nominal_open + pd.Timedelta(minutes=PARAMS.pm_pad_after_min)
     return fetch_pm_history(token_id, start, end, cache_dir or (CACHE_DIR / "pm"), session=pm_session)

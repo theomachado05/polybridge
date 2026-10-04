@@ -1,5 +1,3 @@
-"""Python surface of the micro families: catalog keys, the two algos, and both replays on the research files."""
-
 import csv
 import math
 from pathlib import Path
@@ -76,7 +74,7 @@ def test_replay_ladder_reproduces_fresh_order_check_trades():
         cols["ask_cheap_qty"].append(float(r["print_size"]))
         cols["fee_rate_rich"].append(fr / (rich * (1 - rich)) if fr else 0.0)
         cols["fee_rate_cheap"].append(fc / (cheap * (1 - cheap)) if fc else 0.0)
-        cols["tick"].append(0.0)  # the research's one tick per leg is already in the fill prices
+        cols["tick"].append(0.0)
         cols["ts_rich_ns"].append(int(r["t_print_rich"]) * S)
         cols["ts_cheap_ns"].append(int(r["t_print_cheap"]) * S)
         cols["nested"].append(True)

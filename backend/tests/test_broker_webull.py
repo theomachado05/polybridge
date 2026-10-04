@@ -15,8 +15,6 @@ from app.broker.quotes import Quote
 from app.broker.webull import SANDBOX_HOST, SIM_NOTE, sign
 from tests.test_broker_support import FakeQuotes, run
 
-# Vectors produced by the official Apache-2.0 SDK (webull-openapi-python-sdk 3.0.2, default_signature_composer)
-# with a fixed timestamp and nonce, so our signer is checked against Webull's own implementation.
 TS, NONCE, HOST = "2026-10-03T12:00:00Z", "nonce-123", "api.sandbox.webull.com"
 POST_BODY = {"account_id": "ACC1", "new_orders": [{"client_order_id": "c1", "symbol": "AAPL", "quantity": "10"}]}
 SDK_POST_SIG = "Ae7UA04yigWR/iEFlz0dKSCK4Cvky14zE91fXx0jER4="
@@ -50,25 +48,21 @@ def test_hmac_sha1_variant_uses_md5_body_digest_per_the_older_docs():
              algorithm="MD5")
 
 
-# --- mocked Webull sandbox --------------------------------------------------------------------------
-
 class Sandbox:
-    """Records every request and answers like the Webull sandbox (field names per the public docs/SDK)."""
 
     def __init__(self, status="FILLED", place_error=None, held=0.0, history=None, open_groups=None, profiles=None):
         self.requests: list[httpx.Request] = []
         self.status, self.place_error, self.held = status, place_error, held
-        self.qty: dict[str, str] = {}  # client_order_id -> quantity sent
-        # Order list payloads in Webull's documented shape: groups {client_order_id, combo_type, orders: [...]}
-        self.history = history or []  # list of pages; each page {"data": [...], "pagination_key"?}
+        self.qty: dict[str, str] = {}
+        self.history = history or []
         self.open_groups = open_groups or []
-        self.profiles = profiles if profiles is not None else {}  # symbol -> profile row (default: shortable, ETB)
+        self.profiles = profiles if profiles is not None else {}
 
     def handler(self, r: httpx.Request) -> httpx.Response:
         self.requests.append(r)
         p = r.url.path
         if p == "/trading/accounts/list":
-            return httpx.Response(200, json=[{"account_id": "ACC-PAPER-1", "account_type": "MARGIN"}])  # shorts need margin
+            return httpx.Response(200, json=[{"account_id": "ACC-PAPER-1", "account_type": "MARGIN"}])
         if p == "/trading/assets/balances/get":
             return httpx.Response(200, json={"total_asset_currency": "USD", "total_net_liquidation_value": "101500.5",
                                              "account_currency_assets": [{"currency": "USD", "cash_balance": "90000",
@@ -138,7 +132,7 @@ def test_every_request_is_signed_and_the_signature_verifies(tmp_path):
                      query=dict(r.url.params), body=body, timestamp=h["x-timestamp"], nonce=h["x-signature-nonce"])
         assert h["x-signature"] == again["x-signature"], r.url.path
         assert h["x-app-key"] == "APPKEY" and "SECRET" not in str(dict(h)) and h["x-version"] == "v3"
-        if r.content:  # the bytes sent are the compact JSON that was hashed
+        if r.content:
             assert r.content == json.dumps(body, ensure_ascii=False, separators=(",", ":")).encode()
 
 
@@ -195,7 +189,7 @@ def test_a_sell_larger_than_the_long_position_is_split_into_a_sell_and_a_short(t
         again = await b.place_order(OrderRequest(symbol="AAPL", asset="equity", side="sell", qty=10, client_order_id="s"))
         return o, again, await b.orders()
     o, again, rows = run(go())
-    items = _placed(sb)  # the retry is idempotent: still only two orders at Webull
+    items = _placed(sb)
     assert [(i["side"], i["quantity"], i["client_order_id"]) for i in items] == [("SELL", "4", "s-sell"), ("SHORT", "6", "s-short")]
     assert o.status == "filled" and o.qty == 10 and o.filled_qty == 10 and o.client_order_id == "s"
     assert again.filled_qty == 10 and again.status == "filled"
@@ -253,7 +247,7 @@ def test_odd_balance_shapes_never_raise_a_non_broker_error(tmp_path, balance):
         return await b.account()
     try:
         a = run(go())
-        assert a.cash == 5.0 and a.equity == 7.0  # the list-of-one-row shape is understood
+        assert a.cash == 5.0 and a.equity == 7.0
     except BrokerError as e:
         assert e.status_code == 502
 
@@ -307,7 +301,7 @@ def test_options_and_prediction_legs_route_to_the_sim_and_are_labelled(tmp_path)
     o, p, orders = run(go())
     assert (o.broker, o.status, o.fill_px, o.note) == ("sim", "filled", 2.1, SIM_NOTE)
     assert (p.broker, p.status, p.note) == ("sim", "filled", SIM_NOTE)
-    assert not any(r.url.path == "/trading/orders/place" for r in sb.requests)  # nothing went to Webull
+    assert not any(r.url.path == "/trading/orders/place" for r in sb.requests)
     assert {x.id for x in orders} == {o.id, p.id}
 
 
@@ -330,7 +324,7 @@ def test_cancel_posts_the_client_order_id(tmp_path):
     async def go():
         b = make(sb, tmp_path)
         o = await b.place_order(OrderRequest(symbol="AAPL", asset="equity", side="buy", qty=1, client_order_id="cx"))
-        return await b.cancel(o.id)  # by Webull order id
+        return await b.cancel(o.id)
     o = run(go())
     cancel = next(r for r in sb.requests if r.url.path == "/trading/orders/cancel")
     assert json.loads(cancel.content) == {"account_id": "ACC-PAPER-1", "client_order_id": "cx"}
@@ -358,15 +352,13 @@ def test_configured_account_id_skips_the_account_list(tmp_path):
         await b.account()
         await b.account()
     run(go())
-    paths = [r.url.path for r in sb.requests]  # the list is read once, only for the account's type / class
+    paths = [r.url.path for r in sb.requests]
     assert paths.count("/trading/accounts/list") == 1 and paths.count("/trading/assets/balances/get") == 2
     assert all(r.url.params["account_id"] == "MINE" for r in sb.requests if r.url.path != "/trading/accounts/list")
 
 
-# --- the factory ------------------------------------------------------------------------------------
-
 def test_factory_default_is_the_sim(monkeypatch):
-    monkeypatch.setattr(broker_mod, "_env", lambda n: "")  # hermetic: a developer .env may say BROKER=webull
+    monkeypatch.setattr(broker_mod, "_env", lambda n: "")
     broker_mod.reset_default_broker()
     try:
         assert get_broker().name == "sim"
@@ -376,12 +368,12 @@ def test_factory_default_is_the_sim(monkeypatch):
 
 def test_factory_webull_needs_both_the_switch_and_both_keys(monkeypatch):
     monkeypatch.setattr(broker_mod, "_env", lambda n: {"BROKER": "webull", "WEBULL_APP_KEY": "k"}.get(n, ""))
-    assert broker_mod.build_broker().name == "sim"  # secret missing: graceful fallback, no crash
+    assert broker_mod.build_broker().name == "sim"
     monkeypatch.setattr(broker_mod, "_env", lambda n: {"BROKER": "webull", "WEBULL_APP_KEY": "k", "WEBULL_APP_SECRET": "s"}.get(n, ""))
     b = broker_mod.build_broker()
     assert b.name == "webull-paper" and b.client.base_url == SANDBOX_HOST and b.client.host == HOST
     monkeypatch.setattr(broker_mod, "_env", lambda n: {"WEBULL_APP_KEY": "k", "WEBULL_APP_SECRET": "s"}.get(n, ""))
-    assert broker_mod.build_broker().name == "sim"  # keys alone do not switch the broker
+    assert broker_mod.build_broker().name == "sim"
 
 
 def test_factory_pins_app_state_broker():
@@ -391,8 +383,6 @@ def test_factory_pins_app_state_broker():
     A.state.broker = fake
     assert get_broker(A) is fake
 
-
-# --- review fixes: sandbox-only host, 5xx after acceptance, find_order -------------------------------
 
 @pytest.mark.parametrize("url", ["https://api.webull.com", "https://api.webull.com/", "http://api.sandbox.webull.com",
                                  "https://api.sandbox.webull.com.evil.example", "https://evil.example"])
@@ -484,11 +474,7 @@ def test_fill_price_is_read_from_the_avg_price_key_too():
     assert o.fill_px == 10.5
 
 
-# --- review fix: a split sell whose second leg fails is still reconciled by the parent client id --------
-
 class ShortLegFails(Sandbox):
-    """Holds 4: a sell of 10 is SELL 4 (fills) + SHORT 6, whose POST answers 503. Webull does not know the SHORT leg
-    (``short_known`` False) or took it anyway (True, it then fills)."""
 
     def __init__(self, short_known=False, **kw):
         super().__init__(held=4.0, **kw)
@@ -517,13 +503,13 @@ def test_a_split_whose_short_leg_fails_unconfirmed_is_found_by_the_parent_id_wit
     b = make(sb, tmp_path)
 
     async def go():
-        with pytest.raises(BrokerError):  # the caller tracks "sp" as unconfirmed
+        with pytest.raises(BrokerError):
             await b.place_order(_sell10())
         return await b.find_order("sp")
     o = run(go())
     assert o is not None and o.client_order_id == "sp" and o.id == "sp"
-    assert o.filled_qty == 4 and o.qty == 10  # the SELL leg filled; the SHORT leg never reached Webull
-    assert o.status == "cancelled"  # done: nothing more can trade
+    assert o.filled_qty == 4 and o.qty == 10
+    assert o.status == "cancelled"
 
 
 def test_a_split_short_leg_webull_took_despite_the_5xx_is_counted(tmp_path):
@@ -531,7 +517,7 @@ def test_a_split_short_leg_webull_took_despite_the_5xx_is_counted(tmp_path):
     b = make(sb, tmp_path)
 
     async def go():
-        o = await b.place_order(_sell10())  # _submit asks Webull, which knows the SHORT leg: no exception
+        o = await b.place_order(_sell10())
         return o, await b.find_order("sp")
     o, again = run(go())
     assert o.status == "filled" and o.filled_qty == 10 and again.filled_qty == 10
@@ -542,7 +528,7 @@ def test_a_split_interrupted_before_its_short_leg_answers_keeps_its_legs(tmp_pat
     b = make(sb, tmp_path)
 
     async def boom(*a, **kw):
-        raise asyncio.CancelledError()  # the bridge's wait_for cancels mid-split
+        raise asyncio.CancelledError()
 
     async def go():
         real = b._submit
@@ -596,4 +582,4 @@ def test_the_bridge_books_the_filled_sell_leg_of_a_split_whose_short_leg_failed(
         return await bridges._settle_resting(bridge, None, b, "replace")
     assert run(go()) is True
     assert bridge.resting is None
-    assert bridge.broker_hedge == 4.0 and bridge.account_hedge == 4.0  # never dropped as "unknown, nothing traded"
+    assert bridge.broker_hedge == 4.0 and bridge.account_hedge == 4.0

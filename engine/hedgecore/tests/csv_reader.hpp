@@ -1,6 +1,4 @@
 #pragma once
-// Minimal RFC 4180 CSV reader for the research result files the micro-family tests replay (quoted fields may hold
-// commas and doubled quotes). Test-only.
 #include <algorithm>
 #include <fstream>
 #include <limits>
@@ -43,7 +41,7 @@ inline Csv read_csv(const std::string& path) {
   bool first = true;
   while (std::getline(in, line)) {
     rec += line;
-    if (std::count(rec.begin(), rec.end(), '"') % 2) { rec += '\n'; continue; }  // a quoted newline
+    if (std::count(rec.begin(), rec.end(), '"') % 2) { rec += '\n'; continue; }
     auto f = csv_split(rec);
     rec.clear();
     if (first) {
@@ -64,4 +62,4 @@ inline double to_d(const std::string& s) {
   return std::stod(s);
 }
 
-}  // namespace hctest
+}

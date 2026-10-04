@@ -5,8 +5,6 @@
 
 namespace hedgecore::algos {
 
-// Stress regime = |dp over `window` ticks| large against EWMA vol scaled to the window. In stress the hedge crosses
-// the spread unsliced; in calm it joins the touch in child slices.
 struct StressLeadHedge : AlgoBase<StressLeadHedge> {
   static constexpr const char* id = "stress_lead_hedge";
   static constexpr const char* division = "hedge";
@@ -43,7 +41,7 @@ struct StressLeadHedge : AlgoBase<StressLeadHedge> {
         sizer{p.v[kCoverage], pos.shares_held},
         stress_k(p.v[kStressK]),
         child_max(p.v[kChildMax]) {
-    core.pa.urgency_threshold = stress_k;  // urgency = stress ratio
+    core.pa.urgency_threshold = stress_k;
   }
 
   Intent step(const MarketTick& t, std::int64_t now) noexcept {
@@ -53,7 +51,7 @@ struct StressLeadHedge : AlgoBase<StressLeadHedge> {
     if (!num(p)) return hold(Rc::SignalMissing);
     const double dpw = ddp.update(p);
     const auto v = vol.update(p);
-    double stress = 0.0;  // warm-up counts as calm
+    double stress = 0.0;
     if (num(dpw) && num(v.sigma_prev))
       stress = v.sigma_prev > 0 ? std::abs(dpw) / (v.sigma_prev * std::sqrt(static_cast<double>(ddp.window)))
                                 : (dpw != 0 ? 1e9 : 0.0);
@@ -65,4 +63,4 @@ struct StressLeadHedge : AlgoBase<StressLeadHedge> {
   void on_reject(Instrument i) noexcept { core.on_reject(i); }
 };
 
-}  // namespace hedgecore::algos
+}

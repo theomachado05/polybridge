@@ -1,9 +1,3 @@
-"""Export the in-sample (2024-01-01 -> 2025-12-31) H1/H2 study to research/results/in_sample/.
-
-Derived aggregates only: no raw API payloads, no cache contents. Run from research/:
-    .venv/bin/python export_in_sample.py
-The out-of-sample window is never touched here.
-"""
 from __future__ import annotations
 
 import time
@@ -51,7 +45,6 @@ def fam_of(df, fam):
     return df[df["family"] == fam] if len(df) and "family" in df else df.iloc[0:0]
 
 
-# global tables
 if not ev.empty:
     (ev.assign(year=pd.to_datetime(ev["filing_date"]).dt.year).groupby(["family", "year"]).size()
      .rename("n_events").reset_index().to_csv(OUT / "events_summary.csv", index=False))
@@ -83,7 +76,6 @@ for fam, chk in study["checks"].items():
     de, dp = decay_table(ev_r, cfg), decay_table(pl_r, cfg)
     de.to_csv(OUT / f"{fam}_decay_events.csv")
     dp.to_csv(OUT / f"{fam}_decay_placebo.csv")
-    # sensitivity at h=21
     r21, p21 = ev_r[ev_r.horizon == 21], pl_r[pl_r.horizon == 21]
     keys = ["bucket", "entry", "otm"]
     se = r21.groupby(keys)[strat].agg(n_events="count", mean_events="mean")
@@ -91,7 +83,6 @@ for fam, chk in study["checks"].items():
     sens = se.join(sp, how="outer")
     sens["edge"] = sens["mean_events"] - sens["mean_placebo"]
     sens.reset_index().to_csv(OUT / f"{fam}_sensitivity.csv", index=False)
-    # costs
     priced_f = [p for p in study["priced"] if str(getattr(p.family, "value", p.family)) == fam]
     pl_priced_f = [p for p in study["placebo_priced"] if str(getattr(p.family, "value", p.family)) == fam]
     summaries = []
@@ -104,12 +95,10 @@ for fam, chk in study["checks"].items():
             print(f"cost_table with quotes failed ({type(e).__name__}); falling back to client=None", flush=True)
             ct = cost_table(ev_r, priced_f, strat, h, cfg, client=None)
         ct.drop(columns=["ticker", "event_date"]).to_csv(OUT / f"{fam}_costs_h{h}.csv", index=False)
-        # placebo costs: haircut only (no quote calls); used for the net-of-cost events-minus-placebo edge
         ct_pl = cost_table(pl_r, pl_priced_f, strat, h, cfg, client=None) if len(pl_r) and pl_priced_f else None
         summaries.append({"horizon": h, **cost_summary(ct, ct_pl)})
     if summaries:
         pd.DataFrame(summaries).to_csv(OUT / f"{fam}_cost_summary.csv", index=False)
-    # figures
     sb_e, sb_p = scoreboard(ev_r, cfg, strategies=[strat]), scoreboard(pl_r, cfg, strategies=[strat])
     fig, ax = plt.subplots(figsize=(6, 3.8))
     for sb, label, c in ((sb_e, "events", "tab:red"), (sb_p, "placebo", "tab:gray")):

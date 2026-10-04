@@ -1,4 +1,3 @@
-"""Decomposition of the closure gap and paired forecast scores (METHOD.md sections 3 and 4)."""
 from __future__ import annotations
 
 import numpy as np
@@ -48,7 +47,6 @@ def _ci(a) -> list[float]:
 
 
 class Boot:
-    """Closure-cluster bootstrap with one set of multinomial weights shared by every statistic of a sample."""
 
     def __init__(self, clusters, params: Params = PARAMS):
         self.keys, self.inv = np.unique(np.asarray(clusters).astype(str), return_inverse=True)

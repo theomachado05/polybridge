@@ -1,31 +1,3 @@
-"""8-K signal for the Opportunity division: ``eightk_score(ticker)`` in [-1, 1], 0 when there is no qualifying filing.
-
-Data: the pre-registered tag families from the v3 research (research/HYPOTHESIS_TAGS.md, mirrored in
-``polybridge_research.schema``):
-
-- H1 hedge tags (litigation, class action, regulatory investigation, cybersecurity incident, goodwill / asset /
-  investment impairment) are slow-burning bad news  -> negative score;
-- H2 opportunity tags (restructuring plan, workforce reduction, facility closure, business-line exit) are
-  restructurings the chain tends to over-fear -> positive score;
-- a filing carrying tags from both families is ambiguous about its side (research rule 2) -> it does not qualify;
-- other tags (atlas-only) do not qualify.
-
-Mapping: the most recent qualifying filing on or before ``as_of`` and within ``window_days`` gives
-``score = sign(family) * (1 - age_days / window_days)``: +/-1 on the filing day, decaying linearly to 0 at the
-window's edge. With the default 30-day window the C++ ``eightk_opportunity`` thresholds 0.3 / 0.5 / 0.7 mean
-"filed within 21 / 15 / 9 days". The score is a direction prior from the tag taxonomy, not a measured edge: the
-in-sample H1/H2 tests were null (research/results/in_sample/*_verdict.txt).
-
-Sources, in order: filings passed in by the caller; the bundled ``app/data/eightk_filings.json`` (in-sample
-2024-01-01..2025-12-31, written by ``build_eightk_file`` from the research's Massive disclosures); live Massive
-disclosures for recent dates, loaded into a process-wide store by ``await refresh_eightk()`` (never inside the
-frozen out-of-sample window 2026-01-01..2026-08-31; that guard is enforced here).
-
-"No filing" vs "no data": ``eightk_score`` returns 0.0 only when the data covering ``as_of`` was loaded and holds
-no qualifying filing. When nothing covers ``as_of`` (a live date before ``refresh_eightk`` ran, no key, a Massive
-outage, or a date inside the frozen OOS window) it returns NaN, the MarketTick default, which the C++ EightK
-signal reads as "no signal". ``eightk_coverage(as_of)`` names the source ("in_sample" | "live" | None).
-"""
 from __future__ import annotations
 
 import datetime as dt
@@ -37,7 +9,7 @@ from typing import Any, Iterable
 
 DATA_FILE = Path(__file__).resolve().parent.parent / "data" / "eightk_filings.json"
 WINDOW_DAYS = 30
-OOS_START, OOS_END = dt.date(2026, 1, 1), dt.date(2026, 8, 31)   # HYPOTHESIS.md: never touched before the freeze
+OOS_START, OOS_END = dt.date(2026, 1, 1), dt.date(2026, 8, 31)
 IN_SAMPLE = ("2024-01-01", "2025-12-31")
 DISCLOSURES = "/stocks/filings/8-K/vX/disclosures"
 
@@ -48,11 +20,10 @@ FAMILY_SIGN = {"hedge": -1.0, "opportunity": 1.0}
 
 
 class OOSWindowError(ValueError):
-    """A request would read 8-K data inside the frozen out-of-sample window."""
+    pass
 
 
 def family_of(tags: Iterable[str]) -> str | None:
-    """'hedge' | 'opportunity' | None (no family tag, or both: ambiguous). Same rule as research assign_family."""
     t = set(tags or ())
     h1, h2 = bool(t & H1_TAGS), bool(t & H2_TAGS)
     if h1 and not h2:
@@ -83,7 +54,6 @@ _FILE_CACHE: list[dict] | None = None
 
 
 def load_filings(path: Path = DATA_FILE) -> list[dict]:
-    """Bundled filings [{ticker, filing_date, tags, family, accession_number}]; [] when the file is missing."""
     global _FILE_CACHE
     if path == DATA_FILE and _FILE_CACHE is not None:
         return _FILE_CACHE
@@ -98,7 +68,6 @@ def load_filings(path: Path = DATA_FILE) -> list[dict]:
 
 def latest_filing(ticker: str, filings: Iterable[dict], as_of: Any = None,
                   window_days: int = WINDOW_DAYS) -> dict | None:
-    """Most recent qualifying filing for ``ticker`` on or before ``as_of`` and within ``window_days``."""
     tk = _norm(ticker)
     a = _date(as_of) or dt.date.today()
     best: tuple[dt.date, dict] | None = None
@@ -128,7 +97,6 @@ def score_filing(filing: dict | None, as_of: Any = None, window_days: int = WIND
     return max(-1.0, min(1.0, s)) if math.isfinite(s) else 0.0
 
 
-# Live filings loaded by refresh_eightk(): {"filings": [...], "from": date, "to": date, "window_days": int, "at": ts}
 _LIVE: dict[str, Any] = {}
 LIVE_TTL_S = 3600.0
 
@@ -145,7 +113,6 @@ def _live_covers(a: dt.date, window_days: int) -> bool:
 
 
 def eightk_coverage(as_of: Any = None, window_days: int = WINDOW_DAYS) -> str | None:
-    """Which loaded data covers ``as_of``: "in_sample", "live", or None (score would be NaN)."""
     a = _date(as_of) or dt.date.today()
     if _in_sample_covers(a):
         return "in_sample"
@@ -163,9 +130,6 @@ def _rows_for(as_of: dt.date) -> list[dict]:
 
 def eightk_score(ticker: str, as_of: Any = None, window_days: int = WINDOW_DAYS,
                  filings: Iterable[dict] | None = None) -> float:
-    """[-1, 1]; 0.0 when the data covering ``as_of`` holds no qualifying filing; NaN when no loaded data covers
-    ``as_of`` (see module docstring). With ``filings`` given, that list is the whole truth (0.0 if none). Never
-    raises."""
     try:
         a = _date(as_of) or dt.date.today()
         if filings is not None:
@@ -193,9 +157,6 @@ def eightk_detail(ticker: str, as_of: Any = None, window_days: int = WINDOW_DAYS
 
 
 async def refresh_eightk(as_of: Any = None, window_days: int = WINDOW_DAYS, client=None) -> str | None:
-    """Load live 8-K filings for the ``window_days`` before ``as_of`` (default today) into the shared store that
-    ``eightk_score`` reads (bounded, TTL ``LIVE_TTL_S``; never inside the OOS window). Returns the coverage for
-    ``as_of`` afterwards. No key or an outage leaves the store as it was: never raises."""
     a = _date(as_of) or dt.date.today()
     if a <= OOS_END:
         return eightk_coverage(a, window_days)
@@ -215,10 +176,7 @@ async def refresh_eightk(as_of: Any = None, window_days: int = WINDOW_DAYS, clie
     return eightk_coverage(a, window_days)
 
 
-# ---------------------------------------------------------------- data (Massive disclosures)
-
 def check_window(start: Any, end: Any) -> None:
-    """Raise OOSWindowError if [start, end] overlaps the frozen out-of-sample window."""
     s, e = _date(start), _date(end)
     if s is None or e is None:
         raise ValueError("bad date range")
@@ -227,7 +185,6 @@ def check_window(start: Any, end: Any) -> None:
 
 
 def rows_to_filings(rows: Iterable[dict]) -> list[dict]:
-    """Massive disclosure rows (one per tag) -> one record per (accession, ticker) with its tag set and family."""
     acc: dict[tuple[str, str], dict] = {}
     for r in rows or ():
         tag = r.get("tertiary_category") or r.get("tag")
@@ -251,7 +208,6 @@ def rows_to_filings(rows: Iterable[dict]) -> list[dict]:
 
 
 def fetch_disclosure_rows(get_all, start: str, end: str) -> list[dict]:
-    """All H1/H2 disclosure rows in [start, end] via ``get_all(path, params)``; OOS-guarded."""
     check_window(start, end)
     rows: list[dict] = []
     for tag in sorted(H1_TAGS | H2_TAGS):
@@ -262,7 +218,6 @@ def fetch_disclosure_rows(get_all, start: str, end: str) -> list[dict]:
 
 
 def fetch_recent(client, as_of: Any = None, window_days: int = WINDOW_DAYS) -> list[dict]:
-    """Live filings for the last ``window_days`` (start clamped to after the OOS window). Sync; run via a thread."""
     a = _date(as_of) or dt.date.today()
     start = max(a - dt.timedelta(days=window_days), OOS_END + dt.timedelta(days=1))
     if start > a:
@@ -271,7 +226,6 @@ def fetch_recent(client, as_of: Any = None, window_days: int = WINDOW_DAYS) -> l
 
 
 def build_eightk_file(client, out: Path = DATA_FILE) -> int:
-    """Write the in-sample filings file (research window only). Returns the number of filings written."""
     filings = [f for f in rows_to_filings(fetch_disclosure_rows(client.get_all, *IN_SAMPLE)) if f["family"]]
     payload = {"source": "Massive /stocks/filings/8-K/vX/disclosures (research H1/H2 tags)",
                "window": list(IN_SAMPLE), "built_at": dt.date.today().isoformat(),
@@ -282,7 +236,7 @@ def build_eightk_file(client, out: Path = DATA_FILE) -> int:
     return len(filings)
 
 
-if __name__ == "__main__":  # uv run --env-file ../.env python -m app.options.eightk [cache_dir]
+if __name__ == "__main__":
     import sys
 
     from polybridge_research.massive import MassiveClient, load_api_key

@@ -1,8 +1,3 @@
-"""S7: Friday at-the-money straddles on linked tickers when the prediction market shows a live event, sold Monday at
-09:45; against the same trade on ordinary weekends (METHOD.md).
-
-Run from `research/`:  python -m s7_weekend_straddle.run
-"""
 from __future__ import annotations
 
 import csv
@@ -32,25 +27,21 @@ TODAY = date(2026, 10, 3)
 
 
 def put_ticker(call: str) -> str:
-    """The put with the same expiry and strike (OCC symbol: ...YYMMDD C 00038000)."""
     assert call[-9] == "C", call
     return call[:-9] + "P" + call[-8:]
 
 
 def activity(x_abs: np.ndarray, friday: int) -> float:
-    """Mean absolute overnight odds move over the five sessions ending on the Friday; NaN with under three nights."""
     w = x_abs[max(0, friday - cfg.ACTIVITY_NIGHTS + 1): friday + 1]
     ok = np.isfinite(w)
     return float(np.mean(w[ok])) if ok.sum() >= cfg.ACTIVITY_MIN_NIGHTS else float("nan")
 
 
 def flagged(links_state: list[tuple[float, float]], v: cfg.Variant) -> bool:
-    """links_state: (odds at Friday's close, activity) of each linked question of the ticker."""
     return any(a == a and p == p and a >= v.activity and v.lo <= p <= v.hi for p, a in links_state)
 
 
 def match_controls(flag_idx: list[int], pool: list[int]) -> dict[int, int]:
-    """Each flagged weekend gets the nearest earlier unflagged weekend not yet used (the nearest later one if none)."""
     used: set[int] = set()
     out: dict[int, int] = {}
     for w in sorted(flag_idx):
@@ -64,7 +55,6 @@ def match_controls(flag_idx: list[int], pool: list[int]) -> dict[int, int]:
 
 
 def straddle(q: dict, c: float) -> dict | None:
-    """P&L of one straddle from its four quotes (bid, ask) at cost multiplier c. Prices are per share."""
     def widen(b, a):
         m, h = (a + b) / 2, (a - b) / 2
         return max(m - c * h, 0.0), m + c * h
@@ -97,7 +87,6 @@ def boot_mean(by: dict[str, list[float]]) -> tuple[float, float, float]:
 
 
 def boot_diff(a: dict[str, list[float]], b: dict[str, list[float]]) -> tuple[float, float, float]:
-    """Mean of group a minus mean of group b, resampling weekends (each weekend carries its own trades of both groups)."""
     keys = sorted(set(k for k, v in a.items() if v) | set(k for k, v in b.items() if v))
     fa, fb = [x for k in keys for x in a.get(k, [])], [x for k in keys for x in b.get(k, [])]
     if not fa or not fb or len(keys) < 5:
@@ -143,7 +132,6 @@ def main() -> int:
     n_oos = int(math.ceil(cfg.OOS_FRACTION * len(weekends)))
     oos = set(weekends[-n_oos:])
 
-    # ---- the flag: per ticker and weekend, the state of each linked question at Friday's close
     state: dict[str, dict[int, list[tuple[float, float]]]] = {}
     for l in links:
         pm = np.load(C / f"pm_{l['market'].split(':')[1]}.npz")
@@ -155,7 +143,7 @@ def main() -> int:
         for w in weekends:
             state.setdefault(l["ticker"], {}).setdefault(w, []).append((float(p_close[w - 1]), activity(x_abs, w - 1)))
     variants = {v.id: v for v in cfg.VARIANTS}
-    plan = []          # (ticker, weekend index, group, flags by variant, flagged weekend it controls for)
+    plan = []
     for tk, by_w in state.items():
         flags = {w: {vid: flagged(st, v) for vid, v in variants.items()} for w, st in by_w.items()}
         loose = [w for w in weekends if flags.get(w, {}).get(cfg.LOOSEST)]
@@ -166,7 +154,6 @@ def main() -> int:
             if w in ctrl:
                 plan.append((tk, ctrl[w], "control", flags[w], w))
 
-    # ---- quotes
     client = MassiveClient(load_api_key(search_from=RESEARCH), cache_dir=RESEARCH / ".massive_cache")
     src = OptionSource(client, TODAY)
     px = {}
@@ -215,7 +202,6 @@ def main() -> int:
         trades = list(ex.map(job, plan))
     ok = [t for t in trades if t["status"] == "ok"]
 
-    # ---- metrics
     all_w = [days[w - 1] for w in weekends]
     per_year = len(all_w) / max((pd.Timestamp(all_w[-1]) - pd.Timestamp(all_w[0])).days / 365.0, 1e-9)
     rows = []
@@ -229,7 +215,6 @@ def main() -> int:
                 f_, c_ = [t for t in fl if seg == "ALL" or t["segment"] == seg], [t for t in ct if seg == "ALL" or t["segment"] == seg]
                 bf = boot_mean({d: [t[r] for t in f_ if t["friday"] == d] for d in all_w})
                 bc = boot_mean({d: [t[r] for t in c_ if t["friday"] == d] for d in all_w})
-                # the control of a flagged weekend is carried by that flagged weekend in the difference
                 bd = boot_diff({d: [t[r] for t in f_ if t["friday"] == d] for d in all_w},
                                {d: [t[r] for t in c_ if t["controls_for"] == d] for d in all_w})
                 seg_w = [d for d, w in zip(all_w, weekends) if seg == "ALL" or (w in oos) == (seg == "OOS")]

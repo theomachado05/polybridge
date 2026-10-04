@@ -68,7 +68,6 @@ def test_tie_none_with_candidates(tmp_path, monkeypatch):
 
 def test_just_under_threshold(tmp_path, monkeypatch):
     c = _lib(tmp_path, monkeypatch, {"k:1": {"question": "alpha beta gamma delta epsilon zeta", "mappings": []}})
-    # shared 3, union 7 -> 0.43
     assert c.post("/map", json={"question": "alpha beta gamma eta"}).json()["source"] == "none"
 
 
@@ -84,7 +83,6 @@ def test_non_dict_items_skipped(tmp_path, monkeypatch):
 def test_no_match(client):
     r = client.post("/map", json={"question": "Who wins the Oscar for best picture?"}).json()
     assert r["source"] == "none" and r["items"] == []
-    # no key in tests: the precomputed miss, and the note says why no live AI answer was tried
     assert r["note"].startswith("no precomputed mapping; pick stocks manually")
     assert "live AI mapping unavailable" in r["note"] and "GEMINI_API_KEY" in r["note"]
     assert r["ai"]["provider"] == "rules" and r["ai"]["live"] is False
@@ -111,8 +109,6 @@ def test_shipped_library_loads():
     assert len(mapping._load()["items"]) > 100
     mapping._cache = None
 
-
-# ---------------------------------------------------------------- live AI mapping (Gemini over mocked HTTP)
 
 import httpx  # noqa: E402
 
@@ -228,5 +224,5 @@ def test_validate_mappings_bounds():
 def test_ticker_universe_covers_portfolio_proxies_and_map(monkeypatch):
     monkeypatch.setattr(mapping, "_universe", None)
     tickers = {u["ticker"] for u in mapping.ticker_universe()}
-    assert {"TLT", "IWM", "ABNB", "KRE", "XHB", "VRT"} <= tickers  # portfolio, proxies, precomputed map
+    assert {"TLT", "IWM", "ABNB", "KRE", "XHB", "VRT"} <= tickers
     assert next(u for u in mapping.ticker_universe() if u["ticker"] == "ABNB")["name"] == "Airbnb"

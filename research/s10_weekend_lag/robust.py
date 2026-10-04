@@ -1,5 +1,3 @@
-"""S10, looked at after the run (not pre-registered): does one weekend carry the crude lead, and does it hold in- and out-of-sample?
-Run from `research/`:  python -m s10_weekend_lag.robust   (writes results/s10_weekend_lag/robust.csv)"""
 import math
 import numpy as np
 import pandas as pd

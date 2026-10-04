@@ -1,4 +1,3 @@
-"""Option-implied probability from call spreads, bid/ask bounds, edges after costs, gap labels (METHOD.md 3, 5, 6)."""
 from __future__ import annotations
 
 import bisect
@@ -9,8 +8,8 @@ from typing import Callable, Sequence
 from .costs import commission_per_share, SHARES_PER_CONTRACT
 
 RATE = 0.04
-STALE_OPTION_SEC = 600          # leg quote may be at most 10 minutes older than the snapshot
-MIN_EDGE = 0.01                 # one cent per $1 payoff
+STALE_OPTION_SEC = 600
+MIN_EDGE = 0.01
 GAP_MID = 0.05
 INFORMATIVE = (0.02, 0.98)
 COARSE_WIDTH_SENS = 0.05
@@ -23,7 +22,7 @@ class Quote:
     ask: float
     bid_size: float = float("nan")
     ask_size: float = float("nan")
-    ts: float = float("nan")          # epoch seconds of the NBBO
+    ts: float = float("nan")
 
     def valid(self, snapshot_ts: float | None = None, max_age: float | None = STALE_OPTION_SEC) -> bool:
         if not (self.bid > 0 and self.ask >= self.bid):
@@ -41,7 +40,7 @@ class Spread:
     q2: Quote
     t_years: float
     rate: float = RATE
-    stepped: int = 0                    # strikes moved outward because a leg quote was invalid
+    stepped: int = 0
     p_mid: float = field(init=False)
     p_lo: float = field(init=False)
     p_hi: float = field(init=False)
@@ -68,7 +67,6 @@ class Spread:
         return min(s) if len(s) == 4 else float("nan")
 
     def strip_loss(self, k: float) -> tuple[float, float]:
-        """Worst-case unhedged loss per share inside [k1, k2]: (trade A short YES + long spread, trade B long YES + short spread)."""
         return (max(self.k2 - k, 0.0) / self.width, max(k - self.k1, 0.0) / self.width)
 
 
@@ -77,7 +75,6 @@ def _clamp(x: float) -> float:
 
 
 def bracket_indices(strikes: Sequence[float], k: float, extra: int = 0) -> tuple[int, int] | None:
-    """Narrow rule: if k is listed use its immediate neighbours, else the strikes immediately below/above. `extra` widens."""
     s = list(strikes)
     j = bisect.bisect_left(s, k - 1e-9)
     if j < len(s) and abs(s[j] - k) < 1e-6:
@@ -93,8 +90,6 @@ def bracket_indices(strikes: Sequence[float], k: float, extra: int = 0) -> tuple
 def pick_spread(strikes: Sequence[float], k: float, get_quote: Callable[[float], Quote | None], t_years: float,
                 extra: int = 0, snapshot_ts: float | None = None, max_age: float | None = STALE_OPTION_SEC,
                 rate: float = RATE) -> Spread | None:
-    """Narrow (extra=0) or wide (extra=1) spread. A leg with no valid quote is moved one listed strike outward (at most
-    MAX_STEP_OUT times). Returns None when no valid pair exists (the row is `no_chain`)."""
     s = list(strikes)
     ij = bracket_indices(s, k, extra)
     if ij is None:
@@ -119,7 +114,6 @@ def pick_spread(strikes: Sequence[float], k: float, get_quote: Callable[[float],
 
 
 def edges(sp: Spread, k: float, pm_bid: float, pm_ask: float, fee, size: float | None = None) -> dict:
-    """Edge per share after costs for trade A (sell YES at bid, buy spread) and trade B (buy YES at ask, sell spread)."""
     comm = commission_per_share(sp.width)
     edge_a = pm_bid - fee.per_share(pm_bid, size) - sp.p_hi - comm
     edge_b = sp.p_lo - pm_ask - fee.per_share(pm_ask, size) - comm
@@ -140,7 +134,6 @@ def classify(*, clean: bool, informative: bool, fresh: bool, p_mid_narrow: float
              p_hi: float | None, pm_mid: float | None, edge: float | None, edge_wide_same_trade: float | None,
              live: bool = False, options_open: bool = False, pm_size_at_touch: float | None = None,
              width: float | None = None, legs_have_size: bool = False) -> str:
-    """Strictest gap label a row earns (METHOD.md section 6)."""
     if not (clean and informative and fresh) or p_mid_narrow is None or pm_mid is None:
         return "not_scored"
     label = "none"

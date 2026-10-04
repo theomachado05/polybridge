@@ -1,7 +1,3 @@
-"""Tool catalogue for the voice agent: JSON schemas plus thin handlers over the existing route functions.
-
-Every handler looks the route function up on its module at call time (so tests can monkeypatch it), and returns
-(speakable summary, raw JSON). Approve and start_bridge refuse to run without confirm=true."""
 from __future__ import annotations
 
 from typing import Any, Awaitable, Callable
@@ -10,13 +6,11 @@ from fastapi import HTTPException, Request, Response
 from pydantic import BaseModel, ValidationError
 
 CONFIRM_TOOLS = {"approve", "start_bridge"}
-# Screens the browser-only `navigate` tool can open (web routes: / /build /pipeline /bridge /portfolio ...).
 SCREENS = ["landing", "build", "pipeline", "bridge", "portfolio", "library", "profile", "connect"]
 Handler = Callable[[Request, dict], Awaitable[tuple[str, Any]]]
 
 
 class ToolError(Exception):
-    """A problem the agent should say out loud (bad arguments, missing confirmation)."""
 
     def __init__(self, message: str, *, needs_confirmation: bool = False):
         super().__init__(message)
@@ -84,8 +78,6 @@ TOOLS: list[dict] = [
     {"name": "positions", "method": "GET", "path": "/positions",
      "description": "List what the account currently holds.",
      "parameters": _obj({})},
-    # Browser-only: the web page moves to that screen itself and never calls the backend for it (no route). The
-    # dispatcher echoes it so POST /agent/tool/navigate answers like every other tool.
     {"name": "navigate", "method": None, "path": None, "client_only": True,
      "description": "Open a screen when the user asks to see something.",
      "parameters": _obj({
@@ -97,7 +89,6 @@ NAMES = {t["name"] for t in TOOLS}
 
 
 def catalogue() -> list[dict]:
-    """Schemas as served by GET /agent/tools; `webhook` is what the ElevenLabs server tool should call."""
     return [{**t, "webhook": {"method": "POST", "path": f"/agent/tool/{t['name']}"}} for t in TOOLS]
 
 
@@ -131,8 +122,6 @@ def _money(x: Any) -> str:
 
 
 def _recorded_matches(q: str, seen: set[tuple[str, str]]) -> list[dict]:
-    """Recorded markets (replay index) whose question has every query word: a live search does not list resolved
-    markets, but their recordings replay on demand (the default demo weekend is one). Labelled as recordings."""
     from .. import markets
     words = [w for w in q.lower().split() if len(w) > 2]
     if not words:
@@ -154,7 +143,7 @@ async def _search_markets(request: Request, a: dict):
         out = {"markets": [], "stale": True, "note": "live market search unavailable"}
     rec = _recorded_matches(q, {(m.get("source"), m.get("id")) for m in out["markets"]})
     live = out["markets"]
-    out["markets"] = live + rec  # live results first; recordings appended, each with its `recorded` file name
+    out["markets"] = live + rec
     if not out["markets"]:
         if out.get("note") == "live market search unavailable":
             raise ToolError("Live market search is unavailable right now, and no recorded market matches that topic.")
@@ -211,7 +200,7 @@ async def _propose(request: Request, a: dict):
 
 
 def _require_confirm(a: dict, what: str) -> None:
-    if a.get("confirm") is not True:  # strictly the boolean true: the string "true" or 1 does not count
+    if a.get("confirm") is not True:
         raise ToolError(f"I need your explicit yes before I {what}. Ask the user, then call again with confirm true.",
                         needs_confirmation=True)
 
@@ -290,7 +279,6 @@ HANDLERS: dict[str, Handler] = {
 
 
 async def run_tool(name: str, request: Request, args: dict) -> dict:
-    """Never raises: every failure becomes {ok: false, summary} so the agent can say it out loud."""
     try:
         summary, raw = await HANDLERS[name](request, args)
         return {"ok": True, "tool": name, "summary": summary, "data": raw}

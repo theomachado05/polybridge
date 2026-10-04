@@ -1,4 +1,3 @@
-"""GET /capital: the account risk budget in force, the hedge exposure per event, margin used and any breaches."""
 from __future__ import annotations
 
 import asyncio
@@ -17,7 +16,7 @@ ROUTE_TIMEOUT_S = 20.0
 async def get_capital(request: Request) -> dict:
     try:
         broker = get_broker(request.app)
-    except Exception as e:  # never a 500
+    except Exception as e:
         return {"broker": None, "account_read": False, "account_error": f"broker unavailable ({type(e).__name__})",
                 "limits": budget.limits(request.app), "breaches": [{"kind": "account_unreadable"}]}
     try:

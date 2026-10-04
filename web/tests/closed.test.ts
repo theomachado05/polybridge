@@ -1,6 +1,3 @@
-// Offline tests for closed-market mode's view logic (U1-U5): session pill and headline, the evidence gate on the
-// expected gap, staged hedge B actions and merge, hedge A gating, the research-only opportunity card, the stream
-// reducer's closed-market events, and the hedge A opt-in on the proposal.
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
@@ -14,7 +11,6 @@ import { reusableBridge, startRealBridge, type BridgeApi } from "../src/lib/real
 import { questionFromMarket, type EquityPick } from "../src/lib/markets.ts";
 import type { Proposal, ProposalBody } from "../src/lib/api.ts";
 
-// The recorded weekend (us-recession-in-2025, validated) as the bridge reports it on a Saturday tick.
 const SAT = {
   at: "2025-04-05T18:00:05Z", phase: "weekend", closed: true, label: "Market closed · reopens Mon 09:30 ET / pre-market 04:00",
   next_open: "2025-04-07T13:30:00Z", next_open_et: "2025-04-07T09:30:00-04:00",
@@ -49,7 +45,6 @@ describe("session (U1)", () => {
     assert.equal(closedHeadline({ ...SAT, label: "" }), "Market closed · reopens Mon 09:30 ET / pre-market 04:00");
     assert.equal(closedHeadline({ ...SAT, label: null, phase: "after_hours" }), "After-hours · reopens Mon 09:30 ET / pre-market 04:00");
     assert.equal(closedHeadline({ ...SAT, label: null, phase: "pre_market" }), "Pre-market · regular open 09:30 ET");
-    // GET /session names the pre-market fields next_extended_open(_et)
     const api = { phase: "weekend", equities_open: false, next_open: SAT.next_open, next_open_et: SAT.next_open_et, next_extended_open: SAT.next_premarket, next_extended_open_et: SAT.next_premarket_et };
     assert.equal(closedHeadline(api), "Market closed · reopens Mon 09:30 ET / pre-market 04:00");
     assert.equal(closedHeadline({ phase: "regular", closed: false, label: "Market open · closes 16:00 ET" }), null);
@@ -202,7 +197,7 @@ describe("stream reducer: closed-market events", () => {
     s = reduce(s, { k: "staged", d: { event: "planned", order: order(), timeline: row } });
     s = reduce(s, { k: "staged", d: { event: "update", order: order({ qty: 240, decisions: [...order().decisions!, { at: "x", code: "RESIZED" }] }), timeline: null } });
     assert.equal(s.staged.s1.qty, 240);
-    s = reduce(s, { k: "staged", d: { event: "planned", order: order(), timeline: row } });  // a stale copy never wins
+    s = reduce(s, { k: "staged", d: { event: "planned", order: order(), timeline: row } });
     assert.equal(s.staged.s1.qty, 240);
     assert.equal(s.timeline.length, 1);
     s = reduce(s, { k: "handoff", d: { event: "open", timeline: { at: "2025-04-07T13:30:05Z", at_et: "Mon", event: "open" } } });
@@ -210,7 +205,6 @@ describe("stream reducer: closed-market events", () => {
     assert.equal(s.hedgeA, null);
     s = reduce(s, { k: "hedge_a", d: { summary: { enabled: true, contracts: 10 } } });
     assert.equal(s.hedgeA?.contracts, 10);
-    // the server replays history on reconnect: state starts over
     assert.deepEqual(reduce(s, { k: "open" }).staged, {});
   });
 });
@@ -286,7 +280,6 @@ describe("fix round: reuse, exposure total, stale gap, hedge A totals", () => {
     const mixed = exposureTotal([h(), h({ ticker: "TLT", marketId: "m2", gap: pooled })])!;
     assert.equal(mixed.validated, false);
     assert.equal(Math.round(mixed.usd), -1288 - 100);
-    // A live bridge on the same ticker and market as a holding is the same position: counted once.
     const dup = exposureTotal([h(), h({ kind: "bridge" })])!;
     assert.equal(dup.rows, 1);
     assert.equal(exposureTotal([h({ kind: "bridge", ticker: "IWM", marketId: "m3" }), h()])!.rows, 2);
@@ -297,12 +290,9 @@ describe("fix round: reuse, exposure total, stale gap, hedge A totals", () => {
   it("a kept gap from an earlier closure is not shown as this closure's expected gap", () => {
     const inactive = { bp: null, active: false, n: 0, rate_source: "market" };
     const last = { ...validatedGap, at: "2025-04-05T18:00:05Z" };
-    // Next closure (began after the kept gap): no move yet, so the inactive current gap, not the old one.
     assert.equal(currentGap(inactive, last, true, "2025-04-07T20:00:00Z").gap?.bp, null);
     assert.equal(currentGap(inactive, last, true, null).gap?.bp, null);
-    // Same closure: the kept gap stands.
     assert.equal(currentGap(inactive, last, true, "2025-04-04T20:00:00Z").gap?.bp, -128.8);
-    // After the open: the gap it expected, labelled as past.
     assert.deepEqual([currentGap(inactive, last, false, null).gap?.bp, currentGap(inactive, last, false, null).past], [-128.8, true]);
     assert.equal(currentGap({ ...validatedGap, bp: -50 }, last, true, null).gap?.bp, -50);
   });

@@ -1,8 +1,3 @@
-"""S19 universe: Polymarket's crypto price markets ("What price will Bitcoin hit in October?"), weekly and longer,
-from catalogue metadata only, and a seeded random draw of markets from each event. No price or print is read.
-
-Run from `research/`:  python -m s19_crypto_price_markets.universe
-"""
 from __future__ import annotations
 
 import json
@@ -21,7 +16,6 @@ HERE = Path(__file__).resolve().parent
 
 
 def horizon(title: str) -> str:
-    """daily (left out), monthly or longer, weekly, or another date range."""
     if re.search(rf"\bon ({cfg.MONTHS}) \d", title):
         return "daily"
     if re.search(rf"\bin ({cfg.MONTHS})|\bin 20\d\d|before 20\d\d|by ", title):

@@ -1,7 +1,3 @@
-// Full NYSE calendar (us_equity_regular_session, nyse_trading_day, nyse_early_close) against the backend session clock.
-// The two tables below are backend/app/closed/session.py's answers for 2015-2030: every weekday that is not a trading
-// day (rule-7.2 holidays plus one-off closures), and every 13:00 early-close day. backend/tests/
-// test_engine_closed_session_hedge.py (test_engine_calendar_table_matches_session_py) re-derives them from session.py and fails if either side drifts.
 #include <gtest/gtest.h>
 #include <algorithm>
 #include <cstdint>
@@ -13,7 +9,6 @@ using namespace hedgecore;
 using namespace hctest;
 
 namespace {
-// session.py: weekdays 2015-2030 with is_trading_day == False (YYYYMMDD).
 constexpr std::int64_t kSessionPyClosedWeekdays[] = {
     20150101, 20150119, 20150216, 20150403, 20150525, 20150703, 20150907, 20151126, 20151225, 20160101, 20160118,
     20160215, 20160325, 20160530, 20160704, 20160905, 20161124, 20161226, 20170102, 20170116, 20170220, 20170414,
@@ -30,7 +25,6 @@ constexpr std::int64_t kSessionPyClosedWeekdays[] = {
     20281225, 20290101, 20290115, 20290219, 20290330, 20290528, 20290619, 20290704, 20290903, 20291122, 20291225,
     20300101, 20300121, 20300218, 20300419, 20300527, 20300619, 20300704, 20300902, 20301128, 20301225,
 };
-// session.py: days 2015-2030 with is_early_close == True (YYYYMMDD).
 constexpr std::int64_t kSessionPyEarlyCloses[] = {
     20151127, 20151224, 20161125, 20170703, 20171124, 20180703, 20181123, 20181224, 20190703, 20191129, 20191224,
     20201127, 20201224, 20211126, 20221125, 20230703, 20231124, 20240703, 20241129, 20241224, 20250703, 20251128,
@@ -42,14 +36,13 @@ std::int64_t ymd(std::int64_t lday) {
   return c.y * 10000 + c.m * 100 + c.d;
 }
 bool in(const std::int64_t* b, const std::int64_t* e, std::int64_t v) { return std::find(b, e, v) != e; }
-// ns of an ET wall-clock time on local day lday, with the 2007 DST rule.
 std::int64_t et_ns(std::int64_t lday, int h, int m, int s = 0) {
   const std::int64_t y = civil_from_days(lday).y;
   const std::int64_t local = lday * 86400 + h * 3600 + m * 60 + s;
-  const bool dst = lday > nth_sunday(y, 3, 2) && lday < nth_sunday(y, 11, 1);  // daytime only: never on a switch day
+  const bool dst = lday > nth_sunday(y, 3, 2) && lday < nth_sunday(y, 11, 1);
   return (local + (dst ? 4 : 5) * 3600) * kSec;
 }
-}  // namespace
+}
 
 TEST(CalendarParity, TradingDaysAndEarlyClosesMatchSessionPy2015To2030) {
   const auto* cb = std::begin(kSessionPyClosedWeekdays);
@@ -66,7 +59,6 @@ TEST(CalendarParity, TradingDaysAndEarlyClosesMatchSessionPy2015To2030) {
     ASSERT_EQ(nyse_early_close(d), want_early) << ymd(d);
     closed += weekday && !want_trading;
     early += want_early;
-    // Regular-session membership at the edges, on the tick's own ET time.
     const int close_h = want_early ? 13 : 16;
     ASSERT_FALSE(us_equity_regular_session(et_ns(d, 9, 29, 59))) << ymd(d);
     ASSERT_EQ(us_equity_regular_session(et_ns(d, 9, 30)), want_trading) << ymd(d);
@@ -80,7 +72,6 @@ TEST(CalendarParity, TradingDaysAndEarlyClosesMatchSessionPy2015To2030) {
 }
 
 TEST(CalendarParity, LegacySessionGateIsUnchanged) {
-  // Other families keep us_equity_session: no one-off closures, 16:00 close on early-close days.
   blocks::Session legacy{true};
   blocks::Session full{true, true};
   const std::int64_t mourning = et_ns(days_from_civil(2025, 1, 9), 10, 0);

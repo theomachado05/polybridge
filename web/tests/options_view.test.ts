@@ -1,5 +1,3 @@
-// Offline tests for the options views: strike ladder, hedge-instrument comparison and leg marks. Fixtures are trimmed
-// from real GET /options/chain/SPY and /options/hedge-quote responses (Saturday, market closed).
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { chainLabel, flagLabel, greekMarks, hedgeNotes, hedgeRows, ladder, legLine, markLine, optionFillBadge, sideCells } from "../src/lib/optionsView.ts";
@@ -121,14 +119,11 @@ describe("leg marks", () => {
     assert.equal(markLine(null).text, "marking…");
   });
   it("a closed market's NBBO mark says last close and is not shown as measured", () => {
-    // GET /options/mark on a Saturday: Friday's close, not stale, market closed.
     const sat = markLine({ contract: "O:SPY261014P00731000", available: true, mark: 1.23, half_spread: 0.02, spread_source: "nbbo", stale: false, market_open: false, as_of_label: "last close (market closed)" });
     assert.equal(sat.text, "mark 1.23 ± 0.02 · NBBO · last close");
     assert.equal(sat.tone, "sim");
     assert.match(sat.title, /^last close \(market closed\)/);
-    // The label alone (older payload without market_open) is enough.
     assert.equal(markLine({ contract: "x", available: true, mark: 1.23, half_spread: 0.02, spread_source: "nbbo", stale: false, as_of_label: "last close (market closed)" }).tone, "sim");
-    // Stale still wins the tone.
     assert.equal(markLine({ contract: "x", available: true, mark: 1.23, spread_source: "nbbo", stale: true, market_open: false }).tone, "caution");
   });
 });

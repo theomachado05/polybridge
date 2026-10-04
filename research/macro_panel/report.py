@@ -1,4 +1,3 @@
-"""results.csv companions: tests.json, chart.png and SUMMARY.md. Every number in SUMMARY.md is generated from `res`."""
 from __future__ import annotations
 
 import json

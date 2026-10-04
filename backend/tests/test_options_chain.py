@@ -1,4 +1,3 @@
-"""Massive option chain snapshot parsing, paging, caching and freshness labels (app/options/chain.py). Offline."""
 import asyncio
 import math
 

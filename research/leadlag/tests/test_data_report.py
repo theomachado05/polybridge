@@ -87,7 +87,7 @@ def _tests(pm_p, eq_p, pm_hac=0.5, eq_hac=0.5, A=None, B=None, extra=None):
 
 def test_decision_rule_branches():
     assert verdict(_tests(0.001, 0.5))[0] == "supports PM leading"
-    assert verdict(_tests(0.001, 0.001))[0] == "supports PM leading"     # reverse significant but weaker (F 2 < 3)
+    assert verdict(_tests(0.001, 0.001))[0] == "supports PM leading"
     assert verdict(_tests(0.5, 0.001))[0] == "points the other way"
     assert verdict(_tests(0.5, 0.5))[0] == "no evidence"
     both = _tests(0.001, 0.001)
@@ -104,13 +104,12 @@ def test_robust_reading_no_pm_lead_when_nothing_significant():
 
 
 def test_robust_reading_does_not_claim_nothing_is_significant_when_reg_tests_are():
-    """Reviewer case: Granger HAC not significant, but Reg B cumulative t=2.29 and a curated-subset Wald p=0.003 both ways."""
     t = _tests(0.5, 0.0001, pm_hac=0.88, eq_hac=0.07, A=_reg(0.74, -0.08, -1.2), B=_reg(0.14, 0.20, 2.29),
                extra={"curated": dict(granger={}, A=_reg(0.003, -0.04, -0.45), B=_reg(0.002, 0.41, 3.16))})
     rob, plain = robust_reading(t)
     assert "nothing is significant" not in plain and "nothing is significant" not in rob
     assert "+2.29" in rob and "0.003" in plain and "0.002" in plain
-    assert "not significant at 5%" in plain  # HAC Granger tests
+    assert "not significant at 5%" in plain
     assert "oversized" in plain
     assert "no HAC statistic supports prediction markets leading" in plain
 
@@ -126,6 +125,6 @@ def test_anchor_relative_and_session_helpers():
     assert _rel(pd.Timestamp("2025-03-19 17:45:00", tz="UTC"), anchor) == "-15"
     assert _rel(pd.Timestamp("2025-03-19 18:02:00", tz="UTC"), anchor) == "+2"
     assert _rel(None, anchor) == "n/a" and _rel(anchor, None) == "n/a"
-    assert _session(pd.Timestamp("2026-01-28 19:00:00", tz="UTC")) == "RTH"   # 14:00 ET
-    assert _session(pd.Timestamp("2026-01-28 21:01:00", tz="UTC")) == "ext"   # 16:01 ET, after the close
+    assert _session(pd.Timestamp("2026-01-28 19:00:00", tz="UTC")) == "RTH"
+    assert _session(pd.Timestamp("2026-01-28 21:01:00", tz="UTC")) == "ext"
     assert _session(None) == ""

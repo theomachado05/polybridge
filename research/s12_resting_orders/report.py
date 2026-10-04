@@ -1,4 +1,3 @@
-"""S12 report: metrics.csv, trades.csv, equity and drawdown charts, capacity.md, run_meta.json."""
 from __future__ import annotations
 
 import json

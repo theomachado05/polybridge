@@ -10,10 +10,10 @@ MarketTick opt_tick(std::int64_t ts, double opt_prob, double opt_mid = 3.0) {
   t.opt_mid = opt_mid;
   return t;
 }
-}  // namespace
+}
 
 TEST(BinaryVsSpreadArb, BuysSpreadWhenPmAboveOptionsAndExits) {
-  F a(params<F>(), Position{});  // entry 0.05, exit 0.01, contracts 5
+  F a(params<F>(), Position{});
   const Intent e = a.on_tick(opt_tick(kSec, 0.50), kSec);
   ASSERT_TRUE(is_order(e));
   EXPECT_EQ(e.instrument, Instrument::Option);
@@ -32,7 +32,7 @@ TEST(BinaryVsSpreadArb, SellsSpreadWhenPmBelowOptions) {
   F a(params<F>(), Position{});
   EXPECT_EQ(a.on_tick(opt_tick(kSec, 0.70), kSec).side, -1);
   F b(params<F>(), Position{});
-  EXPECT_EQ(b.on_tick(opt_tick(kSec, 0.57), kSec).reason, rc(Rc::NoSignal));  // gap 0.03 < 0.05
+  EXPECT_EQ(b.on_tick(opt_tick(kSec, 0.57), kSec).reason, rc(Rc::NoSignal));
 }
 
 TEST(BinaryVsSpreadArb, MissingOptionQuote) {

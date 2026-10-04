@@ -1,7 +1,3 @@
-"""S21: the three tests of METHOD.md from the cached option quotes and S18's traded prices. No network.
-
-Run from `research/`:  python -m s21_options_anchor.run
-"""
 from __future__ import annotations
 
 import json
@@ -28,7 +24,6 @@ def by_event(s: pd.DataFrame, col: str) -> dict[str, list[float]]:
 
 
 def boot_slope(x: np.ndarray, y: np.ndarray, events: np.ndarray) -> tuple[float, float, float]:
-    """Least-squares slope of y on x and its event-bootstrap 95% interval (events resampled with replacement)."""
     keys = sorted(set(events))
     b = float(np.polyfit(x, y, 1)[0]) if len(x) > 2 and np.ptp(x) > 0 else float("nan")
     if len(keys) < 5:
@@ -101,7 +96,6 @@ def t2(d: pd.DataFrame) -> list[dict]:
 
 
 def book_sets(d_all: pd.DataFrame) -> dict[str, tuple[str, pd.DataFrame, str]]:
-    """{book id: (side, the markets the book takes, the anchor column or "")}. `d_all`: every stock and S&P market."""
     ok = d_all[d_all.status == "ok"]
     out = {}
     for b in cfg.BOOKS:
@@ -138,15 +132,12 @@ def main() -> int:
     d_all["zero_bid_leg"] = d_all.zero_bid_leg.fillna(False).astype(bool)
     d = d_all[d_all.status == "ok"].copy()
 
-    # ---- T1
     b_c, s_c = t1(d, "central")
     b_l, s_l = t1(d, "lower")
     write_csv(RESULTS / "t1_buckets.csv", b_c + b_l)
     write_csv(RESULTS / "t1_slope.csv", [s_c, s_l])
-    # ---- T2
     write_csv(RESULTS / "t2_regression.csv", t2(d))
 
-    # ---- T3
     entries = pd.read_csv(S18 / "entries.csv")
     sets = book_sets(d_all)
     metrics, trades, monthly = [], [], []
@@ -186,7 +177,6 @@ def main() -> int:
     write_csv(RESULTS / "trades.csv", trades)
     write_csv(RESULTS / "equity.csv", monthly)
 
-    # ---- does the anchor improve S18's book?
     taken, left = sets[cfg.PRIMARY][1], sets["U-left"][1]
     imp = []
     for seg in ("ALL", "IS", "OOS"):

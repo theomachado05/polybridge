@@ -1,15 +1,3 @@
-"""Gemini check: is GEMINI_API_KEY real, which models can it use, and does the app's own GeminiProvider answer?
-
-    make gemini-check
-
-1. Lists the models the key can use (GET /v1beta/models) and picks the newest general "flash" generateContent model
-   (``app.pipeline.llm.newest_flash``). Says whether the configured model (GEMINI_MODEL, else the default) is listed;
-   if it is not, the app falls back to the newest flash model on its first 404, and this check says so.
-2. Runs one classify and one explain call through ``GeminiProvider`` (the exact code the fit uses) on the newest flash
-   model, then one live ``/map``-style ticker mapping through the same provider, validated exactly as the route
-   validates it. Prints model, latency and the parsed results. The key is never printed.
-
-Exit code: 0 all calls answered, 1 the key is invalid or a call failed, 2 GEMINI_API_KEY is missing."""
 from __future__ import annotations
 
 import asyncio
@@ -34,7 +22,6 @@ FITS = Path(__file__).resolve().parents[1] / "app" / "data" / "fits.json"
 
 
 def sample_fit() -> dict:
-    """A real structured result to explain: the first scored precomputed fit (else a minimal rules pick)."""
     try:
         fits = json.loads(FITS.read_text())["fits"]
         for f in fits.values():

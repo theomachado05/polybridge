@@ -1,7 +1,3 @@
-"""S14 report: SUMMARY.md from tests.csv and links.csv.
-
-Run from `research/`:  python -m s14_link_ceiling.report
-"""
 from __future__ import annotations
 
 import json

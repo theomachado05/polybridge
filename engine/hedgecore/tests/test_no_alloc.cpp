@@ -1,4 +1,3 @@
-// Spec §8: no heap allocation on the hot path. Counts global operator new calls made while on_tick/on_fill run.
 #include <gtest/gtest.h>
 #include <atomic>
 #include <cstdlib>
@@ -10,7 +9,7 @@
 namespace {
 std::atomic<bool> g_counting{false};
 std::atomic<long> g_allocs{0};
-}  // namespace
+}
 
 void* operator new(std::size_t n) {
   if (g_counting.load(std::memory_order_relaxed)) g_allocs.fetch_add(1, std::memory_order_relaxed);
@@ -35,7 +34,7 @@ TEST(NoAlloc, OnTickAndOnFillNeverAllocate) {
     t.opt_iv = 0.3 + 0.05 * std::cos(i * 0.2);
     t.opt_implied_prob = p - 0.1 * std::cos(i * 0.1);
     t.eightk_score = (i % 400 == 0) ? 0.9 : 0.0;
-    if (i % 97 == 0) t.yes_bid = NaN;  // missing fields along the way
+    if (i % 97 == 0) t.yes_bid = NaN;
     ticks.push_back(t);
   }
   Position pos;
@@ -58,9 +57,6 @@ TEST(NoAlloc, OnTickAndOnFillNeverAllocate) {
   }
 }
 
-// The shared tape above sits on 1970-01-01 (an NYSE holiday), so closed_session_hedge only takes its closed-market
-// path there. This tape crosses a Friday close, the weekend and the Monday open (2026-10-02..05, hourly), with the
-// equity handoff on, so the YES unwind and the equity handoff leg run under the counter too.
 TEST(NoAlloc, ClosedSessionHedgeAcrossCloseAndOpenNeverAllocates) {
   constexpr std::int64_t kFri1500 = 1790967600LL * kSec;
   std::vector<MarketTick> ticks;
@@ -87,11 +83,9 @@ TEST(NoAlloc, ClosedSessionHedgeAcrossCloseAndOpenNeverAllocates) {
   EXPECT_EQ(g_allocs.load(), 0);
   EXPECT_GT(yes_orders, 0u);
   EXPECT_GT(equity_orders, 0u);
-  EXPECT_GE(handoffs, 2u);  // the YES unwind and the first equity order at the Monday open
+  EXPECT_GE(handoffs, 2u);
 }
 
-// The micro families take their own ticks; same rule: on_tick, on_fill and on_reject never allocate, on the order path
-// as well as the hold path.
 TEST(NoAlloc, MicroFamiliesNeverAllocate) {
   algos::LadderPair lp(algos::LadderPair::spec().defaults(), Position{});
   algos::TouchTicketReference tt(algos::TouchTicketReference::spec().defaults(), Position{});
@@ -127,7 +121,7 @@ TEST(NoAlloc, MicroFamiliesNeverAllocate) {
     if (in.action == MicroAction::Order) {
       ++ladder_orders;
       lp.on_fill(Leg::Rich, in.rich.qty, in.rich.limit_px);
-      if (i % 7 == 0) lp.on_reject(Leg::Cheap);  // exercises the leg-risk path once
+      if (i % 7 == 0) lp.on_reject(Leg::Cheap);
       else lp.on_fill(Leg::Cheap, in.cheap.qty, in.cheap.limit_px);
     } else if (in.action == MicroAction::Unwind) {
       lp.on_fill(in.rich.side ? Leg::Rich : Leg::Cheap, in.rich.side ? in.rich.qty : in.cheap.qty, 0.5);

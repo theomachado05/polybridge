@@ -1,5 +1,3 @@
-"""The original Python frame path (json.loads, dict books, one detector call per touched token), kept as the reference
-twin of hedgecore_book.BookEngine for the replay benchmark and the decision-equality tests. Same interface."""
 from __future__ import annotations
 
 import json

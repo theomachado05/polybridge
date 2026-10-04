@@ -1,7 +1,5 @@
 "use client";
 
-// "Talk to PolyBridge": the ElevenLabs voice agent (official React SDK, @elevenlabs/react). Renders nothing unless
-// NEXT_PUBLIC_ELEVENLABS_AGENT_ID is set; the SDK is loaded only then, in the browser (dynamic import, no SSR).
 import dynamic from "next/dynamic";
 import { voiceEnabled } from "@/lib/voice";
 

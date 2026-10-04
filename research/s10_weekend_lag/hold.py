@@ -1,7 +1,3 @@
-"""S10 Part 4: hold Part 2's stale-side entries to the question's result (METHOD.md amendment 3).
-
-Run from `research/` after `python -m s10_weekend_lag.mechanism`:  python -m s10_weekend_lag.hold
-"""
 from __future__ import annotations
 
 import json
@@ -22,7 +18,6 @@ R = RESULTS / "hold"
 
 
 def yes_result(m: dict) -> float | None:
-    """1.0 or 0.0 if the catalogue shows the market resolved; None otherwise."""
     try:
         outs, prices = json.loads(m.get("outcomes") or "[]"), json.loads(m.get("outcomePrices") or "[]")
     except (TypeError, ValueError):
@@ -36,7 +31,7 @@ def yes_result(m: dict) -> float | None:
 def results(ids: list[str]) -> dict[str, float | None]:
     f = CACHE / "results.json"
     known = json.loads(f.read_text()) if f.exists() else {}
-    pt = ds.Throttle(0.4)                     # shares Polymarket's limit with the Part 3 pull
+    pt = ds.Throttle(0.4)
     for mid in ids:
         if mid in known:
             continue
@@ -73,7 +68,7 @@ def main() -> int:
         t["segment"] = "OOS" if t["date"] >= oos_from else "IS"
     span = pd.date_range(dates[0], dates[-1]).strftime("%Y-%m-%d").tolist()
     metrics = book(trades, "date", 365.0, span, oos_from, "hold to result")
-    for row in metrics:                       # intervals resampling questions (all entries on one question share a result)
+    for row in metrics:
         seg = {"IS": ("IS",), "OOS": ("OOS",), "ALL": ("IS", "OOS")}[row["segment"]]
         st = [t for t in trades if t["cost_mult"] == row["cost_mult"] and t["segment"] in seg]
         by_q: dict[str, list] = {}
