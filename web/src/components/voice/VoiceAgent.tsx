@@ -11,7 +11,7 @@ import { ConversationProvider, useConversation } from "@elevenlabs/react";
 import { Orb } from "@/components/pb";
 import type { Market } from "@/lib/api";
 import { useStore, type Store } from "@/lib/store";
-import { buildClientTools, CONFIRM_TOOLS, micErrorText, ORB_FOR, PHASE_LABEL, voicePhase, type ToolReply, type VoiceToolName } from "@/lib/voice";
+import { buildClientTools, CONFIRM_TOOLS, micErrorText, ORB_FOR, PHASE_LABEL, VOICE_START_EVENT, voicePhase, type ToolReply, type VoiceToolName } from "@/lib/voice";
 import { searchedMarkets, voiceDrive, voiceStartLabel } from "@/lib/voiceDrive";
 import "./voice.css";
 
@@ -108,6 +108,13 @@ function VoicePill({ toolBusy, note, setNote, drive, setDrive }: {
     convo.startSession();
   }, [askingMic, active, convo, setNote]);
 
+  // "Talk to PolyBridge" elsewhere on the page (the home hero) starts this same session.
+  useEffect(() => {
+    const onStart = () => void start();
+    window.addEventListener(VOICE_START_EVENT, onStart);
+    return () => window.removeEventListener(VOICE_START_EVENT, onStart);
+  }, [start]);
+
   const stop = useCallback(() => { convo.endSession(); setNote(null); setDrive(null); }, [convo, setNote, setDrive]);
   // Typing instead of speaking (a loud demo room, no mic): the same agent, the same tools, the same spoken-yes rule.
   const [typed, setTyped] = useState("");
@@ -139,7 +146,7 @@ function VoicePill({ toolBusy, note, setNote, drive, setDrive }: {
       )}
       {active && <button type="button" className="pb-voice-end" onClick={stop}>End call</button>}
       <button type="button" className="pb-voice-pill pb-navpill" onClick={active ? stop : () => void start()} aria-pressed={active} aria-label={active ? `${label}. End the call` : label}>
-        <Orb state={ORB_FOR[phase]} size={24} />
+        <Orb state={ORB_FOR[phase]} size={32} />
         <span className="pb-voice-label">{label}</span>
       </button>
     </div>

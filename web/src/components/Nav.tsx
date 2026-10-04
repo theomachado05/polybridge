@@ -33,11 +33,14 @@ export function Nav() {
   const profile = on("/profile");
   const pill = sessionPill(s.session.data);
 
+  const acct = s.account.status === "ok" ? accountPill(s.account.data, s.session.data) : null;
+  const dot = live ? "#4ADE80" : !acct ? "#FBBF24" : "#9A7BFF";
+
   return (
     <header className="pb-nav">
       <div className="pb-nav-inner">
-        <Link href="/" className="pb-wordmark">PolyBridge</Link>
-        <nav className="pb-navtabs" aria-label="Main">
+        <Link href="/" className="pb-wordmark pb-navpill"><span className="pb-wordmark-dot" aria-hidden />PolyBridge</Link>
+        <nav className="pb-navtabs pb-navpill" aria-label="Main">
           <Link href="/pipeline" className="pb-navtab" aria-current={cur(on("/pipeline"))}>Ladders</Link>
           <button type="button" onClick={goBridge} className="pb-navtab" aria-current={cur(on("/bridge"))}>Tickets</button>
           <Link href="/tested" className="pb-navtab" aria-current={cur(on("/tested"))}>Tested</Link>
@@ -47,12 +50,17 @@ export function Nav() {
         </nav>
         <div className="pb-navmeta">
           {pill && (
-            <span title={pill.title} data-testid="session-pill">
-              <span style={{ color: "var(--faint)" }}>NYSE </span><span style={{ color: "var(--ink)" }}>{pill.text}</span>
+            <span className="pb-statpill pb-navpill" title={pill.title} data-testid="session-pill">
+              <span className="pb-statdot" style={{ background: pill.dot, animation: "none" }} aria-hidden />
+              <span className="pb-statpill-k pb-hide-xs">NYSE</span><span>{pill.text}</span>
             </span>
           )}
-          <span className="pb-navmeta-text pb-ellipsis" style={{ maxWidth: 320 }}>{label}</span>
-          <Link href="/profile" title="Profile" aria-label="Profile" aria-current={cur(profile)} className="pb-iconbtn">
+          <span className="pb-statpill pb-statpill-dark" title={acct?.title ?? label}>
+            <span className="pb-statdot" style={{ background: dot }} aria-hidden />
+            <span className="pb-paperword">Paper<span className="pb-hide-xs"> trading</span></span>
+            <span className="pb-navmeta-text pb-ellipsis" data-testid="account-pill-text">{label}</span>
+          </span>
+          <Link href="/profile" title="Profile" aria-label="Profile" aria-current={cur(profile)} className="pb-iconbtn pb-navpill">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8" /></svg>
           </Link>
         </div>

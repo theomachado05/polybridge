@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 import { sparkPath } from "@/lib/fmt";
 
-export function Orb({ state, size, ink = "#14182B", style }: { state: string; size: number; ink?: string; style?: CSSProperties }) {
+export function Orb({ state, size, ink = "#0F1626", style }: { state: string; size: number; ink?: string; style?: CSSProperties }) {
   return <thinking-orb state={state} size={String(size)} ink={ink} style={{ display: "inline-block", width: size, height: size, ...style }} />;
 }
 
@@ -85,9 +85,9 @@ export function Spark({ data, color, w = 150, h = 56 }: { data: number[]; color:
 
 export function OrbDisc({ state, disc, orb }: { state: string; disc: number; orb: number }) {
   return (
-    <div style={{ position: "relative", width: disc, height: disc, display: "flex", alignItems: "center", justifyContent: "center", flex: "none" }}>
-      <div style={{ position: "absolute", inset: 0, borderRadius: "50%", background: "var(--surface)", border: "1px solid var(--border)" }} />
-      <Orb state={state} size={orb} ink="#14182B" style={{ position: "relative" }} />
+    <div className="pb-orbdisc" style={{ width: disc, height: disc }}>
+      <div className="pb-navpill" style={{ position: "absolute", inset: 0, borderRadius: "50%" }} />
+      <Orb state={state} size={orb} ink="#0F1626" style={{ position: "relative" }} />
     </div>
   );
 }
