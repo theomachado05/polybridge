@@ -92,8 +92,9 @@ def main(which: str = "all") -> int:
     for name, ps in unis.items():
         settle_rows += classify(ps, g, name)
         nest = [p for p in ps if p["nested"]]
-        print(f"{name}: {len(ps)} pairs, nested {len(nest)}", flush=True)
-        legs = sorted({x for p in nest for x in (p["rich"], p["cheap"])})
+        crea = [p for p in ps if p["nested"] or p["why"].startswith("window starts at creation")]
+        print(f"{name}: {len(ps)} pairs, nested {len(nest)}, with creation-window pairs {len(crea)}", flush=True)
+        legs = sorted({x for p in crea for x in (p["rich"], p["cheap"])})
         t0 = time.time()
         rp.prefetch([g[i] for i in legs])
         print(f"{name}: prints for {len(legs)} markets, {time.time() - t0:.0f}s", flush=True)
@@ -107,6 +108,10 @@ def main(which: str = "all") -> int:
         summary[name] = {"pairs": len(ps), "nested": len(nest), "reasons": {}, "metrics": m}
         for p in ps:
             summary[name]["reasons"][p["why"]] = summary[name]["reasons"].get(p["why"], 0) + 1
+        srows, _ = replay(crea, g, name + "_with_creation_pairs")
+        write_csv(OUT / f"trades_{name}_with_creation_pairs.csv", srows)
+        summary[name]["sensitivity_with_creation_pairs"] = {"all": rp.metrics(srows),
+                                                            "creation_pairs_only": rp.metrics([r for r in srows if r["pair"] not in {p["pid"] for p in nest}])}
         if name == "s11":
             summary[name]["survival"] = survival(aux["cands"], {p["pid"]: p for p in ps})
         if name == "fresh":

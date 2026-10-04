@@ -106,3 +106,13 @@ description.
 `/events/keyset` (closed and open events, `end_date_min` 2025-10-01) with `volume_min` = $100,000, a necessary condition
 of the rule (two rungs of $50,000 each). Built at 01:56 (`fresh_universe.json`): 68,571 events read, 68,052 with a closed
 market, 200 already in S11; 373 date ladders, 861 pairs, 1,234 markets. Nothing but catalogue text was read.
+
+**4. Sun 02:03: dates and levels given only in the title; creation wording.** Running the frozen rule on the gamma
+records (metadata only; no print had been read) put 1,232 of 1,779 pairs in "key not found in description": most
+descriptions say "the listed date", "the date specified in the title" or "the listed price", so the rung's key lives only
+in the question, which the ladder rule already requires to be word for word the same apart from the key. Amended rule:
+a pair whose masked descriptions and sources are identical is nested whether or not the key appears in the text (the
+creation check still applies). The creation pattern of amendment 2 also missed "this market's creation"; it now matches
+"market's creation", "market was/is created" and "creation of this/the market". Primary results use nested pairs only.
+Labelled sensitivity (not confirmatory): the same replay with the creation-window pairs added back, with those pairs'
+trades reported apart, so the reader sees whether the written-rule gap ever cost money.

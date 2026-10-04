@@ -166,9 +166,7 @@ def nested(kind: str, bundle: dict, rich: str, cheap: str, g: dict[str, dict]) -
     sb = norm(b.get("resolutionSource") or b.get("_event_resolutionSource"))
     if sa != sb:
         return False, "sources differ"
-    if "@k@" not in da:
-        return False, "key not found in description"
-    if re.search(r"after (?:the )?(?:market|this market)(?:'s)? (?:creation|was created|is created)|market creation", da):
+    if re.search(r"market(?:'s|’s)? creation|market (?:was|is) created|creation of (?:this|the) market", da):
         ta, tb = ts_of(a.get("startDate") or a.get("createdAt")), ts_of(b.get("startDate") or b.get("createdAt"))
         if ta is None or tb is None or tb > ta + 60:
             return False, "window starts at creation and the cheap rung was created later"
