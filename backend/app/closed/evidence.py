@@ -419,12 +419,12 @@ MECHANISMS: tuple[dict, ...] = (
 )
 
 SYSTEM_NUMBERS: tuple[dict, ...] = (
-    _n("Receive to decision, live Polymarket feed (median and p99)", 39.0, 39.0, 3875.9, PERCENTILES, 58610,
+    _n("Receive to decision, live Polymarket feed (median and p99)", 40.0, 40.0, 1805.0, PERCENTILES, 548990,
        "book-update decisions", LATENCY, confirmatory=False, unit="microseconds",
        note="Network time excluded; weekend reference is Friday's close, so these are latency, not trades.",
        ref=LATENCY_REF),
-    _n("C++ stale-quote detector call (isolated)", 158, 158, 158, NO_INTERVAL, 1, "isolated benchmark", LATENCY,
-       confirmatory=False, unit="nanoseconds per call", note="Includes the pybind11 call; Python twin 290 ns.",
+    _n("C++ stale-quote detector call (isolated)", 208, 208, 208, NO_INTERVAL, 1, "isolated benchmark", LATENCY,
+       confirmatory=False, unit="nanoseconds per call", note="Includes the pybind11 call; Python twin 292 ns.",
        ref=LATENCY_REF),
 )
 

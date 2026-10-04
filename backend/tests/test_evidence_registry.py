@@ -141,8 +141,8 @@ def test_headline_numbers_match_the_note():
     hedge = by["ticket_option_hedge"]["numbers"][0]
     assert hedge["value"] > 1 and hedge["source_branch"] == "r/weekend-options"
     lat = {n["unit"]: n for n in ev.system_numbers()}
-    assert (lat["microseconds"]["value"], lat["microseconds"]["ci_high"]) == (39.0, 3875.9)
-    assert lat["microseconds"]["sample"]["n"] == 58610 and lat["nanoseconds per call"]["value"] == 158
+    assert (lat["microseconds"]["value"], lat["microseconds"]["ci_high"]) == (40.0, 1805.0)
+    assert lat["microseconds"]["sample"]["n"] == 548990 and lat["nanoseconds per call"]["value"] == 208
     note = (REPO / "note" / "NOTE.md").read_text().replace("−", "-")
     for s in ("+0.0108", "+0.0064", "+0.0158", "+2.47", "-1.14", "+6.26", "+8.82", "+6.73", "+11.13", "650", "562",
               "7,111", "4,561", "89 resolution dates", "34 live date ladders", "39 µs", "3.9 ms", "58,610", "158 ns"):
@@ -205,7 +205,7 @@ def test_touch_entry_carries_the_sell_threshold_behind_the_ack_gate_and_no_hedge
 
 def test_latency_is_marked_percentiles_not_a_confidence_interval():
     lat = next(n for n in ev.SYSTEM_NUMBERS if "Receive to decision" in n["label"])
-    assert lat["range_kind"] == "percentiles" and lat["value"] == lat["ci_low"] == 39.0 and lat["ci_high"] == 3875.9
+    assert lat["range_kind"] == "percentiles" and lat["value"] == lat["ci_low"] == 40.0 and lat["ci_high"] == 1805.0
     assert "not a confidence interval" in lat["range_desc"]
     kinds = {n["range_kind"] for m in ev.MECHANISMS for n in m["numbers"]}
     assert "percentiles" not in kinds and "ci95" in kinds
