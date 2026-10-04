@@ -92,7 +92,7 @@ and C1 holding over the whole sample. Anything else is a null or "too few observ
 
 ## Amendments
 
-**Amendment 1, 2026-10-04 03:44 UTC, after the run: the bug hunt, and the same question at traded prices.**
+**Amendment 1, 2026-10-04 03:43 UTC, after the run: the bug hunt, and the same question at traded prices.**
 
 *What the bug hunt found.* The run shows YES resolving far less often than priced in every bucket, and "sell every
 market" (V4) with a Sharpe near 3. The entry prices explain it: 232 of the 1,092 entries are within half a point of
@@ -117,6 +117,6 @@ labelled so.
 - A market whose first-weekend prints the data API no longer serves (it serves the latest 20,000 of a market) is
   left out and counted. Capacity is the printed size.
 
-**Correction of wording, 2026-10-04 03:42 UTC, before the run.** Section 1 says "the 1,262 price markets ... that
+**Correction of wording, 2026-10-04 03:41 UTC, before the run.** Section 1 says "the 1,262 price markets ... that
 have a result". The two universes hold 1,262 markets in 137 events, and 1,232 of them have a result (384 in S9, 848
 in S15). Only those 1,232 can enter. No rule changes.

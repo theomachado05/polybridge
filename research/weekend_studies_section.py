@@ -33,6 +33,8 @@ STUDIES = {
                           "segments": {"IS": "IS", "OOS": "OOS", "ALL": None}},
     "S16 Kalshi quotes": {"dir": "s16_kalshi_quotes", "value": "net_points", "metric": "mean_net_points", "unit": "points per trade",
                           "segments": {"IS": "IS", "OOS": "OOS", "ALL": None}},
+    "S18 calibration, at history mids": {"dir": "s18_price_market_calibration", "value": "net_points", "metric": "mean_net_points",
+                                         "unit": "points per trade", "segments": {"IS": "IS", "OOS": "OOS", "ALL": None}},
 }
 PRIMARY = "V0"
 
@@ -173,6 +175,15 @@ def findings(results: Path | str = RESULTS) -> pd.DataFrame:
             f"picked on Kalshi: Kalshi {k['mean']:+.2f} [{k.ci_lo:+.2f}, {k.ci_hi:+.2f}], Polymarket {p_['mean']:+.2f}; picked on Polymarket: "
             f"Polymarket {pp['mean']:+.2f} [{pp.ci_lo:+.2f}, {pp.ci_hi:+.2f}], Kalshi {kk['mean']:+.2f}; the fade at Kalshi's real quotes nets "
             f"{m.mean_net_points:+.2f} points [{m.ci_lo:+.2f}, {m.ci_hi:+.2f}]", "the give-back is one venue's noise; not a pass")
+    f = R / "s18_price_market_calibration" / "prints_tests.csv"
+    if f.exists():
+        t = pd.read_csv(f)
+        sell, buy = "sellers: sold YES into a bid, held to the result", "buyers: bought YES at the ask, held to the result"
+        b, sa, so = _row(t, test=buy, scope="all markets"), _row(t, test=sell, scope="all markets"), _row(t, test=sell, scope="out-of-sample events")
+        add("S18", "Price markets at traded prices, held to the result: buyers of YES, and sellers at the bid",
+            f"buyers {b.mean_pnl_points:+.2f} points per contract [{b.ci_lo:+.2f}, {b.ci_hi:+.2f}]; sellers {sa.mean_pnl_points:+.2f} "
+            f"[{sa.ci_lo:+.2f}, {sa.ci_hi:+.2f}], out-of-sample {so.mean_pnl_points:+.2f} [{so.ci_lo:+.2f}, {so.ci_hi:+.2f}]",
+            "buyers overpaid; selling fails out-of-sample; not a pass")
     f = R / "s14_link_ceiling" / "tests.csv"
     if f.exists():
         t = pd.read_csv(f)

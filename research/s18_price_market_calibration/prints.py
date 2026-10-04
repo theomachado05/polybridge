@@ -67,15 +67,23 @@ def main() -> int:
     if "--pull" in sys.argv:
         pull(entries)
         return 0
-    rows, unreachable, missing = [], 0, 0
+    rows, missing, why = [], 0, {"no print served at all (or the request failed)": 0, "never traded during its first weekend (every print was served)": 0,
+                                 "first-weekend prints beyond the 20,000 the API keeps": 0}
     for r in entries.itertuples():
         f = CACHE / f"prints_{r.market}.json"
         if not f.exists():
             missing += 1
             continue
         rec = json.loads(f.read_text())
-        if rec.get("reach_oldest") is None or rec["reach_oldest"] > r.entry_epoch + WINDOW_S or (rec["served"] >= PAGES * 10000 and rec["reach_oldest"] > r.entry_epoch):
-            unreachable += 1
+        truncated = rec["served"] >= PAGES * 10000
+        if rec.get("reach_oldest") is None:
+            why["no print served at all (or the request failed)"] += 1
+            continue
+        if truncated and rec["reach_oldest"] > r.entry_epoch:
+            why["first-weekend prints beyond the 20,000 the API keeps"] += 1
+            continue
+        if rec["reach_oldest"] > r.entry_epoch + WINDOW_S:
+            why["never traded during its first weekend (every print was served)"] += 1
             continue
         pr = [y for y in (yes_terms(t) for t in rec["prints"]) if y]
         ps, size_s, n_s = weighted(pr, "SELL")
@@ -112,7 +120,8 @@ def main() -> int:
             stat(d[(d[pcol] >= lo) & (d[pcol] < hi)], f"{side}_pnl_points", name, f"traded price {100 * lo:.0f} to {100 * hi:.0f}%", pcol)
     write_csv(RESULTS / "prints_markets.csv", rows)
     write_csv(RESULTS / "prints_tests.csv", out)
-    meta = {"entries": int(len(entries)), "no_print_file": missing, "first_weekend_prints_not_served": unreachable, "markets_checked": int(len(d)),
+    meta = {"entries": int(len(entries)), "no_print_file": missing, "left_out": why, "markets_checked": int(len(d)),
+            "checked_with_no_print_in_the_window": int((d.prints_in_window == 0).sum()),
             "with_a_taker_sell": int(d.sell_prints.gt(0).sum()), "with_a_taker_buy": int(d.buy_prints.gt(0).sum()),
             "mid_at_entry_45_55_among_checked": int(d.mid_at_entry.between(0.45, 0.55).sum())}
     (RESULTS / "prints_meta.json").write_text(json.dumps(meta, indent=1))
