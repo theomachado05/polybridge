@@ -1,9 +1,0 @@
-rule,segment,cost_mult,status,data_label,evidence_qualified_entries,qualified_daily_observations,independent_entry_dates,tested_opportunities,net_pnl,total_return,sharpe,max_drawdown,worst_month,turnover,capacity,bootstrap_ci,capital_base,funding_assumption_ann,success
-A_exact_payoff_basket,IS,1.0,not_testable,reused_history_exploratory,0,0,0,NA,NA,NA,NA,NA,NA,NA,NA,NA,10000.0,0.1,False
-A_exact_payoff_basket,OOS,1.0,not_testable,reused_history_exploratory,0,0,0,NA,NA,NA,NA,NA,NA,NA,NA,NA,10000.0,0.1,False
-A_exact_payoff_basket,IS,2.0,not_testable,reused_history_exploratory,0,0,0,NA,NA,NA,NA,NA,NA,NA,NA,NA,10000.0,0.2,False
-A_exact_payoff_basket,OOS,2.0,not_testable,reused_history_exploratory,0,0,0,NA,NA,NA,NA,NA,NA,NA,NA,NA,10000.0,0.2,False
-B_official_source_carry,IS,1.0,not_testable,reused_history_exploratory,0,0,0,NA,NA,NA,NA,NA,NA,NA,NA,NA,10000.0,0.1,False
-B_official_source_carry,OOS,1.0,not_testable,reused_history_exploratory,0,0,0,NA,NA,NA,NA,NA,NA,NA,NA,NA,10000.0,0.1,False
-B_official_source_carry,IS,2.0,not_testable,reused_history_exploratory,0,0,0,NA,NA,NA,NA,NA,NA,NA,NA,NA,10000.0,0.2,False
-B_official_source_carry,OOS,2.0,not_testable,reused_history_exploratory,0,0,0,NA,NA,NA,NA,NA,NA,NA,NA,NA,10000.0,0.2,False

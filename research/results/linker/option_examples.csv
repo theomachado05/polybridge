@@ -1,6 +1,0 @@
-question,ticker,direction,underlying,last_close,resolves,expiry,strike,directional_leg,call,put,strikes_listed
-Will Flávio Bolsonaro win the 2026 Brazilian presidential election? (first round Sun 2026-10-04),EWZ,up_on_yes,EWZ,38.19,2026-10-05,2026-10-09,38.0,O:EWZ261009C00038000,O:EWZ261009C00038000,O:EWZ261009P00038000,35
-Brazil presidential runoff (Sun 2026-10-25),EWZ,up_on_yes,EWZ,38.19,2026-10-26,2026-10-30,38.0,O:EWZ261030C00038000,O:EWZ261030C00038000,O:EWZ261030P00038000,33
-Strait of Hormuz traffic returns to normal by December 31?,USO,down_on_yes,USO,147.37,2026-12-31,2027-01-15,147.0,O:USO270115P00147000,O:USO270115C00147000,O:USO270115P00147000,149
-Will the U.S. invade Iran before 2027?,XLE,up_on_yes,XLE,62.82,2026-12-31,2026-12-31,65.0,O:XLE261231C00065000,O:XLE261231C00065000,O:XLE261231P00065000,40
-Will the Fed increase interest rates by 25 bps after the October 2026 meeting? (decision 2026-10-28),TLT,down_on_yes,TLT,77.48,2026-10-28,2026-10-30,77.0,O:TLT261030P00077000,O:TLT261030C00077000,O:TLT261030P00077000,50

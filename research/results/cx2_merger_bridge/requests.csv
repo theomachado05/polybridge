@@ -1,9 +1,0 @@
-time_utc,kind,url,status
-2026-10-04T03:45:12.500642+00:00,metadata,https://gamma-api.polymarket.com/markets/694936,0
-2026-10-04T03:45:14.561932+00:00,metadata,https://gamma-api.polymarket.com/markets/2154920,0
-2026-10-04T03:45:16.619475+00:00,metadata,https://gamma-api.polymarket.com/markets/700396,0
-2026-10-04T03:45:18.674195+00:00,metadata,https://gamma-api.polymarket.com/markets/694938,0
-2026-10-04T03:45:20.727900+00:00,metadata,https://gamma-api.polymarket.com/markets/694940,0
-2026-10-04T03:45:22.782208+00:00,metadata,https://gamma-api.polymarket.com/markets/694937,0
-2026-10-04T03:50:40.030745+00:00,metadata,https://gamma-api.polymarket.com/markets/2154920,200
-2026-10-04T03:46:38.607536+00:00,metadata_cache_write_time,https://gamma-api.polymarket.com/events?slug=which-companies-will-be-acquired-before-2027&limit=1,200

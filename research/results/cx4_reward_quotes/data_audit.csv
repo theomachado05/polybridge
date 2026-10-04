@@ -1,7 +1,0 @@
-input,available,reason
-two-sided historical causal quotes and queue,False,"S12 uses taker prints and a queue allowance, not actual maker fills"
-historical market reward eligibility and allocations,False,No local reward-setting time series identified
-competing qualifying liquidity scores,False,Relative share cannot be reconstructed from midpoint or print history
-historical earned reward and rebate records,False,No historical allocation/payment ledger identified
-synchronized exact-contract external hedge fills,False,Existing studies do not establish simultaneous hedged maker execution
-previous S12 model trades,True,Usable only for a known-result break-even diagnostic

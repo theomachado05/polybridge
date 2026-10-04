@@ -1,7 +1,0 @@
-fixture_only,state,stock_terminal,event_no_payoff,cash_distribution,unhedged,event_hedge,put_hedge
-True,timely completion,100,0,0,10000,10000,10000
-True,moderate failure,70,1,0,7000,9000,8000
-True,severe failure,10,1,0,1000,3000,8000
-True,late completion,100,1,0,10000,12000,10000
-True,revised offer closes,110,0,0,11000,11000,11000
-True,failure with distribution,70,1,3,7300,9300,8300

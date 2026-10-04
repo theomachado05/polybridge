@@ -1,6 +1,0 @@
-hypothesis,verdict,oos_sharpe_1x,oos_return_1x,oos_sharpe_2x,oos_return_2x,independent_oos_entry_dates,source
-option insurance,OOS_LOSS_AND_INSUFFICIENT_VALIDATION,-1.4302020366806116,-0.0050115888629052,-1.6713279302166268,-0.0059533274657813,10,/Users/theomachado/gatorquant/research/results/cx1_option_insurance/metrics.csv
-merger failure hedge,NOT_TESTABLE,,,,,0,/Users/theomachado/gatorquant/research/results/cx2_merger_bridge/feasibility.json
-contractual payoff baskets,NOT_TESTABLE,,,,,0,/Users/theomachado/gatorquant/research/results/cx3_payoff_carry/metrics.csv
-official-source resolution carry,NOT_TESTABLE,,,,,0,/Users/theomachado/gatorquant/research/results/cx3_payoff_carry/metrics.csv
-rewarded hedged liquidity,NOT_TESTABLE,,,,,0,/Users/theomachado/gatorquant/research/results/cx4_reward_quotes/metrics.csv
