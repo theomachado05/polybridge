@@ -37,7 +37,7 @@ def plan() -> list[dict]:
     sess = en.sessions_from(np.load(S5_CACHE / "eq_SPY.npz")["t"])
     spans, starts = wn.session_spans(sess), wn.weekend_starts(calendar(), sess)
     entries = pd.read_csv(S18_RESULTS / "entries.csv")
-    return [{**r._asdict(), "market": str(r.market), "event": str(r.event), "windows": wn.market_windows(float(r.entry_epoch), starts, spans)}
+    return [{**r._asdict(), "market": str(r.market), "windows": wn.market_windows(float(r.entry_epoch), starts, spans)}
             for r in entries.itertuples(index=False)]
 
 
