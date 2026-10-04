@@ -1,0 +1,12 @@
+{
+ "links_in_panel": 254,
+ "links_with_own_slope_whole_sample": 179,
+ "links_with_own_slope_in_sample": 167,
+ "sessions": 253,
+ "oos_from": "2026-07-23",
+ "continuation_links": 9,
+ "reversal_links": 15,
+ "tenth": 17,
+ "shuffles": 500,
+ "run_seconds": 3.1
+}

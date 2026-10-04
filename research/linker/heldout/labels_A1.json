@@ -1,0 +1,1413 @@
+{
+ "labeller": "A1",
+ "answers": [
+  {
+   "id": "polymarket:704475",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:679049",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "EWQ",
+     "direction": "down_on_yes",
+     "confidence": 0.45,
+     "mechanism": "A far-left LFI presidency implies large spending, higher taxes and EU conflict, negative for French equities."
+    },
+    {
+     "ticker": "FXE",
+     "direction": "down_on_yes",
+     "confidence": 0.3,
+     "mechanism": "A far-left French president raises euro-area fiscal and cohesion risk, weakening the euro."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:631291",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:2507607",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Seizure of Iran's main crude export terminal takes Iranian barrels offline and invites retaliation on Gulf supply."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "mechanism": "Energy equities rise with the crude risk premium."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:546257",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:679033",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:567562",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1501205",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:604067",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:645986",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:679023",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "EWQ",
+     "direction": "up_on_yes",
+     "confidence": 0.3,
+     "mechanism": "A mainstream centre-right, pro-business president beats the far-right or far-left alternatives the market fears."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1494703",
+   "family": "spot_proxy",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.9,
+     "mechanism": "The question is on WTI crude reaching a level, which the oil fund tracks through front-month futures."
+    },
+    {
+     "ticker": "XOP",
+     "direction": "up_on_yes",
+     "confidence": 0.6,
+     "mechanism": "Oil producers' equity value rises with the crude price."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "confidence": 0.55,
+     "mechanism": "The energy sector rises with the crude price."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:558107",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1223258",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1130016",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:516730",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "SHY",
+     "direction": "up_on_yes",
+     "confidence": 0.6,
+     "mechanism": "More Fed cuts than priced pull front-end Treasury yields down, lifting short-dated Treasury prices."
+    },
+    {
+     "ticker": "IEF",
+     "direction": "up_on_yes",
+     "confidence": 0.55,
+     "mechanism": "A deeper cutting path lowers intermediate Treasury yields, raising 7-10 year Treasury prices."
+    },
+    {
+     "ticker": "TLT",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "A cut count this large implies a sharp slowdown or crisis, which usually pulls long yields down too."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:551143",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:549625",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:679041",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "EWQ",
+     "direction": "up_on_yes",
+     "confidence": 0.3,
+     "mechanism": "A centrist, fiscally conservative president is the market-friendly outcome relative to far-right or far-left alternatives."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:2507618",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Seizure of Iran's main crude export terminal takes Iranian barrels offline and invites retaliation on Gulf supply."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "mechanism": "Energy equities rise with the crude risk premium."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:635529",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:679036",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "EWQ",
+     "direction": "down_on_yes",
+     "confidence": 0.45,
+     "mechanism": "A Frexit candidate winning would threaten France's EU and euro membership, a severe shock to French equities."
+    },
+    {
+     "ticker": "FXE",
+     "direction": "down_on_yes",
+     "confidence": 0.35,
+     "mechanism": "A Frexit presidency would put the euro's integrity in question, weakening the currency."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1484915",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.6,
+     "mechanism": "An end to the Iran conflict removes the Gulf supply-risk premium from crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Energy equities give back the war premium as crude falls."
+    },
+    {
+     "ticker": "JETS",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "mechanism": "Airlines gain from cheaper jet fuel and reopened Middle East airspace."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:2241742",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Iran closing its airspace signals imminent or renewed hostilities, raising the Gulf supply-risk premium in crude."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1198479",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.6,
+     "mechanism": "Strikes on Iran raise the risk of disrupted Gulf oil supply, lifting crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Energy equities rise with the crude risk premium."
+    },
+    {
+     "ticker": "ITA",
+     "direction": "up_on_yes",
+     "confidence": 0.3,
+     "mechanism": "Military action raises expected munitions demand and defence spending for US primes."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1273937",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "This signals escalation of the Iran conflict, raising the Gulf supply-risk premium in crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "confidence": 0.3,
+     "mechanism": "Energy equities rise with the crude risk premium."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:2262267",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:549876",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:569362",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:947288",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1567747",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.6,
+     "mechanism": "An end to the Iran conflict removes the Gulf supply-risk premium from crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Energy equities give back the war premium as crude falls."
+    },
+    {
+     "ticker": "JETS",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "mechanism": "Airlines gain from cheaper jet fuel and reopened Middle East airspace."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:2002685",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "EWU",
+     "direction": "down_on_yes",
+     "confidence": 0.3,
+     "mechanism": "A forced exit raises fears of looser fiscal policy under a successor, hitting gilts and sterling and so the dollar value of UK equities."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:623601",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "JETS",
+     "direction": "up_on_yes",
+     "confidence": 0.25,
+     "mechanism": "Ending the shutdown restores FAA and TSA staffing and lifts flight restrictions that were hurting airlines."
+    },
+    {
+     "ticker": "SPY",
+     "direction": "up_on_yes",
+     "confidence": 0.25,
+     "mechanism": "A sooner end to the shutdown removes a drag on growth and restores federal data and pay, a market-wide positive."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1394368",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.6,
+     "mechanism": "A US ground invasion of Iran would be a major escalation threatening Gulf oil supply and Hormuz transit."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Energy equities rise with the crude risk premium."
+    },
+    {
+     "ticker": "ITA",
+     "direction": "up_on_yes",
+     "confidence": 0.3,
+     "mechanism": "A ground war raises expected munitions demand and defence spending for US primes."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1105751",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:965261",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:2296152",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "mechanism": "Israel closing its airspace signals an imminent exchange of strikes with Iran, raising the crude risk premium."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:562189",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:3128887",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.55,
+     "mechanism": "De-escalation with Iran lowers the Gulf supply-risk premium and brings Iranian and Gulf barrels back."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Energy equities fall with crude as the risk premium unwinds."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1130015",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:663849",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "CVX",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Chevron is the US major operating in Venezuela and gains most from regime change and sanctions relief."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:516937",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "confidence": 0.65,
+     "mechanism": "A US government bitcoin reserve adds a sovereign buyer or holder and legitimises the asset, lifting bitcoin."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "confidence": 0.55,
+     "mechanism": "Strategy is a leveraged holder of bitcoin and rises with the bitcoin price."
+    },
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Higher bitcoin prices and official endorsement lift exchange volumes and Coinbase's value."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1731345",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "mechanism": "De-escalation with Iran lowers the Gulf supply-risk premium and brings Iranian and Gulf barrels back."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.35,
+     "mechanism": "Energy equities fall with crude as the risk premium unwinds."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:665307",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.8,
+     "mechanism": "Closing Hormuz blocks roughly a fifth of world oil flows, a severe supply shock for crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "confidence": 0.55,
+     "mechanism": "Energy equities outside the Gulf gain from the crude price spike."
+    },
+    {
+     "ticker": "FRO",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Hormuz disruption sends war-risk premia and crude tanker spot rates sharply higher."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:562186",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:517817",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:680919",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:608420",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:616913",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "SHY",
+     "direction": "up_on_yes",
+     "confidence": 0.54,
+     "mechanism": "More Fed cuts than priced pull front-end Treasury yields down, lifting short-dated Treasury prices."
+    },
+    {
+     "ticker": "IEF",
+     "direction": "up_on_yes",
+     "confidence": 0.5,
+     "mechanism": "A deeper cutting path lowers intermediate Treasury yields, raising 7-10 year Treasury prices."
+    },
+    {
+     "ticker": "TLT",
+     "direction": "up_on_yes",
+     "confidence": 0.36,
+     "mechanism": "A cut count this large implies a sharp slowdown or crisis, which usually pulls long yields down too."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:2099579",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "ARGT",
+     "direction": "down_on_yes",
+     "confidence": 0.55,
+     "mechanism": "Milei leaving office would end the reform and stabilisation programme that Argentine equities are priced on."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1469755",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1144471",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "IBIT",
+     "direction": "down_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Satoshi's coins moving would raise fears of a roughly one million bitcoin overhang or compromised keys, hitting bitcoin."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "down_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Strategy is a leveraged holder of bitcoin and falls with the bitcoin price."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1466575",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.6,
+     "mechanism": "An end to the Iran conflict removes the Gulf supply-risk premium from crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Energy equities give back the war premium as crude falls."
+    },
+    {
+     "ticker": "JETS",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "mechanism": "Airlines gain from cheaper jet fuel and reopened Middle East airspace."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1466150",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.6,
+     "mechanism": "An end to the Iran conflict removes the Gulf supply-risk premium from crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Energy equities give back the war premium as crude falls."
+    },
+    {
+     "ticker": "JETS",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "mechanism": "Airlines gain from cheaper jet fuel and reopened Middle East airspace."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:631143",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:556016",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:516845",
+   "family": "spot_proxy",
+   "links": [
+    {
+     "ticker": "AMZN",
+     "direction": "up_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Amazon can only become the largest company if its own share price rises relative to peers."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1500922",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "EWU",
+     "direction": "down_on_yes",
+     "confidence": 0.3,
+     "mechanism": "A forced exit raises fears of looser fiscal policy under a successor, hitting gilts and sterling and so the dollar value of UK equities."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:642090",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1288111",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Strikes on Iran raise the risk of disrupted Gulf oil supply, lifting crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "mechanism": "Energy equities rise with the crude risk premium."
+    },
+    {
+     "ticker": "ITA",
+     "direction": "up_on_yes",
+     "confidence": 0.3,
+     "mechanism": "Military action raises expected munitions demand and defence spending for US primes."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:2126542",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "mechanism": "De-escalation with Iran lowers the Gulf supply-risk premium and brings Iranian and Gulf barrels back."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.35,
+     "mechanism": "Energy equities fall with crude as the risk premium unwinds."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1169205",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.5,
+     "mechanism": "An Iranian strike on Israel opens a direct exchange that raises the risk to Gulf oil supply."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "mechanism": "Energy equities rise with the crude risk premium."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:553374",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "EIS",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "mechanism": "The fall of the Islamic Republic would remove Israel's main strategic adversary and proxy funder, cutting Israeli risk premia."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1535972",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:616912",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "SHY",
+     "direction": "up_on_yes",
+     "confidence": 0.54,
+     "mechanism": "More Fed cuts than priced pull front-end Treasury yields down, lifting short-dated Treasury prices."
+    },
+    {
+     "ticker": "IEF",
+     "direction": "up_on_yes",
+     "confidence": 0.5,
+     "mechanism": "A deeper cutting path lowers intermediate Treasury yields, raising 7-10 year Treasury prices."
+    },
+    {
+     "ticker": "TLT",
+     "direction": "up_on_yes",
+     "confidence": 0.36,
+     "mechanism": "A cut count this large implies a sharp slowdown or crisis, which usually pulls long yields down too."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1385748",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.3,
+     "mechanism": "European powers joining military action means the war is widening, raising the Gulf supply-risk premium."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:2910438",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.55,
+     "mechanism": "De-escalation with Iran lowers the Gulf supply-risk premium and brings Iranian and Gulf barrels back."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Energy equities fall with crude as the risk premium unwinds."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:666494",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:642524",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "EPOL",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Poland is the most war-exposed equity market on the menu, so a ceasefire compresses its risk premium."
+    },
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.4,
+     "mechanism": "A ceasefire opens the way to easing sanctions on Russian oil and ends attacks on energy infrastructure, lowering crude."
+    },
+    {
+     "ticker": "VGK",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "mechanism": "A ceasefire lowers Europe's energy and security risk premium, lifting European equities."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:920396",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:2241674",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "mechanism": "Israel closing its airspace signals an imminent exchange of strikes with Iran, raising the crude risk premium."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:628955",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:2099583",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:948043",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:540844",
+   "family": "spot_proxy",
+   "links": [
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "confidence": 0.5,
+     "mechanism": "The question is on the bitcoin price reaching a level, which the spot bitcoin ETF tracks directly."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Strategy is a leveraged holder of bitcoin and rises with the bitcoin price."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:585593",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "DJT",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Trump Media's value rests on Trump holding office and using Truth Social, so his exit would hit the stock."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:586301",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "XRT",
+     "direction": "down_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Upholding the IEEPA tariffs keeps import costs on retailers and removes the prospect of refunds."
+    },
+    {
+     "ticker": "NKE",
+     "direction": "down_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Nike sources mostly from Asian countries hit by the reciprocal tariffs, so upholding them keeps its margin hit."
+    },
+    {
+     "ticker": "TLT",
+     "direction": "up_on_yes",
+     "confidence": 0.3,
+     "mechanism": "Upheld tariffs keep the revenue and avoid large refunds, easing deficit and issuance pressure on long yields."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:2109449",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.4,
+     "mechanism": "A US-Iran meeting raises the odds of a settlement, trimming the Gulf supply-risk premium in crude."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1500768",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:676716",
+   "family": "spot_proxy",
+   "links": [
+    {
+     "ticker": "AMZN",
+     "direction": "up_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Amazon can only become the largest company if its own share price rises relative to peers."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1796310",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:625811",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "GOOGL",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "mechanism": "An earlier Gemini 3.0 release strengthens Alphabet's position in the AI race, supporting the stock."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:948039",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:661700",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:1273936",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "This signals escalation of the Iran conflict, raising the Gulf supply-risk premium in crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "confidence": 0.3,
+     "mechanism": "Energy equities rise with the crude risk premium."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:2099585",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "EWQ",
+     "direction": "down_on_yes",
+     "confidence": 0.45,
+     "mechanism": "The French prime minister falling means renewed government collapse and budget paralysis, hitting French equities."
+    },
+    {
+     "ticker": "FXE",
+     "direction": "down_on_yes",
+     "confidence": 0.25,
+     "mechanism": "French political instability widens OAT spreads and weighs on the euro."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1032303",
+   "family": "spot_proxy",
+   "links": [
+    {
+     "ticker": "SLV",
+     "direction": "up_on_yes",
+     "confidence": 0.9,
+     "mechanism": "The question is on the silver price reaching a level, which the silver trust tracks directly."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:2633430",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.55,
+     "mechanism": "De-escalation with Iran lowers the Gulf supply-risk premium and brings Iranian and Gulf barrels back."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Energy equities fall with crude as the risk premium unwinds."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1170143",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "This signals escalation of the Iran conflict, raising the Gulf supply-risk premium in crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "confidence": 0.3,
+     "mechanism": "Energy equities rise with the crude risk premium."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:556034",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:678937",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:2183424",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:631182",
+   "family": "spot_proxy",
+   "links": [
+    {
+     "ticker": "MSFT",
+     "direction": "up_on_yes",
+     "confidence": 0.55,
+     "mechanism": "Microsoft can only become the largest company if its own share price rises relative to peers."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:668098",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1708133",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:958448",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:947281",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1235514",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1237456",
+   "family": "spot_proxy",
+   "links": [
+    {
+     "ticker": "TSLA",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Tesla can only become the largest company if its own share price rises very sharply."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:549874",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:616911",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "SHY",
+     "direction": "up_on_yes",
+     "confidence": 0.54,
+     "mechanism": "More Fed cuts than priced pull front-end Treasury yields down, lifting short-dated Treasury prices."
+    },
+    {
+     "ticker": "IEF",
+     "direction": "up_on_yes",
+     "confidence": 0.5,
+     "mechanism": "A deeper cutting path lowers intermediate Treasury yields, raising 7-10 year Treasury prices."
+    },
+    {
+     "ticker": "TLT",
+     "direction": "up_on_yes",
+     "confidence": 0.36,
+     "mechanism": "A cut count this large implies a sharp slowdown or crisis, which usually pulls long yields down too."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:635528",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1820098",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "EPOL",
+     "direction": "down_on_yes",
+     "confidence": 0.4,
+     "mechanism": "A US exit from NATO removes the security guarantee for front-line Poland, raising its risk premium."
+    },
+    {
+     "ticker": "VGK",
+     "direction": "down_on_yes",
+     "confidence": 0.35,
+     "mechanism": "A US exit from NATO is a security shock for Europe, forcing costly rearmament and raising equity risk premia."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:616908",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "SHY",
+     "direction": "up_on_yes",
+     "confidence": 0.6,
+     "mechanism": "More Fed cuts than priced pull front-end Treasury yields down, lifting short-dated Treasury prices."
+    },
+    {
+     "ticker": "IEF",
+     "direction": "up_on_yes",
+     "confidence": 0.55,
+     "mechanism": "A deeper cutting path lowers intermediate Treasury yields, raising 7-10 year Treasury prices."
+    },
+    {
+     "ticker": "TLT",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "A cut count this large implies a sharp slowdown or crisis, which usually pulls long yields down too."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:2155023",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.55,
+     "mechanism": "De-escalation with Iran lowers the Gulf supply-risk premium and brings Iranian and Gulf barrels back."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Energy equities fall with crude as the risk premium unwinds."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:516960",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "GOOGL",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Holding the top-ranked AI model signals Alphabet is leading the AI race, supporting the stock."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:638734",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "JETS",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Ending the shutdown restores FAA and TSA staffing and lifts flight restrictions that were hurting airlines."
+    },
+    {
+     "ticker": "SPY",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "mechanism": "A sooner end to the shutdown removes a drag on growth and restores federal data and pay, a market-wide positive."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:550022",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:631185",
+   "family": "spot_proxy",
+   "links": [
+    {
+     "ticker": "TSLA",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Tesla can only become the largest company if its own share price rises very sharply."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1105753",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:678931",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1277190",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "GOOGL",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Holding the top-ranked AI model signals Alphabet is leading the AI race, supporting the stock."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:638735",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "JETS",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "mechanism": "Ending the shutdown restores FAA and TSA staffing and lifts flight restrictions that were hurting airlines."
+    },
+    {
+     "ticker": "SPY",
+     "direction": "up_on_yes",
+     "confidence": 0.3,
+     "mechanism": "A sooner end to the shutdown removes a drag on growth and restores federal data and pay, a market-wide positive."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:562187",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:635518",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1895140",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.6,
+     "mechanism": "An end to the Iran conflict removes the Gulf supply-risk premium from crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Energy equities give back the war premium as crude falls."
+    },
+    {
+     "ticker": "JETS",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "mechanism": "Airlines gain from cheaper jet fuel and reopened Middle East airspace."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1223261",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1198451",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.55,
+     "mechanism": "Strikes on Iran raise the risk of disrupted Gulf oil supply, lifting crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Energy equities rise with the crude risk premium."
+    },
+    {
+     "ticker": "ITA",
+     "direction": "up_on_yes",
+     "confidence": 0.25,
+     "mechanism": "Military action raises expected munitions demand and defence spending for US primes."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:516971",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "KWEB",
+     "direction": "up_on_yes",
+     "confidence": 0.3,
+     "mechanism": "Tencent is a top holding of the China internet ETF and would rerate on AI leadership."
+    },
+    {
+     "ticker": "MCHI",
+     "direction": "up_on_yes",
+     "confidence": 0.25,
+     "mechanism": "Tencent is the largest holding of the MSCI China ETF and would rerate on AI leadership."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1472026",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "mechanism": "Another country striking Iran means the war is widening, most likely to Gulf states, raising the crude risk premium."
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,34 @@
+{
+ "weekends_live": 48,
+ "first_weekend": "2025-11-03",
+ "last_weekend": "2026-09-28",
+ "oos_from": "2026-07-27",
+ "oos_weekends": 10,
+ "markets_in_universe": 871,
+ "markets_live": 710,
+ "market_weekends": 2158,
+ "pull_t1": "2026-10-04T03:27:19.192764+00:00",
+ "pull_failures": 0,
+ "groups": {
+  "quiet": 979,
+  "faller": 480,
+  "between": 443,
+  "riser": 256
+ },
+ "by_class": {
+  "stock": 918,
+  "sp500": 501,
+  "silver": 291,
+  "crude": 197,
+  "gold": 144,
+  "natgas": 107
+ },
+ "by_kind": {
+  "other event": 1967,
+  "leftover of an S9 event": 136,
+  "weekly": 55
+ },
+ "exit_missing": 0,
+ "markets_checked_for_prints": 170,
+ "run_seconds": 64.3
+}

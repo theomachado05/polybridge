@@ -1,0 +1,14 @@
+{
+ "entries": 1092,
+ "no_print_file": 0,
+ "left_out": {
+  "no print served at all (or the request failed)": 1,
+  "never traded during its first weekend (every print was served)": 285,
+  "first-weekend prints beyond the 20,000 the API keeps": 6
+ },
+ "markets_checked": 800,
+ "checked_with_no_print_in_the_window": 60,
+ "with_a_taker_sell": 657,
+ "with_a_taker_buy": 606,
+ "mid_at_entry_45_55_among_checked": 196
+}

@@ -1,0 +1,1 @@
+"""Frozen offline insurance diagnostic."""

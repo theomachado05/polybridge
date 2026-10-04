@@ -1,0 +1,7 @@
+rule,window,markets,counted,events_counted,share_yes_counted,with_a_print,with_a_taker_buy,events_with_a_taker_buy,with_a_taker_sell,events_with_a_taker_sell,prints,"left out: beyond the 20,000 prints the API keeps",left out: resolved before or during the window,left out: no print served at all (or the request failed),left out: window not over at the pull,left out: resolved before the window
+A,W1,1092,1083,130,26.038781163434905,738,604,97,655,101,39026,6,2,1,,
+A,D1,1092,960,128,17.083333333333332,838,751,120,793,120,48477,5,127,,,
+A,W2,1092,913,114,17.196056955093102,783,655,105,726,107,41864,3,173,,3,
+B,W1,1092,1085,130,26.175115207373274,740,606,97,657,101,39374,6,,1,,
+B,D1,1092,1073,130,25.16309412861137,949,859,121,888,122,55073,5,,,,14
+B,W2,1092,936,121,17.094017094017094,792,663,110,732,110,41948,3,,,3,150

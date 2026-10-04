@@ -1,0 +1,435 @@
+{
+ "critic": "C",
+ "answers": [
+  {
+   "id": "polymarket:4662693",
+   "family": "event",
+   "links": [
+    {"ticker": "AMZN", "direction": "down_on_yes", "confidence": 0.55, "mechanism": "Amazon is Anthropic's largest outside investor and primary cloud partner, so a bankruptcy would write down the stake and remove a major AWS compute customer."},
+    {"ticker": "NVDA", "direction": "down_on_yes", "confidence": 0.4, "mechanism": "A frontier lab failing would signal that AI compute demand is not being financed, hitting the main seller of that compute."},
+    {"ticker": "GOOGL", "direction": "down_on_yes", "confidence": 0.35, "mechanism": "Alphabet holds a large equity stake in Anthropic and sells it cloud capacity, both of which would be impaired, partly offset by losing a competitor."}
+   ]
+  },
+  {
+   "id": "polymarket:562828",
+   "family": "event",
+   "links": [
+    {"ticker": "ICLN", "direction": "up_on_yes", "confidence": 0.3, "mechanism": "Clean-energy equities trade as a partisan policy proxy and a Democratic Congress blocks further rollback of energy tax credits, though a presidential veto limits the real effect."}
+   ]
+  },
+  {
+   "id": "polymarket:637002",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:4752979",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:4037599",
+   "family": "event",
+   "links": [
+    {"ticker": "EWZ", "direction": "down_on_yes", "confidence": 0.5, "mechanism": "Brazilian equities and the real price a fiscal-risk premium on a Lula win, so a stronger first-round showing for Lula lowers the dollar value of the Brazil ETF."}
+   ]
+  },
+  {
+   "id": "polymarket:4985052",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "IBIT", "direction": "up_on_yes", "confidence": 0.95, "mechanism": "The fund holds spot bitcoin, so it rises one-for-one with the price the question is written on."},
+    {"ticker": "MSTR", "direction": "up_on_yes", "confidence": 0.85, "mechanism": "The company is a levered bitcoin treasury whose equity value tracks the bitcoin price."},
+    {"ticker": "MARA", "direction": "up_on_yes", "confidence": 0.7, "mechanism": "A bitcoin miner with a large bitcoin balance earns and holds more value when bitcoin is higher."}
+   ]
+  },
+  {
+   "id": "polymarket:5126782",
+   "family": "event",
+   "links": [
+    {"ticker": "AEP", "direction": "down_on_yes", "confidence": 0.3, "mechanism": "AEP's Oklahoma utility (PSO) counts on data-center load growth for its capital plan, which a state moratorium would cut, though Oklahoma is a small share of AEP."}
+   ]
+  },
+  {
+   "id": "polymarket:2589814",
+   "family": "event",
+   "links": [
+    {"ticker": "SPY", "direction": "down_on_yes", "confidence": 0.7, "mechanism": "A 50 basis point hike is a market-wide hawkish shock that raises the discount rate on all equities."},
+    {"ticker": "IWM", "direction": "down_on_yes", "confidence": 0.65, "mechanism": "Small caps carry more floating-rate debt and are the most rate-sensitive part of the US equity market."},
+    {"ticker": "TLT", "direction": "down_on_yes", "confidence": 0.5, "mechanism": "A higher expected policy-rate path lifts Treasury yields and lowers long-bond prices, though curve flattening can soften the long-end move."}
+   ]
+  },
+  {
+   "id": "polymarket:5164765",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:5062265",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "IBIT", "direction": "up_on_yes", "confidence": 0.95, "mechanism": "The fund holds spot bitcoin, so it rises as bitcoin moves toward the level in the question."},
+    {"ticker": "MSTR", "direction": "up_on_yes", "confidence": 0.85, "mechanism": "The company is a levered bitcoin treasury whose equity value tracks the bitcoin price."},
+    {"ticker": "MARA", "direction": "up_on_yes", "confidence": 0.7, "mechanism": "A bitcoin miner with a large bitcoin balance gains when bitcoin is higher."}
+   ]
+  },
+  {
+   "id": "polymarket:5062275",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "IBIT", "direction": "down_on_yes", "confidence": 0.95, "mechanism": "The fund holds spot bitcoin, so it falls as bitcoin drops toward the level in the question."},
+    {"ticker": "MSTR", "direction": "down_on_yes", "confidence": 0.85, "mechanism": "The company is a levered bitcoin treasury whose equity value falls with the bitcoin price."},
+    {"ticker": "MARA", "direction": "down_on_yes", "confidence": 0.7, "mechanism": "A bitcoin miner with a large bitcoin balance loses value when bitcoin is lower."}
+   ]
+  },
+  {
+   "id": "polymarket:682716",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:5062278",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "IBIT", "direction": "down_on_yes", "confidence": 0.95, "mechanism": "The fund holds spot bitcoin, so it falls as bitcoin drops toward the level in the question."},
+    {"ticker": "MSTR", "direction": "down_on_yes", "confidence": 0.85, "mechanism": "The company is a levered bitcoin treasury whose equity value falls with the bitcoin price."},
+    {"ticker": "MARA", "direction": "down_on_yes", "confidence": 0.7, "mechanism": "A bitcoin miner with a large bitcoin balance loses value when bitcoin is lower."}
+   ]
+  },
+  {
+   "id": "polymarket:4662696",
+   "family": "event",
+   "links": [
+    {"ticker": "SMR", "direction": "down_on_yes", "confidence": 0.95, "mechanism": "SMR is NuScale's own stock, and a bankruptcy filing would wipe out most of the equity."},
+    {"ticker": "OKLO", "direction": "down_on_yes", "confidence": 0.35, "mechanism": "A failed small-reactor developer would hurt financing sentiment for the closest listed peer, partly offset by one fewer competitor."}
+   ]
+  },
+  {
+   "id": "polymarket:4641065",
+   "family": "event",
+   "links": [
+    {"ticker": "USO", "direction": "down_on_yes", "confidence": 0.65, "mechanism": "A ceasefire that holds removes Gulf supply-disruption risk premium from crude oil."},
+    {"ticker": "XOP", "direction": "down_on_yes", "confidence": 0.5, "mechanism": "Oil producers are the equities most sensitive to the crude price, which falls as war risk fades."},
+    {"ticker": "JETS", "direction": "up_on_yes", "confidence": 0.4, "mechanism": "Airlines benefit from cheaper jet fuel and reopened routes when Middle East conflict risk recedes."}
+   ]
+  },
+  {
+   "id": "polymarket:4727411",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:666861",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:5062327",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "ETHA", "direction": "down_on_yes", "confidence": 0.95, "mechanism": "The fund holds spot ether, so it falls as ether drops toward the level in the question."},
+    {"ticker": "BMNR", "direction": "down_on_yes", "confidence": 0.8, "mechanism": "The company is an ether treasury whose equity value falls with the ether price."},
+    {"ticker": "COIN", "direction": "down_on_yes", "confidence": 0.45, "mechanism": "Exchange revenue and crypto holdings shrink when major crypto prices fall."}
+   ]
+  },
+  {
+   "id": "polymarket:4662584",
+   "family": "event",
+   "links": [
+    {"ticker": "ORCL", "direction": "down_on_yes", "confidence": 0.8, "mechanism": "OpenAI is the counterparty for most of Oracle's contracted cloud backlog, so its bankruptcy would void the revenue that Oracle's debt-funded build-out depends on."},
+    {"ticker": "CRWV", "direction": "down_on_yes", "confidence": 0.7, "mechanism": "CoreWeave holds multi-billion compute contracts with OpenAI and is heavily levered against that backlog."},
+    {"ticker": "MSFT", "direction": "down_on_yes", "confidence": 0.6, "mechanism": "Microsoft owns roughly a quarter of OpenAI and books large Azure commitments from it, both of which would be impaired."}
+   ]
+  },
+  {
+   "id": "polymarket:5082319",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:2126461",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "USO", "direction": "up_on_yes", "confidence": 0.9, "mechanism": "The fund holds front-month WTI futures, so it rises with the crude price the question is written on."},
+    {"ticker": "XOP", "direction": "up_on_yes", "confidence": 0.7, "mechanism": "Oil and gas producers' earnings rise directly with the crude price."},
+    {"ticker": "XLE", "direction": "up_on_yes", "confidence": 0.65, "mechanism": "The energy sector's earnings rise with the crude price."}
+   ]
+  },
+  {
+   "id": "polymarket:5170746",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "IBIT", "direction": "down_on_yes", "confidence": 0.95, "mechanism": "The fund holds spot bitcoin, so it falls as bitcoin drops toward the level in the question."},
+    {"ticker": "MSTR", "direction": "down_on_yes", "confidence": 0.85, "mechanism": "The company is a levered bitcoin treasury whose equity value falls with the bitcoin price."},
+    {"ticker": "MARA", "direction": "down_on_yes", "confidence": 0.7, "mechanism": "A bitcoin miner with a large bitcoin balance loses value when bitcoin is lower."}
+   ]
+  },
+  {
+   "id": "polymarket:716823",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:3491459",
+   "family": "event",
+   "links": [
+    {"ticker": "USO", "direction": "down_on_yes", "confidence": 0.65, "mechanism": "A final deal brings sanctions relief and more Iranian barrels while removing Gulf war-risk premium from crude."},
+    {"ticker": "XOP", "direction": "down_on_yes", "confidence": 0.5, "mechanism": "Oil producers are the equities most sensitive to the crude price, which falls on added Iranian supply."},
+    {"ticker": "JETS", "direction": "up_on_yes", "confidence": 0.35, "mechanism": "Airlines benefit from cheaper jet fuel and lower Middle East route risk."}
+   ]
+  },
+  {
+   "id": "polymarket:3215008",
+   "family": "event",
+   "links": [
+    {"ticker": "SPY", "direction": "down_on_yes", "confidence": 0.55, "mechanism": "A rate hike is a market-wide tightening that raises the discount rate on equities."},
+    {"ticker": "IWM", "direction": "down_on_yes", "confidence": 0.55, "mechanism": "Small caps carry more floating-rate debt and are the most rate-sensitive part of the US equity market."},
+    {"ticker": "TLT", "direction": "down_on_yes", "confidence": 0.5, "mechanism": "A higher expected policy-rate path lifts Treasury yields and lowers long-bond prices."}
+   ]
+  },
+  {
+   "id": "polymarket:5073563",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:4753009",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:5170771",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "ETHA", "direction": "up_on_yes", "confidence": 0.95, "mechanism": "The fund holds spot ether, so it rises as ether moves toward the level in the question."},
+    {"ticker": "BMNR", "direction": "up_on_yes", "confidence": 0.8, "mechanism": "The company is an ether treasury whose equity value rises with the ether price."},
+    {"ticker": "COIN", "direction": "up_on_yes", "confidence": 0.45, "mechanism": "Exchange revenue and crypto holdings grow when major crypto prices rise."}
+   ]
+  },
+  {
+   "id": "polymarket:4730293",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:5130977",
+   "family": "event",
+   "links": [
+    {"ticker": "USO", "direction": "down_on_yes", "confidence": 0.6, "mechanism": "A ceasefire that holds removes Gulf supply-disruption risk premium from crude oil."},
+    {"ticker": "XOP", "direction": "down_on_yes", "confidence": 0.45, "mechanism": "Oil producers are the equities most sensitive to the crude price, which falls as war risk fades."},
+    {"ticker": "JETS", "direction": "up_on_yes", "confidence": 0.35, "mechanism": "Airlines benefit from cheaper jet fuel and reopened routes when Middle East conflict risk recedes."}
+   ]
+  },
+  {
+   "id": "polymarket:5170773",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "ETHA", "direction": "up_on_yes", "confidence": 0.95, "mechanism": "The fund holds spot ether, so it rises as ether moves toward the level in the question."},
+    {"ticker": "BMNR", "direction": "up_on_yes", "confidence": 0.8, "mechanism": "The company is an ether treasury whose equity value rises with the ether price."},
+    {"ticker": "COIN", "direction": "up_on_yes", "confidence": 0.45, "mechanism": "Exchange revenue and crypto holdings grow when major crypto prices rise."}
+   ]
+  },
+  {
+   "id": "polymarket:630746",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:4757280",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:4970462",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:701502",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "IBIT", "direction": "down_on_yes", "confidence": 0.95, "mechanism": "The fund holds spot bitcoin, so it falls as bitcoin drops toward the level in the question."},
+    {"ticker": "MSTR", "direction": "down_on_yes", "confidence": 0.85, "mechanism": "The company is a levered bitcoin treasury whose equity value falls with the bitcoin price."},
+    {"ticker": "MARA", "direction": "down_on_yes", "confidence": 0.7, "mechanism": "A bitcoin miner with a large bitcoin balance loses value when bitcoin is lower."}
+   ]
+  },
+  {
+   "id": "polymarket:701496",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "IBIT", "direction": "up_on_yes", "confidence": 0.95, "mechanism": "The fund holds spot bitcoin, so it rises as bitcoin moves toward the level in the question."},
+    {"ticker": "MSTR", "direction": "up_on_yes", "confidence": 0.85, "mechanism": "The company is a levered bitcoin treasury whose equity value tracks the bitcoin price."},
+    {"ticker": "MARA", "direction": "up_on_yes", "confidence": 0.7, "mechanism": "A bitcoin miner with a large bitcoin balance gains when bitcoin is higher."}
+   ]
+  },
+  {
+   "id": "polymarket:559651",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:4984993",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "ETHA", "direction": "up_on_yes", "confidence": 0.95, "mechanism": "The fund holds spot ether, so it rises one-for-one with the price the question is written on."},
+    {"ticker": "BMNR", "direction": "up_on_yes", "confidence": 0.8, "mechanism": "The company is an ether treasury whose equity value rises with the ether price."},
+    {"ticker": "COIN", "direction": "up_on_yes", "confidence": 0.45, "mechanism": "Exchange revenue and crypto holdings grow when major crypto prices rise."}
+   ]
+  },
+  {
+   "id": "polymarket:4936105",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "USO", "direction": "down_on_yes", "confidence": 0.9, "mechanism": "The fund holds front-month WTI futures, so it falls as WTI drops toward the $80 low in the question."},
+    {"ticker": "XOP", "direction": "down_on_yes", "confidence": 0.7, "mechanism": "Oil and gas producers' earnings fall directly with the crude price."},
+    {"ticker": "XLE", "direction": "down_on_yes", "confidence": 0.6, "mechanism": "The energy sector's earnings fall with the crude price."}
+   ]
+  },
+  {
+   "id": "polymarket:3501950",
+   "family": "event",
+   "links": [
+    {"ticker": "USO", "direction": "down_on_yes", "confidence": 0.7, "mechanism": "Normal Hormuz transit restores Gulf crude exports and removes the supply-disruption premium from oil."},
+    {"ticker": "XOP", "direction": "down_on_yes", "confidence": 0.55, "mechanism": "Oil producers are the equities most sensitive to the crude price, which falls as Gulf supply returns."},
+    {"ticker": "JETS", "direction": "up_on_yes", "confidence": 0.4, "mechanism": "Airlines benefit from cheaper jet fuel once Gulf crude and product flows normalise."}
+   ]
+  },
+  {
+   "id": "polymarket:630747",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:5170772",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "ETHA", "direction": "up_on_yes", "confidence": 0.95, "mechanism": "The fund holds spot ether, so it rises as ether moves toward the level in the question."},
+    {"ticker": "BMNR", "direction": "up_on_yes", "confidence": 0.8, "mechanism": "The company is an ether treasury whose equity value rises with the ether price."},
+    {"ticker": "COIN", "direction": "up_on_yes", "confidence": 0.45, "mechanism": "Exchange revenue and crypto holdings grow when major crypto prices rise."}
+   ]
+  },
+  {
+   "id": "polymarket:5036103",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "IBIT", "direction": "up_on_yes", "confidence": 0.95, "mechanism": "The fund holds spot bitcoin, so it rises one-for-one with the price the question is written on."},
+    {"ticker": "MSTR", "direction": "up_on_yes", "confidence": 0.85, "mechanism": "The company is a levered bitcoin treasury whose equity value tracks the bitcoin price."},
+    {"ticker": "MARA", "direction": "up_on_yes", "confidence": 0.7, "mechanism": "A bitcoin miner with a large bitcoin balance gains when bitcoin is higher."}
+   ]
+  },
+  {
+   "id": "polymarket:4713962",
+   "family": "event",
+   "links": [
+    {"ticker": "VGK", "direction": "down_on_yes", "confidence": 0.65, "mechanism": "A Russian attack on an EU member is a direct war-risk shock to European equities and the euro."},
+    {"ticker": "ITA", "direction": "up_on_yes", "confidence": 0.5, "mechanism": "Defence contractors reprice higher on expected rearmament spending when Russia-Europe conflict widens."},
+    {"ticker": "GLD", "direction": "up_on_yes", "confidence": 0.4, "mechanism": "Gold draws safe-haven demand when a major-power conflict escalates."}
+   ]
+  },
+  {
+   "id": "polymarket:5170732",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "IBIT", "direction": "up_on_yes", "confidence": 0.95, "mechanism": "The fund holds spot bitcoin, so it rises as bitcoin moves toward the level in the question."},
+    {"ticker": "MSTR", "direction": "up_on_yes", "confidence": 0.85, "mechanism": "The company is a levered bitcoin treasury whose equity value tracks the bitcoin price."},
+    {"ticker": "MARA", "direction": "up_on_yes", "confidence": 0.7, "mechanism": "A bitcoin miner with a large bitcoin balance gains when bitcoin is higher."}
+   ]
+  },
+  {
+   "id": "polymarket:629708",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:2774057",
+   "family": "event",
+   "links": [
+    {"ticker": "USO", "direction": "down_on_yes", "confidence": 0.7, "mechanism": "Normal Hormuz transit restores Gulf crude exports and removes the supply-disruption premium from oil."},
+    {"ticker": "XOP", "direction": "down_on_yes", "confidence": 0.55, "mechanism": "Oil producers are the equities most sensitive to the crude price, which falls as Gulf supply returns."},
+    {"ticker": "JETS", "direction": "up_on_yes", "confidence": 0.4, "mechanism": "Airlines benefit from cheaper jet fuel once Gulf crude and product flows normalise."}
+   ]
+  },
+  {
+   "id": "polymarket:1090496",
+   "family": "event",
+   "links": [
+    {"ticker": "VGK", "direction": "down_on_yes", "confidence": 0.6, "mechanism": "A direct NATO-Russia clash is a war-risk shock to European equities and the euro."},
+    {"ticker": "ITA", "direction": "up_on_yes", "confidence": 0.5, "mechanism": "Defence contractors reprice higher on expected rearmament spending when NATO-Russia conflict escalates."},
+    {"ticker": "GLD", "direction": "up_on_yes", "confidence": 0.4, "mechanism": "Gold draws safe-haven demand when a major-power conflict escalates."}
+   ]
+  },
+  {
+   "id": "polymarket:4885967",
+   "family": "event",
+   "links": [
+    {"ticker": "USO", "direction": "down_on_yes", "confidence": 0.6, "mechanism": "The East-West line is Saudi Arabia's route to the Red Sea that bypasses Hormuz, so a restart puts more crude on the market and lowers the price."},
+    {"ticker": "XOP", "direction": "down_on_yes", "confidence": 0.45, "mechanism": "Oil producers are the equities most sensitive to the crude price, which falls as Saudi export capacity returns."}
+   ]
+  },
+  {
+   "id": "polymarket:631057",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:3554662",
+   "family": "event",
+   "links": [
+    {"ticker": "GOOGL", "direction": "down_on_yes", "confidence": 0.3, "mechanism": "Google's Gemini is the main rival for the top model ranking, and Alphabet's stock has traded on perceived AI leadership, so OpenAI holding the lead is a mild negative."},
+    {"ticker": "MSFT", "direction": "up_on_yes", "confidence": 0.25, "mechanism": "Microsoft owns roughly a quarter of OpenAI and distributes its models through Azure, so OpenAI leadership is a mild positive."}
+   ]
+  },
+  {
+   "id": "polymarket:5126794",
+   "family": "event",
+   "links": [
+    {"ticker": "ETR", "direction": "down_on_yes", "confidence": 0.5, "mechanism": "Entergy Louisiana's growth plan rests on new data-center load, chiefly Meta's Richland Parish campus, which a moratorium would cap."},
+    {"ticker": "META", "direction": "down_on_yes", "confidence": 0.3, "mechanism": "Meta's largest planned data-center campus is in Louisiana and its expansion would be at risk, though existing permits may be grandfathered."}
+   ]
+  },
+  {
+   "id": "polymarket:5062329",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "ETHA", "direction": "down_on_yes", "confidence": 0.95, "mechanism": "The fund holds spot ether, so it falls as ether drops toward the level in the question."},
+    {"ticker": "BMNR", "direction": "down_on_yes", "confidence": 0.8, "mechanism": "The company is an ether treasury whose equity value falls with the ether price."},
+    {"ticker": "COIN", "direction": "down_on_yes", "confidence": 0.45, "mechanism": "Exchange revenue and crypto holdings shrink when major crypto prices fall."}
+   ]
+  },
+  {
+   "id": "polymarket:3554658",
+   "family": "event",
+   "links": [
+    {"ticker": "META", "direction": "up_on_yes", "confidence": 0.45, "mechanism": "Meta taking the top model ranking would validate its very large AI capital spending, which investors currently discount."}
+   ]
+  },
+  {
+   "id": "polymarket:629707",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:4985062",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "IBIT", "direction": "up_on_yes", "confidence": 0.95, "mechanism": "The fund holds spot bitcoin, so it rises one-for-one with the price the question is written on."},
+    {"ticker": "MSTR", "direction": "up_on_yes", "confidence": 0.85, "mechanism": "The company is a levered bitcoin treasury whose equity value tracks the bitcoin price."},
+    {"ticker": "MARA", "direction": "up_on_yes", "confidence": 0.7, "mechanism": "A bitcoin miner with a large bitcoin balance gains when bitcoin is higher."}
+   ]
+  },
+  {
+   "id": "polymarket:1193093",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:4936101",
+   "family": "spot_proxy",
+   "links": [
+    {"ticker": "USO", "direction": "up_on_yes", "confidence": 0.9, "mechanism": "The fund holds front-month WTI futures, so it rises as WTI climbs toward the $120 high in the question."},
+    {"ticker": "XOP", "direction": "up_on_yes", "confidence": 0.7, "mechanism": "Oil and gas producers' earnings rise directly with the crude price."},
+    {"ticker": "XLE", "direction": "up_on_yes", "confidence": 0.6, "mechanism": "The energy sector's earnings rise with the crude price."}
+   ]
+  }
+ ]
+}

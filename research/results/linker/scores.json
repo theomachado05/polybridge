@@ -1,0 +1,164 @@
+{
+ "by_linker": [
+  {
+   "source": "S4 (open markets, Oct 2026)",
+   "linker": "v0 only: text map, critic did not name it",
+   "links": 187,
+   "testable": 69,
+   "confirmed": 26,
+   "contradicted": 5,
+   "unproven": 38,
+   "confirmed_share": 0.37681159420289856,
+   "right_sign_share": 0.7536231884057971,
+   "median_t": 1.192465964738373
+  },
+  {
+   "source": "S4 (open markets, Oct 2026)",
+   "linker": "v1: two models agree",
+   "links": 196,
+   "testable": 46,
+   "confirmed": 23,
+   "contradicted": 4,
+   "unproven": 19,
+   "confirmed_share": 0.5,
+   "right_sign_share": 0.782608695652174,
+   "median_t": 1.977354727849004
+  },
+  {
+   "source": "S5 (240 largest markets of the year)",
+   "linker": "v1: two models agree",
+   "links": 220,
+   "testable": 164,
+   "confirmed": 61,
+   "contradicted": 6,
+   "unproven": 97,
+   "confirmed_share": 0.3719512195121951,
+   "right_sign_share": 0.7621951219512195,
+   "median_t": 1.005888869189027
+  },
+  {
+   "source": "S4 (open markets, Oct 2026)",
+   "linker": "v0: the text map, every link",
+   "links": 383,
+   "testable": 115,
+   "confirmed": 49,
+   "contradicted": 9,
+   "unproven": 57,
+   "confirmed_share": 0.4260869565217391,
+   "right_sign_share": 0.7652173913043478,
+   "median_t": 1.3094028567057074
+  }
+ ],
+ "by_theme_v1": [
+  {
+   "theme": "Bitcoin holders",
+   "links": 111,
+   "testable": 23,
+   "confirmed": 13,
+   "contradicted": 0,
+   "unproven": 10,
+   "confirmed_share": 0.5652173913043478,
+   "right_sign_share": 1.0,
+   "median_t": 3.3731910923770188
+  },
+  {
+   "theme": "China and Taiwan",
+   "links": 18,
+   "testable": 17,
+   "confirmed": 2,
+   "contradicted": 0,
+   "unproven": 15,
+   "confirmed_share": 0.11764705882352941,
+   "right_sign_share": 0.7647058823529411,
+   "median_t": 0.27908460707769694
+  },
+  {
+   "theme": "Fed chair",
+   "links": 11,
+   "testable": 11,
+   "confirmed": 2,
+   "contradicted": 0,
+   "unproven": 9,
+   "confirmed_share": 0.18181818181818182,
+   "right_sign_share": 0.7272727272727273,
+   "median_t": 0.763230035618517
+  },
+  {
+   "theme": "Fed rate decision",
+   "links": 72,
+   "testable": 67,
+   "confirmed": 9,
+   "contradicted": 5,
+   "unproven": 53,
+   "confirmed_share": 0.13432835820895522,
+   "right_sign_share": 0.5970149253731343,
+   "median_t": 0.12505585003119643
+  },
+  {
+   "theme": "Iran, Hormuz and oil",
+   "links": 93,
+   "testable": 51,
+   "confirmed": 45,
+   "contradicted": 0,
+   "unproven": 6,
+   "confirmed_share": 0.8823529411764706,
+   "right_sign_share": 1.0,
+   "median_t": 3.799479312593419
+  },
+  {
+   "theme": "Other",
+   "links": 72,
+   "testable": 17,
+   "confirmed": 7,
+   "contradicted": 2,
+   "unproven": 8,
+   "confirmed_share": 0.4117647058823529,
+   "right_sign_share": 0.7058823529411765,
+   "median_t": 1.368013234730801
+  },
+  {
+   "theme": "Russia-Ukraine ceasefire",
+   "links": 24,
+   "testable": 16,
+   "confirmed": 4,
+   "contradicted": 1,
+   "unproven": 11,
+   "confirmed_share": 0.25,
+   "right_sign_share": 0.625,
+   "median_t": 0.6364781128367984
+  },
+  {
+   "theme": "Single company",
+   "links": 3,
+   "testable": 3,
+   "confirmed": 1,
+   "contradicted": 1,
+   "unproven": 1,
+   "confirmed_share": 0.3333333333333333,
+   "right_sign_share": 0.3333333333333333,
+   "median_t": -0.05579352683683122
+  },
+  {
+   "theme": "US politics and shutdown",
+   "links": 10,
+   "testable": 4,
+   "confirmed": 0,
+   "contradicted": 1,
+   "unproven": 3,
+   "confirmed_share": 0.0,
+   "right_sign_share": 0.5,
+   "median_t": -0.2384367577924023
+  },
+  {
+   "theme": "Venezuela",
+   "links": 2,
+   "testable": 1,
+   "confirmed": 1,
+   "contradicted": 0,
+   "unproven": 0,
+   "confirmed_share": 1.0,
+   "right_sign_share": 1.0,
+   "median_t": 2.447430915829881
+  }
+ ]
+}

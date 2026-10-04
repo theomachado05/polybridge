@@ -1,0 +1,69 @@
+{
+ "rate": 0.0417,
+ "dates": [
+  "2026-08-17",
+  "2026-08-18",
+  "2026-08-19",
+  "2026-08-20",
+  "2026-08-21",
+  "2026-08-24",
+  "2026-08-25",
+  "2026-08-26",
+  "2026-08-27",
+  "2026-08-28",
+  "2026-08-31",
+  "2026-09-01",
+  "2026-09-02",
+  "2026-09-03",
+  "2026-09-04",
+  "2026-09-08",
+  "2026-09-09",
+  "2026-09-10",
+  "2026-09-11",
+  "2026-09-14",
+  "2026-09-15",
+  "2026-09-16",
+  "2026-09-17",
+  "2026-09-21",
+  "2026-09-22",
+  "2026-09-23",
+  "2026-09-24",
+  "2026-09-25",
+  "2026-09-28",
+  "2026-09-29",
+  "2026-09-30",
+  "2026-10-01",
+  "2026-10-02"
+ ],
+ "oos_dates": [
+  "2026-09-24",
+  "2026-09-25",
+  "2026-09-28",
+  "2026-09-29",
+  "2026-09-30",
+  "2026-10-01",
+  "2026-10-02"
+ ],
+ "ex_dividend_dates": [
+  "2026-09-18"
+ ],
+ "drops": {
+  "ex_dividend": 4,
+  "no_ratio": 0,
+  "no_kalshi_event": 0,
+  "no_strike_in_tolerance": 13,
+  "no_kalshi_quote": 19,
+  "kalshi_unsettled": 0
+ },
+ "kalshi_fee_type": "quadratic",
+ "kalshi_fee_multiplier": 1.0,
+ "sets": 60,
+ "log": [
+  "Polymarket SPY rows at S2: 96 on 34 dates (2026-08-17 to 2026-10-02)",
+  "SPY ex-dividend dates in range: ['2026-09-18']",
+  "S&P 500 closes from Kalshi settlement values: 34 sessions",
+  "Kalshi KXINXU: fee_type quadratic, fee_multiplier 1.0",
+  "matched sets: 60 on 33 dates; dropped {'ex_dividend': 4, 'no_ratio': 0, 'no_kalshi_event': 0, 'no_strike_in_tolerance': 13, 'no_kalshi_quote': 19, 'kalshi_unsettled': 0}"
+ ],
+ "run_utc": "2026-10-03T23:42:38Z"
+}

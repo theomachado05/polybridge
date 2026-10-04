@@ -1,0 +1,39 @@
+{
+ "link_sessions": 14659,
+ "bins": 1127527,
+ "bins_with_odds_change": 162330,
+ "links": 220,
+ "dates": 253,
+ "odds_jumps": 3978,
+ "equity_jumps": 13476,
+ "trade": [
+  {
+   "cost_mult": 1.0,
+   "trades": 1469,
+   "tickers": 22,
+   "dates": 166,
+   "mean_net_bp": -4.311585401145307,
+   "ci_lo": -6.860969562371393,
+   "ci_hi": -1.8170161604467492,
+   "mean_gross_bp": 1.815499300896745,
+   "gross_ci_lo": -0.731682274350556,
+   "gross_ci_hi": 4.380201317223901,
+   "hit_rate": 0.31722260040844114,
+   "mean_cost_bp": 6.127084702042052
+  },
+  {
+   "cost_mult": 2.0,
+   "trades": 1469,
+   "tickers": 22,
+   "dates": 166,
+   "mean_net_bp": -10.43867010318736,
+   "ci_lo": -13.009387529002526,
+   "ci_hi": -7.914549773728738,
+   "mean_gross_bp": 1.815499300896745,
+   "gross_ci_lo": -0.731682274350556,
+   "gross_ci_hi": 4.380201317223901,
+   "hit_rate": 0.2532334921715453,
+   "mean_cost_bp": 12.254169404084104
+  }
+ ]
+}

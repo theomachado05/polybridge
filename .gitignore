@@ -50,3 +50,16 @@ backend/data_logs/raw/
 backend/data_logs/*.cache
 backend/data_logs/*.jsonl
 .claude/worktrees/
+
+# forward recorder: run state and the raw books while they are still being written
+research/forward/raw/
+research/forward/recorder.log
+research/forward/recorder.pid
+research/forward/heartbeat_*.json
+research/s1_twin_spread/.cache/
+research/s3_three_way/.cache/
+research/s4_linked_assets/.cache/
+research/s5_big_moves/.cache/
+research/s6_monday_fade/.cache/
+research/s8_open_referee/.cache/
+research/s9_weekend_price_markets/.cache/
