@@ -36,3 +36,6 @@ GAMMA_PAGE = 100
 
 # ---- live (step 4)
 LIVE_BOOKS_PER_CALL = 100
+
+# ---- amendment 1 (before any print was pulled): the data API honours `end`, so prints are paged back by time
+MAX_PRINT_REQUESTS = 30                 # at most 30 pages of 10,000 prints a market (300,000); a market that hits it is "truncated"

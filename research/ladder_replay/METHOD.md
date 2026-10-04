@@ -86,3 +86,23 @@ listed. No pass/fail.
 - The fresh universe is the only test. Seen-data results are mechanics, not evidence.
 
 ## Amendments
+
+**0. Clock.** The pre-registration commit (`08a0236`) was made at 01:50 New York time, not 02:05 as written above.
+
+**1. Sun 01:52: prints paged back by time.** An API probe (format only, three prints of one S11 market) showed that
+`data-api/trades` honours an `end` timestamp. Instead of the latest 20,000 prints, each market's prints are paged back
+with `end` = the oldest print served, 10,000 at a time, until a page is short or reaches before 2025-10-01, at most 30
+pages (300,000 prints); a market that hits the cap is reported as truncated. Prints are de-duplicated on (transaction,
+token, side, size, price, time). No print of a study pair had been read for analysis.
+
+**2. Sun 01:53: windows that start at market creation.** The same probe returned the gamma description of a WTI strike
+rung: "at any point after market creation". For such texts, identical wording does not make two rungs nested, because a
+rung created later watches a shorter window. Rule added before any classification was run: when the masked description
+mentions market creation, the pair is nested only if the cheap rung was created (gamma `startDate`) no later than the
+rich rung (60 s tolerance). The rule also returns "not nested" when the rung's own key does not appear in its
+description.
+
+**3. Sun 01:56: catalogue mechanics.** Gamma's `/events` refuses deep offsets, so the fresh catalogue pages
+`/events/keyset` (closed and open events, `end_date_min` 2025-10-01) with `volume_min` = $100,000, a necessary condition
+of the rule (two rungs of $50,000 each). Built at 01:56 (`fresh_universe.json`): 68,571 events read, 68,052 with a closed
+market, 200 already in S11; 373 date ladders, 861 pairs, 1,234 markets. Nothing but catalogue text was read.
