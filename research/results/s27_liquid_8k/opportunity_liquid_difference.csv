@@ -1,0 +1,10 @@
+strategy,horizon,n_a,n_b,mean_a,mean_b,difference,ci_lo,ci_hi,p_value,family,scope
+cash_secured_put,1,1,26,,,,,,,opportunity,liquid
+cash_secured_put,2,1,25,,,,,,,opportunity,liquid
+cash_secured_put,3,1,26,,,,,,,opportunity,liquid
+cash_secured_put,5,1,26,,,,,,,opportunity,liquid
+cash_secured_put,10,1,26,,,,,,,opportunity,liquid
+cash_secured_put,21,1,26,,,,,,,opportunity,liquid
+cash_secured_put,42,1,26,,,,,,,opportunity,liquid
+cash_secured_put,63,1,25,,,,,,,opportunity,liquid
+cash_secured_put,exp,1,26,,,,,,,opportunity,liquid
