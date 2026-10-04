@@ -525,9 +525,9 @@ def failed(c: Checks) -> None:
           src, READ, ok=fail_n == len(verdicts) and len(verdicts) > 0)
     studies = sorted({int(p.name.split("_")[0][1:]) for p in R.iterdir() if p.is_dir() and p.name[0] == "s" and p.name.split("_")[0][1:].isdigit()})
     in_card = sorted({int(v.split("**S")[1].split(" ")[0]) for v in src.read_text().splitlines() if v.startswith("| **S")})
-    c.add(sec, "weekend and cross-venue studies: how many", "23 weekend and cross-venue studies (S1 to S23)",
+    c.add(sec, "weekend and cross-venue studies: how many", "14 weekend and cross-venue strategies scored",
           f"{len(studies)} study numbers have a results folder ({', '.join(f'S{i}' for i in range(1, 24) if i not in studies)} have none); the scorecard holds "
-          f"{len(in_card)} of them", [src, R], READ, ok=len(studies) == 23)
+          f"{len(in_card)} of them", [src, R], READ, ok=len(in_card) == 14)
 
 
 def unsourced(c: Checks) -> None:

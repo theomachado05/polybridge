@@ -74,7 +74,7 @@ We pre-registered and ran about 40 tests. The table lists the ones a reader migh
 | Trade Polymarket toward options at weekend reopenings, at printed prices | NULL | −0.40 pt [−4.68, +3.74], 402 trades |
 | Same, all weekdays, fresh 2026 window | insufficient trades | 40 of 100 required |
 | Closed-market overlay on a long SPY book (equity curve) | Fail | in sample −$7,318, Sharpe 1.148 vs 1.151; no out-of-sample trade |
-| 23 weekend and cross-venue studies (S1 to S23) | none passes its own rule | best leads above; full scorecard in `research/results/WEEKEND_SCORECARD.md` |
+| 14 weekend and cross-venue strategies scored | none passes its own rule | best leads above; full scorecard in `research/results/WEEKEND_SCORECARD.md` |
 
 ## 7. Limits and next steps
 
