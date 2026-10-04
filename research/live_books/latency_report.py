@@ -157,7 +157,9 @@ def main(argv=None):
           "kernel receive timestamps for TCP), tv is when the underlying `recv` returned them, tr is after TLS decryption and "
           "t0 is after the websocket frame is decoded, all placed on the wall clock like t1 and t2. On the Python paths tr is "
           "taken in the websockets protocol's `data_received` callback, after asyncio's TLS layer has decrypted the bytes; "
-          "the Python paths have no ts or tv. A frame that arrives in the same read as an earlier one shares its ts, tv and tr.",
+          "the Python paths have no ts or tv. A frame that arrives in the same read as an earlier one shares its ts, tv and tr. "
+          "Each path's window starts with a subscription snapshot (two frames of 200 books each); in a short window those "
+          "decisions set the p99, which is why the concurrent A/B below drops the first 30 s.",
           ""]
     if a.ab:
         runs = [read(Path(d) / "decisions") for d in a.ab]
