@@ -155,7 +155,7 @@ def accuracy(c: Checks) -> None:
           "+0.0064 [+0.0036, +0.0093]", f"{t5['mean']:+.4f} {ci(*t5['ci95'], d=4)}", src, REC)
     sym = boot(sc[sc.p_mid.between(0.02, 0.98)])["d_B"]
     c.add(sec, "Brier difference with a symmetric price filter (options also in [0.02, 0.98]; rule not in any committed file)",
-          "+0.0077 [+0.0036, +0.0129]", f"{sym['mean']:+.4f} {ci(*sym['ci95'], d=4)}", src, REC,
+          "+0.0077 [+0.0038, +0.0125]", f"{sym['mean']:+.4f} {ci(*sym['ci95'], d=4)}", src, REC,
           detail=f"{int(sc.p_mid.between(0.02, 0.98).sum()):,} rows; the study's bootstrap, {PARAMS.draws:,} draws, seed {PARAMS.seed}")
     age = float(sc.pm_age_s.mean())
     c.add(sec, "age of the Polymarket price at the snapshot, mean seconds", "about 47 seconds",
@@ -171,7 +171,7 @@ def accuracy(c: Checks) -> None:
     c.add(sec, "encompassing logit", "options +0.85 [+0.63, +1.07], Polymarket +0.30 [+0.15, +0.45]",
           f"options {enc['coef'][1]:+.2f} {ci(*enc['ci95'][1])}, Polymarket {enc['coef'][2]:+.2f} {ci(*enc['ci95'][2])}", src, REC)
     fl = st.ols_cluster(sc.p_mid - 0.5, sc.pm_mid - sc.p_mid, sc.res_date.values)
-    c.add(sec, "slope of Polymarket minus options on options minus 0.5", "slope -0.105 [-0.133, -0.077]",
+    c.add(sec, "slope of Polymarket minus options on options minus 0.5", "slope -0.105 [-0.133, -0.076]",
           f"slope {fl['coef'][1]:+.3f} {ci(*fl['ci95'][1], d=3)}", src, REC, detail=f"unrounded {fl['coef'][1]:+.5f} {ci(*fl['ci95'][1], d=5)}")
 
     ksrc = R / "fresh_accuracy" / "kalshi_rows.csv"
@@ -378,7 +378,7 @@ def s21(c: Checks) -> None:
     sets = s21run.book_sets(d_all)
     taken, left = sets[cfg.PRIMARY][1], sets["U-left"][1]
     t = boot_mean(s21run.by_event(taken, "sell_pnl_points"))
-    c.add(sec, "selling tickets 5 or more points above the reference", "earned +22.3 points [+10.4, +33.1] on 60 markets in 33 events",
+    c.add(sec, "selling tickets 5 or more points above the reference", "earned +22.3 points [+10.3, +33.1] on 60 markets in 33 events",
           f"earned {t[0]:+.1f} points {ci(t[1], t[2], d=1)} on {len(taken)} markets in {taken.event.nunique()} events", src, REC,
           detail=f"unrounded {t[0]:+.4f} {ci(t[1], t[2], d=4)}")
     le = boot_mean(s21run.by_event(left, "sell_pnl_points"))
@@ -437,7 +437,7 @@ def failed(c: Checks) -> None:
     # row 1: the 8-K study. Its trade lists need an API key to rebuild, so the committed tables are read.
     oos, ins = R / "oos", R / "in_sample"
     h2 = pd.read_csv(oos / "opportunity_pass_check.csv").set_index("horizon").loc["21"]
-    c.add(sec, "8-K study, out of sample, H2 at the 21-session horizon", "H2 -0.022 [-0.076, +0.020]",
+    c.add(sec, "8-K study, out of sample, H2 at the 21-session horizon", "H2 -0.021 [-0.076, +0.020]",
           f"H2 {h2.pnl_difference:+.3f} {ci(h2.ci_lo, h2.ci_hi, d=3)}", oos / "opportunity_pass_check.csv", READ,
           detail=f"unrounded {h2.pnl_difference:+.5f} {ci(h2.ci_lo, h2.ci_hi, d=5)}")
     v_in = {(ins / f"{k}_verdict.txt").read_text().strip() for k in ("hedge", "opportunity")}
