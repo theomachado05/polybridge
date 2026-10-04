@@ -7,9 +7,9 @@ All times UTC, 2026-10-04 (Sat 2026-10-03 evening in New York). Commands are run
 | 02:41:43 | `METHOD.md` and `config.py` committed (`2e1d1c0`) | Before anything was computed |
 | 02:42:45 | Runner and tests committed (`a1d895e`) | Before the run |
 | 02:42 | `python -m s14_link_ceiling.run` | 3 s. C1, C2 (500 shuffles), C3. The numbers in `SUMMARY.md` |
-| 02:44 to 02:50 | Follow-up checks, after the run, labelled as such in `SUMMARY.md` | See below |
-| 02:52 | Run repeated with one more column in `links.csv` (the share of a link's odds variation that its largest day carries) | Same seed, same numbers; no rule changed |
-| 02:52 | `python -m s14_link_ceiling.report` | `SUMMARY.md` |
+| 02:43 to 02:45 | Follow-up checks, after the run, labelled as such in `SUMMARY.md` | See below |
+| 02:46 | Run repeated with one more column in `links.csv` (the share of a link's odds variation that its largest day carries) | Same seed, same numbers; no rule changed |
+| 02:46 | `python -m s14_link_ceiling.report` | `SUMMARY.md` |
 
 ## Data
 

@@ -49,6 +49,7 @@ Notes on the rows:
 - **S6 Monday fade: too few observations.** 16 out-of-sample trades; 21 print-verified entries in the year, +$14.02 each with an interval through zero (section 9; `research/results/s6_monday_fade/SUMMARY.md`).
 - **S7 weekend straddles: a loss.** -17.7% of the premium per flagged trade, no better than ordinary weekends (section 9; `research/results/s7_weekend_straddle/SUMMARY.md`).
 - **S8 open referee: null.** Selling an overnight odds move the linked asset did not confirm loses 1.47 points per trade after costs [-2.42, -0.54]; the asset's vote adds nothing (section 9; `research/results/s8_open_referee/SUMMARY.md`).
+- **S9 weekend price markets: not a pass.** Selling a weekend move of 5 points or more in Polymarket's oil, gold and stock price markets nets -0.01 points per trade after costs and -3.77 out-of-sample (section 9; `research/results/s9_weekend_price_markets/SUMMARY.md`).
 - **S3 three-way consistency: no trade.** The primary rule fired 0 times in 60 matched sets on 33 dates (section 9; `research/results/s3_three_way/SUMMARY.md`).
 - Also in the table above: the replication, the fit walk-forward, the 8-K out-of-sample run, R1 hedge A and R3's net residual gap all failed or were NULL.
 
@@ -193,7 +194,7 @@ For the note's "Liquidity and capital" and "Risk management" criteria. This is w
 
 ---
 
-## 9. Weekend and cross-venue alpha: S1 twin spread, S3 three-way, S4 linked assets, S5 replication, S6 Monday fade, S7 weekend straddles, S8 open referee (pre-registered; forward tests pending)
+## 9. Weekend and cross-venue alpha: S1 twin spread, S3 three-way, S4 linked assets, S5 replication, S6 Monday fade, S7 weekend straddles, S8 open referee, S9 weekend price markets, S14 link diagnostic (pre-registered; forward tests pending)
 
 Added 2026-10-03 evening. Brief: `research/ALPHA_BRIEF.md`. Both methods were committed before any data was pulled for them (`research/s1_twin_spread/METHOD.md`, commit `8260548`; `research/s3_three_way/METHOD.md`, commit `83ce137`; amendments are dated in each file). Sources: `research/results/s1_twin_spread/SUMMARY.md`, `metrics.csv`, `trades.csv`, `RUN_LOG.md`; `research/results/s3_three_way/SUMMARY.md`, `metrics.csv`, `sets.csv`.
 
@@ -242,6 +243,19 @@ Added 2026-10-03 evening. Brief: `research/ALPHA_BRIEF.md`. Both methods were co
 - **It is the size of the cost.** A round trip costs 2.62 points here (spread and Polymarket's fee, both ways). Selling every move of 5 points or more earns +1.46 points before costs and -1.12 after [-1.76, -0.48].
 - **Verdict: null.** The asset's vote does not separate the moves that reverse from those that hold: give-back 1.12 points when the asset did not confirm against 1.45 when it did, difference +0.33 [-0.82, +1.49]; at 10 points -0.19 [-2.94, +2.55]. The primary trade loses 1.47 points per trade [-2.42, -0.54] on 198 trades, 4.09 at 2x costs; 16 out-of-sample trades (-3.16).
 
+**S9, Polymarket's own price markets over the weekend.** Polymarket lists markets on the price of oil, gold, silver, the S&P 500 and large stocks ("Will WTI hit $100 in April?"). They trade all weekend while the asset is shut. 391 markets in 25 events, 1,054 market-weekends on 44 weekends. Source: `research/results/s9_weekend_price_markets/SUMMARY.md`; method commit `6e1876a`, amendment `deb2e65`.
+
+- **The link holds inside the weekend, in a market that is open.** Oil price markets move 0.86 points per point of weekend move in the odds of oil-linked events (t = 5.85; 357 market-weekends on 36 weekends). After the reopen nothing more follows (-0.19, t = -1.12).
+- **Part of the weekend move is given back by Monday:** 2.94 points after a move of 5 points or more [-4.66, -1.14]; oil 4.18 [-7.22, -1.56]. Not when futures reopen (-0.39 by Sunday 19:00) but by Monday 09:40.
+- **Verdict: not a pass.** A round trip costs 3.29 points. The pre-registered fade nets -0.01 points per trade [-1.78, +1.77] on 307 trades, -3.29 at 2x costs, and -3.77 on the 42 out-of-sample trades, where the give-back is absent before costs. The oil-only variant is +3.77 in-sample [+0.74, +7.08] and -4.49 out-of-sample: a variant that failed the part of the sample it was not chosen on.
+
+**S14, diagnostic: is the missing edge a link problem, a signal problem, or neither?** No trade; cached S4 and S5 data, 254 links. Source: `research/results/s14_link_ceiling/SUMMARY.md`; method commit `2e1d1c0`.
+
+- **The links work:** 34% of links show the opening-gap relation on their own (t of +2 or more) against 5% when each link's odds moves are shuffled across its sessions.
+- **The signal is not measured badly:** points, log-odds, early night only, late night only: the gap responds (t = 5.5 to 5.9 for the first three), the move after the open does not under any (largest |t| = 1.06).
+- **Links picked with hindsight do not keep working:** the 24 links with the strongest after-open relation in the first 80% of sessions (+5.50 bp per point, t = 3.38) give -2.04 (t = -0.59) on the last 20%.
+- **One pre-registered line was crossed:** more links show an extreme after-open t than shuffling produces (15.1% against 10.5%; 3.4% of shuffles reach it). The extreme ones split 12 positive and 15 negative, and the three largest each rest on one event day; they do not persist.
+
 **Forward tests.** Live order books of the 33 twin pairs (every 15 s) and of 660 threshold markets (every 30 s) have been recorded since Sat 2026-10-03 19:09:48 ET (`research/forward/README.md`). S1 and S3 are run on them as paper tests with rules frozen before the window (Sat 20:00 ET to Sun 07:00 ET); results go into the two SUMMARY files.
 
 ---
@@ -263,7 +277,11 @@ Added 2026-10-03 evening. Brief: `research/ALPHA_BRIEF.md`. Both methods were co
 
 11. **Polymarket gives back part of a large overnight move once the stock market is open, on two separate sets of markets** (S5 amendment 3 and S8): 2.63 points after a move of 10 points or more [-3.90, -1.47]. A round trip across the spread costs the same 2.6 points, so nothing is left for someone who takes prices. Whether resting orders could earn it is untested.
 
-Do not write that the equity lags the odds after the open, or that S4 found a tradable edge. Do not write that the twin spread has a Sharpe ratio of 7, or that it is a strategy with capacity. Do not write that prediction markets predict the open or lead equities, that the PM beats futures, that news nights are special, that the 380-closure relation is pre-registered, confirmed or replicated, that options at the open are an arbitrage, that the expected gap works beyond the recession market, that hedge B reduces the gap, that the PM-contract hedge protects, that the fit predicts returns or works out of sample, that the 8-K signal works, or that the scan found arbitrage.
+12. **The link between an event question and an asset holds inside the weekend, in a market that is open** (S9): Polymarket's oil price markets move 0.86 points per point of oil-linked event odds while oil futures are shut (t = 5.85). It is co-movement over the same weekend, not a lead, and the fade of the weekend move does not pay after costs.
+
+13. **The missing edge is neither a link problem nor a signal-definition problem, on this evidence** (S14): the gap relation shows link by link (34% of links against 5% by chance) and under every definition of the odds move; links chosen with hindsight for a relation after the open do not keep it.
+
+Do not write that the equity lags the odds after the open, or that S4 found a tradable edge. Do not write that the oil-only weekend fade (S9 V2) is an edge: it is an in-sample variant that lost out-of-sample. Do not write that the twin spread has a Sharpe ratio of 7, or that it is a strategy with capacity. Do not write that prediction markets predict the open or lead equities, that the PM beats futures, that news nights are special, that the 380-closure relation is pre-registered, confirmed or replicated, that options at the open are an arbitrage, that the expected gap works beyond the recession market, that hedge B reduces the gap, that the PM-contract hedge protects, that the fit predicts returns or works out of sample, that the 8-K signal works, or that the scan found arbitrage.
 
 ---
 
