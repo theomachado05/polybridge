@@ -40,12 +40,17 @@ be at most fifteen minutes and its timestamp must be at or after that session's 
 bid, ask at least bid, and positive entry bid size and exit ask size. Missing or invalid data means no executable trade;
 every omission is reported. Entry fills are at the bid; exit fills are at the ask. No interpolation, theoretical
 option prices, trades-file-derived fills, or fabricated NBBO is allowed. The offline runner must not load an API key.
+An NBBO quote is observable market data, not a certified live fill; execution at its displayed side/size is an explicit
+historical fill assumption. Capacity is constrained by both displayed entry and future exit size, and does not prove
+scalable simultaneous fills.
 
 ## Exactly two strategy variants
 
 **V0 (primary):** deploy full strike cash on the fixed put. Each closure's research unit holds one contract and its
 return is actual net P&L divided by strike times 100. The portfolio uses that full cash budget on every executable date.
 Fractional contracts express proportional portfolio returns; capacity states the cash needed for a real integer lot.
+At exactly one-contract cash capital, V1 cannot implement a half contract. An integer implementation needs at least
+two contract cash obligations to express the half/full gate. Report that capital floor and available lot capacity.
 
 **V1 (only event-aware variant):** the same contract and times; use half the full-cash exposure when any S5 agreed
 SPY-linked question has odds between 10% and 90% at the entry signal cutoff and a mean absolute overnight odds change
@@ -108,6 +113,8 @@ a positive lower95% bound on the paired block difference. Neither can be called 
 If executable quotes are too few or unavailable, deliver a not-testable audit and missing-data manifest. Do not infer
 a negative or positive strategy result from unavailable data. The maximum network request and download budget is zero;
 a proposed future full-quote study is described separately and not run.
+Zeros on dates with absent historical quotes describe cash in an incomplete executable-data diagnostic. They are not
+evidence that the fully specified historical strategy would have chosen cash or earned zero on those dates.
 
 ## Schema inventory before freeze
 
@@ -121,3 +128,37 @@ rows and 274 daily rows. S16 JSONL uses `k,v`; quote fields are `bid,ask,bsz,asz
 ## Amendments
 
 None at freeze. Any correction will be dated, additive, and state whether outcomes had been inspected.
+
+**Amendment 1 (2026-10-04 03:57 UTC, after the initial offline run): calendar correction.** The first run found the
+cached closing-auction bar at 13:00 on 2025-11-28 and 2025-12-24. Adding five minutes to its timestamp incorrectly
+inferred a 13:05 underlying close. The actual NYSE close on both dates was 13:00, as the
+[official ICE/NYSE calendar published in 2024](https://ir.theice.com/press/news-details/2024/NYSE-Group-Announces-2025-2026-and-2027-Holiday-and-Early-Closings-Calendar/default.aspx)
+states. Clamp those two dates to 13:00; entry becomes 12:55 and strike/signal cutoff 12:30. The original actual-close
+rule is unchanged. Both dates were omitted in the first run due to uncached listings, so no executed put price changes.
+Recompute the gate with corrected prior-close cutoffs and disclose any exposure changes in the original 48 trades.
+The initial metrics/trades/equity/coverage are retained in `initial_offline/` for comparison.
+
+**Amendment 2 (same timestamp, after the initial offline run): DATA_ONLY completion.** Root approved a budget of at
+most 60 sequential Massive requests, at most 0.5 requests/second, at most 2,000,000 response bytes, solely to complete
+the frozen seven missing closure observations. Expected demand is seven reference-listing queries and 14 NBBO queries
+(21 requests). Store responses only under this package's `.cache/`; shared caches stay read only. Root must commit
+this amendment and send its acknowledgment before any request. API authentication uses a header loaded through the
+existing credential helper; keys never enter URLs, outputs or logs. If budget or API access prevents completion,
+report the remaining dates. This neither expands history nor changes the strategy, split, strikes, expiry search,
+costs, event thresholds or success conditions. Initial V0 OOS was +0.2936% at 1x costs, Sharpe 1.420, with five entry
+dates and 51 daily observations; its event-mean interval included zero. Completing missing dates is not confirmation.
+
+**Amendment 3 (same timestamp, root-requested after the initial offline run): equity-risk diagnostic.** Report SPY's
+return from the last completed five-minute underlying bar at the frozen entry instant to the same as-of exit instant,
+and a fixed 0.5-times-SPY return alongside the gross and net put returns. No hedge coefficient is fitted or optimized;
+it is a post-run diagnostic, not another strategy or pass candidate. ATM short puts own roughly half a share of equity
+directional risk per underlying share. Report the gross put minus that fixed stock-risk proxy and a descriptive
+event-level beta, with the small sample and bar-versus-NBBO timing differences stated. This diagnostic helps distinguish
+ordinary equity exposure from insurance premium; it cannot prove a risk premium or a causal prediction-market edge.
+
+**Amendment 4 (2026-10-04 03:57 UTC, after the initial run): output timestamp labels.** In the initial CSV,
+`entry_timestamp` and `exit_timestamp` were accidentally overwritten with SIP quote timestamps when quote fields were
+expanded. Quotes had always been requested/validated against the separately computed scheduled instants, so fills,
+ages, signals and P&L were unaffected. Preserve scheduled times in `entry_timestamp`, `exit_timestamp` and the explicit
+`entry_decision_timestamp`, `exit_decision_timestamp` columns; store SIP times separately as `entry_quote_timestamp`
+and `exit_quote_timestamp`. This is an output-label correction, not an execution-rule change.

@@ -55,3 +55,11 @@ PRIORS = (
     "A short cashsecured put sells crash insurance and owns equity downside; a cash collateral denominator is mandatory.",
     "A one-year history cannot satisfy 30 OOS closure entries and 60 OOS sessions under the fixed split.",
 )
+
+# Additive amendments, 2026-10-04 03:57 UTC, after the initial offline diagnostic.
+# Core instrument, thresholds, strike rule, expiry rule, split and reserved window are unchanged.
+EARLY_CLOSE_ET = {"2025-11-28": "13:00", "2025-12-24": "13:00"}
+DATA_ONLY_REQUEST_BUDGET = 60
+DATA_ONLY_DOWNLOAD_BUDGET_BYTES = 2_000_000
+DATA_ONLY_MAX_RPS = 0.5
+DIAGNOSTIC_SPY_DELTA = 0.5
