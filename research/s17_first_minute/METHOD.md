@@ -79,4 +79,8 @@ quotes, 5+ bars, 5+ quotes. The pull stops at 04:30 Sunday whatever is done; any
 
 ## Amendments
 
-None.
+**Amendment 1, Sun 2026-10-04 about 00:05 New York time, before any event's bars or quotes were pulled.** The previous
+close comes from the same one-minute request as the day (one call from the previous session to the event day, close
+of the last regular-session bar), not from the cached daily bars: the minute bars are split-adjusted at pull time and
+the daily cache was pulled earlier, so mixing them could fake a gap. Betas still use the daily cache (returns only).
+Before this, one format probe was made (USO, 2026-09-30, one minute-bar call and one quote): no return computed.
