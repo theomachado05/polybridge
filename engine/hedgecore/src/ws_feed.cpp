@@ -193,7 +193,7 @@ bool WsFeed::send_text(Conn& c, const char* p, std::size_t n, int opcode) {
   f.append(reinterpret_cast<const char*>(mk), 4);
   for (std::size_t i = 0; i < n; ++i) f += static_cast<char>(p[i] ^ mk[i & 3]);
   std::size_t off = 0;
-  for (int tries = 0; off < f.size() && tries < 100000; ++tries) {
+  for (int tries = 0; off < f.size() && tries < 500; ++tries) {
     if (c.ssl) {
       const int r = SSL_write(c.ssl, f.data() + off, static_cast<int>(f.size() - off));
       if (r > 0) {

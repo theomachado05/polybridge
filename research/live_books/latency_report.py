@@ -161,11 +161,12 @@ def main(argv=None):
           ""]
     if a.ab:
         runs = [read(Path(d) / "decisions") for d in a.ab]
-        w0, w1 = max(r[5] for r in runs), min(r[6] for r in runs)
+        w0, w1 = max(r[5] for r in runs) + 30_000_000_000, min(r[6] for r in runs)
         L += ["## Concurrent A/B (microseconds per book update)", "",
               f"The recorders below ran at the same time on this machine, each with its own connections to the same 400 "
               f"tokens, so they saw the same market traffic and the same machine load. Common window {fmt(w0)} to {fmt(w1)} "
-              f"({(w1 - w0) / 6e10:.1f} min).", "",
+              f"({(w1 - w0) / 6e10:.1f} min), starting 30 s after the later start so that no subscription snapshot is in it.",
+              "",
               "| path | stage | n | p50 | p90 | p99 | p99.9 | mean |", "|---|---|---:|---:|---:|---:|---:|---:|"]
         for d in a.ab:
             lat2, _, _, _, _, _, _, extra2 = read(Path(d) / "decisions", w0, w1)
@@ -192,6 +193,23 @@ def main(argv=None):
             L += ["", "Both paths run in one process on the same frames, timed with `time.perf_counter_ns()` around the "
                   "call; the raw gzip write is excluded from both. The per-decision tail of the new path comes from the "
                   "subscription snapshot frames, which carry 200 books each.", ""]
+            try:
+                from . import native_replay as NR
+            except ImportError:
+                NR = None
+            if NR is not None:
+                msgs = [raw.decode() for f in files for _, raw in B.frames(f) if raw not in (b"PONG", b'"PONG"')]
+                n = NR.run(msgs, B.universe(files))
+                L += ["## Native client on the recorded frames (loopback replay)", "",
+                      f"The same closed raw files served over a local plain websocket to the native client (busy polling, "
+                      f"rerun warming on): {n['sent']:,} frames sent, {n['got']:,} received, {n['raw_mism']} with different "
+                      f"bytes; {n['n_dec']:,} decisions, frames whose decisions differ from `BookEngine.process` on the same "
+                      f"bytes: {n['mism']}.", "",
+                      "| stage | p50 | p90 | p99 | p99.9 | mean |", "|---|---:|---:|---:|---:|---:|"]
+                L += [f"| {name} | " + " | ".join(f"{v:,.2f}" for v in n[k]) + " |" for name, k in
+                      (("loopback socket to decision (t2 - ts)", "sock"), ("frame decoded to decision (t2 - t0)", "t0")) if n[k]]
+                L += ["", "The server writes frames as fast as it can, so several frames often arrive in one read and "
+                      "share its ts; the later ones include the earlier ones' processing.", ""]
     L += [
           "## Detector call cost (isolated, one book touch, nanoseconds per call)", "",
           "| implementation | ns per call |", "|---|---:|",
