@@ -1,12 +1,85 @@
 # The link agent
 
-**Job.** Given a prediction-market question, say which listed instrument it moves, in which direction, how sure we
-are, and which option contract carries that risk. Every study that compares odds with equities or options depends on
-this step. It is the bottleneck: a wrong or missing link makes the test meaningless whatever the statistics.
+**Job.** Given a prediction-market question, say which listed contract it is tied to: for a price ticket, the exact
+option expiry and strikes; for a date rung, its ladder; for anything else, which instrument it moves and how far to
+trust that. Every study that compares odds with equities or options depends on this step. It is the bottleneck: a
+wrong or missing link makes the test meaningless whatever the statistics.
 
 Written 2026-10-03 night. Results are in `research/results/linker/`.
 
-## Version 3 and the second held-out test (2026-10-03, 23:40 ET)
+## Where the link agent stands in the final deliverable (2026-10-04, 04:45 ET)
+
+**The decision.** The note and the product no longer rest on "question → likely ticker". They rest on **exact
+contract links** (`linker/link_map.py`, served by `backend/app/contracts/`): every question is a date-ladder rung, a
+"will it hit" ticket, a "close above" ticket, or other. A ticket links to an option expiry and the two strikes that
+bracket its level; a rung links into its ladder in date order, each adjacent pair checked for nesting; "other" has
+no tested mechanism. So the link agent has two tiers now:
+
+| Tier | What it links | How it is checked | Status |
+|---|---|---|---|
+| Contract links (the rule parser) | tickets to exact option contracts, rungs to ladders | two blind readers of the rules text, held-out half scored once | **96% exact on held-out tickets; bar of 95% met** |
+| Generic links (two blind labellers, version 3, below) | events to instruments, with a direction | prices, on a fresh set | unvalidated: 18% confirmed one at a time; the pooled mechanism holds (t 3.3), not shown after July |
+
+### The contract links, measured (`linker/contract_eval/PLAN.md`)
+
+The registered ladder test was lost to a link error (three ladders with the year read wrong), and the parser had
+unit tests but no measured accuracy on real markets. So: 440 questions and 80 rung pairs from the listings the
+product reads (open, and closed over the last twelve months), names and rules text only. Two blind readers per file
+read each question's rules into type, ticker, level, direction and date; what both agree on is the truth. The sample
+was split before any label: half A to find faults, half B held out and scored once. Plan and sample were committed
+before the labels, the labels before any scoring.
+
+| Held-out half | Parser before the fixes | Fixed parser | Bar |
+|---|---|---|---|
+| Exact ticket links: ticker, level, direction and settlement day all right | 89 of 99 (90%) | **100 of 104 (96%, interval 90% to 99%)** | 95%: met |
+| Rung dates | 53 of 54 | 53 of 54 (98%) | 95%: met |
+| Nested pairs the code accepts | 30 of 30 | 30 of 30 | 95%: met |
+| Type, where both readers agree | | 202 of 202 | |
+
+Half A, before any fix, gave 45 of 87 exact ticket links. About half of those misses were the measure ("end of
+October" is Saturday the 31st to the parser and Friday the 30th to the readers; the link uses the Friday either
+way, so dates are now compared on that session; under the calendar-day rule as first written the held-out figure
+is 84 of 104). The rest were five faults in the parser, each now fixed with a unit test in
+`linker/tests/test_contract_links.py`:
+
+| Fault | Example | What it did |
+|---|---|---|
+| A month followed by a year read as day 20 | "the final trading day of January 2026" | linked an S&P ticket to the January 20 expiry |
+| Weekly close tickets not recognised | "Will Google (GOOGL) finish week of October 5 above $365?" | fell to "other": 7 of 62 close tickets in half A |
+| A negated deadline read as a rung | "Will OpenAI not IPO by December 31, 2026?" | the earlier date is worth more there, so the ladder rule would trade it the wrong way |
+| Tokens read as stocks | "$ANSEM", "Will Hyperliquid reach $100 by ..." | a token got a stock ticket |
+| End of February keyed on a leap day | "close above $230 end of February?" | linked to 2028-02-29 (found on the held-out half, fixed after scoring) |
+
+**How far to trust the 96%.** Two independent agents rebuilt every figure from the labels and found the order of
+commits and the blindness of the inputs intact. Their caveats: the pass is by one ticket and rests on the amended
+date rule; the four held-out misses each linked a ticket two years out (the listing held 128 such tickets), fixed
+only after scoring; and the figure describes Polymarket's few ticket templates, not free text. On 56 hand-made
+questions outside those templates the parser gave a wrong linkable answer on 24: a year written only in the event
+title, a word in parentheses taken as a ticker, a count or a market value taken as a price, a negated ticket read as
+up, an unreadable day replaced by the month's last day, a window ending on a market holiday. The parser was then
+hardened against those classes, refusing with a reason where the answer is not certain; that work is covered by
+unit tests and by both halves as regression sets, not by a held-out sample.
+
+A sixth was a clash between two branches: with both merged, the parser read the generic linker's nested instrument
+file as its ticker table and stopped before the named stock list, so a company named without its symbol lost its
+ticker. Fixed in the same file.
+
+Left for the owners of the ladder and ticket studies, each a known limit, not a silent one:
+- the code refuses 6 of 36 pairs both readers call nested, because the two rules texts differ (safe, but it costs
+  trades);
+- a token written with a symbol in parentheses that is also a US stock symbol ("Chainlink (LINK)") still links to
+  that stock's options;
+- a negated ticket ("not close above") is still read as up;
+- one rung comes out a year early from the frozen ladder rule (a market created on 30 December for "by December 31").
+
+### The generic linker under this decision
+
+Its links are a model's reading, not a contract, and they failed their bar. In `results/linker/link_map_v2.json`
+every item now carries its contract type and, where one exists, its exact contract; every generic mapping is marked
+"unvalidated estimate"; the loader never serves a generic guess for a ticket or a rung; and the evidence registry
+has one entry for the generic links (`event_links`: open lead, no trading). What follows is that linker's own test.
+
+## The generic linker: version 3 and the second held-out test (2026-10-03, 23:40 ET)
 
 Plan, set, instructions, code and a hash manifest were committed before any label existed for these markets; the
 labels were committed before this study pulled any price; the pooled test was added as a dated amendment between the
@@ -125,10 +198,13 @@ are not.
 ### The link map the backend can serve
 
 `python -m linker.link_map2` writes `results/linker/link_map_v2.json` and a copy at `backend/app/data/link_map.json`,
-in the shape of `ai_map.json`: 184 links on 76 open questions, **40 trusted on 20 questions, 32 of them confirmed by
-prices, 39 with a listed option contract**, and 17 questions answered "no listed instrument".
-`backend/app/link_map.py` loads it. The product still serves `ai_map.json`; setting `POLYBRIDGE_LINK_MAP=1` serves the
-link map instead.
+in the shape of `ai_map.json`: 184 links on 76 open questions and 17 questions answered "no listed
+instrument". Each item carries its contract type (34 rungs, 59 other; these populations hold no stock ticket)
+and, for 21 rungs, its ladder. 40 generic links are "trusted" (two labellers agree, not contradicted,
+confirmed by prices or scored 0.5 or more; 32 are confirmed by prices), and every one is marked an unvalidated
+estimate: trusted is not validated. `backend/app/link_map.py` loads the file. The product still serves `ai_map.json`;
+setting `POLYBRIDGE_LINK_MAP=1` serves the link map instead, and then a ticket or a rung is never answered with a
+generic guess.
 
 ## The pipeline (versions 1 and 2)
 

@@ -123,3 +123,26 @@ ticket links 91 of 92, rung dates 64 of 64, nested pairs 30 of 30. Side effects 
   figure that is not held out and is not the result.
 - The one rung miss ("Will Ethereum hit $10,000 by December 31?", a year early) comes from the frozen ladder rule
   for a market created on 30 December; left for the ladder study's owners.
+
+**Verification, 2026-10-04 04:50 ET (two independent agents, after the result; nothing re-scored).** Both rebuilt the eight
+half-B result files from the labels with their own code: every figure reproduced, the commits are in the planned
+order, the input files held nothing of the parser's answer, and all 16 tickets that the amended date rule rescues
+are a weekend day against the Friday before it, the same option session. What they found against the result:
+
+- **The pass is by one ticket and rests on amendment 1.** 99 of 104 would still pass, 98 would not; the interval
+  (90% to 99%) reaches below the bar; under the rule as first written the fixed parser is at 84 of 104.
+- **The four misses were not near misses.** Each linked a ticket to an expiry two years out, and the fetched listing
+  held 128 such end-of-February tickets. The fix came after scoring, so this half does not test it.
+- **The 96% describes Polymarket's templates, not free text.** The linkable tickets are a few forms ("end of
+  <Month>", "week of", "in <Month>"), so the errors are not independent. A third reader agreed with the scored
+  parser on 61 of 65 readings (64 of 65 after the February fix). On 56 hand-made questions outside those forms the
+  parser gave a wrong linkable answer on 24: a year written only in the event title, a word in parentheses taken
+  as a ticker ("(ET)", "(USD)", a token's symbol), a count or a market value taken as a price, a negated ticket
+  read as up, a day it could not read replaced by the month's last day, and a window ending on a market holiday.
+- Smaller: the two readers' own agreement on a ticket's date still used the calendar day, which left two correct
+  links out of the count (102 of 106 with them); the pair files named which rung was earlier from the parser's own
+  order, and held only pairs the code had already linked, so the third bar measures precision only; nothing in the
+  repository can prove the held-out half was scored only once.
+
+The parser is being hardened against those classes after this note (refuse with a reason where the answer is not
+certain). Those changes are tested by unit tests and by both halves as regression sets, not by a held-out sample.
