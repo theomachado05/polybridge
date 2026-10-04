@@ -1,0 +1,20 @@
+[
+ {
+  "window": "2023-01-01..2023-12-31",
+  "scope": "high fear",
+  "verdict": "INSUFFICIENT",
+  "above_zero_at": [],
+  "events_21": 2,
+  "sharpe_events": NaN,
+  "sharpe_ordinary": 0.7920770966672895
+ },
+ {
+  "window": "2023-01-01..2023-12-31",
+  "scope": "all H1",
+  "verdict": "NULL",
+  "above_zero_at": [],
+  "events_21": 10,
+  "sharpe_events": 1.5187940572992495,
+  "sharpe_ordinary": 1.2416880672265114
+ }
+]

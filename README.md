@@ -2,6 +2,8 @@
 
 Evidence-gated 24/7 hedging. PolyBridge hedges equity positions using live prediction-market prices (Polymarket + Kalshi) as the signal, including while the stock market is closed: stocks close, prediction markets don't. Each market's signal is labelled validated (it passed a pre-registered out-of-sample test) or unvalidated estimate, and the label is enforced: closed-hours staged equity orders are planned only on validated markets unless explicitly overridden (the prediction-market leg runs only on its own opt-in and is always labelled an estimate), and an unvalidated market needs an explicit acknowledgement before a hedge runs in regular hours. A human approves every hedge; a compiled C++ algo library runs it on a paper or simulated account.
 
+**Massive "Trade the 8-K" judges:** the write-up is [note/massive/PolyBridge_Massive_8K_report.pdf](note/massive/PolyBridge_Massive_8K_report.pdf) (LaTeX source in `note/massive/tex/`) and the notebook is [research/massive_8k.ipynb](research/massive_8k.ipynb), built on the Massive starter. To run it: `cd research && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`, put `MASSIVE_API_KEY` in `research/.env`, set `HOLDOUT_START`, `HOLDOUT_END` and `RUN_HOLDOUT = True` in the configuration cell, then run all cells (set `RUN_OOS = RUN_FRESH_2022 = False` to skip the re-runs of our own windows). Opened outside the repo, its first cell installs the package from GitHub. Pre-registration: [HYPOTHESIS.md](research/HYPOTHESIS.md), [HYPOTHESIS_TAGS.md](research/HYPOTHESIS_TAGS.md), [FORECAST.md](research/FORECAST.md).
+
 **Start here:** [research/EVIDENCE.md](research/EVIDENCE.md) (every result, with its source) · [research/README.md](research/README.md) (the scored research) · [design](docs/design.md) (architecture, closed-market mode, evidence gating) · [demo script](docs/demo.md) (the tariff weekend first) · [HTTP contracts](docs/contracts.md) · [voice agent](docs/voice-agent.md)
 
 | Folder | Stack | Role |
@@ -11,6 +13,14 @@ Evidence-gated 24/7 hedging. PolyBridge hedges equity positions using live predi
 | `web/` | Next.js · TypeScript | UI: Build chat, AI pipeline, Bridge live, Library, Portfolio, Connect, Profile |
 | `research/` | Python | Evidence (9 studies): pre-registered 8-K study, lead-lag case studies, closed-market study, options-arbitrage scan, closed-hours replication, AI fit walk-forward, closed-market hedge (R1), expected-gap model (R2), options at the open (R3) |
 | `scripts/`, `replays/`, `web/e2e/` | Python, Node | End-to-end demo driver, recorded Polymarket replays, headless-Chrome UI walk and screenshots |
+
+## Reproduce the quant note
+
+```bash
+make reproduce        # offline: reads committed result files only, no API key, no network; a few seconds
+```
+
+This checks every headline number of [note/NOTE.md](note/NOTE.md) against the committed result files and prints one line per claim: the note's value, the value found, the source file, and MATCH or MISMATCH (exit status 1 on any mismatch). Most claims are recomputed from each study's committed trade list or rows with the study's own functions and seeds; the rest are read from its committed stats file, and the line says which. It also writes the track's metrics table, [note/TABLES.md](note/TABLES.md) (the date-ladder book, in-sample and out-of-sample, net of costs), and the figures in [note/figures/](note/figures/). No study is rerun. The first run creates `research/.venv` with `uv`; to use another Python that has the research dependencies, run `make reproduce PYTHON=/path/to/python`. Code: [research/reproduce.py](research/reproduce.py), [research/note_figures.py](research/note_figures.py).
 
 ## Quickstart
 

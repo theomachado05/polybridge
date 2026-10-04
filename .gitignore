@@ -67,6 +67,10 @@ research/s9_weekend_price_markets/.cache/
 # forward_monday http and massive caches
 research/results/forward_monday/.cache/
 
+# LaTeX build files
+*.aux
+*.log
+*.out
 # forward tests (backend/app/forward): raw books, pair CSVs and caches are not committed; summaries and the frozen runner's log are
 backend/data_forward/ladders/raw/
 backend/data_forward/touch/raw/
