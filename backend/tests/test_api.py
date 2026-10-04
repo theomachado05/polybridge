@@ -90,7 +90,7 @@ def test_market_event_proposal_from_ui_body(client):
     assert r.status_code == 201
     p = r.json()
     assert p["family"] == "hedge" and p["strategy"] == "protective_put" and p["basis"] == "market_event"
-    assert p["label"] == "Product hedge — no confirmatory claim"
+    assert p["label"] == "Product hedge, not a tested claim"
     assert p["market"]["id"] == "2589813" and p["direction"] == "down_on_yes" and p["status"] == "proposed"
     assert client.post(f"/proposals/{p['id']}/approve").status_code == 409  # Fed market -> IWM: unvalidated
     assert client.post(f"/proposals/{p['id']}/approve", json={"ack_unvalidated": True}).json()["status"] == "approved"

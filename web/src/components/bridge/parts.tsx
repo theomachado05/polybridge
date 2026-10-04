@@ -1,17 +1,25 @@
-// Presentational pieces of the Bridge screen (the live SSE view).
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { LOGO } from "@/lib/brokers";
-import { Glass, Label, OrbDisc, Spark, Tag, type TagTone } from "@/components/pb";
+import { OrbDisc, Spark, Tag, type TagTone } from "@/components/pb";
 
-const panelPad = { minWidth: 0, padding: "24px 26px 22px" };
-const big = { fontSize: "clamp(38px,4vw,56px)", fontWeight: 400, letterSpacing: "-.02em", lineHeight: 1 } as const;
-const footer = { display: "flex", justifyContent: "space-between", gap: 10, marginTop: 18, paddingTop: 14, borderTop: "1px solid rgba(15,22,38,.08)", fontSize: 12, color: "#5A627A" } as const;
+const cell: CSSProperties = { minWidth: 0, padding: "var(--sp-5)", display: "flex", flexDirection: "column" };
+const footer: CSSProperties = { display: "flex", justifyContent: "space-between", gap: "var(--sp-3)", marginTop: "auto", paddingTop: "var(--sp-3)", borderTop: "1px solid var(--border)", fontSize: "var(--fs-13)", color: "var(--text-2)" };
+const colHead: CSSProperties = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: "var(--sp-2)", flexWrap: "wrap" };
+
+export function SectionHead({ title, children }: { title: ReactNode; children?: ReactNode }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "var(--sp-3)", flexWrap: "wrap", marginBottom: "var(--sp-3)" }}>
+      <h2 className="pb-h4">{title}</h2>
+      {children && <span style={{ display: "inline-flex", gap: "var(--sp-2)", flexWrap: "wrap", alignItems: "center", justifyContent: "flex-end" }}>{children}</span>}
+    </div>
+  );
+}
 
 function Venue({ name, on }: { name: "Polymarket" | "Kalshi"; on: boolean }) {
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "3px 9px 3px 7px", borderRadius: 999, background: on ? "rgba(59,108,246,.12)" : "rgba(15,22,38,.07)", color: on ? "#2B57D6" : undefined }}>
+    <span className="pb-tag" style={on ? { background: "var(--surface)", color: "var(--ink)", border: "1px solid var(--border-strong)", gap: "var(--sp-1)" } : { gap: "var(--sp-1)", color: "var(--faint)" }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={LOGO(name === "Polymarket" ? "polymarket.com" : "kalshi.com").replace("128", "64")} alt="" style={{ width: 12, height: 12, borderRadius: 3 }} />{name}
+      <img src={LOGO(name === "Polymarket" ? "polymarket.com" : "kalshi.com").replace("128", "64")} alt="" style={{ width: 12, height: 12, borderRadius: 3, opacity: on ? 1 : 0.5 }} />{name}
     </span>
   );
 }
@@ -22,74 +30,81 @@ export function TopRow(p: {
   instShort: string; exchange: string; ticker: string; name: string; px: string; pxDelta: ReactNode; pxColor: string; pxSpark: number[]; driftLabel: string; drift: ReactNode; equityTag?: ReactNode;
 }) {
   return (
-    <div className="pb-bridge-top" style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) clamp(20px,5vw,72px) minmax(170px,240px) clamp(20px,5vw,72px) minmax(0,1fr)", alignItems: "center" }}>
-      <Glass style={panelPad}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, color: "#5A627A", fontWeight: 500, gap: 8, flexWrap: "wrap" }}>
-          <span>Prediction market</span>
-          <span style={{ display: "inline-flex", gap: 6 }}>
-            <Venue name="Polymarket" on={p.venues[0] !== "Kalshi"} />
-            <Venue name="Kalshi" on={p.venues[0] === "Kalshi"} />
-          </span>
-        </div>
-        <div className="pb-serif pb-pretty" style={{ fontSize: 25, fontWeight: 400, letterSpacing: "-.01em", lineHeight: 1.2, marginTop: 14 }}>{p.question}</div>
-        {p.marketTag && <div style={{ marginTop: 8 }}>{p.marketTag}</div>}
-        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginTop: 22, gap: 12 }}>
-          <div>
-            <div className="pb-serif pb-tab" style={big}>{p.pBig}</div>
-            <div style={{ fontSize: 12, color: "#5A627A", marginTop: 8 }}>{p.pSub}</div>
-          </div>
-          <Spark data={p.pSpark} color="#3B6CF6" />
-        </div>
-        <div style={footer}><span>{p.volLabel}</span><span style={{ color: "#0F1626", fontWeight: 500 }}>{p.volValue}</span></div>
-      </Glass>
-      <div className="pb-connector" style={{ height: 2, background: "rgba(59,108,246,.35)" }} />
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, textAlign: "center", padding: "10px 0" }}>
-        <OrbDisc state={p.orb} disc={170} orb={130} />
-        <Label style={{ marginTop: 6 }}>{p.nodeLabel}</Label>
-        <div style={{ fontSize: 12, color: "#5A627A", lineHeight: 1.45 }}>{p.nodeLines}</div>
+    <section>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: "var(--sp-5)", flexWrap: "wrap", paddingBottom: "var(--sp-5)" }}>
+        <h1 className="pb-h3 pb-balance" style={{ minWidth: 0, maxWidth: 760 }}>{p.question}</h1>
+        {p.marketTag && <div>{p.marketTag}</div>}
       </div>
-      <div className="pb-connector" style={{ height: 2, background: "rgba(224,72,90,.35)" }} />
-      <Glass style={panelPad}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, color: "#5A627A", fontWeight: 500, gap: 8, flexWrap: "wrap" }}>
-          <span>Equity ({p.exchange})</span>
-          <span style={{ padding: "3px 9px", borderRadius: 999, background: "rgba(15,22,38,.07)" }}>{p.instShort}</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 21, fontWeight: 600, letterSpacing: "-.025em" }}>{p.ticker}</span>
-          <span style={{ fontSize: 13, color: "#5A627A" }}>{p.name}</span>
-          {p.equityTag}
-        </div>
-        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginTop: 22, gap: 12 }}>
-          <div>
-            <div className="pb-serif pb-tab" style={big}>{p.px}</div>
-            <div style={{ fontSize: 12, marginTop: 8, fontWeight: 500, color: p.pxColor }}>{p.pxDelta}</div>
+      <div className="pb-card pb-bridge-top" style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(180px,230px) minmax(0,1fr)", alignItems: "stretch" }}>
+        <div style={cell}>
+          <div style={colHead}>
+            <span className="pb-label">Prediction market</span>
+            <span style={{ display: "inline-flex", gap: "var(--sp-1)" }}>
+              <Venue name="Polymarket" on={p.venues[0] !== "Kalshi"} />
+              <Venue name="Kalshi" on={p.venues[0] === "Kalshi"} />
+            </span>
           </div>
-          <Spark data={p.pxSpark} color="#0F1626" />
+          <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: "var(--sp-4)", marginTop: "var(--sp-5)" }}>
+            <div className="pb-figure">{p.pBig}</div>
+            <Spark data={p.pSpark} color="var(--ink)" w={180} h={48} />
+          </div>
+          <div className="pb-small pb-pretty" style={{ marginTop: "var(--sp-2)", marginBottom: "var(--sp-4)" }}>{p.pSub}</div>
+          <div style={footer}><span>{p.volLabel}</span><span className="pb-num" style={{ color: "var(--ink)", fontWeight: 500 }}>{p.volValue}</span></div>
         </div>
-        <div style={footer}><span>{p.driftLabel}</span><span style={{ color: "#0F1626", fontWeight: 500 }}>{p.drift}</span></div>
-      </Glass>
-    </div>
+        <div style={{ ...cell, alignItems: "center", justifyContent: "center", textAlign: "center", gap: "var(--sp-2)", borderLeft: "1px solid var(--border)", borderRight: "1px solid var(--border)", background: "var(--surface-2)" }}>
+          <OrbDisc state={p.orb} disc={104} orb={80} />
+          <div className="pb-label" style={{ color: "var(--ink)", marginTop: "var(--sp-2)" }}>{p.nodeLabel}</div>
+          <div className="pb-small pb-num" style={{ fontSize: "var(--fs-12)", color: "var(--faint)" }}>{p.nodeLines}</div>
+        </div>
+        <div style={cell}>
+          <div style={colHead}>
+            <span className="pb-label">Equity ({p.exchange})</span>
+            <Tag tone="neutral">{p.instShort}</Tag>
+          </div>
+          <div style={{ display: "flex", alignItems: "baseline", gap: "var(--sp-2)", marginTop: "var(--sp-3)", flexWrap: "wrap" }}>
+            <span className="pb-ticker" style={{ fontSize: "var(--fs-16)" }}>{p.ticker}</span>
+            {p.name && <span className="pb-small">{p.name}</span>}
+            {p.equityTag}
+          </div>
+          <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: "var(--sp-4)", marginTop: "var(--sp-3)" }}>
+            <div className="pb-figure">{p.px}</div>
+            {p.pxSpark.length > 1 && <Spark data={p.pxSpark} color="var(--ink)" w={180} h={48} />}
+          </div>
+          <div className="pb-small" style={{ marginTop: "var(--sp-2)", marginBottom: "var(--sp-4)", color: p.pxColor }}>{p.pxDelta}</div>
+          <div style={footer}><span>{p.driftLabel}</span><span className="pb-num" style={{ color: "var(--ink)", fontWeight: 500 }}>{p.drift}</span></div>
+        </div>
+      </div>
+    </section>
   );
 }
 
 export interface DockAlgo { name: string; status: string; line: string; active: boolean }
 export function AlgoDock({ label, algos, tag }: { label: string; algos: DockAlgo[]; tag?: ReactNode }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
-    {tag && <div style={{ display: "flex", justifyContent: "flex-end", gap: 6, flexWrap: "wrap", padding: "0 8px" }}>{tag}</div>}
-    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: 8, borderRadius: 999, background: "rgba(255,255,255,.6)", border: "1px solid rgba(15,22,38,.1)", flexWrap: "wrap" }}>
-      <span style={{ padding: "0 10px 0 14px", fontSize: 12, color: "#5A627A", whiteSpace: "nowrap" }}>{label}</span>
-      {algos.map((a) => (
-        <div key={a.name} style={{ flex: 1, minWidth: 170, display: "flex", flexDirection: "column", gap: 2, padding: "9px 14px", borderRadius: 999, background: a.active ? "rgba(255,255,255,.85)" : "rgba(255,255,255,.35)", border: `1px solid ${a.active ? "rgba(59,108,246,.35)" : "rgba(255,255,255,.7)"}` }}>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 12.5, fontWeight: 600, letterSpacing: "-.01em", whiteSpace: "nowrap", minWidth: 0 }}>
-            <span className="pb-ellipsis" style={{ minWidth: 0 }}>{a.name}</span>
-            <span style={{ color: a.active ? "#22A06B" : "#5A627A", fontWeight: 500, flex: "none" }}>{a.status}</span>
-          </div>
-          <div className="pb-ellipsis" style={{ fontSize: 11, color: "#5A627A" }}>{a.line}</div>
+    <section>
+      <SectionHead title={label}>{tag}</SectionHead>
+      <div className="pb-card" style={{ padding: "0 var(--sp-5)" }}>
+        <div className="pb-table-scroll">
+          <table className="pb-table">
+            <thead><tr><th style={{ width: "30%" }}>Gate</th><th style={{ width: "22%" }}>Status</th><th>Activity</th></tr></thead>
+            <tbody>
+              {algos.map((a) => (
+                <tr key={a.name} aria-current={a.active ? "true" : undefined}>
+                  <td style={{ fontWeight: a.active ? 600 : 500, color: "var(--ink)" }}>{a.name}</td>
+                  <td>
+                    {a.active
+                      ? <span className="pb-tag" style={{ background: "var(--accent-tint)", color: "var(--accent)" }}>{a.status}</span>
+                      : a.status === "Triggered" ? <span className="pb-tag pb-tag-neutral">{a.status}</span>
+                      : <span style={{ color: "var(--faint)", whiteSpace: "nowrap" }}>{a.status}</span>}
+                  </td>
+                  <td style={{ color: "var(--text-2)" }}>{a.line}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      ))}
-    </div>
-    </div>
+      </div>
+    </section>
   );
 }
 
@@ -97,59 +112,83 @@ export function PortfolioPanel(p: {
   big: string; bigColor: string; bigNote: string; left: [string, string, string]; right: [string, string, string]; ratio: number; ratioLabel?: string; footL: ReactNode; footR: ReactNode; tag?: ReactNode;
 }) {
   return (
-    <Glass style={{ padding: "22px 26px", display: "flex", flexDirection: "column" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}><Label>Portfolio</Label>{p.tag}</div>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 10 }}>
-        <span className="pb-serif" style={{ fontSize: 46, fontWeight: 400, letterSpacing: "-.02em", lineHeight: 1, color: p.bigColor }}>{p.big}</span>
-        <span style={{ fontSize: 12, color: "#5A627A" }}>{p.bigNote}</span>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 20 }}>
-        {[p.left, p.right].map(([a, b, c]) => (
-          <div key={a} style={{ paddingTop: 10, borderTop: "1px solid rgba(15,22,38,.08)" }}>
-            <div style={{ fontSize: 11, color: "#5A627A" }}>{a}</div>
-            <div style={{ fontSize: 16, fontWeight: 600, marginTop: 2, letterSpacing: "-.02em" }}>{b}</div>
-            <div style={{ fontSize: 11, color: "#5A627A" }}>{c}</div>
+    <section>
+      <SectionHead title="Portfolio">{p.tag}</SectionHead>
+      <div className="pb-card" style={{ padding: "var(--sp-5)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,180px),1fr))", gap: "var(--sp-5)", alignItems: "end" }}>
+          <div>
+            <div className="pb-figure" style={{ color: p.bigColor }}>{p.big}</div>
+            <div className="pb-small" style={{ marginTop: "var(--sp-2)" }}>{p.bigNote}</div>
           </div>
-        ))}
+          {[p.left, p.right].map(([a, b, c]) => (
+            <div key={a}>
+              <div className="pb-label">{a}</div>
+              <div className="pb-num" style={{ fontSize: "var(--fs-20)", fontWeight: 600, marginTop: "var(--sp-1)" }}>{b}</div>
+              <div className="pb-small pb-num" style={{ color: "var(--faint)" }}>{c}</div>
+            </div>
+          ))}
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: "var(--sp-2)" }}>
+              <span className="pb-label">{p.ratioLabel ?? "Event exposure covered"}</span>
+              <span className="pb-num" style={{ fontWeight: 600 }}>{p.ratio}%</span>
+            </div>
+            <div className="pb-bar" style={{ marginTop: "var(--sp-2)" }}><div style={{ width: `${p.ratio}%` }} /></div>
+          </div>
+        </div>
+        <div className="pb-small pb-num" style={{ marginTop: "var(--sp-5)", paddingTop: "var(--sp-3)", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "space-between", gap: "var(--sp-3)", flexWrap: "wrap", color: "var(--faint)" }}>
+          <span>{p.footL}</span><span>{p.footR}</span>
+        </div>
       </div>
-      <div style={{ marginTop: 18 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#5A627A" }}><span>{p.ratioLabel ?? "Event exposure covered"}</span><span style={{ color: "#0F1626", fontWeight: 600 }}>{p.ratio}%</span></div>
-        <div className="pb-bar" style={{ height: 8, marginTop: 8 }}><div style={{ width: `${p.ratio}%` }} /></div>
-      </div>
-      <div style={{ marginTop: "auto", paddingTop: 18, display: "flex", justifyContent: "space-between", gap: 10, fontSize: 12, color: "#5A627A", flexWrap: "wrap" }}><span>{p.footL}</span><span>{p.footR}</span></div>
-    </Glass>
+    </section>
   );
 }
 
 export interface TradeCard {
   id: string | number; side: "SELL" | "BUY" | "HOLD"; time: string; head: ReactNode; algo: string; reason: string;
-  /** Evidence label and risk-gate badges (liquidity capped, capital budget) on this order. */
+  qty?: number; what?: string; px?: string;
   tags?: { tone: TagTone; text: string; title?: string }[];
 }
 const SIDE_TEXT: Record<TradeCard["side"], string> = { SELL: "Sell", BUY: "Buy", HOLD: "Hold" };
+const SIDE_TAG: Record<TradeCard["side"], string> = { SELL: "pb-tag-down", BUY: "pb-tag-up", HOLD: "pb-tag-neutral" };
 export function TradesPanel({ trades, empty, tag }: { trades: TradeCard[]; empty?: string; tag?: ReactNode }) {
+  const nums = trades.some((t) => t.qty != null);
   return (
-    <Glass style={{ padding: "22px 26px", minWidth: 0 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#5A627A", fontWeight: 500, gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-        <span>Trades and reasons</span>
-        <span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>{tag}Reason for each order</span>
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
-        {trades.length === 0 && empty && <div style={{ fontSize: 13, color: "#5A627A", padding: "12px 4px" }}>{empty}</div>}
-        {trades.map((t) => (
-          <div key={t.id} style={{ display: "grid", gridTemplateColumns: "64px minmax(0,1fr)", gap: 14, padding: "12px 0", borderTop: "1px solid rgba(15,22,38,.08)" }}>
-            <div>
-              <div style={{ display: "inline-block", padding: "3px 9px", borderRadius: 999, fontSize: 11, fontWeight: 600, color: "#fff", background: t.side === "SELL" ? "#E0485A" : t.side === "BUY" ? "#22A06B" : "#8A92A8" }}>{SIDE_TEXT[t.side]}</div>
-              <div style={{ fontSize: 11, color: "#5A627A", marginTop: 6 }}>{t.time}</div>
-            </div>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 13.5, fontWeight: 600, letterSpacing: "-.01em" }}>{t.head} <span style={{ color: "#5A627A", fontWeight: 400, marginLeft: 6 }}>{t.algo}</span></div>
-              {t.tags && t.tags.length > 0 && <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }} data-testid="trade-tags">{t.tags.map((g) => <Tag key={g.text} tone={g.tone} title={g.title}>{g.text}</Tag>)}</div>}
-              <div className="pb-pretty" style={{ fontSize: 12, color: "#3C4458", lineHeight: 1.45, marginTop: 3 }}>{t.reason}</div>
-            </div>
+    <section>
+      <SectionHead title="Trades and reasons">{tag}<span className="pb-small" style={{ color: "var(--faint)" }}>Reason for each order</span></SectionHead>
+      <div className="pb-card" style={{ padding: trades.length ? "0 var(--sp-5)" : "var(--sp-5)" }}>
+        {trades.length === 0 && empty && <div className="pb-body">{empty}</div>}
+        {trades.length > 0 && (
+          <div className="pb-table-scroll">
+            <table className="pb-table" style={{ minWidth: 640 }}>
+              <thead>
+                <tr>
+                  <th style={{ width: 64 }}>Decision</th><th style={{ width: 64 }}>Side</th><th>Order and reason</th>
+                  {nums && <><th className="pb-num" style={{ width: 72 }}>Shares</th><th className="pb-num" style={{ width: 88 }}>Price</th></>}
+                </tr>
+              </thead>
+              <tbody>
+                {trades.map((t) => (
+                  <tr key={t.id}>
+                    <td style={{ verticalAlign: "top", paddingTop: "var(--sp-3)", color: "var(--faint)" }}>{t.time}</td>
+                    <td style={{ verticalAlign: "top", paddingTop: "var(--sp-3)" }}><span className={`pb-tag ${SIDE_TAG[t.side]}`}>{SIDE_TEXT[t.side]}</span></td>
+                    <td style={{ padding: "var(--sp-3)", height: "auto" }}>
+                      <div style={{ fontWeight: 600, color: "var(--ink)" }}>
+                        {t.qty != null ? t.what : t.head} <span style={{ color: "var(--text-2)", fontWeight: 400, marginLeft: "var(--sp-1)" }}>{t.algo}</span>
+                      </div>
+                      {t.tags && t.tags.length > 0 && <div style={{ display: "flex", gap: "var(--sp-1)", flexWrap: "wrap", marginTop: "var(--sp-1)" }} data-testid="trade-tags">{t.tags.map((g) => <Tag key={g.text} tone={g.tone} title={g.title}>{g.text}</Tag>)}</div>}
+                      <div className="pb-small pb-pretty" style={{ marginTop: "var(--sp-1)", maxWidth: 720 }}>{t.reason}</div>
+                    </td>
+                    {nums && <>
+                      <td className="pb-num" style={{ verticalAlign: "top", paddingTop: "var(--sp-3)", fontWeight: 600 }}>{t.qty != null ? t.qty.toLocaleString("en-US") : ""}</td>
+                      <td className="pb-num" style={{ verticalAlign: "top", paddingTop: "var(--sp-3)" }}>{t.px ?? ""}</td>
+                    </>}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        ))}
+        )}
       </div>
-    </Glass>
+    </section>
   );
 }

@@ -150,7 +150,7 @@ def test_market_event_proposal_runs_a_bridge(client):
     assert decisions[0]["order_qty"] == pytest.approx(0.5 * 400 * 0.20)  # down_on_yes: engine sees p
     s = client.get(f"/bridges/{bid}").json()
     assert s["direction"] == "down_on_yes" and s["market"]["id"] == "2589813" and s["basis"] == "market_event"
-    assert s["label"] == "Product hedge — no confirmatory claim"
+    assert s["label"] == "Product hedge, not a tested claim"
     client.app.state.bridges[p["id"]].status = "running"  # as if still running
     assert client.post("/bridges", json=body).status_code == 200
     assert client.post("/bridges", json={**body, "source": "live"}).status_code == 409

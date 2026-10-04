@@ -8,13 +8,13 @@ import { useAsync, useRetry } from "@/lib/hooks";
 import { algoRunLabel, brokerLabel, useStore, type BridgeEntry } from "@/lib/store";
 import { bridgeFeeGateOff, fillScopeLabel, liveVenue, priceSubtitle, replayInfo, replayNotice } from "@/lib/realBridge";
 import { quantile, useBridgeStream } from "@/lib/useBridgeStream";
-import { Btn, Glass, Label, Orb, Tag, Unavailable } from "@/components/pb";
-import { AlgoDock, PortfolioPanel, TopRow, TradesPanel, type DockAlgo, type TradeCard } from "./parts";
+import { Btn, Glass, Orb, Tag, Unavailable } from "@/components/pb";
+import { AlgoDock, PortfolioPanel, SectionHead, TopRow, TradesPanel, type DockAlgo, type TradeCard } from "./parts";
 import { OpportunityBridge } from "./OpportunityBridge";
 import { ClosedBanner, WeekendPanel } from "./WeekendPanel";
 import { sessionClosed } from "@/lib/closed";
 import { budgetPhrase, capacityFromLiquidity, capitalView, evidenceLabelBadge, fillBadges, gateCounts, gateSentence } from "@/lib/risk";
-import { BadgeTag, CapacityCard, PanelHead } from "@/components/risk/RiskBits";
+import { BadgeTag, CapacityCard } from "@/components/risk/RiskBits";
 
 type LiveEntry = BridgeEntry;
 
@@ -35,12 +35,12 @@ export function BridgeScreen({ routeBridgeId }: { routeBridgeId?: string }) {
 
   if (!list.length) {
     return (
-      <main className="pb-page" style={{ maxWidth: 760, paddingTop: 40, paddingBottom: 80, textAlign: "center" }}>
-        <Glass style={{ padding: "36px 30px", display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
-          <Orb state="breathing" size={90} ink="#1E2A4A" />
-          <h2 className="pb-serif" style={{ margin: 0, fontSize: 34, fontWeight: 400, letterSpacing: "-.015em" }}>No bridges</h2>
-          <p style={{ margin: 0, fontSize: 14, color: "#3C4458", maxWidth: 480 }}>Build a bridge from a market that is a risk to you. Or replay the recorded recession-market weekend on a backend bridge. You approve the bridge first.</p>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
+      <main className="pb-page" style={{ maxWidth: 760, paddingTop: "var(--sp-7)", paddingBottom: "var(--sp-8)", textAlign: "center" }}>
+        <Glass style={{ padding: "var(--sp-7) var(--sp-6)", display: "flex", flexDirection: "column", alignItems: "center", gap: "var(--sp-4)" }}>
+          <Orb state="breathing" size={80} ink="#14182B" />
+          <h1 className="pb-h3">No bridges</h1>
+          <p className="pb-body pb-pretty" style={{ margin: 0, maxWidth: 480 }}>Build a bridge from a market that is a risk to you. Or replay the recorded recession-market weekend on a backend bridge. You approve the bridge first.</p>
+          <div style={{ display: "flex", gap: "var(--sp-3)", flexWrap: "wrap", justifyContent: "center", marginTop: "var(--sp-2)" }}>
             <Btn href="/build">Build a bridge</Btn>
             <Btn kind={opening ? "disabled" : "secondary"} onClick={() => void watchWeekend()}>{opening ? "Wait for the replay" : "Watch the weekend replay"}</Btn>
           </div>
@@ -55,9 +55,9 @@ export function BridgeScreen({ routeBridgeId }: { routeBridgeId?: string }) {
   };
 
   return (
-    <main className="pb-page" style={{ maxWidth: 1400, paddingTop: 8, paddingBottom: 60, display: "flex", flexDirection: "column", gap: 16, animationDuration: ".5s" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", paddingBottom: 16, borderBottom: "1px solid rgba(15,22,38,.16)" }}>
-        <span style={{ fontSize: 13, color: "#5A627A", paddingRight: 8, whiteSpace: "nowrap" }}>
+    <main className="pb-page" style={{ paddingTop: "var(--sp-5)", paddingBottom: "var(--sp-8)", display: "grid", gridTemplateColumns: "minmax(0,1fr)", gap: "var(--sp-6)" }}>
+      <nav aria-label="Bridges" style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)", flexWrap: "wrap", paddingBottom: "var(--sp-4)", borderBottom: "1px solid var(--border)" }}>
+        <span className="pb-small" style={{ paddingRight: "var(--sp-2)", whiteSpace: "nowrap" }}>
           {list.length} {list.length === 1 ? "bridge" : "bridges"}
         </span>
         {list.map((b) => {
@@ -65,23 +65,19 @@ export function BridgeScreen({ routeBridgeId }: { routeBridgeId?: string }) {
           const ticker = b.eq?.t ?? "Bridge";
           const ev = b.q?.ev ?? b.bridgeId;
           return (
-            <button key={b.id} type="button" onClick={() => pick(b)} style={{ display: "flex", alignItems: "center", gap: 10, height: 46, padding: "0 16px 0 12px", borderRadius: 999, cursor: "pointer", background: on ? "#0F1626" : "rgba(255,255,255,.55)", color: on ? "#fff" : "#0F1626", border: `1px solid ${on ? "#0F1626" : "rgba(15,22,38,.14)"}`, minWidth: 0 }} aria-pressed={on}>
-              <span style={{ fontWeight: 600, fontSize: 13, letterSpacing: "-.01em" }}>{ticker}</span>
-              <span className="pb-ellipsis" style={{ fontSize: 12.5, opacity: 0.72, maxWidth: 240 }}>{ev}</span>
-              <span className="pb-tab" style={{ fontSize: 12, opacity: 0.72 }}>{b.mode === "opportunity" ? "options" : "engine"}</span>
+            <button key={b.id} type="button" className="pb-chip" data-on={on} onClick={() => pick(b)} style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)", minWidth: 0 }} aria-pressed={on}>
+              <span className="pb-ticker">{ticker}</span>
+              <span className="pb-ellipsis" style={{ maxWidth: 240, opacity: 0.8 }}>{ev}</span>
+              <span style={{ fontSize: "var(--fs-12)", opacity: 0.7 }}>{b.mode === "opportunity" ? "options" : "engine"}</span>
             </button>
           );
         })}
-        <button type="button" onClick={() => { s.setQuestion(null); router.push("/build"); }} style={{ display: "inline-flex", alignItems: "center", gap: 8, height: 46, padding: "0 16px", borderRadius: 999, cursor: "pointer", border: "1px dashed rgba(15,22,38,.3)", background: "transparent", color: "#3C4458", fontSize: 13, fontWeight: 500 }}>
-          Build a bridge
-        </button>
-      </div>
+        <Btn variant="ghost" size="sm" onClick={() => { s.setQuestion(null); router.push("/build"); }}>Build a bridge</Btn>
+      </nav>
       {active && <LiveBridge key={active.bridgeId} entry={active} />}
     </main>
   );
 }
-
-// ---------------------------------------------------------------- live (backend engine over SSE)
 
 const GATES: { reason: string; name: string }[] = [
   { reason: "stale", name: "Staleness gate" },
@@ -154,6 +150,7 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
     return {
       id: l.n, side: l.qty > 0 ? "SELL" : "BUY", time: `#${l.n}`,
       head: `${Math.abs(l.qty)} ${ticker ?? ""}${px}`,
+      qty: Math.abs(l.qty), what: ticker ?? "", px: filledPx != null ? filledPx.toFixed(2) : spot ? `~${spot.toFixed(2)}` : undefined,
       algo: l.family ? `${prettyId(l.family)}${l.preset != null ? `, preset ${l.preset}` : ""}` : "Delta-bridge sizer",
       reason: `YES at ${l.p == null ? "n/a" : Math.round(l.p * 100) + "¢"}. ${l.family ? "Algo" : "Engine"} reason: ${l.reason.replaceAll("_", " ")}${l.signal != null ? ` (signal ${l.signal.toFixed(3)})` : ""}. ${l.target != null ? `Target hedge ${l.target} sh, previous hedge ${l.current} sh.` : `Hedge before the order: ${l.current} sh.`} Decision time ${fmtNs(l.ns)}.${brokerLine}${gateLine ? ` ${gateLine}` : ""}`,
       tags: fillBadges(f, l.evidence),
@@ -185,15 +182,15 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
   const evLabel = evidenceLabelBadge(summary.data?.evidence_label ?? st.log.findLast((l) => l.evidence)?.evidence ?? null);
   const evTag = evLabel ? <BadgeTag b={{ ...evLabel, title: summary.data?.evidence?.evidence ?? evLabel.title }} /> : null;
   const replayAlert = notice && (notice.tone === "warn"
-    ? <div role="alert" style={{ fontSize: 13, color: "#8A5A00" }}>{notice.text}</div>
-    : <div role="status" style={{ fontSize: 13, color: "#5A627A" }}>{notice.text}</div>);
+    ? <div role="alert" className="pb-small" style={{ color: "var(--warn)" }}>{notice.text}</div>
+    : <div role="status" className="pb-small">{notice.text}</div>);
 
   if (summary.data?.division === "opportunity" || (!summary.data && entry.mode === "opportunity")) {
     return (
       <>
         {summary.error && <Unavailable what={`Bridge ${id}`} error={summary.error} onRetry={retrySummary} />}
-        {st.status === "reconnecting" && <div role="alert" style={{ fontSize: 13, color: "#8A5A00" }}>The connection to the backend stopped. The system tries to connect again.</div>}
-        {st.error && <div style={{ fontSize: 13, color: "#5A627A" }}>Engine message: {st.error}</div>}
+        {st.status === "reconnecting" && <div role="alert" className="pb-small" style={{ color: "var(--warn)" }}>The connection to the backend stopped. The system tries to connect again.</div>}
+        {st.error && <div className="pb-small">Engine message: {st.error}</div>}
         {replayAlert}
         <OpportunityBridge id={id} summary={summary.data ?? null} st={st} question={question} sourceTag={sourceTag} />
       </>
@@ -203,43 +200,39 @@ function LiveBridge({ entry }: { entry: LiveEntry }) {
   return (
     <>
       {summary.error && <Unavailable what={`Bridge ${id}`} error={summary.error} onRetry={retrySummary} />}
-      {st.status === "reconnecting" && <div role="alert" style={{ fontSize: 13, color: "#8A5A00" }}>The connection to the backend stopped. The system tries to connect again.</div>}
-      {st.error && <div style={{ fontSize: 13, color: "#5A627A" }}>Engine message: {st.error}</div>}
+      {st.status === "reconnecting" && <div role="alert" className="pb-small" style={{ color: "var(--warn)" }}>The connection to the backend stopped. The system tries to connect again.</div>}
+      {st.error && <div className="pb-small">Engine message: {st.error}</div>}
       {replayAlert}
       <ClosedBanner session={session} replay={source === "replay"} hold={holding} />
       <TopRow
-        question={question} venues={entry.q?.venues ?? ["Polymarket"]} marketTag={<span style={{ display: "inline-flex", gap: 6 }}>{sourceTag}<Tag tone="neutral">{direction === "down_on_yes" ? "hedge against YES" : "hedge against NO"}</Tag></span>}
+        question={question} venues={entry.q?.venues ?? ["Polymarket"]} marketTag={<span style={{ display: "inline-flex", gap: "var(--sp-2)" }}>{sourceTag}<Tag tone="neutral">{direction === "down_on_yes" ? "hedge against YES" : "hedge against NO"}</Tag></span>}
         pBig={p == null ? "n/a" : `${Math.round(p * 100)}¢`} pSpark={st.prices.slice(-60)}
         pSub={pSub.sub}
         volLabel="Ticks received" volValue={st.prices.length.toLocaleString("en-US")}
         orb={st.status === "running" ? "connecting" : "breathing"} nodeLabel={algoRunLabel(running).node}
-        nodeLines={<>p50 {fmtNs(p50)}, p99 {fmtNs(p99)}<br />{move ? <>Expected move on YES <span style={{ color: move < 0 ? "#E0485A" : "#22A06B", fontWeight: 600 }}>{fmtPct(move)}</span></> : `${st.decisions} decisions`}</>}
+        nodeLines={<>p50 {fmtNs(p50)}, p99 {fmtNs(p99)}<br />{move ? <>Expected move on YES <span style={{ color: move < 0 ? "var(--down)" : "var(--up)", fontWeight: 600 }}>{fmtPct(move)}</span></> : `${st.decisions} decisions`}</>}
         instShort="Dynamic short hedge" exchange="US" ticker={ticker ?? "n/a"} name={[card.data?.name, entry.eq?.name].find((n) => n && n !== ticker) ?? ""}
         equityTag={<Tag tone="neutral" title="The equity price is the last quote from GET /equities. The bridge does not stream it.">last quote</Tag>}
-        px={spot ? spot.toFixed(2) : "n/a"} pxColor="#5A627A" pxDelta={spot ? "The bridge does not stream this price" : "No quote is available"} pxSpark={[]}
+        px={spot ? spot.toFixed(2) : "n/a"} pxColor="var(--text-2)" pxDelta={spot ? "The bridge does not stream this price" : "No quote is available"} pxSpark={[]}
         driftLabel="Priced-in drift since start (mapping estimate)" drift={priced == null ? "n/a" : fmtPct(priced, 2)}
       />
-      <AlgoDock label={running ? "Engine gates, fitted algo" : "Engine gates, default spec"} algos={algos} tag={<span style={{ display: "inline-flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>{evTag}{gateTag}{fitTag}{holdTag}{sourceTag}</span>} />
+      <PortfolioPanel
+        tag={<Tag tone={scope.tone} title={scope.title}>{scope.name}</Tag>}
+        big={`${st.hedge.toLocaleString("en-US")} sh`} bigColor="var(--ink)" bigNote={st.brokerHedge != null ? "hedge that the engine intends" : "current short hedge (engine)"}
+        left={[`Long ${ticker ?? ""}`, `${shares.toLocaleString("en-US")} sh`, spot ? fmtMoney(shares * spot) : "value n/a"]}
+        right={["Engine orders", String(orders.length ? st.log.filter((l) => l.action === "order").length : summary.data?.orders ?? 0), `${st.decisions} decisions`]}
+        ratio={coverage} ratioLabel={`Coverage (target ${Math.round((summary.data?.target_coverage ?? 0.5) * 100)}%)`}
+        footL={st.brokerHedge != null ? `${scope.filledVerb} ${st.brokerHedge.toLocaleString("en-US")} sh short, ${st.fills} fills` : `Status: ${st.status}`} footR={`p50 ${fmtNs(p50)}, p99 ${fmtNs(p99)}`}
+      />
       <WeekendPanel id={id} summary={summary.data ?? null} st={st} replay={source === "replay"} ticker={ticker} />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,340px),1fr))", gap: 16, alignItems: "stretch" }}>
-        <PortfolioPanel
-          tag={<Tag tone={scope.tone} title={scope.title}>{scope.name}</Tag>}
-          big={`${st.hedge.toLocaleString("en-US")} sh`} bigColor="#0F1626" bigNote={st.brokerHedge != null ? "hedge that the engine intends" : "current short hedge (engine)"}
-          left={[`Long ${ticker ?? ""}`, `${shares.toLocaleString("en-US")} sh`, spot ? fmtMoney(shares * spot) : "value n/a"]}
-          right={["Engine orders", String(orders.length ? st.log.filter((l) => l.action === "order").length : summary.data?.orders ?? 0), `${st.decisions} decisions`]}
-          ratio={coverage} ratioLabel={`Coverage (target ${Math.round((summary.data?.target_coverage ?? 0.5) * 100)}%)`}
-          footL={st.brokerHedge != null ? `${scope.filledVerb} ${st.brokerHedge.toLocaleString("en-US")} sh short, ${st.fills} fills` : `Status: ${st.status}`} footR={`p50 ${fmtNs(p50)}, p99 ${fmtNs(p99)}`}
-        />
-        <TradesPanel trades={trades} tag={sourceTag} empty={holding ? "The market is closed, so the algo holds and sends no equity orders. The staged plan (hedge B) covers the open." : st.decisions ? `No orders yet. The gates hold the hedge (${st.decisions} decisions).` : "No ticks yet. Wait for the first tick."} />
-      </div>
+      <AlgoDock label={running ? "Engine gates, fitted algo" : "Engine gates, default spec"} algos={algos} tag={<>{evTag}{gateTag}{fitTag}{holdTag}{sourceTag}</>} />
+      <TradesPanel trades={trades} tag={sourceTag} empty={holding ? "The market is closed, so the algo holds and sends no equity orders. The staged plan (hedge B) covers the open." : st.decisions ? `No orders yet. The gates hold the hedge (${st.decisions} decisions).` : "No ticks yet. Wait for the first tick."} />
       {ticker && <LiquidityPanel ticker={ticker} shares={shares} coverage={summary.data?.target_coverage ?? 0.5} counts={gateCounts(st.log.map((l) => l.fill), summary.data)} sandbox={scope.sandbox} />}
-      <Label style={{ marginTop: -4 }}>Bridge {id}: {summary.data?.label ?? "engine bridge"}</Label>
+      <div className="pb-small" style={{ color: "var(--faint)", paddingTop: "var(--sp-3)", borderTop: "1px solid var(--border)" }}>Bridge <span className="pb-code">{id}</span>: {summary.data?.label ?? "engine bridge"}</div>
     </>
   );
 }
 
-/** 08 · Liquidity & capital: the participation caps every order of this bridge is checked against (GET /liquidity),
- *  and how many orders the caps cut or the capital budget refused so far. */
 function LiquidityPanel({ ticker, shares, coverage, counts, sandbox }: { ticker: string; shares: number; coverage: number; counts: { liquidity: number; capital: number }; sandbox: boolean }) {
   const hedge = Math.floor(coverage * shares);
   const liq = useAsync(`bliq:${ticker}:${coverage}:${hedge}`, () => getLiquidity(ticker, { coverage, ...(hedge > 0 ? { qty: hedge } : {}) }));
@@ -252,15 +245,15 @@ function LiquidityPanel({ ticker, shares, coverage, counts, sandbox }: { ticker:
     : capV && !capV.read ? "The system cannot read the account now, so it refuses orders that increase exposure (fail closed)."
     : "If the system cannot read the account, it refuses orders that increase exposure (fail closed).";
   return (
-    <Glass style={{ padding: "22px 26px", minWidth: 0 }}>
-      <PanelHead label="Liquidity and capital">
+    <section style={{ minWidth: 0 }}>
+      <SectionHead title="Liquidity and capital">
         <Tag tone={counts.liquidity ? "caution" : "neutral"} title="Orders that the participation caps decreased (liquidity_capped)">{counts.liquidity} capped</Tag>
         <Tag tone={counts.capital ? "caution" : "neutral"} title="Orders that the capital budget of the account refused (capital_budget)">{counts.capital} refused (capital)</Tag>
-      </PanelHead>
+      </SectionHead>
       <CapacityCard view={view} title={`Participation caps for ${ticker}, approved hedge ${hedge.toLocaleString("en-US")} sh`} testId="bridge-capacity" />
-      <div className="pb-pretty" style={{ fontSize: 12, color: "#5A627A", marginTop: 10, lineHeight: 1.5 }}>
+      <div className="pb-small pb-pretty" style={{ marginTop: "var(--sp-3)", maxWidth: 880 }}>
         The system caps each order at 10% of the opening 5-minute volume. It caps the total for each session at 1% of ADV. Then it compares each order with the capital budget ({budgetPhrase(cap.data?.limits)}). {enforce}
       </div>
-    </Glass>
+    </section>
   );
 }
