@@ -1,0 +1,17 @@
+{
+ "events_listed": 6315,
+ "frame_dates": 120,
+ "frame_markets": 9349,
+ "frame_tickers": 15,
+ "in_r3_events": 2324,
+ "kinds": {
+  "daily": 4431,
+  "monthly": 524,
+  "weekly": 4394
+ },
+ "markets_listed": 27404,
+ "not_closed": 20,
+ "on_r3_res_date": 303,
+ "parse_not_above_threshold": 4904,
+ "parse_out_of_scope_type": 10504
+}
