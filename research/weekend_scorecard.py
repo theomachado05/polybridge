@@ -56,12 +56,21 @@ def generic(folder: str, name: str, trade: str, unit: str, verdict: str, *, valu
             "Cost of a round trip": cost(ref) if cost else "n/a", "Verdict": verdict}
 
 
+def forward_note(m: pd.DataFrame) -> str:
+    """S1's forward paper test on the recorded weekend books, when it has been run."""
+    f = m[(m.segment == "forward") & (m.variant == "V0") & (m.cost_mult == 1.0)]
+    if f.empty:
+        return ""
+    f = f.iloc[0]
+    return f". On this weekend's recorded books: {int(f.entries)} fills, +${f.pnl_locked:.2f} locked on ${f.capital:,.2f} after costs"
+
+
 def rows() -> list[dict]:
     out = []
     p = R / "s1_twin_spread" / "metrics.csv"
     if p.exists():
-        m = pd.read_csv(p)
-        m = m[(m.quote_rule == "registered") & (m.variant == "V0")]
+        m_all = pd.read_csv(p)
+        m = m_all[(m_all.quote_rule == "registered") & (m_all.variant == "V0")]
         i1, o1, o2 = (m[(m.segment == s) & (m.cost_mult == c)].iloc[0] for s, c in (("IS", 1.0), ("OOS", 1.0), ("OOS", 2.0)))
         out.append({"Study": "**S1 twin spread.** Same question on Polymarket and Kalshi: buy the cheap YES and the other venue's NO", "Unit": "$ per trade",
                     "In-sample, 1× costs": cell(i1, "mean_pnl_per_trade_mid", "ci_lo_mid", "ci_hi_mid", "entries"),
@@ -69,7 +78,7 @@ def rows() -> list[dict]:
                     "At 2× costs": f"{f(o2.mean_pnl_per_trade_mid)} (out-of-sample)", "Sharpe (in / out)": f"{f(i1.sharpe_mid)} / {f(o1.sharpe_mid)} (unverified prices)",
                     "Max drawdown": pc(o1.max_drawdown), "Worst month": pc(o1.worst_month), "Turnover a year": f"{o1.turnover_ann:.1f}×",
                     "Cost of a round trip": f"fees {o1.fees_bp:.0f} bp, spreads {o1.spread_bp:.0f} bp, carry {o1.carry_bp:.0f} bp of capital",
-                    "Verdict": "not a pass: 15% of out-of-sample entries are print-verified, 50% needed"})
+                    "Verdict": "not a pass: 15% of out-of-sample entries are print-verified, 50% needed" + forward_note(m_all)})
     p = R / "s3_three_way" / "metrics.csv"
     if p.exists():
         m = pd.read_csv(p)

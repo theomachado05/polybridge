@@ -80,7 +80,22 @@ tradable prices. The print-verified subset is the part that survives.
 `python -m pytest s1_twin_spread/tests s3_three_way/tests -q`: 38 passed. `python -m pytest tests/test_notebook.py -q`:
 4 passed.
 
-## Still to run
+## Forward paper test (run Sun 2026-10-04, times UTC)
 
-- `python -m s1_twin_spread.forward --rate 0.0417` after Sun 2026-10-04 11:00 UTC (07:00 ET), then
-  `python -m s1_twin_spread.report`. A labelled update with `--final` after 13:30 UTC.
+| Time | What | Result |
+|---|---|---|
+| 11:01:03 | The forward window closed (11:00:00); the recorder kept running | Recorder healthy; 51 failed fetches in all, none after 03:13:37 |
+| 11:02:38 | `python -m s1_twin_spread.forward --rate 0.0417` | 169,818 book rows, 33 pairs, last snapshot 10:59:52. Primary: 7 fills on 6 pairs at 1x costs, +$84.22 locked on $1,217.90; 2 fills at 2x, +$47.59 |
+| 11:02:52 | `python -m s1_twin_spread.report` | `SUMMARY.md` and `capacity.md` gain the forward section; `metrics.csv` gains 8 forward rows and 4 columns. The 32 history rows were checked to be unchanged |
+
+- **Run from a separate checkout of `main`** (branch `r/forward-tests`), with the recording and the S1 cache linked in:
+  other sessions were using the main working tree on another branch.
+- **One gap in the recording inside the window:** 02:56:58 to 03:13:52 UTC (16.9 minutes), when the machine could
+  not reach either exchange. The paper test only acts on snapshots that follow each other within the cadence, so
+  nothing was filled across the gap.
+- **The large fill was looked at book by book.** KXGEMINI-GEM4-26OCT16 ("Gemini 4.0 released by October 15, 2026?"):
+  at 03:21:37 Polymarket's book fell from 0.55 / 0.56 to 0.52 / 0.55 and at 03:21:52 to 0.33 / 0.38 (book 1 second
+  old), while Kalshi showed a bid of 0.59 for 201.64 contracts until 03:22:37. Entry at 03:21:52: 380.64 pairs at
+  83.07 cents a pair over three levels. Exit at 03:42:37, when Polymarket's bid was 0.49 and Kalshi's ask 0.44.
+  +$68.29 after fees, of the +$84.22 total.
+- A labelled update through 13:30 UTC (`--final`) was not run before the submission.

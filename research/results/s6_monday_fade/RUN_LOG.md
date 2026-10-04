@@ -41,3 +41,15 @@ The two runs use identical rules; the second only adds the print check. No rule 
 ## Tests
 
 `python -m pytest s6_monday_fade/tests -q`: 10 passed.
+
+## Forward look (amendment 1; run Sun 2026-10-04, times UTC)
+
+- 11:03:00 `python -m s6_monday_fade.forward`: window 00:00 to 11:00 UTC. 457 threshold markets have a Friday options
+  band and a recorded book; 301 showed a two-sided book (149 Kalshi, 152 Polymarket). **2 fills**, both on
+  Polymarket: AMZN above 250 (5 contracts sold at 0.720 against a band of 0.57 to 0.69) and AMZN above 260 (20.1
+  contracts sold at 0.064 against 0.03 to 0.03): 25.1 contracts, $20.21 of capital, $0.66 beyond the band after fees.
+  Kalshi: 0 fills. Median spread 30 points on Kalshi and 9 on Polymarket; median size at the best price $1.52 and
+  $1.90.
+- 11:04:15 `python -m s6_monday_fade.report`: `SUMMARY.md` gains the forward section (the report generator was given
+  a section that reads `forward.json`, `books_forward.csv` and `fills_forward.csv`). No other number changed.
+- These markets resolve on Monday 2026-10-05; no P&L exists yet.

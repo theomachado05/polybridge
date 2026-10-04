@@ -1,0 +1,39 @@
+{
+ "window": [
+  "2026-10-04T00:00:00+00:00",
+  "2026-10-04T11:00:00+00:00"
+ ],
+ "markets_with_a_band_and_a_book": 457,
+ "fills": 2,
+ "contracts": 25.1,
+ "capital": 20.2136,
+ "gap_dollars": 0.6634071569930146,
+ "by_venue": {
+  "kalshi": {
+   "markets": 149,
+   "fills": 0,
+   "contracts": 0.0,
+   "capital": 0.0,
+   "gap_dollars": 0.0,
+   "spread_median_points": 30.0,
+   "touch_dollars_median": 1.52,
+   "moved_3_points_share": 0.5838926174496645,
+   "mid_change_abs_median_points": 3.500000000000003,
+   "mid_range_median_points": 30.500000000000004,
+   "quote_outside_friday_band_share": 0.0027377544156067645
+  },
+  "polymarket": {
+   "markets": 152,
+   "fills": 2,
+   "contracts": 25.1,
+   "capital": 20.2136,
+   "gap_dollars": 0.6634071569930146,
+   "spread_median_points": 9.000000000000002,
+   "touch_dollars_median": 1.9,
+   "moved_3_points_share": 0.14473684210526316,
+   "mid_change_abs_median_points": 1.0000000000000009,
+   "mid_range_median_points": 34.75,
+   "quote_outside_friday_band_share": 0.03971905287694761
+  }
+ }
+}

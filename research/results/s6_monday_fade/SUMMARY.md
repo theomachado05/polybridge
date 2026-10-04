@@ -117,6 +117,22 @@ V2 (every pair with valid measurements) is identical to V0: R3's file keeps full
 | Costs on every trade | Yes: half-spread and fee on entry, and again on the end-of-day exit variant. |
 | **Polymarket prices that are not prices** | **This is the cause.** 166 of 187 entries have no print at the assumed price, and 54 sit near 0.50. R3 removed prices of exactly 0.500 at the close and the open; near-0.50 midpoints at 09:45 remain. |
 
+## Forward: this weekend's real books against Friday's options band (amendment 1)
+
+Window 2026-10-04 00:00 to 2026-10-04 11:00 UTC (Sat 20:00 to Sun 07:00 New York time). 457 threshold markets have a Friday options band and a recorded book; 301 of them showed a two-sided book at some point. Fills are taken only from recorded levels, at the size shown, after each venue's fee.
+
+**The rule filled 2 times in the eleven hours: 25.1 contracts, $20.21 of capital, $0.66 beyond the options band.** On a weekend these books are wide and thin, and they almost never show a price more than 2 points outside what Friday's options allow.
+
+| Venue | Markets with a two-sided book | Fills | Median spread | Median size at the best price | Quotes outside Friday's band | Mid moved 3+ points over the window |
+|---|---|---|---|---|---|---|
+| Kalshi | 149 | 0 | 30 points | $1.52 | 0.3% of snapshots | 58% of markets |
+| Polymarket | 152 | 2 | 9 points | $1.90 | 4.0% of snapshots | 14% of markets |
+
+| Time (UTC) | Venue | Market | Trade | Contracts | Price | Options band on Friday | Beyond the band, after fees |
+|---|---|---|---|---|---|---|---|
+| 10-04 02:12 | Polymarket | AMZN above 250, 2026-10-05 | sell YES | 5.0 | 0.720 | 0.57 to 0.69 | $0.11 |
+| 10-04 03:24 | Polymarket | AMZN above 260, 2026-10-05 | sell YES | 20.1 | 0.064 | 0.03 to 0.03 | $0.55 |
+
 ## What didn't work
 
 - **Too few out-of-sample trades** (16) for any verdict.

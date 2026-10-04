@@ -77,6 +77,32 @@ def charts(eq: pd.DataFrame, K: float, oos_from: str) -> None:
         plt.close(fig)
 
 
+def forward_section() -> list[str]:
+    """Amendment 1: this weekend's recorded threshold books against Friday's options band. Empty until the forward run exists."""
+    if not (R / "forward.json").exists():
+        return []
+    fwd = json.loads((R / "forward.json").read_text())
+    books = pd.read_csv(R / "books_forward.csv")
+    out = ["## Forward: this weekend's real books against Friday's options band (amendment 1)", "",
+           f"Window {fwd['window'][0][:16].replace('T', ' ')} to {fwd['window'][1][:16].replace('T', ' ')} UTC (Sat 20:00 to Sun 07:00 New York time). "
+           f"{fwd['markets_with_a_band_and_a_book']} threshold markets have a Friday options band and a recorded book; {len(books)} of them showed a "
+           "two-sided book at some point. Fills are taken only from recorded levels, at the size shown, after each venue's fee.", "",
+           f"**The rule filled {fwd['fills']} times in the eleven hours: {fwd['contracts']:.1f} contracts, ${fwd['capital']:.2f} of capital, "
+           f"${fwd['gap_dollars']:.2f} beyond the options band.** On a weekend these books are wide and thin, and they almost never show a price "
+           "more than 2 points outside what Friday's options allow.", "",
+           "| Venue | Markets with a two-sided book | Fills | Median spread | Median size at the best price | Quotes outside Friday's band | Mid moved 3+ points over the window |",
+           "|---|---|---|---|---|---|---|"]
+    for v, d in fwd["by_venue"].items():
+        out.append(f"| {v.capitalize()} | {d['markets']} | {d['fills']} | {d['spread_median_points']:.0f} points | ${d['touch_dollars_median']:.2f} | "
+                   f"{100 * d['quote_outside_friday_band_share']:.1f}% of snapshots | {100 * d['moved_3_points_share']:.0f}% of markets |")
+    if fwd["fills"]:
+        f = pd.read_csv(R / "fills_forward.csv")
+        out += ["", "| Time (UTC) | Venue | Market | Trade | Contracts | Price | Options band on Friday | Beyond the band, after fees |", "|---|---|---|---|---|---|---|---|"]
+        out += [f"| {r.utc[5:16].replace('T', ' ')} | {r.venue.capitalize()} | {r.underlying} above {r.strike:g}, {r.res_date} | {r.side} | {r.qty:.1f} | "
+                f"{r.avg_price:.3f} | {r.options_lo_friday:.2f} to {r.options_hi_friday:.2f} | ${r.gap_dollars:.2f} |" for r in f.itertuples()]
+    return out + [""]
+
+
 def main() -> int:
     m, tr, eq = pd.read_csv(R / "metrics.csv"), pd.read_csv(R / "trades.csv"), pd.read_csv(R / "equity.csv")
     meta = json.loads((R / "run_meta.json").read_text())
@@ -161,6 +187,7 @@ def main() -> int:
           "| The result is never an input | Yes: `outcome` enters only the P&L. |",
           "| Costs on every trade | Yes: half-spread and fee on entry, and again on the end-of-day exit variant. |",
           f"| **Polymarket prices that are not prices** | **This is the cause.** {len(unv)} of {len(p)} entries have no print at the assumed price, and {near_half} sit near 0.50. R3 removed prices of exactly 0.500 at the close and the open; near-0.50 midpoints at 09:45 remain. |", "",
+          *forward_section(),
           "## What didn't work", "",
           f"- **Too few out-of-sample trades** ({int(o1.trades)}) for any verdict.",
           f"- **Only {100 * a1.verified_share:.0f}% of entries are print-verified**, and the verified ones are not significant.",
