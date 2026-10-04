@@ -1,0 +1,10 @@
+strategy,horizon,n_a,n_b,mean_a,mean_b,difference,ci_lo,ci_hi,p_value,window,scope
+cash_secured_put,1,3,111,,,,,,,2026 (seen),all H1
+cash_secured_put,2,3,109,,,,,,,2026 (seen),all H1
+cash_secured_put,3,3,107,,,,,,,2026 (seen),all H1
+cash_secured_put,5,3,109,,,,,,,2026 (seen),all H1
+cash_secured_put,10,3,111,,,,,,,2026 (seen),all H1
+cash_secured_put,21,3,110,,,,,,,2026 (seen),all H1
+cash_secured_put,42,3,97,,,,,,,2026 (seen),all H1
+cash_secured_put,63,1,76,,,,,,,2026 (seen),all H1
+cash_secured_put,exp,1,79,,,,,,,2026 (seen),all H1
