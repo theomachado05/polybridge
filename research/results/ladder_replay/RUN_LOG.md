@@ -16,7 +16,7 @@ minutes late.
 | 02:08 | Losing trades on supposedly nested pairs, all from 5 ladders with the rung year misread by S11's rule. Amendment 5 (post hoc year check). | |
 | 02:10 | Bug: a high-edge trade (Starmer, 62 points) showed YES and NO prints mixed in one second. The data API's `outcomeIndex` is wrong on many prints. Fixed to map by `asset`; first run declared void (`v0_void/`). | `a876979` |
 | 02:11 to 02:18 | All prints pulled again; registered-rule run and year-check run, both universes. | |
-| 02:20 to 02:40 | Checks: high-edge trades read print by print (Starmer now prints YES at 0.12 to 0.14), losers traced to rung order, manual sample of 20 pairs read, SUMMARY written. | this commit |
+| 02:18 to 02:21 | Checks: high-edge trades read print by print (Starmer now prints YES at 0.12 to 0.14), losers traced to rung order, manual sample of 20 pairs read, SUMMARY written. | this commit |
 
 ## Data sources
 
