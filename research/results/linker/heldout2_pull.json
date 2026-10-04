@@ -1,0 +1,69 @@
+{
+ "study": "heldout2",
+ "amended": [],
+ "t1": "2026-10-04T03:38:01+00:00",
+ "markets": 292,
+ "markets_cached": 2,
+ "markets_pulled": 290,
+ "tickers": 54,
+ "equities_pulled": 16,
+ "off_menu": {
+  "CIB": {
+   "keep": true,
+   "note": "off the list, served by Massive as 'Grupo Cibest S.A. American Depositary Shares (each representing four (4) Preferred Shares)' (ADRC) on XNYS",
+   "ticker": "CIB",
+   "name": "Grupo Cibest S.A. American Depositary Shares (each representing four (4) Preferred Shares)",
+   "type": "ADRC",
+   "has_options": true,
+   "list_date": "1995-07-26",
+   "primary_exchange": "XNYS",
+   "recent_listing": false
+  },
+  "EBAY": {
+   "keep": true,
+   "note": "off the list, served by Massive as 'eBay Inc' (CS) on XNAS",
+   "ticker": "EBAY",
+   "name": "eBay Inc",
+   "type": "CS",
+   "has_options": true,
+   "list_date": "1998-09-24",
+   "primary_exchange": "XNAS",
+   "recent_listing": false
+  },
+  "EC": {
+   "keep": true,
+   "note": "off the list, served by Massive as 'Ecopetrol S.A' (ADRC) on XNYS",
+   "ticker": "EC",
+   "name": "Ecopetrol S.A",
+   "type": "ADRC",
+   "has_options": true,
+   "list_date": "2008-09-18",
+   "primary_exchange": "XNYS",
+   "recent_listing": false
+  },
+  "GME": {
+   "keep": true,
+   "note": "off the list, served by Massive as 'GameStop Corp. Class A' (CS) on XNYS",
+   "ticker": "GME",
+   "name": "GameStop Corp. Class A",
+   "type": "CS",
+   "has_options": true,
+   "list_date": "2002-02-13",
+   "primary_exchange": "XNYS",
+   "recent_listing": false
+  },
+  "RYAAY": {
+   "keep": true,
+   "note": "off the list, served by Massive as 'Ryanair Holdings plc American Depositary Shares' (ADRC) on XNAS",
+   "ticker": "RYAAY",
+   "name": "Ryanair Holdings plc American Depositary Shares",
+   "type": "ADRC",
+   "has_options": true,
+   "list_date": "1997-05-29",
+   "primary_exchange": "XNAS",
+   "recent_listing": false
+  }
+ },
+ "failures": [],
+ "seconds": 772.9
+}
