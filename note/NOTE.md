@@ -4,7 +4,7 @@ Gator Quant Hacks 2026 · Systematic Trading track · PolyBridge · Jacob Craini
 
 ## Summary
 
-Prediction markets now price elections, macro events and stock levels around the clock, but most of their books are thin and retail. We test two places where such a book can be checked against something firmer: its own internal logic, and the listed options on the same stock. **Foundation:** on 4,561 fresh Polymarket stock markets, pre-registered and run once, the option-implied probability was a more accurate forecast than the Polymarket price (Brier difference +0.0108, 95% CI +0.0064 to +0.0158). **Mechanism 1, date ladders:** a contract that resolves YES by an earlier date can never be worth more than the same contract for a later date; we measure how often that rule breaks and whether the break can be traded. **Mechanism 2, "will it hit" tickets:** tickets priced above an options-derived reference lost money for their buyers. We report every approach that failed, including our pre-registered 8-K study for the Massive challenge, and describe the C++ system that watches these markets and acts only on signals that have passed their tests.
+Prediction markets now price elections, macro events and stock levels around the clock, but most of their books are thin and retail. We test two places where such a book can be checked against something firmer: its own internal logic, and the listed options on the same stock. **Foundation:** on 4,561 fresh Polymarket stock markets, pre-registered and run once, the option-implied probability was a more accurate forecast than the Polymarket price (Brier difference +0.0108, 95% CI +0.0064 to +0.0158). **Mechanism 1, date ladders:** a contract that resolves YES by an earlier date can never be worth more than the same contract for a later date; we measure how often that rule breaks and whether the break can be traded. **Mechanism 2, "will it hit" tickets:** in past data, tickets priced above an options-derived reference lost money for their buyers, but a fresh test could not confirm it. We report every approach that failed, including our pre-registered 8-K study for the Massive challenge, and describe the C++ system that watches these markets and acts only on signals that have passed their tests.
 
 ## 1. Economic foundation
 
@@ -39,7 +39,7 @@ The result holds on daily and weekly markets, at both snapshots, with equal weig
 
 **Prior evidence (seen data, exploratory).** In `research/s21_options_anchor/`, buyers of YES who paid 10 or more points above the central options reference lost 29.8 points per contract [−40.1, −18.3] (53 markets, 29 events). Selling only tickets priced 5 or more points above the reference earned +22.3 points [+10.4, +33.1] on 60 markets in 33 events, against +3.1 [−1.5, +7.9] on the tickets it left; taken minus left +19.2 [+5.8, +31.5], and no anchor-shuffle reached that gap. It failed its own confirmation rule: only 2 markets were out of sample. The touch reference rests on modeling choices (barrier versus terminal probability, option expiry later than the ticket window), and the broader first-weekend seller result (S18) was negative in its recent period.
 
-**Validation tonight (`research/touch_fresh/`, method committed before data).** [TOUCH: fresh-sample count; verdict or INSUFFICIENT; hedged version and market-exposure regression if run; committed forward protocol from 5 October.]
+**Fresh test (`research/touch_fresh/`, method committed before data): INSUFFICIENT.** Earlier studies had already used almost every heavily traded stock "will it hit" event. Under S21's rules only 32 fresh markets in 4 events remained, below the pre-set 30 markets in 15 events, so the confirmatory test could not run. A secondary sample, fixed before the pull, relaxed one volume floor (142 markets, 85 events), but only 7 markets met the sell rule: −15.4 points per contract [−48.8, +21.8], with the unfiltered seller book at −2.6 [−19.0, +11.5]. The point estimates lean against the S21 result, and the samples are too thin to decide. A delta-hedged unfiltered book earned +10.5 [−0.1, +20.0], and seller returns fell 2.3 points for each 1% the stock moved toward the level, so much of the premium is compensation for market exposure. A forward test for markets listed from 5 October is committed (`research/touch_fresh/FORWARD.md`). We treat this mechanism as an open lead, not a trading thesis.
 
 ## 5. Risk, capital and the system that acts on it
 
@@ -53,7 +53,7 @@ The result holds on daily and weekly markets, at both snapshots, with equal weig
 
 ## 6. What failed
 
-We pre-registered and ran more than 40 tests. The table lists the ones a reader might expect to work.
+We pre-registered and ran about 40 tests. The table lists the ones a reader might expect to work.
 
 | Test | Verdict | Key number |
 |---|---|---|
