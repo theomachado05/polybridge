@@ -96,3 +96,19 @@ observations" and is reported as that.
 ## Amendments
 
 None.
+
+**Amendment 1, 2026-10-04 01:48 UTC, after the S6 run and before this weekend's threshold books were read for it:
+a forward look on real order books (S6 forward).** History cannot say what was executable. This weekend the recorder
+holds the real books of the same markets while options are shut. Rules, fixed now:
+- **Markets:** Polymarket "closes above $K" markets, and Kalshi's S&P 500 and Nasdaq-100 16:00 thresholds, that have
+  a clean-expiry options band from Friday's close in the live rows of `research/results/arb/arb_gaps.csv`.
+- **Window:** 2026-10-04 00:00:00 to 11:00:00 UTC (Sun 07:00 ET); a later update to 13:30 UTC is labelled.
+- **Trade:** as section 2 with real prices and no modelled spread. Sell YES into the recorded bids while
+  `bid − fee − hi ≥ θ`; buy YES from the recorded asks while `lo − ask − fee ≥ θ`; θ = 2 points. The condition must
+  hold at two consecutive snapshots; the fill is from the second one's levels, at least 5 and at most 500 contracts,
+  one position per market. Fees: Polymarket 0.04 × P × (1 − P); Kalshi `ceil_to_cent(0.07 × C × P × (1 − P))`.
+- **Reported:** fills, contracts, capital, the gap against Friday's band in dollars, per venue and underlying; and how
+  the books moved over the window: the change in each market's mid, the share of markets that moved 3 points or more,
+  the median spread and the median dollars at the best price.
+- **Not a P&L.** The markets resolve on Monday or later and Friday's band is stale by then. This measures how much of
+  the S6 idea was executable this weekend, at what size. It is not part of the success criterion.

@@ -76,3 +76,23 @@ def test_closure_metrics():
     assert m["sharpe"] == pytest.approx(r.mean() / r.std(ddof=1) * 52 ** 0.5)
     assert m["max_drawdown"] == pytest.approx(0.005) and m["total_return"] == pytest.approx(0.02)
     assert cfg.PRIMARY == "V0"
+
+
+def test_forward_fill_walks_only_levels_that_clear_the_band():
+    from s6_monday_fade import forward as fw
+    bids = [[0.60, 100.0], [0.55, 100.0], [0.48, 100.0]]                 # options' band top 0.45
+    f = fw.fill(bids, 0.45, "sell YES", "pm")
+    assert f["qty"] == 200 and f["avg_price"] == pytest.approx(0.575)   # 0.48 - fee - 0.45 is under 2 points
+    assert f["capital"] == pytest.approx(200 - 115.0)                    # buying NO costs 1 - price
+    asks = [[0.30, 40.0], [0.36, 40.0], [0.60, 40.0]]                    # band bottom 0.40
+    g = fw.fill(asks, 0.40, "buy YES", "pm")
+    assert g["qty"] == 80 and g["capital"] == pytest.approx(40 * 0.30 + 40 * 0.36)
+    assert fw.fill([[0.60, 2000.0]], 0.45, "sell YES", "pm")["qty"] == fw.MAX_SIZE
+
+
+def test_forward_signal_needs_the_minimum_size():
+    from s6_monday_fade import forward as fw
+    assert fw.signal({"b": [[0.60, 3.0]], "a": [[0.62, 50.0]]}, 0.40, 0.45, "pm") is None
+    side, f = fw.signal({"b": [[0.60, 30.0]], "a": [[0.62, 50.0]]}, 0.40, 0.45, "pm")
+    assert side == "sell YES" and f["qty"] == 30
+    assert fw.signal({"b": [[0.42, 30.0]], "a": [[0.44, 50.0]]}, 0.40, 0.45, "k") is None      # inside the band
