@@ -52,3 +52,5 @@ Every closure, market, Polymarket price and option-implied probability used here
 `research/results/reopen_taker/`: `SUMMARY.md` (verdict first), `stats.json`, `trades_frozen.csv`, `trades.csv`, `RUN_LOG.md`, `.done` (a second run refuses). Code in `research/reopen_taker/`, synthetic tests in `research/reopen_taker/tests/`.
 
 ## Amendments
+
+1. **2026-10-03, post-freeze, pre-outcome, bug fix only.** The first invocation froze the trade list (`trades_frozen.csv` sha256 `59de7cda...dadd7b`) and then crashed while joining outcomes, because 288 R3 event rows repeat a `market_id` (one market spanning several closures; R3's events are market-by-closure pairs, and the outcome is identical across repeats). No P&L or outcome-joined number was computed or seen. The join now takes one outcome per `market_id`. A trade is therefore one per event row (market and reopening day), which is how R3 defines an event; section 3's "one trade per market" is read as one per R3 event. The run was restarted from the on-disk cache and must reproduce the same frozen hash; no rule, threshold or parameter changed.

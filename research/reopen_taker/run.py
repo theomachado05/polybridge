@@ -88,7 +88,7 @@ def main():
         f"http requests {dict(http.session.counts)}; failures {len(http.failures)}")
 
     td = pd.read_csv(fz, dtype={"market_id": str})
-    y = ev.set_index("market_id")["outcome"]
+    y = ev.drop_duplicates("market_id").set_index("market_id")["outcome"]
     td["y"] = td["market_id"].map(y)
     sc["drop_no_outcome"] = int(td["y"].isna().sum())
     td = td.dropna(subset=["y"]).copy()
