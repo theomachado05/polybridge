@@ -41,12 +41,18 @@ def main() -> int:
     pt = ds.Throttle(4.0)
     cands, counts = [], {"events": 0, "events_dropped_by_tag": 0, "markets_seen": 0, "in_s4": 0, "by_word": 0, "low_volume": 0, "short_life": 0}
     for closed in ("true", "false"):
-        offset = 0
+        offset, last_vol = 0, float("nan")
         while offset < 3000:
             evs = ds.get_json(f"{ds.GAMMA}/events", {"closed": closed, "limit": 100, "offset": offset, "order": "volume", "ascending": "false",
-                                                     "end_date_min": cfg.EVENT_END_MIN, "end_date_max": cfg.EVENT_END_MAX}, throttle=pt)
+                                                     "end_date_min": cfg.EVENT_END_MIN, "end_date_max": cfg.EVENT_END_MAX}, throttle=pt,
+                              allow=(422,))
+            if isinstance(evs, dict):          # the API refuses deeper offsets; events come in descending volume, so stop
+                counts[f"stopped_at_offset_{closed}"] = offset
+                counts[f"last_event_volume_{closed}"] = last_vol
+                break
             if not evs:
                 break
+            last_vol = float(evs[-1].get("volume") or 0)
             for ev in evs:
                 counts["events"] += 1
                 tags = [t.get("label") or "" for t in (ev.get("tags") or [])]

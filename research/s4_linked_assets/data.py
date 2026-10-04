@@ -87,10 +87,11 @@ def month_chunks(start: str, end: str) -> list[tuple[str, str]]:
     return out
 
 
-def equity_bars(s: requests.Session, base: str, ticker: str) -> dict[str, np.ndarray]:
+def equity_bars(s: requests.Session, base: str, ticker: str, start: str = cfg.WINDOW_START,
+                end: str = cfg.WINDOW_END) -> dict[str, np.ndarray]:
     """5-minute bars of the regular session (09:30 to 16:00 New York): start time, open, close, volume, vwap."""
     rows = []
-    for a, b in month_chunks(cfg.WINDOW_START, cfg.WINDOW_END):
+    for a, b in month_chunks(start, end):
         rows += massive_rows(s, f"{base}/v2/aggs/ticker/{ticker}/range/{BAR_MIN}/minute/{a}/{b}",
                              {"adjusted": "true", "sort": "asc", "limit": 50000})
     if not rows:
@@ -103,8 +104,9 @@ def equity_bars(s: requests.Session, base: str, ticker: str) -> dict[str, np.nda
             "v": df.v.to_numpy(float), "vw": df.get("vw", df.c).to_numpy(float)}
 
 
-def daily_bars(s: requests.Session, base: str, ticker: str) -> dict[str, np.ndarray]:
-    rows = massive_rows(s, f"{base}/v2/aggs/ticker/{ticker}/range/1/day/{DAILY_START}/{cfg.WINDOW_END}",
+def daily_bars(s: requests.Session, base: str, ticker: str, start: str = DAILY_START,
+               end: str = cfg.WINDOW_END) -> dict[str, np.ndarray]:
+    rows = massive_rows(s, f"{base}/v2/aggs/ticker/{ticker}/range/1/day/{start}/{end}",
                         {"adjusted": "true", "sort": "asc", "limit": 50000})
     days = [datetime.fromtimestamp(r["t"] / 1000, UTC).strftime("%Y-%m-%d") for r in rows]
     return {"day": np.array(days), "c": np.array([float(r["c"]) for r in rows]), "o": np.array([float(r["o"]) for r in rows])}
