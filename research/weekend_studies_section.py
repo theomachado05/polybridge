@@ -31,6 +31,8 @@ STUDIES = {
                         "segments": {"IS": "IS", "OOS": "OOS", "ALL": None}},
     "S15 weekend scare": {"dir": "s15_weekend_scare", "value": "net_points", "metric": "mean_net_points", "unit": "points per trade",
                           "segments": {"IS": "IS", "OOS": "OOS", "ALL": None}},
+    "S16 Kalshi quotes": {"dir": "s16_kalshi_quotes", "value": "net_points", "metric": "mean_net_points", "unit": "points per trade",
+                          "segments": {"IS": "IS", "OOS": "OOS", "ALL": None}},
 }
 PRIMARY = "V0"
 
@@ -160,6 +162,17 @@ def findings(results: Path | str = RESULTS) -> pd.DataFrame:
             f"{r.mean_y:+.2f} points [{r.ci_lo:+.2f}, {r.ci_hi:+.2f}]; {r.diff_vs_quiet:+.2f} [{r.diff_ci_lo:+.2f}, {r.diff_ci_hi:+.2f}]; selling it nets "
             f"{m.mean_net_points:+.2f} [{m.ci_lo:+.2f}, {m.ci_hi:+.2f}]; {int(m.verified_trades)} of {int(m.checkable_trades)} entries print-verified",
             "replicates in quoted prices only; not a pass")
+    f = R / "s16_kalshi_quotes" / "tests.csv"
+    if f.exists():
+        t = pd.read_csv(f)
+        t = t[(t.quote_age == "6h") & (t.threshold == 10.0)]
+        k, p_, kk = (t[t.test.str.startswith(x)].iloc[0] for x in ("K2 the same nights, Kalshi", "K2 the same nights, Polymarket", "K3 nights picked on Polymarket's move: Kalshi"))
+        pp = t[t.test.str.startswith("K3 nights picked on Polymarket's move: Polymarket")].iloc[0]
+        m = _row(pd.read_csv(R / "s16_kalshi_quotes" / "metrics.csv"), variant="V0", segment="ALL", cost_mult=1.0)
+        add("S16", "After a 10+ point overnight move on one venue: that venue's price by the close, and the twin's on the same nights",
+            f"picked on Kalshi: Kalshi {k['mean']:+.2f} [{k.ci_lo:+.2f}, {k.ci_hi:+.2f}], Polymarket {p_['mean']:+.2f}; picked on Polymarket: "
+            f"Polymarket {pp['mean']:+.2f} [{pp.ci_lo:+.2f}, {pp.ci_hi:+.2f}], Kalshi {kk['mean']:+.2f}; the fade at Kalshi's real quotes nets "
+            f"{m.mean_net_points:+.2f} points [{m.ci_lo:+.2f}, {m.ci_hi:+.2f}]", "the give-back is one venue's noise; not a pass")
     f = R / "s14_link_ceiling" / "tests.csv"
     if f.exists():
         t = pd.read_csv(f)

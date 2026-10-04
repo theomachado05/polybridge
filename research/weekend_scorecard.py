@@ -99,6 +99,8 @@ def rows() -> list[dict]:
         generic("s12_resting_orders", "S12 resting orders", "S9's fades posted as resting orders, judged against public prints", "points per filled order",
                 "not a pass: adverse selection out-of-sample", value="net_per_filled", lo="net_lo", hi="net_hi", n="filled",
                 where={"sample": "S9", "variant": "R0"}, cost=lambda r: f"{r.cost_points:.2f} points ({r.cost_bp:,.0f} bp of capital)"),
+        generic("s16_kalshi_quotes", "S16 Kalshi quotes", "Fade overnight moves of 5+ points at Kalshi's real bid and ask", "points per trade",
+                "not a pass", cost=lambda r: f"spread {r.mean_spread_cost_points:.2f} points, fee {r.mean_fee_cost_points:.2f} ({r.cost_bp_of_capital:,.0f} bp of capital)"),
         generic("s15_weekend_scare", "S15 weekend rises", "Sell weekend rises of 5+ points on 871 price markets S9 did not use", "points per trade",
                 "not a pass; the reversal holds in quoted prices only", cost=lambda r: f"{r.mean_cost_points:.2f} points ({r.cost_bp_of_capital:,.0f} bp of capital)"),
     ]

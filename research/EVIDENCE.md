@@ -53,6 +53,7 @@ Notes on the rows:
 - **S10 weekend lag: not a pass.** The oil event questions lead the oil price markets by minutes inside the weekend, but the follow-through is 0.05 points and the trade loses 2.60 points after costs (section 9; `research/results/s10_weekend_lag/SUMMARY.md`).
 - **S12 resting orders: not a pass.** Resting orders cut the cost by two thirds, but out-of-sample the orders that fill lose 11.02 points more than the ones that do not [-20.79, -5.16] (section 9; `research/results/s12_resting_orders/SUMMARY.md`).
 - **S15 selling weekend rises on fresh price markets: not a pass.** -1.21 points per trade after costs [-3.01, +0.73]; the reversal is there in quoted prices (-3.20 points) but 9 of 201 checkable entries have a print (section 9; `research/results/s15_weekend_scare/SUMMARY.md`).
+- **S16 the fade at Kalshi's real quotes: not a pass.** -10.43 points per trade [-12.91, -8.09]; a large overnight move in the mid is mostly the quote widening (section 9; `research/results/s16_kalshi_quotes/SUMMARY.md`).
 - **S3 three-way consistency: no trade.** The primary rule fired 0 times in 60 matched sets on 33 dates (section 9; `research/results/s3_three_way/SUMMARY.md`).
 - Also in the table above: the replication, the fit walk-forward, the 8-K out-of-sample run, R1 hedge A and R3's net residual gap all failed or were NULL.
 
@@ -197,7 +198,7 @@ For the note's "Liquidity and capital" and "Risk management" criteria. This is w
 
 ---
 
-## 9. Weekend and cross-venue alpha: S1 twin spread, S3 three-way, S4 linked assets, S5 replication, S6 Monday fade, S7 weekend straddles, S8 open referee, S9 weekend price markets, S10 weekend lag, S12 resting orders, S14 link diagnostic, S15 weekend rises (pre-registered; forward tests pending)
+## 9. Weekend and cross-venue alpha: S1 twin spread, S3 three-way, S4 linked assets, S5 replication, S6 Monday fade, S7 weekend straddles, S8 open referee, S9 weekend price markets, S10 weekend lag, S12 resting orders, S14 link diagnostic, S15 weekend rises, S16 Kalshi quotes (pre-registered; forward tests pending)
 
 Added 2026-10-03 evening. Brief: `research/ALPHA_BRIEF.md`. Both methods were committed before any data was pulled for them (`research/s1_twin_spread/METHOD.md`, commit `8260548`; `research/s3_three_way/METHOD.md`, commit `83ce137`; amendments are dated in each file). Sources: `research/results/s1_twin_spread/SUMMARY.md`, `metrics.csv`, `trades.csv`, `RUN_LOG.md`; `research/results/s3_three_way/SUMMARY.md`, `metrics.csv`, `sets.csv`.
 
@@ -216,6 +217,7 @@ Added 2026-10-03 evening. Brief: `research/ALPHA_BRIEF.md`. Both methods were co
 | **S9 weekend price markets.** Sell the weekend move in Polymarket's price markets on Sunday 17:55 | points per trade | +0.59 [-1.07, +2.39], n 265 | -3.77 [-7.56, +1.87], n 42 | -3.29 (whole sample) | +0.77 / -3.24 | 52.9% | -27.5% | 24.8× | 3.29 points (1,246 bp of capital) | not a pass |
 | **S10 weekend lag.** Trade the oil price market after the event question jumps, 30-minute hold | points per trade | -2.60 [-2.80, -2.39], n 379 | -2.14, n 42 | -5.25 (whole sample) | -21.18 / -5.36 | 104.9% | -19.4% | 30.2× | 2.69 points (595 bp of capital) | not a pass |
 | **S12 resting orders.** S9's fades posted as resting orders, judged against public prints | points per filled order | +3.28 [-1.16, +8.56], n 70 | -8.07 [-11.24, -5.36], n 20 | -2.05 (whole sample) | +1.64 / -5.63 | 98.1% | -45.2% | 15.7× | 1.11 points (312 bp of capital) | not a pass: adverse selection out-of-sample |
+| **S16 Kalshi quotes.** Fade overnight moves of 5+ points at Kalshi's real bid and ask | points per trade | -6.60 [-8.92, -4.63], n 32 | -12.28 [-15.43, -9.36], n 66 | -19.25 (whole sample) | -4.80 / -10.72 | 327.5% | -208.1% | 16.0× | spread 8.68 points, fee 2.54 (2,515 bp of capital) | not a pass |
 | **S15 weekend rises.** Sell weekend rises of 5+ points on 871 price markets S9 did not use | points per trade | -1.10 [-2.83, +0.72], n 204 | -1.92 [-10.08, +6.05], n 31 | -5.82 (whole sample) | -1.35 / -1.08 | 73.2% | -26.5% | 22.6× | 4.62 points (1,209 bp of capital) | not a pass; the reversal holds in quoted prices only |
 <!-- scorecard:end -->
 
@@ -293,6 +295,11 @@ Added 2026-10-03 evening. Brief: `research/ALPHA_BRIEF.md`. Both methods were co
 - **In prices someone traded at it cannot be shown:** 9 of the 201 entries that can be checked have a print at the assumed price.
 - **The trade: not a pass.** Selling the rise earns +3.40 points before costs and -1.21 after [-3.01, +0.73] on 235 trades; -5.82 at 2x costs. These markets are thin and a round trip costs 4.62 points.
 
+**S16, the give-back at real quotes, on Kalshi.** Kalshi publishes its historical best bid and ask. On the 31 questions that trade on both venues (S1's cache), the same overnight clock as S8. Source: `research/results/s16_kalshi_quotes/SUMMARY.md`; method commit `f7ce87e`, amendment `31c20aa`.
+
+- **Each venue gives back the large moves measured on itself; the other venue's price for the same question does not move.** Nights picked on Kalshi's overnight move of 10 points or more (32 market-sessions): Kalshi's quoted mid -3.55 points by the close [-6.88, -0.66], Polymarket -0.47 [-2.42, +1.33], difference +3.08 [+0.73, +5.90]. Nights picked on Polymarket's move (28): Polymarket -4.30 [-8.00, -0.52], Kalshi -0.27 [-4.00, +2.28], difference -4.04 [-7.71, +0.22]. At 5 points the same signs, intervals through zero. So the give-back is noise in one venue's price, not the event's odds overshooting.
+- **Verdict: not a pass.** At Kalshi's real bid and ask the fade loses 10.43 points per trade [-12.91, -8.09] on 98 trades: after a large overnight move in the mid the quote is wide (8.68 points of spread per round trip, 2.54 of fee).
+
 **Forward tests.** Live order books of the 33 twin pairs (every 15 s) and of 660 threshold markets (every 30 s) have been recorded since Sat 2026-10-03 19:09:48 ET (`research/forward/README.md`). S1 and S3 are run on them as paper tests with rules frozen before the window (Sat 20:00 ET to Sun 07:00 ET); results go into the two SUMMARY files.
 
 ---
@@ -312,7 +319,7 @@ Added 2026-10-03 evening. Brief: `research/ALPHA_BRIEF.md`. Both methods were co
 
 10. **Linked equities do respond to prediction-market odds while they are closed, and the finding replicated on fresh markets.** S4: +4.69 bp of excess opening gap per point of overnight odds move (t = 4.01). S5, 93 markets S4 never used: +6.88 bp per point (t = 6.01), +137 bp after moves of 10 points or more. The response is complete by the open (after the open: -0.55 bp per point, t = -0.74), so it is information, not a trade.
 
-11. **Polymarket gives back part of a large move, and the give-back is the size of the cost of trading it. Four samples agree.** Event markets after an overnight move of 10 points or more: 2.63 points [-3.90, -1.47] (S5 amendment 3 and S8, two sets of markets). Price markets after a weekend move of 5 points or more: 2.94 points [-4.66, -1.14] (S9), and 3.20 points [-5.13, -1.51] after a rise on 871 markets S9 did not use (S15, quoted prices). A round trip across the spread costs 2.6 to 4.6 points. Resting orders cut that cost and then lose to adverse selection out-of-sample (S12).
+11. **Polymarket gives back part of a large move, and the give-back is the size of the cost of trading it. Four samples agree.** Event markets after an overnight move of 10 points or more: 2.63 points [-3.90, -1.47] (S5 amendment 3 and S8, two sets of markets). Price markets after a weekend move of 5 points or more: 2.94 points [-4.66, -1.14] (S9), and 3.20 points [-5.13, -1.51] after a rise on 871 markets S9 did not use (S15, quoted prices). A round trip across the spread costs 2.6 to 4.6 points. Resting orders cut that cost and then lose to adverse selection out-of-sample (S12). **The likeliest reason is that the give-back is noise in one venue's price:** on questions that trade on both venues, each venue gives back the 10-point moves measured on itself (Kalshi -3.55, Polymarket -4.30) while the other venue's price does not move (S16; about 30 market-sessions each). It is the size of the spread because it is the spread.
 
 12. **The link between an event question and an asset holds inside the weekend, in a market that is open** (S9): Polymarket's oil price markets move 0.86 points per point of oil-linked event odds while oil futures are shut (t = 5.85). It is co-movement over the same weekend, not a lead, and the fade of the weekend move does not pay after costs.
 

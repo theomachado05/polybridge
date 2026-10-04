@@ -94,7 +94,7 @@ and the tests of section 3 are what this study can answer.
 
 ## Amendments
 
-**Amendment 1, 2026-10-04 03:37 UTC, after the first run and before computing what it adds: the mirror of K2.** K2
+**Amendment 1, 2026-10-04 03:36 UTC, after the first run and before computing what it adds: the mirror of K2.** K2
 picks the nights on Kalshi's own overnight move and found that Kalshi's quoted mid gives the move back while the
 Polymarket twin does not move. The symmetric question was not in the method and has not been computed: **K3.** Pick
 the nights on **Polymarket's** own overnight move instead (its history price at 09:29 minus the previous close, 5
