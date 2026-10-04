@@ -1,0 +1,303 @@
+{
+ "tickers": [
+  "AAPL",
+  "AEE",
+  "AEP",
+  "AMZN",
+  "BEAM",
+  "BMNR",
+  "CCJ",
+  "CCL",
+  "CEG",
+  "COIN",
+  "CRCL",
+  "CRWV",
+  "DAL",
+  "DLR",
+  "EQIX",
+  "ETHA",
+  "ETN",
+  "ETR",
+  "EWZ",
+  "FRO",
+  "FXI",
+  "GLD",
+  "GLXY",
+  "GOOGL",
+  "HOOD",
+  "IBIT",
+  "ICLN",
+  "ITA",
+  "IWM",
+  "JETS",
+  "KRE",
+  "KWEB",
+  "LLY",
+  "LMT",
+  "MARA",
+  "META",
+  "MPC",
+  "MSFT",
+  "MSTR",
+  "NTLA",
+  "NVDA",
+  "OKLO",
+  "ORCL",
+  "OXY",
+  "PSX",
+  "RKLB",
+  "RTX",
+  "SMH",
+  "SMR",
+  "SPY",
+  "STNG",
+  "TLT",
+  "TRV",
+  "TSLA",
+  "TSM",
+  "UAL",
+  "USO",
+  "VGK",
+  "VLO",
+  "VRT",
+  "XHB",
+  "XLE",
+  "XOM",
+  "XOP",
+  "ZIM"
+ ],
+ "questions": [
+  {
+   "id": "polymarket:4662693",
+   "question": "Will Anthropic announce bankruptcy by December 31, 2027?"
+  },
+  {
+   "id": "polymarket:562828",
+   "question": "2026 Balance of Power: D Senate, D House"
+  },
+  {
+   "id": "polymarket:637002",
+   "question": "Will Donald Trump win the Nobel Peace Prize in 2026?"
+  },
+  {
+   "id": "polymarket:4752979",
+   "question": "Will England win on 2026-10-03?"
+  },
+  {
+   "id": "polymarket:4037599",
+   "question": "Will Lula win the most votes in the first round of the 2026 Brazil presidential election?"
+  },
+  {
+   "id": "polymarket:4985052",
+   "question": "Will the price of Bitcoin be above $76,000 on October 3?"
+  },
+  {
+   "id": "polymarket:5126782",
+   "question": "Will Oklahoma enact a data center moratorium by December 31, 2027?"
+  },
+  {
+   "id": "polymarket:2589814",
+   "question": "Will the Fed increase interest rates by 50+ bps after the October 2026 meeting?"
+  },
+  {
+   "id": "polymarket:5164765",
+   "question": "Israel accuses Iran/proxies of plane stabbing incident by Oct 31?"
+  },
+  {
+   "id": "polymarket:5062265",
+   "question": "Will Bitcoin reach $88,000 September 28-October 4?"
+  },
+  {
+   "id": "polymarket:5062275",
+   "question": "Will Bitcoin dip to $82,000 September 28-October 4?"
+  },
+  {
+   "id": "polymarket:682716",
+   "question": "Will Moshe Feiglin be the next Prime Minister of Israel?"
+  },
+  {
+   "id": "polymarket:5062278",
+   "question": "Will Bitcoin dip to $80,000 September 28-October 4?"
+  },
+  {
+   "id": "polymarket:4662696",
+   "question": "Will NuScale announce bankruptcy by December 31, 2027?"
+  },
+  {
+   "id": "polymarket:4641065",
+   "question": "US x Iran ceasefire continues through October 31?"
+  },
+  {
+   "id": "polymarket:4727411",
+   "question": "Will Jamaica win on 2026-10-02?"
+  },
+  {
+   "id": "polymarket:666861",
+   "question": "Trump out as President before 2027?"
+  },
+  {
+   "id": "polymarket:5062327",
+   "question": "Will Ethereum dip to $2,600 September 28-October 4?"
+  },
+  {
+   "id": "polymarket:4662584",
+   "question": "Will OpenAI announce bankruptcy by December 31, 2027?"
+  },
+  {
+   "id": "polymarket:5082319",
+   "question": "Will Elon Musk post 90-114 tweets from October 1 to October 3, 2026?"
+  },
+  {
+   "id": "polymarket:2126461",
+   "question": "Will Crude Oil reach a new all-time high by December 31?"
+  },
+  {
+   "id": "polymarket:5170746",
+   "question": "Will Bitcoin dip to $60,000 in October?"
+  },
+  {
+   "id": "polymarket:716823",
+   "question": "Extended FDV above $500M one day after launch?"
+  },
+  {
+   "id": "polymarket:3491459",
+   "question": "US-Iran Final Nuclear Deal by October 31, 2026?"
+  },
+  {
+   "id": "polymarket:3215008",
+   "question": "Will the Fed increase interest rates by 25 bps after the December 2026 meeting?"
+  },
+  {
+   "id": "polymarket:5073563",
+   "question": "Will Argentina win on 2026-10-03?"
+  },
+  {
+   "id": "polymarket:4753009",
+   "question": "Will Czechia win on 2026-10-03?"
+  },
+  {
+   "id": "polymarket:5170771",
+   "question": "Will Ethereum reach $3,000 in October?"
+  },
+  {
+   "id": "polymarket:4730293",
+   "question": "Will AD Cali win on 2026-10-02?"
+  },
+  {
+   "id": "polymarket:5130977",
+   "question": "US x Iran ceasefire continues through October 7?"
+  },
+  {
+   "id": "polymarket:5170773",
+   "question": "Will Ethereum reach $2,800 in October?"
+  },
+  {
+   "id": "polymarket:630746",
+   "question": "Will the Democrats win the Kansas Senate race in 2026?"
+  },
+  {
+   "id": "polymarket:4757280",
+   "question": "Will India win on 2026-10-03?"
+  },
+  {
+   "id": "polymarket:4970462",
+   "question": "Will Elon Musk post 180-199 tweets from September 29 to October 6, 2026?"
+  },
+  {
+   "id": "polymarket:701502",
+   "question": "Will Bitcoin dip to $45,000 by December 31, 2026?"
+  },
+  {
+   "id": "polymarket:701496",
+   "question": "Will Bitcoin reach $100,000 by December 31, 2026?"
+  },
+  {
+   "id": "polymarket:559651",
+   "question": "Xi Jinping out before 2027?"
+  },
+  {
+   "id": "polymarket:4984993",
+   "question": "Will the price of Ethereum be above $2,800 on October 3?"
+  },
+  {
+   "id": "polymarket:4936105",
+   "question": "Will WTI Crude Oil (WTI) hit (LOW) $80 in October?"
+  },
+  {
+   "id": "polymarket:3501950",
+   "question": "Strait of Hormuz traffic returns to normal by October 31?"
+  },
+  {
+   "id": "polymarket:630747",
+   "question": "Will the Republicans win the Kansas Senate race in 2026?"
+  },
+  {
+   "id": "polymarket:5170772",
+   "question": "Will Ethereum reach $2,900 in October?"
+  },
+  {
+   "id": "polymarket:5036103",
+   "question": "Will the price of Bitcoin be above $84,000 on October 4?"
+  },
+  {
+   "id": "polymarket:4713962",
+   "question": "Russia military action against an EU country by December 31, 2026?"
+  },
+  {
+   "id": "polymarket:5170732",
+   "question": "Will Bitcoin reach $95,000 in October?"
+  },
+  {
+   "id": "polymarket:629708",
+   "question": "Will the Republicans win the Vermont governor race in 2026?"
+  },
+  {
+   "id": "polymarket:2774057",
+   "question": "Strait of Hormuz traffic returns to normal by September 30?"
+  },
+  {
+   "id": "polymarket:1090496",
+   "question": "NATO x Russia military clash by December 31, 2026?"
+  },
+  {
+   "id": "polymarket:4885967",
+   "question": "Saudi Oil Pipeline (East-West) restarts by October 15?"
+  },
+  {
+   "id": "polymarket:631057",
+   "question": "Will the Democrats win the Ohio Senate race in 2026?"
+  },
+  {
+   "id": "polymarket:3554662",
+   "question": "Will OpenAI have the best AI model at the end of October 2026?"
+  },
+  {
+   "id": "polymarket:5126794",
+   "question": "Will Louisiana enact a data center moratorium by December 31, 2026?"
+  },
+  {
+   "id": "polymarket:5062329",
+   "question": "Will Ethereum dip to $2,500 September 28-October 4?"
+  },
+  {
+   "id": "polymarket:3554658",
+   "question": "Will Meta have the best AI model at the end of October 2026?"
+  },
+  {
+   "id": "polymarket:629707",
+   "question": "Will the Democrats win the Vermont governor race in 2026?"
+  },
+  {
+   "id": "polymarket:4985062",
+   "question": "Will the price of Bitcoin be above $80,000 on October 3?"
+  },
+  {
+   "id": "polymarket:1193093",
+   "question": "Will Ulf Kristersson be the next Prime Minister of Sweden?"
+  },
+  {
+   "id": "polymarket:4936101",
+   "question": "Will WTI Crude Oil (WTI) hit (HIGH) $120 in October?"
+  }
+ ]
+}
