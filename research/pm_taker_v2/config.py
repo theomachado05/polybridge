@@ -1,0 +1,55 @@
+"""Pre-registered parameters of the options-anchored Polymarket taker (METHOD.md). Change only through an Amendment."""
+from __future__ import annotations
+
+import os
+from pathlib import Path
+
+PKG_DIR = Path(__file__).resolve().parent
+RESEARCH_DIR = PKG_DIR.parent
+REPO_DIR = RESEARCH_DIR.parent
+RESULTS_DIR = RESEARCH_DIR / "results" / "pm_taker_v2"
+CACHE_DIR = Path(os.environ.get("PM_TAKER_V2_CACHE", str(RESULTS_DIR / ".massive_cache")))
+LISTING_PATH = Path(os.environ.get("PM_TAKER_LISTING", str(REPO_DIR.parent / "fresh_daily_listing_meta.json")))
+LISTING_SHA256 = "6d1c551f77d5a9697e37c34b13454f4487d1d61e9c36d285ff4b328fef5be747"
+TZ = "America/New_York"
+
+RES_MIN, RES_MAX = "2026-04-01", "2026-08-14"
+KILL_MAX = "2026-04-21"
+WINDOW_START_HM = (10, 0)
+WINDOW_END_HM = (15, 55)
+LISTING_LAG_SEC = 300
+EXPIRY_CLOSE_HM = (16, 0)
+
+TAU = 0.05
+TAUS_SECONDARY = (0.03, 0.10)
+TAU_STOP = 0.10
+TICK = 0.01
+TICK_SECONDARY = (0.0, 0.02)
+X_RANGE = (0.02, 0.98)
+BUY_EVAL_MAX = 0.94
+SELL_EVAL_MIN = 0.06
+
+QUOTE_LAG_SEC = 1
+LEG_MAX_AGE = 300
+BAND_MAX = 0.20
+P_RANGE = (0.03, 0.97)
+RATE = 0.04
+
+FEE_RATE_DEFAULT = 0.04
+FEE_EXP_DEFAULT = 1.0
+
+Y_ONE, Y_ZERO = 0.99, 0.01
+
+MID_HALF_SPREAD = 0.025
+MID_MAX_AGE = 900
+
+TRADES_PAGE = 500
+TRADES_MAX_OFFSET = 10_000
+
+BOOT_DRAWS = 10_000
+SEED = 20261003
+MIN_TRADES = 100
+MIN_DAYS = 30
+KILL_NO_SPREAD_MAX = 0.30
+FREEZE_DEADLINE_ET = "2026-10-03T23:59:00"
+CAPACITY_SHARE = 0.5

@@ -1,0 +1,531 @@
+{
+ "n_rows_total": 2612,
+ "n_rows_usable": 2609,
+ "n_markets": 36,
+ "n_markets_usable": 36,
+ "n_dates_usable": 353,
+ "excluded": {
+  "no PM quote": 3
+ },
+ "primary": {
+  "n": 2609,
+  "n_dates": 353,
+  "b": 0.8081413953296571,
+  "a": 6.327870040559735,
+  "t": 1.5884573067078642,
+  "se": 0.5087586502432097,
+  "r2": 0.0016704872216406486,
+  "p_perm": 0.05349465053494651,
+  "hc3_t": 1.5884573067078642,
+  "cluster_t": 1.6721316061000433,
+  "cluster_se": 0.4833001136881245,
+  "G": 353,
+  "ci": [
+   -0.1391094286949741,
+   1.7553922193542884
+  ]
+ },
+ "verdict": "does not hold",
+ "verdict_detail": {
+  "slope_positive": true,
+  "perm_p_below_0.05": false,
+  "cluster_t_above_2": false
+ },
+ "contrast": {
+  "n_macro": 2609,
+  "n_geo": 1049,
+  "G": 492,
+  "b_geo": 0.723268779440362,
+  "b_macro": 0.8081413953296579,
+  "d": 0.08487261588929589,
+  "se": 0.7299210655816502,
+  "t": 0.1162764302762843,
+  "ci": [
+   -1.3457463954923776,
+   1.5154916272709693
+  ],
+  "label": "no difference shown"
+ },
+ "collapsed": {
+  "n": 353,
+  "b": 2.898719229573851,
+  "t": 0.7095280802959757,
+  "r2": 0.0030441170843648058,
+  "p_perm": 0.285971402859714,
+  "rho": 0.11303023394704878,
+  "p_rho": 0.034596540345965404
+ },
+ "s2": {
+  "n": 678,
+  "k": 347,
+  "rate": 0.5117994100294986,
+  "p": 0.5645989131098799
+ },
+ "s2_date_perm": {
+  "n": 678,
+  "k": 347,
+  "rate": 0.5117994100294986,
+  "p": 0.5645989131098799,
+  "p_perm": 0.5001499850014999
+ },
+ "by_class": {
+  "fed": {
+   "n": 721,
+   "n_dates": 345,
+   "b": -1.5129835962791747,
+   "a": 6.837655319124377,
+   "t": -0.7065492465252124,
+   "se": 2.1413703343680313,
+   "r2": 0.0005698504442414043,
+   "p_perm": 0.46235376462353767,
+   "hc3_t": -0.7065492465252124,
+   "cluster_t": -0.7901499915877627,
+   "cluster_se": 1.914805558928018,
+   "G": 345,
+   "ci": [
+    -5.265933558777968,
+    2.239966366219619
+   ],
+   "n_markets": 10
+  },
+  "gdp": {
+   "n": 1005,
+   "n_dates": 209,
+   "b": 1.117966314730312,
+   "a": 6.724390315791596,
+   "t": 0.8445148882395281,
+   "se": 1.3237970464449946,
+   "r2": 0.0023558114374867545,
+   "p_perm": 0.17098290170982902,
+   "hc3_t": 0.8445148882395281,
+   "cluster_t": 1.021250777463429,
+   "cluster_se": 1.0947030243708642,
+   "G": 209,
+   "ci": [
+    -1.0276122037277045,
+    3.2635448331883286
+   ],
+   "n_markets": 10
+  },
+  "inflation": {
+   "n": 481,
+   "n_dates": 247,
+   "b": 0.9053811226423748,
+   "a": 4.269758655569227,
+   "t": 1.403504225211089,
+   "se": 0.6450861396631736,
+   "r2": 0.00500508442870351,
+   "p_perm": 0.13738626137386262,
+   "hc3_t": 1.403504225211089,
+   "cluster_t": 1.4329884845926977,
+   "cluster_se": 0.6318132576618114,
+   "G": 247,
+   "ci": [
+    -0.33295011709749966,
+    2.1437123623822494
+   ],
+   "n_markets": 10
+  },
+  "recession": {
+   "n": 314,
+   "n_dates": 248,
+   "b": 1.4698833204490802,
+   "a": 4.775931160881821,
+   "t": 0.7526327860706324,
+   "se": 1.9529886920327915,
+   "r2": 0.001125355175123799,
+   "p_perm": 0.5615438456154385,
+   "hc3_t": 0.7526327860706324,
+   "cluster_t": 0.7819378948350534,
+   "cluster_se": 1.8797954801246026,
+   "G": 248,
+   "ci": [
+    -2.2144481479578566,
+    5.154214788856017
+   ],
+   "n_markets": 3
+  },
+  "unemployment": {
+   "n": 88,
+   "n_dates": 88,
+   "b": 0.2234240668259737,
+   "a": 12.47076364701666,
+   "t": 0.15567133162908806,
+   "se": 1.4352293674619385,
+   "r2": 0.000929706737541669,
+   "p_perm": 0.6967303269673033,
+   "hc3_t": 0.15567133162908806,
+   "cluster_t": 0.5813024566108254,
+   "cluster_se": 0.3843508044480075,
+   "G": 88,
+   "ci": [
+    -0.5298896732631609,
+    0.9767378069151084
+   ],
+   "n_markets": 3
+  }
+ },
+ "loo_class": {
+  "fed": 0.8668596985231659,
+  "recession": 0.7943809870963467,
+  "inflation": 0.708113869837994,
+  "gdp": 0.6616888657588593,
+  "unemployment": 0.9380107792100492
+ },
+ "per_market": {
+  "fed-decreases-interest-rates-by-50-bps-after-january-2026-meeting": {
+   "cls": "fed",
+   "rank": 1,
+   "sign": 1,
+   "n": 73,
+   "b": -1.6791584847732466,
+   "cluster_t": -1.6954907654424805
+  },
+  "will-the-fed-increase-interest-rates-by-25-bps-after-the-march-2026-meeting": {
+   "cls": "fed",
+   "rank": 2,
+   "sign": -1,
+   "n": 43,
+   "b": -7.512222035125156,
+   "cluster_t": -0.9800402753454941
+  },
+  "fed-decreases-interest-rates-by-50-bps-after-december-2025-meeting": {
+   "cls": "fed",
+   "rank": 3,
+   "sign": 1,
+   "n": 91,
+   "b": -4.289525818247026,
+   "cluster_t": -1.2713079537675875
+  },
+  "fed-increases-interest-rates-by-25-bps-after-november-2024-meeting": {
+   "cls": "fed",
+   "rank": 4,
+   "sign": -1,
+   "n": 67,
+   "b": -81.33165416559501,
+   "cluster_t": -1.6816899170351216
+  },
+  "fed-increases-interest-rates-by-25-bps-after-october-2025-meeting": {
+   "cls": "fed",
+   "rank": 5,
+   "sign": -1,
+   "n": 92,
+   "b": -61.21091686011839,
+   "cluster_t": -2.464827505551689
+  },
+  "will-the-fed-increase-interest-rates-by-25-bps-after-the-april-2026-meeting": {
+   "cls": "fed",
+   "rank": 6,
+   "sign": -1,
+   "n": 32,
+   "b": -8.024329347170855,
+   "cluster_t": -0.7535757729308672
+  },
+  "fed-increases-interest-rates-by-25-bps-after-september-2025-meeting": {
+   "cls": "fed",
+   "rank": 7,
+   "sign": -1,
+   "n": 90,
+   "b": 45.974054222196294,
+   "cluster_t": 1.095364037062107
+  },
+  "fed-increases-interest-rates-by-25-bps-after-january-2025-meeting": {
+   "cls": "fed",
+   "rank": 8,
+   "sign": -1,
+   "n": 53,
+   "b": -4.43878716006212,
+   "cluster_t": -0.15018643908157273
+  },
+  "fed-increases-interest-rates-by-25-bps-after-july-2025-meeting": {
+   "cls": "fed",
+   "rank": 9,
+   "sign": -1,
+   "n": 90,
+   "b": 173.58296663069615,
+   "cluster_t": 3.762562582220723
+  },
+  "fed-decreases-interest-rates-by-50-bps-after-june-2025-meeting": {
+   "cls": "fed",
+   "rank": 10,
+   "sign": 1,
+   "n": 90,
+   "b": -16.75451281964548,
+   "cluster_t": -0.5853874454759269
+  },
+  "us-recession-by-end-of-2026": {
+   "cls": "recession",
+   "rank": 19,
+   "sign": -1,
+   "n": 64,
+   "b": -1.0000279756085722,
+   "cluster_t": -0.3723248029750817
+  },
+  "will-inflation-reach-more-than-3-in-2025": {
+   "cls": "inflation",
+   "rank": 24,
+   "sign": -1,
+   "n": 225,
+   "b": 2.4909773173894942,
+   "cluster_t": 1.7273181777307183
+  },
+  "us-recession-in-2024-1": {
+   "cls": "recession",
+   "rank": 26,
+   "sign": -1,
+   "n": 103,
+   "b": 1.6603921007591658,
+   "cluster_t": 0.4894536110619182
+  },
+  "us-recession-announced-by-nber-before-june-2025": {
+   "cls": "recession",
+   "rank": 28,
+   "sign": -1,
+   "n": 147,
+   "b": 4.870308961662897,
+   "cluster_t": 1.3199327365737863
+  },
+  "negative-gdp-growth-in-q2-2025": {
+   "cls": "gdp",
+   "rank": 29,
+   "sign": -1,
+   "n": 79,
+   "b": 2.6163687211634628,
+   "cluster_t": 0.4477380677365314
+  },
+  "negative-gdp-growth-in-q3-2025": {
+   "cls": "gdp",
+   "rank": 30,
+   "sign": -1,
+   "n": 180,
+   "b": 7.910277539731247,
+   "cluster_t": 1.4650658619548587
+  },
+  "negative-gdp-growth-in-q1-2025": {
+   "cls": "gdp",
+   "rank": 31,
+   "sign": -1,
+   "n": 40,
+   "b": -0.7776953360240457,
+   "cluster_t": -0.3514759636198888
+  },
+  "will-annual-inflation-increase-by-39-or-higher-in-december": {
+   "cls": "inflation",
+   "rank": 32,
+   "sign": -1,
+   "n": 67,
+   "b": -0.4205968629552439,
+   "cluster_t": -0.4914667535132181
+  },
+  "will-annual-inflation-increase-by-2pt3-or-less-in-april": {
+   "cls": "inflation",
+   "rank": 33,
+   "sign": 1,
+   "n": 22,
+   "b": 1.2104624050755755,
+   "cluster_t": 0.7956471129582823
+  },
+  "will-us-gdp-growth-in-q2-2025-be-greater-than-2": {
+   "cls": "gdp",
+   "rank": 35,
+   "sign": 1,
+   "n": 61,
+   "b": 2.7055793972173134,
+   "cluster_t": 0.6876535815857674
+  },
+  "5-gdp-contraction-in-q3-2025": {
+   "cls": "gdp",
+   "rank": 39,
+   "sign": -1,
+   "n": 181,
+   "b": 7.443940452184675,
+   "cluster_t": 1.6048791321649294
+  },
+  "will-inflation-reach-more-than-5-in-2026-282-763": {
+   "cls": "inflation",
+   "rank": 41,
+   "sign": -1,
+   "n": 31,
+   "b": -1.6345872780310646,
+   "cluster_t": -2.479623738243528
+  },
+  "will-annual-inflation-increase-by-2pt2-or-less-in-may": {
+   "cls": "inflation",
+   "rank": 44,
+   "sign": 1,
+   "n": 20,
+   "b": 0.3715742189106328,
+   "cluster_t": 0.06268742393800474
+  },
+  "will-annual-inflation-increase-by-2pt6-or-less-in-august": {
+   "cls": "inflation",
+   "rank": 45,
+   "sign": 1,
+   "n": 21,
+   "b": -0.8013076868847726,
+   "cluster_t": -4.342929854970218
+  },
+  "will-monthly-inflation-increase-by-0pt5-or-more-in-march": {
+   "cls": "inflation",
+   "rank": 46,
+   "sign": -1,
+   "n": 21,
+   "b": 2.499969709554482,
+   "cluster_t": 1.5328210717331827
+  },
+  "will-us-annual-inflation-be-2pt6-or-less-in-december": {
+   "cls": "inflation",
+   "rank": 47,
+   "sign": 1,
+   "n": 22,
+   "b": -3.9687834288044197,
+   "cluster_t": -0.8139976096856907
+  },
+  "will-us-gdp-growth-in-q2-2025-be-less-than-1pt0": {
+   "cls": "gdp",
+   "rank": 48,
+   "sign": -1,
+   "n": 100,
+   "b": 0.9684784142431433,
+   "cluster_t": 0.8942001196343664
+  },
+  "negative-gdp-growth-in-2025": {
+   "cls": "gdp",
+   "rank": 49,
+   "sign": -1,
+   "n": 186,
+   "b": 3.391300723579896,
+   "cluster_t": 0.816113943779494
+  },
+  "will-annual-inflation-increase-by-3pt3-or-more-in-september": {
+   "cls": "inflation",
+   "rank": 50,
+   "sign": -1,
+   "n": 30,
+   "b": 4.049013866188666,
+   "cluster_t": 0.2704594914633161
+  },
+  "will-us-gdp-growth-in-q4-2025-be-greater-than-3pt5": {
+   "cls": "gdp",
+   "rank": 53,
+   "sign": 1,
+   "n": 43,
+   "b": 3.206060454395862,
+   "cluster_t": 1.3537459106724024
+  },
+  "will-annual-inflation-increase-by-2pt6-or-more-in-june": {
+   "cls": "inflation",
+   "rank": 54,
+   "sign": -1,
+   "n": 22,
+   "b": 0.19131547472421745,
+   "cluster_t": 0.1304613286086159
+  },
+  "will-us-gdp-growth-be-less-than-2-in-q1-2025": {
+   "cls": "gdp",
+   "rank": 57,
+   "sign": -1,
+   "n": 40,
+   "b": -2.313649598976524,
+   "cluster_t": -0.3837986416828226
+  },
+  "will-us-gdp-growth-in-2025-be-less-than-0pt5": {
+   "cls": "gdp",
+   "rank": 59,
+   "sign": -1,
+   "n": 95,
+   "b": -0.45511513995166064,
+   "cluster_t": -2.7842633447810554
+  },
+  "will-the-september-2025-unemployment-rate-be-4pt5": {
+   "cls": "unemployment",
+   "rank": 60,
+   "sign": -1,
+   "n": 45,
+   "b": -0.2973308470873075,
+   "cluster_t": -0.18174230697674976
+  },
+  "will-the-may-2025-unemployment-rate-be-4pt1": {
+   "cls": "unemployment",
+   "rank": 63,
+   "sign": 1,
+   "n": 24,
+   "b": -3.5960847247811167,
+   "cluster_t": -1.1586868809650972
+  },
+  "will-the-november-2025-unemployment-rate-be-4pt6": {
+   "cls": "unemployment",
+   "rank": 68,
+   "sign": -1,
+   "n": 19,
+   "b": 0.548517773386445,
+   "cluster_t": 3.1470077432587535
+  }
+ },
+ "fresh": {
+  "n": 0,
+  "n_dates": 0,
+  "b": null,
+  "t": null,
+  "se": null,
+  "r2": null,
+  "p_perm": null,
+  "hc3_t": null,
+  "cluster_t": null,
+  "cluster_se": null,
+  "G": 0,
+  "ci": [
+   null,
+   null
+  ]
+ },
+ "by_kind": {
+  "overnight": {
+   "n": 2017,
+   "n_dates": 273,
+   "b": 0.6266836407249208,
+   "a": 4.635266252775168,
+   "t": 1.249040361108416,
+   "se": 0.5017320978873676,
+   "r2": 0.0011674302101769563,
+   "p_perm": 0.14458554144585542,
+   "hc3_t": 1.249040361108416,
+   "cluster_t": 1.1929631132007243,
+   "cluster_se": 0.5253168633550842,
+   "G": 273,
+   "ci": [
+    -0.40291850004396346,
+    1.656285781493805
+   ]
+  },
+  "weekend_holiday": {
+   "n": 592,
+   "n_dates": 80,
+   "b": 1.2211086625975593,
+   "a": 11.951469160724628,
+   "t": 0.8378500768404429,
+   "se": 1.4574309847919282,
+   "r2": 0.0026532179946595624,
+   "p_perm": 0.18168183181681832,
+   "hc3_t": 0.8378500768404429,
+   "cluster_t": 1.1287089636500665,
+   "cluster_se": 1.08186317458549,
+   "G": 80,
+   "ci": [
+    -0.8993042125157162,
+    3.341521537710835
+   ]
+  }
+ },
+ "original": {
+  "b": 7.52,
+  "p_perm": 0.001,
+  "n_rows": 380
+ },
+ "replication": {
+  "b": 0.63,
+  "p_perm": 0.126,
+  "cluster_t": 1.09,
+  "n_rows": 1211
+ }
+}

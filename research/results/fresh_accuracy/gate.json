@@ -1,0 +1,27 @@
+{
+ "scored_rows": 7111,
+ "dates": 89,
+ "status": {
+  "scored": 7111,
+  "pm_extreme": 6510,
+  "no_clean_expiry": 3551,
+  "no_chain": 779,
+  "pm_stale": 299,
+  "pm_placeholder": 283
+ },
+ "dropped_snapshots": {
+  "snapshot_before_listing": 165
+ },
+ "requests": {
+  "http": {
+   "clob.polymarket.com": 9350
+  },
+  "massive": {
+   "api.massive.com": 20678
+  },
+  "http_failures": 0,
+  "massive_failures": 0,
+  "failures_sample": []
+ },
+ "seconds": 5726.096668958664
+}
