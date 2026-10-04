@@ -1,7 +1,9 @@
 // Mirrors docs/contracts.md (HTTP API). Change both together, by PR.
 import type { ClosedLabels, ClosedModeSummary, ClosureView, GapView, HedgeASummary, SessionView, StagedOrder } from "./closed.ts";
 import type { ForwardStatus, LaddersOut, Registry, TicketsOut } from "./micro.ts";
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+import { apiBase } from "./tunnel.ts";
+// "/api" in tunnel mode (`make share`: same origin, proxied by the Next.js server); http://localhost:8000 by default.
+export const API_URL = apiBase(process.env.NEXT_PUBLIC_API_URL);
 
 export type Family = "hedge" | "opportunity";
 export type ProposalStatus = "proposed" | "approved" | "rejected";

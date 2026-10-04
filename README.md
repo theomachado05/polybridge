@@ -42,6 +42,7 @@ make dev                        # backend :8000 (offline replay) + web :3000, Ct
 |---|---|
 | `make dev` | Backend (engine group, replay of the recorded tariff weekend) + web dev server |
 | `make dev-tlt` / `dev-ita` / `dev-iwm` / `dev-nvda` | The same with another recording as the configured file |
+| `make share` | The whole app at one public ngrok URL behind basic auth (`NGROK_BASIC_AUTH`, `AGENT_TOOL_SECRET`); see [docs/share.md](docs/share.md) |
 | `make webull-check` | Read-only Webull paper check: account, balance, positions, open orders, market hours; never places an order outside 09:30-16:00 ET |
 | `make test` | Every lane: research, backend, C++ (ctest), engine bindings, web lint + build |
 | `make e2e` | The regression run on the TLT replay: starts both servers, drives the full flow over HTTP with assertions, clicks the real UI in headless Chrome, saves 8 screenshots to `web/e2e/screens/`, stops everything |
@@ -64,7 +65,8 @@ Keys live only in `.env` (gitignored) or your shell. A missing key means a grace
 | `CAPITAL_MAX_GROSS_PCT`, `CAPITAL_MAX_EVENT_PCT`, `CAPITAL_SHORT_PUT_MODE` | backend: the capital budget (gross hedge notional and per-event exposure as fractions of account equity) and how a short put is margined (`margin` = Reg T naked-put rule) | 0.50, 0.20, cash-secured puts |
 | `AGENT_TOOL_SECRET` | backend: shared secret for the voice-agent tunnel. Every write from outside localhost (anything but GET/HEAD/OPTIONS) must send it as `X-Agent-Secret`, else 401. Required before you tunnel the backend; see [docs/voice-agent.md](docs/voice-agent.md#required-shared-secret) | writes from localhost work; tunnelled writes are refused |
 | `POLYBRIDGE_REPLAY_PATH`, `POLYBRIDGE_REPLAY_SPEED`, `POLYBRIDGE_REPLAY_PRICES` | backend: replay file and speed for `source: "replay"` bridges and the offline fallback; `POLYBRIDGE_REPLAY_PRICES=recorded` (the `make dev` default) fills every replay order at the recorded price. A recording found through the replay index plays at its sidecar's `replay_speed`. The file is used only for the market it records, named in its `<file>.meta.json` sidecar (see [replays/README.md](replays/README.md)); another market gets a 422 | `replays/<market id>.jsonl` at real time |
-| `NEXT_PUBLIC_API_URL` | web: backend URL | `http://localhost:8000` |
+| `NEXT_PUBLIC_API_URL` | web: backend URL; `/api` in tunnel mode (`make share`: same origin, proxied by the Next.js server) | `http://localhost:8000` |
+| `NGROK_BASIC_AUTH`, `PUBLIC_WEB_HOST` | `make share`: the ngrok basic-auth `user:password` (required) and the tunnel host added to the voice widget allowlist by `make voice-agent` ([docs/share.md](docs/share.md)) | `make share` refuses to start; widget allows localhost only |
 | `SIM_ACCOUNT_PATH`, `SIM_START_CASH` | backend: where the simulated account is saved and its starting cash | `backend/.sim_account.json` (gitignored), $1,000,000 |
 
 Real-money execution is out of scope: accounts are simulated or Webull paper only, and the Webull client talks only to `api.sandbox.webull.com` (`backend/app/broker/webull.py` refuses any other host).

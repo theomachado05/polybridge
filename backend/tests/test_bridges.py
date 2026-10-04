@@ -51,6 +51,8 @@ def _events(client, bridge_id):
     out, kind = [], None
     with client.stream("GET", f"/bridges/{bridge_id}/stream") as r:
         assert r.headers["content-type"].startswith("text/event-stream")
+        # no-transform: a compressing proxy (the Next.js /api rewrite in tunnel mode) must not gzip-buffer the events
+        assert "no-transform" in r.headers["cache-control"]
         for line in r.iter_lines():
             if line.startswith("event: "):
                 kind = line[7:]
