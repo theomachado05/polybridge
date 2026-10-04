@@ -110,3 +110,8 @@ BTC_VARIANTS = (
 )
 BTC_PRIMARY = "B0"
 BTC_MIN_OOS_TRADES, BTC_MIN_OOS_DATES = 30, 10
+
+
+# ==== Part 4, hold the stale side to the result (METHOD.md amendment 3) ====
+HOLD_SOURCE = "results/s10_weekend_lag/mechanism/trades.csv"   # Part 2's type-B pick-off entries at 1x
+HOLD_MIN_OOS_TRADES, HOLD_MIN_OOS_QUESTIONS = 30, 10

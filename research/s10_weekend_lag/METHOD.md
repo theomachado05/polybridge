@@ -259,3 +259,28 @@ the print-verified entries' mean net P&L above zero.
 
 *Capacity known now.* $10 to $79 at the best price on a Saturday night. Capacity will be reported from printed
 sizes.
+
+**Amendment 3, 2026-10-04 04:00 UTC (Sun 00:00 New York time), before any question's result is read: Part 4, hold
+the stale side to the result.** Part 2 found that a stale question does not catch up with its active linked question
+within 30 minutes (+0.07 points before costs). If the stale price ignored real news, the news may still show in how
+the question resolves, and holding to the result pays one fill and one fee instead of two.
+
+*Entries.* Exactly Part 2's type-B pick-off entries (`mechanism/trades.csv`, question pairs, 1×): the same market,
+instant, side and entry price (the mid one minute after the signal, moved by 0.5 point, plus 0.04 × P × (1 − P)).
+Nothing is reselected.
+
+*Exit.* The question's result from Polymarket's catalogue (1 or 0 for YES), no exit fill, no fee. Questions without a
+result in the catalogue tonight are left out and counted. 2× costs as before.
+
+*Test before costs.* The mean of the side × (result − entry mid), in points: above zero means the stale price was
+wrong in the direction the active question pointed.
+
+*Inference.* All entries on one question share one result, so intervals resample **questions** (and, reported
+alongside, dates). Out-of-sample: the entries on the most recent 20% of dates.
+
+*Success criterion.* At least 30 OOS entries on at least 10 questions; OOS mean net above zero with an interval
+(resampling questions) excluding zero at 1×; above zero at 2×; in-sample above zero at 1×; the print-verified
+entries (Part 2's check) above zero. Otherwise a null.
+
+*Known now.* Part 2's results. No result of any of these questions has been read for this test (S5 and S4 used
+some of these questions' prices, not their results).
