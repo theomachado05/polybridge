@@ -179,8 +179,9 @@ def hedge_evidence(doc: dict | None = None) -> dict:
 #
 # One entry per mechanism PolyBridge reports on. The UI reads every status, label and number from here, never from
 # hard-coded text. A number is never shown without its range and its sample: each one carries ``ci_low``/``ci_high``
-# with ``range_kind`` saying what the range is (a 95% date-cluster interval, a percentile span, or "census": a count
-# with no sampling interval, low == high == value), ``sample`` (n and units) and ``result_file`` (repo-relative).
+# with ``range_kind`` saying what the range is, as a machine token: "ci95" (a 95% interval), "ci90", "percentiles"
+# (ci_low = p50, ci_high = p99 of a distribution: NOT a confidence interval), "census" (a count with no sampling
+# interval, low == high == value) or "none"; ``range_desc`` is the prose, ``sample`` (n and units) and ``result_file`` (repo-relative).
 # Two result files are not on main yet; those numbers also carry ``source_branch`` and ``source_commit`` so a reader can
 # still open them, and ``result_file_on_disk`` (computed when served) says whether this checkout has the file.
 # ----------------------------------------------------------------------------------------------------------------------
@@ -214,8 +215,11 @@ CI95_DATES = "95% interval over dates"
 CI95_EVENT = "95% interval, event bootstrap"
 CI90_DATE = "90% interval, date cluster bootstrap (equivalence margin +/-0.003)"
 CENSUS = "census count: no sampling interval (low = high = value)"
-PERCENTILES = "distribution: median to p99 of the logged decisions"
+PERCENTILES = "percentiles of the logged decisions: median (p50) and p99, not a confidence interval"
 NO_INTERVAL = "no interval reported in the result file (low = high = value); see note"
+# machine token for each prose description above (``range_kind`` in the served number; the prose is ``range_desc``)
+RANGE_KINDS = {CI95_DATE: "ci95", CI95_DATES: "ci95", CI95_EVENT: "ci95", CI90_DATE: "ci90", CENSUS: "census",
+               PERCENTILES: "percentiles", NO_INTERVAL: "none"}
 
 FORWARD_START = "2026-10-05"
 
@@ -235,10 +239,21 @@ LATENCY = "research/results/live_books/LATENCY.md"
 LATENCY_REF = {"source_branch": "r/live-speed", "source_commit": "a6ba327"}
 
 
+def _kind(desc: str) -> str:
+    if desc in RANGE_KINDS:
+        return RANGE_KINDS[desc]
+    if desc.startswith("95%"):
+        return "ci95"
+    if desc.startswith("90%"):
+        return "ci90"
+    raise KeyError(desc)
+
+
 def _n(label: str, value: float, lo: float, hi: float, range_kind: str, n: int, units: str, result_file: str, *,
        confirmatory: bool, unit: str = "", also: tuple[tuple[int, str], ...] = (), note: str = "",
        ref: dict | None = None) -> dict:
-    out = {"label": label, "value": value, "unit": unit, "ci_low": lo, "ci_high": hi, "range_kind": range_kind,
+    out = {"label": label, "value": value, "unit": unit, "ci_low": lo, "ci_high": hi,
+           "range_kind": _kind(range_kind), "range_desc": range_kind,
            "sample": {"n": n, "units": units, "also": [{"n": a, "units": u} for a, u in also]},
            "result_file": result_file, "confirmatory": confirmatory}
     if note:
@@ -455,7 +470,7 @@ MECHANISMS: tuple[dict, ...] = (
 )
 
 SYSTEM_NUMBERS: tuple[dict, ...] = (
-    _n("Receive to decision, live Polymarket feed (median; range to p99)", 39.0, 39.0, 3875.9, PERCENTILES, 58610,
+    _n("Receive to decision, live Polymarket feed (median and p99)", 39.0, 39.0, 3875.9, PERCENTILES, 58610,
        "book-update decisions", LATENCY, confirmatory=False, unit="microseconds",
        note="Network time excluded; weekend reference is Friday's close, so these are latency, not trades.",
        ref=LATENCY_REF),

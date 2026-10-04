@@ -78,8 +78,9 @@ def test_every_number_has_a_range_a_sample_and_a_result_file(mid, n):
     assert n["label"]
     assert n["ci_low"] is not None and n["ci_high"] is not None and n["range_kind"]
     assert n["ci_low"] <= n["value"] <= n["ci_high"]
-    if n["range_kind"] in (ev.CENSUS, ev.NO_INTERVAL):
-        assert n["ci_low"] == n["value"] == n["ci_high"] and n.get("note") or n["range_kind"] == ev.CENSUS
+    assert n["range_kind"] in {"ci95", "ci90", "census", "percentiles", "none"} and n["range_desc"]
+    if n["range_kind"] in ("census", "none"):
+        assert n["ci_low"] == n["value"] == n["ci_high"] and n.get("note") or n["range_kind"] == "census"
     assert isinstance(n["sample"]["n"], int) and n["sample"]["n"] > 0 and n["sample"]["units"]
     assert isinstance(n["confirmatory"], bool)
     rf = n["result_file"]
@@ -205,3 +206,11 @@ def test_touch_entry_carries_the_sell_threshold_behind_the_ack_gate_and_no_hedge
     assert a["proposals"] and a["requires_acknowledgement"] and a["requires_approval"]
     hedge = ev.mechanism("ticket_option_hedge")
     assert hedge["actions_allowed"]["proposals"] is False and hedge["actions_allowed"]["trade"] is False
+
+
+def test_latency_is_marked_percentiles_not_a_confidence_interval():
+    lat = next(n for n in ev.SYSTEM_NUMBERS if "Receive to decision" in n["label"])
+    assert lat["range_kind"] == "percentiles" and lat["value"] == lat["ci_low"] == 39.0 and lat["ci_high"] == 3875.9
+    assert "not a confidence interval" in lat["range_desc"]
+    kinds = {n["range_kind"] for m in ev.MECHANISMS for n in m["numbers"]}
+    assert "percentiles" not in kinds and "ci95" in kinds

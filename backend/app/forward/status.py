@@ -110,18 +110,55 @@ def touch(base: Path) -> dict:
     return out
 
 
-def recorder() -> dict | None:
-    """Read-only heartbeat of the live book recorder (research/forward). Another checkout may be the one running it:
-    set POLYBRIDGE_RECORDER_DIR to that checkout's research/forward."""
-    d = Path(os.environ.get("POLYBRIDGE_RECORDER_DIR", "").strip() or REPO / "research" / "forward")
+LIVE_WITHIN_S = 900  # recorder.py rewrites each heartbeat every 20 cycles (5 to 10 min apart); older than 15 min = stopped
+RECORDER_HOME = Path("/Users/theomachado/gatorquant/research/forward")  # the checkout that runs the recorder
+
+
+def recorder_dir() -> Path:
+    """Where the recorder writes its heartbeats: env RECORDER_DIR (or POLYBRIDGE_RECORDER_DIR), else the recorder's
+    own checkout when it exists on this machine, else this worktree's research/forward."""
+    for k in ("RECORDER_DIR", "POLYBRIDGE_RECORDER_DIR"):
+        v = os.environ.get(k, "").strip()
+        if v:
+            return Path(v).expanduser()
+    return RECORDER_HOME if RECORDER_HOME.is_dir() else REPO / "research" / "forward"
+
+
+def _pid_alive(d: Path) -> bool | None:
+    """Whether recorder.pid names a running process (signal 0 sends nothing). None when there is no readable pid."""
+    try:
+        pid = int((d / "recorder.pid").read_text().strip())
+        os.kill(pid, 0)
+    except (OSError, ValueError):
+        return False if (d / "recorder.pid").is_file() else None
+    return True
+
+
+def recorder(now: float | None = None) -> dict | None:
+    """Read-only state of the live book recorder (heartbeat_*.json, recorder.pid in ``recorder_dir()``; nothing is
+    written). state is "live" when the newest heartbeat is under LIVE_WITHIN_S old and recorder.pid (if any) names a running process, else "stopped"; None when the
+    directory has no readable heartbeat at all."""
+    d = recorder_dir()
+    now = time.time() if now is None else now
     beats = {}
+    newest = 0.0
     for f in sorted(d.glob("heartbeat_*.json")) if d.is_dir() else []:
         try:
             hb = json.loads(f.read_text())
+            mtime = f.stat().st_mtime
         except (OSError, ValueError):
             continue
-        beats[f.stem.removeprefix("heartbeat_")] = {"age_s": round(time.time() - f.stat().st_mtime, 1), **{k: hb[k] for k in list(hb)[:8]}}
-    return {"dir": str(d), "heartbeats": beats} if beats else None
+        if not isinstance(hb, dict):
+            continue
+        newest = max(newest, mtime)
+        beats[f.stem.removeprefix("heartbeat_")] = {"age_s": round(now - mtime, 1), **{k: hb[k] for k in list(hb)[:8]}}
+    if not beats:
+        return None
+    age = round(now - newest, 1)
+    alive = _pid_alive(d)
+    return {"dir": str(d), "heartbeats": beats, "state": "live" if age < LIVE_WITHIN_S and alive is not False else "stopped",
+            "age_s": age, "last_update_utc": datetime.fromtimestamp(newest, timezone.utc).isoformat(),
+            "pid_alive": alive}
 
 
 def build(base: Path | None = None) -> dict:
