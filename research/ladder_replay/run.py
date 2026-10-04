@@ -77,7 +77,11 @@ def write_csv(path: Path, rows: list[dict]) -> None:
         w.writerows(rows)
 
 
-def main(which: str = "all") -> int:
+def main(which: str = "all", variant: str = "frozen") -> int:
+    global OUT
+    if variant == "order_check":
+        rp.ORDER_CHECK = True
+        OUT = OUT / "order_check"
     OUT.mkdir(parents=True, exist_ok=True)
     s11 = json.loads((HERE.parent / "s11_bundles" / "bundles.json").read_text())
     fresh = json.loads((HERE / "fresh_universe.json").read_text())

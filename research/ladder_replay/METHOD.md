@@ -116,3 +116,19 @@ creation check still applies). The creation pattern of amendment 2 also missed "
 "market's creation", "market was/is created" and "creation of this/the market". Primary results use nested pairs only.
 Labelled sensitivity (not confirmatory): the same replay with the creation-window pairs added back, with those pairs'
 trades reported apart, so the reader sees whether the written-rule gap ever cost money.
+
+**5. Sun 02:08 (post hoc, after a first run): the year of a rung.** The first full run (02:00 to 02:07) had losing trades,
+which a nested pair cannot have. Every one came from 5 ladders whose rung order was wrong: S11's year rule (amendment 1
+of S11) read "by December 31?" in a market created in March 2026 as 2025-12-31, or "by January 31?" in a market created
+in October 2025 as 2025-01-31, so the rung called "earlier" was the later one. That breaks the definition of nested in
+step 1, which the frozen text rule did not test because most descriptions give the date only through the title. Added
+check (`replay.ORDER_CHECK`): each date rung's deadline is re-derived (an explicit year in its question or
+`groupItemTitle`, else the first year in which the month and day fall on or after the market's start date), and a pair
+is nested only if the rich rung's deadline is strictly earlier. This was chosen after seeing that run's losers, so
+results under it are reported as post hoc. The registered rule (amendments 1 to 4) gives the confirmatory verdict;
+both are reported side by side.
+
+**6. Sun 02:10: bug, first run void.** The first run also mapped prints to YES terms with the data API's
+`outcomeIndex`, which is wrong on many prints (a "No" print with index 0 and a "Yes" print with index 1 in the same
+second). Prints now map by `asset` against the market's `clobTokenIds` (the `outcome` text as fallback, as S11 did).
+Every print was pulled again; the first run's files are kept in `results/ladder_replay/v0_void/` and are not results.

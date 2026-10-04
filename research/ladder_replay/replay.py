@@ -151,10 +151,40 @@ def rung_key(kind: str, bundle: dict, leg: str):
     return date.fromisoformat(k) if kind == "date" else float(k)
 
 
+ORDER_CHECK = False                     # amendment 5 (post hoc): re-derive each date rung's deadline before trusting the ladder order
+
+
+def deadline(m: dict, key: date) -> date | None:
+    """The rung's own deadline: an explicit year in its question or groupItemTitle wins; otherwise the first year in which
+    the month and day fall on or after the market's start date (a "by <date>" market is never created after its date)."""
+    for txt in (m.get("groupItemTitle") or "", m.get("question") or ""):
+        for ph in re.findall(s11cfg.DATE_RE, txt):
+            y = re.search(r"20\d\d", ph)
+            d = parse_date(ph, int(y.group(0))) if y else None
+            if d is not None and (d.month, d.day) == (key.month, key.day):
+                return d
+    st = ts_of(m.get("startDate") or m.get("createdAt"))
+    if st is None:
+        return None
+    s0 = datetime.fromtimestamp(st - 86400, timezone.utc).date()
+    for y in (s0.year, s0.year + 1, s0.year + 2):
+        try:
+            d = date(y, key.month, key.day)
+        except ValueError:
+            continue
+        if d >= s0:
+            return d
+    return None
+
+
 def nested(kind: str, bundle: dict, rich: str, cheap: str, g: dict[str, dict]) -> tuple[bool, str]:
     a, b = g.get(rich), g.get(cheap)
     if not a or not b:
         return False, "no gamma record"
+    if ORDER_CHECK and kind == "date":
+        da_, db_ = deadline(a, rung_key(kind, bundle, rich)), deadline(b, rung_key(kind, bundle, cheap))
+        if da_ is None or db_ is None or not da_ < db_:
+            return False, "rung order wrong once each deadline's year is re-derived"
     sp = date_spellings if kind == "date" else level_spellings
     da = mask(a.get("description") or "", sp(rung_key(kind, bundle, rich)), "@k@")
     db = mask(b.get("description") or "", sp(rung_key(kind, bundle, cheap)), "@k@")
@@ -186,6 +216,8 @@ def prints(m: dict) -> dict | None:
     if f.exists():
         z = np.load(f)
         return {k: z[k] for k in z.files}
+    toks = json.loads(m["clobTokenIds"]) if isinstance(m.get("clobTokenIds"), str) else (m.get("clobTokenIds") or [])
+    toks = [str(t) for t in toks] + ["", ""]
     oldest_needed = datetime.fromisoformat(cfg.WINDOW_START).replace(tzinfo=NY).timestamp()
     T, P, S, Z, seen = [], [], [], [], set()
     end, n_req, truncated = None, 0, False
@@ -202,11 +234,15 @@ def prints(m: dict) -> dict | None:
             if key in seen:
                 continue
             seen.add(key)
-            oi = x.get("outcomeIndex")
-            if oi not in (0, 1):
+            asset, out = str(x.get("asset") or ""), str(x.get("outcome") or "").lower()
+            if asset and asset in toks:
+                is_no = asset == toks[1]
+            elif out in ("yes", "no"):
+                is_no = out == "no"
+            else:
                 continue
             px, sd = float(x["price"]), 1 if str(x.get("side")).upper() == "BUY" else -1
-            if oi == 1:
+            if is_no:
                 px, sd = 1.0 - px, -sd
             T.append(int(x["timestamp"]))
             P.append(px)
