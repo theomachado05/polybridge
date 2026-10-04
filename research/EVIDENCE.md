@@ -50,6 +50,8 @@ Notes on the rows:
 - **S7 weekend straddles: a loss.** -17.7% of the premium per flagged trade, no better than ordinary weekends (section 9; `research/results/s7_weekend_straddle/SUMMARY.md`).
 - **S8 open referee: null.** Selling an overnight odds move the linked asset did not confirm loses 1.47 points per trade after costs [-2.42, -0.54]; the asset's vote adds nothing (section 9; `research/results/s8_open_referee/SUMMARY.md`).
 - **S9 weekend price markets: not a pass.** Selling a weekend move of 5 points or more in Polymarket's oil, gold and stock price markets nets -0.01 points per trade after costs and -3.77 out-of-sample (section 9; `research/results/s9_weekend_price_markets/SUMMARY.md`).
+- **S10 weekend lag: not a pass.** The oil event questions lead the oil price markets by minutes inside the weekend, but the follow-through is 0.05 points and the trade loses 2.60 points after costs (section 9; `research/results/s10_weekend_lag/SUMMARY.md`).
+- **S12 resting orders: not a pass.** Resting orders cut the cost by two thirds, but out-of-sample the orders that fill lose 11.02 points more than the ones that do not [-20.79, -5.16] (section 9; `research/results/s12_resting_orders/SUMMARY.md`).
 - **S3 three-way consistency: no trade.** The primary rule fired 0 times in 60 matched sets on 33 dates (section 9; `research/results/s3_three_way/SUMMARY.md`).
 - Also in the table above: the replication, the fit walk-forward, the 8-K out-of-sample run, R1 hedge A and R3's net residual gap all failed or were NULL.
 
@@ -194,7 +196,7 @@ For the note's "Liquidity and capital" and "Risk management" criteria. This is w
 
 ---
 
-## 9. Weekend and cross-venue alpha: S1 twin spread, S3 three-way, S4 linked assets, S5 replication, S6 Monday fade, S7 weekend straddles, S8 open referee, S9 weekend price markets, S14 link diagnostic (pre-registered; forward tests pending)
+## 9. Weekend and cross-venue alpha: S1 twin spread, S3 three-way, S4 linked assets, S5 replication, S6 Monday fade, S7 weekend straddles, S8 open referee, S9 weekend price markets, S10 weekend lag, S12 resting orders, S14 link diagnostic (pre-registered; forward tests pending)
 
 Added 2026-10-03 evening. Brief: `research/ALPHA_BRIEF.md`. Both methods were committed before any data was pulled for them (`research/s1_twin_spread/METHOD.md`, commit `8260548`; `research/s3_three_way/METHOD.md`, commit `83ce137`; amendments are dated in each file). Sources: `research/results/s1_twin_spread/SUMMARY.md`, `metrics.csv`, `trades.csv`, `RUN_LOG.md`; `research/results/s3_three_way/SUMMARY.md`, `metrics.csv`, `sets.csv`.
 
@@ -248,6 +250,16 @@ Added 2026-10-03 evening. Brief: `research/ALPHA_BRIEF.md`. Both methods were co
 - **The link holds inside the weekend, in a market that is open.** Oil price markets move 0.86 points per point of weekend move in the odds of oil-linked events (t = 5.85; 357 market-weekends on 36 weekends). After the reopen nothing more follows (-0.19, t = -1.12).
 - **Part of the weekend move is given back by Monday:** 2.94 points after a move of 5 points or more [-4.66, -1.14]; oil 4.18 [-7.22, -1.56]. Not when futures reopen (-0.39 by Sunday 19:00) but by Monday 09:40.
 - **Verdict: not a pass.** A round trip costs 3.29 points. The pre-registered fade nets -0.01 points per trade [-1.78, +1.77] on 307 trades, -3.29 at 2x costs, and -3.77 on the 42 out-of-sample trades, where the give-back is absent before costs. The oil-only variant is +3.77 in-sample [+0.74, +7.08] and -4.49 out-of-sample: a variant that failed the part of the sample it was not chosen on.
+
+**S10, inside the weekend, which Polymarket market moves first?** (parallel session P1.) Five-minute bins from the last session's 20:00 to Sunday 17:55, oil-linked event questions against the crude oil price markets, 36 weekends. Source: `research/results/s10_weekend_lag/SUMMARY.md`; method commit `b376c9b`.
+
+- **The event questions move first.** A move in the event odds predicts a move the same way in the oil price markets over the next 15 minutes (slope 0.204, t = 3.42) and 30 minutes (0.339, t = 3.25), errors clustered by weekend. The price markets also lead the event odds, more weakly (0.135 at 30 minutes, t = 2.54).
+- **Verdict: not a pass.** After a jump of 3 points or more the price markets move a further +0.05 points in five minutes. The trade earns +0.11 points before costs and -2.60 after [-2.80, -2.39] on 379 in-sample trades. 17 of 421 entries (4%) have a print at the assumed price; 68% of entries were in a market whose price had not changed in the previous 15 minutes, so part of the lead is stale prices catching up.
+
+**S12, can a resting order earn the give-back that a taker cannot?** (parallel session P3.) S9's and S8's orders posted at the mid and judged against public prints under a strict fill rule. Source: `research/results/s12_resting_orders/SUMMARY.md`; method commit `d0c680e`.
+
+- **Waiting in the book cuts the cost from 3.29 to 1.11 points per filled order, and the orders that fill are the wrong ones.** 90 of 301 reachable S9 orders fill (30%). Net per filled order: +0.65 points [-3.28, +5.36]; -2.05 at 2x costs.
+- **Verdict: not a pass.** In-sample +3.28 per filled order [-1.16, +8.56]. Out-of-sample the 20 orders that filled lost 6.84 points at mid while the 22 that did not fill would have earned 4.18: a difference of -11.02 [-20.79, -5.16]. That is adverse selection.
 
 **S14, diagnostic: is the missing edge a link problem, a signal problem, or neither?** No trade; cached S4 and S5 data, 254 links. Source: `research/results/s14_link_ceiling/SUMMARY.md`; method commit `2e1d1c0`.
 
