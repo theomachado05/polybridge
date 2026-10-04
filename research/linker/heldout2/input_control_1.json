@@ -1,0 +1,785 @@
+{
+ "instructions": "# Link labeller, control arm: the by-event linker of the first held-out test\n\nYou are one of two independent labellers. The other one cannot see your answers. A link counts only if both of you\nname it.\n\n**You read this one file and nothing else.** No other file, no web, no prices, no search. Use the question text and\ngeneral knowledge of how markets work. Do not use any memory of how a question resolved or of how a price moved\naround it. If you do remember either, set `remembered: true` on that question.\n\n## What you are given\n\n- `tickers`: the only tickers you may name.\n- `events`: Polymarket yes/no questions grouped by event.\n\n## What you return for every question\n\n- `id`\n- `family`: `event` (a real-world outcome that would move a listed instrument from outside), `spot_proxy` (the\n  question is settled by a traded price or only happens because that price moved), or `none`.\n- `role`: `carrier` (the question that carries its event), `duplicate` (another deadline of the same event, or a\n  question that says the same thing as the carrier), `tail` (an outcome too remote for its odds to move), or `none`.\n- `links`, only on a carrier: each with `ticker`, `direction` (`up_on_yes` or `down_on_yes`), `confidence` (0 to 1),\n  `impact_pct` (the instrument's move in percent on full resolution), `alternative` (the outcome the direction is\n  measured against) and `mechanism` (one sentence).\n- `remembered`: true or false.\n\n## Rules\n\n1. Link the question that carries the event: the main market, not a side market.\n2. One deadline per ladder: \"by April 30\", \"by May 31\", \"by June 30\" are one event. Link one of them.\n3. For an event with several outcomes, state the alternative; the direction is measured against it.\n4. Pick an instrument the event would move by about 1% or more.\n5. A question driven by the asset's own price is a `spot_proxy`, not an event.\n6. No hindsight.\n\n## Output\n\nWrite one JSON object to the answer file you were told, and nothing else there:\n\n```json\n{\"labeller\": \"<the name you were given>\", \"chunk\": <number>, \"answers\": [\n  {\"id\": \"polymarket:123\", \"family\": \"event\", \"role\": \"carrier\", \"remembered\": false,\n   \"links\": [{\"ticker\": \"USO\", \"direction\": \"up_on_yes\", \"confidence\": 0.6, \"impact_pct\": 6,\n              \"alternative\": \"...\", \"mechanism\": \"...\"}]}\n]}\n```\n\nEvery question gets exactly one answer.\n",
+ "tickers": [
+  "SPY",
+  "QQQ",
+  "IWM",
+  "DIA",
+  "TLT",
+  "IEF",
+  "SHY",
+  "HYG",
+  "LQD",
+  "UUP",
+  "FXE",
+  "FXY",
+  "USO",
+  "UNG",
+  "GLD",
+  "SLV",
+  "CPER",
+  "URA",
+  "DBA",
+  "CORN",
+  "WEAT",
+  "XLE",
+  "XOP",
+  "XLF",
+  "KRE",
+  "XLK",
+  "SMH",
+  "XLV",
+  "XBI",
+  "XLI",
+  "ITA",
+  "XLU",
+  "XLY",
+  "XLP",
+  "XHB",
+  "XRT",
+  "JETS",
+  "ICLN",
+  "TAN",
+  "EWZ",
+  "EWW",
+  "EWC",
+  "EWJ",
+  "FXI",
+  "KWEB",
+  "MCHI",
+  "EWT",
+  "EWY",
+  "INDA",
+  "EWG",
+  "EWU",
+  "EWQ",
+  "VGK",
+  "EIS",
+  "TUR",
+  "ARGT",
+  "EWA",
+  "EPOL",
+  "GREK",
+  "EZA",
+  "AAPL",
+  "MSFT",
+  "GOOGL",
+  "AMZN",
+  "META",
+  "NVDA",
+  "TSLA",
+  "AMD",
+  "INTC",
+  "TSM",
+  "ORCL",
+  "NFLX",
+  "DIS",
+  "BA",
+  "LMT",
+  "RTX",
+  "NOC",
+  "GD",
+  "XOM",
+  "CVX",
+  "OXY",
+  "JPM",
+  "GS",
+  "BAC",
+  "WFC",
+  "UNH",
+  "PFE",
+  "MRNA",
+  "LLY",
+  "NVO",
+  "WMT",
+  "COST",
+  "TGT",
+  "NKE",
+  "F",
+  "GM",
+  "UBER",
+  "DAL",
+  "UAL",
+  "CCL",
+  "COIN",
+  "MSTR",
+  "MARA",
+  "IBIT",
+  "ETHA",
+  "HOOD",
+  "DJT",
+  "PLTR",
+  "GEO",
+  "CXW",
+  "SMR",
+  "OKLO",
+  "CEG",
+  "VST",
+  "CCJ",
+  "FSLR",
+  "ENPH",
+  "MSOS",
+  "NUE",
+  "CLF",
+  "DE",
+  "CAT",
+  "ZIM",
+  "FRO",
+  "STNG",
+  "BABA",
+  "PDD",
+  "VRT",
+  "DLR",
+  "EQIX",
+  "CRWV",
+  "RKLB"
+ ],
+ "events": [
+  {
+   "event": "weed-rescheduled-in-2025",
+   "questions": [
+    {
+     "id": "polymarket:516714",
+     "question": "Weed rescheduled in 2025?"
+    }
+   ]
+  },
+  {
+   "event": "billionaire-one-time-wealth-tax-passes-in-california-election-2026",
+   "questions": [
+    {
+     "id": "polymarket:648383",
+     "question": "Billionaire one-time wealth tax passes in California election 2026?"
+    }
+   ]
+  },
+  {
+   "event": "will-elon-musk-buy-ryanair",
+   "questions": [
+    {
+     "id": "polymarket:1203147",
+     "question": "Will Elon Musk buy Ryanair?"
+    }
+   ]
+  },
+  {
+   "event": "will-russia-invade-a-nato-country-in-2025",
+   "questions": [
+    {
+     "id": "polymarket:610256",
+     "question": "Will Russia invade a NATO country by June 30, 2026?"
+    },
+    {
+     "id": "polymarket:548083",
+     "question": "Will Russia invade a NATO country in 2025?"
+    }
+   ]
+  },
+  {
+   "event": "will-iran-close-the-strait-of-hormuz-in-2025",
+   "questions": [
+    {
+     "id": "polymarket:519695",
+     "question": "Will Iran close the Strait of Hormuz in 2025?"
+    }
+   ]
+  },
+  {
+   "event": "israel-withdraws-from-lebanon-by",
+   "questions": [
+    {
+     "id": "polymarket:2002609",
+     "question": "Israel withdraws from Lebanon by June 30, 2026?"
+    },
+    {
+     "id": "polymarket:2333782",
+     "question": "Israel withdraws from Lebanon by July 31, 2026?"
+    },
+    {
+     "id": "polymarket:2002608",
+     "question": "Israel withdraws from Lebanon by May 31, 2026?"
+    }
+   ]
+  },
+  {
+   "event": "largest-company-end-of-january",
+   "questions": [
+    {
+     "id": "polymarket:964904",
+     "question": "Will Saudi Aramco be the largest company in the world by market cap on January 31?"
+    },
+    {
+     "id": "polymarket:964899",
+     "question": "Will NVIDIA be the largest company in the world by market cap on January 31?"
+    },
+    {
+     "id": "polymarket:964903",
+     "question": "Will Tesla be the largest company in the world by market cap on January 31?"
+    },
+    {
+     "id": "polymarket:964901",
+     "question": "Will Apple be the largest company in the world by market cap on January 31?"
+    },
+    {
+     "id": "polymarket:964902",
+     "question": "Will Alphabet be the largest company in the world by market cap on January 31?"
+    },
+    {
+     "id": "polymarket:964900",
+     "question": "Will Microsoft be the largest company in the world by market cap on January 31?"
+    }
+   ]
+  },
+  {
+   "event": "will-the-us-officially-declare-war-on-venezuela-in-2025",
+   "questions": [
+    {
+     "id": "polymarket:950187",
+     "question": "Will the US officially declare war on Venezuela by June 30, 2026?"
+    }
+   ]
+  },
+  {
+   "event": "colombia-presidential-election-1st-round-winner",
+   "questions": [
+    {
+     "id": "polymarket:569344",
+     "question": "Will Abelardo de la Espriella win the 1st round of the 2026 Colombian presidential election?"
+    },
+    {
+     "id": "polymarket:569343",
+     "question": "Will Iván Cepeda Castro win the 1st round of the 2026 Colombian presidential election?"
+    },
+    {
+     "id": "polymarket:569342",
+     "question": "Will Paloma Valencia win the 1st round of the 2026 Colombian presidential election?"
+    }
+   ]
+  },
+  {
+   "event": "iran-announces-withdrawal-from-mou-negotiations-byptptpt-20260622191732319",
+   "questions": [
+    {
+     "id": "polymarket:2643400",
+     "question": "Will Iran announce withdrawal from MOU negotiations by July 31?"
+    },
+    {
+     "id": "polymarket:2820206",
+     "question": "Will Iran announce withdrawal from MOU negotiations by August 15?"
+    }
+   ]
+  },
+  {
+   "event": "will-trump-meet-with-putin-again-by",
+   "questions": [
+    {
+     "id": "polymarket:576926",
+     "question": "Will Trump meet with Putin by October 31?"
+    },
+    {
+     "id": "polymarket:576927",
+     "question": "Will Trump meet with Putin by December 31?"
+    }
+   ]
+  },
+  {
+   "event": "will-gamestop-acquire-ebay",
+   "questions": [
+    {
+     "id": "polymarket:2154920",
+     "question": "Will GameStop acquire eBay?"
+    }
+   ]
+  },
+  {
+   "event": "will-ukraine-recapture-crimean-territory-by-june-30-2026",
+   "questions": [
+    {
+     "id": "polymarket:2374271",
+     "question": "Will Ukraine recapture Crimean territory by December 31, 2026?"
+    },
+    {
+     "id": "polymarket:610376",
+     "question": "Will Ukraine recapture Crimean territory by June 30, 2026?"
+    }
+   ]
+  },
+  {
+   "event": "which-countries-will-strike-iran-by-march-31",
+   "questions": [
+    {
+     "id": "polymarket:1472010",
+     "question": "Will UAE strike Iran by March 31?"
+    },
+    {
+     "id": "polymarket:1472019",
+     "question": "Will Saudi Arabia strike Iran by March 31?"
+    },
+    {
+     "id": "polymarket:1472017",
+     "question": "Will Qatar strike Iran by March 31?"
+    }
+   ]
+  },
+  {
+   "event": "west-bengal-legislative-assembly-election-winner",
+   "questions": [
+    {
+     "id": "polymarket:951182",
+     "question": "Will the All India Trinamool Congress (AITC) win the most seats in the 2026 West Bengal Legislative Assembly election?"
+    },
+    {
+     "id": "polymarket:951183",
+     "question": "Will the Bharatiya Janata Party (BJP) win the most seats in the 2026 West Bengal Legislative Assembly election?"
+    }
+   ]
+  },
+  {
+   "event": "russia-x-ukraine-ceasefire-agreement-by",
+   "questions": [
+    {
+     "id": "polymarket:2243897",
+     "question": "Russia x Ukraine ceasefire agreement by December 31, 2026?"
+    },
+    {
+     "id": "polymarket:2243896",
+     "question": "Russia x Ukraine ceasefire agreement by October 31, 2026?"
+    },
+    {
+     "id": "polymarket:2243895",
+     "question": "Russia x Ukraine ceasefire agreement by June 30, 2026?"
+    }
+   ]
+  },
+  {
+   "event": "how-much-revenue-will-the-us-raise-from-tariffs-in-2025",
+   "questions": [
+    {
+     "id": "polymarket:537487",
+     "question": "Will the U.S. collect between $500b and $1t in revenue in 2025?"
+    },
+    {
+     "id": "polymarket:537484",
+     "question": "Will the U.S. collect less than $100b in revenue in 2025?"
+    },
+    {
+     "id": "polymarket:537485",
+     "question": "Will the U.S. collect between $100b and $200b in revenue in 2025?"
+    },
+    {
+     "id": "polymarket:537486",
+     "question": "Will the U.S. collect between $200b and $500b in revenue in 2025?"
+    }
+   ]
+  },
+  {
+   "event": "berlin-state-election-winner",
+   "questions": [
+    {
+     "id": "polymarket:789953",
+     "question": "Will AfD win the most seats in the 2026 Berlin state elections?"
+    }
+   ]
+  },
+  {
+   "event": "new-jersey-governor-election-margin-of-victory",
+   "questions": [
+    {
+     "id": "polymarket:593160",
+     "question": "Will Mikie Sherrill win by 6-9%?"
+    },
+    {
+     "id": "polymarket:593158",
+     "question": "Will Mikie Sherrill win by less than 3%?"
+    }
+   ]
+  },
+  {
+   "event": "who-will-trump-meet-with-in-2025",
+   "questions": [
+    {
+     "id": "polymarket:524148",
+     "question": "Will Trump meet with Xi Jinping in 2025?"
+    }
+   ]
+  },
+  {
+   "event": "maine-democratic-senate-primary-winner",
+   "questions": [
+    {
+     "id": "polymarket:599323",
+     "question": "Will Graham Platner be the Democratic nominee for Senate in Maine?"
+    }
+   ]
+  },
+  {
+   "event": "russia-parliamentary-election-winner",
+   "questions": [
+    {
+     "id": "polymarket:1129894",
+     "question": "Will United Russia (ER) win the most seats in the next Russian parliamentary election?"
+    }
+   ]
+  },
+  {
+   "event": "iran-full-airspace-closure-byptptpt-20260625195253028",
+   "questions": [
+    {
+     "id": "polymarket:2686770",
+     "question": "Iran full airspace closure by July 31?"
+    },
+    {
+     "id": "polymarket:2686771",
+     "question": "Iran full airspace closure by August 31?"
+    },
+    {
+     "id": "polymarket:3128769",
+     "question": "Iran full airspace closure by September 30?"
+    }
+   ]
+  },
+  {
+   "event": "will-alberta-join-the-us",
+   "questions": [
+    {
+     "id": "polymarket:1345724",
+     "question": "Will Alberta join the US? "
+    }
+   ]
+  },
+  {
+   "event": "ukraine-recognizes-russian-sovereignty-over-ukrainian-territory-in-2025",
+   "questions": [
+    {
+     "id": "polymarket:522057",
+     "question": "Ukraine recognizes Russian sovereignty over its territory by December 31, 2025?"
+    }
+   ]
+  },
+  {
+   "event": "iran-coup-attempt-by-june-30",
+   "questions": [
+    {
+     "id": "polymarket:1123479",
+     "question": "Iran coup attempt by June 30?"
+    }
+   ]
+  },
+  {
+   "event": "bachelorette-season-22-winner",
+   "questions": [
+    {
+     "id": "polymarket:1429058",
+     "question": "Will Richard Van De Water win The Bachelorette Season 22?"
+    }
+   ]
+  },
+  {
+   "event": "costa-rica-presidential-election",
+   "questions": [
+    {
+     "id": "polymarket:676464",
+     "question": "Will Laura Virginia Fernández Delgado win the 2026 Costa Rican presidential election?"
+    }
+   ]
+  },
+  {
+   "event": "mojtaba-khamenei-public-appearance-by",
+   "questions": [
+    {
+     "id": "polymarket:2554361",
+     "question": "Mojtaba Khamenei seen in public by July 31?"
+    }
+   ]
+  },
+  {
+   "event": "next-uk-prime-minister-in-2026-122",
+   "questions": [
+    {
+     "id": "polymarket:1343458",
+     "question": "Will Andy Burnham be the next Prime Minister of the United Kingdom in 2026?"
+    },
+    {
+     "id": "polymarket:1343457",
+     "question": "Will Nigel Farage be the next Prime Minister of the United Kingdom in 2026?"
+    },
+    {
+     "id": "polymarket:1343514",
+     "question": "Will no next Prime Minister of the United Kingdom be appointed in 2026?"
+    },
+    {
+     "id": "polymarket:1343466",
+     "question": "Will Rupert Lowe be the next Prime Minister of the United Kingdom in 2026?"
+    }
+   ]
+  },
+  {
+   "event": "cuban-regime-falls-in-2026",
+   "questions": [
+    {
+     "id": "polymarket:1553591",
+     "question": "Cuban regime falls in 2026?"
+    }
+   ]
+  },
+  {
+   "event": "what-price-will-gold-close-at-in-2025",
+   "questions": [
+    {
+     "id": "polymarket:516935",
+     "question": "Will Gold close at $3,200 or more at the end of 2025?"
+    },
+    {
+     "id": "polymarket:516930",
+     "question": "Will Gold close at $2,700-2,800 at the end of 2025?"
+    },
+    {
+     "id": "polymarket:516934",
+     "question": "Will Gold close at $3,100-3,200 at the end of 2025?"
+    },
+    {
+     "id": "polymarket:516933",
+     "question": "Will Gold close at $3,000-3,100 at the end of 2025?"
+    },
+    {
+     "id": "polymarket:516932",
+     "question": "Will Gold close at $2,900-3,000 at the end of 2025?"
+    }
+   ]
+  },
+  {
+   "event": "where-will-trump-and-putin-meet-next-584",
+   "questions": [
+    {
+     "id": "polymarket:618505",
+     "question": "Will Trump and Putin meet next in Australia?"
+    },
+    {
+     "id": "polymarket:618507",
+     "question": "Will Trump and Putin meet next in another EU country?"
+    },
+    {
+     "id": "polymarket:618509",
+     "question": "Will Trump and Putin not meet?"
+    }
+   ]
+  },
+  {
+   "event": "based-fdv-above-one-day-after-launch",
+   "questions": [
+    {
+     "id": "polymarket:676390",
+     "question": "Based FDV above $500M one day after launch?"
+    }
+   ]
+  },
+  {
+   "event": "who-will-trump-talk-to-in-november",
+   "questions": [
+    {
+     "id": "polymarket:658462",
+     "question": "Will Trump talk to Nicolás Maduro in November?"
+    }
+   ]
+  },
+  {
+   "event": "what-will-spacexs-public-ticker-be",
+   "questions": [
+    {
+     "id": "polymarket:929494",
+     "question": "Will SpaceX's public ticker be $SEX?"
+    }
+   ]
+  },
+  {
+   "event": "which-company-has-the-best-ai-model-end-of-may",
+   "questions": [
+    {
+     "id": "polymarket:1975544",
+     "question": "Will Mistral have the best AI model at the end of May 2026?"
+    },
+    {
+     "id": "polymarket:1975534",
+     "question": "Will Anthropic have the best AI model at the end of May 2026?"
+    },
+    {
+     "id": "polymarket:1975536",
+     "question": "Will OpenAI have the best AI model at the end of May 2026?"
+    },
+    {
+     "id": "polymarket:1975541",
+     "question": "Will Moonshot have the best AI model at the end of May 2026?"
+    },
+    {
+     "id": "polymarket:1975535",
+     "question": "Will Google have the best AI model at the end of May 2026?"
+    }
+   ]
+  },
+  {
+   "event": "will-russia-capture-all-of-pokrovsk-by-september-30",
+   "questions": [
+    {
+     "id": "polymarket:595744",
+     "question": "Will Russia capture all of Pokrovsk by December 31?"
+    },
+    {
+     "id": "polymarket:642529",
+     "question": "Will Russia capture all of Pokrovsk by November 30?"
+    }
+   ]
+  },
+  {
+   "event": "flying-tulip-fdv-above-one-day-after-launch",
+   "questions": [
+    {
+     "id": "polymarket:1145508",
+     "question": "Flying Tulip FDV above $800M one day after launch?"
+    }
+   ]
+  },
+  {
+   "event": "metamask-fdv-above-one-day-after-launch",
+   "questions": [
+    {
+     "id": "polymarket:665531",
+     "question": "Metamask FDV above $700M one day after launch?"
+    }
+   ]
+  },
+  {
+   "event": "macron-out-in-2025",
+   "questions": [
+    {
+     "id": "polymarket:517231",
+     "question": "Macron out in 2025?"
+    }
+   ]
+  },
+  {
+   "event": "lai-ching-te-impeached-by-june-30",
+   "questions": [
+    {
+     "id": "polymarket:1066556",
+     "question": "Lai Ching-te impeached by June 30?"
+    }
+   ]
+  },
+  {
+   "event": "claude-5-released-by",
+   "questions": [
+    {
+     "id": "polymarket:1363116",
+     "question": "Will Claude 5 be released by April 30, 2026?"
+    }
+   ]
+  },
+  {
+   "event": "chile-presidential-election-1st-round-winner",
+   "questions": [
+    {
+     "id": "polymarket:571952",
+     "question": "Will Jeannette Jara win the 1st round of the 2025 Chilean presidential election?"
+    }
+   ]
+  },
+  {
+   "event": "iran-charges-hormuz-fees-byptptpt-20260625175035466",
+   "questions": [
+    {
+     "id": "polymarket:2686766",
+     "question": "Iran charges Hormuz fees by August 31?"
+    }
+   ]
+  },
+  {
+   "event": "bank-of-japan-decision-in-december-425",
+   "questions": [
+    {
+     "id": "polymarket:669998",
+     "question": "Bank of Japan decreases interest rates after January 2026 meeting?"
+    },
+    {
+     "id": "polymarket:670001",
+     "question": "Bank of Japan increases interest rates by 50+ bps after January 2026 meeting?"
+    }
+   ]
+  },
+  {
+   "event": "iran-military-action-against-by-april-30",
+   "questions": [
+    {
+     "id": "polymarket:1910397",
+     "question": "Will Iran strike Bahrain by April 30, 2026?"
+    }
+   ]
+  },
+  {
+   "event": "anthropic-ipo-by",
+   "questions": [
+    {
+     "id": "polymarket:2421094",
+     "question": "Will Anthropic IPO by October 31, 2026?"
+    },
+    {
+     "id": "polymarket:2413329",
+     "question": "Will Anthropic IPO by September 30, 2026?"
+    }
+   ]
+  },
+  {
+   "event": "printr-public-sale-total-commitments",
+   "questions": [
+    {
+     "id": "polymarket:2088989",
+     "question": "Over $3M committed to the Printr public sale?"
+    }
+   ]
+  },
+  {
+   "event": "us-escorts-commercial-ship-through-hormuz-by-march-31",
+   "questions": [
+    {
+     "id": "polymarket:1653794",
+     "question": "US escorts commercial ship through Hormuz by April 30?"
+    }
+   ]
+  },
+  {
+   "event": "satoshis-identity-be-proven-by",
+   "questions": [
+    {
+     "id": "polymarket:1927581",
+     "question": "Will Satoshi's identity be revealed by June 30?"
+    }
+   ]
+  },
+  {
+   "event": "portugal-presidential-election-1st-round-winner",
+   "questions": [
+    {
+     "id": "polymarket:809536",
+     "question": "Will André Ventura win the 1st round of the 2026 Portugal presidential election?"
+    }
+   ]
+  },
+  {
+   "event": "will-russia-capture-all-of-myrnohrad-by",
+   "questions": [
+    {
+     "id": "polymarket:670028",
+     "question": "Will Russia capture all of Myrnohrad by December 31?"
+    }
+   ]
+  },
+  {
+   "event": "gc-hit-jan-2026",
+   "questions": [
+    {
+     "id": "polymarket:1032232",
+     "question": "Will Gold (GC) hit (HIGH) $5,500 by end of January?"
+    }
+   ]
+  }
+ ]
+}

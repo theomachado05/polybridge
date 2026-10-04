@@ -1,0 +1,780 @@
+{
+ "instructions": "# Link labeller, control arm: the by-event linker of the first held-out test\n\nYou are one of two independent labellers. The other one cannot see your answers. A link counts only if both of you\nname it.\n\n**You read this one file and nothing else.** No other file, no web, no prices, no search. Use the question text and\ngeneral knowledge of how markets work. Do not use any memory of how a question resolved or of how a price moved\naround it. If you do remember either, set `remembered: true` on that question.\n\n## What you are given\n\n- `tickers`: the only tickers you may name.\n- `events`: Polymarket yes/no questions grouped by event.\n\n## What you return for every question\n\n- `id`\n- `family`: `event` (a real-world outcome that would move a listed instrument from outside), `spot_proxy` (the\n  question is settled by a traded price or only happens because that price moved), or `none`.\n- `role`: `carrier` (the question that carries its event), `duplicate` (another deadline of the same event, or a\n  question that says the same thing as the carrier), `tail` (an outcome too remote for its odds to move), or `none`.\n- `links`, only on a carrier: each with `ticker`, `direction` (`up_on_yes` or `down_on_yes`), `confidence` (0 to 1),\n  `impact_pct` (the instrument's move in percent on full resolution), `alternative` (the outcome the direction is\n  measured against) and `mechanism` (one sentence).\n- `remembered`: true or false.\n\n## Rules\n\n1. Link the question that carries the event: the main market, not a side market.\n2. One deadline per ladder: \"by April 30\", \"by May 31\", \"by June 30\" are one event. Link one of them.\n3. For an event with several outcomes, state the alternative; the direction is measured against it.\n4. Pick an instrument the event would move by about 1% or more.\n5. A question driven by the asset's own price is a `spot_proxy`, not an event.\n6. No hindsight.\n\n## Output\n\nWrite one JSON object to the answer file you were told, and nothing else there:\n\n```json\n{\"labeller\": \"<the name you were given>\", \"chunk\": <number>, \"answers\": [\n  {\"id\": \"polymarket:123\", \"family\": \"event\", \"role\": \"carrier\", \"remembered\": false,\n   \"links\": [{\"ticker\": \"USO\", \"direction\": \"up_on_yes\", \"confidence\": 0.6, \"impact_pct\": 6,\n              \"alternative\": \"...\", \"mechanism\": \"...\"}]}\n]}\n```\n\nEvery question gets exactly one answer.\n",
+ "tickers": [
+  "SPY",
+  "QQQ",
+  "IWM",
+  "DIA",
+  "TLT",
+  "IEF",
+  "SHY",
+  "HYG",
+  "LQD",
+  "UUP",
+  "FXE",
+  "FXY",
+  "USO",
+  "UNG",
+  "GLD",
+  "SLV",
+  "CPER",
+  "URA",
+  "DBA",
+  "CORN",
+  "WEAT",
+  "XLE",
+  "XOP",
+  "XLF",
+  "KRE",
+  "XLK",
+  "SMH",
+  "XLV",
+  "XBI",
+  "XLI",
+  "ITA",
+  "XLU",
+  "XLY",
+  "XLP",
+  "XHB",
+  "XRT",
+  "JETS",
+  "ICLN",
+  "TAN",
+  "EWZ",
+  "EWW",
+  "EWC",
+  "EWJ",
+  "FXI",
+  "KWEB",
+  "MCHI",
+  "EWT",
+  "EWY",
+  "INDA",
+  "EWG",
+  "EWU",
+  "EWQ",
+  "VGK",
+  "EIS",
+  "TUR",
+  "ARGT",
+  "EWA",
+  "EPOL",
+  "GREK",
+  "EZA",
+  "AAPL",
+  "MSFT",
+  "GOOGL",
+  "AMZN",
+  "META",
+  "NVDA",
+  "TSLA",
+  "AMD",
+  "INTC",
+  "TSM",
+  "ORCL",
+  "NFLX",
+  "DIS",
+  "BA",
+  "LMT",
+  "RTX",
+  "NOC",
+  "GD",
+  "XOM",
+  "CVX",
+  "OXY",
+  "JPM",
+  "GS",
+  "BAC",
+  "WFC",
+  "UNH",
+  "PFE",
+  "MRNA",
+  "LLY",
+  "NVO",
+  "WMT",
+  "COST",
+  "TGT",
+  "NKE",
+  "F",
+  "GM",
+  "UBER",
+  "DAL",
+  "UAL",
+  "CCL",
+  "COIN",
+  "MSTR",
+  "MARA",
+  "IBIT",
+  "ETHA",
+  "HOOD",
+  "DJT",
+  "PLTR",
+  "GEO",
+  "CXW",
+  "SMR",
+  "OKLO",
+  "CEG",
+  "VST",
+  "CCJ",
+  "FSLR",
+  "ENPH",
+  "MSOS",
+  "NUE",
+  "CLF",
+  "DE",
+  "CAT",
+  "ZIM",
+  "FRO",
+  "STNG",
+  "BABA",
+  "PDD",
+  "VRT",
+  "DLR",
+  "EQIX",
+  "CRWV",
+  "RKLB"
+ ],
+ "events": [
+  {
+   "event": "which-company-has-the-best-ai-model-end-of-april",
+   "questions": [
+    {
+     "id": "polymarket:1664039",
+     "question": "Will OpenAI have the best AI model at the end of April 2026?"
+    },
+    {
+     "id": "polymarket:1664048",
+     "question": "Will DeepSeek have the best AI model at the end of April 2026?"
+    },
+    {
+     "id": "polymarket:1664037",
+     "question": "Will Anthropic have the best AI model at the end of April 2026?"
+    },
+    {
+     "id": "polymarket:1664043",
+     "question": "Will Baidu have the best AI model at the end of April 2026?"
+    },
+    {
+     "id": "polymarket:1664038",
+     "question": "Will Google have the best AI model at the end of April 2026?"
+    },
+    {
+     "id": "polymarket:1664045",
+     "question": "Will Amazon have the best AI model at the end of April 2026?"
+    }
+   ]
+  },
+  {
+   "event": "what-iranian-demands-will-trump-agree-to-by-may-31",
+   "questions": [
+    {
+     "id": "polymarket:2111561",
+     "question": "Will Trump agree to Iranian enrichment of uranium by May 31?"
+    },
+    {
+     "id": "polymarket:2111563",
+     "question": "Will Trump agree to Iranian transit fees in the Strait of Hormuz by May 31?"
+    }
+   ]
+  },
+  {
+   "event": "clacton-by-election-winner-20260707143521303",
+   "questions": [
+    {
+     "id": "polymarket:2832147",
+     "question": "Will Count Binface win the Clacton by-election?"
+    },
+    {
+     "id": "polymarket:2832140",
+     "question": "Will Nigel Farage win the Clacton by-election?"
+    }
+   ]
+  },
+  {
+   "event": "xi-jinping-out-by",
+   "questions": [
+    {
+     "id": "polymarket:956370",
+     "question": "Xi Jinping out by June 30?"
+    }
+   ]
+  },
+  {
+   "event": "trump-out-as-president-by-may-31",
+   "questions": [
+    {
+     "id": "polymarket:2097472",
+     "question": "Trump out as President by May 31?"
+    }
+   ]
+  },
+  {
+   "event": "will-france-uk-or-germany-strike-iran-by-june-30-259",
+   "questions": [
+    {
+     "id": "polymarket:1385754",
+     "question": "Will France, UK, or Germany strike Iran by June 30?"
+    }
+   ]
+  },
+  {
+   "event": "china-x-taiwan-military-clash-before-2027",
+   "questions": [
+    {
+     "id": "polymarket:677407",
+     "question": "China x Taiwan military clash before 2027?"
+    }
+   ]
+  },
+  {
+   "event": "zelenskyy-out-as-ukraine-president-before-2027",
+   "questions": [
+    {
+     "id": "polymarket:567689",
+     "question": "Zelenskyy out as Ukraine president by end of 2026?"
+    }
+   ]
+  },
+  {
+   "event": "which-countries-will-recognize-israel-by-june-30",
+   "questions": [
+    {
+     "id": "polymarket:693485",
+     "question": "Will Lebanon recognize Israel by June 30?"
+    }
+   ]
+  },
+  {
+   "event": "how-many-gold-cards-will-trump-sell-in-2025",
+   "questions": [
+    {
+     "id": "polymarket:525557",
+     "question": "Will Trump sell 0 Gold Cards in 2025?"
+    },
+    {
+     "id": "polymarket:525558",
+     "question": "Will Trump sell 1-100 Gold Cards in 2025?"
+    },
+    {
+     "id": "polymarket:525559",
+     "question": "Will Trump sell 101-1k Gold Cards in 2025?"
+    }
+   ]
+  },
+  {
+   "event": "which-company-has-the-best-ai-model-end-of-march-751",
+   "questions": [
+    {
+     "id": "polymarket:801452",
+     "question": "Will Baidu have the best AI model at the end of March 2026?"
+    },
+    {
+     "id": "polymarket:801449",
+     "question": "Will Anthropic have the best AI model at the end of March 2026?"
+    },
+    {
+     "id": "polymarket:801450",
+     "question": "Will OpenAI have the best AI model at the end of March 2026?"
+    },
+    {
+     "id": "polymarket:801455",
+     "question": "Will DeepSeek have the best AI model at the end of March 2026?"
+    },
+    {
+     "id": "polymarket:801456",
+     "question": "Will Moonshot have the best AI model at the end of March 2026?"
+    },
+    {
+     "id": "polymarket:801453",
+     "question": "Will Z.ai have the best AI model at the end of March 2026?"
+    }
+   ]
+  },
+  {
+   "event": "ky-04-republican-primary-winner",
+   "questions": [
+    {
+     "id": "polymarket:789540",
+     "question": "Will Thomas Massie be the Republican nominee for KY-04?"
+    },
+    {
+     "id": "polymarket:789542",
+     "question": "Will Ed Gallrein be the Republican nominee for KY-04?"
+    }
+   ]
+  },
+  {
+   "event": "israel-and-indonesia-normalize-relations-by",
+   "questions": [
+    {
+     "id": "polymarket:677314",
+     "question": "Israel and Indonesia normalize relations by June 30, 2026?"
+    }
+   ]
+  },
+  {
+   "event": "ukraine-signs-peace-deal-with-russia-before-2027",
+   "questions": [
+    {
+     "id": "polymarket:665224",
+     "question": "Ukraine signs peace deal with Russia before 2027?"
+    }
+   ]
+  },
+  {
+   "event": "jeffrey-epstein-foul-play-confirmed-in-2025",
+   "questions": [
+    {
+     "id": "polymarket:1057349",
+     "question": "Jeffrey Epstein foul play confirmed by December 31, 2026?"
+    }
+   ]
+  },
+  {
+   "event": "which-company-has-best-ai-model-end-of-november",
+   "questions": [
+    {
+     "id": "polymarket:630106",
+     "question": "Will Mistral have the best AI model at the end of November 2025?"
+    },
+    {
+     "id": "polymarket:630100",
+     "question": "Will OpenAI have the best AI model at the end of November 2025?"
+    }
+   ]
+  },
+  {
+   "event": "peru-presidential-election-first-round-2nd-place",
+   "questions": [
+    {
+     "id": "polymarket:1656087",
+     "question": "Will Roberto Sánchez Palomino finish in second place in the first round of the 2026 Peruvian presidential election?"
+    },
+    {
+     "id": "polymarket:1656056",
+     "question": "Will Rafael López Aliaga finish in second place in the first round of the 2026 Peruvian presidential election?"
+    }
+   ]
+  },
+  {
+   "event": "is-jeffrey-epstein-alive-498",
+   "questions": [
+    {
+     "id": "polymarket:1059772",
+     "question": "Jeffrey Epstein confirmed to be alive before 2027?"
+    }
+   ]
+  },
+  {
+   "event": "slovenian-parliamentary-election-winner-791",
+   "questions": [
+    {
+     "id": "polymarket:954518",
+     "question": "Will the Slovenian Democratic Party (SDS) win the most seats in the 2026 Slovenian parliamentary election?"
+    },
+    {
+     "id": "polymarket:954519",
+     "question": "Will the Freedom Movement (GS) win the most seats in the 2026 Slovenian parliamentary election?"
+    }
+   ]
+  },
+  {
+   "event": "michigan-democratic-senate-primary-winner",
+   "questions": [
+    {
+     "id": "polymarket:599305",
+     "question": "Will Abdul El-Sayed win the 2026 Michigan Democratic Primary?"
+    },
+    {
+     "id": "polymarket:599304",
+     "question": "Will Haley Stevens win the 2026 Michigan Democratic Primary?"
+    }
+   ]
+  },
+  {
+   "event": "ai-bubble-burst-by",
+   "questions": [
+    {
+     "id": "polymarket:691340",
+     "question": "AI bubble burst in 2026?"
+    }
+   ]
+  },
+  {
+   "event": "opensea-fdv-above-one-day-after-launch",
+   "questions": [
+    {
+     "id": "polymarket:618454",
+     "question": "Opensea FDV above $500M one day after launch?"
+    },
+    {
+     "id": "polymarket:618455",
+     "question": "Opensea FDV above $1B one day after launch?"
+    }
+   ]
+  },
+  {
+   "event": "friedrich-merz-out-as-chancellor-of-germany-before-2027",
+   "questions": [
+    {
+     "id": "polymarket:665513",
+     "question": "Friedrich Merz out as Chancellor of Germany before December 31, 2026?"
+    }
+   ]
+  },
+  {
+   "event": "next-prime-minister-of-denmark-after-parliamentary-election",
+   "questions": [
+    {
+     "id": "polymarket:1451230",
+     "question": "Will Morten Messerschmidt be the next prime minister of Denmark after the 2026 parliamentary elections?"
+    },
+    {
+     "id": "polymarket:1451225",
+     "question": "Will Lars Løkke Rasmussen be the next prime minister of Denmark after the 2026 parliamentary elections?"
+    },
+    {
+     "id": "polymarket:1451224",
+     "question": "Will Mette Frederiksen be the next prime minister of Denmark after the 2026 parliamentary elections?"
+    },
+    {
+     "id": "polymarket:1451226",
+     "question": "Will Troels Lund Poulsen be the next prime minister of Denmark after the 2026 parliamentary elections?"
+    }
+   ]
+  },
+  {
+   "event": "2nd-place-in-new-york-city-mayoral-election",
+   "questions": [
+    {
+     "id": "polymarket:551980",
+     "question": "Will Zohran Mamdani win second place in the 2025 NYC mayoral election?"
+    },
+    {
+     "id": "polymarket:551977",
+     "question": "Will Andrew Cuomo win second place in the 2025 NYC mayoral election?"
+    },
+    {
+     "id": "polymarket:551978",
+     "question": "Will Curtis Sliwa win second place in the 2025 NYC mayoral election?"
+    }
+   ]
+  },
+  {
+   "event": "minneapolis-mayoral-election-665",
+   "questions": [
+    {
+     "id": "polymarket:566987",
+     "question": "Will Jacob Frey win the 2025 Minneapolis mayoral election?"
+    },
+    {
+     "id": "polymarket:566988",
+     "question": "Will Omar Fateh win the 2025 Minneapolis mayoral election?"
+    }
+   ]
+  },
+  {
+   "event": "human-moon-landing-in-2026",
+   "questions": [
+    {
+     "id": "polymarket:1131170",
+     "question": "Human moon landing in 2026?"
+    }
+   ]
+  },
+  {
+   "event": "largest-company-end-of-may-167",
+   "questions": [
+    {
+     "id": "polymarket:1999720",
+     "question": "Will Tesla be the largest company in the world by market cap on May 31?"
+    },
+    {
+     "id": "polymarket:1999716",
+     "question": "Will NVIDIA be the largest company in the world by market cap on May 31?"
+    },
+    {
+     "id": "polymarket:1999718",
+     "question": "Will Apple be the largest company in the world by market cap on May 31?"
+    },
+    {
+     "id": "polymarket:1999723",
+     "question": "Will Broadcom be the largest company in the world by market cap on May 31?"
+    },
+    {
+     "id": "polymarket:1999722",
+     "question": "Will Amazon be the largest company in the world by market cap on May 31?"
+    },
+    {
+     "id": "polymarket:1999721",
+     "question": "Will Saudi Aramco be the largest company in the world by market cap on May 31?"
+    }
+   ]
+  },
+  {
+   "event": "iran-agrees-to-end-enrichment-of-uranium-by-december-31",
+   "questions": [
+    {
+     "id": "polymarket:1796138",
+     "question": " Iran agrees to end enrichment of uranium by December 31?"
+    }
+   ]
+  },
+  {
+   "event": "who-will-trump-pardon-in-2025",
+   "questions": [
+    {
+     "id": "polymarket:537898",
+     "question": "Will Trump pardon Sam Bankman-Fried in 2025?"
+    }
+   ]
+  },
+  {
+   "event": "will-mitch-mcconnell-resign-from-the-senate-before-his-term-ends",
+   "questions": [
+    {
+     "id": "polymarket:637910",
+     "question": "Mitch McConnell steps down from Senate before his term ends?"
+    }
+   ]
+  },
+  {
+   "event": "bank-of-japan-decision-in-december",
+   "questions": [
+    {
+     "id": "polymarket:655654",
+     "question": "Bank of Japan increases interest rates by 25 bps after December 2025 meeting?"
+    },
+    {
+     "id": "polymarket:655653",
+     "question": "No change in Bank of Japan's interest rates after December 2025 meeting?"
+    },
+    {
+     "id": "polymarket:655655",
+     "question": "Bank of Japan increases interest rates by 50+ bps after December 2025 meeting?"
+    }
+   ]
+  },
+  {
+   "event": "puffpaw-fdv-above-one-day-after-launch",
+   "questions": [
+    {
+     "id": "polymarket:1005344",
+     "question": "Puffpaw FDV above $100M one day after launch?"
+    },
+    {
+     "id": "polymarket:1005343",
+     "question": "Puffpaw FDV above $50M one day after launch?"
+    }
+   ]
+  },
+  {
+   "event": "will-hamaz-disarm-by-december-31",
+   "questions": [
+    {
+     "id": "polymarket:2747434",
+     "question": "Will Hamas agree to disarm by December 31?"
+    },
+    {
+     "id": "polymarket:570071",
+     "question": "Will Hamas agree to disarm by December 31?"
+    }
+   ]
+  },
+  {
+   "event": "what-will-gold-gc-hit-by-end-of-february",
+   "questions": [
+    {
+     "id": "polymarket:1273328",
+     "question": "Will Gold (GC) hit (HIGH) $5,500 by end of February?"
+    },
+    {
+     "id": "polymarket:1295950",
+     "question": "Will Gold (GC) hit (HIGH) $10,000 by end of February?"
+    }
+   ]
+  },
+  {
+   "event": "megaeth-airdrop-by",
+   "questions": [
+    {
+     "id": "polymarket:556108",
+     "question": "Will MegaETH perform an airdrop by June 30? "
+    }
+   ]
+  },
+  {
+   "event": "gc-hit-jun-2026",
+   "questions": [
+    {
+     "id": "polymarket:1032272",
+     "question": "Will Gold (GC) hit (HIGH) $5,500 by end of June?"
+    }
+   ]
+  },
+  {
+   "event": "us-strike-on-mexico-by",
+   "questions": [
+    {
+     "id": "polymarket:1107380",
+     "question": "US strike on Mexico by March 31?"
+    },
+    {
+     "id": "polymarket:1107361",
+     "question": "US strike on Mexico by January 31?"
+    }
+   ]
+  },
+  {
+   "event": "will-the-us-invade-greenland-in-2026",
+   "questions": [
+    {
+     "id": "polymarket:1115301",
+     "question": "Will the U.S. invade Greenland in 2026?"
+    }
+   ]
+  },
+  {
+   "event": "how-high-will-10-year-treasury-yield-go-in-2025",
+   "questions": [
+    {
+     "id": "polymarket:535639",
+     "question": "Will the 10-year Treasury yield hit 4.6% in 2025?"
+    },
+    {
+     "id": "polymarket:535642",
+     "question": "Will the 10-year Treasury yield hit 5.2% in 2025?"
+    },
+    {
+     "id": "polymarket:535640",
+     "question": "Will the 10-year Treasury yield hit 4.8% in 2025?"
+    }
+   ]
+  },
+  {
+   "event": "china-x-japan-military-clash-before-2027",
+   "questions": [
+    {
+     "id": "polymarket:687642",
+     "question": "China x Japan military clash before 2027?"
+    }
+   ]
+  },
+  {
+   "event": "iran-nuke-before-2027",
+   "questions": [
+    {
+     "id": "polymarket:677396",
+     "question": "Iran Nuke before 2027?"
+    }
+   ]
+  },
+  {
+   "event": "will-russia-capture-all-of-stepnohirsk-by",
+   "questions": [
+    {
+     "id": "polymarket:2125369",
+     "question": "Will Russia capture all of Stepnohirsk by September 30, 2026?"
+    }
+   ]
+  },
+  {
+   "event": "dublin-central-by-election-winner",
+   "questions": [
+    {
+     "id": "polymarket:1400467",
+     "question": "Will Eoghan Ó Ceannabháin win the 2026 Dublin-central by-election?"
+    },
+    {
+     "id": "polymarket:1400471",
+     "question": "Will Séamas McGrattan win the 2026 Dublin-central by-election?"
+    }
+   ]
+  },
+  {
+   "event": "ukraine-joins-nato-before-2027",
+   "questions": [
+    {
+     "id": "polymarket:665495",
+     "question": "Ukraine joins NATO before 2027?"
+    }
+   ]
+  },
+  {
+   "event": "next-leader-out-of-power-before-2027-795",
+   "questions": [
+    {
+     "id": "polymarket:1485215",
+     "question": "Will Benjamin Netanyahu be the next leader out before 2027?"
+    }
+   ]
+  },
+  {
+   "event": "maine-senate-election-winner",
+   "questions": [
+    {
+     "id": "polymarket:630772",
+     "question": "Will the Democrats win the Maine Senate race in 2026?"
+    }
+   ]
+  },
+  {
+   "event": "fogo-fdv-above-one-day-after-launch",
+   "questions": [
+    {
+     "id": "polymarket:716632",
+     "question": "Fogo FDV above $700M one day after launch?"
+    },
+    {
+     "id": "polymarket:776293",
+     "question": "Fogo FDV above $300M one day after launch?"
+    }
+   ]
+  },
+  {
+   "event": "will-china-unban-bitcoin-by-2027",
+   "questions": [
+    {
+     "id": "polymarket:665258",
+     "question": "Will China unban Bitcoin by 2027?"
+    }
+   ]
+  },
+  {
+   "event": "us-x-russia-military-clash-by",
+   "questions": [
+    {
+     "id": "polymarket:1124834",
+     "question": "US x Russia military clash by December 31, 2026?"
+    }
+   ]
+  },
+  {
+   "event": "openai-ipo-by",
+   "questions": [
+    {
+     "id": "polymarket:656312",
+     "question": "Will OpenAI IPO by December 31 2026?"
+    }
+   ]
+  },
+  {
+   "event": "will-opensea-launch-a-token-by-142",
+   "questions": [
+    {
+     "id": "polymarket:1271610",
+     "question": "Will OpenSea launch a token by March 31, 2026?"
+    }
+   ]
+  },
+  {
+   "event": "russia-x-ukraine-ceasefire-by",
+   "questions": [
+    {
+     "id": "polymarket:2264328",
+     "question": "Russia x Ukraine ceasefire by December 31, 2026?"
+    }
+   ]
+  }
+ ]
+}
