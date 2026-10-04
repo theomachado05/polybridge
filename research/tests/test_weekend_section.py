@@ -10,5 +10,5 @@ def test_every_recomputed_number_matches_the_committed_metrics():
 
 def test_findings_cover_the_studies_and_read_real_numbers():
     f = wss.findings()
-    assert {"S4", "S5", "S7", "S8", "S9", "S10", "S12", "S14", "S15", "S16", "S18"} <= set(f.study)
+    assert {"S4", "S5", "S7", "S8", "S9", "S10", "S12", "S14", "S15", "S16", "S18", "S19"} <= set(f.study)
     assert not f.value.str.contains("nan").any()

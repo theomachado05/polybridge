@@ -184,6 +184,14 @@ def findings(results: Path | str = RESULTS) -> pd.DataFrame:
             f"buyers {b.mean_pnl_points:+.2f} points per contract [{b.ci_lo:+.2f}, {b.ci_hi:+.2f}]; sellers {sa.mean_pnl_points:+.2f} "
             f"[{sa.ci_lo:+.2f}, {sa.ci_hi:+.2f}], out-of-sample {so.mean_pnl_points:+.2f} [{so.ci_lo:+.2f}, {so.ci_hi:+.2f}]",
             "buyers overpaid; selling fails out-of-sample; not a pass")
+    f = R / "s19_crypto_price_markets" / "tests.csv"
+    if f.exists():
+        t = pd.read_csv(f)
+        sell, buy = "sellers: sold YES into a bid, held to the result", "buyers: bought YES at the ask, held to the result"
+        b, sa = _row(t, test=buy, scope="all markets"), _row(t, test=sell, scope="all markets")
+        add("S19", "The same test on 1,265 crypto price markets, two years: sellers at the bid, and buyers",
+            f"sellers {sa.mean_pnl_points:+.2f} points per contract [{sa.ci_lo:+.2f}, {sa.ci_hi:+.2f}]; buyers {b.mean_pnl_points:+.2f} "
+            f"[{b.ci_lo:+.2f}, {b.ci_hi:+.2f}]", "S18's premium does not replicate")
     f = R / "s14_link_ceiling" / "tests.csv"
     if f.exists():
         t = pd.read_csv(f)

@@ -107,7 +107,32 @@ def rows() -> list[dict]:
         generic("s15_weekend_scare", "S15 weekend rises", "Sell weekend rises of 5+ points on 871 price markets S9 did not use", "points per trade",
                 "not a pass; the reversal holds in quoted prices only", cost=lambda r: f"{r.mean_cost_points:.2f} points ({r.cost_bp_of_capital:,.0f} bp of capital)"),
     ]
-    return out + [s for s in specs if s]
+    out = out + [s for s in specs if s]
+    sell = "sellers: sold YES into a bid, held to the result"
+    for folder, tests_csv, book_csv, name, trade in (
+            ("s18_price_market_calibration", "prints_tests.csv", "prints_book.csv", "S18 at traded prices",
+             "Sell YES into the bid on a market's first weekend, hold to the result (oil, metals, S&P 500, stocks)"),
+            ("s19_crypto_price_markets", "tests.csv", "book.csv", "S19 crypto replication",
+             "The same on Bitcoin, Ethereum, Solana and XRP price markets, first 48 hours, two years")):
+        if not (R / folder / tests_csv).exists():
+            continue
+        t, b = pd.read_csv(R / folder / tests_csv), pd.read_csv(R / folder / book_csv)
+
+        def tr(scope, test=sell):
+            return t[(t.test == test) & (t.scope == scope)].iloc[0]
+
+        def bk(seg):
+            return b[(b.book == "sellers") & (b.segment == seg)].iloc[0]
+
+        i1, o1, two, allb = tr("in-sample events"), tr("out-of-sample events"), tr("all markets", sell + ", fee doubled"), bk("ALL")
+        out.append({"Study": f"**{name}.** {trade}", "Unit": "points per contract",
+                    "In-sample, 1× costs": cell(i1, "mean_pnl_points", "ci_lo", "ci_hi", "markets"),
+                    "Out-of-sample, 1× costs": cell(o1, "mean_pnl_points", "ci_lo", "ci_hi", "markets"),
+                    "At 2× costs": f"{f(two.mean_pnl_points)} (whole sample, fee doubled)", "Sharpe (in / out)": f"{f(bk('IS').sharpe)} / {f(bk('OOS').sharpe)} (monthly)",
+                    "Max drawdown": pc(allb.max_drawdown), "Worst month": pc(allb.worst_month), "Turnover a year": f"{allb.turnover_ann:.1f}×",
+                    "Cost of a round trip": "the market's taker fee, once; the price is the print",
+                    "Verdict": "not a pass: nothing out-of-sample" if folder.startswith("s18") else "does not replicate"})
+    return out
 
 
 def table() -> str:
