@@ -259,3 +259,12 @@ fails. So one more test, on the mechanism and not on single links: `linker/poole
 
 **Note, 2026-10-03 23:25 ET.** The heading of amendment 1 gives 23:27 ET; its commit (dd7e1a5) is stamped 23:24 ET.
 The commit time is the right one.
+
+**Note, 2026-10-03 23:37 ET, while the pull was running and before any price of the fresh set was read: two
+readings fixed in `linker/pooled.py` (with `test_pooled.py`).** (1) The pooled options test covers the links of
+section 7, that is the version-3 links that are testable on the equity side, with no minimum on their own number
+of option days. Amendment 1's words ("every version-3 link with any such day") are wider; the narrower reading is
+the one the frozen options code can pull for, and it is the one that runs. (2) Ties at the median of the
+active-against-quiet split go to the quiet half. The code was checked on the development run only, where the pooled
+slope was 0.034 daily standard deviations per point (t 4.7) and the options directional slope had t 6.1; those are
+development figures, not evidence.
