@@ -62,3 +62,26 @@ nested pairs the code misses, the labellers' own agreement rate, and every error
 4. Half B is scored once: with the parser as it stood at step 1 and with the fixed parser. Both are reported.
 
 ## Amendments
+
+**Amendment 1, 2026-10-04 04:22 ET. After half A was scored and its errors read (labels commit d44b2a2); before half B is
+scored or any of its labels is read.** Half A, as planned: exact ticket links 45 of 87 (52%), rung dates 53 of 54,
+nested pairs 30 of 30. Reading the errors gave one fault in the measure and four in the parser.
+
+- **The measure.** A ticket's date is compared on the session the option link uses: the last weekday on or before
+  the parser's window end against the last weekday on or before the readers' date. Most of half A's date "errors"
+  were this and nothing else: "close above $840 end of October" is Saturday the 31st to the parser and Friday the
+  30th to the readers, and the link uses the Friday either way. Half B is reported under this rule, and the parser
+  as it stood at step 1 is also reported under the rule as first written.
+- **Parser faults found on half A, to be fixed with a unit test each** (`linker/link_map.py`,
+  `linker/tests/test_contract_links.py`):
+  1. a month followed by a year is read as day 20 of the month ("the final trading day of January 2026" becomes
+     January 20), which links a ticket to the wrong expiry and gives a rung the wrong date;
+  2. weekly close tickets ("finish week of October 5 above $365") are not recognised and fall to "other";
+  3. a negated deadline question ("will X not happen by <date>") is read as a ladder rung, although for it the
+     earlier deadline is worth more, not less;
+  4. a token written with a dollar sign ($ANSEM) is read as a stock ticker, and other tokens' price questions are
+     typed as stock tickets with no ticker.
+- **Not changed.** The readers were told "a single stock", so they called a ticket on an exchange-traded fund
+  (EWY) "other"; such questions stay counted as the plan says and are listed by name. The three nested pairs the
+  code refuses because the two rules texts differ are left as they are: refusing is the safe side.
+- Half A is re-scored with the fixed parser as a development figure. Half B is then scored once.
