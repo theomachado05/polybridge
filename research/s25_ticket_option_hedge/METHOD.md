@@ -161,4 +161,17 @@ looked at after the run goes under a heading that says so. A Sharpe above 3 mean
 
 ## Amendments
 
-(none yet)
+- **2026-10-04 01:55 New York, clerical.** The header says "about 02:00"; the pre-registration commit (`9519ff4`) was made
+  at 01:47:44 New York and the pull started at 01:47:49. Git's timestamp is the record. No rule changed.
+
+- **2026-10-04 01:56 New York, after the result was read: three looks that are not tests.** The primary was run and read
+  first (H1 not met, H2 not met, H3 met). Reading `trades.csv` showed that some Monday leg quotes are opening quotes that
+  were never refreshed by 09:35 (for example "0 bid, 15.00 offered" on both legs of a far out-of-the-money META put
+  spread, 299 seconds old), which the pre-registered rule accepts and buys at the offer. The primary stands as
+  registered. `after.py` writes `after_run.csv` with: **L1** the primary and variant A without the markets where a
+  Monday leg quote is more than 60 seconds old at 09:35; **L2** on those markets, the same two spreads at Monday's mid
+  quotes plus commission (not executable; it shows how much of the hedge's loss is the cost of crossing); **L3** the
+  number of spreads per ticket that would have minimised the standard deviation of P&L per market, found after the
+  fact on the primary's markets (optimistic by construction). Each is run once and reported whatever it shows, under
+  the heading "Looked at after the run". None replaces H1, H2 or H3, and no rule, threshold or size of the primary or
+  of variants A and B changes.

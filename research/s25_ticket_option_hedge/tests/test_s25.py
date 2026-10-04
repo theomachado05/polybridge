@@ -7,7 +7,7 @@ import pytest
 
 from s25_ticket_option_hedge import config as cfg
 from s25_ticket_option_hedge import engine as eg
-from s25_ticket_option_hedge import pull
+from s25_ticket_option_hedge import pull, run
 
 COMM5 = 2 * 0.65 / (100 * 5.0)          # commission per unit of a 5-wide spread
 
@@ -144,3 +144,29 @@ def test_the_plan_is_s21s_markets_and_s21s_rule_subset():
     assert (d.hedge_day > d.anchor_day).all() and (d.expiry > d.hedge_day).all()
     assert all(pd.Timestamp(x).weekday() in (0, 1) for x in d.hedge_day)           # a Monday, or a Tuesday after a holiday
     assert ((d.hedge_epoch - d.open_epoch) == 300).all()
+
+
+def toy():
+    return pd.DataFrame([
+        {"market": "1", "event": "e", "segment": "IS", "rule": True, "contracts": 100.0, "sell_price": 0.40, "ticket_pnl_points": 40.0, "ticket_pnl_points_2x": 39.0,
+         "hedge_pnl_points_P": -30.0, "unit_cost_P": 0.15, "hedge_pnl_points_B": -20.0, "unit_cost_B": 0.10, "entry_epoch": 1.0e9, "result_epoch": 1.0e9 + 20 * 86400,
+         "hedge_epoch": 1.0e9 + 2 * 86400, "anchor_epoch": 1.0e9 - 4 * 3600, "expiry_epoch": 1.0e9 + 25 * 86400},
+        {"market": "2", "event": "f", "segment": "OOS", "rule": False, "contracts": 50.0, "sell_price": 0.20, "ticket_pnl_points": -80.0, "ticket_pnl_points_2x": -80.5,
+         "hedge_pnl_points_P": 160.0, "unit_cost_P": 0.20, "hedge_pnl_points_B": 170.0, "unit_cost_B": 0.15, "entry_epoch": 1.0e9, "result_epoch": 1.0e9 + 10 * 86400,
+         "hedge_epoch": 1.0e9 + 2 * 86400, "anchor_epoch": 1.0e9 - 4 * 3600, "expiry_epoch": 1.0e9 + 25 * 86400},
+    ])
+
+
+def test_the_hedged_book_has_a_ticket_leg_and_a_hedge_leg_per_market():
+    t = toy()
+    u, h, b = run.legs_of(t, "U"), run.legs_of(t, "P"), run.legs_of(t, "B")
+    assert len(u) == 2 and len(h) == 4
+    assert u.pnl.sum() == pytest.approx(100 * 0.40 + 50 * -0.80)
+    assert h.pnl.sum() == pytest.approx(100 * (0.40 - 0.30) + 50 * (-0.80 + 1.60))
+    assert h[h.leg == "ticket"].capital.tolist() == pytest.approx([60.0, 40.0])                 # collateral: 1 - price per ticket
+    assert h[h.leg == "hedge"].capital.tolist() == pytest.approx([100 * 2 * 0.15, 50 * 2 * 0.20])   # premium: h spreads per ticket
+    assert (h[h.leg == "hedge"].entry_epoch == t.hedge_epoch.to_numpy()).all() and (b[b.leg == "hedge"].entry_epoch == t.anchor_epoch.to_numpy()).all()
+    assert (h[h.leg == "hedge"].end_epoch == t.expiry_epoch.to_numpy()).all()
+    assert run.legs_of(t, "U2x").pnl.sum() == pytest.approx(100 * 0.39 + 50 * -0.805)
+    assert list(run.subset(t, "rule").market) == ["1"] and list(run.subset(t, "left").market) == ["2"] and len(run.subset(t, "full")) == 2
+    assert run.pnl_col("U") == "ticket_pnl_points" and run.pnl_col("P2x") == "hedged_pnl_points_P2x"
