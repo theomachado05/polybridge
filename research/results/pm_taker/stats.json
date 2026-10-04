@@ -1,0 +1,33 @@
+{
+ "verdict": "INSUFFICIENT",
+ "reason": "day-one kill test: projected_trades_below_100",
+ "kill": {
+  "projected_trades": 77.54074074074074,
+  "projected_days": 43.0,
+  "no_spread_share": 0.0,
+  "stop": true,
+  "reasons": [
+   "projected_trades_below_100"
+  ],
+  "kill_trades": 4,
+  "kill_markets": 135,
+  "kill_evaluated": 110,
+  "kill_no_spread": 0,
+  "kill_unusable": 16
+ },
+ "scope": {
+  "drop_no_clean_expiry": 1885,
+  "drop_reopening_day": 1202,
+  "universe_markets": 2617,
+  "universe_days": 86,
+  "universe_ticker_days": 449,
+  "universe_empty_window": 25,
+  "markets_processed": 135,
+  "prints_raw": 202,
+  "markets_offset_cap": 0,
+  "prints_kept": 189,
+  "markets_with_prints": 82,
+  "eval_unusable": 16,
+  "eval_ok": 94
+ }
+}
