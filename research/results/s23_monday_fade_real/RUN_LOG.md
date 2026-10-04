@@ -12,6 +12,7 @@ All times New York, Sun 2026-10-04, read from the machine's clock. Commit hashes
 | 00:47 | Checks on the passing T2 book: three trades read print by print; T2 replayed from the raw records by code that shares nothing with the runner (32 trades, +$312.62, the same). `after.py` written for the checks made after the run. |
 | 00:48 | Second run after the chart code changed (labels collided in the first charts). `metrics.csv`, `trades.csv` and `staircase.csv` are byte-identical to the first run (sha256 `99cc9eef…`, `c4b82842…`, `981f6d4b…` before and after). |
 | 00:51 | `report.py` wrote `SUMMARY.md` and `capacity.md` from the result files. Tests rerun: 18 pass, exit code 0. |
+| 00:52 | **Results committed and pushed to `origin r/weekend-options`: `f1816bf`** (results, `after.py`, `report.py`, the chart change, METHOD Amendment 1). |
 
 ## Data sources (no network call was made)
 
