@@ -1,0 +1,118 @@
+"""S11: the bundle rules, the consistency checks at real books and at mids, episodes, jumps and the sibling trade."""
+import math
+
+import numpy as np
+
+from s11_bundles import engine as en
+from s11_bundles import universe as uni
+
+NOFEE = (0.0, 1.0)
+
+
+def mk(i, q, vol=1e6, end="2026-12-31T00:00:00Z"):
+    return {"id": str(i), "question": q, "volume": vol, "endDate": end}
+
+
+def test_date_ladder_orders_by_date_and_needs_by():
+    ms = [mk(1, "Ceasefire by May 31?"), mk(2, "Ceasefire by April 30?"), mk(3, "Ceasefire by end of June?"),
+          mk(4, "Ceasefire on April 30?"), mk(5, "Ceasefire on May 31?")]
+    out = uni.date_ladders("e", ms)
+    assert len(out) == 1
+    assert out[0]["legs"] == ["2", "1", "3"]
+    assert out[0]["pairs"] == [["2", "1"], ["1", "3"]]          # [rich = earlier, cheap = later]
+
+
+def test_date_ladder_drops_duplicate_dates():
+    assert uni.date_ladders("e", [mk(1, "X by May 31?"), mk(2, "X by May 31, 2026?")]) == []
+
+
+def test_parse_date():
+    assert str(uni.parse_date("end of June", 2026)) == "2026-06-30"
+    assert str(uni.parse_date("February", 2028)) == "2028-02-29"
+    assert str(uni.parse_date("August 31, 2026", 2025)) == "2026-08-31"
+    assert str(uni.parse_date("Dec 31st", 2025)) == "2025-12-31"
+
+
+def test_strike_ladder_orientation():
+    up = [mk(1, "Will WTI hit (HIGH) $100 by end of March?"), mk(2, "Will WTI hit (HIGH) $105 by end of March?"),
+          mk(3, "Will WTI hit (HIGH) $95 by end of March?")]
+    out = uni.strike_ladders("e", up)
+    assert out[0]["legs"] == ["3", "1", "2"] and out[0]["orient"] == 1
+    assert out[0]["pairs"] == [["1", "3"], ["2", "1"]]          # the higher level is the rich leg
+    dn = [mk(1, "Will WTI hit (LOW) $40 by end of March?"), mk(2, "Will WTI hit (LOW) $45 by end of March?")]
+    out = uni.strike_ladders("e", dn)
+    assert out[0]["orient"] == -1 and out[0]["pairs"] == [["1", "2"]]   # the lower level is the rich leg
+
+
+def test_strike_levels_and_unsigned_wording_left_out():
+    assert uni.strike_template("Lighter market cap (FDV) >$1B one day after launch?")[1:] == (1e9, 1)
+    assert uni.strike_template("Will Bitcoin dip to $80,000 by December 31?")[1:] == (80000.0, -1)
+    assert uni.strike_template("Will Bitcoin be above $100k in 2026?")[1:] == (100000.0, 1)
+    assert uni.strike_template("Will 7 Fed rate cuts happen in 2025?")[2] == 0
+    assert uni.strike_template("Will the 10-year yield be above 4.5% on Dec 31?")[1] is None
+
+
+def test_negrisk_bounds():
+    ms = [mk(i, f"Will {i} win?") for i in range(3)]
+    assert uni.negrisk_set("e", ms, True)[0]["legs"] == ["0", "1", "2"]
+    assert uni.negrisk_set("e", ms, False) == []
+    assert uni.negrisk_set("e", [mk(i, "q") for i in range(31)], True) == []
+
+
+def test_pair_arb_walks_depth_and_charges_fees():
+    r = en.pair_arb([(0.60, 10), (0.55, 50)], [(0.50, 20), (0.58, 100)], NOFEE, NOFEE)
+    # 10 at 0.60-0.50, 10 at 0.55-0.50, then 0.55-0.58 < 0
+    assert r["size"] == 20 and math.isclose(r["locked"], 10 * 0.10 + 10 * 0.05)
+    r = en.pair_arb([(0.60, 10)], [(0.50, 20)], (0.25, 1.0), (0.25, 1.0))   # fees 0.06 + 0.0625 eat the 0.10
+    assert r["size"] == 0 and r["edge"] < 0
+    assert en.pair_arb([], [(0.5, 1)], NOFEE, NOFEE)["size"] == 0
+
+
+def test_basket_arb_both_sides():
+    asks = [[(0.30, 10)], [(0.30, 5), (0.35, 10)], [(0.30, 10)]]
+    r = en.basket_arb(asks, [NOFEE] * 3, "buy_yes")
+    assert r["size"] == 10 and math.isclose(r["locked"], 5 * 0.10 + 5 * 0.05)
+    bids = [[(0.40, 10)], [(0.40, 10)], [(0.40, 3)]]
+    r = en.basket_arb(bids, [NOFEE] * 3, "buy_no")
+    assert r["size"] == 3 and math.isclose(r["locked"], 3 * 0.20)
+    assert en.basket_arb([[(0.3, 1)], []], [NOFEE] * 2, "buy_yes")["size"] == 0
+
+
+def test_pair_edge_and_costs_scale():
+    e1 = en.pair_edge(0.60, 0.50, 0.01, NOFEE, NOFEE, 1.0)
+    e2 = en.pair_edge(0.60, 0.50, 0.01, NOFEE, NOFEE, 2.0)
+    assert math.isclose(float(e1), 0.08) and math.isclose(float(e2), 0.06)
+    assert np.isnan(en.pair_edge(np.nan, 0.5, 0.01, NOFEE, NOFEE))
+
+
+def test_basket_edge():
+    mids = np.array([[0.30, 0.40], [0.30, 0.40], [0.30, 0.40]])
+    y, n = en.basket_edge(mids, 0.01, [NOFEE] * 3)
+    assert np.allclose(y, [1 - 0.93, 1 - 1.23]) and np.allclose(n, [0.87 - 1, 1.17 - 1])
+
+
+def test_episodes_join_short_gaps():
+    t = np.arange(0, 600 * 60, 60.0)
+    f = np.zeros(len(t), bool)
+    f[[10, 11, 40, 200]] = True                  # 10-11 and 40 are 29 minutes apart: one episode; 200 is another
+    assert en.episodes(f, t) == [(10, 40), (200, 200)]
+
+
+def test_jumps_threshold_and_cooldown():
+    t = np.arange(0, 200 * 60, 60.0)
+    p = np.full(len(t), 0.50)
+    p[10:] = 0.53                                # +3 points: seen at minute 10
+    p[30:] = 0.60                                # inside the hour: ignored
+    p[100:] = 0.50                               # -10 points, after the hour
+    j = en.jumps(t, p)
+    assert [i for i, _ in j] == [10, 100] and math.isclose(j[0][1], 3.0, abs_tol=1e-6) and j[1][1] < 0
+    q = p.copy()
+    q[5:12] = np.nan                             # a stale mid cannot make a jump
+    assert 10 not in [i for i, _ in en.jumps(t, q)]
+
+
+def test_taker_trade():
+    e, pnl = en.taker_trade(0.50, 0.55, True, 0.01, NOFEE, 1.0)
+    assert math.isclose(e, 0.51) and math.isclose(pnl, 0.03)
+    e, pnl = en.taker_trade(0.50, 0.55, False, 0.01, NOFEE, 2.0)
+    assert math.isclose(e, 0.48) and math.isclose(pnl, 0.48 - 0.57)
