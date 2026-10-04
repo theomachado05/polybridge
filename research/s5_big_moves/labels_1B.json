@@ -1,0 +1,1528 @@
+{
+ "labeller": "1B",
+ "answers": [
+  {
+   "id": "polymarket:2169995",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "MSTR",
+     "direction": "down_on_yes",
+     "confidence": 0.55,
+     "mechanism": "A sale would break the hold-forever treasury strategy and signal balance-sheet stress, hurting the stock."
+    },
+    {
+     "ticker": "IBIT",
+     "direction": "down_on_yes",
+     "confidence": 0.4,
+     "mechanism": "The largest corporate holder selling adds supply and signals forced deleveraging, pressuring bitcoin."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:601700",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "SHY",
+     "direction": "down_on_yes",
+     "confidence": 0.7,
+     "mechanism": "A hike raises the policy rate that short Treasury yields track, pushing short-dated Treasury prices down."
+    },
+    {
+     "ticker": "IEF",
+     "direction": "down_on_yes",
+     "confidence": 0.6,
+     "mechanism": "Higher hike odds push intermediate Treasury yields up, lowering 7-10 year Treasury prices."
+    },
+    {
+     "ticker": "TLT",
+     "direction": "down_on_yes",
+     "confidence": 0.45,
+     "mechanism": "A hawkish repricing generally lifts yields along the curve, weighing on long Treasuries, though the long end reacts less reliably."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:654415",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "SHY",
+     "direction": "down_on_yes",
+     "confidence": 0.7,
+     "mechanism": "A hike raises the policy rate that short Treasury yields track, pushing short-dated Treasury prices down."
+    },
+    {
+     "ticker": "IEF",
+     "direction": "down_on_yes",
+     "confidence": 0.6,
+     "mechanism": "Higher hike odds push intermediate Treasury yields up, lowering 7-10 year Treasury prices."
+    },
+    {
+     "ticker": "TLT",
+     "direction": "down_on_yes",
+     "confidence": 0.45,
+     "mechanism": "A hawkish repricing generally lifts yields along the curve, weighing on long Treasuries, though the long end reacts less reliably."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:680392",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1795527",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "EPOL",
+     "direction": "up_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Poland is the listed market most exposed to the war next door, so a ceasefire cuts its risk premium."
+    },
+    {
+     "ticker": "VGK",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "A ceasefire lowers the European geopolitical and energy risk premium, lifting European equities."
+    },
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.35,
+     "mechanism": "A ceasefire raises the prospect of eased sanctions on Russian oil and removes attacks on energy infrastructure, lowering crude."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1180303",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "mechanism": "Rising odds of leadership or regime collapse in Iran come with military escalation and turmoil in a major Gulf producer, raising the crude supply-risk premium."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:601699",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "SHY",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "mechanism": "With a cut as the main alternative, higher odds of a hold mean fewer cuts priced, lifting short yields and lowering short Treasury prices."
+    },
+    {
+     "ticker": "IEF",
+     "direction": "down_on_yes",
+     "confidence": 0.45,
+     "mechanism": "A hold instead of a cut is a hawkish repricing that lifts intermediate Treasury yields and lowers their prices."
+    },
+    {
+     "ticker": "TLT",
+     "direction": "down_on_yes",
+     "confidence": 0.35,
+     "mechanism": "Pricing out a cut tends to lift yields along the curve, weighing on long Treasuries."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:601698",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "SHY",
+     "direction": "up_on_yes",
+     "confidence": 0.7,
+     "mechanism": "A cut lowers the policy rate that short Treasury yields track, lifting short-dated Treasury prices."
+    },
+    {
+     "ticker": "IEF",
+     "direction": "up_on_yes",
+     "confidence": 0.6,
+     "mechanism": "Higher cut odds pull intermediate Treasury yields down, raising 7-10 year Treasury prices."
+    },
+    {
+     "ticker": "TLT",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Repricing toward easier policy usually lowers yields along the curve, lifting long Treasuries, though the long end reacts less reliably."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1919425",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.65,
+     "mechanism": "A permanent US-Iran peace deal removes the Gulf supply-risk premium and restores export flows, lowering crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Lower crude on de-escalation reduces the earnings outlook of US energy producers."
+    },
+    {
+     "ticker": "SPY",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "The Iran war oil shock was a market-wide drag, so de-escalation lifts broad US equities through lower energy costs and risk premia."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:2063134",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:669662",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "SHY",
+     "direction": "down_on_yes",
+     "confidence": 0.4,
+     "mechanism": "With a cut as the main alternative, higher odds of a hold mean fewer cuts priced, lifting short yields and lowering short Treasury prices."
+    },
+    {
+     "ticker": "IEF",
+     "direction": "down_on_yes",
+     "confidence": 0.35,
+     "mechanism": "A hold instead of a cut is a hawkish repricing that lifts intermediate Treasury yields and lowers their prices."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:516719",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "EPOL",
+     "direction": "up_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Poland is the listed market most exposed to the war next door, so a ceasefire cuts its risk premium."
+    },
+    {
+     "ticker": "VGK",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "A ceasefire lowers the European geopolitical and energy risk premium, lifting European equities."
+    },
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.35,
+     "mechanism": "A ceasefire raises the prospect of eased sanctions on Russian oil and removes attacks on energy infrastructure, lowering crude."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:958443",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "mechanism": "Rising odds of leadership or regime collapse in Iran come with military escalation and turmoil in a major Gulf producer, raising the crude supply-risk premium."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:669661",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "SHY",
+     "direction": "up_on_yes",
+     "confidence": 0.7,
+     "mechanism": "A cut lowers the policy rate that short Treasury yields track, lifting short-dated Treasury prices."
+    },
+    {
+     "ticker": "IEF",
+     "direction": "up_on_yes",
+     "confidence": 0.6,
+     "mechanism": "Higher cut odds pull intermediate Treasury yields down, raising 7-10 year Treasury prices."
+    },
+    {
+     "ticker": "TLT",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Repricing toward easier policy usually lowers yields along the curve, lifting long Treasuries, though the long end reacts less reliably."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:958442",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "mechanism": "Rising odds of leadership or regime collapse in Iran come with military escalation and turmoil in a major Gulf producer, raising the crude supply-risk premium."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:538930",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:2063135",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:570361",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "SHY",
+     "direction": "up_on_yes",
+     "confidence": 0.7,
+     "mechanism": "A cut lowers the policy rate that short Treasury yields track, lifting short-dated Treasury prices."
+    },
+    {
+     "ticker": "IEF",
+     "direction": "up_on_yes",
+     "confidence": 0.6,
+     "mechanism": "Higher cut odds pull intermediate Treasury yields down, raising 7-10 year Treasury prices."
+    },
+    {
+     "ticker": "TLT",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Repricing toward easier policy usually lowers yields along the curve, lifting long Treasuries, though the long end reacts less reliably."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:588775",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:1962237",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.65,
+     "mechanism": "A permanent US-Iran peace deal removes the Gulf supply-risk premium and restores export flows, lowering crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Lower crude on de-escalation reduces the earnings outlook of US energy producers."
+    },
+    {
+     "ticker": "SPY",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "The Iran war oil shock was a market-wide drag, so de-escalation lifts broad US equities through lower energy costs and risk premia."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1706766",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.65,
+     "mechanism": "An end to the US/Israel-Iran conflict removes the Gulf supply-risk premium and restores export flows, lowering crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Lower crude on de-escalation reduces the earnings outlook of US energy producers."
+    },
+    {
+     "ticker": "SPY",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "The Iran war oil shock was a market-wide drag, so de-escalation lifts broad US equities through lower energy costs and risk premia."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:563368",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "IBIT",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Movement of Satoshi's dormant coins would signal a huge potential supply overhang and shake confidence, pressuring bitcoin."
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "down_on_yes",
+     "confidence": 0.4,
+     "mechanism": "The stock is a leveraged holder of bitcoin and would fall with it."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:906974",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "SHY",
+     "direction": "down_on_yes",
+     "confidence": 0.3,
+     "mechanism": "With a cut as the main alternative, higher odds of a hold mean fewer cuts priced, lifting short yields and lowering short Treasury prices."
+    },
+    {
+     "ticker": "IEF",
+     "direction": "down_on_yes",
+     "confidence": 0.3,
+     "mechanism": "A hold instead of a cut is a hawkish repricing that lifts intermediate Treasury yields and lowers their prices."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1654958",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:571191",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1540766",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.7,
+     "mechanism": "Normal tanker traffic through Hormuz restores Gulf crude exports and removes the supply shock, lowering crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Lower crude once Hormuz reopens reduces the earnings outlook of US energy producers."
+    },
+    {
+     "ticker": "SPY",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "mechanism": "The Hormuz closure was a market-wide energy shock, so normalisation lifts broad US equities."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:947289",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:997488",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:649847",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1809560",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.7,
+     "mechanism": "Normal tanker traffic through Hormuz restores Gulf crude exports and removes the supply shock, lowering crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Lower crude once Hormuz reopens reduces the earnings outlook of US energy producers."
+    },
+    {
+     "ticker": "SPY",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "mechanism": "The Hormuz closure was a market-wide energy shock, so normalisation lifts broad US equities."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:2063129",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:906973",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "SHY",
+     "direction": "up_on_yes",
+     "confidence": 0.7,
+     "mechanism": "A cut lowers the policy rate that short Treasury yields track, lifting short-dated Treasury prices."
+    },
+    {
+     "ticker": "IEF",
+     "direction": "up_on_yes",
+     "confidence": 0.6,
+     "mechanism": "Higher cut odds pull intermediate Treasury yields down, raising 7-10 year Treasury prices."
+    },
+    {
+     "ticker": "TLT",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Repricing toward easier policy usually lowers yields along the curve, lifting long Treasuries, though the long end reacts less reliably."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:2063132",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:572471",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:1654960",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "SHY",
+     "direction": "down_on_yes",
+     "confidence": 0.7,
+     "mechanism": "A hike raises the policy rate that short Treasury yields track, pushing short-dated Treasury prices down."
+    },
+    {
+     "ticker": "IEF",
+     "direction": "down_on_yes",
+     "confidence": 0.6,
+     "mechanism": "Higher hike odds push intermediate Treasury yields up, lowering 7-10 year Treasury prices."
+    },
+    {
+     "ticker": "TLT",
+     "direction": "down_on_yes",
+     "confidence": 0.45,
+     "mechanism": "A hawkish repricing generally lifts yields along the curve, weighing on long Treasuries, though the long end reacts less reliably."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:571202",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1654959",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "SHY",
+     "direction": "down_on_yes",
+     "confidence": 0.7,
+     "mechanism": "A hike raises the policy rate that short Treasury yields track, pushing short-dated Treasury prices down."
+    },
+    {
+     "ticker": "IEF",
+     "direction": "down_on_yes",
+     "confidence": 0.6,
+     "mechanism": "Higher hike odds push intermediate Treasury yields up, lowering 7-10 year Treasury prices."
+    },
+    {
+     "ticker": "TLT",
+     "direction": "down_on_yes",
+     "confidence": 0.45,
+     "mechanism": "A hawkish repricing generally lifts yields along the curve, weighing on long Treasuries, though the long end reacts less reliably."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:567560",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:556033",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:538928",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:2176262",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.7,
+     "mechanism": "Normal tanker traffic through Hormuz restores Gulf crude exports and removes the supply shock, lowering crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Lower crude once Hormuz reopens reduces the earnings outlook of US energy producers."
+    },
+    {
+     "ticker": "SPY",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "mechanism": "The Hormuz closure was a market-wide energy shock, so normalisation lifts broad US equities."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:571214",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1654956",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "SHY",
+     "direction": "up_on_yes",
+     "confidence": 0.7,
+     "mechanism": "A cut lowers the policy rate that short Treasury yields track, lifting short-dated Treasury prices."
+    },
+    {
+     "ticker": "IEF",
+     "direction": "up_on_yes",
+     "confidence": 0.6,
+     "mechanism": "Higher cut odds pull intermediate Treasury yields down, raising 7-10 year Treasury prices."
+    },
+    {
+     "ticker": "TLT",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Repricing toward easier policy usually lowers yields along the curve, lifting long Treasuries, though the long end reacts less reliably."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:567564",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1808970",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:569426",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:2774056",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.7,
+     "mechanism": "Normal tanker traffic through Hormuz restores Gulf crude exports and removes the supply shock, lowering crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Lower crude once Hormuz reopens reduces the earnings outlook of US energy producers."
+    },
+    {
+     "ticker": "SPY",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "mechanism": "The Hormuz closure was a market-wide energy shock, so normalisation lifts broad US equities."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:2054133",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.7,
+     "mechanism": "Normal tanker traffic through Hormuz restores Gulf crude exports and removes the supply shock, lowering crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Lower crude once Hormuz reopens reduces the earnings outlook of US energy producers."
+    },
+    {
+     "ticker": "SPY",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "mechanism": "The Hormuz closure was a market-wide energy shock, so normalisation lifts broad US equities."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1567746",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.65,
+     "mechanism": "An end to the US/Israel-Iran conflict removes the Gulf supply-risk premium and restores export flows, lowering crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Lower crude on de-escalation reduces the earnings outlook of US energy producers."
+    },
+    {
+     "ticker": "SPY",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "The Iran war oil shock was a market-wide drag, so de-escalation lifts broad US equities through lower energy costs and risk premia."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:994900",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.55,
+     "mechanism": "An Israeli strike on Iran raises the risk to Gulf supply and shipping, lifting crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Higher crude on escalation lifts US energy producers."
+    },
+    {
+     "ticker": "ITA",
+     "direction": "up_on_yes",
+     "confidence": 0.3,
+     "mechanism": "Defence contractors are bid when a Middle East war escalates and munitions demand rises."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1467766",
+   "family": "spot_proxy",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.9,
+     "mechanism": "USO holds WTI futures, so a higher chance of CL reaching the strike is a higher crude price."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "confidence": 0.6,
+     "mechanism": "Energy-sector earnings rise with the crude price."
+    },
+    {
+     "ticker": "XOP",
+     "direction": "up_on_yes",
+     "confidence": 0.6,
+     "mechanism": "Oil and gas producers are highly geared to the crude price."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1733817",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "DJT",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Trump Media's value rests on Trump's position and brand, so his leaving office would hit the stock."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1235517",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:540881",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1985666",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "FXI",
+     "direction": "up_on_yes",
+     "confidence": 0.3,
+     "mechanism": "A Trump visit going ahead signals the US-China trade truce is holding, supporting Chinese large caps."
+    },
+    {
+     "ticker": "KWEB",
+     "direction": "up_on_yes",
+     "confidence": 0.25,
+     "mechanism": "Chinese internet ADRs are the most sensitive to the US-China relationship and would gain on a visit."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:947268",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1500754",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:635516",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:567563",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1484914",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.65,
+     "mechanism": "An end to the US/Israel-Iran conflict removes the Gulf supply-risk premium and restores export flows, lowering crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Lower crude on de-escalation reduces the earnings outlook of US energy producers."
+    },
+    {
+     "ticker": "SPY",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "The Iran war oil shock was a market-wide drag, so de-escalation lifts broad US equities through lower energy costs and risk premia."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:666860",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "DJT",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Trump Media's value rests on Trump's position and brand, so his leaving office would hit the stock."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:947271",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1517835",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.6,
+     "mechanism": "A declared end to US military operations against Iran removes the Gulf supply-risk premium and restores export flows, lowering crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Lower crude on de-escalation reduces the earnings outlook of US energy producers."
+    },
+    {
+     "ticker": "SPY",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "The Iran war oil shock was a market-wide drag, so de-escalation lifts broad US equities through lower energy costs and risk premia."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:2270338",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.65,
+     "mechanism": "A permanent US-Iran peace deal removes the Gulf supply-risk premium and restores export flows, lowering crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Lower crude on de-escalation reduces the earnings outlook of US energy producers."
+    },
+    {
+     "ticker": "SPY",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "The Iran war oil shock was a market-wide drag, so de-escalation lifts broad US equities through lower energy costs and risk premia."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:546256",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1370652",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Iran agreeing to end enrichment removes the main cause of conflict and opens the way to sanctions relief, lowering crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.35,
+     "mechanism": "Lower crude on a settlement reduces the earnings outlook of US energy producers."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:565930",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "TSLA",
+     "direction": "up_on_yes",
+     "confidence": 0.6,
+     "mechanism": "Unsupervised FSD is central to Tesla's robotaxi and autonomy valuation, so a launch supports the stock."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1478016",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:956590",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "EWT",
+     "direction": "down_on_yes",
+     "confidence": 0.8,
+     "mechanism": "An invasion would be catastrophic for Taiwanese listed equities."
+    },
+    {
+     "ticker": "TSM",
+     "direction": "down_on_yes",
+     "confidence": 0.8,
+     "mechanism": "TSMC's fabs and operations are in Taiwan and would be directly at risk."
+    },
+    {
+     "ticker": "SMH",
+     "direction": "down_on_yes",
+     "confidence": 0.6,
+     "mechanism": "The semiconductor supply chain depends on Taiwanese fabrication, and TSMC is a large holding."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:2535468",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.7,
+     "mechanism": "Normal tanker traffic through Hormuz restores Gulf crude exports and removes the supply shock, lowering crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Lower crude once Hormuz reopens reduces the earnings outlook of US energy producers."
+    },
+    {
+     "ticker": "SPY",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "mechanism": "The Hormuz closure was a market-wide energy shock, so normalisation lifts broad US equities."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1472548",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:516710",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "SPY",
+     "direction": "down_on_yes",
+     "confidence": 0.6,
+     "mechanism": "A recession means falling earnings and a market-wide derating of US equities."
+    },
+    {
+     "ticker": "IWM",
+     "direction": "down_on_yes",
+     "confidence": 0.55,
+     "mechanism": "Small caps are the most cyclical and credit-sensitive part of the US market."
+    },
+    {
+     "ticker": "TLT",
+     "direction": "up_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Recession odds bring rate cuts and a flight to safety, lifting long Treasuries."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:690635",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:957019",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.55,
+     "mechanism": "A nuclear deal lowers the risk of conflict and opens the way for more Iranian barrels, lowering crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Lower crude on a deal reduces the earnings outlook of US energy producers."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1708109",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Losing Kharg Island, Iran's main export terminal, means a seizure or strike that takes Iranian exports offline and escalates the war, lifting crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "mechanism": "Higher crude on escalation lifts US energy producers."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:516716",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "mechanism": "Rising odds of leadership or regime collapse in Iran come with military escalation and turmoil in a major Gulf producer, raising the crude supply-risk premium."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:521918",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:701290",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "EWT",
+     "direction": "down_on_yes",
+     "confidence": 0.8,
+     "mechanism": "An invasion would be catastrophic for Taiwanese listed equities."
+    },
+    {
+     "ticker": "TSM",
+     "direction": "down_on_yes",
+     "confidence": 0.8,
+     "mechanism": "TSMC's fabs and operations are in Taiwan and would be directly at risk."
+    },
+    {
+     "ticker": "SMH",
+     "direction": "down_on_yes",
+     "confidence": 0.6,
+     "mechanism": "The semiconductor supply chain depends on Taiwanese fabrication, and TSMC is a large holding."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:635222",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:549621",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:537882",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "ORCL",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Oracle is TikTok's US cloud host and a member of the buying group, so a sale keeps and deepens that business rather than a ban ending it."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:666646",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1477563",
+   "family": "spot_proxy",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.9,
+     "mechanism": "USO holds WTI futures, so a higher chance of CL reaching the strike is a higher crude price."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "confidence": 0.6,
+     "mechanism": "Energy-sector earnings rise with the crude price."
+    },
+    {
+     "ticker": "XOP",
+     "direction": "up_on_yes",
+     "confidence": 0.6,
+     "mechanism": "Oil and gas producers are highly geared to the crude price."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:567565",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1105750",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:690390",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:984442",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.6,
+     "mechanism": "A US strike on Iran raises the risk to Gulf supply and shipping, lifting crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Higher crude on escalation lifts US energy producers."
+    },
+    {
+     "ticker": "ITA",
+     "direction": "up_on_yes",
+     "confidence": 0.3,
+     "mechanism": "Defence contractors are bid when the US enters a Middle East conflict and munitions demand rises."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:516818",
+   "family": "spot_proxy",
+   "links": [
+    {
+     "ticker": "NVDA",
+     "direction": "up_on_yes",
+     "confidence": 0.8,
+     "mechanism": "The question is a function of NVIDIA's own market value relative to the other megacaps, so YES rises with the share price."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:556062",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:2937525",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.6,
+     "mechanism": "An effective US-Iran ceasefire removes the Gulf supply-risk premium and restores export flows, lowering crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Lower crude on de-escalation reduces the earnings outlook of US energy producers."
+    },
+    {
+     "ticker": "SPY",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "The Iran war oil shock was a market-wide drag, so de-escalation lifts broad US equities through lower energy costs and risk premia."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:546272",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:2034747",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:569431",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:2133405",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "Iran closing its airspace signals an imminent or resumed exchange of strikes, raising the crude risk premium."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "confidence": 0.3,
+     "mechanism": "Higher crude on renewed escalation lifts US energy producers."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:2002564",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.5,
+     "mechanism": "An Israel-Iran peace deal removes the Gulf supply-risk premium, lowering crude."
+    },
+    {
+     "ticker": "EIS",
+     "direction": "up_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Peace with Iran removes Israel's main security threat and war costs, lifting Israeli equities."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.35,
+     "mechanism": "Lower crude on a peace deal reduces the earnings outlook of US energy producers."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:642841",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:623603",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "JETS",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "mechanism": "The November 2025 shutdown forced FAA flight cuts, so an end within days rather than a longer drag restores airline schedules and revenue."
+    },
+    {
+     "ticker": "SPY",
+     "direction": "up_on_yes",
+     "confidence": 0.3,
+     "mechanism": "A near-term end to a record-long federal shutdown removes a market-wide drag on activity and data, lifting US equities."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:516925",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1608448",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "EWW",
+     "direction": "down_on_yes",
+     "confidence": 0.3,
+     "mechanism": "A US military operation against cartels abroad most likely means action on Mexican soil, a sovereignty and trade-relations shock for Mexican assets."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:668100",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:541629",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:1467763",
+   "family": "spot_proxy",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "confidence": 0.9,
+     "mechanism": "USO holds WTI futures, so a higher chance of CL reaching the strike is a higher crude price."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "up_on_yes",
+     "confidence": 0.6,
+     "mechanism": "Energy-sector earnings rise with the crude price."
+    },
+    {
+     "ticker": "XOP",
+     "direction": "up_on_yes",
+     "confidence": 0.6,
+     "mechanism": "Oil and gas producers are highly geared to the crude price."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1116646",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:597967",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "EWU",
+     "direction": "down_on_yes",
+     "confidence": 0.3,
+     "mechanism": "A forced change of prime minister raises UK fiscal and political risk, weakening sterling and gilts and so the dollar value of UK equities."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:569433",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:948040",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:517311",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:801289",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:920389",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:569368",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:678929",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:2034729",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:2109450",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.4,
+     "mechanism": "A US-Iran diplomatic meeting signals de-escalation and a path to a settlement, trimming the crude risk premium."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.3,
+     "mechanism": "Lower crude on de-escalation reduces the earnings outlook of US energy producers."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1243248",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "EPOL",
+     "direction": "up_on_yes",
+     "confidence": 0.5,
+     "mechanism": "Poland is the listed market most exposed to the war next door, so a ceasefire cuts its risk premium."
+    },
+    {
+     "ticker": "VGK",
+     "direction": "up_on_yes",
+     "confidence": 0.4,
+     "mechanism": "A ceasefire lowers the European geopolitical and energy risk premium, lifting European equities."
+    },
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.35,
+     "mechanism": "A ceasefire raises the prospect of eased sanctions on Russian oil and removes attacks on energy infrastructure, lowering crude."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:1484987",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:2111640",
+   "family": "event",
+   "links": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "confidence": 0.6,
+     "mechanism": "A US-Iran nuclear deal removes the Gulf supply-risk premium and restores export flows, lowering crude."
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "confidence": 0.45,
+     "mechanism": "Lower crude on de-escalation reduces the earnings outlook of US energy producers."
+    },
+    {
+     "ticker": "SPY",
+     "direction": "up_on_yes",
+     "confidence": 0.35,
+     "mechanism": "The Iran war oil shock was a market-wide drag, so de-escalation lifts broad US equities through lower energy costs and risk premia."
+    }
+   ]
+  },
+  {
+   "id": "polymarket:635513",
+   "family": "none",
+   "links": []
+  },
+  {
+   "id": "polymarket:579306",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:1469737",
+   "family": "event",
+   "links": []
+  },
+  {
+   "id": "polymarket:638492",
+   "family": "none",
+   "links": []
+  }
+ ]
+}
