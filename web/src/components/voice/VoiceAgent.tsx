@@ -124,8 +124,8 @@ function VoicePill({ toolBusy, note, setNote, drive, setDrive }: {
       {note && <div className="pb-voice-note" data-tone={note.tone} role={note.tone === "error" ? "alert" : "status"}>{note.text}</div>}
       {active && <button type="button" className="pb-voice-end" onClick={stop}>End call</button>}
       <button type="button" className="pb-voice-pill pb-navpill" onClick={active ? stop : () => void start()} aria-pressed={active} aria-label={active ? `${label}. End the call` : label}>
-        <Orb state={ORB_FOR[phase]} size={28} />
-        <span>{label}</span>
+        <Orb state={ORB_FOR[phase]} size={24} />
+        <span className="pb-voice-label">{label}</span>
       </button>
     </div>
   );

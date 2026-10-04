@@ -20,7 +20,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${newsreader.variable} antialiased`}>
       <body>
-        <div style={{ position: "relative", minHeight: "100vh" }}>
+        <div className="pb-voice-shell" style={{ position: "relative", minHeight: "100vh", boxSizing: "border-box" }}>
           <StoreProvider>
             <Nav />
             <EngineStrip />
