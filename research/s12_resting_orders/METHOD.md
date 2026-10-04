@@ -147,4 +147,17 @@ primary. The adverse-selection difference is reported whatever it shows; it expl
 
 ## Amendments
 
-(none yet)
+**Amendment 1, Sat 2026-10-03 23:05 New York time (after the first pull, before any result was computed). A code
+bug, not a change of rule.** The first pull asked the data API for S8's 60 markets with a missing condition id (a
+pandas NaN passed as true), so every S8 market came back empty. Fixed (`run.py`, the condition lookup), S8's print
+files deleted and pulled again. S9 was unaffected.
+
+**Amendment 2, Sat 2026-10-03 23:10 New York time (after the first run). A case the method did not cover.** The
+method says the deadline mid must be at most 30 minutes old but not what happens when it is missing. It is missing
+for 5 S9 orders on the weekend of 2026-04-20, only at the 120-minute deadline (variants R1 and R3), because the
+one-minute history has a gap that Monday morning. Those rows use the mid at the exit instant instead (flag
+`deadline_mid_missing` in `trades.csv`). The primary (R0, 30 minutes) is not touched.
+
+**Note, not an amendment.** Some S9 markets trade on a tenth-of-a-cent grid. The pre-registered rule posts on the
+cent (rounded on the passive side), as fixed. On those markets the order sits up to half a cent further from the mid
+than it needed to: fewer fills, and up to 0.5 point more per fill than a tighter order would have earned.
