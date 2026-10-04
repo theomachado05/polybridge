@@ -1,0 +1,5 @@
+segment,variant,theta,cost_mult,sets,entries,strikes_traded,contracts,capital,pnl_locked_if_resolved_alike,pnl_mid,pnl_liq,locked_edge_bp,fees_bp
+forward,V0,0.02,1.0,6,0,0,0,0,0,0.0,0.0,nan,nan
+forward,V0,0.02,2.0,6,0,0,0,0,0,0.0,0.0,nan,nan
+forward,V1,0.01,1.0,6,0,0,0,0,0,0.0,0.0,nan,nan
+forward,V1,0.01,2.0,6,0,0,0,0,0,0.0,0.0,nan,nan

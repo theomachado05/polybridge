@@ -74,7 +74,20 @@ History has no sizes, so it supports no capacity claim. The verified entries res
 
 ## Forward paper test (this weekend's recorded order books)
 
-Pending. The window is Sat 2026-10-03 20:00 ET to Sun 2026-10-04 07:00 ET. The rules are frozen in METHOD.md.
+Window 2026-10-04T00:00:00Z to 2026-10-04T10:59:52Z, real books on both venues, fills only from recorded levels. Primary variant: **7 fills on 6 pairs at 1× costs**, 1,305 contract pairs, $1,217.90 of capital, locked edge +$84.22 (692 bp of capital); at 2× costs 2 fills, +$47.59. Marked at the end of the window: mid +$54.80, liquidation -$0.77.
+
+| Variant | Costs | Fills | Pairs | Exits | Contract pairs | Capital | Locked edge | P&L at mid | P&L at liquidation |
+|---|---|---|---|---|---|---|---|---|---|
+| V0 | 1× | 7 | 6 | 1 | 1,305 | $1,217.90 | +$84.22 | +$54.80 | -$0.77 |
+| V0 | 2× | 2 | 2 | 0 | 390 | $341.02 | +$47.59 | +$32.61 | -$13.97 |
+| V1 | 1× | 5 | 4 | 1 | 1,253 | $1,156.78 | +$93.76 | +$66.00 | +$12.53 |
+| V1 | 2× | 1 | 1 | 0 | 381 | $332.26 | +$47.47 | +$33.13 | -$12.69 |
+| V2 | 1× | 4 | 3 | 1 | 900 | $813.33 | +$85.21 | +$67.28 | +$39.14 |
+| V2 | 2× | 1 | 1 | 0 | 381 | $332.26 | +$47.47 | +$33.13 | -$12.69 |
+| V3 | 1× | 6 | 6 | 0 | 1,151 | $1,066.81 | +$76.63 | +$26.02 | -$43.52 |
+| V3 | 2× | 2 | 2 | 0 | 390 | $341.02 | +$47.59 | +$32.61 | -$13.97 |
+
+The window is under a day, so no Sharpe ratio is computed for it (METHOD.md section 6).
 
 ## Every variant tried
 

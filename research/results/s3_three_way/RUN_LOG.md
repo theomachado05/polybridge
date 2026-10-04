@@ -38,3 +38,14 @@ All times UTC, 2026-10-03. Commands are run from `research/`.
 - Part F (the weekend recording) has not been read: the window closes Sun 2026-10-04 11:00 UTC. The strike map for
   Monday was built from names and Friday's closes only: SPY 750, 755, 760, 765, 770, 775 against S&P 7525, 7575,
   7625, 7675, 7725, 7775 (ratio 10.0342 = 7722.72 / 769.64).
+
+## Forward paper test (run Sun 2026-10-04, times UTC)
+
+- 11:02:55 `python -m s3_three_way.forward --rate 0.0417`: 849,420 book rows, six matched strikes (SPY 750 to 775
+  against S&P 7525 to 7775, ratio 10.0342), 1,287 snapshots each, last snapshot 10:59:53. **0 fills** for V0 and V1
+  at 1x and 2x costs. Kalshi showed a two-sided book on four of the six strikes (52% of snapshots at 7625, all of
+  them at 7675, 7725 and 7775), with spreads of 9 to 32 points; Polymarket's spreads were 0.5 to 10 points.
+- 11:03:45 `python -m s3_three_way.report`: `SUMMARY.md` gains the forward section; `metrics.csv` gains 4 forward
+  rows. The 24 history rows were checked to be unchanged.
+- Run from a separate checkout of `main` (branch `r/forward-tests`) with the recording linked in. The same 17-minute
+  gap as in S1's log (02:56:46 to 03:13:52 UTC).

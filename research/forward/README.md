@@ -47,3 +47,12 @@ nohup research/forward/run_recorder.sh >/dev/null 2>&1 &
 
 The wrapper restarts the recorder if it dies and holds a `caffeinate` so the Mac does not idle-sleep. Closing the lid
 on battery still stops it.
+
+## What the recording holds (checked Sun 2026-10-04 11:05 UTC)
+
+- Forward window, 2026-10-04 00:00 to 11:00 UTC: 2,681 cycles with data for the twins and 2,669 for the thresholds,
+  no failed fetch inside the window except during the gap below.
+- **One gap: 02:56:58 to 03:13:52 UTC (16.9 minutes; thresholds 02:56:46 to 03:13:52).** Every connection from the
+  machine failed (name resolution and timeouts, to Polymarket and to Kalshi alike). It recovered on its own.
+- Size on disk at 11:01 UTC: 19 MB (twins), 39 MB (thresholds). Not committed (58 MB together). The forward results
+  under `research/results/s1_twin_spread`, `s3_three_way` and `s6_monday_fade` are built from it.

@@ -59,7 +59,16 @@ Kalshi `quadratic` fee, multiplier 1: `ceil(0.07 × C × P × (1 − P))`, up to
 
 ## Forward: this weekend's recorded books (Monday 2026-10-05 markets)
 
-Pending. Window Sat 20:00 ET to Sun 07:00 ET, six matched strikes (SPY 750 to 775 against S&P 7525 to 7775), real books every 30 s. Options are closed, so their Friday band is reported, not used.
+Six matched strikes, real books every 30 s. Primary (θ = 2¢): **0 fills at 1× costs**, 0 contract pairs, $0.00 of capital, +$0.00 locked if both venues resolve alike on Monday; 0 fills at 2×. The markets resolve after the deadline, so no realised P&L.
+
+| SPY strike | S&P strike | Snapshots | Polymarket mid (median) | Polymarket spread | Kalshi mid (median) | Kalshi spread | Mid gap (PM − Kalshi) | Options band, Friday close (stale) |
+|---|---|---|---|---|---|---|---|---|
+| 750 | 7525 | 1287 | 0.997 | 0.005 | n/a | n/a | n/a | 0.37 to 1.00 |
+| 755 | 7575 | 1287 | 0.938 | 0.102 | n/a | n/a | n/a | 0.42 to 1.00 |
+| 760 | 7625 | 1287 | 0.930 | 0.080 | 0.945 | 0.090 | -0.010 | 0.83 to 1.00 |
+| 765 | 7675 | 1287 | 0.885 | 0.070 | 0.790 | 0.320 | 0.085 | 0.82 to 0.89 |
+| 770 | 7725 | 1287 | 0.540 | 0.070 | 0.585 | 0.180 | -0.040 | 0.55 to 0.57 |
+| 775 | 7775 | 1287 | 0.150 | 0.070 | 0.270 | 0.280 | -0.115 | 0.15 to 0.16 |
 
 ## What didn't work
 

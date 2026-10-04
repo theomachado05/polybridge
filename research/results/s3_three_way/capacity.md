@@ -4,6 +4,6 @@
 
 No capacity claim: the history has no sizes, and the primary rule produced no trade.
 
-## Forward recording
+## Forward recording (sizes that were on the book)
 
-Pending: the forward window closes Sun 2026-10-04 07:00 ET.
+Primary variant, 1× costs: 0 of 6 strikes showed a fillable edge at some snapshot; largest fillable amount per strike, summed, $0.
