@@ -13,6 +13,9 @@ screenshot pass over the 8 screens (web/e2e/screens/). Both servers are always s
     python3 scripts/e2e_demo.py                 # everything
     python3 scripts/e2e_demo.py --no-screens    # API flow only (no web server, no Chrome)
     python3 scripts/e2e_demo.py --reuse         # use servers already on :8000/:3000, stop nothing
+    python3 scripts/e2e_demo.py --reuse --no-screens --api-base http://localhost:3000/api
+                                                # tunnel mode (`SHARE_NO_NGROK=1 make share`): the API flow and the SSE
+                                                # stream through the Next.js /api proxy
     python3 scripts/e2e_demo.py --opportunity   # the Opportunity division (API only): options fit -> approved options
                                                 # proposal -> replay bridge with simulated multi-leg option orders
     python3 scripts/e2e_demo.py --weekend       # closed-market mode (API only): the recorded weekend on the validated
@@ -39,6 +42,7 @@ import sys
 import tempfile
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -201,13 +205,13 @@ def stop_all() -> None:
 def read_sse(base: str, bridge_id: str, want_events: int, max_s: float, need_fill: bool):
     """Read the bridge stream. Returns (events, closed_by_server). Stops after `want_events` events, but keeps going
     (until max_s) while `need_fill` and no order has been filled yet. Heartbeats are not events."""
-    host, port = base.replace("http://", "").split(":")
-    conn = http.client.HTTPConnection(host, int(port), timeout=15)
+    u = urllib.parse.urlsplit(base)  # base may carry a path prefix (--api-base http://localhost:3000/api)
+    conn = http.client.HTTPConnection(u.hostname, u.port or 80, timeout=15)
     events: list[tuple[str, dict]] = []
     closed = False
     t0 = time.time()
     try:
-        conn.request("GET", f"/bridges/{bridge_id}/stream", headers={"accept": "text/event-stream"})
+        conn.request("GET", f"{u.path.rstrip('/')}/bridges/{bridge_id}/stream", headers={"accept": "text/event-stream"})
         resp = conn.getresponse()
         if resp.status != 200:
             raise Abort(f"stream answered {resp.status}")
@@ -726,8 +730,10 @@ def run_weekend_flow(base: str, args) -> dict:
 
 # ------------------------------------------------------------------ screenshots
 
-SCREENS = [("landing", "/"), ("build", "/build"), ("connect", "/connect"), ("pipeline", "/pipeline"),
-           ("bridge", None), ("portfolio", "/portfolio"), ("library", "/library"), ("profile", "/profile")]
+# "pipeline" is the generic AI fit (/build/fit); /pipeline is the ladder board and /bridge the ticket board (09, 10).
+SCREENS = [("landing", "/"), ("build", "/build"), ("connect", "/connect"), ("pipeline", "/build/fit"),
+           ("bridge", None), ("portfolio", "/portfolio"), ("library", "/library"), ("profile", "/profile"),
+           ("ladders", "/pipeline"), ("tickets", "/bridge")]
 
 
 def ui_walk(web: str, base: str, args) -> list[str]:
@@ -787,7 +793,7 @@ def direct_shot(web: str, i: int, name: str, path: str, wait_ms: int, prof: Path
 
 
 def screenshots(web: str, base: str, bridge_id: str | None, args) -> None:
-    say("\n== 10. UI walk + screenshots of the 8 screens -> web/e2e/screens/")
+    say("\n== 10. UI walk + screenshots of the 10 screens -> web/e2e/screens/")
     SCREEN_DIR.mkdir(parents=True, exist_ok=True)
     for old in SCREEN_DIR.glob("*.png"):
         old.unlink()
@@ -814,6 +820,8 @@ def main() -> int:
     ap.add_argument("--backend-port", type=int, default=8000)
     ap.add_argument("--web-port", type=int, default=3000)
     ap.add_argument("--reuse", action="store_true", help="use servers already listening (stops nothing)")
+    ap.add_argument("--api-base", help="with --reuse: send the API flow through this base instead of the backend, e.g. "
+                    "http://localhost:3000/api (tunnel mode: Next.js proxy + server-side X-Agent-Secret)")
     ap.add_argument("--no-screens", action="store_true", help="skip the web server and the Chrome pass")
     ap.add_argument("--events", type=int, default=40, help="minimum SSE events to read (default 40)")
     ap.add_argument("--stream-timeout", type=float, default=120.0)
@@ -855,6 +863,10 @@ def main() -> int:
         args.replay = str(OPP_REPLAY) if args.replay == str(DEFAULT_REPLAY) else args.replay
 
     base, web = f"http://localhost:{args.backend_port}", f"http://localhost:{args.web_port}"
+    if args.api_base:  # tunnel mode: every API call (and the SSE stream) through the web server's /api proxy
+        if not args.reuse:
+            raise SystemExit("--api-base needs --reuse (servers already running, e.g. SHARE_NO_NGROK=1 make share)")
+        base = args.api_base.rstrip("/")
     work = Path(tempfile.mkdtemp(prefix="pb-e2e-"))
     started = time.time()
     out: dict = {}

@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Drives the real UI in headless Chrome over the DevTools protocol (no dependencies: Node's global WebSocket + fetch).
 // Click path: Landing -> Build chat (search a market, pick the ticker, pick the hedge) -> Connect -> AI pipeline -> approve ->
-// Bridge live (replay) -> Library -> Portfolio -> Profile, saving a screenshot of each of the 8 screens, and checking
+// Bridge live (replay) -> Library -> Portfolio -> Profile -> Ladder board (/pipeline) -> Ticket board (/bridge), saving a
+// screenshot of each of the 10 screens, and checking
 // that what the UI shows is what the backend runs. On the Bridge screen it waits for the bridge's first broker fill (or
 // the end of the replay) up to --fill-deadline-s, instead of sampling after a fixed delay.
 //
@@ -106,15 +107,15 @@ try {
   await waitFor(`!!document.querySelector('input[aria-label=Composer]')`, "Build composer", 30_000);
   await ev(`document.querySelector('input[aria-label=Composer]').focus()`);
   await send("Input.insertText", { text: QUERY });
-  await waitFor(has("button.pb-row", MARKET_TEXT), `search lists "${MARKET_TEXT}"`, 45_000);
+  await waitFor(has("button.pb-list-row", MARKET_TEXT), `search lists "${MARKET_TEXT}"`, 45_000);
   check("UI: live market search lists the target market", true, MARKET_TEXT);
-  await click("button.pb-row", MARKET_TEXT);
-  await waitFor(has("button.pb-row", TICKER), `mapping lists ${TICKER}`, 30_000);
+  await click("button.pb-list-row", MARKET_TEXT);
+  await waitFor(has("button.pb-list-row", TICKER), `mapping lists ${TICKER}`, 30_000);
   check("UI: /map lists the mapped tickers, labelled as an AI estimate", await ev(`document.body.innerText.toLowerCase().includes('estimate')`), "");
-  await click("button.pb-row", TICKER);
-  await waitFor(`document.querySelectorAll('button.pb-row').length > 0 && !!document.body.innerText.match(/hedge/i)`, "hedge menu", 30_000);
+  await click("button.pb-list-row", TICKER);
+  await waitFor(`document.querySelectorAll('button.pb-list-row').length > 0 && !!document.body.innerText.match(/hedge/i)`, "hedge menu", 30_000);
   await sleep(1500);
-  await click("button.pb-row", "hort"); // the dynamic short-shares hedge (the one the engine runs)
+  await click("button.pb-list-row", "hort"); // the dynamic short-shares hedge (the one the engine runs)
   await waitFor(has("button", "Connect brokerage"), "Connect brokerage button", 30_000);
   // Liquidity preview + hedge-instrument comparison (real Massive data; best effort, the walk does not fail on it).
   try { await waitFor(`!!document.querySelector('[data-testid=hedge-compare]') && !/Pricing the four hedges/.test(document.querySelector('[data-testid=hedge-compare]').innerText)`, "hedge comparison answers", 30_000); } catch {}
@@ -131,12 +132,12 @@ try {
   await click("button", "pipeline");
   await waitFor(has("h2", "Approve the"), "pipeline reaches the approval gate", 90_000);
   const pipeText = await ev("document.body.innerText");
-  const fitTag = /Rules \+ C\+\+ replay|AI · Gemini[^\n]*/.exec(pipeText)?.[0];
-  check("UI: pipeline shows a fit, labelled \"Rules + C++ replay\" or \"AI · Gemini <model>\"", !!fitTag, fitTag ?? "no label");
+  const fitTag = /Rules \+ C\+\+ replay|AI · (?:OpenAI|Gemini)[^\n]*/.exec(pipeText)?.[0];
+  check("UI: pipeline shows a fit, labelled \"Rules + C++ replay\" or \"AI · OpenAI|Gemini <model>\"", !!fitTag, fitTag ?? "no label");
   const fam = /AI fit for \w+: ([A-Za-z0-9 ]+?)(?: preset|\.|\n)/.exec(pipeText)?.[1]?.trim();
   check("UI: pipeline names the chosen family", !!fam, fam ?? "");
   // The approval step reads the pending proposal first: evidence gate + liquidity & capacity card.
-  await waitFor(`!!document.querySelector('[data-testid=evidence-gate]') && !/checking evidence/i.test(document.querySelector('[data-testid=evidence-gate]').innerText)`, "evidence gate answers", 45_000);
+  await waitFor(`!!document.querySelector('[data-testid=evidence-gate]') && !/checking evidence|not read yet/i.test(document.querySelector('[data-testid=evidence-gate]').innerText)`, "evidence gate answers", 45_000);
   const unvalidated = await ev(`!!document.querySelector('[data-testid=evidence-ack]')`);
   // The generic AI fit is unvalidated (registry generic_ai_fit), so the box always carries an unvalidated verdict with the
   // acknowledgement (or an earlier one recorded), whatever the market's own gap evidence. Anything else fails.
@@ -153,7 +154,9 @@ try {
     await ev(`document.querySelector('[data-testid=evidence-ack]').click()`);
     await waitFor(has("button", "Approve"), "approve enables after the acknowledgement", 10_000);
   }
-  await click("button", "Approve"); // "Approve the unvalidated fit" or "Approve without the fee gate"
+  // "Approve the unvalidated fit" / "Approve without the fee gate", or "Open approved bridge" when this backend already
+  // holds the same approved proposal (a rerun with --reuse).
+  if (!(await click("button", "Approve"))) await click("button", "Open approved bridge");
   await waitFor(`location.pathname.startsWith('/bridge') && /Bridge [0-9a-f]{8,}/.test(document.body.innerText)`, "opens the Bridge screen on a backend bridge", 60_000);
   const bridgeId = await ev("(/Bridge ([0-9a-f]{8,})/.exec(document.body.innerText) || [])[1]");
   check("UI: approve opened a backend bridge", /^[0-9a-f]{8,}$/.test(bridgeId), bridgeId);
@@ -195,6 +198,17 @@ try {
   await ev(`(() => { const el = document.querySelector('a[href="/profile"]'); if (!el) return false; el.click(); return true; })()`);
   await waitFor(`location.pathname === '/profile'`, "profile route", 30_000);
   await shot(8, "profile");
+
+  // 9-10. The micro-markets boards: /pipeline is the ladder board, /bridge the ticket board (each reads its own route).
+  await click("a", "Ladders");
+  await waitFor(`location.pathname === '/pipeline' && /Date ladders/.test(document.body.innerText)`, "ladder board renders", 30_000);
+  await waitFor(`/\\d+ ladders?/.test(document.body.innerText) || /No (open )?ladders|could not/i.test(document.body.innerText)`, "ladder board answers", 60_000);
+  check("UI: /pipeline is the ladder board and lists ladders", await ev(`/[1-9]\\d* ladders?/.test(document.body.innerText)`), (await ev(`(/\\d+ ladders?[^\\n]*/.exec(document.body.innerText) || [""])[0]`)).slice(0, 120));
+  await shot(9, "ladders");
+  await goto("/bridge");
+  await waitFor(`/Ticket board/.test(document.body.innerText) && !/Reading open tickets/.test(document.body.innerText)`, "ticket board answers", 90_000);
+  check("UI: /bridge is the ticket board and it answered", await ev(`/tickets against the options chain/.test(document.body.innerText)`), "");
+  await shot(10, "tickets");
 } catch (e) {
   code = 1;
   let where = "";

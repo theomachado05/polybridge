@@ -1,4 +1,4 @@
-.PHONY: setup-research test-research setup-backend test-backend build-engine test-engine test-engine-py setup-web test-web test dev dev-live dev-tlt dev-ita dev-iwm dev-nvda e2e e2e-api e2e-opportunity e2e-weekend e2e-demo webull-check gemini-check openai-check voice-agent keys-check
+.PHONY: setup-research test-research setup-backend test-backend build-engine test-engine test-engine-py setup-web test-web test dev dev-live dev-tlt dev-ita dev-iwm dev-nvda e2e e2e-api e2e-opportunity e2e-weekend e2e-demo share webull-check gemini-check openai-check voice-agent keys-check
 
 research/.venv:
 	$(MAKE) setup-research
@@ -84,6 +84,14 @@ dev-live:
 	(cd backend && uv run --group engine $(ENVFILE) uvicorn app.main:app --port 8000) & \
 	(cd web && pnpm dev) & \
 	wait
+
+# `make share`: the whole app behind ONE public URL (docs/share.md). Backend :8000 + web :3000 in tunnel mode
+# (NEXT_PUBLIC_API_URL=/api: the browser calls /api/*, the Next.js server proxies it to 127.0.0.1:8000 and adds
+# X-Agent-Secret from AGENT_TOOL_SECRET server side), then `ngrok http 3000 --basic-auth "$NGROK_BASIC_AUTH"`. Refuses to
+# start without NGROK_BASIC_AUTH=user:password and AGENT_TOOL_SECRET in .env. Prints the public URL and the one-time
+# `PUBLIC_WEB_HOST=<host> make voice-agent` command. SHARE_NO_NGROK=1: the same servers, no tunnel (local check).
+share:
+	REPLAY=$(REPLAY) SPEED=$(SPEED) REPLAY_PRICES=$(REPLAY_PRICES) bash scripts/share.sh
 
 # End-to-end: starts both servers, drives search -> map -> fit -> propose -> approve -> bridge -> SSE -> account over
 # HTTP, clicks the real UI in headless Chrome and screenshots the 8 screens into web/e2e/screens/, then stops everything.
