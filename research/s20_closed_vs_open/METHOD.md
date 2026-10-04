@@ -159,4 +159,20 @@ per market, window and rule), `books.csv`, `equity_curve.png`, `drawdown.png`, `
 
 ## Amendments
 
-None yet.
+**Amendment 1, 2026-10-04 04:52 UTC, after the run. No rule was changed.**
+
+- *A bias that section 3 missed.* T3's second comparison (W2 minus D1 on the same markets) keeps only markets that
+  still traded on their second weekend, that is, markets that were not hit during the week. Those tickets have
+  decayed, so that difference is pushed below zero under rule B as well as under rule A. Section 3 flagged this for
+  rule A only. The number is reported as it came out and labelled so in the summary.
+- *Looked at after the run,* reported under that heading in the summary and part of no pass line: the gap between
+  buyers' and sellers' traded prices in the same market and window; open-week buyers split by whether their market
+  resolved during that week; the bug hunt on every book with a Sharpe above 3 (`after.py`, `after_the_run.csv`).
+- *Reach of a window (section 2), as coded in the runner committed before any pulled print was read (`f358817`).* W1
+  uses S18's rule on S18's cache. D1 and W2 count as covered when the last page served was short (every print of the
+  market came) or a print older than the window's start came. With 20,000 prints served and none older this is
+  S18's rule; it is stricter only if a page came back full and the next one failed, which did not happen.
+- *Outputs also written:* `counts.csv` (section 6), `books.csv` and `equity.csv` (T4), `run_meta.json` (the check
+  that W1 under rule B returns S18's committed numbers; it does, to the last digit).
+- *A test added while the pull ran,* before the run: `test_cached_prints_lie_inside_their_windows`, an integrity
+  check of the cache. It is committed with the results.

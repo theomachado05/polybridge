@@ -154,3 +154,27 @@ def test_the_book_locks_capital_from_the_window_start_and_caps_the_size():
     assert r["trades"] == 6 and r["pnl"] == pytest.approx(float((10.0 * s.sell_pnl_points / 100).sum()))             # 10 contracts printed: fewer than 100
     assert r["capital_base"] == pytest.approx(float((10.0 * (1 - s.sell_price)).sum()))                               # all six are locked together at the first result
     assert {x["window"] for x in eq} == {"W1", "D1", "W2"} and {x["segment"] for x in rows} == {"IS", "OOS", "ALL"}
+
+
+def test_cached_prints_lie_inside_their_windows():
+    """Integrity of the pull, on the real cache when it is there: every kept print is inside the window it is filed under,
+    and D1 prints fall on weekdays between 09:30 and 16:00 New York."""
+    import json
+    from datetime import datetime
+
+    files = list(pull.CACHE.glob("prints_*.json")) if pull.CACHE.exists() else []
+    if not files:
+        pytest.skip("no cache on this machine")
+    by_market = {m["market"]: m for m in pull.plan()}
+    n = 0
+    for f in files:
+        m, rec = by_market[f.stem.split("_")[1]], json.loads(f.read_text())
+        for key, name in (("d1", "D1"), ("w2", "W2")):
+            for p in rec[key]:
+                ts = float(p["timestamp"])
+                assert wn.inside(ts, m["windows"][name])
+                if name == "D1":
+                    t = datetime.fromtimestamp(ts, wn.ET)
+                    assert t.weekday() < 5 and (9, 30) <= (t.hour, t.minute) and (t.hour, t.minute, t.second) <= (16, 0, 0)
+                n += 1
+    assert n > 0
