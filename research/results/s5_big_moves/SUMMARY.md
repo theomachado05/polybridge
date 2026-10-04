@@ -65,6 +65,41 @@ Share of link-days by move: 2 to 5 points 13.7%, 5 to 10 points 5.9%, 10 or more
 
 **Verdict: not a pass.**
 
+## Which questions, which instruments (and is the link the weak point?)
+
+**The instruments are shares of ETFs and stocks, at the open and the close. No option was traded or priced in S4 or S5.** Each question is tied to up to three tickers, each with a direction, and only where two blind labellers named the same ticker and direction. By theme (the themes are for reading; no rule uses them):
+
+| Theme | Questions | Links | Tickers | Link-days | Opening gap, bp per point | After the open, bp per point | Nights with a 10-point move | Gap on those nights |
+|---|---|---|---|---|---|---|---|---|
+| Fed rate decision | 23 | 61 | IEF, SHY, TLT | 5933 | +0.51 (t +1.8) | -0.26 (t -1.3) | 30 on 8 dates | +12 bp, same sign 67% |
+| Iran, Hormuz and oil | 34 | 88 | USO, XLE, SPY, XOP, ITA | 3377 | +9.52 (t +6.1) | -0.92 (t -0.9) | 352 on 54 dates | +173 bp, same sign 77% |
+| China and Taiwan | 7 | 16 | FXI, EWT, SMH, TSM, KWEB | 1399 | +1.70 (t +1.4) | -0.08 (t -0.1) | 20 on 7 dates | +46 bp, same sign 60% |
+| Russia-Ukraine ceasefire | 7 | 21 | EPOL, USO, VGK | 1293 | +8.71 (t +1.6) | +1.34 (t +0.5) | 0 on 0 dates | n/a |
+| Fed chair | 6 | 11 | GLD, UUP, SHY, TLT | 972 | +3.28 (t +3.1) | +2.52 (t +3.5) | 14 on 5 dates | +15 bp, same sign 50% |
+| US politics and shutdown | 7 | 10 | DJT, EWU, SPY, IWM, JETS | 616 | -0.01 (t -0.0) | -1.71 (t -2.9) | 22 on 13 dates | -1 bp, same sign 36% |
+| Bitcoin holders | 4 | 8 | IBIT, MSTR | 552 | +5.71 (t +2.3) | -0.80 (t -0.4) | 26 on 11 dates | +89 bp, same sign 81% |
+| Single company | 3 | 3 | TSLA, MSFT, ORCL | 205 | +3.78 (t +2.4) | +0.77 (t +0.4) | 13 on 12 dates | +61 bp, same sign 92% |
+| Venezuela | 2 | 2 | CVX | 92 | +6.81 (t +2.1) | +3.72 (t +1.1) | 1 on 1 dates | +71 bp, same sign 100% |
+
+- **One theme carries the result.** Iran, Hormuz and oil has 71% of the 10-point nights. There the link is strong (+11.6 bp per point, t = 5.5) and the move after the open is still nothing (-1.1, t = -0.9). Everything else together: +2.63 bp per point (t = 3.4).
+- **Fed questions are the largest group and the weakest link in bp.** They are tied to Treasury ETFs (SHY, IEF, TLT) whose prices move by a fraction of a bp per point of odds. The direction is mostly right; the instrument is too quiet to trade.
+- **Most links point the right way; few are proven.** Of 174 links with 30 days of data, 126 have a positive gap relation, 61 significantly, and 7 are significantly contradicted by the data (see `links_detail.csv`).
+- **Links to SPY are empty by construction** (the equity move is measured in excess of SPY): 623 link-days, 13 of the primary's trades. Without them P1 is +7.93 bp per point (t = 5.66) and the primary trade is -15.3 bp on 81 trades [-60.7, 28.0]. No verdict changes (METHOD.md, correction).
+- **Known weak spots in the links:** deadline ladders ("by April 30", "by May 31") drift with the calendar, not with news; "cut by 25 bps" and "no change" flip sign with what the alternative is; the Bitcoin-holder questions move because Bitcoin's price moves; one Fed-chair link (Warsh against gold) was set with hindsight and rests on one day.
+
+The primary trade by theme, without the SPY trades:
+
+| Theme | Trades | Dates | Gross per trade | Net per trade | Winners |
+|---|---|---|---|---|---|
+| Iran, Hormuz and oil | 36 | 19 | -20.1 bp | -25.6 bp | 44% |
+| Single company | 13 | 12 | +52.5 bp | +44.4 bp | 46% |
+| Bitcoin holders | 12 | 6 | -27.7 bp | -36.1 bp | 50% |
+| China and Taiwan | 10 | 5 | -15.3 bp | -21.4 bp | 40% |
+| US politics and shutdown | 8 | 8 | -81.9 bp | -89.6 bp | 12% |
+| Fed chair | 2 | 1 | +244.1 bp | +236.6 bp | 100% |
+
+**So the link is not what kills the trade.** Where the link is strongest and the events most frequent, the equity still does not keep moving after the open.
+
 ## Exploratory: who moves first inside the session? (S5b)
 
 Designed after the S5 run (amendment 2). Regular session, 5-minute bins: 1,127,527 link-bins on 220 links and 253 dates; 3,978 bins with an odds jump of 3 points or more, 13,476 with an equity jump of 50 bp or more.

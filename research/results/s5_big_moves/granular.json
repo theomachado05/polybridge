@@ -1,0 +1,122 @@
+{
+ "link_check": {
+  "links_with_30_days": 174,
+  "gap_slope_positive": 126,
+  "right_and_significant": 61,
+  "wrong_and_significant": 7
+ },
+ "spy_link_days": 623,
+ "spy_weight": 0.13352066967710705,
+ "p1_all": {
+  "slope": 6.875493719786516,
+  "t": 6.008210255292063,
+  "n": 14439
+ },
+ "p1_without_spy": {
+  "slope": 7.934977187770154,
+  "t": 5.660434608125825,
+  "n": 13816
+ },
+ "after_without_spy": {
+  "slope": -0.6394868499898001,
+  "t": -0.7293467622840447,
+  "n": 13816
+ },
+ "largest_theme": "Iran, Hormuz and oil",
+ "largest_theme_share_of_big_nights": 0.7100737100737101,
+ "p1_largest_theme": {
+  "slope": 11.575325231486872,
+  "t": 5.507695183553419,
+  "n": 2873
+ },
+ "after_largest_theme": {
+  "slope": -1.1201341870080814,
+  "t": -0.8733531642990181,
+  "n": 2873
+ },
+ "p1_without_largest_theme": {
+  "slope": 2.6266085913640778,
+  "t": 3.3892400686285127,
+  "n": 10943
+ },
+ "after_without_largest_theme": {
+  "slope": 0.0613948237221103,
+  "t": 0.09635229301361464,
+  "n": 10943
+ },
+ "p2_all": {
+  "trades": 94,
+  "dates": 46,
+  "mean_net_bp": -13.971416939877987,
+  "ci_lo": -50.92940292518294,
+  "ci_hi": 24.074177797236384,
+  "mean_gross_bp": -7.361197900196747,
+  "hit": 0.3723404255319149
+ },
+ "p2_without_spy": {
+  "trades": 81,
+  "dates": 44,
+  "mean_net_bp": -15.250780152450991,
+  "ci_lo": -60.672875988561756,
+  "ci_hi": 27.98976100750595,
+  "mean_gross_bp": -8.542624723685119,
+  "hit": 0.43209876543209874
+ },
+ "p2_spy_trades": 13,
+ "p2_by_theme": {
+  "Bitcoin holders": {
+   "trades": 12,
+   "dates": 6,
+   "mean_net_bp": -36.10259251373926,
+   "ci_lo": -167.9581917265202,
+   "ci_hi": 75.81800106650753,
+   "mean_gross_bp": -27.664265764364533,
+   "hit": 0.5
+  },
+  "China and Taiwan": {
+   "trades": 10,
+   "dates": 5,
+   "mean_net_bp": -21.364939781916757,
+   "ci_lo": -64.8696782943896,
+   "ci_hi": 25.28321090301468,
+   "mean_gross_bp": -15.333132734014356,
+   "hit": 0.4
+  },
+  "Fed chair": {
+   "trades": 2,
+   "dates": 1,
+   "mean_net_bp": 236.55978712390103,
+   "ci_lo": NaN,
+   "ci_hi": NaN,
+   "mean_gross_bp": 244.0601524462029,
+   "hit": 1.0
+  },
+  "Iran, Hormuz and oil": {
+   "trades": 36,
+   "dates": 19,
+   "mean_net_bp": -25.623531666318126,
+   "ci_lo": -94.00066900111771,
+   "ci_hi": 34.91274504474276,
+   "mean_gross_bp": -20.064437673473588,
+   "hit": 0.4444444444444444
+  },
+  "Single company": {
+   "trades": 13,
+   "dates": 12,
+   "mean_net_bp": 44.445034871780834,
+   "ci_lo": -92.02012994465065,
+   "ci_hi": 188.24377025026823,
+   "mean_gross_bp": 52.54263520195085,
+   "hit": 0.46153846153846156
+  },
+  "US politics and shutdown": {
+   "trades": 8,
+   "dates": 8,
+   "mean_net_bp": -89.61132149474906,
+   "ci_lo": -165.7683175872337,
+   "ci_hi": -21.360304417103436,
+   "mean_gross_bp": -81.93811154733676,
+   "hit": 0.125
+  }
+ }
+}

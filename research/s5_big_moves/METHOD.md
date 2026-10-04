@@ -145,3 +145,11 @@ odds, not the equity. Rules, fixed before computing:
   the mean of `y` signed by `x` after moves of 5 points or more and of 10 points or more, all closures and weekends.
 - Not a P&L: historical Polymarket prices are not executable. The result is set against a round-trip cost of about
   2 to 4 points on liquid markets (two half-spreads plus the 0.04 × P × (1 − P) fee each way).
+
+**Correction, 2026-10-04 01:12 UTC, found after the run while breaking the result down by link: links to SPY are
+empty by construction.** Every equity move is measured in excess of `β ×` SPY. For a link whose ticker is SPY itself
+that excess is zero whatever happens, so those links add weight to the odds side and nothing to the equity side, and
+their trades earn zero before costs. 18 of the 220 links are SPY links (623 link-days, 13% of the weight; 13 of the 94
+primary trades). The published S5 figures are left as run. `granular.py` reports both: without SPY links P1 is +7.93
+bp per point (t = 5.66) against +6.88 (t = 6.01), and the primary trade is -15.3 bp per trade on 81 trades against
+-14.0 on 94. Neither verdict changes. The same flaw is in S4 (3 SPY links, 191 link-days).

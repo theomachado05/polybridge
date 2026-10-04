@@ -81,6 +81,48 @@ def charts(eq: pd.DataFrame, recent_from: str) -> None:
         plt.close(fig)
 
 
+def granular_section() -> list[str]:
+    """Which questions are tied to which instruments, by theme; empty until `python -m s5_big_moves.granular` has run."""
+    if not (R / "themes.csv").exists():
+        return []
+    th, z = pd.read_csv(R / "themes.csv"), json.loads((R / "granular.json").read_text())
+    tb = th.assign(T=th.theme, Q=th.questions.astype(int), L=th.links.astype(int), K=th.tickers, N=th.link_days.astype(int),
+                   G=th.apply(lambda r: f"{r.gap_bp_per_point:+.2f} (t {r.gap_t:+.1f})", axis=1),
+                   A=th.apply(lambda r: f"{r.after_open_bp_per_point:+.2f} (t {r.after_open_t:+.1f})", axis=1),
+                   B=th.apply(lambda r: f"{int(r.big_nights)} on {int(r.big_dates)} dates", axis=1),
+                   BG=th.apply(lambda r: "n/a" if r.big_nights == 0 else f"{r.big_gap_bp:+.0f} bp, same sign {100 * r.big_gap_same_sign:.0f}%", axis=1))
+    c, top = z["link_check"], z["largest_theme"]
+    pt = pd.DataFrame([{"T": k, "N": v["trades"], "D": v["dates"], "G": bp(v["mean_gross_bp"]), "X": bp(v["mean_net_bp"]),
+                        "H": f"{100 * v['hit']:.0f}%"} for k, v in sorted(z["p2_by_theme"].items(), key=lambda kv: -kv[1]["trades"])])
+    return ["## Which questions, which instruments (and is the link the weak point?)", "",
+            "**The instruments are shares of ETFs and stocks, at the open and the close. No option was traded or priced in S4 or S5.** "
+            "Each question is tied to up to three tickers, each with a direction, and only where two blind labellers named the same "
+            "ticker and direction. By theme (the themes are for reading; no rule uses them):", "",
+            md_table(tb, {"T": "Theme", "Q": "Questions", "L": "Links", "K": "Tickers", "N": "Link-days", "G": "Opening gap, bp per point",
+                          "A": "After the open, bp per point", "B": "Nights with a 10-point move", "BG": "Gap on those nights"}), "",
+            f"- **One theme carries the result.** {top} has {100 * z['largest_theme_share_of_big_nights']:.0f}% of the 10-point nights. There "
+            f"the link is strong ({z['p1_largest_theme']['slope']:+.1f} bp per point, t = {z['p1_largest_theme']['t']:.1f}) and the move after "
+            f"the open is still nothing ({z['after_largest_theme']['slope']:+.1f}, t = {z['after_largest_theme']['t']:.1f}). Everything else "
+            f"together: {z['p1_without_largest_theme']['slope']:+.2f} bp per point (t = {z['p1_without_largest_theme']['t']:.1f}).",
+            "- **Fed questions are the largest group and the weakest link in bp.** They are tied to Treasury ETFs (SHY, IEF, TLT) whose "
+            "prices move by a fraction of a bp per point of odds. The direction is mostly right; the instrument is too quiet to trade.",
+            f"- **Most links point the right way; few are proven.** Of {c['links_with_30_days']} links with 30 days of data, "
+            f"{c['gap_slope_positive']} have a positive gap relation, {c['right_and_significant']} significantly, and "
+            f"{c['wrong_and_significant']} are significantly contradicted by the data (see `links_detail.csv`).",
+            f"- **Links to SPY are empty by construction** (the equity move is measured in excess of SPY): {z['spy_link_days']} link-days, "
+            f"{z['p2_spy_trades']} of the primary's trades. Without them P1 is {z['p1_without_spy']['slope']:+.2f} bp per point "
+            f"(t = {z['p1_without_spy']['t']:.2f}) and the primary trade is {bp(z['p2_without_spy']['mean_net_bp'])} on "
+            f"{z['p2_without_spy']['trades']} trades [{num(z['p2_without_spy']['ci_lo'], 1)}, {num(z['p2_without_spy']['ci_hi'], 1)}]. "
+            "No verdict changes (METHOD.md, correction).",
+            "- **Known weak spots in the links:** deadline ladders (\"by April 30\", \"by May 31\") drift with the calendar, not with news; "
+            "\"cut by 25 bps\" and \"no change\" flip sign with what the alternative is; the Bitcoin-holder questions move because "
+            "Bitcoin's price moves; one Fed-chair link (Warsh against gold) was set with hindsight and rests on one day.", "",
+            "The primary trade by theme, without the SPY trades:", "",
+            md_table(pt, {"T": "Theme", "N": "Trades", "D": "Dates", "G": "Gross per trade", "X": "Net per trade", "H": "Winners"}), "",
+            "**So the link is not what kills the trade.** Where the link is strongest and the events most frequent, the equity still "
+            "does not keep moving after the open.", ""]
+
+
 def intraday_section() -> list[str]:
     """S5b (amendment 2) and the give-back check (amendment 3); empty until `python -m s5_big_moves.intraday` has run."""
     if not (R / "intraday.csv").exists():
@@ -232,6 +274,7 @@ def main() -> int:
           "| Criterion | Result | Evidence |", "|---|---|---|"]
     S += [f"| {a} | {'pass' if b else '**fail**'} | {e} |" for a, b, e in crit]
     S += ["", f"**Verdict: {p2}.**", "",
+          *granular_section(),
           *intraday_section(),
           "## The links", "",
           f"{meta['universe_counts']['events']:,} events scanned, {meta['universe_candidates']} markets eligible, the 240 with the largest volume "
