@@ -92,4 +92,6 @@ and C1 holding over the whole sample. Anything else is a null or "too few observ
 
 ## Amendments
 
-None.
+**Correction of wording, 2026-10-04 03:42 UTC, before the run.** Section 1 says "the 1,262 price markets ... that
+have a result". The two universes hold 1,262 markets in 137 events, and 1,232 of them have a result (384 in S9, 848
+in S15). Only those 1,232 can enter. No rule changes.
