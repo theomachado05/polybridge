@@ -1,4 +1,4 @@
-.PHONY: setup-research test-research setup-backend test-backend build-engine test-engine test-engine-py setup-web test-web test dev dev-live dev-tlt dev-ita dev-iwm dev-nvda e2e e2e-api e2e-opportunity e2e-weekend e2e-demo webull-check gemini-check voice-agent keys-check
+.PHONY: setup-research test-research setup-backend test-backend build-engine test-engine test-engine-py setup-web test-web test dev dev-live dev-tlt dev-ita dev-iwm dev-nvda e2e e2e-api e2e-opportunity e2e-weekend e2e-demo share webull-check gemini-check openai-check voice-agent keys-check
 
 research/.venv:
 	$(MAKE) setup-research
@@ -62,6 +62,9 @@ dev-live:
 	(cd web && pnpm dev) & \
 	wait
 
+share:
+	REPLAY=$(REPLAY) SPEED=$(SPEED) REPLAY_PRICES=$(REPLAY_PRICES) bash scripts/share.sh
+
 e2e:
 	python3 scripts/e2e_demo.py $(E2E_ARGS)
 
@@ -82,6 +85,9 @@ webull-check:
 
 gemini-check:
 	cd backend && uv run --locked $(ENVFILE) python scripts/gemini_check.py
+
+openai-check:
+	cd backend && uv run --locked $(ENVFILE) python scripts/openai_check.py
 
 voice-agent:
 	cd backend && uv run --locked $(ENVFILE) python scripts/elevenlabs_agent.py $(ARGS)

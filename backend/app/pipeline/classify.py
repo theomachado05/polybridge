@@ -18,7 +18,7 @@ async def classify(question: str, provider: LLMProvider, allowed: list[str] | No
             cls = await provider.classify(question, allowed, ticker)
             if cls in allowed:
                 return cls, getattr(provider, "label", None) or getattr(provider, "name", "gemini")
-            err = "Gemini returned a class outside the allowed set"
+            err = f"{getattr(provider, 'display', 'Gemini')} returned a class outside the allowed set"
         except LLMError as e:
             err = str(e)
         except Exception as e:

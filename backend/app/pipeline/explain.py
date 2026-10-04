@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .llm import LLMProvider, RulesProvider, template_rationale
+from .llm import LLMError, LLMProvider, RulesProvider, template_rationale
 
 FACT_KEYS = ("event_class", "division", "family", "preset_index", "params", "score", "score_basis", "score_raw",
              "avg_hedge_ratio", "scored", "unscored_reason",
@@ -22,9 +22,9 @@ async def explain(result: dict, provider: LLMProvider, trace: dict | None = None
             text = await provider.explain(f)
             if text:
                 return text, True
-            err = "Gemini returned an empty rationale"
+            err = f"{getattr(provider, 'display', 'Gemini')} returned an empty rationale"
         except Exception as e:
-            err = str(e) if str(e).startswith("Gemini") else f"provider error: {type(e).__name__}"
+            err = str(e) if isinstance(e, LLMError) or str(e).startswith("Gemini") else f"provider error: {type(e).__name__}"
         if trace is not None:
             trace["error"] = err
     return template_rationale(f), False

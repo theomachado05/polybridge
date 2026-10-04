@@ -8,6 +8,7 @@ REPO = BACKEND.parent
 
 KNOWN_KEYS: list[tuple[str, tuple[str, ...]]] = [
     ("MASSIVE_API_KEY", ("MASSIVE_API_KEY",)),
+    ("OPENAI_API_KEY", ("OPENAI_API_KEY",)),
     ("GEMINI_API_KEY", ("GEMINI_API_KEY",)),
     ("ELEVENLABS_API_KEY", ("ELEVENLABS_API_KEY",)),
     ("WEBULL_APP_KEY", ("WEBULL_APP_KEY", "WEBULL_API_KEY")),

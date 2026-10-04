@@ -23,17 +23,26 @@ def _isolated_broker(tmp_path, monkeypatch):
 
 @pytest.fixture(autouse=True)
 def _no_llm_keys(monkeypatch):
-    from app.pipeline import llm
+    from app.pipeline import llm, openai_llm
 
     monkeypatch.setenv("GEMINI_API_KEY", "")
+    monkeypatch.setenv("OPENAI_API_KEY", "")
     monkeypatch.setenv("ELEVENLABS_API_KEY", "")
-    monkeypatch.delenv("GEMINI_MODEL", raising=False)
+    for name in ("GEMINI_MODEL", "OPENAI_MODEL", "LLM_PROVIDER"):
+        monkeypatch.delenv(name, raising=False)
     monkeypatch.setattr(llm, "gemini_key", lambda: None)
-    llm._models_cache.clear()
-    llm._resolved.clear()
+    monkeypatch.setattr(openai_llm, "openai_key", lambda: None)
+
+    def clear():
+        llm._models_cache.clear()
+        llm._resolved.clear()
+        openai_llm._models_cache.clear()
+        openai_llm._clients.clear()
+        openai_llm._no_temperature.clear()
+
+    clear()
     yield
-    llm._models_cache.clear()
-    llm._resolved.clear()
+    clear()
 
 
 def pytest_configure(config):

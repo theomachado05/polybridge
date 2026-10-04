@@ -1,6 +1,7 @@
 import type { ClosedLabels, ClosedModeSummary, ClosureView, GapView, HedgeASummary, SessionView, StagedOrder } from "./closed.ts";
 import type { ForwardStatus, LaddersOut, Registry, TicketsOut } from "./micro.ts";
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+import { apiBase } from "./tunnel.ts";
+export const API_URL = apiBase(process.env.NEXT_PUBLIC_API_URL);
 
 export type Family = "hedge" | "opportunity";
 export type ProposalStatus = "proposed" | "approved" | "rejected";
@@ -392,7 +393,7 @@ export interface FitOut {
   score: number | null;
   alternatives: FitAlternative[];
   rationale: string;
-  llm: "gemini" | "rules" | string;
+  llm: "rules" | string;
   model?: string | null;
   ai?: { live?: boolean | null; model?: string | null; provider?: string | null; cached?: boolean | null;
     steps?: { classify?: string | null; explain?: string | null } | null; fell_back_reason?: string | null } | null;

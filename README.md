@@ -28,16 +28,17 @@ make setup-web
 make dev                                                 # backend :8000 (offline replay) + web :3000
 ```
 
-`make dev` replays the recorded April 2025 tariff weekend on "US recession in 2025?" and hedges SPY in closed-market mode at 3600x speed (about 67 seconds; approve the staged plan before Monday 04:00 on the recording). `make dev-tlt`, `dev-ita`, `dev-iwm` and `dev-nvda` play the other recordings in `backend/replays/`, and `make dev-live` uses the live Polymarket book. Open http://localhost:3000, not 127.0.0.1, because the backend allows CORS from localhost only.
+`make dev` replays the recorded April 2025 tariff weekend on "US recession in 2025?" and hedges SPY in closed-market mode at 3600x speed (about 67 seconds; approve the staged plan before Monday 04:00 on the recording). `make dev-tlt`, `dev-ita`, `dev-iwm` and `dev-nvda` play the other recordings in `backend/replays/`, and `make dev-live` uses the live Polymarket book. `make share` serves the whole app at one public ngrok URL behind basic auth ([docs/share.md](docs/share.md)). Open http://localhost:3000, not 127.0.0.1, because the backend allows CORS from localhost only.
 
 | Variable | Used for | Without it |
 |---|---|---|
 | `MASSIVE_API_KEY` | equity and option quotes, the research notebooks | recorded bars and committed data only |
-| `GEMINI_API_KEY` | event classification and the fit rationale | keyword rules and a template rationale |
+| `OPENAI_API_KEY`, `GEMINI_API_KEY` (`LLM_PROVIDER`: `auto`, `openai`, `gemini` or `rules`) | event classification and the fit rationale (OpenAI first, then Gemini) | keyword rules and a template rationale |
 | `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` | voice widget (`web/.env.local`) | no voice button |
 | `BROKER` (`sim` or `webull`), `WEBULL_APP_KEY`, `WEBULL_APP_SECRET` | Webull paper trading (sandbox host only) | the simulated $1,000,000 account |
 | `AGENT_TOOL_SECRET` | required before tunnelling the backend for the voice agent ([docs/voice-agent.md](docs/voice-agent.md)) | tunnelled writes are refused |
 | `POLYBRIDGE_REPLAY_PATH`, `POLYBRIDGE_REPLAY_SPEED`, `POLYBRIDGE_REPLAY_PRICES` | replay file, speed and fill prices | set by `make dev` |
+| `NGROK_BASIC_AUTH`, `PUBLIC_WEB_HOST` | `make share`: the whole app at one public ngrok URL behind basic auth ([docs/share.md](docs/share.md)) | `make share` refuses to start |
 
 Keys live only in `.env` (gitignored) or the shell. Real-money execution is out of scope.
 

@@ -20,6 +20,15 @@ AGENT_NAME = "PolyBridge"
 DESC_PREFIX = "PolyBridge: "
 DEFAULT_LLM = "gemini-2.5-flash"
 WEB_HOSTS = ("localhost:3000", "127.0.0.1:3000")
+
+
+def web_hosts() -> list[str]:
+    hosts = list(WEB_HOSTS)
+    extra = (os.environ.get("PUBLIC_WEB_HOST") or "").strip().lower()
+    extra = extra.split("://", 1)[-1].split("/", 1)[0]
+    if extra and extra not in hosts:
+        hosts.append(extra)
+    return hosts
 TIMEOUT_S = 20.0
 TOOL_TIMEOUTS = {"fit": 90, "start_bridge": 30, "search_markets": 20, "propose": 20, "approve": 20,
                  "bridge_status": 15, "account": 15, "positions": 15, "navigate": 5}
@@ -88,7 +97,7 @@ def agent_body(system_prompt: str, first_message: str, tool_ids: list[str], llm:
                    "stability": 0.45, "similarity_boost": 0.8, "speed": 1.0}
     return {"name": AGENT_NAME, "conversation_config": conv,
             "platform_settings": {"auth": {"enable_auth": False,
-                                           "allowlist": [{"hostname": h} for h in WEB_HOSTS]}}}
+                                           "allowlist": [{"hostname": h} for h in web_hosts()]}}}
 
 
 def _detail(r: httpx.Response) -> str:

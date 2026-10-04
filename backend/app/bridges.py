@@ -1750,4 +1750,4 @@ async def bridge_stream(bridge_id: str, request: Request) -> StreamingResponse:
                 return
 
     return StreamingResponse(gen(), media_type="text/event-stream",
-                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+                             headers={"Cache-Control": "no-cache, no-transform", "X-Accel-Buffering": "no"})

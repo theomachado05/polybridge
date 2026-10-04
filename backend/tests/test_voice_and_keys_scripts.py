@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import elevenlabs_agent  # noqa: E402
 import gemini_check  # noqa: E402
 import keys_check  # noqa: E402
+import openai_check  # noqa: E402
 
 from app.agent import elevenlabs as el  # noqa: E402
 from app.agent.tools import TOOLS  # noqa: E402
@@ -86,7 +87,7 @@ def env_local(tmp_path, monkeypatch):
 def _keys(monkeypatch, **present):
     def fake(name):
         return present.get(name)
-    for mod in (elevenlabs_agent, keys_check, gemini_check):
+    for mod in (elevenlabs_agent, keys_check, gemini_check, openai_check):
         monkeypatch.setattr(mod, "env_key", fake)
 
 
@@ -133,6 +134,7 @@ def test_prompt_from_doc_without_markers_is_a_clear_error(tmp_path):
 
 
 def test_create_writes_only_the_agent_id_and_masks_it(env_local, monkeypatch):
+    monkeypatch.delenv("PUBLIC_WEB_HOST", raising=False)
     env_local.write_text("NEXT_PUBLIC_API_URL=http://localhost:8000\n")
     fake = FakeEleven()
     code, out = _run([], fake, env_local, monkeypatch, ELEVENLABS_API_KEY=EL_KEY)
@@ -148,6 +150,19 @@ def test_create_writes_only_the_agent_id_and_masks_it(env_local, monkeypatch):
     assert "agent created: ***0001" in out and aid not in out
     assert EL_KEY not in out and EL_KEY not in env_local.read_text()
     assert all(r.headers["xi-api-key"] == EL_KEY and EL_KEY not in str(r.url) for r in fake.requests)
+
+
+def test_public_web_host_joins_the_widget_allowlist(env_local, monkeypatch):
+    monkeypatch.setenv("PUBLIC_WEB_HOST", "https://Abc-123.ngrok-free.app/")
+    fake = FakeEleven()
+    code, out = _run([], fake, env_local, monkeypatch, ELEVENLABS_API_KEY=EL_KEY)
+    assert code == 0, out
+    (_, body), = fake.agents.items()
+    assert body["platform_settings"]["auth"]["allowlist"] == [
+        {"hostname": "localhost:3000"}, {"hostname": "127.0.0.1:3000"}, {"hostname": "abc-123.ngrok-free.app"}]
+    assert "widget allowlist: localhost:3000, 127.0.0.1:3000, abc-123.ngrok-free.app" in out
+    monkeypatch.setenv("PUBLIC_WEB_HOST", "localhost:3000")
+    assert el.web_hosts() == ["localhost:3000", "127.0.0.1:3000"]
 
 
 def test_rerun_is_idempotent_updates_in_place(env_local, monkeypatch):
@@ -234,6 +249,15 @@ def test_keys_check_runs_gemini_check_when_present(env_local, monkeypatch):
     lines: list[str] = []
     assert keys_check.main(gemini_run=lambda: 1, out=lines.append, env_local=env_local) == 1
     assert "== Gemini" in "\n".join(lines) and "skipped (no ELEVENLABS_API_KEY" in "\n".join(lines)
+
+
+def test_keys_check_runs_openai_check_when_present(env_local, monkeypatch):
+    _keys(monkeypatch, OPENAI_API_KEY="sk-test-sekrit")
+    lines: list[str] = []
+    assert keys_check.main(openai_run=lambda: 1, gemini_run=lambda: 0, out=lines.append, env_local=env_local) == 1
+    out = "\n".join(lines)
+    assert "present  OPENAI_API_KEY" in out and "== OpenAI" in out and "sk-test-sekrit" not in out
+    assert "== Gemini: skipped" in out
 
 
 def _gemini_http(models_status=200, generate=None):

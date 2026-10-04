@@ -1,5 +1,5 @@
 import type { FitOut } from "./api";
-import { aiLabel, aiStatus, classifiedByGemini } from "./ai.ts";
+import { aiLabel, aiStatus, classifiedByLlm } from "./ai.ts";
 import { fmtPct, prettyId } from "./fmt.ts";
 
 export type OrbState = "connecting" | "working" | "searching" | "composing" | "breathing" | "listening";
@@ -100,7 +100,7 @@ export function fitSteps(fit: FitOut, c: PipeContext): PipeStep[] {
     : fit.ticks_source === "replay" ? `Offline mode: ${fit.n_ticks.toLocaleString("en-US")} ticks from a recorded replay file (not live history).`
     : `No usable price history for this market. The engine did not replay presets and uses the family default.`;
   return [
-    { key: "classify", name: "Classifying the event", orb: "searching", text: `${c.question.replace(/\?$/, "")} → ${cls} (${classifiedByGemini(fit) ? aiLabel(ai).replace(/^AI · /, "") : "keyword rules"}). Division: ${fit.division}.` },
+    { key: "classify", name: "Classifying the event", orb: "searching", text: `${c.question.replace(/\?$/, "")} → ${cls} (${classifiedByLlm(fit) ? aiLabel(ai).replace(/^AI · /, "") : "keyword rules"}). Division: ${fit.division}.` },
     { key: "shortlist", name: "Selecting algo families", orb: "connecting", text: short.length ? `${short.length} ${short.length === 1 ? "family covers" : "families cover"} ${cls}: ${short.slice(0, 5).map(prettyId).join(", ")}${short.length > 5 ? "…" : ""}.` : `No compiled family covers ${cls}.` },
     { key: "history", name: "Loading price history", orb: "working", text: history },
     { key: "tune", name: "Tuning presets on replay", orb: "searching", text: fit.family ? tuneText(fit, fam, alts) : "No family to tune." },

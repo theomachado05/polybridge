@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field, PrivateAttr, field_validator, model_valid
 from .classify import classify
 from .engine_adapter import EngineAdapter
 from .explain import explain
-from .llm import NO_KEY_REASON, LLMProvider, RulesProvider, rules_classify, rules_info
+from .llm import LLMProvider, RulesProvider, no_llm_reason, rules_classify, rules_info
 from .shortlist import shortlist, unmet_requirements
 from .options_join import join_options
 from .ticks import (TickSet, _universe_entry, available_requirements, build_ticks, kalshi_series, orient_for_family,
@@ -65,7 +65,7 @@ class Alternative(BaseModel):
 
 
 class AIInfo(BaseModel):
-    provider: Literal["gemini", "rules"]
+    provider: Literal["openai", "gemini", "rules"]
     model: str | None = None
     live: bool = False
     cached: bool = False
@@ -82,7 +82,7 @@ class FitResponse(BaseModel):
     score: float | None
     alternatives: list[Alternative]
     rationale: str
-    llm: str = Field(pattern=r"^(rules|gemini:[A-Za-z0-9._\-]+)$")
+    llm: str = Field(pattern=r"^(rules|(openai|gemini):[A-Za-z0-9._\-]+)$")
     ticks_source: Literal["live_history", "replay", "none"]
     n_ticks: int
     score_basis: Literal["hedge_var_reduction_vs_static", "net_pnl_per_drawdown"] | None = None
@@ -100,20 +100,26 @@ class FitResponse(BaseModel):
 
 
 def ai_block(provider: LLMProvider, classify_by: str, explain_by_llm: bool, errors: list[str]) -> dict:
-    steps = {"classify": "gemini" if classify_by.startswith("gemini") else "rules",
-             "explain": "gemini" if explain_by_llm else "template"}
+    by = classify_by.split(":", 1)[0]
+    name = getattr(provider, "name", "gemini")
+    name = name if name in ("openai", "gemini") else "gemini"
+    steps = {"classify": by if by in ("openai", "gemini") else "rules",
+             "explain": name if explain_by_llm else "template"}
     if isinstance(provider, RulesProvider):
-        return {**rules_info(NO_KEY_REASON), "steps": steps}
-    used = steps["classify"] == "gemini" or explain_by_llm
+        return {**rules_info(no_llm_reason(provider)), "steps": steps}
+    used = steps["classify"] != "rules" or explain_by_llm
     reasons = [e for e in errors if e]
     fb = getattr(provider, "fell_back_reason", None)
     if fb:
         reasons.insert(0, fb)
     reason = "; ".join(dict.fromkeys(reasons)) or None
     if not used:
-        return {**rules_info(f"Gemini did not answer ({reason or 'unknown error'}); keyword rules and template used"),
+        who = getattr(provider, "display", None) or "Gemini"
+        return {**rules_info(f"{who} did not answer ({reason or 'unknown error'}); keyword rules and template used"),
                 "steps": steps}
-    return {"provider": "gemini", "model": getattr(provider, "model", None), "live": True, "steps": steps,
+    if not explain_by_llm:
+        name = steps["classify"]
+    return {"provider": name, "model": getattr(provider, "model", None), "live": True, "steps": steps,
             "fell_back_reason": reason}
 
 

@@ -7,7 +7,7 @@ from ..pipeline.llm import LLMError, RulesProvider
 from . import research
 
 TYPES = ("ladder_rung", "touch_ticket", "close_above_ticket", "other")
-GEMINI_NOTE = "Gemini reads text into fields only; every field is checked against the rule parser, which wins; it never decides a trade."
+GEMINI_NOTE = "The LLM (OpenAI or Gemini) reads text into fields only; every field is checked against the rule parser, which wins; it never decides a trade."
 _COMPARED = {"touch_ticket": ("underlying", "level", "direction", "window_end"),
              "close_above_ticket": ("underlying", "level", "direction", "window_end"),
              "ladder_rung": ("date",), "other": ()}
@@ -88,6 +88,7 @@ async def classify_contract(question: str, rules: str | None = None, market: dic
             agreement["error"] = str(e)
         except Exception as e:
             agreement["error"] = f"provider error: {type(e).__name__}"
+        agreement["provider"] = getattr(provider, "label", "gemini")
     res = dict(res, gemini_agreement=agreement, flagged=bool(agreement["disagreements"]))
     return res
 
@@ -112,4 +113,5 @@ async def check_pair_with_gemini(provider: Any, pair: dict, rich: dict, cheap: d
         g = {"used": True, "same_rules": same, "agree": same == rule_same, "error": None}
     except LLMError as e:
         g = {"used": True, "same_rules": None, "agree": None, "error": str(e)}
+    g["provider"] = getattr(provider, "label", "gemini")
     return {**pair, "gemini": g, "flagged": g["agree"] is False}

@@ -141,6 +141,105 @@ class RulesProvider:
         return template_rationale(result)
 
 
+def classify_request(question: str, allowed: list[str], ticker: str | None = None) -> tuple[str, dict]:
+    prompt = ("Classify this prediction-market question into exactly one event class for an equity-hedging "
+              "system. Use 'unsupported' when no class fits (sports, entertainment, weather...).\n"
+              f"Allowed classes: {', '.join(allowed)}.\n"
+              f"Question: {question!r}\n" + (f"Equity the user holds: {ticker}\n" if ticker else "") +
+              'Answer as JSON: {"event_class": "<one allowed class>"}')
+    schema = {"type": "OBJECT", "properties": {"event_class": {"type": "STRING", "enum": list(allowed)}},
+              "required": ["event_class"]}
+    return prompt, schema
+
+
+def explain_request(result: dict) -> tuple[str, dict]:
+    prompt = ("Write a 2-3 sentence rationale for an investor explaining why this algo and preset were chosen. "
+              "Use ONLY the facts in the JSON below; do not add numbers, events, or claims that are not in it. "
+              "If 'scored' is false, say plainly that the preset was picked by rules without a replay score. "
+              "For a hedge, 'score' is the variance reduction BEYOND a static hedge of the same average size "
+              "(what the market signal adds); 'score_raw' is plain variance reduction, which any static short "
+              "earns, so never present score_raw as the hedge's edge. "
+              "Say 'replay' for replayed history, never 'live performance'.\n"
+              "Write scores as percentages with one decimal (0.2459 -> 24.6%).\n"
+              f"{json.dumps(_round_floats(result), default=str, sort_keys=True)}\n"
+              'Answer as JSON: {"rationale": "<2-3 sentences>"}')
+    schema = {"type": "OBJECT", "properties": {"rationale": {"type": "STRING"}}, "required": ["rationale"]}
+    return prompt, schema
+
+
+def map_request(question: str, universe: list[dict], max_items: int = 6) -> tuple[str, dict]:
+    tickers = [u["ticker"] for u in universe]
+    lines = "\n".join(f"{u['ticker']}: {u.get('name') or u['ticker']}" for u in universe)
+    prompt = ("You map a prediction-market question to the US-listed stocks or ETFs whose price would move if the "
+              "question resolved YES. Choose ONLY tickers from the list below; never invent a ticker. "
+              f"Return at most {max_items}, most affected first, and an empty list when no listed ticker has a "
+              "clear, direct link (do not stretch). For each: direction 'down_on_yes' if the stock would fall on "
+              "YES, 'up_on_yes' if it would rise; impact_pct = your estimate of the stock's move in percent "
+              "(a positive number, at most 20) if YES became certain; rationale = one plain sentence, no numbers "
+              "that are not in the question.\n"
+              f"Question: {question!r}\nTickers:\n{lines}\n"
+              'Answer as JSON: {"mappings": [{"ticker": "...", "direction": "down_on_yes|up_on_yes", '
+              '"impact_pct": 1.5, "rationale": "..."}]}')
+    item = {"type": "OBJECT", "properties": {
+        "ticker": {"type": "STRING", "enum": tickers},
+        "direction": {"type": "STRING", "enum": ["down_on_yes", "up_on_yes"]},
+        "impact_pct": {"type": "NUMBER"},
+        "rationale": {"type": "STRING"}}, "required": ["ticker", "direction", "impact_pct", "rationale"]}
+    schema = {"type": "OBJECT", "properties": {"mappings": {"type": "ARRAY", "items": item}},
+              "required": ["mappings"]}
+    return prompt, schema
+
+
+def strict_json_schema(schema: Any) -> Any:
+    if isinstance(schema, list):
+        return [strict_json_schema(x) for x in schema]
+    if not isinstance(schema, dict):
+        return schema
+    out: dict = {}
+    for k, v in schema.items():
+        if k == "type" and isinstance(v, str):
+            out[k] = v.lower()
+        elif k == "properties" and isinstance(v, dict):
+            out[k] = {name: strict_json_schema(sub) for name, sub in v.items()}
+        elif k == "items":
+            out[k] = strict_json_schema(v)
+        else:
+            out[k] = v
+    if out.get("type") == "object":
+        out["required"] = list((out.get("properties") or {}).keys())
+        out["additionalProperties"] = False
+    return out
+
+
+class JSONProvider:
+    display = "LLM"
+
+    async def _generate(self, prompt: str, schema: dict) -> dict:  # pragma: no cover - abstract
+        raise NotImplementedError
+
+    async def classify(self, question: str, allowed: list[str], ticker: str | None = None) -> str:
+        out = await self._generate(*classify_request(question, allowed, ticker))
+        cls = str(out.get("event_class", "")).strip()
+        if cls not in allowed:
+            raise LLMError(f"{self.display} returned a class outside the allowed set")
+        return cls
+
+    async def explain(self, result: dict) -> str:
+        out = await self._generate(*explain_request(result))
+        text = str(out.get("rationale", "")).strip()
+        if not text:
+            raise LLMError(f"{self.display} returned an empty rationale")
+        sentences = re.split(r"(?<=[.!?])\s+", text)
+        return " ".join(sentences[:3])[:800]
+
+    async def map_tickers(self, question: str, universe: list[dict], max_items: int = 6) -> list:
+        out = await self._generate(*map_request(question, universe, max_items))
+        rows = out.get("mappings")
+        if not isinstance(rows, list):
+            raise LLMError(f"{self.display} returned no mappings list")
+        return rows
+
+
 def gemini_key() -> str | None:
     key = (os.environ.get("GEMINI_API_KEY") or "").strip()
     if key:
@@ -160,7 +259,7 @@ def _response_text(payload: dict) -> str:
         raise LLMError("Gemini response had no text") from e
 
 
-def parse_json_text(text: str) -> dict:
+def parse_json_text(text: str, vendor: str = "Gemini") -> dict:
     t = (text or "").strip()
     m = re.match(r"^```(?:json)?\s*(.*?)\s*```$", t, re.S)
     if m:
@@ -168,9 +267,9 @@ def parse_json_text(text: str) -> dict:
     try:
         v = json.loads(t)
     except ValueError as e:
-        raise LLMError("Gemini returned malformed JSON") from e
+        raise LLMError(f"{vendor} returned malformed JSON") from e
     if not isinstance(v, dict):
-        raise LLMError("Gemini JSON was not an object")
+        raise LLMError(f"{vendor} JSON was not an object")
     return v
 
 
@@ -249,8 +348,9 @@ def _round_floats(x: Any, nd: int = 4) -> Any:
     return x
 
 
-class GeminiProvider:
+class GeminiProvider(JSONProvider):
     name = "gemini"
+    display = "Gemini"
 
     def __init__(self, api_key: str, model: str | None = None, http: httpx.AsyncClient | None = None,
                  timeout_s: float = TIMEOUT_S) -> None:
@@ -327,68 +427,9 @@ class GeminiProvider:
             if self._http is None:
                 await http.aclose()
 
-    async def classify(self, question: str, allowed: list[str], ticker: str | None = None) -> str:
-        prompt = ("Classify this prediction-market question into exactly one event class for an equity-hedging "
-                  "system. Use 'unsupported' when no class fits (sports, entertainment, weather...).\n"
-                  f"Allowed classes: {', '.join(allowed)}.\n"
-                  f"Question: {question!r}\n" + (f"Equity the user holds: {ticker}\n" if ticker else "") +
-                  'Answer as JSON: {"event_class": "<one allowed class>"}')
-        schema = {"type": "OBJECT", "properties": {"event_class": {"type": "STRING", "enum": list(allowed)}},
-                  "required": ["event_class"]}
-        out = await self._generate(prompt, schema)
-        cls = str(out.get("event_class", "")).strip()
-        if cls not in allowed:
-            raise LLMError("Gemini returned a class outside the allowed set")
-        return cls
 
-    async def explain(self, result: dict) -> str:
-        prompt = ("Write a 2-3 sentence rationale for an investor explaining why this algo and preset were chosen. "
-                  "Use ONLY the facts in the JSON below; do not add numbers, events, or claims that are not in it. "
-                  "If 'scored' is false, say plainly that the preset was picked by rules without a replay score. "
-                  "For a hedge, 'score' is the variance reduction BEYOND a static hedge of the same average size "
-                  "(what the market signal adds); 'score_raw' is plain variance reduction, which any static short "
-                  "earns, so never present score_raw as the hedge's edge. "
-                  "Say 'replay' for replayed history, never 'live performance'.\n"
-                  "Write scores as percentages with one decimal (0.2459 -> 24.6%).\n"
-                  f"{json.dumps(_round_floats(result), default=str, sort_keys=True)}\n"
-                  'Answer as JSON: {"rationale": "<2-3 sentences>"}')
-        schema = {"type": "OBJECT", "properties": {"rationale": {"type": "STRING"}}, "required": ["rationale"]}
-        out = await self._generate(prompt, schema)
-        text = str(out.get("rationale", "")).strip()
-        if not text:
-            raise LLMError("Gemini returned an empty rationale")
-        sentences = re.split(r"(?<=[.!?])\s+", text)
-        return " ".join(sentences[:3])[:800]
-
-
-    async def map_tickers(self, question: str, universe: list[dict], max_items: int = 6) -> list:
-        tickers = [u["ticker"] for u in universe]
-        lines = "\n".join(f"{u['ticker']}: {u.get('name') or u['ticker']}" for u in universe)
-        prompt = ("You map a prediction-market question to the US-listed stocks or ETFs whose price would move if the "
-                  "question resolved YES. Choose ONLY tickers from the list below; never invent a ticker. "
-                  f"Return at most {max_items}, most affected first, and an empty list when no listed ticker has a "
-                  "clear, direct link (do not stretch). For each: direction 'down_on_yes' if the stock would fall on "
-                  "YES, 'up_on_yes' if it would rise; impact_pct = your estimate of the stock's move in percent "
-                  "(a positive number, at most 20) if YES became certain; rationale = one plain sentence, no numbers "
-                  "that are not in the question.\n"
-                  f"Question: {question!r}\nTickers:\n{lines}\n"
-                  'Answer as JSON: {"mappings": [{"ticker": "...", "direction": "down_on_yes|up_on_yes", '
-                  '"impact_pct": 1.5, "rationale": "..."}]}')
-        item = {"type": "OBJECT", "properties": {
-            "ticker": {"type": "STRING", "enum": tickers},
-            "direction": {"type": "STRING", "enum": ["down_on_yes", "up_on_yes"]},
-            "impact_pct": {"type": "NUMBER"},
-            "rationale": {"type": "STRING"}}, "required": ["ticker", "direction", "impact_pct", "rationale"]}
-        schema = {"type": "OBJECT", "properties": {"mappings": {"type": "ARRAY", "items": item}},
-                  "required": ["mappings"]}
-        out = await self._generate(prompt, schema)
-        rows = out.get("mappings")
-        if not isinstance(rows, list):
-            raise LLMError("Gemini returned no mappings list")
-        return rows
-
-
-NO_KEY_REASON = "no GEMINI_API_KEY: keyword rules and templates, no LLM call"
+NO_KEY_REASON = "no OPENAI_API_KEY or GEMINI_API_KEY: keyword rules and templates, no LLM call"
+PROVIDER_CHOICES = ("auto", "openai", "gemini", "rules")
 
 
 def rules_info(reason: str | None = None) -> dict:
@@ -399,6 +440,37 @@ def ai_label(provider: object) -> str:
     return getattr(provider, "label", None) or "rules"
 
 
+def provider_choice() -> str:
+    v = (os.environ.get("LLM_PROVIDER") or "auto").strip().lower()
+    return v if v in PROVIDER_CHOICES else "auto"
+
+
+class _Rules(RulesProvider):
+
+    def __init__(self, reason: str) -> None:
+        self.fell_back_reason = reason
+
+
+def no_llm_reason(provider: object) -> str:
+    return getattr(provider, "fell_back_reason", None) or NO_KEY_REASON
+
+
 def default_provider(http: httpx.AsyncClient | None = None) -> LLMProvider:
-    key = gemini_key()
-    return GeminiProvider(key, http=http) if key else RulesProvider()
+    choice = provider_choice()
+    if choice == "rules":
+        return _Rules("LLM_PROVIDER=rules: keyword rules and templates, no LLM call")
+    from .openai_llm import ChainProvider, OpenAIProvider, openai_key
+    chain: list = []
+    if choice in ("auto", "openai") and (okey := openai_key()):
+        chain.append(OpenAIProvider(okey))
+    if choice in ("auto", "gemini") and (gkey := gemini_key()):
+        chain.append(GeminiProvider(gkey, http=http))
+    if not chain:
+        if choice == "openai":
+            return _Rules("LLM_PROVIDER=openai but no OPENAI_API_KEY: keyword rules and templates, no LLM call")
+        if choice == "gemini":
+            return _Rules("LLM_PROVIDER=gemini but no GEMINI_API_KEY: keyword rules and templates, no LLM call")
+        return RulesProvider()
+    if len(chain) == 1 and isinstance(chain[0], GeminiProvider):
+        return chain[0]
+    return ChainProvider(chain)
