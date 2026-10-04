@@ -61,3 +61,20 @@ PRIMARY = "V0"
 COST_MULTIPLIERS = (1.0, 2.0)
 MIN_OOS_TRADES, MIN_OOS_WEEKENDS, MIN_VERIFIED_SHARE = 30, 5, 0.5
 LEAD_T = 2.0                             # |t| at or above which a lead or lag slope is called significant
+
+
+# ==== Part 2, the mechanism (METHOD.md amendment 1, added before any price of these pairs is read) ====
+# Pairs: type B, two event questions linked to the same ticker (all hours, full history); type A, an event question
+# and a Polymarket price market on the asset its link names (weekend windows only, the S9 cache).
+TICKER_CLASS = {**{t: "crude" for t in OIL_TICKERS}, "GLD": "gold",
+                **{t: "stock:" + t for t in ("MSFT", "AMZN", "GOOGL", "NVDA", "TSLA", "META")}}
+ACTIVITY_WINDOW_S = 3600        # activity of a market = minutes in the last hour in which its one-minute price changed
+STALE_WINDOW_S = 900            # a market is stale at t if its price did not change in the 15 minutes before t
+PAIR_BAND = (0.05, 0.95)        # both prices inside this band at t - 5 minutes for a pair-bin to count
+MECH_HORIZONS_S = (300, 900, 1800)
+N_BOOT_MECH = 1000
+# the pick-off trade (type B primary, type A variant)
+EVENT_HALF_SPREAD = 0.005       # S8: half of the 1.0-point median spread of event markets (S5 cost snapshot)
+EVENT_FEE_RATE = 0.04           # taker fee 0.04 x P x (1 - P), as S8
+PICKOFF_EXIT_S = 1800
+PICKOFF_MAX_PER_DATE = 10

@@ -145,3 +145,61 @@ edge. Anything else is a null or "too few observations".
 `equity_curve.png`, `drawdown.png`, `capacity.md`, `RUN_LOG.md`.
 
 ## Amendments
+
+**Amendment 1, 2026-10-04 03:00 UTC (Sat 23:00 New York time), after Part 1's run, before any price of the Part 2
+pairs is read: Part 2, the mechanism.** Theo's instruction after Part 1: stop looking at one asset or one question,
+look at the mechanism. Part 1 is unchanged and stays the pre-registered result for oil.
+
+*What Part 1 showed that motivates this.* The crude price markets follow the oil event questions over 5 to 60
+minutes. The price markets also lead the questions, more weakly. 68% of the trade's entries were in a price market
+whose price had not changed for 15 minutes, and 4% were print-verified. One explanation covers both directions: news
+reaches the **active** market first, and the **thin** market's price catches up later, whichever of the two is the
+"news" question. If so, the lead is about activity, not about news against price. That also links the earlier
+studies: the asset opens where the odds moved (S4, S5) because the asset was shut, which is the extreme case of a
+thin market.
+
+*Pairs.*
+- **Type B (primary): two event questions linked to the same ticker** (links from `s8_open_referee.run.links()`;
+  SPY already dropped). The pair's sign is the product of the two link directions; a pair linked through several
+  tickers with conflicting signs is dropped. All hours, the whole history in the S5 and S4 caches (one-minute). Not
+  seen before this amendment at a resolution finer than the overnight readings of S4, S5 and S8.
+- **Type A: an event question and a price market on the asset its link names**: crude (the oil tickers), gold (GLD),
+  and the six stocks with price markets (MSFT, AMZN, GOOGL, NVDA, TSLA, META). Sign = link direction × the market's
+  sign. Weekend windows only (the S9 cache), Part 1's window. The crude pairs were seen in Part 1 as an index; here
+  they enter pair by pair.
+
+*Definitions on the five-minute grid.* A pair-bin at `t` counts if both prices are valid (5-minute validity) and
+between 5% and 95% at `t − 5 min`. **Activity** of a market at `t`: the number of minutes in the hour before `t`
+in which its one-minute price changed. The **active** member of a pair-bin is the one with more activity (ties
+dropped); the other is the **thin** member. A market is **stale** at `t` if its price did not change in the 15
+minutes before `t`.
+
+*Tests (before costs).* Through-origin slopes, errors clustered by New York date (type B) or weekend (type A):
+- **M1, activity decides the direction.** The thin member's change over `(t, t + h]` on the active member's change
+  over `(t − 5 min, t]` (signed by the pair's sign), and the reverse, for h = 5, 15, 30 minutes. The difference
+  between the two slopes, with a 95% interval from resampling clusters (1,000 draws, seed 0).
+- **M2, staleness carries the lag.** The active → thin slope split by whether the thin member is stale at `t`; and
+  the same-bin slope (thin's change over `(t − 5 min, t]` on active's) in the same two groups. The prediction: a stale
+  follower shows little same-bin response and more later; an active follower responds mostly in the same bin.
+- Reported for type B and type A separately, and for type B by the news-versus-news direction too (no change in
+  rules).
+
+*M3, can the stale side be picked off?* Type B (primary) and type A (variant). Signal: the active member of a pair
+jumps (3+ points in 5 minutes or 5+ in 15, from a price between 5% and 95%) while the other member is stale.
+Trade the stale member on the side the jump implies, at its mid one minute later, moved by the half-spread (event
+questions 0.5 point, S8; price markets Part 1's class values, stocks 2.5) plus a 0.04 × P × (1 − P) taker fee
+(event questions, as S8; price markets their own fee). Exit 30 minutes later on the same terms. One trade per pair
+per 30 minutes; at most 10 trades per New York date (type B) or weekend (type A), in time order. 1× and 2× costs.
+Out-of-sample: the most recent 20% of dates (type B) or weekends (type A) with a trade. **Print check** on every
+entry exactly as in section 6 (condition ids from Polymarket's catalogue by market id). Success criterion: the same
+as section 7's trade criterion, with "OOS weekends" read as "OOS dates" for type B (at least 10).
+
+*Success criteria for the mechanism (type B, fixed now).* **M1 holds** if the active → thin slope at 5 minutes is
+positive with t ≥ 2 and its difference from the thin → active slope is positive with an interval excluding zero.
+**M2 holds** if the active → thin slope at 15 minutes is larger for stale followers than for active ones, with an
+interval of the difference excluding zero. Type A is reported against the same rules. Anything else is reported as a
+null.
+
+*Caveat known now.* "Stale" is read from a one-minute price history that Polymarket fills in every minute. A price
+that does not change can be a quote nobody moved, or no quote worth trading. The print check is what tells them
+apart, and only for recent prints (the latest 20,000 per market).
