@@ -9,7 +9,7 @@ const {
 
 const DIR = __dirname;
 const FONT = "Arial";
-const SIZE = 20; // half-points: 10pt
+const SIZE = 22; // half-points: 11pt
 
 // Parse "**bold**" and "*italic*" inline markers into runs.
 function runs(text) {
@@ -55,8 +55,8 @@ function floatImage(file, wIn, hIn, offsetIn = 0) {
 const title = new Paragraph({
   spacing: { after: 60 },
   children: [new TextRun({
-    text: "(MASSIVE 8-K CHALLENGE) PolyBridge: NO TRADE – The Option Chain Already Priced the Headline",
-    bold: true, font: FONT, size: 22,
+    text: "(MASSIVE 8-K) PolyBridge: NO TRADE – The Option Chain Already Priced the Headline",
+    bold: true, font: FONT, size: 24,
   })],
 });
 
@@ -77,16 +77,20 @@ const body = [
 
   para("**How we tested it:** Hypotheses, tags, pass rule and forecast were committed to git before any data (HYPOTHESIS.md, HYPOTHESIS_TAGS.md, FORECAST.md); the out-of-sample run sits behind a frozen tag (method-freeze) and a one-run guard. **Entry is conservative:** every filing is treated as public after the close, so the trade enters at the close of the next session and never trades on an intraday filing it could not have seen. **Pass rule:** the 97.5% bootstrap interval of the edge over ordinary days lies above zero at **2 or more** of 21 sessions, 42 sessions and expiry, with the ratio moving the predicted way there. Fewer than 2 testable horizons is **INSUFFICIENT**, not NULL."),
 
+  para("**What is new in our link:** The starter pairs a filing category with a strategy; we pair it with a pricing mechanism and test both its P&L and its fingerprint on the chain. The parity ratio turns “did the trade make money” into “where in the option’s life did the chain misprice”, so even a null locates the error: day one or the follow-through. The two families were chosen to bend the ruler in **opposite directions** (H1 under-priced risk, H2 over-priced demand), so one volatility regime cannot make both pass. And the conservative entry, the cross-family exclusion and the placebo on the same names were fixed before any data, which is what makes the bounds worth quoting."),
+
   para("**What we found:** Neither hypothesis passes, in or out of sample (Graph 2). In-sample both are **NULL**: H1’s edge is **+0.07%** at 21 sessions [−2.70, +2.91], **+0.49%** at 42 and **+3.33%** at expiry; H2’s is **+0.09%**, **+0.21%** and **+0.92%**, every headline interval straddling zero. Out of sample H1 is **INSUFFICIENT** (3 events) and H2 is **NULL with its sign reversed**: **−2.15%** at 21 sessions [−7.59, +2.03] and **−1.38%** at 42. The decay curve shows why: 2026 restructurings moved far more than priced in the first week (ratio above 1 with 95% confidence at 3 and 5 sessions, 7 events), the opposite of H2. **Sensitivity:** across expiry bucket × OTM distance (3%, 5%, 10%) at 21 sessions, H1’s edge ranges **−0.67%** to **+0.68%** and H2’s **+0.08%** to **+1.24%**. **By category** (exploratory atlas, at most 15 events a tag): no H1 tag clears zero; restructuring plans alone with the cash-secured put do (**+2.57%** at expiry [+0.95, +4.51], 14 events, q = 0.014), a lead for the next pre-registered test, not a result.",
     { image: floatImage("graph2_edges.png", 3.75, 2.5, 0.02) }),
 
   para("**Trade realism:** As specified, the trade buys (H1) or sells cash-secured (H2) the 5%-out-of-the-money 3–6-month put at the next close and exits at 21 sessions. A **5%** premium haircut each way costs **28–29 bp** of the stock price; real half-spreads where Massive quotes exist are **26–29 bp**. Net of costs the edge over ordinary days is **+11 bp** for both families, inside the noise (+14 to +15 bp at doubled costs, since the haircut hits events and ordinary days alike). **Capacity:** the median put traded **34** (H1) and **49** (H2) contracts on the entry day, so at 10% participation a desk fills 3–5 contracts an event, about **$0.1M** of stock notional, on roughly **1.3** H1 and **1.0** H2 events a month."),
 
-  para("**Catalyst, the judges’ sealed window:** Before running any window outside 2024–2025 we committed a forecast. Out of sample it got “no pass” and the H2 count right (about 8; 7 reached 21 sessions), and missed the H1 count (about 11; 3 arrived), the interval widths (2–3x wider) and all three signs it could score. **For the sealed window it predicts:** a 3-month window gives about 4 H1 and 3 H2 events, so **INSUFFICIENT** for both; 4–5 months NULL or INSUFFICIENT; 6 months or longer **NULL** for both. A PASS would contradict our forecast. The notebook prints this forecast beside the sealed-window verdict, from one switch (RUN_HOLDOUT)."),
+  para("**Catalyst, the judges’ sealed window:** Before running any window outside 2024–2025 we committed a forecast. Out of sample it got “no pass” and the H2 count right (about 8; 7 reached 21 sessions), and missed the H1 count (about 11; 3 arrived), the interval widths (2–3x wider) and all three signs it could score. **For the sealed window it predicts:** a 3-month window gives about 4 H1 and 3 H2 events, so **INSUFFICIENT** for both; 4–5 months NULL or INSUFFICIENT; 6 months or longer **NULL** for both. A PASS would contradict our forecast. The notebook prints it beside the sealed-window verdict."),
 
   para("**What a portfolio manager can use:** After these filings, buying protection at the next close does not overpay by more than the bounds above, so a holder who wants the hedge need not wait for implied volatility to fall; selling restructuring puts for a premium is not a strategy at this size. For PolyBridge the result is the one the thesis needs: the chain is a straight enough ruler after corporate headlines to price thinner markets against."),
 
-  para("**Risks to our call: (1) Too few events to see a real edge.** *Mitigant:* we state bounds, not “no effect”; a litigation or cyber wave adds power and the forecast says what it would take. **(2) Spot is inferred and marks are daily last trades.** *Mitigant:* entry and exit use the same construction, so the error largely cancels, and real half-spreads confirm the haircut. **(3) Static top-100 list (survivorship).** *Mitigant:* events and ordinary days come from the same companies, so the bias largely nets out of the edge. **(4) The 2026 first-week bend is real.** *Mitigant:* it is our next pre-registered test, with restructuring plans alone and H2 entry a few sessions after the filing, on a window with power to detect a 0.5% edge.",
+  para("**How PolyBridge uses the result:** The product gates every signal on its own pre-registered test, in code. Because neither family passed, PolyBridge shows 8-K tags as untested and never lets them size a hedge. The study still does work for the product: it is evidence that the chain is a fair reference after corporate headlines, which is the price we hold thinner prediction markets against. If the sealed window or the 2026 follow-up passes, the gate opens for that family alone."),
+
+  para("**Risks to our call: (1) Too few events to see a real edge.** *Mitigant:* we state bounds, not “no effect”; a litigation or cyber wave adds power and the forecast says what it would take. **(2) Spot is inferred and marks are daily last trades.** *Mitigant:* entry and exit use the same construction, so the error largely cancels, and real half-spreads confirm the haircut. **(3) Static top-100 list (survivorship).** *Mitigant:* events and ordinary days come from the same companies, so the bias largely nets out of the edge. **(4) The 2026 first-week bend is real.** *Mitigant:* it is our next pre-registered test, on a window with power to detect a 0.5% edge.",
     { after: 0 }),
 ];
 
