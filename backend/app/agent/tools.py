@@ -183,7 +183,9 @@ async def _fit(request: Request, a: dict):
         body["market"] = m
     out = _dump(await pr.pipeline_fit(FitRequest(**body), request))
     score = out.get("score")
-    how = "Gemini suggested" if str(out.get("llm") or "").startswith("gemini") else "A rules-based pick:"
+    llm_by = str(out.get("llm") or "")
+    how = ("Gemini suggested" if llm_by.startswith("gemini") else "OpenAI suggested" if llm_by.startswith("openai")
+           else "A rules-based pick:")
     s = (f"For {str(body['ticker']).upper()} {how} a {out.get('family') or 'default'} hedge for a {out.get('event_class')} event"
          + (f", replay score {score:.2f} on {out.get('n_ticks') or 0} historical ticks" if isinstance(score, (int, float))
             else ", unscored") + f". {out.get('rationale', '')}")

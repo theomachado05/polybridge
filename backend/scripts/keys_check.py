@@ -3,7 +3,8 @@
     make keys-check
 
 Prints present / missing for each key the app reads (never a value), and whether web/.env.local names a voice agent.
-When GEMINI_API_KEY is present it runs the full Gemini check (scripts/gemini_check.py). When ELEVENLABS_API_KEY is
+When OPENAI_API_KEY is present it runs
+the full OpenAI check (scripts/openai_check.py); when GEMINI_API_KEY is present it runs the full Gemini check (scripts/gemini_check.py). When ELEVENLABS_API_KEY is
 present it makes read-only ElevenLabs calls: GET /v1/user/subscription, and GET /v1/convai/agents/{id} when an agent
 id is known (does it exist, how many tools does it have).
 
@@ -24,7 +25,7 @@ from app.keys import KNOWN_KEYS, REPO, env_key, mask  # noqa: E402
 ENV_LOCAL = REPO / "web" / ".env.local"
 
 
-def main(transport=None, gemini_run=None, out=print, env_local: Path = ENV_LOCAL) -> int:
+def main(transport=None, gemini_run=None, out=print, env_local: Path = ENV_LOCAL, openai_run=None) -> int:
     present = {}
     for label, names in KNOWN_KEYS:
         present[label] = any(env_key(n) for n in names)
@@ -33,6 +34,16 @@ def main(transport=None, gemini_run=None, out=print, env_local: Path = ENV_LOCAL
     out(f"{'present' if agent_id else 'MISSING':<8} {el.ENV_VAR} (web/.env.local)"
         + (f" = {mask(agent_id)}" if agent_id else ": run make voice-agent once ELEVENLABS_API_KEY is set"))
     failed = 0
+
+    out("")
+    if present["OPENAI_API_KEY"]:
+        out("== OpenAI")
+        if openai_run is None:
+            import openai_check
+            openai_run = lambda: asyncio.run(openai_check.run(env_key("OPENAI_API_KEY"), out=out))  # noqa: E731
+        failed += openai_run() != 0
+    else:
+        out("== OpenAI: skipped (no OPENAI_API_KEY; the AI pipeline uses Gemini when its key is set, else rules)")
 
     out("")
     if present["GEMINI_API_KEY"]:
