@@ -1,0 +1,52 @@
+{
+ "sessions": 253,
+ "first": "2025-10-01",
+ "last": "2026-10-02",
+ "recent_from": "2026-07-23",
+ "universe_counts": {
+  "events": 2400,
+  "events_dropped_by_tag": 1846,
+  "markets_seen": 7601,
+  "in_s4": 56,
+  "by_word": 162,
+  "low_volume": 5770,
+  "short_life": 444,
+  "stopped_at_offset_true": 2100,
+  "last_event_volume_true": 3484769.059747
+ },
+ "universe_candidates": 892,
+ "label_stats": {
+  "questions": 240,
+  "both_event": 124,
+  "named_by_one": 47,
+  "agreed": 220,
+  "opposite_direction": 0,
+  "markets_with_link": 93
+ },
+ "links": 220,
+ "links_with_data": 220,
+ "link_days": 14439,
+ "markets_in_test": 93,
+ "tickers_in_test": 27,
+ "dates_in_test": 252,
+ "weekend_closures": 55,
+ "gap_sd_bp": 125.49383839550059,
+ "share_moves": {
+  "2 to 5": 0.13657455502458618,
+  "5 to 10": 0.05879908580926657,
+  "10 or more": 0.03310478564997576
+ },
+ "p1": {
+  "sample": "all link-days",
+  "relation": "opening gap on overnight odds move",
+  "n": 14439,
+  "slope": 6.875493719786516,
+  "se": 1.1443497194077963,
+  "t": 6.008210255292063,
+  "sign_agree": 0.5461890654457312,
+  "n_nonzero": 11139,
+  "clusters": 252
+ },
+ "pull_failures": [],
+ "run_seconds": 1.6
+}

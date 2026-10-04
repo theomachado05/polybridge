@@ -99,7 +99,7 @@ Each at 1× and 2× costs. The deflated Sharpe ratio uses 4 trials.
 
 ## Amendments
 
-**Note, 2026-10-04 00:47 UTC, before any S5 price was pulled: how deep the event scan went.** The gamma API refuses
+**Note, 2026-10-04 00:49 UTC, before any S5 price was pulled: how deep the event scan went.** The gamma API refuses
 event offsets above 2,000. The scan of resolved events stopped there, at an event volume of $3.5 million; open events
 ran out on their own. A market cannot have more volume than its event, and the last of the 240 kept markets has $6.5
 million, so nothing below the cut-off could have entered the list. Scan counts are in `universe.json`: 2,400 events

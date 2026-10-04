@@ -130,13 +130,13 @@ reported as that.
 
 ## Amendments
 
-**Amendment 1, 2026-10-04 00:27 UTC, before any test-sample price was pulled: 5-minute equity bars.** Section 2 says
+**Amendment 1, 2026-10-04 00:25 UTC, before any test-sample price was pulled: 5-minute equity bars.** Section 2 says
 1-minute equity bars. One-minute bars for 66 tickers over nine months would not fit on the disk that is left.
 Five-minute regular-session bars are used instead. Nothing in the rules changes: the open is the open of the 09:30
 bar, the 10:00 exit is the close of the 09:55 bar, the 30-minute gate bins are six bars. The capacity figure of
 section 3 uses the first five minutes instead of the first minute. Polymarket odds stay at 1 minute.
 
-**Amendment 2, 2026-10-04 00:34 UTC, after the S4 run: an exploratory follow-up, S4c (pre-market).** The run showed
+**Amendment 2, 2026-10-04 00:33 UTC, after the S4 run: an exploratory follow-up, S4c (pre-market).** The run showed
 that the linked equity's opening gap lines up with the overnight move in odds and that nothing follows after 09:30.
 The open question is whether the equity already reflects the odds *before* the open, in the pre-market, where it can
 be traded. S4c was designed after seeing the S4 result, so it is **exploratory** and is not part of the success
