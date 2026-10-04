@@ -46,6 +46,8 @@ Notes on the rows:
 - **S1 twin spread: not a pass.** 15 of 99 out-of-sample entries are print-verified, against the 50% the criterion required. The modelled backtest's Sharpe of 7.16 is an artifact of an assumed Polymarket spread (section 9; `research/results/s1_twin_spread/SUMMARY.md`).
 - **S4 linked-asset trade: too few observations, and negative.** 12 out-of-sample trades, -47.1 bp net each; the open (and the 08:00 pre-market price) already carries the odds move (section 9; `research/results/s4_linked_assets/SUMMARY.md`).
 - **S5 continuation trade: not a pass.** After an overnight odds move of 10 points or more, buying the linked equity at the open lost 14.0 bp per trade on 94 trades [-50.9, +24.1] (section 9; `research/results/s5_big_moves/SUMMARY.md`).
+- **S6 Monday fade: too few observations.** 16 out-of-sample trades; 21 print-verified entries in the year, +$14.02 each with an interval through zero (section 9; `research/results/s6_monday_fade/SUMMARY.md`).
+- **S7 weekend straddles: a loss.** -17.7% of the premium per flagged trade, no better than ordinary weekends (section 9; `research/results/s7_weekend_straddle/SUMMARY.md`).
 - **S3 three-way consistency: no trade.** The primary rule fired 0 times in 60 matched sets on 33 dates (section 9; `research/results/s3_three_way/SUMMARY.md`).
 - Also in the table above: the replication, the fit walk-forward, the 8-K out-of-sample run, R1 hedge A and R3's net residual gap all failed or were NULL.
 
@@ -190,7 +192,7 @@ For the note's "Liquidity and capital" and "Risk management" criteria. This is w
 
 ---
 
-## 9. Weekend and cross-venue alpha: S1 twin spread, S3 three-way, S4 linked assets, S5 replication (pre-registered; forward tests pending)
+## 9. Weekend and cross-venue alpha: S1 twin spread, S3 three-way, S4 linked assets, S5 replication, S6 Monday fade, S7 weekend straddles (pre-registered; forward tests pending)
 
 Added 2026-10-03 evening. Brief: `research/ALPHA_BRIEF.md`. Both methods were committed before any data was pulled for them (`research/s1_twin_spread/METHOD.md`, commit `8260548`; `research/s3_three_way/METHOD.md`, commit `83ce137`; amendments are dated in each file). Sources: `research/results/s1_twin_spread/SUMMARY.md`, `metrics.csv`, `trades.csv`, `RUN_LOG.md`; `research/results/s3_three_way/SUMMARY.md`, `metrics.csv`, `sets.csv`.
 
@@ -220,6 +222,18 @@ Added 2026-10-03 evening. Brief: `research/ALPHA_BRIEF.md`. Both methods were co
 - **The pre-registered continuation trade is not a pass:** 94 trades, 15 tickers, 46 dates, -14.0 bp net per trade [-50.9, +24.1] at 1x costs, -20.6 bp at 2x. The +39 bp hint in S4 did not survive.
 - **Inside the session each leads the other by too little to trade (exploratory, 1.13 million 5-minute link-bins).** After a 3-point jump in the odds the equity adds +2.05 bp over 30 minutes [-0.21, +4.56]; trading it: 1,469 trades, +1.8 bp before costs, -4.3 bp after [-6.9, -1.8]. After a 50 bp jump in the equity the odds add +0.12 point over 30 minutes [+0.07, +0.16], against a Polymarket round trip of about 2.0 points (live books of 18 open linked markets on 2026-10-03: one spread plus two fees, quartiles 1.2 to 2.4).
 - **The odds give back part of an overnight move during the next session (exploratory, 6,229 market-days):** slope -0.127 (t = -3.21); after moves of 10 points or more, -2.86 points [-4.37, -1.40] by the close (198 cases, 92 dates). About the size of the cost of trading it, not significant by the next morning (-1.87 [-4.23, +0.44]) or on weekends alone, and bid-ask bounce in the price history would look the same. Not an edge on this evidence.
+
+**S6, Monday morning: bet with the options against Polymarket, on Polymarket.** R3's 1,535 events over 45 closures; trade when Polymarket at 09:45 sits 2 points or more beyond the options' band after a 4.5-point half-spread (measured on this weekend's recorded books) and the fee; held to resolution. Source: `research/results/s6_monday_fade/SUMMARY.md`; method commit `7ef1a8d`.
+
+- **Verdict: too few observations** (16 out-of-sample trades on 6 closures; 30 needed).
+- **Confirmed entries:** 21 of 187 entries have a Polymarket trade print at the assumed price; 15 of the 21 won; +$14.02 per trade of up to 100 contracts, closure-bootstrap interval -3.99 to +36.94.
+- **The modelled figure is not evidence:** all 187 entries +$20.14 per trade [15.08, 26.28], Sharpe 4.27; 54 of them have a Polymarket price between 0.45 and 0.55, the midpoint of an empty book. The pre-registered bug hunt found the same artifact as S1.
+- **Capacity:** a median of $2.33 at the best price on this weekend's books of 158 such markets.
+
+**S7, Friday straddles when the prediction market shows a live event.** For tickers linked to a question whose odds are between 10% and 90% and moving 4 points a night, buy an at-the-money straddle at Friday 15:55 at the ask, sell it at Monday 09:45 at the bid, real NBBO quotes; against the same trade on matched ordinary weekends. 55 weekends, 505 trades with all four quotes. Source: `research/results/s7_weekend_straddle/SUMMARY.md`; method commit `8b4e914`.
+
+- **Verdict: too few out-of-sample observations (3 trades), and over the whole year a clear loss.** Flagged straddles returned -17.7% of the premium [-20.8, -14.7] on 161 trades, -30.4% at 2x costs; control straddles -17.6%; flagged minus control -0.1% [-3.9, +3.7].
+- **Options were not too cheap.** Mid to mid, with no costs: -1.0% flagged against -2.0% control. The underlying did move more on flagged weekends (129 bp against 105 bp), and the options had priced it.
 
 **Forward tests.** Live order books of the 33 twin pairs (every 15 s) and of 660 threshold markets (every 30 s) have been recorded since Sat 2026-10-03 19:09:48 ET (`research/forward/README.md`). S1 and S3 are run on them as paper tests with rules frozen before the window (Sat 20:00 ET to Sun 07:00 ET); results go into the two SUMMARY files.
 
