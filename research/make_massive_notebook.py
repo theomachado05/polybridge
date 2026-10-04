@@ -232,6 +232,78 @@ and the put dear; the protective put earned through the stock it owns. That is a
 stress regimes. H2 in 2022 is NULL: +0.48% at 21 sessions [−1.72, +2.22].
 """
 
+H3_MD = r"""
+## 10 · H3: sell the put after bad-news filings (discovered on 2022)
+
+Section 9's decomposition points at a different trade. In stress, bad news is oversold and puts are dear, so the trade
+paid by both is to **sell** the put: after an H1 filing (the 7 frozen tags), sell the 5%-out-of-the-money 3–6 month put
+at the close of the session after the filing (conservative timing), cash-secured, and hold it. The put seller is paid by
+the rebound and by the premium. Edge = the same trade on ordinary days of the same companies; PASS if the 97.5% interval
+lies above zero at 2 or more of 21 sessions, 42 sessions and expiry. **High fear**: the event's implied move at entry is
+at least 14%, applied to events and ordinary days alike; all H1 events are reported as the secondary scope.
+
+The rule was committed in `s28_sell_fear/METHOD.md` (commit `f9468bf`) before the high-fear filter touched any window.
+**2022 formed the hypothesis, so its numbers are not evidence for it.** The confirmatory test is the sealed window below.
+"""
+
+H3 = r'''
+import sys
+if str(Path.cwd()) not in sys.path:
+    sys.path.insert(0, str(Path.cwd()))     # s28_sell_fear lives next to this notebook in research/
+try:
+    from s28_sell_fear.run import high_fear, h3
+except ImportError:
+    high_fear = h3 = None
+    print("s28_sell_fear not found (notebook opened outside the repo); the committed H3 run is in results/s28_sell_fear/SUMMARY.md.")
+
+
+def h3_rows(st, years, window):
+    """H3 on one study: all H1 events and the high-fear subset, cash-secured put minus ordinary days."""
+    ev, pl = of_family(st["results"], "hedge"), of_family(st["placebo_results"], "hedge")
+    rows = []
+    for scope in ("all H1", "high fear"):
+        a, b = (ev, pl) if scope == "all H1" or not len(ev) or not len(pl) else (high_fear(ev), high_fear(pl))
+        d, v, ok, n, s_ev, s_pl = h3(a, b, cfg, years)
+        row = {"window": window, "scope": scope, "verdict": v, "events_21": n}
+        for hz in (21, 42):
+            x = d[d.horizon == hz] if len(d) else d
+            if not len(x) or pd.isna(x.difference.iloc[0]):
+                row[f"edge_{hz}"] = "too few events"
+            elif pd.isna(x.ci_lo.iloc[0]):
+                row[f"edge_{hz}"] = f"{100 * x.difference.iloc[0]:+.2f}% (no interval)"
+            else:
+                row[f"edge_{hz}"] = f"{100 * x.difference.iloc[0]:+.2f}% [{100 * x.ci_lo.iloc[0]:+.2f}, {100 * x.ci_hi.iloc[0]:+.2f}]"
+        row["sharpe_21_events_vs_ordinary"] = f"{s_ev:.2f} vs {s_pl:.2f}"
+        rows.append(row)
+    return rows
+
+
+if h3 is not None:
+    if fresh is None:
+        print("2022 not run (RUN_FRESH_2022 = False); showing 2024-25 and 2026 only. The committed 2022 run is in results/s28_sell_fear/.")
+    h3_tab = []
+    for st, yrs, name in ((fresh, 1.0, "2022 (discovery)"), (study, 2.0, "2024-25 (seen)"),
+                          (globals().get("oos") if RUN_OOS else None, 8 / 12, "2026 (seen)")):
+        if st is not None:
+            h3_tab += h3_rows(st, yrs, name)
+    h3_tab = pd.DataFrame(h3_tab)
+    with pd.option_context("display.width", 200, "display.max_colwidth", 40):
+        print("H3: cash-secured put after H1 filings minus ordinary days (97.5% CI; Sharpe at 21 sessions, annualised)")
+        print(h3_tab.to_string(index=False))
+'''
+
+R_H3 = r"""
+**Reading.** On 2022, where H3 was discovered, it shows the pass shape: all 12 H1 events +1.73% [+0.33, +3.11] at 21
+sessions and +2.25% [+0.51, +4.06] at 42, Sharpe 3.34 against 0.11 on ordinary days; the 7 high-fear events +2.17% and
++2.63%, Sharpe 3.56. That is the discovery, not evidence. On 2024–25 (seen, calm) H3 is **NULL**: all H1 +0.03% at 21
+sessions, and high fear −1.38% [−5.61, +2.02] on 8 events. **The stock-level fear filter failed**: high-fear filings in a
+calm market did not rebound. What separated 2022 looks like market-wide stress, and that condition has not been defined or
+tested; no condition is added after the fact. 2026 is INSUFFICIENT (1 and 3 events). The sealed window is H3's
+confirmatory test.
+
+2023 out-of-sample: see results/s28_sell_fear/oos_2023-01-01_2023-12-31.json
+"""
+
 CONCLUSION = r"""
 ## What this says about the thesis
 
@@ -241,6 +313,8 @@ the news rather than from cheap puts (section 9). Otherwise the option chain at 
 about right: within roughly 3% of the stock price for post-headline protection and 0.9% for restructuring
 puts over 2024–2025, and too few or too noisy events since. The mechanisms left traces in the right direction (H1's decay
 shape, H2's stable sensitivity sign), but not edges a desk could trade after costs and at this capacity.
+H3 is the conditional trade (sell the put after bad-news filings in market stress): discovered on 2022 with Sharpe 3.34,
+flat in calm 2024–25, and tested independently on the sealed window.
 
 That is the result PolyBridge's premise needs. We use the chain as the reference price for thinner markets, and this study
 finds no headline-driven bend large enough to matter. The one bend we saw, restructurings in 2026 moving far more than
@@ -258,6 +332,11 @@ have not resolved by today are absent rather than guessed.
 **What we predicted** ([FORECAST.md](FORECAST.md), committed before any window outside 2024–2025 was run): a 3-month window
 gives about 4 H1 and 3 H2 events, too few for an interval, so INSUFFICIENT for both; 4–5 months NULL or INSUFFICIENT;
 6 months or more NULL for both. A PASS would contradict the forecast and we would call it a surprise, not a confirmation.
+
+**H3 is tested here too** (section 10, rule committed in `s28_sell_fear/METHOD.md`, `f9468bf`): the cash-secured put
+after H1 filings, high-fear events and all H1 events, against ordinary days. This is its first confirmatory test.
+Forecast: a calm window gives few high-fear events and a null (or INSUFFICIENT); a stressed window should show the edge at
+21 and 42 sessions.
 """
 
 HOLDOUT = r'''
@@ -305,6 +384,14 @@ if RUN_HOLDOUT:
                 plt.show()
         else:
             print(f"[{fam}] no priced events or no placebo in this window")
+    if h3 is not None:
+        h3_hold = pd.DataFrame(h3_rows(holdout, months / 12, f"sealed {HOLDOUT_START}..{HOLDOUT_END}"))
+        with pd.option_context("display.width", 200, "display.max_colwidth", 40):
+            print("H3 on the sealed window: cash-secured put after H1 filings minus ordinary days (97.5% CI)")
+            print(h3_hold.to_string(index=False))
+        for r in h3_hold.to_dict("records"):
+            rows.append({"family": f"H3 {r['scope']} (cash_secured_put)", "events_at_21": r["events_21"], "verdict": r["verdict"],
+                         "our_forecast": "NULL or INSUFFICIENT if calm; edge at 21 and 42 if stressed"})
     show(pd.DataFrame(rows).set_index("family"), "Sealed window: verdict against our committed forecast")
     book_report(holdout, months / 12, f"Sealed window {HOLDOUT_START} to {HOLDOUT_END}")
 else:
@@ -395,6 +482,7 @@ new = [md(INTRO), code(INSTALL), code(CONFIG), reuse(2), code(BOOK_FN),
        md("## 8 · Out-of-sample, 2026-01-01 to 2026-08-31\n\nThe frozen pipeline, exits pinned to 2 October 2026 as in the single committed run (`results/oos/`)."),
        code(OOS), md(R_OOS),
        md(FRESH_MD), code(FRESH), md(R_FRESH),
+       md(H3_MD), code(H3), md(R_H3),
        md(HOLDOUT_MD), code(HOLDOUT),
        md(CONCLUSION), reuse(14)]
 
