@@ -1,0 +1,10 @@
+{
+  "run_utc": "2026-10-04T04:58:37.932767+00:00",
+  "evidence_selection": "ACTUAL_VWAP_50_TO_75",
+  "engineering_pilot": "SPY monthly barriers",
+  "fresh_validation": false,
+  "assessment": "Share with caveats",
+  "micro_metrics_sha256": "4140bd3ffdeb2ea0fbe2a789bc94237b7a7fa71fb707d80684002357beaa3073",
+  "actual_funded_daily_sharpe_verified": false,
+  "market_metadata_requests": 11
+}
