@@ -12,3 +12,12 @@
 - Verdict: PASS
 - Single run, no rerun. Massive quote cache shared at the scratchpad `shared_massive_cache/` (keyed by sha1 of the quote URL, i.e. contract and second).
 - Note added after the run (no rule changed): no monthly market produced a scored row (status of the 1,048 monthly rows: pm_extreme 640, no_clean_expiry 397, pm_placeholder 11), so the kind split shows daily and weekly only.
+
+## H3 run
+
+- Commit: `52c053d`
+- Started 2026-10-04T00:24:36.282725+00:00, finished 2026-10-04T01:12:32.170347+00:00
+- Command: `cd research && SHARED_MASSIVE_CACHE=<shared dir> .venv/bin/python -m fresh_accuracy.run --h3`
+- Requests: {"api.elections.kalshi.com": 3875}; massive {"api.massive.com": 10127}
+- Failures: http 0, massive 0
+- Verdict: EQUIVALENT

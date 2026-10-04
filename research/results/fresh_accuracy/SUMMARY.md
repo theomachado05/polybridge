@@ -40,7 +40,15 @@ Option reference: mean half-band (p_hi - p_lo)/2 0.0663 (median 0.0230) per $1 o
 
 ## H3: Kalshi index equivalence (gated)
 
-Pending: run only if the primary is PASS and finished before 01:30 ET.
+**H3 verdict: EQUIVALENT.** 2,609 Kalshi S2 rows on 215 dates. Brier Kalshi 0.1382 vs options 0.1370, difference +0.0013, 90% CI [+0.0001, +0.0025] (equivalence margin +/-0.003), 95% CI [-0.0001, +0.0027]. Log score difference +0.0031 [-0.0022, +0.0082] (reported, not tested).
+
+| subset | rows | clusters | Brier Kalshi vs options | log score Kalshi vs options |
+|---|---|---|---|---|
+| all | 2609 | 215 | 0.1382 vs 0.1370, diff +0.0013 [-0.0001, +0.0027] | 0.4284 vs 0.4253, diff +0.0031 [-0.0022, +0.0082] |
+| series KXINXU | 1318 | 215 | 0.1353 vs 0.1337, diff +0.0016 [+0.0003, +0.0030] | 0.4209 vs 0.4161, diff +0.0048 [-0.0010, +0.0102] |
+| series KXNASDAQ100U | 1291 | 214 | 0.1413 vs 0.1403, diff +0.0010 [-0.0013, +0.0034] | 0.4360 vs 0.4346, diff +0.0014 [-0.0065, +0.0090] |
+
+Kalshi costs from data: mean half-spread 0.0273, mean taker fee 0.0091 per $1. Row status: {'scored': 2618, 'no_two_sided_candle': 728, 'pm_extreme': 40, 'snapshot_outside_life': 9, 'no_chain': 4}.
 
 ## Funnel
 
