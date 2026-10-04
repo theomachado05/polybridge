@@ -1,6 +1,7 @@
-// AI pipeline screen: the six steps, either mapped from POST /pipeline/fit (classify, shortlist,
-// history, tune, explain, ready) or, when the endpoint fails, the prototype's scripted steps (labelled demo).
+// Pipeline screen: the six steps mapped from POST /pipeline/fit (classify, shortlist, history, tune, explain, ready),
+// or, when no fit can run, the real facts of the pick and the engine's default spec (never scripted numbers).
 import type { FitOut } from "./api";
+import { aiLabel, aiStatus, classifiedByGemini } from "./ai.ts";
 import { fmtPct, prettyId } from "./fmt.ts";
 
 export type OrbState = "connecting" | "working" | "searching" | "composing" | "breathing" | "listening";
@@ -11,7 +12,6 @@ export interface PipeContext {
   ticker: string; held: number;
   move: number; rev: number | null; brand: number | null; why: string;
   shortlisted?: string[];   // family ids from GET /library for the fitted class
-  real?: boolean;           // a live market with a real mapping: never show the prototype's invented lots/comps
   heldReal?: number;        // shares actually held (real path)
   libraryTotal?: number;    // preset count GET /library reports (no number is shown without it)
   noDirection?: boolean;    // live market, ticker outside its mapping: no hedge was fitted (adverse outcome unknown)
@@ -110,6 +110,7 @@ function tuneText(fit: FitOut, fam: string, alts: FitOut["alternatives"]): strin
 }
 
 export function fitSteps(fit: FitOut, c: PipeContext): PipeStep[] {
+  const ai = aiStatus(fit);
   const cls = prettyId(String(fit.event_class || "unsupported"));
   const fam = fit.family ? prettyId(fit.family) : "no family";
   const alts = (fit.alternatives ?? []).filter((a) => a && a.family);
@@ -119,25 +120,25 @@ export function fitSteps(fit: FitOut, c: PipeContext): PipeStep[] {
     : fit.ticks_source === "replay" ? `Offline: ${fit.n_ticks.toLocaleString("en-US")} ticks from a recorded replay file (not live history).`
     : `No usable price history for this market, so presets were not replayed; the family default is used.`;
   return [
-    { key: "classify", name: "Classifying the event", orb: "searching", text: `${c.question.replace(/\?$/, "")} → ${cls} (${fit.llm === "gemini" ? "Gemini" : "keyword rules"}). Division: ${fit.division}.` },
+    { key: "classify", name: "Classifying the event", orb: "searching", text: `${c.question.replace(/\?$/, "")} → ${cls} (${classifiedByGemini(fit) ? aiLabel(ai).replace(/^AI · /, "") : "keyword rules"}). Division: ${fit.division}.` },
     { key: "shortlist", name: "Shortlisting algo families", orb: "connecting", text: short.length ? `${short.length} ${short.length === 1 ? "family covers" : "families cover"} ${cls}: ${short.slice(0, 5).map(prettyId).join(", ")}${short.length > 5 ? "…" : ""}.` : `No compiled family covers ${cls}.` },
     { key: "history", name: "Loading price history", orb: "working", text: history },
     { key: "tune", name: "Tuning presets on replay", orb: "searching", text: fit.family ? tuneText(fit, fam, alts) : "Nothing to tune." },
     { key: "explain", name: "Explaining the fit", orb: "composing", text: fit.rationale || "No rationale returned." },
-    { key: "ready", name: "Ready for your approval", orb: "listening", text: `AI fit for ${c.ticker}: ${fam}${fit.family ? (fit.division === "hedge" && fit.preset_index != null ? ` preset #${fit.preset_index}. It is sent with the proposal: once you approve, the bridge runs exactly this family and preset` : ` (${fit.division} family: not run on a hedge bridge, which uses the engine's default delta-bridge spec)`) : ""}. Next: you approve a proposal, then the engine starts.` },
+    { key: "ready", name: "Ready for your approval", orb: "listening", text: `${ai.live ? "AI fit" : "Fit (rules + C++ replay)"} for ${c.ticker}: ${fam}${fit.family ? (fit.division === "hedge" && fit.preset_index != null ? ` preset #${fit.preset_index}. It is sent with the proposal: once you approve, the bridge runs exactly this family and preset` : ` (${fit.division} family: not run on a hedge bridge, which uses the engine's default delta-bridge spec)`) : ""}. Next: you approve a proposal, then the engine starts.` },
   ];
 }
 
-export function demoSteps(c: PipeContext): PipeStep[] {
+/** The steps when no fit can run for a live pick: the fit failed (the screen shows the error and a retry) or the
+ *  outcome that hurts the ticker is unknown. Real facts only; approving then runs the engine's default spec. */
+export function noFitSteps(c: PipeContext): PipeStep[] {
   const held = c.heldReal ? `${c.heldReal.toLocaleString("en-US")} sh held` : `no position — sized to a ${c.held.toLocaleString("en-US")} sh notional`;
   return [
-    { key: "classify", name: "Parsing question", orb: "searching", text: `Resolution: ${c.question.replace("Will ", "").replace("?", "")} — sources: ${c.venues.join(" + ")}. Current YES ${c.yes}¢, 24h vol ${c.vol}.` },
-    { key: "shortlist", name: "Mapping exposure", orb: "connecting", text: c.real ? `${c.ticker}: ${held}.` : `${c.ticker}: ${c.held.toLocaleString("en-US")} sh across 3 lots (2 long-term). Fee schedule and account type loaded.` },
-    { key: "history", name: "Estimating impact", orb: "working", text: c.real
-      ? (c.move ? `Precomputed AI mapping: expected move on YES ${fmtPct(c.move)}. ${c.why}` : `No impact estimate for ${c.ticker} on this market; the engine hedges on probability alone (fee gate off).`)
-      : `Revenue ${c.rev == null ? "n/a" : fmtPct(c.rev)}, brand ${c.brand == null ? "n/a" : fmtPct(c.brand)} → expected move on YES ${fmtPct(c.move)} (confidence 0.71). ${c.why}` },
-    { key: "tune", name: "Searching algo library", orb: "searching", text: c.real ? (c.noDirection ? `No hedge fit: ${c.ticker} is not in this market's mapping, so the outcome that hurts it is unknown and no presets were scored.` : "Algo fit endpoint unavailable, so no presets were scored; the engine's default delta-bridge runs.") : `${c.libraryTotal ? `The library holds ${c.libraryTotal.toLocaleString("en-US")} presets. ` : ""}Scripted demo scoring on σ regime, venue latency, fee drag and tax fit: 61 pass; 6 sample algos compose.` },
-    { key: "explain", name: "Composing the chain", orb: "composing", text: c.real ? "Staleness → Sigma gate → No-trade band → Fee gate → Delta-bridge sizer → Position cap (hedgecore Engine)." : "Sigma Gate → Book-Imbalance Reader → Delta-Bridge v3 → Vol-Adaptive Slicer / Meridian TWAP → Tax-Lot Optimizer → Fee-Aware Router." },
-    { key: "ready", name: c.real ? "Ready for your approval" : "Backtesting on comps", orb: "listening", text: c.real ? (c.noDirection ? `The engine cannot orient a hedge for ${c.ticker} on this market, so it does not start an engine bridge; opening it shows the prototype's simulator.` : `Next: you approve a proposal for ${c.ticker}; then the engine's default delta-bridge spec runs on the market's live feed (or a replay).`) : `NYC LL18 and Barcelona 2028 ban: this chain would have captured 71% of ${c.ticker}'s event drawdown at 0.09% cost.` },
+    { key: "classify", name: "Reading the market", orb: "searching", text: `${c.question.replace(/\?$/, "")} · ${c.venues.join(" + ")}${c.yes ? ` · YES ${c.yes}¢, 24h vol ${c.vol}` : ""}.` },
+    { key: "shortlist", name: "Mapping exposure", orb: "connecting", text: `${c.ticker}: ${held}.` },
+    { key: "history", name: "Estimating impact", orb: "working", text: c.move ? `Mapping estimate: expected move on YES ${fmtPct(c.move)}. ${c.why}` : `No impact estimate for ${c.ticker} on this market; the engine hedges on probability alone (fee gate off).` },
+    { key: "tune", name: "Tuning presets on replay", orb: "searching", text: c.noDirection ? `No hedge fit: ${c.ticker} is not in this market's mapping and you have not said which outcome hurts it, so no presets were scored.` : "The fit did not answer, so no presets were scored; approving runs the engine's default delta-bridge spec." },
+    { key: "explain", name: "Composing the chain", orb: "composing", text: "Staleness → Sigma gate → No-trade band → Fee gate → Delta-bridge sizer → Position cap (hedgecore Engine, default spec)." },
+    { key: "ready", name: "Ready for your approval", orb: "listening", text: c.noDirection ? `The engine cannot orient a hedge for ${c.ticker} until you say which outcome hurts it (on Build).` : `Next: you approve a proposal for ${c.ticker}; then the engine's default delta-bridge spec runs on the market's recorded replay (or its live feed).` },
   ];
 }

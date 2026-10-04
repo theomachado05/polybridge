@@ -123,7 +123,8 @@ export interface EquityCard {
 export interface MapItem { ticker: string; direction: string; impact_pct: number | null; rationale: string | null }
 export interface MapCandidate { source_key: string; matched_question: string; score: number; items: MapItem[] }
 export interface MapOut {
-  source: "precomputed" | "none";
+  /** "ai_precomputed" (an LLM ahead of time, ai_map.json), "ai_live:gemini:<model>" (Gemini, now), or "none". */
+  source: "ai_precomputed" | "none" | string;
   label: string;
   match_type: "exact" | "fuzzy" | null;
   score: number | null;
@@ -248,6 +249,8 @@ export interface Exposure {
   rationale: string | null;
   remaining_usd: number;
   label: string;
+  /** Where the mapping came from (POST /map's `source`); absent on backends that only serve precomputed mappings. */
+  source?: string | null;
   match_type: string | null;
   matched_question: string | null;
   score: number | null;
@@ -359,7 +362,9 @@ export const getLiquidity = (ticker: string, p: { coverage?: number; qty?: numbe
   request<LiquidityEquity>(`/liquidity/${encodeURIComponent(ticker)}${Object.keys(p).length ? `?${qs(p)}` : ""}`);
 export const getCapital = () => request<CapitalOut>("/capital");
 
-export const getHealth = () => request<{ status: string }>("/health");
+/** GET /health; `ai` (when the backend reports it) says whether an LLM is configured and answering. */
+export interface HealthOut { status: string; ai?: { live?: boolean | null; model?: string | null; provider?: string | null } | null }
+export const getHealth = () => request<HealthOut>("/health");
 export const listProposals = () => request<Proposal[]>("/proposals");
 /** Explicit user action only. `ackUnvalidated` is the user's acknowledgement that the market's signal has not passed
  *  its out-of-sample test (the backend answers 409 EVIDENCE_UNVALIDATED without it on such a market). */
@@ -398,7 +403,7 @@ export const getPortfolio = () => request<PortfolioOut>("/portfolio");
 export const listVerdicts = () => request<TagVerdict[]>("/verdicts");
 
 // ---- v4 endpoints (spec §4 fit, §5 broker, §3.4/§9 library). Shapes are parsed defensively in the UI
-// because the backend streams land in parallel; every caller has a labelled demo fallback.
+// because the backend streams land in parallel; a caller whose endpoint fails shows the error with a retry.
 
 export type EventClass =
   | "macro_fed" | "elections" | "tariffs_trade" | "geopolitics_energy" | "housing" | "fig"
@@ -437,7 +442,14 @@ export interface FitOut {
   score: number | null;
   alternatives: FitAlternative[];
   rationale: string;
+  /** Which classifier answered this fit: "gemini" (or a Gemini model id) or "rules". The only basis for an "AI" label. */
   llm: "gemini" | "rules" | string;
+  /** The Gemini model, when the backend reports it. */
+  model?: string | null;
+  /** LLM provenance block (docs/contracts.md "AI provenance"): `steps` says what produced each step
+   *  (classify "gemini" | "rules", explain "gemini" | "template"); `live` alone does not mean Gemini classified. */
+  ai?: { live?: boolean | null; model?: string | null; provider?: string | null; cached?: boolean | null;
+    steps?: { classify?: string | null; explain?: string | null } | null; fell_back_reason?: string | null } | null;
   ticks_source: "live_history" | "replay" | "none" | string;
   n_ticks: number;
   /** What `score` measures (null or absent: unscored, or an older backend whose hedge score was the raw cut). */

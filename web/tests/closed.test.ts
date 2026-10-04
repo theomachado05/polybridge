@@ -11,7 +11,7 @@ import {
 } from "../src/lib/closed.ts";
 import { init, quantile, reduce } from "../src/lib/bridgeStream.ts";
 import { reusableBridge, startRealBridge, type BridgeApi } from "../src/lib/realBridge.ts";
-import { questionFromMarket, type EquityPick } from "../src/lib/demo.ts";
+import { questionFromMarket, type EquityPick } from "../src/lib/markets.ts";
 import type { Proposal, ProposalBody } from "../src/lib/api.ts";
 
 // The recorded weekend (us-recession-in-2025, validated) as the bridge reports it on a Saturday tick.

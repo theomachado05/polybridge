@@ -76,14 +76,17 @@ async def pipeline_fit(req: FitRequest, request: Request) -> FitResponse:
     cache: FitCache = request.app.state.cache_fit
     key = req.model_dump_json()
     hit = cache.get(key)
-    if hit is not None:
-        return hit
+    if hit is not None:  # say so: any Gemini call behind it happened earlier
+        return hit.model_copy(update={"ai": hit.ai.model_copy(update={"cached": True})})
     try:
         deps = _deps(request)
     except Exception:
         deps = Deps(adapter=EngineAdapter(module=None))
     value = await fit(req, deps)
-    if not value.rationale.startswith("The fit pipeline hit an internal error"):  # never cache a degraded answer
+    # Never cache a degraded answer, nor one where a Gemini call failed and rules/template stood in: that failure
+    # may be transient (503, timeout), and caching it would pin the fallback for the whole TTL, so Retry could not
+    # reach Gemini. A cached answer whose Gemini calls succeeded, or a rules-only answer with no key, stays cached.
+    if not value.rationale.startswith("The fit pipeline hit an internal error") and not value.gemini_failed:
         cache.put(key, value)
     return value
 

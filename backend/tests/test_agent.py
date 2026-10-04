@@ -5,7 +5,8 @@ from fastapi.testclient import TestClient
 from app.agent.tools import HANDLERS, NAMES
 from app.main import create_app
 
-EXPECTED = {"search_markets", "fit", "propose", "approve", "start_bridge", "bridge_status", "account", "positions"}
+EXPECTED = {"search_markets", "fit", "propose", "approve", "start_bridge", "bridge_status", "account", "positions",
+            "navigate"}
 
 
 @pytest.fixture
@@ -26,8 +27,11 @@ def test_tool_list_shape(client):
     assert {t["name"] for t in tools} == EXPECTED == NAMES == set(HANDLERS)
     routes = {(p, m.upper()) for p, ops in client.app.openapi()["paths"].items() for m in ops}
     for t in tools:
-        assert t["method"] in ("GET", "POST") and t["path"].startswith("/")
-        assert (t["path"], t["method"]) in routes, f"{t['name']} maps to a missing route"
+        if t.get("client_only"):  # runs in the browser (navigate): no backend route behind it
+            assert t["method"] is None and t["path"] is None
+        else:
+            assert t["method"] in ("GET", "POST") and t["path"].startswith("/")
+            assert (t["path"], t["method"]) in routes, f"{t['name']} maps to a missing route"
         assert 0 < len(t["description"]) < 140
         p = t["parameters"]
         assert p["type"] == "object" and set(p["required"]) <= set(p["properties"])
@@ -35,6 +39,23 @@ def test_tool_list_shape(client):
     for n in ("approve", "start_bridge"):
         t = next(t for t in tools if t["name"] == n)
         assert "confirm" in t["parameters"]["required"]
+
+
+def test_navigate_is_a_browser_only_tool_with_a_screen_enum(client):
+    t = next(t for t in client.get("/agent/tools").json()["tools"] if t["name"] == "navigate")
+    assert t["client_only"] is True and t["method"] is None and t["path"] is None
+    assert t["description"] == "Open a screen when the user asks to see something."
+    p = t["parameters"]
+    assert p["required"] == ["screen"] and set(p["properties"]) == {"screen", "bridge_id"}
+    assert p["properties"]["screen"]["enum"] == ["landing", "build", "pipeline", "bridge", "portfolio", "library",
+                                                 "profile", "connect"]
+    assert p["properties"]["bridge_id"]["type"] == "string"
+    # The dispatcher only echoes it (the page navigates itself); a bad screen is a speakable refusal.
+    j = call(client, "navigate", {"screen": "bridge", "bridge_id": "b1"}).json()
+    assert j["ok"] is True and j["data"] == {"screen": "bridge", "bridge_id": "b1"}
+    assert call(client, "navigate", {"screen": "portfolio", "bridge_id": "b1"}).json()["data"]["bridge_id"] is None
+    bad = call(client, "navigate", {"screen": "settings"}).json()
+    assert bad["ok"] is False and "cannot open settings" in bad["summary"]
 
 
 def test_unknown_tool_is_404(client):
@@ -76,6 +97,7 @@ def test_fit_dispatch_builds_request(client, monkeypatch):
 def test_propose_then_approve_requires_confirm(client):
     j = call(client, "propose", {"ticker": "ABNB", "shares_held": 100, "market_id": "m1", "direction": "down_on_yes"}).json()
     assert j["ok"], j
+    assert "unvalidated estimate" in j["summary"] and "acknowledgement" in j["summary"]
     pid = j["data"]["id"]
     for bad in ({}, {"confirm": False}, {"confirm": "true"}, {"confirm": 1}):
         r = call(client, "approve", {"proposal_id": pid, **bad})
@@ -152,3 +174,45 @@ def test_agent_secret_enforced_when_set(client, monkeypatch):
     monkeypatch.setenv("AGENT_TOOL_SECRET", "s3")
     assert client.post("/agent/tool/account", json={}).status_code == 401
     assert client.post("/agent/tool/account", json={}, headers={"X-Agent-Secret": "s3"}).status_code == 200
+
+
+def test_local_web_app_client_tools_need_no_secret(client, monkeypatch):
+    """The voice widget's client tools run in the browser page on localhost:3000, which cannot hold a secret."""
+    monkeypatch.setenv("AGENT_TOOL_SECRET", "s3")
+    ok = client.post("/agent/tool/account", json={}, headers={"Origin": "http://localhost:3000"})
+    assert ok.status_code == 200 and ok.json()["ok"] is True
+    assert client.post("/agent/tool/account", json={}, headers={"Origin": "https://evil.example"}).status_code == 401
+    tunnel = {"Origin": "http://localhost:3000", "X-Forwarded-For": "1.2.3.4", "Host": "abc.ngrok.app"}
+    assert client.post("/agent/tool/account", json={}, headers=tunnel).status_code == 401  # remote: secret still due
+    # confirm-gated tools stay gated for the browser too
+    r = client.post("/agent/tool/approve", json={"proposal_id": "x"}, headers={"Origin": "http://localhost:3000"})
+    assert r.json()["ok"] is False and r.json()["needs_confirmation"] is True
+
+
+def test_search_appends_matching_recordings(client, monkeypatch):
+    """A live search does not list resolved markets; the agent still learns the recorded demo weekend's id."""
+    from app import markets
+    from app.markets import Market, SearchOut
+
+    async def fake(q, request):
+        return SearchOut(markets=[Market(source="polymarket", id="m9", question="US recession in 2026?", yes_price=0.2)])
+    monkeypatch.setattr(markets, "markets_search", fake)
+    j = call(client, "search_markets", {"q": "recession"}).json()
+    assert j["ok"] and [m["id"] for m in j["data"]["markets"]] == ["m9", "516710"]
+    assert j["data"]["markets"][1]["recorded"] == "us-recession-in-2025-weekend-2025-04-04.jsonl"
+    assert "US recession in 2026? at 20 percent" in j["summary"]
+    assert "Recorded replays: US recession in 2025? (id 516710)" in j["summary"]
+
+
+def test_search_down_still_offers_recordings(client, monkeypatch):
+    from fastapi import HTTPException
+
+    from app import markets
+
+    async def down(q, request):
+        raise HTTPException(502, "down")
+    monkeypatch.setattr(markets, "markets_search", down)
+    j = call(client, "search_markets", {"q": "recession"}).json()
+    assert j["ok"] and "unavailable" in j["summary"] and "516710" in j["summary"]
+    j = call(client, "search_markets", {"q": "zzzz unknown topic"}).json()
+    assert j["ok"] is False and "unavailable" in j["summary"]

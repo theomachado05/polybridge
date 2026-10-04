@@ -19,7 +19,7 @@ from pydantic import BaseModel
 
 from . import chain
 from . import equities as eq
-from .mapping import MapRequest, map_event
+from .mapping import SOURCE_PRECOMPUTED, MapRequest, lookup_precomputed
 from .markets import Market, offline_search, search_all
 from .models import Proposal
 
@@ -129,10 +129,10 @@ def hedge_status(ticker: str, proposals: list[Proposal], bridges: dict | None = 
 def find_exposure(ticker: str, shares: float, spot: float | None, markets: list[Market]) -> Exposure | None:
     for m in markets[:TOP_MARKETS]:
         try:
-            res = map_event(MapRequest(question=m.question, source=m.source, market_id=m.id))
+            res = lookup_precomputed(MapRequest(question=m.question, source=m.source, market_id=m.id))
         except Exception:
             continue
-        if res.get("source") != "precomputed":
+        if res.get("source") != SOURCE_PRECOMPUTED:
             continue
         item = next((i for i in res["items"] if isinstance(i, dict) and str(i.get("ticker", "")).upper() == ticker), None)
         if item is None:

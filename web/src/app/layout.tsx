@@ -29,10 +29,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <StoreProvider>
             <Nav />
             {children}
+            {/* Inside the store: voice tool results drive the same state and routes as the mouse flow. */}
+            <VoiceButton />
           </StoreProvider>
         </div>
         <Script src="/thinking-orbs.js" strategy="afterInteractive" />
-        <VoiceButton />
       </body>
     </html>
   );

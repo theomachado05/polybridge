@@ -320,7 +320,7 @@ export function capitalView(c: CapitalOut | null | undefined): CapitalView {
 
 /** The nav / Portfolio account pill: "Webull paper · Individual Margin · market closed". */
 export function accountPill(a: AccountOut | null | undefined, session?: Pick<SessionView, "equities_open"> | null): { text: string; tone: Tone; title: string } {
-  if (!a) return { text: "No account endpoint", tone: "demo", title: "GET /account is unavailable" };
+  if (!a) return { text: "Account unavailable", tone: "demo", title: "GET /account could not be read" };
   const webull = (a.broker ?? "").toLowerCase().includes("webull");
   const name = webull ? "Webull paper" : "Simulated account";
   const open = session?.equities_open ?? a.market_open;

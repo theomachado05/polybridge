@@ -1,4 +1,4 @@
-.PHONY: setup-research test-research setup-backend test-backend build-engine test-engine test-engine-py setup-web test-web test dev dev-live dev-tlt dev-ita dev-iwm dev-nvda e2e e2e-api e2e-opportunity e2e-weekend e2e-demo webull-check
+.PHONY: setup-research test-research setup-backend test-backend build-engine test-engine test-engine-py setup-web test-web test dev dev-live dev-tlt dev-ita dev-iwm dev-nvda e2e e2e-api e2e-opportunity e2e-weekend e2e-demo webull-check gemini-check voice-agent keys-check
 
 research/.venv:
 	$(MAKE) setup-research
@@ -114,3 +114,18 @@ e2e-demo:
 # WEBULL_SMOKE_ORDER=1 also places and cancels a 1-share SPY limit at $1.00 (cannot fill). Ids are masked.
 webull-check:
 	cd backend && uv run --locked $(ENVFILE) python scripts/webull_check.py
+
+# --- AI keys (GEMINI_API_KEY, ELEVENLABS_API_KEY in the repo-root .env; values are never printed) ------------------
+# Gemini: lists the models the key can use, picks the newest flash model, runs one classify + one explain + one live
+# ticker mapping through the app's own GeminiProvider; prints model, latency and results. Exit 2 = no key, 1 = failed.
+gemini-check:
+	cd backend && uv run --locked $(ENVFILE) python scripts/gemini_check.py
+
+# ElevenLabs: create (or update) the PolyBridge agent with CLIENT tools matching GET /agent/tools (no tunnel), then
+# write only NEXT_PUBLIC_ELEVENLABS_AGENT_ID into web/.env.local (gitignored). Idempotent. ARGS=--dry-run: no network.
+voice-agent:
+	cd backend && uv run --locked $(ENVFILE) python scripts/elevenlabs_agent.py $(ARGS)
+
+# Which keys are present (names only); runs gemini-check and read-only ElevenLabs calls when their keys are present.
+keys-check:
+	cd backend && uv run --locked $(ENVFILE) python scripts/keys_check.py

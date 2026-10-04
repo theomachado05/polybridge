@@ -64,9 +64,15 @@ export function Tag({ tone, children, title }: { tone: TagTone; children: ReactN
   const t = TAG[tone];
   return <span className="pb-tag" style={{ background: t.bg, color: t.fg }} title={title}><i style={{ background: t.dot }} />{children}</span>;
 }
-export const DemoTag = ({ what = "demo data", title }: { what?: string; title?: string }) => (
-  <Tag tone="demo" title={title ?? "The backend endpoint is unavailable, so this shows the design prototype's sample data."}>{what}</Tag>
-);
+/** An endpoint that failed: what is missing, the backend's reason, and a retry. Never a stand-in number. */
+export function Unavailable({ what, error, onRetry, style, compact }: { what: string; error?: string | null; onRetry?: () => void; style?: CSSProperties; compact?: boolean }) {
+  return (
+    <div role="alert" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", fontSize: compact ? 12 : 13, color: "#8A5A00", lineHeight: 1.45, ...style }}>
+      <span className="pb-pretty" style={{ minWidth: 0 }}>{what} unavailable{error ? ` (${error})` : ""}.</span>
+      {onRetry && <button type="button" className="pb-chip pb-chip-sm" data-on={false} onClick={onRetry}>Retry</button>}
+    </div>
+  );
+}
 
 export function Spark({ data, color, w = 150, h = 56 }: { data: number[]; color: string; w?: number; h?: number }) {
   const d = sparkPath(data, 300, h);

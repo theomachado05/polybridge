@@ -253,7 +253,7 @@ def test_gemini_classify_parses_json_and_sends_json_mode(monkeypatch):
     r = Router(gemini=gemini_payload({"event_class": "housing"}))
     p = GeminiProvider("secret-key", http=mock_http(r))
     cls, used = run(classify("Will home prices fall?", p, ["housing", "macro_fed", "unsupported"]))
-    assert (cls, used) == ("housing", "gemini")
+    assert (cls, used) == ("housing", "gemini:gemini-2.5-flash")
     req = r.requests[0]
     assert req.url.path == "/v1beta/models/gemini-2.5-flash:generateContent"
     assert "secret-key" not in str(req.url)
@@ -650,7 +650,7 @@ def test_opportunity_ranking_does_not_charge_fees_twice():
 RESPONSE_KEYS = {"event_class", "division", "family", "preset_index", "params", "score", "alternatives", "rationale",
                  "llm", "ticks_source", "n_ticks",  # spec §4
                  "score_basis", "score_note", "score_raw", "score_vs_static", "avg_hedge_ratio",  # what score means
-                 "no_static_benchmark"}
+                 "no_static_benchmark", "ai"}
 
 
 def test_fit_scored_end_to_end_with_fake_engine_and_mocked_http():
@@ -779,8 +779,10 @@ def test_fit_uses_gemini_when_provider_works(library):
     c = make_client(module=None, offline=True, provider=p, library=library)
     j = c.post("/pipeline/fit", json={"question": "Will the 30-year mortgage rate fall below 6%?", "ticker": "ITB",
                                       "shares_held": 100}).json()
-    assert j["llm"] == "gemini" and j["event_class"] == "housing" and j["family"] == "housing_rates"
+    assert j["llm"] == "gemini:gemini-2.5-flash" and j["event_class"] == "housing" and j["family"] == "housing_rates"
     assert j["rationale"] == "Picked by rules. No replay score."
+    assert j["ai"] == {"provider": "gemini", "model": "gemini-2.5-flash", "live": True, "cached": False,
+                       "steps": {"classify": "gemini", "explain": "gemini"}, "fell_back_reason": None}
 
 
 def test_fit_never_500(monkeypatch):
@@ -967,3 +969,145 @@ def test_real_catalog_rules_pick_for_each_supported_class():
     m = real_manifest()
     for ec, fid in want.items():
         assert shortlist(m, ec)["hedge"][0]["id"] == fid, ec
+
+
+# ---------------------------------------------------------------- Gemini model list, 404 fallback, the `ai` block
+
+MODELS = {"models": [
+    {"name": "models/gemini-2.0-flash", "supportedGenerationMethods": ["generateContent"]},
+    {"name": "models/gemini-2.5-flash", "supportedGenerationMethods": ["generateContent", "countTokens"]},
+    {"name": "models/gemini-2.5-flash-lite", "supportedGenerationMethods": ["generateContent"]},
+    {"name": "models/gemini-2.5-flash-preview-tts", "supportedGenerationMethods": ["generateContent"]},
+    {"name": "models/gemini-2.5-flash-image", "supportedGenerationMethods": ["generateContent"]},
+    {"name": "models/gemini-3-flash-preview", "supportedGenerationMethods": ["generateContent"]},
+    {"name": "models/gemini-3-pro", "supportedGenerationMethods": ["generateContent"]},
+    {"name": "models/gemini-flash-latest", "supportedGenerationMethods": ["generateContent"]},
+    {"name": "models/gemini-9-flash-embedding", "supportedGenerationMethods": ["embedContent"]},
+]}
+
+
+def test_newest_flash_picks_highest_version_general_text_model():
+    assert llm_mod.newest_flash(MODELS["models"]) == "gemini-3-flash-preview"
+    stable = [m for m in MODELS["models"] if "gemini-3" not in m["name"]]
+    assert llm_mod.newest_flash(stable) == "gemini-2.5-flash"  # stable over lite, plain over suffixed
+    both = stable + [{"name": "models/gemini-2.5-flash-preview-05-20", "supportedGenerationMethods": ["generateContent"]}]
+    assert llm_mod.newest_flash(both) == "gemini-2.5-flash"     # stable beats preview at the same version
+    assert llm_mod.newest_flash([]) is None
+
+
+def _models_and_generate(gone: set[str], answer: dict, seen: list):
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        path = request.url.path
+        if path == "/v1beta/models":
+            return httpx.Response(200, json=MODELS)
+        model = path.split("/models/")[1].split(":")[0]
+        if model in gone:
+            return httpx.Response(404, json={"error": {"code": 404}})
+        return httpx.Response(200, json=gemini_payload(answer))
+    return handler
+
+
+def test_configured_model_404_falls_back_once_to_newest_flash_and_is_remembered(monkeypatch, caplog):
+    monkeypatch.setenv("GEMINI_MODEL", "gemini-1.0-flash-gone")
+    seen: list = []
+    http = mock_http(_models_and_generate({"gemini-1.0-flash-gone"}, {"event_class": "crypto"}, seen))
+    p = GeminiProvider("sekrit-key", http=http)
+    with caplog.at_level("WARNING", logger="polybridge.llm"):
+        cls, used = run(classify("Will Bitcoin hit $150k?", p, ["crypto", "unsupported"]))
+    assert (cls, used) == ("crypto", "gemini:gemini-3-flash-preview")
+    assert [r.url.path for r in seen] == ["/v1beta/models/gemini-1.0-flash-gone:generateContent", "/v1beta/models",
+                                          "/v1beta/models/gemini-3-flash-preview:generateContent"]
+    assert "falling back to gemini-3-flash-preview" in caplog.text and "sekrit" not in caplog.text
+    assert "returned 404" in p.fell_back_reason
+    # a new provider in the same process (one per request) starts on the fallback: no second 404, no second list
+    seen.clear()
+    p2 = GeminiProvider("sekrit-key", http=http)
+    assert p2.model == "gemini-3-flash-preview" and "returned 404" in p2.fell_back_reason
+    run(p2.classify("btc?", ["crypto", "unsupported"]))
+    assert [r.url.path for r in seen] == ["/v1beta/models/gemini-3-flash-preview:generateContent"]
+
+
+def test_404_with_no_listed_flash_model_is_an_llm_error(monkeypatch):
+    def handler(request):
+        if request.url.path == "/v1beta/models":
+            return httpx.Response(200, json={"models": []})
+        return httpx.Response(404)
+    p = GeminiProvider("k", model="gone", http=mock_http(handler))
+    with pytest.raises(LLMError, match="HTTP 404"):
+        run(p.classify("btc?", ["crypto", "unsupported"]))
+    assert p.model == "gone" and p.fell_back_reason is None
+
+
+def test_list_models_errors_name_the_status_and_never_the_key():
+    p_err = None
+    try:
+        run(llm_mod.list_models("sekrit", mock_http(lambda r: httpx.Response(400)), use_cache=False))
+    except LLMError as e:
+        p_err = str(e)
+    assert p_err == "Gemini model list failed: HTTP 400" and "sekrit" not in p_err
+
+
+def test_fit_ai_block_without_key(library):
+    c = make_client(module=None, offline=True, library=library)
+    j = c.post("/pipeline/fit", json={"question": "Will the Fed cut rates?", "ticker": "SPY", "shares_held": 10}).json()
+    assert j["llm"] == "rules"
+    assert j["ai"]["provider"] == "rules" and j["ai"]["model"] is None and j["ai"]["live"] is False
+    assert "GEMINI_API_KEY" in j["ai"]["fell_back_reason"]
+    assert j["ai"]["steps"] == {"classify": "rules", "explain": "template"}
+    again = c.post("/pipeline/fit", json={"question": "Will the Fed cut rates?", "ticker": "SPY",
+                                          "shares_held": 10}).json()
+    assert again["ai"]["cached"] is True and j["ai"]["cached"] is False
+
+
+def test_fit_ai_block_when_gemini_fails_says_why(library):
+    p = GeminiProvider("k", http=mock_http(Router(gemini=None)))  # HTTP 500 on every call
+    c = make_client(module=None, offline=True, provider=p, library=library)
+    j = c.post("/pipeline/fit", json={"question": "Will the Fed cut rates?", "ticker": "SPY", "shares_held": 10}).json()
+    assert j["llm"] == "rules" and j["ai"]["provider"] == "rules" and j["ai"]["live"] is False
+    assert "classify: Gemini call failed: HTTP 500" in j["ai"]["fell_back_reason"]
+    assert "explain: Gemini call failed: HTTP 500" in j["ai"]["fell_back_reason"]
+
+
+def test_fit_ai_block_partial_gemini(library):
+    def handler(request):  # classify fails, explain works
+        body = json.loads(request.content)
+        if "event_class" in json.dumps(body["generationConfig"]["responseSchema"]):
+            return httpx.Response(503)
+        return httpx.Response(200, json=gemini_payload({"rationale": "Rules picked it."}))
+    p = GeminiProvider("k", http=mock_http(Router(gemini=handler)))
+    c = make_client(module=None, offline=True, provider=p, library=library)
+    j = c.post("/pipeline/fit", json={"question": "Will the Fed cut rates?", "ticker": "SPY", "shares_held": 10}).json()
+    assert j["llm"] == "rules"  # the event class came from the rules: llm says so
+    assert j["ai"]["provider"] == "gemini" and j["ai"]["live"] is True
+    assert j["ai"]["steps"] == {"classify": "rules", "explain": "gemini"}
+    assert j["ai"]["fell_back_reason"] == "classify: Gemini call failed: HTTP 503"
+
+
+def test_fit_cache_skips_answers_where_gemini_failed(library):
+    """A transient Gemini failure (503 on classify) is not pinned for the cache TTL: the next identical request asks
+    Gemini again, and once Gemini answers, that answer is cached as usual."""
+    state = {"classify_fails": True, "classify_calls": 0}
+
+    def handler(request):
+        body = json.loads(request.content)
+        if "event_class" in json.dumps(body["generationConfig"]["responseSchema"]):
+            state["classify_calls"] += 1
+            if state["classify_fails"]:
+                return httpx.Response(503)
+            return httpx.Response(200, json=gemini_payload({"event_class": "macro_fed"}))
+        return httpx.Response(200, json=gemini_payload({"rationale": "Rules picked it."}))
+
+    p = GeminiProvider("k", http=mock_http(Router(gemini=handler)))
+    c = make_client(module=None, offline=True, provider=p, library=library)
+    body = {"question": "Will the Fed cut rates?", "ticker": "SPY", "shares_held": 10}
+    first = c.post("/pipeline/fit", json=body).json()
+    assert first["ai"]["steps"]["classify"] == "rules" and first["ai"]["cached"] is False
+    state["classify_fails"] = False
+    second = c.post("/pipeline/fit", json=body).json()
+    assert state["classify_calls"] == 2, "the failed answer was served from the cache instead of asking Gemini again"
+    assert second["llm"] == "gemini:gemini-2.5-flash" and second["ai"]["steps"]["classify"] == "gemini"
+    assert second["ai"]["cached"] is False
+    third = c.post("/pipeline/fit", json=body).json()
+    assert third["ai"]["cached"] is True and state["classify_calls"] == 2
+    assert "_gemini_failed" not in third and "gemini_failed" not in third

@@ -1,6 +1,6 @@
-// Presentational pieces of the Bridge screen, shared by the demo simulator and the live SSE view.
+// Presentational pieces of the Bridge screen (the live SSE view).
 import type { ReactNode } from "react";
-import { LOGO } from "@/lib/demo";
+import { LOGO } from "@/lib/brokers";
 import { Glass, Label, OrbDisc, Spark, Tag, type TagTone } from "@/components/pb";
 
 const panelPad = { minWidth: 0, padding: "24px 26px 22px" };

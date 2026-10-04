@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { ALGOS, IN_CHAIN } from "@/lib/demo";
 import { fmtNs, prettyId } from "@/lib/fmt";
 import { UI_FAMILIES, type LibRow } from "@/lib/library";
 import { fitScoreView, type FitScoreView } from "@/lib/pipeline";
+import { aiLabel, aiStatus, aiTitle, type AiStatus } from "@/lib/ai";
 import { useStore } from "@/lib/store";
-import { Chip, DemoTag, Glass, Tag } from "@/components/pb";
+import { Chip, Glass, Orb, Tag, Unavailable } from "@/components/pb";
 
 const FAMS = ["All", ...UI_FAMILIES] as const;
 const fmtGrid = (g: number[]) => (g.length ? g.map((v) => (Number.isInteger(v) ? v : +v.toFixed(4))).join(" · ") : "—");
@@ -20,7 +20,7 @@ function UsePill({ n, label }: { n: number; label?: string }) {
   );
 }
 
-function RealRow({ r, fitted, running }: { r: LibRow; fitted: FitScoreView | null; running: (number | null)[] }) {
+function RealRow({ r, fitted, fitAi, running }: { r: LibRow; fitted: FitScoreView | null; fitAi: AiStatus; running: (number | null)[] }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="pb-row-soft" style={{ borderRadius: 20, transition: "background .2s ease" }}>
@@ -40,8 +40,8 @@ function RealRow({ r, fitted, running }: { r: LibRow; fitted: FitScoreView | nul
         </div>
         <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
           {running.length
-            ? <span title={`hedgecore.Algo runs this family on ${running.length} live bridge${running.length === 1 ? "" : "s"} (the AI fit sent with the approved proposal)`}><Tag tone="ai">Running · preset {running.map((n) => n ?? "custom").join(", ")}</Tag></span>
-            : fitted ? <span title={`Picked by POST /pipeline/fit for your last pick; it runs once you approve a bridge for it. ${fitted.title}`}><Tag tone="ai">AI fit · not running yet</Tag></span> : <UsePill n={0} />}
+            ? <span title={`hedgecore.Algo runs this family on ${running.length} backend bridge${running.length === 1 ? "" : "s"} (the fit sent with the approved proposal)`}><Tag tone="live">Running · preset {running.map((n) => n ?? "custom").join(", ")}</Tag></span>
+            : fitted ? <span title={`Picked by POST /pipeline/fit for your last pick; it runs once you approve a bridge for it. ${aiTitle(fitAi)} ${fitted.title}`}><Tag tone={fitAi.live ? "ai" : "neutral"}>{aiLabel(fitAi)} · not running yet</Tag></span> : <UsePill n={0} />}
           {/* What the signal adds over a static hedge (neutral, never green, when it adds nothing). */}
           {fitted?.scored && <span className="pb-pretty" title={fitted.title} style={{ fontSize: 11, lineHeight: 1.35, color: fitted.tone === "positive" ? "#2B57D6" : "#5A627A" }}>{fitted.short} (in-sample)</span>}
           <span className="pb-mono" style={{ fontSize: 11, color: "#5A627A" }}>{r.presets.toLocaleString("en-US")} presets</span>
@@ -78,30 +78,28 @@ export default function Library() {
   const s = useStore();
   const [fam, setFam] = useState<(typeof FAMS)[number]>("All");
   const lib = s.library.status === "ok" ? s.library.data : null;
-  // Live bridges started with an AI fit run that family and preset (hedgecore.Algo); those families are marked as
-  // running. The latest AI fit without a bridge is marked separately, as a pick that is not running yet.
+  // Bridges started with a fit run that family and preset (hedgecore.Algo); those families are marked as
+  // running. The latest fit without a bridge is marked separately, as a pick that is not running yet.
   const fitData = s.fit?.status === "ok" ? s.fit.data ?? null : null;
   const fitted = fitData?.family ?? null;
   const fittedView = fitData?.family ? fitScoreView(fitData) : null;
+  const fitAi = aiStatus(fitData);
+  // Only backend bridges this session opened count; a family is "running" when one of them runs it.
   const running: Record<string, (number | null)[]> = {};
-  for (const b of s.bridges) if (b.kind === "live" && b.fit) (running[b.fit.family] ??= []).push(b.fit.preset_index);
-  const demoBridges = s.bridges.filter((b) => b.kind === "demo").length;
+  for (const b of s.bridges) if (b.fit) (running[b.fit.family] ??= []).push(b.fit.preset_index);
   const rows = lib ? lib.rows.filter((r) => fam === "All" || r.uiFamilies.includes(fam)) : [];
-  const demoRows = ALGOS.filter((a) => fam === "All" || a.fam === fam);
 
   return (
     <main className="pb-page" style={{ maxWidth: 1180, paddingTop: 18, paddingBottom: 60, display: "flex", flexDirection: "column", gap: 16 }}>
       <div className="pb-header">
         <div>
           <div className="pb-label" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-            {lib ? `LIBRARY · ${lib.total.toLocaleString("en-US")} PRESETS · ${lib.rows.length} FAMILIES` : "LIBRARY · SAMPLE ALGORITHMS"}
-            {lib ? <Tag tone="measured" title="GET /library — the compiled hedgecore catalog; the count is what catalog() reports">compiled catalog</Tag> : <DemoTag what="sample list" title={`GET /library failed (${s.library.error ?? "loading"}); showing the prototype's 15 sample algorithms.`} />}
+            {lib ? `LIBRARY · ${lib.total.toLocaleString("en-US")} PRESETS · ${lib.rows.length} FAMILIES` : "LIBRARY"}
+            {lib && <Tag tone="measured" title="GET /library — the compiled hedgecore catalog; the count is what catalog() reports">compiled catalog</Tag>}
           </div>
           <h2 className="pb-h2">Composed per event, tuned per tick.</h2>
           <div className="pb-lede">
-            {lib
-              ? "Every family is a fixed chain of compiled blocks with a parameter grid; a preset is one grid point. The AI only picks from what is compiled here."
-              : "Every bridge chains a handful of these. We show what each one does and which parameters it tunes — the logic stays ours."}
+            Every family is a fixed chain of compiled blocks with a parameter grid; a preset is one grid point. The fit only picks from what is compiled here, by replaying presets on the market&rsquo;s history.
           </div>
         </div>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -109,28 +107,10 @@ export default function Library() {
         </div>
       </div>
       <Glass style={{ padding: 8 }}>
-        {lib && rows.map((r) => <RealRow key={r.id} r={r} fitted={r.id === fitted ? fittedView : null} running={running[r.id] ?? []} />)}
+        {lib && rows.map((r) => <RealRow key={r.id} r={r} fitted={r.id === fitted ? fittedView : null} fitAi={fitAi} running={running[r.id] ?? []} />)}
         {lib && rows.length === 0 && <div style={{ padding: "18px", fontSize: 13, color: "#5A627A" }}>No family in the catalog uses a {fam} block yet.</div>}
-        {!lib && demoRows.map((a) => {
-          const n = IN_CHAIN.has(a.name) ? demoBridges : 0;
-          return (
-            <div key={a.id} className="pb-row-soft pb-lib-row" style={{ display: "grid", gap: 18, alignItems: "center", padding: "16px 18px", borderRadius: 20 }}>
-              <span className="pb-mono" style={{ fontSize: 11.5, color: "#5A627A" }}>{a.id}</span>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-.015em" }}>{a.name}</span>
-                  <span style={{ padding: "2px 8px", borderRadius: 999, fontSize: 11, fontWeight: 500, background: "rgba(15,22,38,.06)", color: "#3C4458" }}>{a.fam}</span>
-                </div>
-                <div className="pb-pretty" style={{ fontSize: 12.5, color: "#3C4458", lineHeight: 1.45, marginTop: 4 }}>{a.role}</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 11, color: "#5A627A" }}>Tunes</div>
-                <div className="pb-mono" style={{ fontSize: 12, marginTop: 3, lineHeight: 1.4 }}>{a.tunes}</div>
-              </div>
-              <div style={{ textAlign: "right" }}><UsePill n={n} /></div>
-            </div>
-          );
-        })}
+        {s.library.status === "loading" && <div style={{ padding: 18, display: "flex", gap: 10, alignItems: "center", fontSize: 13, color: "#3C4458" }}><Orb state="working" size={20} />Reading the compiled catalog…</div>}
+        {s.library.status === "error" && <Unavailable what="The algorithm library (GET /library)" error={s.library.error} onRetry={s.reloadLibrary} style={{ padding: 18 }} />}
       </Glass>
     </main>
   );

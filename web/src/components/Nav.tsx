@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { brokerLabel, defaultPick, useStore } from "@/lib/store";
+import { brokerLabel, useStore } from "@/lib/store";
 import { sessionPill } from "@/lib/closed";
 import { accountPill } from "@/lib/risk";
 
@@ -19,12 +19,12 @@ export function Nav() {
   const build = on("/build") || on("/connect") || on("/pipeline");
   const step = !s.question ? 1 : !s.equity ? 2 : 3;
   // A backend bridge opened by URL (/bridge/<id>) counts even before it is in the store.
-  const routeBridge = path.startsWith("/bridge/") && !s.bridges.some((b) => b.kind === "live" && path.endsWith("/" + b.bridgeId)) ? 1 : 0;
-  const n = s.bridges.length + routeBridge, anyLive = routeBridge > 0 || s.bridges.some((b) => b.kind === "live");
+  const routeBridge = path.startsWith("/bridge/") && !s.bridges.some((b) => path.endsWith("/" + b.bridgeId)) ? 1 : 0;
+  const n = s.bridges.length + routeBridge;
   const live = on("/bridge") || (on("/portfolio") && n > 0);
   const lib = s.library.status === "ok" && s.library.data ? `${s.library.data.total.toLocaleString("en-US")} presets` : "Algo library";
   const dot = live ? "#4ADE80" : on("/pipeline") ? "#FBBF24" : "#9A7BFF";
-  const label = live ? `${anyLive ? "Running" : "Demo"} · ${n} ${n === 1 ? "bridge" : "bridges"}`
+  const label = live ? (n ? `Running · ${n} ${n === 1 ? "bridge" : "bridges"}` : "No bridges yet")
     : on("/library") ? lib
     : on("/profile") ? `${s.settings.conns.length} connection${s.settings.conns.length === 1 ? "" : "s"}`
     : on("/pipeline") ? "Composing bridge"
@@ -32,13 +32,7 @@ export function Nav() {
     : on("/connect") ? "Connect brokerage"
     : s.account.status === "ok" ? accountPill(s.account.data, s.session.data).text : brokerLabel(s.account).name;
 
-  const goBridge = () => {
-    if (!s.bridges.length) {
-      const d = defaultPick();
-      s.addDemoBridge(s.question ?? d.q, s.equity ?? d.eq, s.inst ?? "shares");
-    }
-    router.push("/bridge");
-  };
+  const goBridge = () => router.push("/bridge");
   const profile = on("/profile");
   const pill = sessionPill(s.session.data);
 

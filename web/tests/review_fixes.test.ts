@@ -4,10 +4,10 @@ import assert from "node:assert/strict";
 import {
   REPLAY_SANDBOX_SENTENCE, fillScopeLabel, fitDirection, liveVenue, priceSubtitle, startRealBridge, type BridgeApi,
 } from "../src/lib/realBridge.ts";
-import { QUESTIONS, isOpenMarket, questionFromMarket, topImpact, type EquityPick } from "../src/lib/demo.ts";
+import { isOpenMarket, questionFromMarket, topImpact, type EquityPick } from "../src/lib/markets.ts";
 import type { Proposal } from "../src/lib/api.ts";
 import { parseLibrary, shortlist } from "../src/lib/library.ts";
-import { IN_SAMPLE_NOTE, demoSteps, fitSteps, hedgeScoreText, type PipeContext } from "../src/lib/pipeline.ts";
+import { IN_SAMPLE_NOTE, fitSteps, hedgeScoreText, noFitSteps, type PipeContext } from "../src/lib/pipeline.ts";
 import { engineBridgeFor } from "../src/lib/portfolioView.ts";
 
 const q = questionFromMarket({ source: "polymarket", id: "m1", question: "Will X happen?", yes_price: 0.4, volume_24h: 1000, end_date: null, url: null, token_id: "tok" });
@@ -53,15 +53,14 @@ describe("proposal reuse matches the exact approved terms", () => {
 });
 
 describe("hedge fit direction", () => {
-  it("is unknown for a live-market ticker outside the mapping, never guessed from a zero move", () => {
-    assert.equal(fitDirection(q, { direction: undefined, move: 0 }), null);
-    assert.equal(fitDirection(q, { direction: "up_on_yes", move: 0 }), "up_on_yes");
-    // demo markets keep the prototype's sign-of-move rule
-    assert.equal(fitDirection(QUESTIONS[0], { direction: undefined, move: -1.2 }), "down_on_yes");
+  it("is unknown for a ticker outside the mapping, never guessed from the sign of a move", () => {
+    assert.equal(fitDirection(q, { direction: undefined }), null);
+    assert.equal(fitDirection(q, { direction: "up_on_yes" }), "up_on_yes");
+    assert.equal(fitDirection(q, { direction: undefined, move: -1.2 } as EquityPick), null);
   });
   it("the pipeline says no hedge was fitted instead of claiming the endpoint failed", () => {
-    const c: PipeContext = { question: "Will X?", venues: ["Polymarket"], yes: 40, vol: "1k", ticker: "AAPL", held: 500, move: 0, rev: null, brand: null, why: "", real: true, noDirection: true };
-    const steps = demoSteps(c);
+    const c: PipeContext = { question: "Will X?", venues: ["Polymarket"], yes: 40, vol: "1k", ticker: "AAPL", held: 500, move: 0, rev: null, brand: null, why: "", noDirection: true };
+    const steps = noFitSteps(c);
     assert.match(steps.find((s) => s.key === "tune")!.text, /No hedge fit: AAPL is not in this market's mapping/);
     assert.match(steps.find((s) => s.key === "ready")!.text, /cannot orient a hedge/);
   });
@@ -138,8 +137,6 @@ describe("Portfolio hedge status", () => {
     const live = { kind: "live", bridgeId: "23a6", q: { real: {} }, eq: { t: "IWM" } };
     assert.equal(engineBridgeFor(none, [live]), "23a6");
     assert.equal(engineBridgeFor(none, [{ ...live, mode: "opportunity" }]), null, "an options bridge is not a hedge");
-    assert.equal(engineBridgeFor(none, [{ ...live, q: { real: undefined } }]), null, "a demo-market bridge is not a hedge");
-    assert.equal(engineBridgeFor(none, [{ kind: "demo", eq: { t: "IWM" } }]), null);
     assert.equal(engineBridgeFor(none, [{ ...live, eq: { t: "SPY" } }]), null);
   });
 });

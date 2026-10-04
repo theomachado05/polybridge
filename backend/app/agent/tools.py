@@ -10,6 +10,8 @@ from fastapi import HTTPException, Request, Response
 from pydantic import BaseModel, ValidationError
 
 CONFIRM_TOOLS = {"approve", "start_bridge"}
+# Screens the browser-only `navigate` tool can open (web routes: / /build /pipeline /bridge /portfolio ...).
+SCREENS = ["landing", "build", "pipeline", "bridge", "portfolio", "library", "profile", "connect"]
 Handler = Callable[[Request, dict], Awaitable[tuple[str, Any]]]
 
 
@@ -82,6 +84,14 @@ TOOLS: list[dict] = [
     {"name": "positions", "method": "GET", "path": "/positions",
      "description": "List what the account currently holds.",
      "parameters": _obj({})},
+    # Browser-only: the web page moves to that screen itself and never calls the backend for it (no route). The
+    # dispatcher echoes it so POST /agent/tool/navigate answers like every other tool.
+    {"name": "navigate", "method": None, "path": None, "client_only": True,
+     "description": "Open a screen when the user asks to see something.",
+     "parameters": _obj({
+         "screen": {"type": "string", "enum": SCREENS, "description": "The screen to open."},
+         "bridge_id": {"type": "string", "description": "A bridge id, only with screen bridge, to open that bridge."}},
+         ["screen"])},
 ]
 NAMES = {t["name"] for t in TOOLS}
 
@@ -120,18 +130,46 @@ def _money(x: Any) -> str:
         return "an unknown amount"
 
 
+def _recorded_matches(q: str, seen: set[tuple[str, str]]) -> list[dict]:
+    """Recorded markets (replay index) whose question has every query word: a live search does not list resolved
+    markets, but their recordings replay on demand (the default demo weekend is one). Labelled as recordings."""
+    from .. import markets
+    words = [w for w in q.lower().split() if len(w) > 2]
+    if not words:
+        return []
+    try:
+        recs = markets._recordings()
+    except Exception:
+        return []
+    return [_dump(m) for m in recs
+            if (m.source, m.id) not in seen and all(w in m.question.lower() for w in words)]
+
+
 async def _search_markets(request: Request, a: dict):
     from .. import markets
-    out = _dump(await markets.markets_search(str(_need(a, "q")), request))
-    ms = out["markets"]
-    if not ms:
+    q = str(_need(a, "q"))
+    try:
+        out = _dump(await markets.markets_search(q, request))
+    except HTTPException:
+        out = {"markets": [], "stale": True, "note": "live market search unavailable"}
+    rec = _recorded_matches(q, {(m.get("source"), m.get("id")) for m in out["markets"]})
+    live = out["markets"]
+    out["markets"] = live + rec  # live results first; recordings appended, each with its `recorded` file name
+    if not out["markets"]:
+        if out.get("note") == "live market search unavailable":
+            raise ToolError("Live market search is unavailable right now, and no recorded market matches that topic.")
         return "I found no markets on that topic.", out
     parts = []
-    for m in ms[:3]:
+    for m in live[:3 if not rec else 2]:
         p = m.get("yes_price") if m.get("yes_price") is not None else m.get("price")
         title = m.get("question") or m.get("title") or m.get("id")
         parts.append(f"{title}" + (f" at {round(float(p) * 100)} percent" if isinstance(p, (int, float)) else ""))
-    return f"I found {len(ms)} markets. Top ones: " + "; ".join(parts) + ".", out
+    kind = "cached or offline" if out.get("stale") else "live"
+    said = (f"I found {len(live)} {kind} markets. Top ones: " + "; ".join(parts) + ".") if live else (
+        "Live search found nothing." if out.get("note") is None else "Live market search is unavailable.")
+    if rec:
+        said += " Recorded replays: " + "; ".join(f"{m['question']} (id {m['id']})" for m in rec[:2]) + "."
+    return said, out
 
 
 async def _fit(request: Request, a: dict):
@@ -145,7 +183,7 @@ async def _fit(request: Request, a: dict):
         body["market"] = m
     out = _dump(await pr.pipeline_fit(FitRequest(**body), request))
     score = out.get("score")
-    how = "Gemini suggested" if out.get("llm") == "gemini" else "A rules-based pick:"
+    how = "Gemini suggested" if str(out.get("llm") or "").startswith("gemini") else "A rules-based pick:"
     s = (f"For {str(body['ticker']).upper()} {how} a {out.get('family') or 'default'} hedge for a {out.get('event_class')} event"
          + (f", replay score {score:.2f} on {out.get('n_ticks') or 0} historical ticks" if isinstance(score, (int, float))
             else ", unscored") + f". {out.get('rationale', '')}")
@@ -164,9 +202,12 @@ async def _propose(request: Request, a: dict):
     out = _dump(routes.create_proposal(ProposalIn(**body), request))
     kind = "an opportunity, not a hedge" if out.get("family") == "opportunity" else "a draft"
     label = f" {out['label']}." if out.get("label") else ""
+    ev = out.get("evidence") if isinstance(out.get("evidence"), dict) else None
+    evidence = ("" if ev is None else " Its market's signal is validated out of sample." if ev.get("validated") else
+                " Its market's signal is an unvalidated estimate: approving needs your acknowledgement of that.")
     return (f"I drafted proposal {out['id']} ({kind}): a {out['strategy'].replace('_', ' ')} on {out['ticker']} covering "
-            f"{round(out['target_coverage'] * 100)} percent of {out['shares_held']:g} shares.{label} It is waiting for your approval. "
-            "Shall I approve it?"), out
+            f"{round(out['target_coverage'] * 100)} percent of {out['shares_held']:g} shares.{label}{evidence} It is waiting "
+            "for your approval. Shall I approve it?"), out
 
 
 def _require_confirm(a: dict, what: str) -> None:
@@ -233,9 +274,18 @@ async def _positions(request: Request, a: dict):
     return f"The account holds {len(out)} positions: {names}" + (", and more." if len(out) > 5 else "."), out
 
 
+async def _navigate(request: Request, a: dict):
+    screen = str(_need(a, "screen"))
+    if screen not in SCREENS:
+        raise ToolError(f"I cannot open {screen}. I can open: {', '.join(SCREENS)}.")
+    bid = a.get("bridge_id") if screen == "bridge" and isinstance(a.get("bridge_id"), str) and a["bridge_id"] else None
+    return f"Opening {screen}.", {"screen": screen, "bridge_id": bid}
+
+
 HANDLERS: dict[str, Handler] = {
     "search_markets": _search_markets, "fit": _fit, "propose": _propose, "approve": _approve,
     "start_bridge": _start_bridge, "bridge_status": _bridge_status, "account": _account, "positions": _positions,
+    "navigate": _navigate,
 }
 
 
