@@ -268,3 +268,24 @@ the one the frozen options code can pull for, and it is the one that runs. (2) T
 active-against-quiet split go to the quiet half. The code was checked on the development run only, where the pooled
 slope was 0.034 daily standard deviations per point (t 4.7) and the options directional slope had t 6.1; those are
 development figures, not evidence.
+
+**Note, 2026-10-03 23:49 ET, after the result (commit e476728) and its verification by five independent agents. No figure is
+changed; the run is not repeated.** Disclosures and two figures the plan promised that the results files lack:
+
+- **Odds of some of these markets were on this machine before the labels**, pulled by another study (S11, in the
+  main checkout, another session) for 93 of the 291 test markets. Eight of them are legs of version-3 links and
+  were pulled before the labels commit, one of them before the plan commit; they touch four of the eleven confirmed
+  links (EWQ, USO, GREK, TUR). The linker's code reads only its own cache and those of S4 and S5, the labellers read
+  only their input files, and this session never opened that cache. The first line of this plan ("before any price
+  exists") is true of this study's pulls, not of the machine.
+- `linker/pooled.py` was finished at 23:35, while the odds were being pulled (249 of 290 files on disk) and before
+  any equity of a new ticker was pulled; nothing was scored before 23:38.
+- The plan and the code are in two commits of the same second (5ce5b2c, 748fe0c), not one; the manifest covers
+  both. The labellers were started right after the second.
+- The control arm's 58 links include one link to SPY, which is never scored.
+- **Robust verdict of the first test's by-event links** (section 4): 42 links, 19 testable, 6 confirmed, none
+  contradicted.
+- **Options evidence split by the equity verdict** (section 7), directional leg: on equity-confirmed links 2
+  confirmed, 2 unproven, none contradicted; on equity-unproven links 2 confirmed, 22 unproven, 3 contradicted.
+- The verification reproduced every reported figure from its own code and found the pre-registration intact. Its
+  checks on the pooled result are post hoc and are reported as such in `linker/LINKER.md`.

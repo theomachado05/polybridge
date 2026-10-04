@@ -1,46 +1,54 @@
 {
- "generated_at": "2026-10-03T22:02:11",
+ "generated_at": "2026-10-03T23:41:04",
  "generator": "link agent v3 (two blind labellers, trained scorer, price benchmark)",
  "as_of": "2026-10-02",
  "summary": {
   "as_of": "2026-10-02",
   "today": "2026-10-04",
-  "open_links": 130,
-  "open_questions": 51,
-  "trusted_links": 26,
-  "trusted_questions": 13,
+  "open_links": 184,
+  "open_questions": 76,
+  "trusted_links": 40,
+  "trusted_questions": 20,
   "trusted_tickers": [
    "BMNR",
    "COIN",
+   "EIS",
    "ETHA",
+   "EWZ",
+   "FRO",
+   "FXI",
    "GLXY",
    "GOOGL",
    "HOOD",
    "IBIT",
    "IEF",
+   "ITUB",
    "JETS",
    "MARA",
    "MSTR",
+   "PBR",
    "SHY",
    "USO",
+   "UUP",
    "XLE"
   ],
-  "trusted_confirmed_by_prices": 25,
-  "trusted_with_an_option_contract": 26,
-  "trusted_event_links": 9,
-  "trusted_event_questions": 6,
+  "trusted_confirmed_by_prices": 32,
+  "trusted_with_an_option_contract": 39,
+  "trusted_event_links": 23,
+  "trusted_event_questions": 13,
   "trusted_price_proxy_links": 17,
   "trusted_by_theme": {
+   "Other": 14,
    "Bitcoin holders": 13,
-   "Other": 8,
-   "Iran, Hormuz and oil": 3,
-   "Fed rate decision": 2
+   "Iran, Hormuz and oil": 10,
+   "Fed rate decision": 2,
+   "China and Taiwan": 1
   },
-  "version3_links": 0,
-  "trusted_version3_links": 0,
-  "probe_links": 0,
-  "no_instrument_items": 0,
-  "no_instrument_open_clusters": 0,
+  "version3_links": 58,
+  "trusted_version3_links": 15,
+  "probe_links": 3,
+  "no_instrument_items": 17,
+  "no_instrument_open_clusters": 17,
   "no_instrument_but_older_links": 0
  },
  "items": {
@@ -261,6 +269,98 @@
      "probe": false,
      "mechanism_class": null,
      "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:3128886": {
+   "question": "US announces end of Iranian blockade by December 31, 2026?",
+   "cluster": "c051",
+   "signal": [
+    [
+     "polymarket:3128886",
+     1.0
+    ]
+   ],
+   "alternative": "The blockade continues through 2026.",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "impact_pct": 7.0,
+     "rationale": "Ending the blockade returns Iranian and Gulf barrels to market and lowers crude.",
+     "confidence": 0.5,
+     "score": 0.8709165771582013,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 29.07568567708482,
+     "gap_t": 5.495046881789617,
+     "days": 48,
+     "trusted": true,
+     "option": {
+      "contract": "O:USO270115P00147000",
+      "expiry": "2027-01-15",
+      "strike": 147.0,
+      "call": "O:USO270115C00147000",
+      "put": "O:USO270115P00147000"
+     },
+     "version": 3,
+     "source": "dev",
+     "probe": false,
+     "mechanism_class": "commodity_supply",
+     "verdict_since_cutoff": "confirmed"
+    },
+    {
+     "ticker": "XLE",
+     "direction": "down_on_yes",
+     "impact_pct": 2.75,
+     "rationale": "Energy producers lose with lower oil prices.",
+     "confidence": 0.35,
+     "score": 0.8124196871556201,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 12.071912560933256,
+     "gap_t": 4.704618429634594,
+     "days": 48,
+     "trusted": true,
+     "option": {
+      "contract": "O:XLE270115P00062500",
+      "expiry": "2027-01-15",
+      "strike": 62.5,
+      "call": "O:XLE270115C00062500",
+      "put": "O:XLE270115P00062500"
+     },
+     "version": 3,
+     "source": "dev",
+     "probe": false,
+     "mechanism_class": "commodity_supply",
+     "verdict_since_cutoff": "confirmed"
+    },
+    {
+     "ticker": "JETS",
+     "direction": "up_on_yes",
+     "impact_pct": 2.75,
+     "rationale": "Airlines gain from cheaper fuel.",
+     "confidence": 0.3,
+     "score": 0.7888572379385068,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 11.363690954756816,
+     "gap_t": 4.963409120734109,
+     "days": 48,
+     "trusted": true,
+     "option": {
+      "contract": "O:JETS270115C00028000",
+      "expiry": "2027-01-15",
+      "strike": 28.0,
+      "call": "O:JETS270115C00028000",
+      "put": "O:JETS270115P00028000"
+     },
+     "version": 3,
+     "source": "dev",
+     "probe": false,
+     "mechanism_class": "commodity_supply",
+     "verdict_since_cutoff": "confirmed"
     }
    ],
    "no_instrument": false,
@@ -594,6 +694,280 @@
      "probe": false,
      "mechanism_class": null,
      "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:1168142": {
+   "question": "Will the upper bound of the target federal funds rate be \u2265 4.5% at the end of 2026?",
+   "cluster": "c061",
+   "signal": [
+    [
+     "polymarket:1168142",
+     1.0
+    ],
+    [
+     "polymarket:1168832",
+     -1.0
+    ],
+    [
+     "polymarket:1168141",
+     0.857
+    ],
+    [
+     "polymarket:1168833",
+     -0.857
+    ],
+    [
+     "polymarket:1168140",
+     0.714
+    ],
+    [
+     "polymarket:1168834",
+     -0.714
+    ],
+    [
+     "polymarket:1168139",
+     0.571
+    ],
+    [
+     "polymarket:1168843",
+     -0.571
+    ],
+    [
+     "polymarket:1168844",
+     -0.429
+    ],
+    [
+     "polymarket:1168138",
+     0.429
+    ],
+    [
+     "polymarket:1168136",
+     0.143
+    ],
+    [
+     "polymarket:1168134",
+     -0.143
+    ]
+   ],
+   "alternative": "A lower end-2026 federal funds rate, i.e. more cuts.",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "SHY",
+     "direction": "down_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "A higher expected policy path raises 1-3 year Treasury yields.",
+     "confidence": 0.5,
+     "score": 0.8152029225937736,
+     "verdict": "unproven",
+     "gap_bp_per_point": 0.0412842321100529,
+     "gap_t": 0.3199070336149597,
+     "days": 182,
+     "trusted": true,
+     "option": {
+      "contract": "O:SHY270115P00081000",
+      "expiry": "2027-01-15",
+      "strike": 81.0,
+      "call": "O:SHY270115C00081000",
+      "put": "O:SHY270115P00081000"
+     },
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "rates_policy",
+     "verdict_since_cutoff": "unproven"
+    },
+    {
+     "ticker": "UUP",
+     "direction": "up_on_yes",
+     "impact_pct": 4.5,
+     "rationale": "Higher US rates widen yield differentials and lift the dollar.",
+     "confidence": 0.35,
+     "score": 0.7390238918128534,
+     "verdict": "unproven",
+     "gap_bp_per_point": 0.8480680527895222,
+     "gap_t": 1.266809729815486,
+     "days": 182,
+     "trusted": true,
+     "option": {
+      "contract": "O:UUP270115C00029000",
+      "expiry": "2027-01-15",
+      "strike": 29.0,
+      "call": "O:UUP270115C00029000",
+      "put": "O:UUP270115P00029000"
+     },
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "rates_policy",
+     "verdict_since_cutoff": "unproven"
+    },
+    {
+     "ticker": "TLT",
+     "direction": "down_on_yes",
+     "impact_pct": 4.5,
+     "rationale": "Higher policy-rate expectations push up long yields.",
+     "confidence": 0.5,
+     "score": 0.0747886627204153,
+     "verdict": "unproven",
+     "gap_bp_per_point": -0.492575372227334,
+     "gap_t": -0.4952551938917151,
+     "days": 182,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "rates_policy",
+     "verdict_since_cutoff": "unproven"
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:601818": {
+   "question": "Will Tarcisio de Freitas win the 2026 Brazilian presidential election?",
+   "cluster": "c001",
+   "signal": [
+    [
+     "polymarket:601818",
+     1.0
+    ],
+    [
+     "polymarket:601819",
+     -1.0
+    ],
+    [
+     "polymarket:601826",
+     1.0
+    ],
+    [
+     "polymarket:601824",
+     1.0
+    ],
+    [
+     "polymarket:601823",
+     1.0
+    ],
+    [
+     "polymarket:601822",
+     1.0
+    ],
+    [
+     "polymarket:601827",
+     1.0
+    ],
+    [
+     "polymarket:601830",
+     -1.0
+    ],
+    [
+     "polymarket:601821",
+     -1.0
+    ],
+    [
+     "polymarket:601828",
+     1.0
+    ],
+    [
+     "polymarket:601820",
+     1.0
+    ],
+    [
+     "polymarket:601829",
+     -1.0
+    ],
+    [
+     "polymarket:601825",
+     0.85
+    ],
+    [
+     "polymarket:601831",
+     0.5
+    ]
+   ],
+   "alternative": "Lula or another candidate of the Workers' Party left wins.",
+   "ends": "2026-10-05",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "EWZ",
+     "direction": "up_on_yes",
+     "impact_pct": 10.0,
+     "rationale": "Two models expect EWZ rises as the odds rise; prices have not confirmed it yet (unproven). Scorer: 0.81.",
+     "confidence": 0.5,
+     "score": 0.8108539920025747,
+     "verdict": "unproven",
+     "gap_bp_per_point": 2.8775740609741827,
+     "gap_t": 1.5367540932164525,
+     "days": 252,
+     "trusted": true,
+     "option": {
+      "contract": "O:EWZ261009C00038000",
+      "expiry": "2026-10-09",
+      "strike": 38.0,
+      "call": "O:EWZ261009C00038000",
+      "put": "O:EWZ261009P00038000"
+     },
+     "version": 3,
+     "source": "heldout2",
+     "probe": true,
+     "mechanism_class": "country_election",
+     "verdict_since_cutoff": "unproven"
+    },
+    {
+     "ticker": "PBR",
+     "direction": "up_on_yes",
+     "impact_pct": 15.0,
+     "rationale": "Two models expect PBR rises as the odds rise; prices have not confirmed it yet (unproven). Scorer: 0.79.",
+     "confidence": 0.45,
+     "score": 0.7871463994819277,
+     "verdict": "unproven",
+     "gap_bp_per_point": 2.422648768599357,
+     "gap_t": 0.8948935328031665,
+     "days": 252,
+     "trusted": true,
+     "option": {
+      "contract": "O:PBR261009C00021500",
+      "expiry": "2026-10-09",
+      "strike": 21.5,
+      "call": "O:PBR261009C00021500",
+      "put": "O:PBR261009P00021500"
+     },
+     "version": 3,
+     "source": "heldout2",
+     "probe": true,
+     "mechanism_class": "country_election",
+     "verdict_since_cutoff": "confirmed"
+    },
+    {
+     "ticker": "ITUB",
+     "direction": "up_on_yes",
+     "impact_pct": 9.0,
+     "rationale": "Prices confirm it: ITUB opened 4.7 bp further per point of odds (t = 2.1, 252 days).",
+     "confidence": 0.4,
+     "score": 0.7613418969051562,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 4.67287713161625,
+     "gap_t": 2.125623895467208,
+     "days": 252,
+     "trusted": true,
+     "option": {
+      "contract": "O:ITUB261016C00009000",
+      "expiry": "2026-10-16",
+      "strike": 9.0,
+      "call": "O:ITUB261016C00009000",
+      "put": "O:ITUB261016P00009000"
+     },
+     "version": 3,
+     "source": "heldout2",
+     "probe": true,
+     "mechanism_class": "country_election",
+     "verdict_since_cutoff": "confirmed"
     }
    ],
    "no_instrument": false,
@@ -950,6 +1324,109 @@
    "no_instrument": false,
    "no_instrument_reason": ""
   },
+  "polymarket:2757806": {
+   "question": "Iran charges Hormuz fees by October 31?",
+   "cluster": "c127",
+   "signal": [
+    [
+     "polymarket:2757806",
+     1.0
+    ]
+   ],
+   "alternative": "Hormuz transit stays free of Iranian fees.",
+   "ends": "2026-11-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "Fees and Iranian control over Hormuz raise the cost and risk of Gulf crude supply.",
+     "confidence": 0.35,
+     "score": 0.5415163276347451,
+     "verdict": "unproven",
+     "gap_bp_per_point": -9.55218877062291,
+     "gap_t": -1.9516982603170032,
+     "days": 65,
+     "trusted": true,
+     "option": {
+      "contract": "O:USO261106C00147500",
+      "expiry": "2026-11-06",
+      "strike": 147.5,
+      "call": "O:USO261106C00147500",
+      "put": "O:USO261106P00147500"
+     },
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "commodity_supply",
+     "verdict_since_cutoff": "unproven"
+    },
+    {
+     "ticker": "FRO",
+     "direction": "up_on_yes",
+     "impact_pct": 5.0,
+     "rationale": "Friction in Hormuz tightens tanker supply and lifts tanker rates.",
+     "confidence": 0.3,
+     "score": 0.5046722206196214,
+     "verdict": "unproven",
+     "gap_bp_per_point": 0.1780777360761622,
+     "gap_t": 0.0300487275185825,
+     "days": 65,
+     "trusted": true,
+     "option": {
+      "contract": "O:FRO261120C00054200",
+      "expiry": "2026-11-20",
+      "strike": 54.2,
+      "call": "O:FRO261120C00054200",
+      "put": "O:FRO261120P00054200"
+     },
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "commodity_supply",
+     "verdict_since_cutoff": "unproven"
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:2747434": {
+   "question": "Will Hamas agree to disarm by December 31?",
+   "cluster": "c098",
+   "signal": [
+    [
+     "polymarket:2747434",
+     1.0
+    ]
+   ],
+   "alternative": "Hamas does not agree to disarm by December 31",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "EIS",
+     "direction": "up_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Hamas disarmament lowers Israel's security risk premium.",
+     "confidence": 0.35,
+     "score": 0.5337023214967243,
+     "verdict": "unproven",
+     "gap_bp_per_point": 0.2404173488931363,
+     "gap_t": 0.362273349032944,
+     "days": 65,
+     "trusted": true,
+     "option": null,
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "war_geopolitics",
+     "verdict_since_cutoff": "unproven"
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
   "polymarket:701494": {
    "question": "Will Bitcoin reach $120,000 by December 31, 2026?",
    "cluster": null,
@@ -1110,6 +1587,155 @@
    "no_instrument": false,
    "no_instrument_reason": ""
   },
+  "polymarket:616902": {
+   "question": "Will no Fed rate cuts happen in 2026?",
+   "cluster": "c023",
+   "signal": [
+    [
+     "polymarket:616902",
+     1.0
+    ],
+    [
+     "polymarket:616914",
+     -1.0
+    ],
+    [
+     "polymarket:616913",
+     -0.8315
+    ],
+    [
+     "polymarket:616903",
+     0.8315
+    ],
+    [
+     "polymarket:616912",
+     -0.6685
+    ],
+    [
+     "polymarket:616904",
+     0.6685
+    ],
+    [
+     "polymarket:616911",
+     -0.5
+    ],
+    [
+     "polymarket:616905",
+     0.5
+    ],
+    [
+     "polymarket:616910",
+     -0.3315
+    ],
+    [
+     "polymarket:616906",
+     0.3315
+    ],
+    [
+     "polymarket:616909",
+     -0.1685
+    ],
+    [
+     "polymarket:616907",
+     0.1685
+    ]
+   ],
+   "alternative": "Fewer or no Fed rate cuts in 2026.",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "SHY",
+     "direction": "down_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "More cuts lower short Treasury yields and raise short-bond prices.",
+     "confidence": 0.5,
+     "score": 0.4435590654346311,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 0.7133572834329781,
+     "gap_t": 2.3494970168654055,
+     "days": 252,
+     "trusted": true,
+     "option": {
+      "contract": "O:SHY270115P00081000",
+      "expiry": "2027-01-15",
+      "strike": 81.0,
+      "call": "O:SHY270115C00081000",
+      "put": "O:SHY270115P00081000"
+     },
+     "version": 3,
+     "source": "dev",
+     "probe": false,
+     "mechanism_class": "rates_policy",
+     "verdict_since_cutoff": "unproven"
+    },
+    {
+     "ticker": "IEF",
+     "direction": "down_on_yes",
+     "impact_pct": 2.13,
+     "rationale": "A more hawkish Fed outcome pushes intermediate Treasury yields up, lowering 7-10 year Treasury prices.",
+     "confidence": 0.55,
+     "score": 0.1229754533156209,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 2.129530085027886,
+     "gap_t": 2.7382398994335597,
+     "days": 252,
+     "trusted": true,
+     "option": {
+      "contract": "O:IEF270115P00089000",
+      "expiry": "2027-01-15",
+      "strike": 89.0,
+      "call": "O:IEF270115C00089000",
+      "put": "O:IEF270115P00089000"
+     },
+     "version": 1,
+     "source": "S5 (240 largest markets of the year)",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "UUP",
+     "direction": "up_on_yes",
+     "impact_pct": 4.5,
+     "rationale": "Lower US rates narrow rate differentials and weaken the dollar.",
+     "confidence": 0.4,
+     "score": 0.3723266613966345,
+     "verdict": "unproven",
+     "gap_bp_per_point": 0.1718342746209717,
+     "gap_t": 0.1864664194101556,
+     "days": 252,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "dev",
+     "probe": false,
+     "mechanism_class": "fx_macro",
+     "verdict_since_cutoff": "unproven"
+    },
+    {
+     "ticker": "GLD",
+     "direction": "down_on_yes",
+     "impact_pct": 5.0,
+     "rationale": "Lower real rates raise the appeal of non-yielding gold.",
+     "confidence": 0.3,
+     "score": 0.3062379749340189,
+     "verdict": "unproven",
+     "gap_bp_per_point": 0.9878563581160296,
+     "gap_t": 0.1868045474012878,
+     "days": 252,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "dev",
+     "probe": false,
+     "mechanism_class": "rates_policy",
+     "verdict_since_cutoff": "confirmed"
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
   "polymarket:3554659": {
    "question": "Will Google have the best AI model at the end of October 2026?",
    "cluster": null,
@@ -1171,68 +1797,167 @@
    "no_instrument": false,
    "no_instrument_reason": ""
   },
-  "polymarket:616902": {
-   "question": "Will no Fed rate cuts happen in 2026?",
-   "cluster": null,
+  "polymarket:2696747": {
+   "question": "US-Iran Final Nuclear Deal by December 31, 2026?",
+   "cluster": "c077",
    "signal": [
     [
-     "polymarket:616902",
+     "polymarket:2696747",
      1.0
     ]
    ],
-   "alternative": "",
+   "alternative": "No US-Iran nuclear deal in 2026, sanctions and conflict risk persist.",
    "ends": "2027-01-01",
    "kind": "event",
    "mappings": [
     {
-     "ticker": "SHY",
+     "ticker": "USO",
      "direction": "down_on_yes",
-     "impact_pct": 0.81,
-     "rationale": "A hike or a withheld cut raises front-end Treasury yields, lowering short-dated Treasury prices.",
-     "confidence": 0.65,
-     "score": 0.1587671742934876,
+     "impact_pct": 5.5,
+     "rationale": "A deal brings sanctions relief, more Iranian oil and a lower war premium.",
+     "confidence": 0.45,
+     "score": 0.2473851069933541,
      "verdict": "confirmed",
-     "gap_bp_per_point": 0.8110126708746125,
-     "gap_t": 3.1381621248826503,
-     "days": 252,
+     "gap_bp_per_point": 43.130852427320434,
+     "gap_t": 5.741322256176288,
+     "days": 68,
      "trusted": true,
      "option": {
-      "contract": "O:SHY270115P00081000",
+      "contract": "O:USO270115P00147000",
       "expiry": "2027-01-15",
-      "strike": 81.0,
-      "call": "O:SHY270115C00081000",
-      "put": "O:SHY270115P00081000"
+      "strike": 147.0,
+      "call": "O:USO270115C00147000",
+      "put": "O:USO270115P00147000"
      },
-     "version": 1,
-     "source": "S5 (240 largest markets of the year)",
+     "version": 3,
+     "source": "dev",
      "probe": false,
-     "mechanism_class": null,
-     "verdict_since_cutoff": null
+     "mechanism_class": "commodity_supply",
+     "verdict_since_cutoff": "confirmed"
     },
     {
-     "ticker": "IEF",
+     "ticker": "XLE",
      "direction": "down_on_yes",
-     "impact_pct": 2.13,
-     "rationale": "A more hawkish Fed outcome pushes intermediate Treasury yields up, lowering 7-10 year Treasury prices.",
-     "confidence": 0.55,
-     "score": 0.1229754533156209,
+     "impact_pct": 2.0,
+     "rationale": "Energy producers lose with lower crude prices.",
+     "confidence": 0.3,
+     "score": 0.1742379529440686,
      "verdict": "confirmed",
-     "gap_bp_per_point": 2.129530085027886,
-     "gap_t": 2.7382398994335597,
-     "days": 252,
+     "gap_bp_per_point": 16.728646102908208,
+     "gap_t": 6.833010319655699,
+     "days": 68,
      "trusted": true,
      "option": {
-      "contract": "O:IEF270115P00089000",
+      "contract": "O:XLE270115P00062500",
       "expiry": "2027-01-15",
-      "strike": 89.0,
-      "call": "O:IEF270115C00089000",
-      "put": "O:IEF270115P00089000"
+      "strike": 62.5,
+      "call": "O:XLE270115C00062500",
+      "put": "O:XLE270115P00062500"
      },
-     "version": 1,
-     "source": "S5 (240 largest markets of the year)",
+     "version": 3,
+     "source": "dev",
      "probe": false,
-     "mechanism_class": null,
-     "verdict_since_cutoff": null
+     "mechanism_class": "commodity_supply",
+     "verdict_since_cutoff": "confirmed"
+    },
+    {
+     "ticker": "EIS",
+     "direction": "up_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "A deal lowers the risk of Iran-Israel war.",
+     "confidence": 0.3,
+     "score": 0.1742379529440686,
+     "verdict": "unproven",
+     "gap_bp_per_point": 0.3200190827881659,
+     "gap_t": 0.0727847272936998,
+     "days": 68,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "dev",
+     "probe": false,
+     "mechanism_class": "war_geopolitics",
+     "verdict_since_cutoff": "unproven"
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:677407": {
+   "question": "China x Taiwan military clash before 2027?",
+   "cluster": "c021",
+   "signal": [
+    [
+     "polymarket:677407",
+     1.0
+    ]
+   ],
+   "alternative": "No military clash between China and Taiwan.",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "FXI",
+     "direction": "down_on_yes",
+     "impact_pct": 6.5,
+     "rationale": "Conflict brings sanctions risk on Chinese companies.",
+     "confidence": 0.3,
+     "score": 0.0321250069759685,
+     "verdict": "confirmed",
+     "gap_bp_per_point": 15.469057288305738,
+     "gap_t": 2.448370275951007,
+     "days": 220,
+     "trusted": true,
+     "option": {
+      "contract": "O:FXI270115P00033000",
+      "expiry": "2027-01-15",
+      "strike": 33.0,
+      "call": "O:FXI270115C00033000",
+      "put": "O:FXI270115P00033000"
+     },
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "war_geopolitics",
+     "verdict_since_cutoff": "unproven"
+    },
+    {
+     "ticker": "TSM",
+     "direction": "down_on_yes",
+     "impact_pct": 12.5,
+     "rationale": "TSMC's fabs sit in the conflict zone.",
+     "confidence": 0.7,
+     "score": 0.097669169331391,
+     "verdict": "unproven",
+     "gap_bp_per_point": -2.0839848368039795,
+     "gap_t": -0.2544100573306241,
+     "days": 220,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "war_geopolitics",
+     "verdict_since_cutoff": "unproven"
+    },
+    {
+     "ticker": "EWT",
+     "direction": "down_on_yes",
+     "impact_pct": 12.5,
+     "rationale": "Military conflict directly threatens Taiwanese assets and trade.",
+     "confidence": 0.4,
+     "score": 0.0426986897842327,
+     "verdict": "unproven",
+     "gap_bp_per_point": -8.371674442571264,
+     "gap_t": -1.1145200406812918,
+     "days": 220,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "war_geopolitics",
+     "verdict_since_cutoff": "unproven"
     }
    ],
    "no_instrument": false,
@@ -1993,6 +2718,190 @@
    "no_instrument": false,
    "no_instrument_reason": ""
   },
+  "polymarket:665224": {
+   "question": "Ukraine signs peace deal with Russia before 2027?",
+   "cluster": "c040",
+   "signal": [
+    [
+     "polymarket:665224",
+     1.0
+    ]
+   ],
+   "alternative": "The war continues without a signed deal.",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "EPOL",
+     "direction": "up_on_yes",
+     "impact_pct": 6.0,
+     "rationale": "Peace removes Poland's frontline risk premium and adds reconstruction demand.",
+     "confidence": 0.4,
+     "score": 0.2105171001747283,
+     "verdict": "unproven",
+     "gap_bp_per_point": 0.2583092669918693,
+     "gap_t": 0.0969972107087444,
+     "days": 227,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "war_geopolitics",
+     "verdict_since_cutoff": "unproven"
+    },
+    {
+     "ticker": "VGK",
+     "direction": "up_on_yes",
+     "impact_pct": 2.5,
+     "rationale": "Lower energy and security risk lifts European equities.",
+     "confidence": 0.35,
+     "score": 0.1870079198039594,
+     "verdict": "unproven",
+     "gap_bp_per_point": 1.11112047439188,
+     "gap_t": 0.6529275629305648,
+     "days": 227,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "war_geopolitics",
+     "verdict_since_cutoff": "unproven"
+    },
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "impact_pct": 4.0,
+     "rationale": "A deal raises the odds of eased sanctions and more Russian supply, lowering crude.",
+     "confidence": 0.3,
+     "score": 0.1655734924435842,
+     "verdict": "unproven",
+     "gap_bp_per_point": 4.447367805405173,
+     "gap_t": 0.5245008741262269,
+     "days": 227,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "war_geopolitics",
+     "verdict_since_cutoff": "unproven"
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:1731346": {
+   "question": "Iran agrees to surrender enriched uranium stockpile by December 31, 2026?",
+   "cluster": "c053",
+   "signal": [
+    [
+     "polymarket:1731346",
+     1.0
+    ]
+   ],
+   "alternative": "Iran keeps its enriched uranium stockpile, conflict risk persists.",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "impact_pct": 4.5,
+     "rationale": "A nuclear concession lowers war risk and opens a path to sanctions relief and more Iranian oil.",
+     "confidence": 0.4,
+     "score": 0.193129200974136,
+     "verdict": "unproven",
+     "gap_bp_per_point": 20.308365491452708,
+     "gap_t": 1.774662739989834,
+     "days": 130,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "dev",
+     "probe": false,
+     "mechanism_class": "war_geopolitics",
+     "verdict_since_cutoff": "unproven"
+    },
+    {
+     "ticker": "EIS",
+     "direction": "up_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Removing the Iranian nuclear threat lowers Israel's security risk premium.",
+     "confidence": 0.3,
+     "score": 0.1511868771310398,
+     "verdict": "unproven",
+     "gap_bp_per_point": 7.055511813121557,
+     "gap_t": 1.567350713743051,
+     "days": 130,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "dev",
+     "probe": false,
+     "mechanism_class": "war_geopolitics",
+     "verdict_since_cutoff": "confirmed"
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:2243897": {
+   "question": "Russia x Ukraine ceasefire agreement by December 31, 2026?",
+   "cluster": "c045",
+   "signal": [
+    [
+     "polymarket:2243897",
+     1.0
+    ]
+   ],
+   "alternative": "no Russia-Ukraine ceasefire agreement by December 31, 2026",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "EPOL",
+     "direction": "up_on_yes",
+     "impact_pct": 5.5,
+     "rationale": "Poland gains most as a frontline economy and reconstruction hub.",
+     "confidence": 0.6,
+     "score": 0.1597306256435207,
+     "verdict": "unproven",
+     "gap_bp_per_point": -0.8513182296148866,
+     "gap_t": -0.1527369367777147,
+     "days": 98,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "war_geopolitics",
+     "verdict_since_cutoff": "unproven"
+    },
+    {
+     "ticker": "VGK",
+     "direction": "up_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "A ceasefire lowers energy and security risk for European economies.",
+     "confidence": 0.55,
+     "score": 0.1408808854557003,
+     "verdict": "unproven",
+     "gap_bp_per_point": 1.5591348007899788,
+     "gap_t": 0.4990188533982002,
+     "days": 98,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "war_geopolitics",
+     "verdict_since_cutoff": "unproven"
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
   "polymarket:3215007": {
    "question": "Will there be no change in Fed interest rates after the December 2026 meeting?",
    "cluster": null,
@@ -2043,6 +2952,42 @@
      "probe": false,
      "mechanism_class": null,
      "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:1323083": {
+   "question": "Will Hezbollah disarm by December 31?",
+   "cluster": "c073",
+   "signal": [
+    [
+     "polymarket:1323083",
+     1.0
+    ]
+   ],
+   "alternative": "Hezbollah keeps its arms through December 31",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "EIS",
+     "direction": "up_on_yes",
+     "impact_pct": 1.5,
+     "rationale": "A disarmed Hezbollah removes Israel's northern threat and lowers its risk premium.",
+     "confidence": 0.3,
+     "score": 0.1440876010606814,
+     "verdict": "unproven",
+     "gap_bp_per_point": 0.5632697746474127,
+     "gap_t": 0.2717094244848922,
+     "days": 167,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "war_geopolitics",
+     "verdict_since_cutoff": "unproven"
     }
    ],
    "no_instrument": false,
@@ -2172,6 +3117,114 @@
      "probe": false,
      "mechanism_class": null,
      "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:2413330": {
+   "question": "Will Anthropic IPO by December 31, 2026?",
+   "cluster": "c134",
+   "signal": [
+    [
+     "polymarket:2413330",
+     1.0
+    ]
+   ],
+   "alternative": "Anthropic stays private through 2026.",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "AMZN",
+     "direction": "up_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Amazon's large Anthropic stake gets a public mark and liquidity.",
+     "confidence": 0.3,
+     "score": 0.1011160568083938,
+     "verdict": "unproven",
+     "gap_bp_per_point": -3.0500455166824265,
+     "gap_t": -0.6538038521687247,
+     "days": 85,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "company_specific",
+     "verdict_since_cutoff": "unproven"
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:1796138": {
+   "question": " Iran agrees to end enrichment of uranium by December 31?",
+   "cluster": "c084",
+   "signal": [
+    [
+     "polymarket:1796138",
+     1.0
+    ]
+   ],
+   "alternative": "Iran keeps enriching and the confrontation continues.",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "impact_pct": 4.5,
+     "rationale": "A nuclear deal lowers the war risk premium on Gulf crude and opens room for sanctions relief.",
+     "confidence": 0.3,
+     "score": 0.0968393995054649,
+     "verdict": "unproven",
+     "gap_bp_per_point": 8.636386638867688,
+     "gap_t": 1.290723772909239,
+     "days": 127,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "war_geopolitics",
+     "verdict_since_cutoff": "confirmed"
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:1107381": {
+   "question": "US strike on Mexico by December 31?",
+   "cluster": "c107",
+   "signal": [
+    [
+     "polymarket:1107381",
+     1.0
+    ]
+   ],
+   "alternative": "No US strike on Mexico.",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "EWW",
+     "direction": "down_on_yes",
+     "impact_pct": 7.0,
+     "rationale": "Strikes on Mexico raise sovereign and trade-relationship risk, hitting Mexican equities and the peso.",
+     "confidence": 0.5,
+     "score": 0.0929163360593406,
+     "verdict": "unproven",
+     "gap_bp_per_point": 0.4297729019270793,
+     "gap_t": 0.2934189463678199,
+     "days": 187,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "war_geopolitics",
+     "verdict_since_cutoff": "unproven"
     }
    ],
    "no_instrument": false,
@@ -2320,6 +3373,42 @@
      "probe": false,
      "mechanism_class": null,
      "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:656312": {
+   "question": "Will OpenAI IPO by December 31 2026?",
+   "cluster": "c143",
+   "signal": [
+    [
+     "polymarket:656312",
+     1.0
+    ]
+   ],
+   "alternative": "OpenAI stays private through 2026.",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "MSFT",
+     "direction": "up_on_yes",
+     "impact_pct": 2.0,
+     "rationale": "Microsoft's large OpenAI stake gets a public mark.",
+     "confidence": 0.3,
+     "score": 0.0719672190721872,
+     "verdict": "unproven",
+     "gap_bp_per_point": -1.1524013458152786,
+     "gap_t": -0.5153788603678559,
+     "days": 231,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "company_specific",
+     "verdict_since_cutoff": "unproven"
     }
    ],
    "no_instrument": false,
@@ -2528,6 +3617,61 @@
    "no_instrument": false,
    "no_instrument_reason": ""
   },
+  "polymarket:2154920": {
+   "question": "Will GameStop acquire eBay?",
+   "cluster": "c034",
+   "signal": [
+    [
+     "polymarket:2154920",
+     1.0
+    ]
+   ],
+   "alternative": "No acquisition.",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "EBAY",
+     "direction": "up_on_yes",
+     "impact_pct": 15.0,
+     "rationale": "A takeover pays eBay holders a premium.",
+     "confidence": 0.5,
+     "score": 0.0603680578609504,
+     "verdict": "unproven",
+     "gap_bp_per_point": 2.8523245232682957,
+     "gap_t": 0.4573829257103393,
+     "days": 105,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "company_specific",
+     "verdict_since_cutoff": "unproven"
+    },
+    {
+     "ticker": "GME",
+     "direction": "down_on_yes",
+     "impact_pct": 9.0,
+     "rationale": "The acquirer pays a premium and takes on a large deal, which usually weighs on its shares.",
+     "confidence": 0.35,
+     "score": 0.0396081884578168,
+     "verdict": "unproven",
+     "gap_bp_per_point": 3.1649624594082764,
+     "gap_t": 0.2968708161723393,
+     "days": 105,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "company_specific",
+     "verdict_since_cutoff": "unproven"
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
   "polymarket:2589814": {
    "question": "Will the Fed increase interest rates by 50+ bps after the October 2026 meeting?",
    "cluster": null,
@@ -2583,6 +3727,80 @@
    "no_instrument": false,
    "no_instrument_reason": ""
   },
+  "polymarket:677396": {
+   "question": "Iran Nuke before 2027?",
+   "cluster": "c119",
+   "signal": [
+    [
+     "polymarket:677396",
+     1.0
+    ]
+   ],
+   "alternative": "Iran does not get a nuclear weapon before 2027.",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "EIS",
+     "direction": "down_on_yes",
+     "impact_pct": 7.0,
+     "rationale": "Israel faces a direct existential threat and likely conflict.",
+     "confidence": 0.35,
+     "score": 0.044495777589596,
+     "verdict": "unproven",
+     "gap_bp_per_point": 6.2124810734866545,
+     "gap_t": 0.7902627023906977,
+     "days": 220,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "war_geopolitics",
+     "verdict_since_cutoff": "unproven"
+    },
+    {
+     "ticker": "USO",
+     "direction": "up_on_yes",
+     "impact_pct": 8.0,
+     "rationale": "A nuclear Iran raises the risk of Gulf conflict and oil supply disruption.",
+     "confidence": 0.35,
+     "score": 0.044495777589596,
+     "verdict": "unproven",
+     "gap_bp_per_point": 27.75532236633051,
+     "gap_t": 1.52083076332045,
+     "days": 220,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "war_geopolitics",
+     "verdict_since_cutoff": "unproven"
+    },
+    {
+     "ticker": "GLD",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Safe-haven demand rises.",
+     "confidence": 0.3,
+     "score": 0.038619832161821,
+     "verdict": "unproven",
+     "gap_bp_per_point": 5.365363285592543,
+     "gap_t": 0.4533487113763638,
+     "days": 220,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "war_geopolitics",
+     "verdict_since_cutoff": "unproven"
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
   "polymarket:3554658": {
    "question": "Will Meta have the best AI model at the end of October 2026?",
    "cluster": null,
@@ -2633,6 +3851,116 @@
      "probe": false,
      "mechanism_class": null,
      "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:691340": {
+   "question": "AI bubble burst in 2026?",
+   "cluster": "c060",
+   "signal": [
+    [
+     "polymarket:691340",
+     1.0
+    ]
+   ],
+   "alternative": "The AI investment boom continues through 2026.",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "SMH",
+     "direction": "down_on_yes",
+     "impact_pct": 25.0,
+     "rationale": "A burst cuts AI chip demand and semiconductor valuations.",
+     "confidence": 0.3,
+     "score": 0.0407833866634697,
+     "verdict": "unproven",
+     "gap_bp_per_point": 1.2986549581752185,
+     "gap_t": 0.394390278818041,
+     "days": 216,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "company_specific",
+     "verdict_since_cutoff": "unproven"
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:2264328": {
+   "question": "Russia x Ukraine ceasefire by December 31, 2026?",
+   "cluster": "c149",
+   "signal": [
+    [
+     "polymarket:2264328",
+     1.0
+    ]
+   ],
+   "alternative": "no Russia-Ukraine ceasefire by December 31, 2026",
+   "ends": "2026-12-31",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "EPOL",
+     "direction": "up_on_yes",
+     "impact_pct": 4.5,
+     "rationale": "Poland gains most from peace and reconstruction.",
+     "confidence": 0.5,
+     "score": 0.0404368576028679,
+     "verdict": "unproven",
+     "gap_bp_per_point": 4.767303847813992,
+     "gap_t": 0.5427030215174903,
+     "days": 95,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "war_geopolitics",
+     "verdict_since_cutoff": "unproven"
+    },
+    {
+     "ticker": "VGK",
+     "direction": "up_on_yes",
+     "impact_pct": 3.5,
+     "rationale": "A ceasefire lowers Europe's war risk premium and energy costs.",
+     "confidence": 0.35,
+     "score": 0.0263389664614697,
+     "verdict": "unproven",
+     "gap_bp_per_point": -0.1281145734994378,
+     "gap_t": -0.0318912761300973,
+     "days": 95,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "war_geopolitics",
+     "verdict_since_cutoff": "unproven"
+    },
+    {
+     "ticker": "USO",
+     "direction": "down_on_yes",
+     "impact_pct": 4.5,
+     "rationale": "A ceasefire eases Russian oil supply risk and sanctions.",
+     "confidence": 0.3,
+     "score": 0.0228035187556226,
+     "verdict": "unproven",
+     "gap_bp_per_point": -17.09785942483848,
+     "gap_t": -1.2486626597937889,
+     "days": 95,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "war_geopolitics",
+     "verdict_since_cutoff": "unproven"
     }
    ],
    "no_instrument": false,
@@ -2712,6 +4040,97 @@
    "no_instrument": false,
    "no_instrument_reason": ""
   },
+  "polymarket:1124834": {
+   "question": "US x Russia military clash by December 31, 2026?",
+   "cluster": "c141",
+   "signal": [
+    [
+     "polymarket:1124834",
+     1.0
+    ]
+   ],
+   "alternative": "No direct US-Russia military clash.",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "ITA",
+     "direction": "up_on_yes",
+     "impact_pct": 4.5,
+     "rationale": "Direct conflict with Russia raises US defense spending.",
+     "confidence": 0.3,
+     "score": 0.0340244282474483,
+     "verdict": "unproven",
+     "gap_bp_per_point": 1.698932176098495,
+     "gap_t": 1.8493937203672104,
+     "days": 185,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "war_geopolitics",
+     "verdict_since_cutoff": "unproven"
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:665480": {
+   "question": "Will US withdraw from NATO before 2027?",
+   "cluster": "c082",
+   "signal": [
+    [
+     "polymarket:665480",
+     1.0
+    ]
+   ],
+   "alternative": "The US stays in NATO.",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "EPOL",
+     "direction": "down_on_yes",
+     "impact_pct": 5.5,
+     "rationale": "Frontline Poland is most exposed to the loss of US protection.",
+     "confidence": 0.3,
+     "score": 0.0331947787958004,
+     "verdict": "unproven",
+     "gap_bp_per_point": 7.899135393124835,
+     "gap_t": 1.0686249815992934,
+     "days": 227,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "dev",
+     "probe": false,
+     "mechanism_class": "war_geopolitics",
+     "verdict_since_cutoff": "unproven"
+    },
+    {
+     "ticker": "VGK",
+     "direction": "down_on_yes",
+     "impact_pct": 2.5,
+     "rationale": "Losing the US security guarantee raises European risk and forces costly rearmament.",
+     "confidence": 0.3,
+     "score": 0.0331947787958004,
+     "verdict": "unproven",
+     "gap_bp_per_point": 0.5650007758928381,
+     "gap_t": 0.2063937462222707,
+     "days": 227,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "dev",
+     "probe": false,
+     "mechanism_class": "war_geopolitics",
+     "verdict_since_cutoff": "unproven"
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
   "polymarket:616908": {
    "question": "Will 6 Fed rate cuts happen in 2026?",
    "cluster": null,
@@ -2743,6 +4162,25 @@
      "probe": false,
      "mechanism_class": null,
      "verdict_since_cutoff": null
+    },
+    {
+     "ticker": "TLT",
+     "direction": "up_on_yes",
+     "impact_pct": 4.5,
+     "rationale": "A cut count this large implies a sharp slowdown or crisis, which usually pulls long yields down too.",
+     "confidence": 0.5,
+     "score": 0.0231268916064776,
+     "verdict": "unproven",
+     "gap_bp_per_point": 3.047106518893892,
+     "gap_t": 0.9438402556288776,
+     "days": 252,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "dev",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": "contradicted"
     },
     {
      "ticker": "IEF",
@@ -2798,6 +4236,116 @@
      "probe": false,
      "mechanism_class": null,
      "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:1345724": {
+   "question": "Will Alberta join the US? ",
+   "cluster": "c068",
+   "signal": [
+    [
+     "polymarket:1345724",
+     1.0
+    ]
+   ],
+   "alternative": "Alberta stays in Canada.",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "FXC",
+     "direction": "down_on_yes",
+     "impact_pct": 3.5,
+     "rationale": "Loss of oil export revenue and political risk weaken the Canadian dollar.",
+     "confidence": 0.3,
+     "score": 0.0289056990275151,
+     "verdict": "unproven",
+     "gap_bp_per_point": 3.671687211723547,
+     "gap_t": 1.6537780785530312,
+     "days": 127,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "fx_macro",
+     "verdict_since_cutoff": "unproven"
+    },
+    {
+     "ticker": "EWC",
+     "direction": "down_on_yes",
+     "impact_pct": 5.0,
+     "rationale": "Losing Alberta's oil wealth and the constitutional crisis would hit Canadian equities.",
+     "confidence": 0.3,
+     "score": 0.0259282006076964,
+     "verdict": "unproven",
+     "gap_bp_per_point": 6.470209238474783,
+     "gap_t": 1.7557949907587176,
+     "days": 163,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "country_election",
+     "verdict_since_cutoff": "unproven"
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:1144471": {
+   "question": "Will Satoshi move any Bitcoin in 2026?",
+   "cluster": "c058",
+   "signal": [
+    [
+     "polymarket:1144471",
+     1.0
+    ]
+   ],
+   "alternative": "Satoshi's roughly one million coins stay dormant.",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "IBIT",
+     "direction": "down_on_yes",
+     "impact_pct": 10.0,
+     "rationale": "Movement signals possible sale of about 5% of supply or a broken key, hitting Bitcoin.",
+     "confidence": 0.45,
+     "score": 0.0278998564766341,
+     "verdict": "unproven",
+     "gap_bp_per_point": 33.201798277027684,
+     "gap_t": 0.865315786714034,
+     "days": 183,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "dev",
+     "probe": false,
+     "mechanism_class": "other",
+     "verdict_since_cutoff": "unproven"
+    },
+    {
+     "ticker": "MSTR",
+     "direction": "down_on_yes",
+     "impact_pct": 15.0,
+     "rationale": "The leveraged Bitcoin treasury falls more than Bitcoin.",
+     "confidence": 0.35,
+     "score": 0.0209108301556132,
+     "verdict": "unproven",
+     "gap_bp_per_point": 44.11225178780665,
+     "gap_t": 0.8325392301025485,
+     "days": 183,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "dev",
+     "probe": false,
+     "mechanism_class": "other",
+     "verdict_since_cutoff": "unproven"
     }
    ],
    "no_instrument": false,
@@ -2872,6 +4420,80 @@
      "probe": false,
      "mechanism_class": null,
      "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
+  "polymarket:687642": {
+   "question": "China x Japan military clash before 2027?",
+   "cluster": "c116",
+   "signal": [
+    [
+     "polymarket:687642",
+     1.0
+    ]
+   ],
+   "alternative": "No military clash between China and Japan.",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "EWJ",
+     "direction": "down_on_yes",
+     "impact_pct": 6.0,
+     "rationale": "Japan is a direct party to the clash.",
+     "confidence": 0.4,
+     "score": 0.0272990762712543,
+     "verdict": "unproven",
+     "gap_bp_per_point": -0.6720014022108882,
+     "gap_t": -0.0655304111691997,
+     "days": 218,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "war_geopolitics",
+     "verdict_since_cutoff": "unproven"
+    },
+    {
+     "ticker": "FXI",
+     "direction": "down_on_yes",
+     "impact_pct": 6.0,
+     "rationale": "A clash brings sanctions and capital flight risk for Chinese equities.",
+     "confidence": 0.4,
+     "score": 0.0272990762712543,
+     "verdict": "unproven",
+     "gap_bp_per_point": 6.500823726018167,
+     "gap_t": 0.5650343324900216,
+     "days": 218,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "war_geopolitics",
+     "verdict_since_cutoff": "unproven"
+    },
+    {
+     "ticker": "ITA",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Pacific conflict raises defense demand.",
+     "confidence": 0.3,
+     "score": 0.0204573806541541,
+     "verdict": "unproven",
+     "gap_bp_per_point": 5.511539726074717,
+     "gap_t": 0.6857338094167884,
+     "days": 218,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "war_geopolitics",
+     "verdict_since_cutoff": "unproven"
     }
    ],
    "no_instrument": false,
@@ -3135,6 +4757,61 @@
    "no_instrument": false,
    "no_instrument_reason": ""
   },
+  "polymarket:665258": {
+   "question": "Will China unban Bitcoin by 2027?",
+   "cluster": "c138",
+   "signal": [
+    [
+     "polymarket:665258",
+     1.0
+    ]
+   ],
+   "alternative": "China keeps its Bitcoin ban through 2027",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "COIN",
+     "direction": "up_on_yes",
+     "impact_pct": 9.0,
+     "rationale": "Higher crypto prices and volumes lift exchange revenue.",
+     "confidence": 0.4,
+     "score": 0.0253609193786052,
+     "verdict": "unproven",
+     "gap_bp_per_point": -0.2546788412538111,
+     "gap_t": -0.1381858976112639,
+     "days": 227,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "crypto_policy",
+     "verdict_since_cutoff": "unproven"
+    },
+    {
+     "ticker": "IBIT",
+     "direction": "up_on_yes",
+     "impact_pct": 12.5,
+     "rationale": "Opening the Chinese market adds large new demand for Bitcoin.",
+     "confidence": 0.3,
+     "score": 0.0121647083933011,
+     "verdict": "unproven",
+     "gap_bp_per_point": 2.6637461994579184,
+     "gap_t": 1.3256526571342404,
+     "days": 227,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "heldout2",
+     "probe": false,
+     "mechanism_class": "crypto_policy",
+     "verdict_since_cutoff": "unproven"
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
   "polymarket:562803": {
    "question": "Will the Republican Party control the House after the 2026 Midterm elections?",
    "cluster": null,
@@ -3245,56 +4922,56 @@
    "no_instrument": false,
    "no_instrument_reason": ""
   },
-  "polymarket:1144471": {
-   "question": "Will Satoshi move any Bitcoin in 2026?",
-   "cluster": null,
+  "polymarket:1115301": {
+   "question": "Will the U.S. invade Greenland in 2026?",
+   "cluster": "c110",
    "signal": [
     [
-     "polymarket:1144471",
+     "polymarket:1115301",
      1.0
     ]
    ],
-   "alternative": "",
+   "alternative": "No US invasion of Greenland.",
    "ends": "2027-01-01",
    "kind": "event",
    "mappings": [
     {
-     "ticker": "IBIT",
-     "direction": "down_on_yes",
-     "impact_pct": 33.2,
-     "rationale": "Satoshi's coins moving would raise fears of a roughly one million bitcoin overhang or compromised keys, hitting bitcoin.",
-     "confidence": 0.35,
-     "score": 0.0150793276308608,
+     "ticker": "GLD",
+     "direction": "up_on_yes",
+     "impact_pct": 3.0,
+     "rationale": "Safe-haven demand rises on an alliance crisis.",
+     "confidence": 0.3,
+     "score": 0.0176892957578018,
      "verdict": "unproven",
-     "gap_bp_per_point": 33.201798277027684,
-     "gap_t": 0.865315786714034,
-     "days": 183,
+     "gap_bp_per_point": 24.333963611687743,
+     "gap_t": 1.2779977323665652,
+     "days": 187,
      "trusted": false,
      "option": null,
-     "version": 1,
-     "source": "held-out",
+     "version": 3,
+     "source": "heldout2",
      "probe": false,
-     "mechanism_class": null,
-     "verdict_since_cutoff": null
+     "mechanism_class": "war_geopolitics",
+     "verdict_since_cutoff": "unproven"
     },
     {
-     "ticker": "MSTR",
+     "ticker": "VGK",
      "direction": "down_on_yes",
-     "impact_pct": 44.11,
-     "rationale": "Strategy is a leveraged holder of bitcoin and falls with the bitcoin price.",
+     "impact_pct": 4.5,
+     "rationale": "An attack on NATO ally Denmark ruptures the transatlantic alliance and hits European equities.",
      "confidence": 0.3,
-     "score": 0.0130247109253019,
+     "score": 0.0176892957578018,
      "verdict": "unproven",
-     "gap_bp_per_point": 44.11225178780665,
-     "gap_t": 0.8325392301025485,
-     "days": 183,
+     "gap_bp_per_point": -3.456925864057778,
+     "gap_t": -0.9220085621423064,
+     "days": 187,
      "trusted": false,
      "option": null,
-     "version": 1,
-     "source": "held-out",
+     "version": 3,
+     "source": "heldout2",
      "probe": false,
-     "mechanism_class": null,
-     "verdict_since_cutoff": null
+     "mechanism_class": "war_geopolitics",
+     "verdict_since_cutoff": "unproven"
     }
    ],
    "no_instrument": false,
@@ -3355,6 +5032,105 @@
    "no_instrument": false,
    "no_instrument_reason": ""
   },
+  "polymarket:679049": {
+   "question": "Will Mathilde Panot win the 2027 French presidential election?",
+   "cluster": "c033",
+   "signal": [
+    [
+     "polymarket:679049",
+     1.0
+    ],
+    [
+     "polymarket:679023",
+     -1.0
+    ],
+    [
+     "polymarket:679041",
+     -1.0
+    ],
+    [
+     "polymarket:679043",
+     -1.0
+    ],
+    [
+     "polymarket:679042",
+     -1.0
+    ],
+    [
+     "polymarket:679039",
+     -1.0
+    ],
+    [
+     "polymarket:679048",
+     1.0
+    ],
+    [
+     "polymarket:679037",
+     1.0
+    ],
+    [
+     "polymarket:679025",
+     1.0
+    ],
+    [
+     "polymarket:679035",
+     0.5
+    ],
+    [
+     "polymarket:679033",
+     0.5
+    ],
+    [
+     "polymarket:679046",
+     0.5
+    ]
+   ],
+   "alternative": "A centrist or centre-right candidate wins.",
+   "ends": "2027-04-19",
+   "kind": "event",
+   "mappings": [
+    {
+     "ticker": "EWQ",
+     "direction": "down_on_yes",
+     "impact_pct": 6.0,
+     "rationale": "A far-left LFI presidency implies large spending, higher taxes and EU conflict, negative for French equities.",
+     "confidence": 0.35,
+     "score": 0.0120550918986791,
+     "verdict": "unproven",
+     "gap_bp_per_point": -12.607821011164878,
+     "gap_t": -1.7338834023948873,
+     "days": 220,
+     "trusted": false,
+     "option": null,
+     "version": 3,
+     "source": "dev",
+     "probe": false,
+     "mechanism_class": "country_election",
+     "verdict_since_cutoff": "unproven"
+    },
+    {
+     "ticker": "FXE",
+     "direction": "down_on_yes",
+     "impact_pct": 52.64,
+     "rationale": "A far-left French president raises euro-area fiscal and cohesion risk, weakening the euro.",
+     "confidence": 0.3,
+     "score": 0.0067296275493749,
+     "verdict": "contradicted",
+     "gap_bp_per_point": -52.64326941993851,
+     "gap_t": -2.3352223311969635,
+     "days": 220,
+     "trusted": false,
+     "option": null,
+     "version": 1,
+     "source": "held-out",
+     "probe": false,
+     "mechanism_class": null,
+     "verdict_since_cutoff": null
+    }
+   ],
+   "no_instrument": false,
+   "no_instrument_reason": ""
+  },
   "polymarket:679036": {
    "question": "Will Fran\u00e7ois Asselineau win the 2027 French presidential election?",
    "cluster": null,
@@ -3397,61 +5173,6 @@
      "verdict": "contradicted",
      "gap_bp_per_point": -15.032208792932297,
      "gap_t": -3.746759693831739,
-     "days": 220,
-     "trusted": false,
-     "option": null,
-     "version": 1,
-     "source": "held-out",
-     "probe": false,
-     "mechanism_class": null,
-     "verdict_since_cutoff": null
-    }
-   ],
-   "no_instrument": false,
-   "no_instrument_reason": ""
-  },
-  "polymarket:679049": {
-   "question": "Will Mathilde Panot win the 2027 French presidential election?",
-   "cluster": null,
-   "signal": [
-    [
-     "polymarket:679049",
-     1.0
-    ]
-   ],
-   "alternative": "",
-   "ends": "2027-04-19",
-   "kind": "event",
-   "mappings": [
-    {
-     "ticker": "EWQ",
-     "direction": "down_on_yes",
-     "impact_pct": 97.88,
-     "rationale": "A far-left LFI presidency implies large spending, higher taxes and EU conflict, negative for French equities.",
-     "confidence": 0.4,
-     "score": 0.0090368871181073,
-     "verdict": "contradicted",
-     "gap_bp_per_point": -97.88331429260458,
-     "gap_t": -2.484942431017912,
-     "days": 220,
-     "trusted": false,
-     "option": null,
-     "version": 1,
-     "source": "held-out",
-     "probe": false,
-     "mechanism_class": null,
-     "verdict_since_cutoff": null
-    },
-    {
-     "ticker": "FXE",
-     "direction": "down_on_yes",
-     "impact_pct": 52.64,
-     "rationale": "A far-left French president raises euro-area fiscal and cohesion risk, weakening the euro.",
-     "confidence": 0.3,
-     "score": 0.0067296275493749,
-     "verdict": "contradicted",
-     "gap_bp_per_point": -52.64326941993851,
-     "gap_t": -2.3352223311969635,
      "days": 220,
      "trusted": false,
      "option": null,
@@ -3536,6 +5257,210 @@
    ],
    "no_instrument": false,
    "no_instrument_reason": ""
+  },
+  "polymarket:1057349": {
+   "question": "Jeffrey Epstein foul play confirmed by December 31, 2026?",
+   "cluster": "c043",
+   "signal": [],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [],
+   "no_instrument": true,
+   "no_instrument_reason": "No listed instrument reacts to this. / No listed instrument reacts to this finding.",
+   "probe": false
+  },
+  "polymarket:1553591": {
+   "question": "Cuban regime falls in 2026?",
+   "cluster": "c088",
+   "signal": [],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [],
+   "no_instrument": true,
+   "no_instrument_reason": "Cuba has no listed market; cruise or travel names would not move 1% beyond beta. / Cuba's economy is too small for regime change to move a listed US instrument by 1%.",
+   "probe": false
+  },
+  "polymarket:665531": {
+   "question": "Metamask FDV above $700M one day after launch?",
+   "cluster": "c112",
+   "signal": [],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [],
+   "no_instrument": true,
+   "no_instrument_reason": "MetaMask's parent is private; no US-listed instrument would move 1%. / MetaMask's owner Consensys is private and the token moves no listed US instrument by 1%.",
+   "probe": false
+  },
+  "polymarket:648383": {
+   "question": "Billionaire one-time wealth tax passes in California election 2026?",
+   "cluster": "c005",
+   "signal": [],
+   "alternative": "",
+   "ends": "2026-11-04",
+   "kind": "event",
+   "mappings": [],
+   "no_instrument": true,
+   "no_instrument_reason": "A state-level tax on individuals' wealth would not move any listed instrument by 1% after taking out the market. / A one-time state tax on individuals would not move any listed instrument by 1% after market.",
+   "probe": false
+  },
+  "polymarket:1429058": {
+   "question": "Will Richard Van De Water win The Bachelorette Season 22?",
+   "cluster": "c077",
+   "signal": [],
+   "alternative": "",
+   "ends": "2026-11-30",
+   "kind": "event",
+   "mappings": [],
+   "no_instrument": true,
+   "no_instrument_reason": "A reality TV outcome has no market effect. / A reality show outcome moves no listed instrument.",
+   "probe": false
+  },
+  "polymarket:2771185": {
+   "question": "Mojtaba Khamenei seen in public by December 31?",
+   "cluster": "c083",
+   "signal": [],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [],
+   "no_instrument": true,
+   "no_instrument_reason": "A public appearance would not move oil or any listed instrument by 1%. / A public appearance has no clear directional effect of 1% on any listed instrument.",
+   "probe": false
+  },
+  "polymarket:637910": {
+   "question": "Mitch McConnell steps down from Senate before his term ends?",
+   "cluster": "c089",
+   "signal": [],
+   "alternative": "",
+   "ends": "2027-01-04",
+   "kind": "event",
+   "mappings": [],
+   "no_instrument": true,
+   "no_instrument_reason": "Kentucky's governor-appointment rules keep the seat Republican in practice; no market effect. / A Senate seat change with a same-party replacement moves no listed instrument.",
+   "probe": false
+  },
+  "polymarket:1005344": {
+   "question": "Puffpaw FDV above $100M one day after launch?",
+   "cluster": "c095",
+   "signal": [],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [],
+   "no_instrument": true,
+   "no_instrument_reason": "The token is not tradable through any US-listed instrument. / A small token's valuation moves no US-listed instrument.",
+   "probe": false
+  },
+  "polymarket:665495": {
+   "question": "Ukraine joins NATO before 2027?",
+   "cluster": "c128",
+   "signal": [],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [],
+   "no_instrument": true,
+   "no_instrument_reason": "The direction for European assets is ambiguous: membership brings security but also escalation risk with Russia. / Membership could mean either security guarantees or escalation; no instrument has a clear 1% direction.",
+   "probe": false
+  },
+  "polymarket:567689": {
+   "question": "Zelenskyy out as Ukraine president by end of 2026?",
+   "cluster": "c024",
+   "signal": [],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [],
+   "no_instrument": true,
+   "no_instrument_reason": "Direction is unclear: his exit could come from a peace deal and elections or from a collapse, so no instrument has a reliable sign. / His exit could come from a peace deal and election or from a collapse, so no instrument has a clear direction.",
+   "probe": false
+  },
+  "polymarket:2374271": {
+   "question": "Will Ukraine recapture Crimean territory by December 31, 2026?",
+   "cluster": "c036",
+   "signal": [],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [],
+   "no_instrument": true,
+   "no_instrument_reason": "Battlefield gains in Crimea have no clear-signed effect of 1% on a listed instrument. / A limited territorial gain has no clear 1% effect on any US-listed instrument.",
+   "probe": false
+  },
+  "polymarket:1059772": {
+   "question": "Jeffrey Epstein confirmed to be alive before 2027?",
+   "cluster": "c051",
+   "signal": [],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [],
+   "no_instrument": true,
+   "no_instrument_reason": "No listed instrument reacts.",
+   "probe": false
+  },
+  "polymarket:618454": {
+   "question": "Opensea FDV above $500M one day after launch?",
+   "cluster": "c063",
+   "signal": [],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [],
+   "no_instrument": true,
+   "no_instrument_reason": "The token is not US-listed and moves no listed instrument by 1%. / The OpenSea token is not traded through any US-listed instrument.",
+   "probe": false
+  },
+  "polymarket:1131170": {
+   "question": "Human moon landing in 2026?",
+   "cluster": "c078",
+   "signal": [],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [],
+   "no_instrument": true,
+   "no_instrument_reason": "No listed instrument would move 1% on the timing of a crewed landing. / No listed instrument would move 1% on the timing of a landing.",
+   "probe": false
+  },
+  "polymarket:1388704": {
+   "question": "Will Samuel Alito announce his retirement by December 31, 2026?",
+   "cluster": "c105",
+   "signal": [],
+   "alternative": "",
+   "ends": "2027-01-01",
+   "kind": "event",
+   "mappings": [],
+   "no_instrument": true,
+   "no_instrument_reason": "A conservative-for-conservative replacement moves no listed instrument by 1%. / A like-for-like court replacement moves no listed instrument 1%.",
+   "probe": false
+  },
+  "polymarket:630772": {
+   "question": "Will the Democrats win the Maine Senate race in 2026?",
+   "cluster": "c132",
+   "signal": [],
+   "alternative": "",
+   "ends": "2026-11-04",
+   "kind": "event",
+   "mappings": [],
+   "no_instrument": true,
+   "no_instrument_reason": "One Senate seat moves no listed instrument by 1%. / A single Senate seat does not move any listed instrument 1%.",
+   "probe": false
+  },
+  "polymarket:628955": {
+   "question": "Will Tom Steyer win the California Governor Election in 2026?",
+   "cluster": "c069",
+   "signal": [],
+   "alternative": "",
+   "ends": "2026-11-04",
+   "kind": "event",
+   "mappings": [],
+   "no_instrument": true,
+   "no_instrument_reason": "No listed instrument on the list has California-specific exposure that would move 1% on the governor race. / A state governorship would not move any listed instrument 1% after beta.",
+   "probe": false
   }
  }
 }
