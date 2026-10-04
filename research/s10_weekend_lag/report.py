@@ -108,9 +108,34 @@ def main() -> int:
     K = float(m[(m.variant == cfg.PRIMARY) & (m.cost_mult == 1.0) & (m.segment == "ALL")].capital_base.iloc[0])
     charts(tr, eq, K, meta["oos_from"])
     leadlag_chart(ll)
+    if (R / "mechanism" / "slopes.csv").exists():
+        mechanism_chart()
     (R / "capacity.md").write_text(capacity(tr, m))
     print("charts and capacity.md written")
     return 0
+
+
+
+def mechanism_chart() -> None:
+    """Part 2: how far the follower moves per point of the leader's move, by horizon, for question pairs (type B)."""
+    s = pd.read_csv(R / "mechanism" / "slopes.csv")
+    s = s[(s.pairs == "B") & (s.group == "all")]
+    fig, ax = plt.subplots(figsize=(9.5, 4.0), facecolor=SURFACE)
+    _style(ax)
+    lines = (("active->thin", "active", BLUE, "Active market leads, follower active"),
+             ("active->thin", "stale", GREY, "Active market leads, follower stale (no change in 15 min)"),
+             ("thin->active", "all", ORANGE, "Thin market leads, active follows"))
+    for k, (d, f, color, label) in enumerate(lines):
+        r = s[(s.direction == d) & (s.follower == f)].sort_values("horizon_min")
+        xs = np.arange(len(r)) * 4 + (k - 1) * 0.8
+        ax.errorbar(xs, r.slope, yerr=1.96 * r.se, fmt="o", color=color, capsize=3, label=label)
+    ax.set_xticks(np.arange(3) * 4, ["next 5 min", "next 15 min", "next 30 min"])
+    ax.set_ylabel("follower's move per point of leader's move", color=INK2, fontsize=9)
+    ax.set_title("Linked Polymarket questions, 1,301 pairs, 373 days: stale prices do not catch up", loc="left", fontsize=11, color=INK)
+    ax.legend(frameon=False, fontsize=8.5, loc="upper left")
+    fig.tight_layout()
+    fig.savefig(R / "mechanism" / "mechanism.png", dpi=160, facecolor=SURFACE)
+    plt.close(fig)
 
 
 if __name__ == "__main__":

@@ -30,3 +30,20 @@
 - The first `git commit` named the empty results folder in the pathspec and failed; recommitted with the package path.
 - Commit trailers name Claude Opus 5.5, the model that ran this session (the brief's template names Fable 5.1).
 - No amendments to METHOD.md.
+
+## Part 2, the mechanism (Theo: "stop focus on a single equity or question, focus on the mechanism")
+
+| Time (New York) | Step | Commit |
+|---|---|---|
+| 22:55 | Amendment 1 (Part 2) and its config committed and pushed, before any Part 2 price was read | `9b198db` |
+| 23:15 | `mechanism.py` and five tests committed (11 tests pass) | `906b68d` |
+| 23:15 | First run failed: some stock price markets name the ticker only in the event title. Fixed to read the title too | |
+| 23:16 | Run without prints (8 s) | |
+| 23:16 to 23:20 | Run with prints: 136 markets, condition ids from gamma, about 400 requests at 2.5 a second, no errors (276 s) | |
+
+- Same caches as Part 1; condition ids of event questions from `gamma-api.polymarket.com/markets/<id>`, cached in
+  `.cache/conditions.json`.
+- The pre-registered same-bin split of M2 is mechanical (a stale follower cannot move in the same bin); disclosed in
+  SUMMARY and not used.
+- Amendment 1's heading says 03:00 UTC (23:00 New York); the commit is at 22:55. The heading is not rewritten.
+- Times are from `git log`.

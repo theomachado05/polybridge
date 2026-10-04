@@ -249,7 +249,7 @@ def price_series() -> dict[str, dict]:
         pm = np.load(f)
         if len(pm["t"]) < 2:
             continue
-        cls = m["asset_class"] if m["asset_class"] != "stock" else "stock:" + STOCK_RE.search(m["question"]).group(1)
+        cls = m["asset_class"] if m["asset_class"] != "stock" else "stock:" + (STOCK_RE.search(m["question"]) or STOCK_RE.search(m["event_title"])).group(1)
         out[m["id"]] = {"id": m["id"], "question": m["question"], "cls": cls, "sign": float(m["sign"]), "t": pm["t"], "p": pm["p"].astype(float),
                         "half": {"crude": 0.005, "gold": 0.0125}.get(m["asset_class"], 0.025), "fee_rate": m["fee_rate"],
                         "fee_exponent": m["fee_exponent"], "condition": m["condition"], "mkind": "price market"}
