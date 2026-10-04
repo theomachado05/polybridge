@@ -54,6 +54,36 @@ or more on at least 30% of nights) keeps 109 links at 64% confirmed.
 care: a link with active odds is also easier to confirm statistically, so the scorer finds links that are both true
 and testable. That is what a trade needs, but it is not proof that quiet links are false.
 
+## Held-out test (120 markets no study had used)
+
+Plan committed before any label or price existed: `linker/heldout/PLAN.md`. Results: `results/linker/heldout.json`,
+`heldout_links.csv`.
+
+| | Links | Questions linked | Testable | Confirmed | Contradicted | Right sign |
+|---|---|---|---|---|---|---|
+| Arm A, by question (the current linker) | 101 | 53 | 55 | 13 (24%) | 4 | 71% |
+| Arm B, by event (the revised linker) | 42 | 24 | 21 | 9 (43%) | 0 | 86% |
+
+- **Linking by event is more precise and less broad.** It names fewer than half as many links, loses
+  4 confirmed ones, and drops every contradicted one. By the rule fixed in the plan
+  (higher confirmed share and no more contradicted links) arm B is the better linker. The counts are small
+  (9 of 21 against 13 of 55), so this is a direction, not a proof.
+- **The scorer holds up on unseen markets.** Trained on S4 and S5 only: AUC 0.88 on 55 held-out
+  links; 50% confirmed in its top third against a base rate of 24%,
+  and 0% in its bottom third.
+- **The confirmed links are again almost all one theme:** Iran and oil (USO, XLE, JETS). Tariffs, AI-model and
+  Bitcoin-reserve links stayed unproven.
+
+## The live link map
+
+`python -m linker.link_map` writes `results/linker/link_map.csv` and `link_map.json`: every link on a question that is
+still open, with its score, what the prices say, its measured sensitivity and its option contract. As of 2026-10-02:
+130 links on 51 open questions, of which **26 are trusted**
+(13 questions). 9 of the trusted links are on events
+(6 questions: the Clarity Act, Hormuz, a US invasion of Iran, the best AI model, Fed cuts
+in 2026); the other 17 are price proxies (Bitcoin and Ethereum thresholds). Every trusted
+link has a listed option contract.
+
 ## What breaks a link (found in the data)
 
 1. **The wrong market of the event.** The original map tied EWZ to five-week-old side markets ("finishes second in
