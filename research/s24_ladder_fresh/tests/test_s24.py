@@ -233,3 +233,60 @@ def test_config_is_the_brief():
     assert cfg.WINDOW_S == 600 and cfg.WINDOW_VARIANT_S == 120 and cfg.SIZE_CAP == 100
     assert cfg.COSTS[1.0] == {"fee_mult": 1.0, "haircut": 0.01} and cfg.COSTS[2.0] == {"fee_mult": 2.0, "haircut": 0.02}
     assert cfg.RATE <= 1.0 and cfg.MAX_REQUESTS <= 3000 and (cfg.MIN_OOS_TRADES, cfg.MIN_OOS_DATES) == (30, 10)
+
+
+# ---------------------------------------------------------------- end to end on made-up prints
+
+def test_detect_settle_and_metrics_end_to_end(tmp_path, monkeypatch):
+    from s24_ladder_fresh import report as rp
+    here, cache, res = tmp_path / "pkg", tmp_path / "pkg" / ".cache", tmp_path / "res"
+    (cache / "prints").mkdir(parents=True)
+    res.mkdir()
+    for name, val in (("HERE", here), ("CACHE", cache), ("PRINTS", cache / "prints"), ("RESULTS", res)):
+        monkeypatch.setattr(rn, name, val)
+    rn._mem.clear()
+
+    def mkt(i, q, close):
+        return {"id": i, "question": q, "conditionId": "0x" + i, "startDate": "2025-01-01T00:00:00Z", "closedTime": close,
+                "fee_rate": 0.0, "fee_exponent": 1.0}
+    day = 86400
+    M = {"1": mkt("1", "X by June 30?", "2025-07-01 00:00:00+00"), "2": mkt("2", "X by July 31?", "2025-08-01 00:00:00+00"),
+         "3": mkt("3", "Y above $2?", None), "4": mkt("4", "Y above $1?", None)}
+    L = {"ladders": [{"set": "a", "kind": "date", "event": "x", "event_title": "X", "legs": ["1", "2"], "pairs": [["1", "2"]]},
+                     {"set": "b", "kind": "strike", "event": "y", "event_title": "Y", "legs": ["4", "3"], "pairs": [["3", "4"]]}],
+         "markets": M}
+    (here / "ladders.json").write_text(json.dumps(L))
+    (cache / "pull_state.json").write_text(json.dumps({"done": [0, 1], "used": {"a": 2, "b": 2}}))
+
+    def save(i, rows):
+        a = np.array(rows, float)
+        np.savez_compressed(cache / "prints" / f"{i}.npz", t=a[:, 0].astype(np.int64), price=a[:, 1], side=a[:, 2].astype(np.int8),
+                            out=a[:, 3].astype(np.int8), size=a[:, 4], served=np.array([len(rows)]), pages=np.array([len(rows)]))
+    # pair 1>2: a sale of "June" at 0.50 and a purchase of "July" at 0.45 on six days; the last sale is a NO purchase at 0.50
+    save("1", [(T0 + d * day, 0.50, -1, 1, 30) for d in range(5)] + [(T0 + 5 * day, 0.50, 1, 0, 30)])
+    save("2", [(T0 + d * day + 60, 0.45, 1, 1, 500) for d in range(6)])
+    # pair 3>4: one 1-cent gap; both rungs still open
+    save("3", [(T0, 0.31, -1, 1, 5)])
+    save("4", [(T0 + 5, 0.30, 1, 1, 5)])
+    assert rn.detect() == 0
+    cut = json.loads((res / "oos_cut.json").read_text())
+    assert cut["a"]["trade_dates"] == 6 and cut["a"]["oos_start"] == "2025-06-19" and cut["b"]["trade_dates"] == 1
+    (cache / "outcomes.json").write_text(json.dumps({"1": {"outcome": 0.0, "closedTime": "2025-07-01 00:00:00+00"},
+                                                     "2": {"outcome": 1.0, "closedTime": "2025-08-01 00:00:00+00"},
+                                                     "3": {"outcome": None, "closedTime": None}, "4": {"outcome": None, "closedTime": None}}))
+    assert rn.settle() == 0
+    T = pd.read_csv(res / "trades.csv", dtype={"rich": str, "cheap": str})
+    p = T[T.variant == "W600"]
+    a = p[p.set == "a"]
+    assert len(a) == 6 and list(a.segment) == ["IS"] * 4 + ["OOS"] * 2
+    assert np.allclose(a.pnl_1x, 0.03 + 1.0) and np.allclose(a.pnl_2x, 0.01 + 1.0) and (a.size_capped == 30).all()
+    assert a.sale_raw.iloc[-1] == "BUY No @0.5000" and (a.settle_date == "2025-07-31").all() and not a.broken.any()
+    b = p[p.set == "b"].iloc[0]
+    assert abs(b.pnl_1x + 0.01) < 1e-9 and b.settled_by.startswith("open") and b.settle_date == rn.LAST_DAY and not b.locked_at_entry
+    assert len(T[T.variant == "W120"]) == 7 and not T.print_after_close.any()
+    Mx = rp.build_metrics(T)
+    r = rp.get(Mx, scope="set a")
+    assert r.trades == 6 and r.dates == 6 and abs(r.net_points_per_trade - 103.0) < 1e-6 and abs(r.usd_capped - 6 * 30 * 1.03) < 1e-6
+    assert rp.get(Mx, scope="set a", segment="OOS").trades == 2 and rp.get(Mx, scope="resolved pairs only").trades == 6
+    lines = rp.pass_lines(Mx)
+    assert [ok for _, ok, _ in lines][2:] == [True, False]            # positive at 2x; too few out-of-sample trades
