@@ -18,6 +18,8 @@ attached by id. Idempotent: our tools are found by name + type client + the ``Po
 updated in place; the agent is updated when its id is known, else created."""
 from __future__ import annotations
 
+import os
+
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -30,6 +32,8 @@ from .tools import CONFIRM_TOOLS, TOOLS
 API = "https://api.elevenlabs.io"
 REPO = Path(__file__).resolve().parents[3]
 VOICE_DOC = REPO / "docs" / "voice-agent.md"
+DEFAULT_VOICE_ID = "cjVigY5qzO86Huf0OWal"  # ElevenLabs premade "Eric - Smooth, Trustworthy" (conversational)
+DEFAULT_TTS_MODEL = "eleven_turbo_v2"      # English agents: the higher-quality v2 English model
 AGENT_NAME = "PolyBridge"
 DESC_PREFIX = "PolyBridge: "
 DEFAULT_LLM = "gemini-2.5-flash"
@@ -103,8 +107,11 @@ def agent_body(system_prompt: str, first_message: str, tool_ids: list[str], llm:
     if llm:
         prompt["llm"] = llm
     conv: dict[str, Any] = {"agent": {"first_message": first_message, "language": "en", "prompt": prompt}}
-    if voice_id:
-        conv["tts"] = {"voice_id": voice_id}
+    voice_id = voice_id or os.environ.get("ELEVENLABS_VOICE_ID") or DEFAULT_VOICE_ID
+    # A warmer, less robotic delivery: the higher-quality English model, a little less stability (more natural
+    # intonation), strong similarity to the chosen voice, normal speed.
+    conv["tts"] = {"voice_id": voice_id, "model_id": os.environ.get("ELEVENLABS_TTS_MODEL") or DEFAULT_TTS_MODEL,
+                   "stability": 0.45, "similarity_boost": 0.8, "speed": 1.0}
     return {"name": AGENT_NAME, "conversation_config": conv,
             "platform_settings": {"auth": {"enable_auth": False,
                                            "allowlist": [{"hostname": h} for h in WEB_HOSTS]}}}
