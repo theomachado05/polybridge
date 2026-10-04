@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import websockets
+from websockets.asyncio.client import ClientConnection
 
 import live_books  # noqa: F401
 from arbscan import datasrc as ds
@@ -32,9 +33,16 @@ try:
 except ImportError:
     BookEngine, BOOK_IMPL = PyBookEngine, "python_book"
     keep_warm = set_interactive_qos = None
+try:
+    from .hedgecore_book import WsFeed
+except ImportError:
+    WsFeed = None
 
 UTC = timezone.utc
-WS_URL = "wss://ws-subscriptions-clob.polymarket.com/ws/market"
+WS_HOST, WS_PATH = "ws-subscriptions-clob.polymarket.com", "/ws/market"
+WS_URL = f"wss://{WS_HOST}{WS_PATH}"
+CA_FILES = ("/opt/homebrew/etc/openssl@3/cert.pem", "/usr/local/etc/openssl@3/cert.pem", "/etc/ssl/cert.pem")
+DRAIN_SEC = 0.002
 OUT = FC.RESEARCH_DIR / "results" / "live_books"
 SNAPSHOT = FC.PKG_DIR / f"snapshot_{FC.SNAPSHOT_DATE}.csv"
 CHUNK = 200
@@ -92,10 +100,23 @@ def yes_no(meta: dict) -> tuple[str, str]:
     return toks[0], toks[1]
 
 
+class StampedConnection(ClientConnection):
+    t_read = 0
+
+    def data_received(self, data: bytes) -> None:
+        self.t_read = time.perf_counter_ns()
+        super().data_received(data)
+
+
 class Recorder:
-    def __init__(self, out: Path, until: datetime, raw_cap: int, warm: bool = True):
+    def __init__(self, out: Path, until: datetime, raw_cap: int, warm: bool = True, native: bool = True,
+                 spin: bool = True, warm_us: int = 200):
         self.out, self.until, self.raw_cap = out, until, raw_cap
-        self.warm = warm and keep_warm is not None
+        self.native = native and WsFeed is not None and BOOK_IMPL == "cpp_book"
+        self.spin = self.native and spin
+        self.warm_us = warm_us if self.spin else 0
+        self.impl = ("native_ws_spin" if self.spin else "native_ws") if self.native else BOOK_IMPL
+        self.warm = warm and keep_warm is not None and not self.spin
         self.raw = HourlyGz(out / "raw", "raw", binary=True)
         self.dec = HourlyGz(out / "decisions", "decisions")
         self.gaps = (out / "gaps.jsonl").open("a")
@@ -210,11 +231,14 @@ class Recorder:
                 self.log.exception("reference refresh failed: %s", e)
             await asyncio.sleep(2.0)
 
-    def on_message(self, raw: bytes, t0: int, t0m: int):
+    def on_message(self, raw: bytes, t0: int, t0m: int, tr: int | None = None):
         if raw == b"PONG":
             return
-        self.counts["msgs"] += 1
         n = self.engine.process(raw, t0, t0m)
+        self.on_frame(raw, n, t0, None, tr, self.engine.decisions() if n > 0 else ())
+
+    def on_frame(self, raw: bytes, n: int, t0: int, ts: int | None, tr: int | None, decs, tv: int | None = None):
+        self.counts["msgs"] += 1
         if n < 0:
             self.counts["bad_json"] += 1
         if self.raw_on:
@@ -225,11 +249,10 @@ class Recorder:
             if closed:
                 self.log.info("raw hour closed %s: %.1f MB, raw dir %.1f MB", closed.name, closed.stat().st_size / 1e6,
                               dir_bytes(closed.parent) / 1e6)
-        if n > 0:
-            for d in self.engine.decisions():
-                self.log_decision(t0, d)
+        for d in decs:
+            self.log_decision(t0, d, ts, tr, tv)
 
-    def log_decision(self, t0: int, d: tuple):
+    def log_decision(self, t0: int, d: tuple, ts: int | None = None, tr: int | None = None, tv: int | None = None):
         slot, kind, side, yb, ybs, ya, yas, bdep, adep, p, edge, net, px, sz, t1, t2 = d
         mid, is_yes = self.slot_info[slot]
         ref = self.refs.get(mid)
@@ -240,7 +263,7 @@ class Recorder:
             self.counts["flagged"] += 1
             if not stale:
                 self.counts["flagged_fresh"] += 1
-        row = {"t0": t0, "t1": t1, "t2": t2, "kind": KINDS[kind], "mid": mid, "tok": "yes" if is_yes else "no", "tk": m["tk"],
+        row = {"ts": ts, "tv": tv, "tr": tr, "t0": t0, "t1": t1, "t2": t2, "kind": KINDS[kind], "mid": mid, "tok": "yes" if is_yes else "no", "tk": m["tk"],
                "k": m["k"], "res": m["res_date"], "bid": yb, "bid_sz": ybs, "ask": ya, "ask_sz": yas,
                "bid_depth_2c": bdep, "ask_depth_2c": adep,
                "p_ref": None if p != p else round(p, 5), "ref_basis": ref.basis if ref else None,
@@ -249,7 +272,7 @@ class Recorder:
                "reference_stale": stale, "in_window": t2 // 1_000_000_000 >= int(m["w0"]) and t2 // 1_000_000_000 <= int(m["w1"])
                and str(datetime.fromtimestamp(t2 / 1e9, R.ET).date()) == m["reopening"],
                "decision": detector.SIDES[side], "edge_pt": round(edge, 3), "net_edge_pt": round(net, 3),
-               "price": None if px != px else round(px, 4), "size": sz, "impl": BOOK_IMPL, "warm": self.warm}
+               "price": None if px != px else round(px, 4), "size": sz, "impl": self.impl, "warm": self.warm or self.warm_us > 0}
         self.dec.write(t2, json.dumps(row, separators=(",", ":")) + "\n")
 
     async def pinger(self, ws):
@@ -261,7 +284,8 @@ class Recorder:
         backoff, down_since, err = 1.0, None, ""
         while not self.stop.is_set():
             try:
-                async with websockets.connect(WS_URL, ping_interval=None, max_size=2 ** 24, open_timeout=20) as ws:
+                async with websockets.connect(WS_URL, ping_interval=None, max_size=2 ** 24, open_timeout=20,
+                                              create_connection=StampedConnection) as ws:
                     await ws.send(json.dumps({"assets_ids": assets, "type": "market"}))
                     if down_since is not None:
                         now = time.time()
@@ -280,7 +304,8 @@ class Recorder:
                             except websockets.ConnectionClosedOK:
                                 break
                             t0m = time.perf_counter_ns()
-                            self.on_message(raw, time.time_ns(), t0m)
+                            t0 = time.time_ns()
+                            self.on_message(raw, t0, t0m, t0 - (t0m - ws.t_read))
                     finally:
                         ping.cancel()
                     err = "closed by server"
@@ -294,7 +319,53 @@ class Recorder:
             await asyncio.sleep(backoff)
             backoff = min(backoff * 2, 60.0)
 
+    async def native_supervisor(self):
+        ca = next((c for c in CA_FILES if os.path.exists(c)), "")
+        feed = WsFeed(self.engine, WS_HOST, 443, WS_PATH, True, ca, self.spin, PING_SEC, self.warm_us)
+        down: dict[int, tuple[float, str]] = {}
+        try:
+            while not self.stop.is_set():
+                if self.resub.is_set():
+                    self.resub.clear()
+                    al = sorted(self.assets)
+                    subs = [json.dumps({"assets_ids": al[j:j + CHUNK], "type": "market"}) for j in range(0, len(al), CHUNK)]
+                    await asyncio.to_thread(feed.stop)
+                    self.drain(feed, down)
+                    down.clear()
+                    if subs:
+                        await asyncio.to_thread(feed.start, subs)
+                    self.log.info("subscribing %d assets (%d markets) over %d native connections (spin %s)", len(al),
+                                  len(self.markets), len(subs), self.spin)
+                try:
+                    self.drain(feed, down)
+                except Exception as e:
+                    self.log.exception("native drain failed: %s", e)
+                await asyncio.sleep(DRAIN_SEC)
+        finally:
+            await asyncio.to_thread(feed.stop)
+            self.drain(feed, down)
+
+    def drain(self, feed, down: dict[int, tuple[float, str]]):
+        frames, events = feed.drain()
+        for cid, kind, t, msg in events:
+            if kind == 1:
+                down.setdefault(cid, (t, msg))
+                if msg != "stopped":
+                    self.log.warning("conn %d down: %s", cid, msg)
+            elif cid in down:
+                t_down, err = down.pop(cid)
+                self.gaps.write(json.dumps({"conn": cid, "gap_start": t_down, "gap_end": t, "dur_s": round(t - t_down, 2),
+                                            "err": err}) + "\n")
+                self.gaps.flush()
+                self.log.warning("conn %d reconnected after %.1fs gap (%s)", cid, t - t_down, err)
+            else:
+                self.log.info("conn %d connected", cid)
+        for cid, n, ts, tv, tr, t0, raw, decs in frames:
+            self.on_frame(raw, n, t0, ts, tr, decs, tv)
+
     async def ws_supervisor(self):
+        if self.native:
+            return await self.native_supervisor()
         tasks: list[asyncio.Task] = []
         while not self.stop.is_set():
             await self.resub.wait()
@@ -345,8 +416,8 @@ class Recorder:
         if self.warm:
             set_interactive_qos()
             keep_warm(True)
-        self.log.info("start pid %d, frame path %s, detector impl %s, keep-warm %s, until %s", os.getpid(), BOOK_IMPL,
-                      detector.IMPL, self.warm, self.until.isoformat())
+        self.log.info("start pid %d, frame path %s, detector impl %s, keep-warm %s, rerun-warm %d us, until %s", os.getpid(),
+                      self.impl, detector.IMPL, self.warm, self.warm_us, self.until.isoformat())
         tasks = [asyncio.create_task(c) for c in (self.universe_loop(), self.ref_loop(), self.ws_supervisor(), self.housekeeping())]
         await self.stop.wait()
         for t in tasks:
@@ -369,6 +440,12 @@ def main(argv=None):
     ap.add_argument("--raw-cap-gb", type=float, default=RAW_CAP / 1024 ** 3)
     ap.add_argument("--keep-warm", action=argparse.BooleanOptionalAction, default=True,
                     help="interactive QoS on the event loop thread and one native thread spinning to keep the P cores awake")
+    ap.add_argument("--native", action=argparse.BooleanOptionalAction, default=True,
+                    help="native C++ websocket and TLS client thread calling the book engine with no Python in the hot path")
+    ap.add_argument("--spin", action=argparse.BooleanOptionalAction, default=True,
+                    help="native client busy-polls its sockets instead of blocking in poll(); replaces keep-warm")
+    ap.add_argument("--warm-us", type=int, default=200,
+                    help="with --spin, rerun the last frame on the engine after this many idle microseconds to keep it in cache")
     a = ap.parse_args(argv)
     a.out.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(filename=a.out / "recorder.log", level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -376,7 +453,8 @@ def main(argv=None):
     pid = a.out / "recorder.pid"
     pid.write_text(str(os.getpid()))
     try:
-        asyncio.run(Recorder(a.out, datetime.fromisoformat(a.until), int(a.raw_cap_gb * 1024 ** 3), a.keep_warm).run())
+        asyncio.run(Recorder(a.out, datetime.fromisoformat(a.until), int(a.raw_cap_gb * 1024 ** 3), a.keep_warm, a.native,
+                             a.spin, a.warm_us).run())
     finally:
         if pid.exists() and pid.read_text().strip() == str(os.getpid()):
             pid.unlink()

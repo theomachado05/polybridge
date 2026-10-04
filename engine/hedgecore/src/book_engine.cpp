@@ -168,7 +168,7 @@ struct BookEngine::Impl {
   std::vector<BookDecision> dec;
   std::vector<int> touched;
   int n = 0;
-  int64_t bad = 0, other = 0, t0 = 0, t0m = 0;
+  int64_t bad = 0, other = 0, t0 = 0, t0m = 0, epoch = 0;
 
   int lookup(std::string_view a) const {
     auto it = idx.find(a);
@@ -359,6 +359,7 @@ BookEngine::BookEngine(double tau, double fee_rate, double fee_exp, std::size_t 
 BookEngine::~BookEngine() = default;
 
 int BookEngine::add_asset(std::string_view asset_id, int market, bool is_yes) {
+  ++im_->epoch;
   im_->ensure_market(market);
   auto it = im_->idx.find(asset_id);
   int s;
@@ -381,6 +382,7 @@ int BookEngine::add_asset(std::string_view asset_id, int market, bool is_yes) {
 }
 
 bool BookEngine::remove_asset(std::string_view asset_id) {
+  ++im_->epoch;
   auto it = im_->idx.find(asset_id);
   if (it == im_->idx.end()) return false;
   Slot& sl = im_->slots[static_cast<std::size_t>(it->second)];
@@ -428,6 +430,16 @@ int BookEngine::process(const char* data, std::size_t len, int64_t t0, int64_t t
   }
   return I.n;
 }
+
+int BookEngine::rerun(const char* data, std::size_t len) {
+  const int64_t bad = im_->bad, other = im_->other;
+  const int k = process(data, len, 0, 0);
+  im_->bad = bad;
+  im_->other = other;
+  return k;
+}
+
+int64_t BookEngine::epoch() const noexcept { return im_->epoch; }
 
 const BookDecision* BookEngine::decisions() const noexcept { return im_->dec.data(); }
 int BookEngine::n_decisions() const noexcept { return im_->n; }

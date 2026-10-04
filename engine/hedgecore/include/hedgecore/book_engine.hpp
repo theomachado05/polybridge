@@ -44,6 +44,8 @@ class BookEngine {
   void set_p(int market, double p_ref);
 
   int process(const char* data, std::size_t len, int64_t t0, int64_t t0_mono);
+  int rerun(const char* data, std::size_t len);
+  int64_t epoch() const noexcept;
   const BookDecision* decisions() const noexcept;
   int n_decisions() const noexcept;
   int64_t bad_frames() const noexcept;

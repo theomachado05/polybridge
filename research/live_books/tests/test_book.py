@@ -142,6 +142,7 @@ def test_recorder_raw_and_decision_rows(tmp_path):
 
     r = RC.Recorder.__new__(RC.Recorder)
     r.out, r.raw_on, r.in_sess, r.counts, r.warm = tmp_path, True, False, Counter(), False
+    r.impl, r.warm_us = RC.BOOK_IMPL, 0
     r.raw, r.dec = RC.HourlyGz(tmp_path / "raw", "raw", binary=True), RC.HourlyGz(tmp_path / "decisions", "decisions")
     r.log = logging.getLogger("test")
     r.engine, r.mid_idx, r.slot_info, r.refs = RC.BookEngine(R.TAU), {}, {}, {}
